@@ -13,8 +13,9 @@
 			"components": [
 				{
 					"ID": "morphology_list",
-					"type": "popup",
-					"vertical": true,
+					"type": "scrollbar",
+					"custom_minimum_sizeX": 199,
+					"vertical": 1,
 					"titleBarText": "Morphology",
 					"components": [
 						{
