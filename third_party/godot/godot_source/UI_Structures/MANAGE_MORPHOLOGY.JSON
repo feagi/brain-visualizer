@@ -412,7 +412,7 @@
 									"type": "textbox",
 									"ID": "FIELDFORCURRENTINFO",
 									"editable": false,
-									"custom_minimum_sizeX": 350,
+									"custom_minimum_sizeX": 400,
 									"custom_minimum_sizeY": 100
 								},
 								{
