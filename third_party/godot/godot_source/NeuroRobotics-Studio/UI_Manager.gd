@@ -20,7 +20,7 @@ var Activated: bool = false
 var UI_Top_TopBar: Newnit_Box
 var UI_LeftBar: Newnit_Popup
 var UI_createcorticalBar : Newnit_Box
-var UI_ManageNeuronMorphology : Newnit_Box
+var UI_ManageNeuronMorphology : Newnit_Popup
 var UI_MappingDefinition : Newnit_Box
 var UI_CircuitImport : Newnit_Box
 var UI_GraphCore: GraphCore
@@ -426,7 +426,7 @@ func SpawnCircuitImport(activation: Dictionary):
 	z.connect("value_changed",Callable($Brain_Visualizer,"_on_z_spinbox_value_changed").bind([x, y, z, w, h, d]))
 
 func SpawnNeuronManager():
-	UI_ManageNeuronMorphology = Newnit_Box.new()
+	UI_ManageNeuronMorphology = Newnit_Popup.new()
 	var cerateneuronmorphology = HelperFuncs.GenerateDefinedUnitDict("MANAGE_MORPHOLOGY", currentLanguageISO)
 	add_child(UI_ManageNeuronMorphology)
 	UI_ManageNeuronMorphology.Activate(cerateneuronmorphology)

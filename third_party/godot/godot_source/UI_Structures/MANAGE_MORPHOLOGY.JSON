@@ -15,7 +15,7 @@
 					"ID": "morphology_list",
 					"type": "scrollbar",
 					"custom_minimum_sizeX": 199,
-					"vertical": 1,
+					"vertical": 0,
 					"titleBarText": "Morphology",
 					"components": [
 						{
