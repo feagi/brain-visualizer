@@ -55,7 +55,8 @@ func Activate(langISO: String):
 	test_json_conv.parse(filess.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	filess.close()
-	
+#	SpawnIndicator(createindicator)
+#	SpawnNeuronManager()
 	# Initialize GraphCore
 	UI_GraphCore = $graphCore #TODO: this is very temporary
 	UI_GraphCore.DataUp.connect(GraphEditInput)
@@ -417,11 +418,8 @@ func SpawnCircuitImport(activation: Dictionary):
 	var w = UI_CircuitImport.GetReferenceByID("WHD").get_node("counter_W").get_node("counter_W")
 	var h = UI_CircuitImport.GetReferenceByID("WHD").get_node("counter_H").get_node("counter_H")
 	var d = UI_CircuitImport.GetReferenceByID("WHD").get_node("counter_D").get_node("counter_D")
-#	var close_button = UI_CircuitImport.get_node("Unit_TITLEBAR").get_node("Button_CLOSEBUTTON").get_node("button")
 	var import_button = UI_CircuitImport.GetReferenceByID("UpdateButtonTop").get_node("button_UpdateButtonTop")
 	import_button.connect("pressed", Callable($Brain_Visualizer,"_on_insert_button_pressed").bind([dropdown, x,y,z]))
-#	close_button.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
-#	import_close_button = close_button
 	dropdown.connect("item_selected",Callable($Brain_Visualizer,"_on_ItemList_item_selected").bind(dropdown))
 	x.connect("value_changed",Callable($Brain_Visualizer,"_on_x_spinbox_value_changed").bind([x, y, z, w, h, d]))
 	y.connect("value_changed",Callable($Brain_Visualizer,"_on_y_spinbox_value_changed").bind([x, y, z, w, h, d]))
@@ -445,26 +443,43 @@ func SpawnNeuronManager():
 	composite.visible = false
 	patterns.visible = false
 	vectors_bar.visible = false
-	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
+#	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
+	
+#	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
+#	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
+#	var duplicated_button_box = node_button_box.duplicate()
+#	var duplicated_button = node_button_box.duplicate()
+#	node_button_box.visible = false 
+#	duplicated_button.visible = true
+#	duplicated_button_box.add_child(duplicated_button)
+#	parent_of_button.add_child(duplicated_button_box)
+#	if optionbutton_holder:
+#		for i in optionbutton_holder:
+#			var new_node = duplicated_button.duplicate()
+#			new_node.get_node("button_button1").visible = true
+#			new_node.get_node("button_button1").text = i
+#			new_node.set_name("button1" + str(i))
+#			new_node.get_node("button_button1").connect("pressed", Callable(self,"button_rule").bind(new_node.get_node("button_button1").text))
+#			UI_ManageNeuronMorphology.GetReferenceByID("morphology_list").add_child(new_node)
+
+
 	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
 	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
 	var duplicated_button_box = node_button_box.duplicate()
 	var duplicated_button = node_button_box.duplicate()
-	node_button_box.visible = false 
-	duplicated_button.visible = true
 	duplicated_button_box.add_child(duplicated_button)
 	parent_of_button.add_child(duplicated_button_box)
 	if optionbutton_holder:
 		for i in optionbutton_holder:
-			var new_node = duplicated_button.duplicate()
-			new_node.get_node("button_button1").visible = true
-			new_node.get_node("button_button1").text = i
+			var new_node = UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").duplicate()
+#			new_node.visible = true
+			new_node.text = i
 			new_node.set_name("button1" + str(i))
-			new_node.get_node("button_button1").connect("pressed", Callable(self,"button_rule").bind(new_node.get_node("button_button1").text))
-			UI_ManageNeuronMorphology.GetReferenceByID("morphology_list").add_child(new_node)
+			new_node.connect("pressed", Callable(self,"button_rule").bind(new_node.text))
+			UI_ManageNeuronMorphology.GetReferenceByID("button1").add_child(new_node)
 
 func button_rule(rule_name):
 	if rule_name != " ":
