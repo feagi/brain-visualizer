@@ -75,7 +75,7 @@ func _SpawnTopBar(activation: Dictionary):
 	# TODO best not to connect to Element children, better to connect to element signals itself
 	# This may work for now but can cause weird issues later
 	var import_circuit = UI_Top_TopBar.GetReferenceByID("GENOMEFILENAME").get_node("sideButton_GENOMEFILENAME")
-	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
+#	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
 ####################################

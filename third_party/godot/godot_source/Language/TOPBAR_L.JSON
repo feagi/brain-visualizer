@@ -1,15 +1,11 @@
 {
 	"TITLE": {
 		"text": 
-		  {"eng": "NeuroRobotics Studio"}
+		  {"eng": ""}
 		},
 	"GENOMEFILENAME": {
 		"sideLabelText":
 		  {"eng":  "Genome File Name"}
-	},
-	"REFRESHRATE": {
-		"sideLabelText":
-		  {"eng":  "System Refresh Rate"}
 	},
 	"CORTICALAREAS" : {
 	  "sideLabelText":

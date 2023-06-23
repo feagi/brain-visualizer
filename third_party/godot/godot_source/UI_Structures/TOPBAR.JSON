@@ -2,6 +2,8 @@
    "ID":"BAR",
    "vertical":false,
    "type": "box",
+	"positionX": 120,
+	"positionY": 8,
    "enablePanel": true,
    "components":[
 	  {
@@ -11,7 +13,8 @@
 	  {
 		 "type":"header",
 		 "ID":"GENOMEFILENAME",
-		  "sideButtonText": "+"
+		  "sideButtonText": "+",
+		  "image": "test.png"
 	  },
 	  {
 		 "type":"floatfield",
@@ -30,6 +33,11 @@
 		 "hasButton":true,
 		 "ID":"NEURONMORPHOLOGIES",
 		  "sideButtonText": "+"
-	  }
+	  },
+	   {
+		   "type": "button",
+		   "ID": "TESTEST",
+		   "image": "test.png"
+	   }
    ]
 }
