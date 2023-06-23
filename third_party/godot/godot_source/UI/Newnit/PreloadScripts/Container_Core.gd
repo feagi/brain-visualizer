@@ -15,6 +15,7 @@ static func Func_SpawnChild(childActivationSettings: Dictionary, ContainerObject
 		"dropdown": newChild = Element_DropDown.new()
 		"field": newChild = Element_Field.new()
 		"floatfield": newChild = Element_FloatField.new()
+		"intfield": newChild = Element_IntField.new()
 		"header": newChild = Element_Label.new()
 		"vector3": newChild = Element_Vector3.new()
 		"box": newChild = Newnit_Box.new()
