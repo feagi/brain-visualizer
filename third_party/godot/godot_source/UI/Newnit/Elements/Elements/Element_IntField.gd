@@ -28,7 +28,7 @@ func _ActivationSecondary(settings: Dictionary) -> void:
 
 func _PopulateSubElements() -> Array:
 	# used during Activation Primary to add Counter
-	return ["intField"]
+	return ["intfield"]
 
 func _getChildData() -> Dictionary:
 	return {
