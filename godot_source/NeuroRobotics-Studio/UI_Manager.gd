@@ -486,10 +486,11 @@ func SpawnNeuronManager():
 	var morphologyScroll: Newnit_Scroll = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
 	for i in morphologyOptions:
 		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
-		# You can connect whatever from spawnedItem
+		spawnedItem.connect("DataUp", Callable(self,"button_rule"))
 
 
-func button_rule(rule_name):
+func button_rule(data: Dictionary, originatingID: StringName, originatingRef: Node):
+	var rule_name = originatingRef.text
 	if rule_name != " ":
 		if "+" in rule_name:
 			rule_name = rule_name.replace("+", "%2B")
