@@ -1,7 +1,7 @@
 {
 	"ID": "MANAGE_NEURON_MORPHOLOGY",
-	"positionX": 400,
-	"positionY": 400,
+	"positionX": 700,
+	"positionY": 100,
 	"widthAlignment": 1,
 	"enablePanel": true,
 	"titleBarText":"Manage Neuron Morphology",
