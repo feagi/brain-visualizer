@@ -20,7 +20,7 @@ var Activated: bool = false
 var UI_Top_TopBar: Newnit_Box
 var UI_LeftBar: Newnit_Popup
 var UI_createcorticalBar : Newnit_Box
-var UI_ManageNeuronMorphology : Newnit_Box
+var UI_ManageNeuronMorphology : Newnit_Popup
 var UI_MappingDefinition : Newnit_Box
 var UI_CircuitImport : Newnit_Box
 var UI_GraphCore: GraphCore
@@ -87,6 +87,7 @@ signal DataUp(data: Dictionary)
 ######### Top Bar Control ##########
 # We should be using this to make things more streamline
 func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
 		"CORTICALAREAS":
 			if "selectedIndex" in data.keys():
@@ -260,7 +261,7 @@ func RelayDownwards(callType, data) -> void:
 						for x in original_dropdown.get_item_count():
 							i.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions").add_item(original_dropdown.get_item_text(x))
 				UI_MappingDefinition.get_node("box_third_box").visible = false
-			if UI_CreateMorphology:
+			if UI_CreateMorphology != null:
 				if UI_CreateMorphology.GetReferenceByID("Composite").visible:
 					UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": data}}}})
 			optionbutton_holder = data
@@ -426,7 +427,7 @@ func SpawnCircuitImport(activation: Dictionary):
 	z.connect("value_changed",Callable($Brain_Visualizer,"_on_z_spinbox_value_changed").bind([x, y, z, w, h, d]))
 
 func SpawnNeuronManager():
-	UI_ManageNeuronMorphology = Newnit_Box.new()
+	UI_ManageNeuronMorphology = Newnit_Popup.new()
 	var cerateneuronmorphology = HelperFuncs.GenerateDefinedUnitDict("MANAGE_MORPHOLOGY", currentLanguageISO)
 	add_child(UI_ManageNeuronMorphology)
 	UI_ManageNeuronMorphology.Activate(cerateneuronmorphology)
