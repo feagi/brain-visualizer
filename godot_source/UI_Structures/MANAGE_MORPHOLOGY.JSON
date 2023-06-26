@@ -19,11 +19,7 @@
 					"vertical": true,
 					"titleBarText": "Morphology",
 					"components": [
-						{
-							"type": "button",
-							"ID": "button1",
-							"text": "Dummy"
-						}
+
 					]
 				},
 				{

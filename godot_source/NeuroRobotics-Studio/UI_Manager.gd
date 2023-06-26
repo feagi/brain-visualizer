@@ -466,21 +466,23 @@ func SpawnNeuronManager():
 #			new_node.get_node("button_button1").connect("pressed", Callable(self,"button_rule").bind(new_node.get_node("button_button1").text))
 #			UI_ManageNeuronMorphology.GetReferenceByID("morphology_list").add_child(new_node)
 
+	# OLD DUPLICATION
+#	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
+#	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
+#	var duplicated_button_box = node_button_box.duplicate()
+#	var duplicated_button = node_button_box.duplicate()
+#	duplicated_button_box.add_child(duplicated_button)
+#	parent_of_button.add_child(duplicated_button_box)
+#	if optionbutton_holder:
+#		for i in optionbutton_holder:
+#			var new_node = UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").duplicate()
+##			new_node.visible = true
+#			new_node.text = i
+#			new_node.set_name("button1" + str(i))
+#			new_node.connect("pressed", Callable(self,"button_rule").bind(new_node.text))
+#			UI_ManageNeuronMorphology.GetReferenceByID("button1").add_child(new_node)
+	x
 
-	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
-	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
-	var duplicated_button_box = node_button_box.duplicate()
-	var duplicated_button = node_button_box.duplicate()
-	duplicated_button_box.add_child(duplicated_button)
-	parent_of_button.add_child(duplicated_button_box)
-	if optionbutton_holder:
-		for i in optionbutton_holder:
-			var new_node = UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").duplicate()
-#			new_node.visible = true
-			new_node.text = i
-			new_node.set_name("button1" + str(i))
-			new_node.connect("pressed", Callable(self,"button_rule").bind(new_node.text))
-			UI_ManageNeuronMorphology.GetReferenceByID("button1").add_child(new_node)
 
 func button_rule(rule_name):
 	if rule_name != " ":
