@@ -33,6 +33,7 @@ var velocity = Vector3(0, 0, 0)
 var flagged = false ## This allows space and del to be able to send data without being overwritten by spam "{}"
 var is_not_typing = true
 var cortical_pointer = ""
+var old_data
 
 const CAMERA_TURN_SPEED = 200
 
@@ -41,6 +42,10 @@ func get_input_keyboard(_delta):
 		is_not_typing = false
 	else:
 		is_not_typing = true
+	if old_data != Godot_list.Node_2D_control:
+		old_data = Godot_list.Node_2D_control
+		print("Godot: ", Godot_list.Node_2D_control)
+		
 	# Rotate outer gimbal around y axis
 	if Input.is_action_pressed("ui_left") and is_not_typing:
 		x = x - 1

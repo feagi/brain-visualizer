@@ -76,7 +76,7 @@ func _ready():
 #		print("FROM PYTHON: ", data)
 		if data != null:
 			if "update" in data:
-				timer_api.loading_box_timer = $"../../../box_loading"
+				timer_api.loading_box_timer = true
 				Autoload_variable.BV_Core.Update_Dimensions()
 				Autoload_variable.BV_Core.GET_health_status()
 				stored_value= ""

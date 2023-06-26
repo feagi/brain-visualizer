@@ -1,8 +1,9 @@
-[gd_scene load_steps=19 format=3 uid="uid://deenwnua3u7ay"]
+[gd_scene load_steps=20 format=3 uid="uid://deenwnua3u7ay"]
 
 [ext_resource type="PackedScene" uid="uid://c0650xa4eujml" path="res://circuit_build/Main.tscn" id="2_l206u"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Button_to_Autoload.gd" id="2_t7fr6"]
-[ext_resource type="FontFile" uid="uid://ejvbsquk5vu6" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
+[ext_resource type="Script" path="res://brain_visualizer_source/box_loading.gd" id="10_uh1ag"]
+[ext_resource type="FontFile" uid="uid://c5shbghijinx6" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
 [ext_resource type="Script" path="res://Official_world_scripts/scene_transition.gd" id="31_pws3t"]
 [ext_resource type="Script" path="res://NeuroRobotics-Studio/Core.gd" id="31_vv2v0"]
 [ext_resource type="PackedScene" uid="uid://c7v5wwar1gqjo" path="res://NeuroRobotics-Studio/UI_Manager.tscn" id="32_fbal3"]
@@ -254,25 +255,30 @@ offset_bottom = 600.0
 [node name="Brain_Visualizer" parent="Core/GlobalUISystem" instance=ExtResource("34_jfnov")]
 
 [node name="box_loading" type="ColorRect" parent="."]
-visible = false
 anchors_preset = -1
-anchor_left = 7.885
-anchor_top = 0.008
-anchor_right = 7.885
-anchor_bottom = 0.516
-offset_left = -8353.95
-offset_top = 226.959
-offset_right = -7991.95
-offset_bottom = 76.3751
+anchor_left = 0.677951
+anchor_top = 0.430556
+anchor_right = 0.838542
+anchor_bottom = 0.530864
+grow_horizontal = 0
+grow_vertical = 2
 pivot_offset = Vector2(0, -1)
+size_flags_horizontal = 8
 color = Color(0.0196078, 0.0196078, 0.0196078, 1)
+script = ExtResource("10_uh1ag")
+metadata/_edit_use_anchors_ = true
 
 [node name="Label" type="Label" parent="box_loading"]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = -1
 anchor_left = -0.0136986
 anchor_top = -0.0519481
 anchor_right = 1.03378
 anchor_bottom = 1.05411
+offset_left = 13.0411
+offset_top = 6.37663
+offset_right = -220.431
+offset_bottom = 6.48285
 theme_override_fonts/font = SubResource("FontFile_jm7r5")
 text = "Loading genome.."
 
