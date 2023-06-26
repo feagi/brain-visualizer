@@ -132,7 +132,7 @@ var alignment: int:
 
 var childBaseID: String
 
-func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> void:
+func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> Node:
 	var cachedChildren = children
 	index = HelperFuncs.clampToIntRange(index, 0, len(cachedChildren))
 	var newItem: Node = HelperFuncs.SpawnNewnitOfType(Activation["type"])
@@ -140,6 +140,8 @@ func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int 
 	_scrollBox.move_child(newItem, index)
 	newItem.Activate(Activation)
 	newItem.SetData(initialData)
+	_UpdateItemIDs(index, len(cachedChildren))
+	return newItem
 
 func RemoveItem(itemIndex: int) -> void:
 	_scrollBox.get_child(itemIndex).queue_free()
