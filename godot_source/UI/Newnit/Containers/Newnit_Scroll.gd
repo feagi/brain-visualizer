@@ -134,12 +134,16 @@ var childBaseID: String
 
 func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> void:
 	var cachedChildren = children
-	index = HelperFuncs.clampToIntRange(cachedChildren)
+	index = HelperFuncs.clampToIntRange(index, 0, len(cachedChildren))
 	var newItem: Node = HelperFuncs.SpawnNewnitOfType(Activation["type"])
 	_scrollBox.add_child(newItem)
 	_scrollBox.move_child(newItem, index)
 	newItem.Activate(Activation)
 	newItem.SetData(initialData)
+
+func RemoveItem(itemIndex: int) -> void:
+	_scrollBox.get_child(itemIndex).queue_free()
+	_UpdateItemIDs(itemIndex, len(children))
 
 func _UpdateItemIDs(startIndex: int, endIndex: int) -> void:
 	for i in range(startIndex, endIndex):
