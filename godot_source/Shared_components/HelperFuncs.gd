@@ -232,3 +232,13 @@ static func CheckIfSubkeyExists(dictIn: Dictionary, searchText: String) -> bool:
 	for key in dictIn.keys():
 		if key.contains(searchText): return true
 	return false
+
+static func AppendIntToString(strIn: String, intIn: int, seperator: String = "___") -> String:
+	return strIn + seperator + str(intIn)
+
+static func GetPrefixFromStringWInt(strWInt: String, seperator: String = "___") -> String:
+	return strWInt.get_slice(seperator, 0)
+
+static func GetIntFromStringWInt(strWInt: String, seperator: String = "___") -> int:
+	var intString = strWInt.get_slice(seperator, 1)
+	return intString.to_int()
