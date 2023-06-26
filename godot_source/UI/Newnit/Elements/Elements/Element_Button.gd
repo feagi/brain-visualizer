@@ -23,7 +23,7 @@ var text: String:
 	set(v): _Button.text= v
 	
 var image: String:
-	set(v): _Button.icon = ResourceLoader.load("res://"+v);_Button.expand_icon = true;print("WORKING")
+	set(v): _Button.icon = ResourceLoader.load("res://"+v);_Button.expand_icon = true;
 
 var _Button: Button_Sub
 
