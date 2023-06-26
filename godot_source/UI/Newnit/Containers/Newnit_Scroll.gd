@@ -130,6 +130,8 @@ var alignment: int:
 	get: return _scrollBox.alignment
 	set(v): _scrollBox.alignment = v
 
+var childBaseID: String
+
 func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> void:
 	var cachedChildren = children
 	index = HelperFuncs.clampToIntRange(cachedChildren)
@@ -138,6 +140,11 @@ func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int 
 	_scrollBox.move_child(newItem, index)
 	newItem.Activate(Activation)
 	newItem.SetData(initialData)
+
+func _UpdateItemIDs(startIndex: int, endIndex: int) -> void:
+	for i in range(startIndex, endIndex):
+		var curItem: Node = _scrollBox.get_child(i)
+		curItem._ID = HelperFuncs.AppendIntToString(childBaseID, i)
 
 func _AlternateActivationPath(settings: Dictionary) -> bool:
 	
