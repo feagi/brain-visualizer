@@ -12,6 +12,10 @@ static func Func_GetChildIDs(children: Array) -> Array:
 static func Func_Activate(settings: Dictionary, NewnitObject: Node) -> void:
 	if NewnitObject._isActivated: return
 	
+	if !NewnitObject.hasNewnitParent:
+		var parentObj = NewnitObject.get_parent()
+		assert(parentObj != null, "Please set this newnits parent before activating!")
+	
 	# Convert JSON Vector Parts into Vectors
 	settings = HelperFuncs.RemapVector2FloatsToVector2("position", settings)
 	settings = HelperFuncs.RemapVector2FloatsToVector2("size", settings)

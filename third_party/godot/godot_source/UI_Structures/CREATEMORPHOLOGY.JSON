@@ -5,6 +5,7 @@
 	"titleBarTitle": "Create new Neuron Morphology",
 	"enableCloseButton": true,
 	"vertical": true,
+	"enablePanel": true,
 	"widthAlignment": 1,
 	"positionX": 400,
 	"positionY": 200,
