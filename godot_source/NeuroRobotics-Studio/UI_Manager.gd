@@ -370,6 +370,7 @@ func SpawnCreateMophology():
 	morphology_creation_add_button = add_row
 	morphology_creation_add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_pressed").bind(UI_CreateMorphology))
 	create_button.connect("pressed", Callable($Brain_Visualizer,"_on_create_pressed").bind(UI_CreateMorphology))
+	
 
 func SpawnCorticalCrete():
 	UI_createcorticalBar = Newnit_Box.new()
@@ -439,6 +440,7 @@ func SpawnNeuronManager():
 	var patterns_bar = UI_ManageNeuronMorphology.GetReferenceByID("PatternRow0")
 	var vectors_bar = UI_ManageNeuronMorphology.GetReferenceByID("XYZ")
 	var add_button = UI_ManageNeuronMorphology.GetReferenceByID("header_definition").get_node("sideButton_header_definition")
+	var delete_button = UI_ManageNeuronMorphology.GetReferenceByID("SAVEDELETE").get_node("sideButton_SAVEDELETE")
 	patterns_bar.visible = false
 	vectors.visible = false
 	composite.visible = false
@@ -446,7 +448,8 @@ func SpawnNeuronManager():
 	vectors_bar.visible = false
 #	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
-	save_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
+	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
+	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
 	
 #	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
