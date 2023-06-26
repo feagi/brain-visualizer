@@ -56,13 +56,13 @@ func _ActivationSecondary(settings: Dictionary) -> void:
 	flip_v = HelperFuncs.GetIfCan(settings, "flip_v", D_flip_v)
 	ignore_texture_size = HelperFuncs.GetIfCan(settings, "ignore_texture_size", D_ignore_texture_size)
 	stretch_mode = HelperFuncs.GetIfCan(settings, "stretch_mode", D_stretch_mode)
-	if "default_texture_path" in settings.keys:
+	if "default_texture_path" in settings.keys():
 		LoadTextureFromPath(settings["default_texture_path"])
 	_runtimeSettableProperties.merge(_specificSettableProps)
 
 func _PopulateSubElements() -> Array:
 	# used during Activation Primary to add Counter
-	return ["button"]
+	return ["textureButton"]
 
 func _getChildData() -> Dictionary:
 	return {
