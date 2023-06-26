@@ -213,6 +213,7 @@ func _SpawnSubElements(componentTypes: Array) -> void:
 			"floatField": subComp = LineEdit_ff_Sub.new()
 			"label": subComp = Label_Sub.new()
 			"textbox": subComp = TextEdit_Sub.new()
+			"intfield": subComp = LineEdit_int_Sub.new()
 			# More Types!
 			_:
 				@warning_ignore("assert_always_false")
