@@ -112,10 +112,10 @@ func _DataUpProxy(data: Dictionary, recievedID: String, reference: Node) -> void
 
 ### Start Scroll Container Unique
 
-var scrollBox: Newnit_Box
+var _scrollBox: Newnit_Box
 
 var children: Array:
-	get: return NEWNIT_CONTAINER_CORE.Get_children(scrollBox)
+	get: return NEWNIT_CONTAINER_CORE.Get_children(_scrollBox)
 
 var specificSettableProps := {
 	"alignment": TYPE_INT,
@@ -123,26 +123,35 @@ var specificSettableProps := {
 }
 
 var vertical: int:
-	get: return scrollBox.vertical
-	set(v): scrollBox.vertical = v
+	get: return _scrollBox.vertical
+	set(v): _scrollBox.vertical = v
 
 var alignment: int:
-	get: return scrollBox.alignment
-	set(v): scrollBox.alignment = v
+	get: return _scrollBox.alignment
+	set(v): _scrollBox.alignment = v
+
+func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> void:
+	var cachedChildren = children
+	index = HelperFuncs.clampToIntRange(cachedChildren)
+	var newItem: Node = HelperFuncs.SpawnNewnitOfType(Activation["type"])
+	_scrollBox.add_child(newItem)
+	_scrollBox.move_child(newItem, index)
+	newItem.Activate(Activation)
+	newItem.SetData(initialData)
 
 func _AlternateActivationPath(settings: Dictionary) -> bool:
 	
 	type = "scrollbar"
 	
 	# use this to modify element spawning
-	scrollBox = Newnit_Box.new()
-	add_child(scrollBox)
+	_scrollBox = Newnit_Box.new()
+	add_child(_scrollBox)
 	
 	# modify settings overwrite
 	settings["ID"] = ID + "___Box"
 	settings["type"] = "box"
 	
-	scrollBox.Activate(settings)
+	_scrollBox.Activate(settings)
 	
 	return true # prevent default activation procedures
 

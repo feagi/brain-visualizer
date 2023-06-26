@@ -192,6 +192,11 @@ static func clampToRange(input: float, min: float, max: float) -> float:
 	if input > max: return max
 	return input
 
+static func clampToIntRange(input: int, min: int, max: int) -> int:
+	if input < min: return min
+	if input > max: return max
+	return input
+
 # Remaps X Y floats from activation JSON into a vector
 static func RemapVector2FloatsToVector2(prefix: String, searching: Dictionary) -> Dictionary:
 	if (prefix in searching.keys()): return searching # vector present
@@ -242,3 +247,30 @@ static func GetPrefixFromStringWInt(strWInt: String, seperator: String = "___") 
 static func GetIntFromStringWInt(strWInt: String, seperator: String = "___") -> int:
 	var intString = strWInt.get_slice(seperator, 1)
 	return intString.to_int()
+
+static func SpawnNewnitOfType(type: String) -> Node:
+	var newChild: Node
+	match type:
+		"counter": newChild = Element_Counter.new()
+		"button": newChild = Element_Button.new()
+		"checkbox": newChild = Element_CheckBox.new()
+		"checkbutton": newChild = Element_CheckButton.new()
+		"dropdown": newChild = Element_DropDown.new()
+		"field": newChild = Element_Field.new()
+		"floatfield": newChild = Element_FloatField.new()
+		"intfield": newChild = Element_IntField.new()
+		"header": newChild = Element_Label.new()
+		"vector3": newChild = Element_Vector3.new()
+		"box": newChild = Newnit_Box.new()
+		"tab": newChild = Newnit_Tabs.new()
+		"scrollbar": newChild = Newnit_Scroll.new()
+		"list": newChild = Element_List.new()
+		"popup": newChild = Newnit_Popup.new()
+		"collapsible": newChild = Newnit_Collapsible.new()
+		"textbox": newChild = Element_TextBox.new()
+		"texturebutton": newChild = Element_TextureButton.new()
+		# TODO: More types!
+		_:
+			print("Invalid child of type ", type, " attempted to spawn. Skipping...")
+			return
+	return newChild
