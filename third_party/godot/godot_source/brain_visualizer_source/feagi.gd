@@ -63,14 +63,11 @@ func _ready():
 	set_physics_process(false)
 #	add_3D_indicator()
 	Autoload_variable.BV_Core.Update_Dimensions() # Grab genome list
-	Autoload_variable.BV_Core.Update_Morphology_type()
 
 	while true:
 		if Godot_list.genome_data["genome"] != previous_genome_data:
 			previous_genome_data = Godot_list.genome_data["genome"].duplicate()
 			_csv_generator()
-		if $".."/".."/".."/Menu/box_loading.visible:
-			$".."/".."/".."/Menu/box_loading.visible = false
 		if cortical_is_clicked():
 			pass
 		elif select_cortical.selected.is_empty() != true:
@@ -79,7 +76,7 @@ func _ready():
 #		print("FROM PYTHON: ", data)
 		if data != null:
 			if "update" in data:
-				$".."/".."/".."/Menu/box_loading.visible = true
+				timer_api.loading_box_timer = $"../../../box_loading"
 				Autoload_variable.BV_Core.Update_Dimensions()
 				Autoload_variable.BV_Core.GET_health_status()
 				stored_value= ""
@@ -391,44 +388,6 @@ func add_3D_indicator():
 	generate_textbox(create_textbox_axis, 0,0,-6,"z", 1, 0, 0)
 	$GridMap.clear()
 
-func _on_HTTPRequest_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var genome_properties = test_json_conv.get_data()
-	if _response_code == 200:
-		$".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text = genome_properties["cortical_id"]
-		$".."/".."/".."/Menu/cortical_menu/title.text = genome_properties["cortical_name"]
-		$".."/".."/".."/Menu/cortical_menu/Control/name_string.text = $".."/".."/".."/Menu/cortical_menu/title.text
-		$".."/".."/".."/Menu/properties/Control/neuron_count.value = genome_properties["cortical_neuron_per_vox_count"]
-		$".."/".."/".."/Menu/cortical_menu/Control/X.value = genome_properties["cortical_coordinates"][0]
-		$".."/".."/".."/Menu/cortical_menu/Control/Y.value = genome_properties["cortical_coordinates"][1]
-		$".."/".."/".."/Menu/cortical_menu/Control/Z.value = genome_properties["cortical_coordinates"][2]
-		$".."/".."/".."/Menu/cortical_menu/Control/W.value = genome_properties["cortical_dimensions"][0]
-		$".."/".."/".."/Menu/cortical_menu/Control/D.value = genome_properties["cortical_dimensions"][2]
-		$".."/".."/".."/Menu/cortical_menu/Control/H.value = genome_properties["cortical_dimensions"][1]
-		$".."/".."/".."/Menu/properties/Control/syn.value = genome_properties["cortical_synaptic_attractivity"]
-		$".."/".."/".."/Menu/properties/Control/pst_syn.value = genome_properties["neuron_post_synaptic_potential"]
-		$".."/".."/".."/Menu/properties/Control/pst_syn_max.value = float(genome_properties["neuron_post_synaptic_potential_max"])
-		$".."/".."/".."/Menu/properties/Control/plst.value = genome_properties["neuron_plasticity_constant"]
-		$".."/".."/".."/Menu/properties/Control/fire.value = genome_properties["neuron_fire_threshold"]
-		$".."/".."/".."/Menu/properties/Control/Threshold_Sensitivity_text.value = int(genome_properties["neuron_firing_threshold_limit"])
-		$".."/".."/".."/Menu/properties/Control/fireshold_increment.text = str(genome_properties["neuron_fire_threshold_increment"])
-		$".."/".."/".."/Menu/properties/Control/refa.value = genome_properties["neuron_refractory_period"]
-		$".."/".."/".."/Menu/properties/Control/leak.text = str(float(genome_properties["neuron_leak_coefficient"]))
-		$".."/".."/".."/Menu/properties/Control/leak_Vtext.text = str((genome_properties["neuron_leak_variability"]))
-		$".."/".."/".."/Menu/properties/Control/cfr.value = genome_properties["neuron_consecutive_fire_count"]
-		$".."/".."/".."/Menu/properties/Control/snze.value = genome_properties["neuron_snooze_period"]
-		$".."/".."/".."/Menu/properties/Control/dege.value = genome_properties["neuron_degeneracy_coefficient"]
-		$".."/".."/".."/Menu/properties/Control/psud.set_pressed(genome_properties["neuron_psp_uniform_distribution"])
-		if genome_properties["neuron_mp_charge_accumulation"] != null:
-			$".."/".."/".."/Menu/properties/Control/MP.set_pressed(genome_properties["neuron_mp_charge_accumulation"])
-		else:
-			$".."/".."/".."/Menu/properties/Control/MP.set_pressed(false)
-		last_cortical_selected = genome_properties
-		print("STILL USING")
-		Autoload_variable.BV_Core.Update_Afferent_list(genome_properties["cortical_id"])
-#	$"..".SpawnLeftBar()
-
 
 func _on_send_feagi_request_completed(_result, _response_code, _headers, body):
 	var test_json_conv = JSON.new()
@@ -486,17 +445,9 @@ func _on_get_genome_name_request_completed(_result, _response_code, _headers, bo
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
-		$".."/".."/".."/Menu/information_menu/genome_string.text = api_data
 		Autoload_variable.BV_Core.Update_Refresh_Rate()
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_genome_name_request_completed", "/v1/feagi/genome/file_name")
-
-
-func _on_get_burst_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	$".."/".."/".."/Menu/information_menu/burst_duration_label/burst_value.text = str(1/float(api_data))
-	$notification.generate_notification_message(api_data, _response_code, "_on_get_burst_request_completed", "/v1/feagi/feagi/burst_engine/stimulation_period")
+	
 
 func _on_download_pressed():
 	_clear_node_name_list(global_name_list)
@@ -534,6 +485,7 @@ func _on_add_pressed(node=[]):
 			node[8].release_focus()
 			$Node3D/Camera3D.transform.origin=Vector3(json_data["cortical_coordinates"][0]-20,json_data["cortical_coordinates"][1],json_data["cortical_coordinates"][2]+20)
 			$"..".UI_createcorticalBar.queue_free()
+			Godot_list.Node_2D_control = false
 	Autoload_variable.BV_Core.Update_CorticalAreaNameList()
 
 func _on_remove_pressed(node):
@@ -660,16 +612,6 @@ func _on_mapping_def_request_completed(_result, _response_code, _headers, body):
 			$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(i)
 	$notification.generate_notification_message(api_data, _response_code, "_on_mapping_def_request_completed", "/v1/feagi/genome/morphology_list")
 
-func _on_morphology_types_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	$".."/".."/".."/Menu/rule_properties/rules/rule_type_options.add_item(" ")
-	if api_data != null:
-		for i in api_data:
-			$".."/".."/".."/Menu/rule_properties/rules/rule_type_options.add_item(i)
-	$notification.generate_notification_message(api_data, _response_code, "_on_morphology_types_request_completed", "/v1/feagi/genome/morphology_types")
-
 
 func _on_plus_add_pressed():
 	var UI_MappingDefinition = $"..".UI_MappingDefinition
@@ -771,10 +713,7 @@ func _on_get_cortical_dst_request_completed(_result, _response_code, _headers, b
 						if i in Godot_list.genome_data["genome"][x][7]:
 							dst_data[i] = api_data["cortical_destinations"][i]
 		dst_data_holder = dst_data.duplicate()
-		$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 749
-		if $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text != "":
-			var get_id = $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text
-			Autoload_variable.BV_Core.Get_mem_data(get_id)
+		Autoload_variable.BV_Core.Get_mem_data($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("sideLabel_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_cortical_dst_request_completed", "/v1/feagi/genome/cortical_area")
 
 func _on_cortical_mapping_add_pressed(name_input):
@@ -856,28 +795,6 @@ func _on_Neuron_morphologies_button_pressed():
 		$".."/".."/".."/Menu/rule_properties.visible = false
 		$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.visible = true
 		Autoload_variable.BV_Core.Update_MorphologyList()
-
-func _on_morphology_list_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.clear()
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.clear()
-	$".."/".."/".."/Menu/rule_properties/rules/morphology_definition/composite_label/morphology_name.clear()
-	$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.clear()
-	$".."/".."/".."/Menu/Control/inner_box/box_of_composite/mapper_composite.clear()
-	$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.add_item(" ")
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(" ")
-	$".."/".."/".."/Menu/rule_properties/rules/morphology_definition/composite_label/morphology_name.add_item(" ")
-	$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.add_item(" ")
-	$".."/".."/".."/Menu/Control/inner_box/box_of_composite/mapper_composite.add_item(" ")
-	for i in api_data:
-		$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.add_item(i)
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(i)
-		$".."/".."/".."/Menu/Control/inner_box/box_of_composite/mapper_composite.add_item(i)
-		$".."/".."/".."/Menu/rule_properties/rules/morphology_definition/composite_label/morphology_name.add_item(i)
-		$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.add_item(i, null, true)
-	$notification.generate_notification_message(api_data, _response_code, "_on_morphology_list_request_completed", "/v1/feagi/genome/morphology_list")
 
 func _on_Neuron_morphologies_item_selected(index):
 	if index != 0:
@@ -1061,10 +978,8 @@ func _on_mem_request_request_completed(_result, _response_code, _headers, body):
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
-	
-	var get_id = $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text
-	$".."/".."/".."/Menu/button_choice/Control/mem.set_pressed(api_data)
-	Autoload_variable.BV_Core.Get_syn_data(get_id)
+	$"..".UI_LeftBar.GetReferenceByID("Mem_potent").get_node("checkButton_Mem_potent").set_pressed(api_data)
+	Autoload_variable.BV_Core.Get_syn_data($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("sideLabel_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_mem_request_request_completed", "/v1/feagi/monitoring/neuron/membrane_potential")
 
 func _on_syn_request_request_completed(_result, _response_code, _headers, body):
@@ -1072,7 +987,7 @@ func _on_syn_request_request_completed(_result, _response_code, _headers, body):
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	
-	$".."/".."/".."/Menu/button_choice/Control/syn.set_pressed(api_data)
+	$"..".UI_LeftBar.GetReferenceByID("syn_potent").get_node("checkButton_syn_potent").set_pressed(api_data)
 	$notification.generate_notification_message(api_data, _response_code, "_on_syn_request_request_completed", "/v1/feagi/monitoring/neuron/synaptic_potential")
 
 func _on_syn_pressed():
@@ -1085,17 +1000,6 @@ func _on_insert_button_pressed(full_data):
 	Autoload_variable.BV_Core.POST_Request_Brain_visualizer(combine_url, new_data)
 #	$"..".import_close_button.emit_signal("pressed") # what happen to this?
 	$"..".UI_CircuitImport.queue_free()
-	
-
-func _on_circuit_request_request_completed(_result, _response_code, _headers, body):
-	$".."/".."/".."/Menu/insert_menu/insert_button/ItemList.clear()
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	for i in api_data:
-		$".."/".."/".."/Menu/insert_menu/insert_button/ItemList.add_item(i, null, true)
-	$notification.generate_notification_message(api_data, _response_code, "_on_circuit_request_request_completed", "/v1/feagi/genome/circuits")
-	
 
 func _on_import_pressed():
 	if not $"..".UI_CircuitImport:
