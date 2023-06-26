@@ -1,0 +1,24 @@
+{
+	"TITLE": {
+		"text": 
+		  {"eng": ""}
+		},
+	"GENOMEFILENAME": {
+		"sideLabelText":
+		  {"eng":  "Genome File Name"}
+	},
+	"CORTICALAREAS" : {
+	  "sideLabelText":
+		{"eng": "Cortical Areas"}
+	},
+	"NEURONMORPHOLOGIES" : {
+		"sideLabelText":
+		  {"eng": "Neuron Morphologies"} 
+	},
+	"blank": {
+		"sideLabelText":
+		{
+			"eng": ""
+		}
+	}
+}

@@ -1,0 +1,43 @@
+{
+   "ID":"BAR",
+   "vertical":false,
+   "type": "box",
+	"positionX": 120,
+	"positionY": 8,
+   "enablePanel": true,
+   "components":[
+	  {
+		 "type":"header",
+		 "ID":"TITLE",
+	  },
+	  {
+		 "type":"header",
+		 "ID":"GENOMEFILENAME",
+		  "sideButtonText": "+",
+		  "image": "test.png"
+	  },
+	  {
+		 "type":"floatfield",
+		 "ID":"REFRESHRATE",
+		 "minValue": 0.01,
+		 "maxValue": 10.0,
+		 "scaleWithInputText": false
+	  },
+	  {
+		 "type":"dropdown",
+		 "sideButtonText": "+",
+		 "ID":"CORTICALAREAS"
+	  },
+	  {
+		 "type":"dropdown",
+		 "hasButton":true,
+		 "ID":"NEURONMORPHOLOGIES",
+		  "sideButtonText": "+"
+	  },
+	   {
+		   "type": "button",
+		   "ID": "TESTEST",
+		   "image": "test.png"
+	   }
+   ]
+}
