@@ -25,6 +25,7 @@ static func Func_SpawnChild(childActivationSettings: Dictionary, ContainerObject
 		"popup": newChild = Newnit_Popup.new()
 		"collapsible": newChild = Newnit_Collapsible.new()
 		"textbox": newChild = Element_TextBox.new()
+		"texturebutton": newChild = Element_TextureButton.new()
 		# TODO: More types!
 		_:
 			print("Invalid child of type ", childActivationSettings["type"], " attempted to spawn. Skipping...")

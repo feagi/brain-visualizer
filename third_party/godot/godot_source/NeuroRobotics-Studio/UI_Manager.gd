@@ -350,8 +350,8 @@ func mapping_definition_button(node):
 func SpawnCreateMophology():
 	var CMDict = HelperFuncs.GenerateDefinedUnitDict("CREATEMORPHOLOGY", currentLanguageISO)
 	UI_CreateMorphology = Newnit_Box.new()
-	UI_CreateMorphology.Activate(CMDict)
 	add_child(UI_CreateMorphology)
+	UI_CreateMorphology.Activate(CMDict)
 	var composite = UI_CreateMorphology.GetReferenceByID("Composite")
 	var patterns = UI_CreateMorphology.GetReferenceByID("Patterns")
 	var vectors = UI_CreateMorphology.GetReferenceByID("Vectors")
