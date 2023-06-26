@@ -41,9 +41,6 @@ func _ready():
 	print("CORE FEAGI ROOTADDRESS: ", FEAGI_RootAddress)
 	# # # Build the bridge # # # 
 	Autoload_variable.Core_BV = $GlobalUISystem/Brain_Visualizer
-	Autoload_variable.Core_addOption = get_parent().get_node("Menu/Mapping_Properties/cortical_dropdown")
-	Autoload_variable.Core_Menu = get_parent().get_node("Menu")
-	Autoload_variable.Core_addition = get_parent().get_node("Menu/addition_menu")
 	Autoload_variable.Core_notification = $GlobalUISystem/Brain_Visualizer/notification
 	Autoload_variable.Core_Camera = $GlobalUISystem/Brain_Visualizer/Node3D/Camera3D
 	# Retrieve relvant Child Nodes
@@ -103,7 +100,6 @@ func Update_CorticalMap(): Call_GET(ADD_Cortical_Name_Map, _Relay_CorticalMap)
 func Update_GenomeCorticalArea_SPECIFC(corticalArea: String): Call_GET(ADD_GET_Genome_CorticalArea, _Relay_GET_Genome_CorticalArea, corticalArea ) 
 func Update_Dimensions(): Call_GET(ADD_GET_Dimensions, _Relay_Dimensions)
 func Update_Refresh_Rate(): Call_GET(ADD_GET_stimulation_period, _Relay_Get_BurstRate)
-func Update_Morphology_type(): Call_GET(ADD_GET_Morphology_types, _Relay_Morphology_type)
 func Update_Cortical_grab_id(input): Call_GET(ADD_GET_cortical_id+input, _Relay_Cortical_grab_id)
 func Update_Afferent_list(input): Call_GET(ADD_GET_Afferent+input, _Relay_Afferent)
 func Update_Efferent_information(input): Call_GET(ADD_GET_Efferent+input, _Relay_Efferent)
@@ -197,8 +193,8 @@ func _Relay_updated_cortical(_result, _response_code, _headers, _body: PackedByt
 func _Relay_Get_BurstRate(_result, _response_code, _headers, body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Burst Rate"); return
 	FeagiCache.burst_rate = float(JSON.parse_string(body.get_string_from_utf8()))
-	Autoload_variable.Core_BV._on_get_burst_request_completed(_result, _response_code, _headers, body)
 	UIManager.RelayDownwards(REF.FROM.burstEngine, FeagiCache.burst_rate)
+	$GlobalUISystem/Brain_Visualizer/notification.generate_notification_message("", _response_code, "_on_get_burst_request_completed", "/v1/feagi/feagi/burst_engine/stimulation_period")
 
 func _Relay_Get_Health(_result, _response_code, _headers, body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Burst Rate"); return
@@ -219,11 +215,6 @@ func _Relay_Dimensions(_result, _response_code, _headers, body: PackedByteArray)
 			create_json[i] = api_data[i]
 		Godot_list.genome_data["genome"] = create_json
 
-func _Relay_Morphology_type(_result, _response_code, _headers, body: PackedByteArray):
-	#Feagi Updated Dimensions
-	if LogNetworkError(_result): print("Unable to get Morphology Type"); return
-	Autoload_variable.Core_BV._on_morphology_types_request_completed(_result, _response_code, _headers, body)
-	
 func _Relay_Cortical_grab_id(_result, _response_code, _headers, body: PackedByteArray):
 	#Feagi Updated Dimensions
 	if LogNetworkError(_result): print("Unable to get Cortical IDs"); return
@@ -243,8 +234,7 @@ func _Relay_MorphologyList(_result, _response_code, _headers, body: PackedByteAr
 	if api_data != null:
 		FeagiCache.genome_morphologyList = JSON.parse_string(body.get_string_from_utf8())
 		UIManager.RelayDownwards(REF.FROM.genome_morphologyList, FeagiCache.genome_morphologyList)
-		if Autoload_variable.Core_BV.visible:
-			Autoload_variable.Core_BV._on_morphology_list_request_completed(_result, _response_code, _headers, body)
+	$GlobalUISystem/Brain_Visualizer/notification.generate_notification_message(api_data, _response_code, "_on_morphology_list_request_completed", "/v1/feagi/genome/morphology_list")
 
 func _Relay_GenomeFileName(_result, _response_code, _headers, body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Genome File Name"); return
@@ -271,8 +261,6 @@ func _Relay_CorticalAreaNameList(_result, _response_code, _headers, body: Packed
 	if api_data != null:
 		FeagiCache.genome_corticalAreaNameList = JSON.parse_string(body.get_string_from_utf8())
 		UIManager.RelayDownwards(REF.FROM.genome_corticalAreaNameList, FeagiCache.genome_corticalAreaNameList)
-		if get_parent().get_node("Menu").ready:
-			Autoload_variable.Core_addOption._on_load_options_cortical_name_request_completed(_result, _response_code, _headers, body)
 	
 func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: PackedByteArray):
 	# Note, this is for a specific cortical Area
@@ -317,11 +305,11 @@ func _Relay_Update_syn(_result, _response_code, _headers, _body: PackedByteArray
 
 func _Relay_circuit_list(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Circuit list"); return
-	Autoload_variable.Core_BV._on_circuit_request_request_completed(_result, _response_code, _headers, _body)
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(_body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	UIManager.RelayDownwards(REF.FROM.circuit_list, api_data)
+	$GlobalUISystem/Brain_Visualizer/notification.generate_notification_message(api_data, _response_code, "_on_circuit_request_request_completed", "/v1/feagi/genome/circuits")
 	
 func _Relay_circuit_size(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Circuit list"); return
