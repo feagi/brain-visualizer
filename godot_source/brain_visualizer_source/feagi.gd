@@ -455,7 +455,6 @@ func _on_download_pressed():
 	previous_genome_data = {}
 
 func _on_add_pressed(node=[]):
-	print("HERE!")
 	var json_data = {}
 	if node == []:
 		if $".."/".."/".."/Menu/addition_menu/OptionButton.selected == 1 or $".."/".."/".."/Menu/addition_menu/OptionButton.selected == 2:
@@ -1172,6 +1171,8 @@ func _on_get_morphology_request_completed(_result, _response_code, _headers, bod
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(body.get_string_from_utf8()) # Every http data, it's done in poolbytearray
 	var api_data = test_json_conv.get_data()
+	if $"..".UI_ManageNeuronMorphology == null:
+		$"..".SpawnNeuronManager()
 	var vectors = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Vectors")
 	var composite = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Composite")
 	var patterns = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Patterns")
