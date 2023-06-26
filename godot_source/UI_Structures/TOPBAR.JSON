@@ -3,19 +3,9 @@
    "vertical":false,
    "type": "box",
 	"positionX": 120,
-	"positionY": 8,
+	"positionY": 53,
    "enablePanel": true,
    "components":[
-	  {
-		 "type":"header",
-		 "ID":"TITLE",
-	  },
-	  {
-		 "type":"header",
-		 "ID":"GENOMEFILENAME",
-		  "sideButtonText": "+",
-		  "image": "test.png"
-	  },
 	  {
 		 "type":"floatfield",
 		 "ID":"REFRESHRATE",
@@ -23,21 +13,89 @@
 		 "maxValue": 10.0,
 		 "scaleWithInputText": false
 	  },
-	  {
-		 "type":"dropdown",
-		 "sideButtonText": "+",
-		 "ID":"CORTICALAREAS"
-	  },
-	  {
-		 "type":"dropdown",
-		 "hasButton":true,
-		 "ID":"NEURONMORPHOLOGIES",
-		  "sideButtonText": "+"
-	  },
 	   {
-		   "type": "button",
+		   "ID":"neuronal_circuit_box",
+		   "vertical":false,
+		   "type": "box",
+		   "components":[
+			  {
+				 "type":"header",
+				 "ID":"HEADER_NEURONALCIRCUITS",
+				  "sideButtonText": "+",
+				  "text": "Neuronal Circuits"
+			  },
+			   {
+				   "type": "texturebutton",
+				   "ID": "PLUS_ONE",
+				   "default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
+				   "ignore_texture_size": true,
+				   "stretch_mode": 2,
+				   "custom_minimum_sizeX": 50,
+				   "custom_minimum_sizeY": 50
+			   }
+		   ]
+		},
+	   {
+				   "ID":"Corticalareas_Box",
+				   "vertical":false,
+				   "type": "box",
+			   		"components":[
+					  {
+						 "type":"header",
+						 "ID":"CORTICALAREAS"
+					  },
+					   {
+						   "type": "texturebutton",
+						   "ID": "DROPDOWN_CORTICAL",
+						   "default_texture_path": "res://brain_visualizer_source/menu_assets/image/eye.png",
+						   "ignore_texture_size": true,
+						   "stretch_mode": 2,
+						   "custom_minimum_sizeX": 5,
+						   "custom_minimum_sizeY": 5
+					   },
+					   {
+						   "type": "texturebutton",
+						   "ID": "PLUS_THREE",
+						   "default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
+						   "ignore_texture_size": true,
+						   "stretch_mode": 2,
+						   "custom_minimum_sizeX": 5,
+						   "custom_minimum_sizeY": 5
+					   },
+					   {
+						   "type": "texturebutton",
+						   "ID": "CONNECT_CORTICAL",
+						   "default_texture_path": "res://brain_visualizer_source/menu_assets/image/connect.png",
+						   "ignore_texture_size": true,
+						   "stretch_mode": 2,
+						   "custom_minimum_sizeX": 5,
+						   "custom_minimum_sizeY": 5
+					   }
+					]
+			},
+	  {
+				 "type":"dropdown",
+				 "hasButton":true,
+				 "ID":"NEURONMORPHOLOGIES",
+				  "sideButtonText": "+"
+			  },
+	   {
+				   "type": "texturebutton",
+				   "ID": "PLUS_TWO",
+				   "default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
+				   "ignore_texture_size": true,
+				   "stretch_mode": 2,
+				   "custom_minimum_sizeX": 50,
+				   "custom_minimum_sizeY": 50
+			   },
+	   {
+		   "type": "texturebutton",
 		   "ID": "TESTEST",
-		   "image": "test.png"
+		   "default_texture_path": "res://brain_visualizer_source/menu_assets/image/setting.png",
+		   "ignore_texture_size": true,
+		   "stretch_mode": 2,
+		   "custom_minimum_sizeX": 5,
+		   "custom_minimum_sizeY": 5
 	   }
    ]
 }

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://c0650xa4eujml" path="res://circuit_build/Main.tscn" id="2_l206u"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Button_to_Autoload.gd" id="2_t7fr6"]
 [ext_resource type="Script" path="res://brain_visualizer_source/box_loading.gd" id="10_uh1ag"]
-[ext_resource type="FontFile" uid="uid://b6ncyrxbx8xf2" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
+[ext_resource type="FontFile" uid="uid://5gftug8dm8jx" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
 [ext_resource type="Script" path="res://Official_world_scripts/scene_transition.gd" id="31_pws3t"]
 [ext_resource type="Script" path="res://NeuroRobotics-Studio/Core.gd" id="31_vv2v0"]
 [ext_resource type="PackedScene" uid="uid://c7v5wwar1gqjo" path="res://NeuroRobotics-Studio/UI_Manager.tscn" id="32_fbal3"]
@@ -313,8 +313,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 60, 100)
 [node name="color_indicator" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 158.0
-offset_bottom = 12.248
+offset_left = 1.0
+offset_top = 45.0
+offset_right = 159.0
+offset_bottom = 57.248
 
 [node name="ColorRect" type="ColorRect" parent="color_indicator"]
 layout_mode = 0
