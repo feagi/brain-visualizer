@@ -75,7 +75,7 @@ func _SpawnTopBar(activation: Dictionary):
 	# TODO best not to connect to Element children, better to connect to element signals itself
 	# This may work for now but can cause weird issues later
 	var import_circuit = UI_Top_TopBar.GetReferenceByID("GENOMEFILENAME").get_node("sideButton_GENOMEFILENAME")
-#	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
+	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
 ####################################
@@ -87,6 +87,7 @@ signal DataUp(data: Dictionary)
 ######### Top Bar Control ##########
 # We should be using this to make things more streamline
 func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
 		"CORTICALAREAS":
 			if "selectedIndex" in data.keys():
@@ -260,7 +261,7 @@ func RelayDownwards(callType, data) -> void:
 						for x in original_dropdown.get_item_count():
 							i.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions").add_item(original_dropdown.get_item_text(x))
 				UI_MappingDefinition.get_node("box_third_box").visible = false
-			if UI_CreateMorphology:
+			if UI_CreateMorphology != null:
 				if UI_CreateMorphology.GetReferenceByID("Composite").visible:
 					UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": data}}}})
 			optionbutton_holder = data
