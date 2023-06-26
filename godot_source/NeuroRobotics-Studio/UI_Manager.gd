@@ -25,6 +25,7 @@ var UI_MappingDefinition : Newnit_Box
 var UI_CircuitImport : Newnit_Box
 var UI_GraphCore: GraphCore
 var UI_CreateMorphology: Newnit_Box
+var UI_TEST: Newnit_Box
 var UI_INDICATOR: Newnit_Box
 var cache: FeagiCache
 var vectors_holder = []
@@ -55,6 +56,12 @@ func Activate(langISO: String):
 	test_json_conv.parse(filess.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	filess.close()
+	var test_dict = HelperFuncs.GenerateDefinedUnitDict("TEST", currentLanguageISO)
+	UI_TEST = Newnit_Box.new()
+	add_child(UI_TEST)
+	UI_TEST.Activate(test_dict)
+	UI_TEST.DataUp.connect(TopBarInput)
+	
 #	SpawnIndicator(createindicator)
 #	SpawnNeuronManager()
 	# Initialize GraphCore
@@ -74,7 +81,7 @@ func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar.DataUp.connect(TopBarInput)
 	# TODO best not to connect to Element children, better to connect to element signals itself
 	# This may work for now but can cause weird issues later
-	var import_circuit = UI_Top_TopBar.GetReferenceByID("GENOMEFILENAME").get_node("sideButton_GENOMEFILENAME")
+	var import_circuit = UI_Top_TopBar.GetReferenceByID("HEADER_NEURONALCIRCUITS").get_node("sideButton_HEADER_NEURONALCIRCUITS")
 	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
@@ -265,8 +272,8 @@ func RelayDownwards(callType, data) -> void:
 				if UI_CreateMorphology.GetReferenceByID("Composite").visible:
 					UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": data}}}})
 			optionbutton_holder = data
-		REF.FROM.genome_fileName:
-			UI_Top_TopBar.SetData({"GENOMEFILENAME": {"sideLabelText":data}})
+#		REF.FROM.genome_fileName:
+#			UI_Top_TopBar.SetData({"GENOMEFILENAME": {"sideLabelText":data}})
 #		REF.FROM.connectome_properties_mappings:
 #			pass
 #		REF.FROM.godot_fullCorticalData:
@@ -314,7 +321,7 @@ func RelayDownwards(callType, data) -> void:
 			UI_LeftBar.SetData(cortical_properties)
 			$"..".Update_Afferent_list(data["cortical_id"])
 		REF.FROM.burstEngine:
-			UI_Top_TopBar.SetData({"REFRESHRATE": {"value": data}})
+			UI_Top_TopBar.SetData({"REFRESHRATE": {"value": 1/data}})
 	pass
 
 
