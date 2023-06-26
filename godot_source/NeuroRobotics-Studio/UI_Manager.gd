@@ -370,6 +370,7 @@ func SpawnCreateMophology():
 	morphology_creation_add_button = add_row
 	morphology_creation_add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_pressed").bind(UI_CreateMorphology))
 	create_button.connect("pressed", Callable($Brain_Visualizer,"_on_create_pressed").bind(UI_CreateMorphology))
+	
 
 func SpawnCorticalCrete():
 	UI_createcorticalBar = Newnit_Box.new()
@@ -439,6 +440,7 @@ func SpawnNeuronManager():
 	var patterns_bar = UI_ManageNeuronMorphology.GetReferenceByID("PatternRow0")
 	var vectors_bar = UI_ManageNeuronMorphology.GetReferenceByID("XYZ")
 	var add_button = UI_ManageNeuronMorphology.GetReferenceByID("header_definition").get_node("sideButton_header_definition")
+	var delete_button = UI_ManageNeuronMorphology.GetReferenceByID("SAVEDELETE").get_node("sideButton_SAVEDELETE")
 	patterns_bar.visible = false
 	vectors.visible = false
 	composite.visible = false
@@ -446,26 +448,9 @@ func SpawnNeuronManager():
 	vectors_bar.visible = false
 #	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
-	save_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
+	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
+	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
-	
-#	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
-#	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
-#	var duplicated_button_box = node_button_box.duplicate()
-#	var duplicated_button = node_button_box.duplicate()
-#	node_button_box.visible = false 
-#	duplicated_button.visible = true
-#	duplicated_button_box.add_child(duplicated_button)
-#	parent_of_button.add_child(duplicated_button_box)
-#	if optionbutton_holder:
-#		for i in optionbutton_holder:
-#			var new_node = duplicated_button.duplicate()
-#			new_node.get_node("button_button1").visible = true
-#			new_node.get_node("button_button1").text = i
-#			new_node.set_name("button1" + str(i))
-#			new_node.get_node("button_button1").connect("pressed", Callable(self,"button_rule").bind(new_node.get_node("button_button1").text))
-#			UI_ManageNeuronMorphology.GetReferenceByID("morphology_list").add_child(new_node)
-
 
 	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
 	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
