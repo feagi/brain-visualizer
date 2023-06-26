@@ -17,6 +17,7 @@
 					"type": "scrollbar",
 					"custom_minimum_sizeX": 199,
 					"vertical": true,
+					"childBaseID": "Morphology",
 					"titleBarText": "Morphology",
 					"components": [
 

@@ -481,15 +481,12 @@ func SpawnNeuronManager():
 #			new_node.set_name("button1" + str(i))
 #			new_node.connect("pressed", Callable(self,"button_rule").bind(new_node.text))
 #			UI_ManageNeuronMorphology.GetReferenceByID("button1").add_child(new_node)
-	var ButtonItem := {
-		"type": "button",
-		"ID": "morphologyOption",
-	}
+	const ButtonItem := { "type": "button", "ID": "morphologyOption"}
 	var morphologyOptions: Array = cache.genome_morphologyList
 	var morphologyScroll: Newnit_Scroll = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
 	for i in morphologyOptions:
-		morphologyScroll.SpawnItem(ButtonItem, {"text": i})
-		
+		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
+		# You can connect whatever from spawnedItem
 
 
 func button_rule(rule_name):

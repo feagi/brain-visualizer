@@ -112,6 +112,8 @@ func _DataUpProxy(data: Dictionary, recievedID: String, reference: Node) -> void
 
 ### Start Scroll Container Unique
 
+const D_childBaseID := "MissingBaseChildID"
+
 var _scrollBox: Newnit_Box
 
 var children: Array:
@@ -119,7 +121,8 @@ var children: Array:
 
 var specificSettableProps := {
 	"alignment": TYPE_INT,
-	"vertical": TYPE_INT
+	"vertical": TYPE_INT,
+	"childBaseID": TYPE_STRING
 }
 
 var vertical: int:
@@ -130,7 +133,7 @@ var alignment: int:
 	get: return _scrollBox.alignment
 	set(v): _scrollBox.alignment = v
 
-var childBaseID: String
+var childBaseID: String = D_childBaseID
 
 func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> Node:
 	var cachedChildren = children
@@ -148,12 +151,13 @@ func RemoveItem(itemIndex: int) -> void:
 	_UpdateItemIDs(itemIndex, len(children))
 
 func _UpdateItemIDs(startIndex: int, endIndex: int) -> void:
-	for i in range(startIndex, endIndex):
+	for i in range(startIndex, endIndex + 1):
 		var curItem: Node = _scrollBox.get_child(i)
 		curItem._ID = HelperFuncs.AppendIntToString(childBaseID, i)
 
 func _AlternateActivationPath(settings: Dictionary) -> bool:
 	
+	childBaseID = HelperFuncs.GetIfCan(settings, "childBaseID", D_childBaseID)
 	type = "scrollbar"
 	
 	# use this to modify element spawning
