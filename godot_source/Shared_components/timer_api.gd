@@ -23,4 +23,5 @@ func loading_box():
 	var data = ""
 	while data == "" or data == "updated":
 		await get_tree().create_timer(1).timeout
+		data = str(network_setting.one_frame)
 	loading_box_timer = false
