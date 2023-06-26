@@ -4,6 +4,7 @@
 	"positionY": 400,
 	"widthAlignment": 1,
 	"enablePanel": true,
+	"titleBarText":"Manage Neuron Morphology",
 	"type": "box",
 	"components": [
 		{
@@ -15,7 +16,7 @@
 					"ID": "morphology_list",
 					"type": "scrollbar",
 					"custom_minimum_sizeX": 199,
-					"vertical": 0,
+					"vertical": true,
 					"titleBarText": "Morphology",
 					"components": [
 						{

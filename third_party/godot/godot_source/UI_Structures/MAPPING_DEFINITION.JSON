@@ -4,6 +4,7 @@
 	"positionY": 400,
 	"type": "box",
   	"enableCloseButton": true,
+	"enablePanel": true,
 	"components": [
 		{
 			"type": "box",
