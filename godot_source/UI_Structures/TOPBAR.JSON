@@ -23,6 +23,18 @@
 				}
 			]
 		},
+{
+			"ID": "SPACEBOX_1",
+			"vertical": false,
+			"type": "box",
+			"components": [
+				{
+					"type": "header",
+					"text": "    ",
+					"ID": "SPACE1"
+				}
+			]
+		},
 		{
 			"ID": "neuronal_circuit_box",
 			"vertical": false,
@@ -41,6 +53,18 @@
 					"stretch_mode": 2,
 					"custom_minimum_sizeX": 50,
 					"custom_minimum_sizeY": 50
+				}
+			]
+		},
+		{
+			"ID": "SPACEBOX_2",
+			"vertical": false,
+			"type": "box",
+			"components": [
+				{
+					"type": "header",
+					"text": "            ",
+					"ID": "SPACE2"
 				}
 			]
 		},
@@ -78,6 +102,18 @@
 					"stretch_mode": 2,
 					"custom_minimum_sizeX": 5,
 					"custom_minimum_sizeY": 5
+				}
+			]
+		},
+		{
+			"ID": "SPACEBOX_3",
+			"vertical": false,
+			"type": "box",
+			"components": [
+				{
+					"type": "header",
+					"text": "                        ",
+					"ID": "SPACE3"
 				}
 			]
 		},
