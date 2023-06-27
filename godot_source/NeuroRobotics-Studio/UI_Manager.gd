@@ -17,6 +17,8 @@ var currentLanguageISO: String:
 var Activated: bool = false
 
 # References
+var cache: FeagiCache
+
 var UI_Top_TopBar: Newnit_Box
 var UI_LeftBar: Newnit_Popup
 var UI_createcorticalBar : Newnit_Box
@@ -26,12 +28,11 @@ var UI_CircuitImport : Newnit_Box
 var UI_GraphCore: GraphCore
 var UI_CreateMorphology: Newnit_Box
 var UI_INDICATOR: Newnit_Box
-var cache: FeagiCache
-var vectors_holder = []
+var vectors_holder := []
 var src_global 
 var dst_global
 var import_close_button
-var UI_holders = []
+var UI_holders := []
 var global_json_data
 var optionbutton_holder
 var morphology_creation_add_button
@@ -48,7 +49,7 @@ func Activate(langISO: String):
 	# Initialize UI
 	
 	# Initialize TopBar
-	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOPBAR", currentLanguageISO)
+	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOP_BAR", currentLanguageISO)
 	_SpawnTopBar(topBarDict)
 	var filess = FileAccess.open("res://brain_visualizer_source/type_option.json", FileAccess.READ)
 	var test_json_conv = JSON.new()
@@ -75,7 +76,7 @@ func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar.DataUp.connect(TopBarInput)
 	# TODO best not to connect to Element children, better to connect to element signals itself
 	# This may work for now but can cause weird issues later
-	var import_circuit = UI_Top_TopBar.GetReferenceByID("HEADER_NEURONALCIRCUITS").get_node("sideButton_HEADER_NEURONALCIRCUITS")
+	var import_circuit = UI_Top_TopBar.GetReferenceByID("NEURONAL_CIRCUITS_HEADER").get_node("sideButton_NEURONAL_CIRCUITS_HEADER")
 	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
@@ -90,9 +91,9 @@ signal DataUp(data: Dictionary)
 func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
-		"CORTICALAREAS":
+		"CORTICAL_AREAS_HEADER":
 			if "selectedIndex" in data.keys():
-				var name_from_dropdown = UI_Top_TopBar.GetReferenceByID("CORTICALAREAS").get_node("dropDown_CORTICALAREAS").text
+				var name_from_dropdown = UI_Top_TopBar.GetReferenceByID("CORTICAL_AREAS_HEADER").get_node("dropDown_CORTICAL_AREAS_HEADER").text
 				$Brain_Visualizer.camera_list_selected(name_from_dropdown)
 			if "sideButton" in data.keys():
 				if not UI_createcorticalBar:
@@ -122,7 +123,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 					$"..".GET_USUAGE_MORPHOLOGY(rule_name)
 				SpawnNeuronManager()
 				UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
-		"REFRESHRATE":
+		"REFRESH_RATE_FLOATFIELD":
 			DataUp.emit({"updatedBurstRate": data["value"]})
 
 func CreateMorphologyInput(data: Dictionary, ElementID: String, ElementRef: Node):
@@ -246,8 +247,6 @@ func RelayDownwards(callType, data) -> void:
 #		REF.FROM.pns_current_opu:
 #			pass
 		REF.FROM.genome_corticalAreaIdList:
-#			if UI_Top_TopBar:
-#				UI_Top_TopBar.SetData({"Corticalareas_Box": {"CORTICALAREAS": {"options":data}}})
 			if UI_MappingDefinition:
 				UI_MappingDefinition.SetData({"testlabel": {"SOURCECORTICALAREA":{"options": data, "value": src_global}}})
 				UI_MappingDefinition.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"options": data, "value": dst_global}}})
@@ -315,7 +314,7 @@ func RelayDownwards(callType, data) -> void:
 			UI_LeftBar.SetData(cortical_properties)
 			$"..".Update_Afferent_list(data["cortical_id"])
 		REF.FROM.burstEngine:
-			UI_Top_TopBar.SetData({"REFRESHBOX": {"REFRESHRATE": {"value": 1/data}}})
+			UI_Top_TopBar.SetData({"REFRESH_RATE_BOX": {"REFRESH_RATE_FLOATFIELD": {"value": 1/data}}})
 	pass
 
 
