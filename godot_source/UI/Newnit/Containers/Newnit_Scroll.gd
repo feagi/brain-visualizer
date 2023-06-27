@@ -112,37 +112,63 @@ func _DataUpProxy(data: Dictionary, recievedID: String, reference: Node) -> void
 
 ### Start Scroll Container Unique
 
-var scrollBox: Newnit_Box
+const D_childBaseID := "MissingBaseChildID"
+
+var _scrollBox: Newnit_Box
 
 var children: Array:
-	get: return NEWNIT_CONTAINER_CORE.Get_children(scrollBox)
+	get: return NEWNIT_CONTAINER_CORE.Get_children(_scrollBox)
 
 var specificSettableProps := {
 	"alignment": TYPE_INT,
-	"vertical": TYPE_INT
+	"vertical": TYPE_INT,
+	"childBaseID": TYPE_STRING
 }
 
 var vertical: int:
-	get: return scrollBox.vertical
-	set(v): scrollBox.vertical = v
+	get: return _scrollBox.vertical
+	set(v): _scrollBox.vertical = v
 
 var alignment: int:
-	get: return scrollBox.alignment
-	set(v): scrollBox.alignment = v
+	get: return _scrollBox.alignment
+	set(v): _scrollBox.alignment = v
+
+var childBaseID: String = D_childBaseID
+
+func SpawnItem(Activation: Dictionary, initialData: Dictionary = {}, index: int = 99999999) -> Node:
+	var cachedChildren = children
+	index = HelperFuncs.clampToIntRange(index, 0, len(cachedChildren))
+	var newItem: Node = HelperFuncs.SpawnNewnitOfType(Activation["type"])
+	_scrollBox.add_child(newItem)
+	_scrollBox.move_child(newItem, index)
+	newItem.Activate(Activation)
+	newItem.SetData(initialData)
+	_UpdateItemIDs(index, len(cachedChildren))
+	return newItem
+
+func RemoveItem(itemIndex: int) -> void:
+	_scrollBox.get_child(itemIndex).queue_free()
+	_UpdateItemIDs(itemIndex, len(children))
+
+func _UpdateItemIDs(startIndex: int, endIndex: int) -> void:
+	for i in range(startIndex, endIndex + 1):
+		var curItem: Node = _scrollBox.get_child(i)
+		curItem._ID = HelperFuncs.AppendIntToString(childBaseID, i)
 
 func _AlternateActivationPath(settings: Dictionary) -> bool:
 	
+	childBaseID = HelperFuncs.GetIfCan(settings, "childBaseID", D_childBaseID)
 	type = "scrollbar"
 	
 	# use this to modify element spawning
-	scrollBox = Newnit_Box.new()
-	add_child(scrollBox)
+	_scrollBox = Newnit_Box.new()
+	add_child(_scrollBox)
 	
 	# modify settings overwrite
 	settings["ID"] = ID + "___Box"
 	settings["type"] = "box"
 	
-	scrollBox.Activate(settings)
+	_scrollBox.Activate(settings)
 	
 	return true # prevent default activation procedures
 

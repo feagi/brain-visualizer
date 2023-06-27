@@ -452,23 +452,17 @@ func SpawnNeuronManager():
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
+	
+	const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+	var morphologyOptions: Array = cache.genome_morphologyList
+	var morphologyScroll: Newnit_Scroll = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
+	for i in morphologyOptions:
+		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
+		spawnedItem.connect("DataUp", Callable(self,"button_rule"))
 
-	var node_button_box = UI_ManageNeuronMorphology.GetReferenceByID("button1")
-	var parent_of_button = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
-	var duplicated_button_box = node_button_box.duplicate()
-	var duplicated_button = node_button_box.duplicate()
-	duplicated_button_box.add_child(duplicated_button)
-	parent_of_button.add_child(duplicated_button_box)
-	if optionbutton_holder:
-		for i in optionbutton_holder:
-			var new_node = UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").duplicate()
-#			new_node.visible = true
-			new_node.text = i
-			new_node.set_name("button1" + str(i))
-			new_node.connect("pressed", Callable(self,"button_rule").bind(new_node.text))
-			UI_ManageNeuronMorphology.GetReferenceByID("button1").add_child(new_node)
 
-func button_rule(rule_name):
+func button_rule(data: Dictionary, originatingID: StringName, originatingRef: Node):
+	var rule_name = originatingRef.text
 	if rule_name != " ":
 		if "+" in rule_name:
 			rule_name = rule_name.replace("+", "%2B")
