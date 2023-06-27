@@ -217,6 +217,11 @@ func cortical_is_clicked():
 	if select_cortical.selected.is_empty() != true:
 		dst_data_holder = {}
 		var iteration_name = select_cortical.selected[0].replace("'","")
+		if $"..".UI_QUICKCONNECT != null:
+			if $"..".UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").visible:
+				var button = $"..".UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
+				if button.text == "Click any cortical":
+					button.text = iteration_name
 		var grab_id_cortical = ""
 		grab_id_cortical = name_to_id(iteration_name)
 		update_cortical_map_name(grab_id_cortical)
@@ -355,9 +360,6 @@ func _on_Update_pressed(data_input):
 	else:
 		generate_one_model(create_textbox, x,y,z,width, depth, height, name_input)
 
-	$".."/".."/".."/Menu/Mapping_Properties.visible = false
-	$".."/".."/".."/Menu/cortical_menu/Control/Update.release_focus()
-
 func add_3D_indicator():
 	for i in 6:
 		$GridMap3.set_cell_item( Vector3(i,0,0) ,0) #set the arrow indicator of 3D
@@ -447,7 +449,6 @@ func _on_get_genome_name_request_completed(_result, _response_code, _headers, bo
 	if api_data != null:
 		Autoload_variable.BV_Core.Update_Refresh_Rate()
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_genome_name_request_completed", "/v1/feagi/genome/file_name")
-	
 
 func _on_download_pressed():
 	_clear_node_name_list(global_name_list)
@@ -456,19 +457,7 @@ func _on_download_pressed():
 
 func _on_add_pressed(node=[]):
 	var json_data = {}
-	if node == []:
-		if $".."/".."/".."/Menu/addition_menu/OptionButton.selected == 1 or $".."/".."/".."/Menu/addition_menu/OptionButton.selected == 2:
-			json_data["cortical_type"] = $".."/".."/".."/Menu/addition_menu/OptionButton.get_item_text($".."/".."/".."/Menu/addition_menu/OptionButton.selected)
-			json_data["cortical_name"] = $".."/".."/".."/Menu/addition_menu/cortical_name_label/type.get_item_text($".."/".."/".."/Menu/addition_menu/cortical_name_label/type.selected)
-			json_data["cortical_coordinates"] = []
-			json_data["cortical_coordinates"].append($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value)
-			json_data["cortical_coordinates"].append($".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value)
-			json_data["cortical_coordinates"].append($".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value)
-			json_data["channel_count"] = $".."/".."/".."/Menu/addition_menu/count/count_spinbox.value
-			Autoload_variable.BV_Core.Update_cortical_area(json_data)
-	else:
-		if node[7].selected == 3:
-#			if $".."/".."/".."/Menu/addition_menu/cortical_name_textbox/type.text != "" and $".."/".."/".."/Menu/addition_menu/cortical_name_textbox/type.text != " ":
+	if node[7].selected == 3:
 			json_data["cortical_type"] = "CUSTOM"
 			json_data["cortical_name"] = node[6].text
 			json_data["cortical_coordinates"] = []
@@ -491,7 +480,7 @@ func _on_remove_pressed(node):
 	var get_name_data = node.get_node("sideLabel_CorticalID").text
 	_clear_single_cortical(id_to_name(get_name_data), global_name_list)
 	Autoload_variable.BV_Core.Delete_cortical_area(get_name_data)
-#	$".."/".."/".."/Menu/cortical_menu/Control/remove.release_focus()
+
 
 func _on_update_destination_info_request_completed(_result, _response_code, _headers, body):
 	var test_json_conv = JSON.new()
@@ -510,9 +499,6 @@ func _on_update_destination_info_request_completed(_result, _response_code, _hea
 				new_node.set_name("Unit_third_box" + str(i))
 				UI_MappingDefinition.add_child(new_node)
 				plus_node.append(new_node)
-				# Waiting on toggle
-#				new_node.get_child(0).connect("pressed",Callable(self,"_on_Mapping_def_pressed"))
-#				new_node.get_child(4).text_changed.connect(_on_text_changed.bind(new_node.get_child(4)))
 				ghost_morphology.append(new_node)
 				var dropdown = new_node.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions")
 				for x in dropdown.get_item_count():
@@ -543,7 +529,6 @@ func _on_remove_cortical_request_completed(_result, _response_code, _headers, _b
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(_body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
-	
 	$notification.generate_notification_message(api_data, _response_code, "_on_remove_cortical_request_completed")
 
 func map_info_pressed(node_duplicated):
@@ -553,20 +538,6 @@ func map_info_pressed(node_duplicated):
 func remove_button_inside_dst(node_duplicated):
 	plus_node.erase(node_duplicated)
 	node_duplicated.queue_free()
-
-func info_pressed(duplicated_node_lineedit):
-	var get_id = $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text
-	if duplicated_node_lineedit.text != " " and duplicated_node_lineedit.text != "":
-		get_id_from_dst = Godot_list.genome_data["genome"][duplicated_node_lineedit.text][7]
-		var combine_url = '#&dst_cortical_area=$'.replace("#", get_id)
-		combine_url= combine_url.replace("$", get_id_from_dst)
-		Autoload_variable.BV_Core.Update_destination(combine_url)
-	for i in $".."/".."/".."/Menu/Mapping_Properties/source_dropdown.get_item_count():
-		if $".."/".."/".."/Menu/cortical_menu/Control/name_string.text == $".."/".."/".."/Menu/Mapping_Properties/source_dropdown.get_item_text(i):
-			$".."/".."/".."/Menu/Mapping_Properties/source_dropdown.selected = i
-	for i in $".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.get_item_count():
-		if duplicated_node_lineedit.text == $".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.get_item_text(i):
-			$".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.selected = i
 
 func dst_remove_pressed(duplicated_node_lineedit):
 	_on_info_pressed() # leveraging the same function to clear all infos on the box
@@ -594,23 +565,6 @@ func delete_morphology(input_node):
 	print("erasing: ", input_node)
 	input_node.queue_free()
 	new_morphology_node.erase(input_node)
-
-
-func _on_mapping_def_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	
-	if api_data != null and not api_data.has("Request failed..."):
-		$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.clear()
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.clear()
-		$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.add_item(" ")
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(" ")
-		for i in api_data:
-			$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.add_item(i)
-			$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(i)
-	$notification.generate_notification_message(api_data, _response_code, "_on_mapping_def_request_completed", "/v1/feagi/genome/morphology_list")
-
 
 func _on_plus_add_pressed():
 	var UI_MappingDefinition = $"..".UI_MappingDefinition
@@ -717,27 +671,6 @@ func _on_cortical_mapping_add_pressed(name_input):
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", $"..".currentLanguageISO)
 	$"..".SpawnMappingDefinition(id_to_name(name_input), "", mappingdefinitiongenerated)
 
-func generate_cortical_mapping():
-	for i in $".."/".."/".."/Menu/Mapping_Properties/source_dropdown.get_item_count():
-		if $".."/".."/".."/Menu/cortical_menu/Control/name_string.text == $".."/".."/".."/Menu/Mapping_Properties/source_dropdown.get_item_text(i):
-			$".."/".."/".."/Menu/Mapping_Properties/source_dropdown.selected = i
-	var counter = child_node_holder.size()
-	var new_node = $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer/cortical_map_name.duplicate()
-	$".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.add_child(new_node)
-	child_node_holder.append(new_node)
-	new_node.visible = true
-#	new_node.text = new_name
-	new_node.position.x = $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer/cortical_map_name.position.x
-	new_node.position.y = $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer/cortical_map_name.position.y + (counter * 30)
-	new_node.size.x = $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer/cortical_map_name.size.x
-	new_node.size.y = $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer/cortical_map_name.size.y
-	new_node.visible = true
-	new_node.editable = true
-	new_node.text = ""
-	new_node.get_child(0).connect("pressed",Callable(self,"dst_remove_pressed").bind(new_node))
-	new_node.get_child(1).connect("pressed",Callable(self,"info_pressed").bind(new_node))
-	counter += 1
-
 func name_to_id(name_input):
 	var iteration_name = name_input
 	var grab_id_cortical = ""
@@ -748,23 +681,11 @@ func name_to_id(name_input):
 				return grab_id_cortical
 	else:
 		return ""
-			
+
 func id_to_name(name_input):
 	for x in Godot_list.genome_data["genome"]:
 		if Godot_list.genome_data["genome"][x][7] == name_input:
 			return x
-
-func _on_menu_pressed():
-	$".."/".."/".."/Menu/information_menu/cortical_cam_label/menu.text = ""
-	if $".."/".."/".."/Menu/information_menu/cortical_cam_label/menu_itemlist.visible:
-		$".."/".."/".."/Menu/information_menu/cortical_cam_label/menu_itemlist.visible = false
-	else:
-		$".."/".."/".."/Menu/information_menu/cortical_cam_label/menu_itemlist.visible = true
-		$".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.load_options()
-		$".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.release_focus()
-
-func _on_cortical_dropdown_pressed():
-	$".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.load_options()
 
 func _on_burst_value_text_entered(new_text):
 	var json = {}
@@ -784,30 +705,6 @@ func _on_burst_value_focus_exited():
 		json["burst_duration"] = float(1/float(new_text))
 	Autoload_variable.BV_Core.Update_BurstRate(json["burst_duration"])
 	$".."/".."/".."/Menu/information_menu/burst_duration_label/burst_value.release_focus()
-
-func _on_Neuron_morphologies_button_pressed():
-	if $".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.visible:
-		$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.visible = false
-	else:
-		$".."/".."/".."/Menu/rule_properties.visible = false
-		$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.visible = true
-		Autoload_variable.BV_Core.Update_MorphologyList()
-
-func _on_Neuron_morphologies_item_selected(index):
-	if index != 0:
-		$".."/".."/".."/Menu/rule_properties.visible = true
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.selected = index
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.emit_signal("item_selected", index)
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.release_focus()
-
-func _on_Button_pressed():
-	$".."/".."/".."/Menu/Control/inner_box/morphology_type.clear()
-	for i in $".."/".."/".."/Menu/rule_properties/rules/rule_type_options.get_item_count():
-		if $".."/".."/".."/Menu/rule_properties/rules/rule_type_options.get_item_text(i) != "functions":
-			$".."/".."/".."/Menu/Control/inner_box/morphology_type.add_item($".."/".."/".."/Menu/rule_properties/rules/rule_type_options.get_item_text(i))
-	$".."/".."/".."/Menu/Control.visible = true
-	if $".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.get_item_count() == 0:
-		Autoload_variable.BV_Core.Update_MorphologyList()
 
 func _on_create_pressed(node):
 	var name_input = node.GetReferenceByID("MorphologyName").get_node("field_MorphologyName").text
@@ -871,10 +768,6 @@ func _on_create_pressed(node):
 			var combine_url = '/v1/feagi/genome/morphology' + '?morphology_name=' + new_name + '&morphology_type=' + new_type.to_lower()
 			Autoload_variable.BV_Core.POST_Request_Brain_visualizer(SEC+combine_url, json)
 		node.queue_free()
-func _on_X_inside_inner_box_pressed():
-	$".."/".."/".."/Menu/Control.visible = false
-	new_morphology_clear()
-	$".."/".."/".."/Menu/Control/inner_box/morphology_name.text = ""
 
 func _on_afferent_request_completed(_result, _response_code, _headers, body):
 	var test_json_conv = JSON.new()
@@ -919,13 +812,6 @@ func ghost_morphology_clear():
 		if is_instance_valid(i):
 			i.queue_free()
 	ghost_morphology.clear()
-
-func _on_cortical_dropdown_item_selected(index):
-	if index != 0:
-		if $".."/".."/".."/Menu/Mapping_Properties/source_dropdown.selected != 0:
-			var combine_url = '#&dst_cortical_area=$'.replace("#", name_to_id($".."/".."/".."/Menu/Mapping_Properties/source_dropdown.get_item_text($".."/".."/".."/Menu/Mapping_Properties/source_dropdown.get_selected_id())))
-			combine_url= combine_url.replace("$", name_to_id($".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.get_item_text(index)))
-			Autoload_variable.BV_Core.Update_destination(combine_url)
 
 func _on_update_inside_map_pressed(node):
 	var combine_url = '?src_cortical_area=#&dst_cortical_area=$'
@@ -1007,23 +893,11 @@ func _on_import_pressed():
 		$"..".UI_CircuitImport.queue_free()
 		print("Godot list: ", Godot_list.godot_list)
 		_clear_single_cortical("example", Godot_list.godot_list)
-		
 
 func _on_ItemList_item_selected(index, node):
 	var name_text = node.get_item_text(index)
 	name_text = symbols_checker_for_api(name_text)
 	Autoload_variable.BV_Core.Get_circuit_size(name_text)
-
-func _on_circuit_size_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	
-	$".."/".."/".."/Menu/insert_menu/inner_box/W_spinbox.value = api_data[0]
-	$".."/".."/".."/Menu/insert_menu/inner_box/D_spinbox.value = api_data[1]
-	$".."/".."/".."/Menu/insert_menu/inner_box/H_spinbox.value = api_data[2]
-	generate_single_cortical($".."/".."/".."/Menu/insert_menu/x_spinbox.value, $".."/".."/".."/Menu/insert_menu/y_spinbox.value, $".."/".."/".."/Menu/insert_menu/z_spinbox.value, $".."/".."/".."/Menu/insert_menu/inner_box/W_spinbox.value, $".."/".."/".."/Menu/insert_menu/inner_box/D_spinbox.value, $".."/".."/".."/Menu/insert_menu/inner_box/H_spinbox.value, "example")
-	$notification.generate_notification_message(api_data, _response_code, "_on_circuit_size_request_completed", "/v1/feagi/genome/circuit_size")
 
 func symbols_checker_for_api(string_data):
 	if " " in string_data:
@@ -1046,40 +920,8 @@ func _on_z_spinbox_value_changed(_value, array_data):
 	generate_single_cortical(array_data[0].value, array_data[1].value, _value, array_data[3].value, array_data[4].value, array_data[5].value, "example")
 	demo_new_cortical()
 
-func _on_Neuron_morphologies_item_item_selected(index):
-	$".."/".."/".."/Menu/rule_properties.visible = true
-	$".."/".."/".."/Menu/information_menu/Neuron_morphologies_button.text = $".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.get_item_text(index)
-	$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.visible = false
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.selected = index
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.emit_signal("item_selected", index)
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.release_focus()
-
 func _on_Mapping_def_pressed():
 	Autoload_variable.BV_Core.Update_MorphologyList()
-
-func _on_ghost_morphology_list_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	
-	$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.clear()
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.clear()
-	$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.clear()
-	$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.add_item(" ")
-	$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(" ")
-	$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.add_item(" ")
-	for i in api_data:
-		$".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.add_item(i)
-		$".."/".."/".."/Menu/rule_properties/mapping_rule_options.add_item(i)
-		$".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.add_item(i, null, true)
-	if ghost_morphology:
-		for a in ghost_morphology:
-			var node_ghost = a
-			if node_ghost.get_item_count() != $".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.get_item_count():
-				node_ghost.clear()
-				for i in $".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.get_item_count():
-					node_ghost.add_item($".."/".."/".."/Menu/Mapping_Properties/inside_mapping_menu/Control/Mapping_def.get_item_text(i), i)
-	$notification.generate_notification_message(api_data, _response_code, "_on_circuit_size_request_completed", "/v1/feagi/genome/circuit_size")
 
 func _on_text_changed(new_text, node_input):
 	Godot_list.Node_2D_control = true
@@ -1149,21 +991,6 @@ func _morphology_add_row(dropdown, row_node, parent_node, button, create_button)
 		button.position.y = new_morphology_node[len(new_morphology_node)-1].position.y + 20
 		create_button.position.y = button.position.y + 10
 		# End of Section
-
-func _on_morphology_name_focus_exited():
-	new_morphology_clear()
-	for i in $".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.get_item_count():
-		var name_morphology = $".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.get_item_text(i)
-		if $".."/".."/".."/Menu/information_menu/Neuron_morphologies_item.get_item_text(i) == $".."/".."/".."/Menu/Control/inner_box/morphology_name.text:
-			if "+" in name_morphology:
-				name_morphology = name_morphology.replace("+", "%2B")
-			if "[" in name_morphology:
-				name_morphology = name_morphology.replace("[", "%5B")
-			if "]" in name_morphology:
-				name_morphology = name_morphology.replace("]", "%5D")
-			if ", " in name_morphology:
-				name_morphology = name_morphology.replace(", ", "%2C%20")
-			Autoload_variable.BV_Core.Get_Morphology_information(name_morphology)
 
 func _on_get_morphology_request_completed(_result, _response_code, _headers, body):
 	new_morphology_clear()
@@ -1294,43 +1121,31 @@ func _on_grab_location_of_cortical_request_completed(result, response_code, head
 func _on_X_SpinBox_value_changed(_value, node=[]):
 	if node:
 		generate_single_cortical(node[3].value, node[4].value, node[5].value, node[0].value, node[1].value, node[2].value, "example")
-	else:
-		generate_single_cortical($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value, $".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value, $".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/W_Spinbox.value,$".."/".."/".."/Menu/addition_menu/wdh/H_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/D_Spinbox.value, "example")
 	demo_new_cortical()
 
 func _on_W_Spinbox_value_changed(_value, node=[]):
 	if node:
 		generate_single_cortical(node[3].value, node[4].value, node[5].value, node[0].value, node[1].value, node[2].value, "example")
-	else:
-		generate_single_cortical($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value, $".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value, $".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/W_Spinbox.value,$".."/".."/".."/Menu/addition_menu/wdh/H_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/D_Spinbox.value, "example")
 	demo_new_cortical()
 
 func _on_H_Spinbox_value_changed(_value, node=[]):
 	if node:
 		generate_single_cortical(node[3].value, node[4].value, node[5].value, node[0].value, node[1].value, node[2].value, "example")
-	else:
-		generate_single_cortical($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value, $".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value, $".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/W_Spinbox.value,$".."/".."/".."/Menu/addition_menu/wdh/H_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/D_Spinbox.value, "example")
 	demo_new_cortical()
 
 func _on_D_Spinbox_value_changed(_value, node=[]):
 	if node:
 		generate_single_cortical(node[3].value, node[4].value, node[5].value, node[0].value, node[1].value, node[2].value, "example")
-	else:
-		generate_single_cortical($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value, $".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value, $".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/W_Spinbox.value,$".."/".."/".."/Menu/addition_menu/wdh/H_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/D_Spinbox.value, "example")
 	demo_new_cortical()
 
 func _on_Y_Spinbox_value_changed(_value, node=[]):
 	if node:
 		generate_single_cortical(node[3].value, node[4].value, node[5].value, node[0].value, node[1].value, node[2].value, "example")
-	else:
-		generate_single_cortical($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value, $".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value, $".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/W_Spinbox.value,$".."/".."/".."/Menu/addition_menu/wdh/H_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/D_Spinbox.value, "example")
 	demo_new_cortical()
 
 func _on_Z_Spinbox_value_changed(_value, node=[]):
 	if node:
 		generate_single_cortical(node[3].value, node[4].value, node[5].value, node[0].value, node[1].value, node[2].value, "example")
-	else:
-		generate_single_cortical($".."/".."/".."/Menu/addition_menu/xyz/X_SpinBox.value, $".."/".."/".."/Menu/addition_menu/xyz/Y_Spinbox.value, $".."/".."/".."/Menu/addition_menu/xyz/Z_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/W_Spinbox.value,$".."/".."/".."/Menu/addition_menu/wdh/H_Spinbox.value, $".."/".."/".."/Menu/addition_menu/wdh/D_Spinbox.value, "example")
 	demo_new_cortical()
 
 func demo_new_cortical():

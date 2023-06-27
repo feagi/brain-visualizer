@@ -23,6 +23,7 @@ var UI_createcorticalBar : Newnit_Box
 var UI_ManageNeuronMorphology : Newnit_Popup
 var UI_MappingDefinition : Newnit_Box
 var UI_CircuitImport : Newnit_Box
+var UI_QUICKCONNECT: Newnit_Popup
 var UI_GraphCore: GraphCore
 var UI_CreateMorphology: Newnit_Box
 var UI_INDICATOR: Newnit_Box
@@ -55,6 +56,7 @@ func Activate(langISO: String):
 	test_json_conv.parse(filess.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	filess.close()
+	SpawnQuickConnect()
 	
 #	SpawnIndicator(createindicator)
 #	SpawnNeuronManager()
@@ -176,6 +178,13 @@ func _isNeuronProperty(ID: String) -> bool:
 	if ID == "SnoozePeriod": return true
 	if ID == "DegeneracyConstant": return true
 	return false
+	
+func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID)
+	match(ElementID):
+		"SRC_CORTICAL":
+			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
+			button.text = "Click any cortical"
 
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 	match(ElementID):
@@ -476,6 +485,15 @@ func button_rule(data: Dictionary, originatingID: StringName, originatingRef: No
 		$"..".GET_USUAGE_MORPHOLOGY(rule_name)
 		UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
+func SpawnQuickConnect():
+	var quickconnectdict = HelperFuncs.GenerateDefinedUnitDict("QUICKCONNECT", currentLanguageISO)
+	UI_QUICKCONNECT = Newnit_Popup.new()
+	add_child(UI_QUICKCONNECT)
+	UI_QUICKCONNECT.Activate(quickconnectdict)
+	UI_holders.append(UI_QUICKCONNECT)
+	UI_QUICKCONNECT.DataUp.connect(QuickConnectINPUT)
+	
+	
 
 func SpawnMappingDefinition(src, dst, activation):
 	if is_instance_valid(UI_MappingDefinition):
