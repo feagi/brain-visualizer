@@ -5,31 +5,7 @@
 static func Func_SpawnChild(childActivationSettings: Dictionary, ContainerObject) -> void:
 	# TODO: (optional) Property Inheritance
 	
-	var newChild
-	
-	match childActivationSettings["type"]:
-		"counter": newChild = Element_Counter.new()
-		"button": newChild = Element_Button.new()
-		"checkbox": newChild = Element_CheckBox.new()
-		"checkbutton": newChild = Element_CheckButton.new()
-		"dropdown": newChild = Element_DropDown.new()
-		"field": newChild = Element_Field.new()
-		"floatfield": newChild = Element_FloatField.new()
-		"intfield": newChild = Element_IntField.new()
-		"header": newChild = Element_Label.new()
-		"vector3": newChild = Element_Vector3.new()
-		"box": newChild = Newnit_Box.new()
-		"tab": newChild = Newnit_Tabs.new()
-		"scrollbar": newChild = Newnit_Scroll.new()
-		"list": newChild = Element_List.new()
-		"popup": newChild = Newnit_Popup.new()
-		"collapsible": newChild = Newnit_Collapsible.new()
-		"textbox": newChild = Element_TextBox.new()
-		"texturebutton": newChild = Element_TextureButton.new()
-		# TODO: More types!
-		_:
-			print("Invalid child of type ", childActivationSettings["type"], " attempted to spawn. Skipping...")
-			return
+	var newChild = HelperFuncs.SpawnNewnitOfType(childActivationSettings["type"])
 	newChild._hasNewnitParent = true
 	newChild._parent = ContainerObject
 	newChild.Activate(childActivationSettings)
