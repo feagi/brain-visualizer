@@ -5,8 +5,11 @@ class_name Element_TextureButton
 const D_editable = true
 const D_flip_h = false
 const D_flip_v = false
-const D_ignore_texture_size = false
-const D_stretch_mode = 2
+const D_ignore_texture_size = true
+const D_stretch_mode = 0
+const D_manual_size_flags_vertical = 8
+const D_manual_size_flags_horizontal = 8
+const D_internal_custom_minimum_size = Vector2(20,20)
 
 const _specificSettableProps := {
 	"editable": TYPE_BOOL,
@@ -15,6 +18,8 @@ const _specificSettableProps := {
 	"flip_v": TYPE_BOOL,
 	"ignore_texture_size": TYPE_BOOL,
 	"stretch_mode": TYPE_INT,
+	"manual_size_flags_vertical": TYPE_INT,
+	"manual_size_flags_horizontal": TYPE_INT
 }
 
 var value: bool:
@@ -40,6 +45,18 @@ var stretch_mode: int:
 	get: return _Button.stretch_mode
 	set(v): _Button.stretch_mode = v
 
+var manual_size_flags_vertical: int:
+	get: return _Button.size_flags_vertical
+	set(v): _Button.size_flags_vertical = v
+
+var manual_size_flags_horizontal: int:
+	get: return _Button.size_flags_horizontal
+	set(v): _Button.size_flags_horizontal = v
+
+var internal_custom_minimum_size: Vector2:
+	get: return _Button.custom_minimum_size
+	set(v): _Button.custom_minimum_size = v
+
 var _Button: TextureButton_Sub
 
 func LoadTextureFromPath(path: String) -> void:
@@ -56,6 +73,9 @@ func _ActivationSecondary(settings: Dictionary) -> void:
 	flip_v = HelperFuncs.GetIfCan(settings, "flip_v", D_flip_v)
 	ignore_texture_size = HelperFuncs.GetIfCan(settings, "ignore_texture_size", D_ignore_texture_size)
 	stretch_mode = HelperFuncs.GetIfCan(settings, "stretch_mode", D_stretch_mode)
+	manual_size_flags_vertical = HelperFuncs.GetIfCan(settings, "manual_size_flags_vertical", D_manual_size_flags_vertical)
+	manual_size_flags_horizontal = HelperFuncs.GetIfCan(settings, "manual_size_flags_horizontal", D_manual_size_flags_horizontal)
+	internal_custom_minimum_size = HelperFuncs.GetIfCan(settings, "internal_custom_minimum_size", D_internal_custom_minimum_size)
 	if "default_texture_path" in settings.keys():
 		LoadTextureFromPath(settings["default_texture_path"])
 	_runtimeSettableProperties.merge(_specificSettableProps)

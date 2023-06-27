@@ -23,6 +23,7 @@ static func Func_Activate(settings: Dictionary, NewnitObject: Node) -> void:
 	settings = HelperFuncs.RemapRGBToVector3i("color", settings)
 	settings = HelperFuncs.RemapVector3FloatsToVector3("vectorValue", settings)
 	settings = HelperFuncs.RemapVector2FloatsToVector2("custom_minimum_size", settings)
+	settings = HelperFuncs.RemapVector2FloatsToVector2("internal_custom_minimum_size", settings)
 	
 	# Apply Control Properties
 	NewnitObject.custom_minimum_size = HelperFuncs.GetIfCan(settings, "mSize", D_custom_minimum_size)
