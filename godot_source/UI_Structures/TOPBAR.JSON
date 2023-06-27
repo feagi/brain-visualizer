@@ -1,138 +1,138 @@
 {
-	"ID": "BAR",
-	"vertical": false,
-	"type": "box",
-	"positionX": 120,
-	"positionY": 8,
-	"enablePanel": true,
-	"components": [{
-			"ID": "REFRESHBOX",
-			"vertical": false,
-			"type": "box",
-			"components": [{
-					"type": "floatfield",
-					"ID": "REFRESHRATE",
-					"minValue": 0.01,
-					"maxValue": 10.0,
-					"scaleWithInputText": false
-				},
-				{
-					"type": "header",
-					"text": "Hz",
-					"ID": "HZ_TITLE"
-				}
-			]
-		},
-{
-			"ID": "SPACEBOX_1",
-			"vertical": false,
-			"type": "box",
-			"components": [
-				{
-					"type": "header",
-					"text": "    ",
-					"ID": "SPACE1"
-				}
-			]
-		},
-		{
-			"ID": "neuronal_circuit_box",
-			"vertical": false,
-			"type": "box",
-			"components": [{
-					"type": "header",
-					"ID": "HEADER_NEURONALCIRCUITS",
-					"sideButtonText": "+",
-					"text": "Neuronal Circuits"
-				},
-				{
-					"type": "texturebutton",
-					"ID": "PLUS_ONE",
-					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
-				}
-			]
-		},
-		{
-			"ID": "SPACEBOX_2",
-			"vertical": false,
-			"type": "box",
-			"components": [
-				{
-					"type": "header",
-					"text": "            ",
-					"ID": "SPACE2"
-				}
-			]
-		},
-		{
-			"ID": "Corticalareas_Box",
-			"vertical": false,
-			"type": "box",
-			"components": [{
-					"type": "header",
-					"ID": "CORTICALAREAS"
-				},
-				{
-					"type": "texturebutton",
-					"ID": "DROPDOWN_CORTICAL",
-					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/eye.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
-				},
-				{
-					"type": "texturebutton",
-					"ID": "PLUS_THREE",
-					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
-				},
-				{
-					"type": "texturebutton",
-					"ID": "CONNECT_CORTICAL",
-					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/connect.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
-				}
-			]
-		},
-		{
-			"ID": "SPACEBOX_3",
-			"vertical": false,
-			"type": "box",
-			"components": [
-				{
-					"type": "header",
-					"text": "                        ",
-					"ID": "SPACE3"
-				}
-			]
-		},
-		{
-			"ID": "NEURONMORPHOLOGIESBOX",
-			"vertical": false,
-			"type": "box",
-			"components": [{
-					"type": "header",
-					"ID": "NEURONMORPHOLOGIES",
-					"text": "Neuron Morphologies"
-				},
-				{
-					"type": "texturebutton",
-					"ID": "PLUS_TWO",
-					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
-				},
-				{
-					"type": "texturebutton",
-					"ID": "TESTEST",
-					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/setting.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
-				}
-			]
-		}
-	]
+   "ID":"TOP_BAR",
+   "vertical":false,
+   "type":"box",
+   "positionX":120,
+   "positionY":8,
+   "enablePanel":true,
+   "components":[
+	  {
+		 "ID":"REFRESH_RATE_BOX",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"floatfield",
+			   "ID":"REFRESH_RATE_FLOATFIELD",
+			   "minValue":0.01,
+			   "maxValue":10.0,
+			   "scaleWithInputText":false,
+			   "suffix": "Hz"
+			}
+		 ]
+	  },
+	  {
+		 "ID":"SPACEBOX_1",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"header",
+			   "text":"    ",
+			   "ID":"SPACE1"
+			}
+		 ]
+	  },
+	  {
+		 "ID":"NEURONAL_CIRCUITS_BOX",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"header",
+			   "ID":"NEURONAL_CIRCUITS_HEADER",
+			   "text":"Neuronal Circuits"
+			},
+			{
+			   "type":"texturebutton",
+			   "ID":"IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON",
+			   "default_texture_path":"res://brain_visualizer_source/menu_assets/image/plus.png",
+			   "internal_custom_minimum_sizeX":50,
+			   "internal_custom_minimum_sizeY":50
+			}
+		 ]
+	  },
+	  {
+		 "ID":"SPACEBOX_2",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"header",
+			   "text":"            ",
+			   "ID":"SPACE2"
+			}
+		 ]
+	  },
+	  {
+		 "ID":"CORTICAL_AREAS_BOX",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"header",
+			   "ID":"CORTICAL_AREAS_HEADER"
+			},
+			{
+			   "type":"texturebutton",
+			   "ID":"LIST_CORTICAL_AREAS_TEXTURE_BUTTON",
+			   "default_texture_path":"res://brain_visualizer_source/menu_assets/image/eye.png",
+			   "internal_custom_minimum_sizeX":50,
+			   "internal_custom_minimum_sizeY":50
+			},
+			{
+			   "type":"texturebutton",
+			   "ID":"CREATE_CORTICAL_AREA_TEXTURE_BUTTON",
+			   "default_texture_path":"res://brain_visualizer_source/menu_assets/image/plus.png",
+			   "internal_custom_minimum_sizeX":50,
+			   "internal_custom_minimum_sizeY":50
+			},
+			{
+			   "type":"texturebutton",
+			   "ID":"QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON",
+			   "default_texture_path":"res://brain_visualizer_source/menu_assets/image/connect.png",
+			   "internal_custom_minimum_sizeX":50,
+			   "internal_custom_minimum_sizeY":50
+			}
+		 ]
+	  },
+	  {
+		 "ID":"SPACEBOX_3",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"header",
+			   "text":"                        ",
+			   "ID":"SPACE3"
+			}
+		 ]
+	  },
+	  {
+		 "ID":"NEURON_MORPHOLOGIES_BOX",
+		 "vertical":false,
+		 "type":"box",
+		 "components":[
+			{
+			   "type":"header",
+			   "ID":"NEURON_MORPHOLOGIES_HEADER",
+			   "text":"Neuron Morphologies"
+			},
+			{
+			   "type":"texturebutton",
+			   "ID":"CREATE_NEURON_MORPHOLOGY_TEXTURE_BOX",
+			   "default_texture_path":"res://brain_visualizer_source/menu_assets/image/plus.png",
+			   "internal_custom_minimum_sizeX":50,
+			   "internal_custom_minimum_sizeY":50
+			},
+			{
+			   "type":"texturebutton",
+			   "ID":"MANAGE_NEURON_MORPHOLOGIES",
+			   "default_texture_path":"res://brain_visualizer_source/menu_assets/image/setting.png",
+			   "internal_custom_minimum_sizeX":50,
+			   "internal_custom_minimum_sizeY":50
+			}
+		 ]
+	  }
+   ]
 }
