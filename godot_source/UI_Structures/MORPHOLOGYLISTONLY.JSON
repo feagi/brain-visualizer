@@ -3,21 +3,20 @@
 	"positionX": 650,
 	"positionY": 600,
 	"type": "popup",
-	"titleBarText":"MORPHOLOGYLIST",
+	"titleBarText": "MORPHOLOGYLIST",
 	"enablePanel": true,
-   "vertical": true,
-	"components": [
-			{
-				"ID": "morphology_list",
-				"type": "scrollbar",
-				"custom_minimum_sizeX": 199,
-				"custom_minimum_sizeY": 399,
-				"vertical": true,
-				"childBaseID": "Morphology",
-				"titleBarText": "Morphology",
-				"components": [
+	"vertical": true,
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [{
+		"ID": "morphology_list",
+		"type": "scrollbar",
+		"custom_minimum_sizeX": 199,
+		"custom_minimum_sizeY": 399,
+		"vertical": true,
+		"childBaseID": "Morphology",
+		"titleBarText": "Morphology",
+		"components": [
 
-					]
-			}
-    ]
+		]
+	}]
 }

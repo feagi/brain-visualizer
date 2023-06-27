@@ -2,15 +2,15 @@
 	"ID": "CREATEMORPHOLOGY",
 	"type": "box",
 	"enableTitleBar": true,
-	"titleBarTitle": "Create new Neuron Morphology",
+	"titleBarText": "Create new Neuron Morphology",
 	"enableCloseButton": true,
 	"vertical": true,
 	"enablePanel": true,
 	"widthAlignment": 1,
 	"positionX": 400,
 	"positionY": 200,
-	"components": [
-		{
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [{
 			"type": "field",
 			"ID": "MorphologyName"
 		},
@@ -27,8 +27,7 @@
 			"ID": "Composite",
 			"vertical": true,
 			"visibility": 0,
-			"components": [
-				{
+			"components": [{
 					"type": "header",
 					"ID": "Seed"
 				},
@@ -37,8 +36,7 @@
 					"ID": "inner_composite",
 					"vertical": false,
 					"visibility": 0,
-					"components": [
-						{
+					"components": [{
 							"type": "floatfield",
 							"ID": "X_SEED",
 							"label": "X"
@@ -52,7 +50,8 @@
 							"type": "floatfield",
 							"ID": "Z_SEED",
 							"label": "Z"
-						}]
+						}
+					]
 				},
 				{
 					"type": "header",
@@ -63,13 +62,11 @@
 					"type": "box",
 					"ID": "XYZ_s1",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "box",
 							"ID": "XYZ_1",
 							"vertical": true,
-							"components": [
-								{
+							"components": [{
 									"type": "header",
 									"ID": "X_title",
 									"sideLabelText": "X:"
@@ -78,8 +75,7 @@
 									"type": "box",
 									"ID": "XYZ_X",
 									"vertical": true,
-									"components": [
-										{
+									"components": [{
 											"type": "counter",
 											"ID": "C1",
 											"sideLabelText": "C",
@@ -101,8 +97,7 @@
 							"type": "box",
 							"ID": "XYZ_Y",
 							"vertical": true,
-							"components": [
-								{
+							"components": [{
 									"type": "header",
 									"ID": "Y_title",
 									"sideLabelText": "Y:"
@@ -111,8 +106,7 @@
 									"type": "box",
 									"ID": "XYZ_2",
 									"vertical": true,
-									"components": [
-										{
+									"components": [{
 											"type": "counter",
 											"ID": "C2",
 											"sideLabelText": "C",
@@ -134,8 +128,7 @@
 							"type": "box",
 							"ID": "XYZ_Z",
 							"vertical": true,
-							"components": [
-								{
+							"components": [{
 									"type": "header",
 									"ID": "Z_title",
 									"sideLabelText": "Z:",
@@ -146,8 +139,7 @@
 									"type": "box",
 									"ID": "XYZ_3",
 									"vertical": true,
-									"components": [
-										{
+									"components": [{
 											"type": "counter",
 											"ID": "C3",
 											"sideLabelText": "C",
@@ -171,13 +163,11 @@
 					"type": "box",
 					"ID": "MAPPING_DROPDOWN",
 					"vertical": false,
-					"components": [
-						{
-							"type": "dropdown",
-							"ID": "MAPPINGDROPDOWN",
-							"sideLabelText": "Mapping: "
-						}
-					]
+					"components": [{
+						"type": "dropdown",
+						"ID": "MAPPINGDROPDOWN",
+						"sideLabelText": "Mapping: "
+					}]
 				}
 			]
 		},
@@ -186,13 +176,11 @@
 			"ID": "Patterns",
 			"vertical": true,
 			"visibility": 0,
-			"components": [
-				{
+			"components": [{
 					"type": "box",
 					"ID": "xyz_letters",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "header",
 							"ID": "X1",
 							"sideLabelText": "X"
@@ -228,8 +216,7 @@
 					"type": "box",
 					"ID": "PatternRow0",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "floatfield",
 							"ID": "Xi",
 							"label": "X"
@@ -278,13 +265,11 @@
 			"ID": "Vectors",
 			"vertical": true,
 			"visibility": 0,
-			"components": [
-				{
+			"components": [{
 					"type": "box",
 					"ID": "xyz_letters",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "header",
 							"ID": "X1",
 							"sideLabelText": "X"
@@ -305,8 +290,7 @@
 					"type": "box",
 					"ID": "XYZ",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "counter",
 							"ID": "X",
 							"max_value": 99999999,
@@ -336,15 +320,15 @@
 				}
 			]
 		},
-				{
-					"type": "button",
-					"ID": "AddRowButton",
-					"text": "Add Row"
-				},
-				{
-					"type": "button",
-					"ID": "UPDATEBUTTON",
-					"text": "Create"
-				}
+		{
+			"type": "button",
+			"ID": "AddRowButton",
+			"text": "Add Row"
+		},
+		{
+			"type": "button",
+			"ID": "UPDATEBUTTON",
+			"text": "Create"
+		}
 	]
 }

@@ -3,14 +3,13 @@
 	"positionX": 600,
 	"positionY": 400,
 	"type": "box",
-  	"enableCloseButton": true,
+	"enableCloseButton": true,
 	"enablePanel": true,
-	"components": [
-		{
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [{
 			"type": "box",
 			"ID": "testlabel",
-			"components": [
-				{
+			"components": [{
 					"ID": "SOURCECORTICALAREA",
 					"type": "dropdown"
 				},
@@ -24,8 +23,7 @@
 		{
 			"type": "box",
 			"ID": "vector_title",
-			"components": [
-				{
+			"components": [{
 					"type": "header",
 					"ID": "MAPPINGDEFINITION",
 					"side": 1
@@ -52,24 +50,21 @@
 		{
 			"type": "box",
 			"ID": "third_box",
-			"components": [
-				{
+			"components": [{
 					"type": "dropdown",
 					"ID": "mappingdefinitions"
 				},
 				{
 					"type": "box",
 					"ID": "overwritescalar",
-					"components": [
-						{
+					"components": [{
 							"type": "header",
 							"ID": "overwritescalartitle"
 						},
 						{
 							"type": "box",
 							"ID": "XYZ",
-							"components": [
-								{
+							"components": [{
 									"type": "floatfield",
 									"ID": "Pos_X"
 								},
@@ -95,8 +90,7 @@
 					"type": "box",
 					"ID": "third_box1",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "header",
 							"ID": "Plasticitytitle"
 						},
@@ -104,7 +98,8 @@
 							"type": "checkbutton",
 							"ID": "PSPTOGGLE"
 						}
-						]},
+					]
+				},
 				{
 					"type": "button",
 					"ID": "mappingdefbuttonminus",
@@ -115,9 +110,9 @@
 			"vertical": false
 		},
 		{
-				"type": "button",
-				"ID": "updatebutton",
-				"text": "Update"
-			}
+			"type": "button",
+			"ID": "updatebutton",
+			"text": "Update"
+		}
 	]
 }
