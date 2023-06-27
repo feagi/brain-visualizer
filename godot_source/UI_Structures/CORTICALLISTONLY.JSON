@@ -1,0 +1,23 @@
+{
+	"ID": "CORTICALLISTONLY",
+	"positionX": 550,
+	"positionY": 55,
+	"type": "popup",
+	"titleBarText":"Cortical Area List",
+	"enablePanel": true,
+   "vertical": true,
+	"components": [
+			{
+				"ID": "morphology_list",
+				"type": "scrollbar",
+				"custom_minimum_sizeX": 199,
+				"custom_minimum_sizeY": 399,
+				"vertical": true,
+				"childBaseID": "Morphology",
+				"titleBarText": "Morphology",
+				"components": [
+
+					]
+			}
+    ]
+}
