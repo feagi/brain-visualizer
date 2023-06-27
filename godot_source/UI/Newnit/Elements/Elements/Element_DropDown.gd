@@ -53,3 +53,6 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(data) -> void: #Data already is a proper Formatted Dictionary
 	DataUp.emit(data, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_optionButton.tooltip_text = toolTip

@@ -112,7 +112,8 @@ const _TITLEBAR_BUTTON := {
 	"type": "header",
 	"sideButtonText": "X",
 	"text": "CUSTOM_TITLE_HERE",
-	"ID": "POPUP_TOPBAR"
+	"ID": "POPUP_TOPBAR",
+	"manual_size_flags_horizontal": 2
 }
 
 

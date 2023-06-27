@@ -72,3 +72,6 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(numIn) -> void:
 	DataUp.emit({"value": numIn}, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_SpinBox.tooltip_text = toolTip
