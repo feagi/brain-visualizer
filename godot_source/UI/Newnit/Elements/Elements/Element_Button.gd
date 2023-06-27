@@ -21,9 +21,6 @@ var editable: bool:
 var text: String:
 	get: return _Button.text
 	set(v): _Button.text= v
-	
-var image: String:
-	set(v): _Button.icon = ResourceLoader.load("res://"+v);_Button.expand_icon = true;print("WORKING")
 
 var _Button: Button_Sub
 
@@ -32,8 +29,6 @@ func _ActivationSecondary(settings: Dictionary) -> void:
 	else: _Button = get_children()[0]
 	editable = HelperFuncs.GetIfCan(settings, "editable", D_editable)
 	text = HelperFuncs.GetIfCan(settings, "text", D_text)
-	if "image" in settings.keys():
-		image = settings["image"]
 	
 	
 	_runtimeSettableProperties.merge(_specificSettableProps)

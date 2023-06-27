@@ -55,6 +55,7 @@ func Activate(langISO: String):
 	test_json_conv.parse(filess.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	filess.close()
+	
 #	SpawnIndicator(createindicator)
 #	SpawnNeuronManager()
 	# Initialize GraphCore
@@ -74,7 +75,7 @@ func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar.DataUp.connect(TopBarInput)
 	# TODO best not to connect to Element children, better to connect to element signals itself
 	# This may work for now but can cause weird issues later
-	var import_circuit = UI_Top_TopBar.GetReferenceByID("GENOMEFILENAME").get_node("sideButton_GENOMEFILENAME")
+	var import_circuit = UI_Top_TopBar.GetReferenceByID("HEADER_NEURONALCIRCUITS").get_node("sideButton_HEADER_NEURONALCIRCUITS")
 	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
@@ -245,14 +246,14 @@ func RelayDownwards(callType, data) -> void:
 #		REF.FROM.pns_current_opu:
 #			pass
 		REF.FROM.genome_corticalAreaIdList:
-			if UI_Top_TopBar:
-				UI_Top_TopBar.SetData({"CORTICALAREAS": {"options":data}})
+#			if UI_Top_TopBar:
+#				UI_Top_TopBar.SetData({"Corticalareas_Box": {"CORTICALAREAS": {"options":data}}})
 			if UI_MappingDefinition:
 				UI_MappingDefinition.SetData({"testlabel": {"SOURCECORTICALAREA":{"options": data, "value": src_global}}})
 				UI_MappingDefinition.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"options": data, "value": dst_global}}})
 		REF.FROM.genome_morphologyList:
-			if UI_Top_TopBar:
-				UI_Top_TopBar.SetData({"NEURONMORPHOLOGIES": {"options":data}})
+#			if UI_Top_TopBar:
+#				UI_Top_TopBar.SetData({"NEURONMORPHOLOGIESBOX": {"NEURONMORPHOLOGIES": {"options":data}}})
 			if UI_MappingDefinition != null:
 				UI_MappingDefinition.SetData({"third_box": {"mappingdefinitions": {"options": data}}})
 				var original_dropdown = UI_MappingDefinition.get_node("box_third_box").get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions")
@@ -265,8 +266,8 @@ func RelayDownwards(callType, data) -> void:
 				if UI_CreateMorphology.GetReferenceByID("Composite").visible:
 					UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": data}}}})
 			optionbutton_holder = data
-		REF.FROM.genome_fileName:
-			UI_Top_TopBar.SetData({"GENOMEFILENAME": {"sideLabelText":data}})
+#		REF.FROM.genome_fileName:
+#			UI_Top_TopBar.SetData({"GENOMEFILENAME": {"sideLabelText":data}})
 #		REF.FROM.connectome_properties_mappings:
 #			pass
 #		REF.FROM.godot_fullCorticalData:
@@ -314,7 +315,7 @@ func RelayDownwards(callType, data) -> void:
 			UI_LeftBar.SetData(cortical_properties)
 			$"..".Update_Afferent_list(data["cortical_id"])
 		REF.FROM.burstEngine:
-			UI_Top_TopBar.SetData({"REFRESHRATE": {"value": data}})
+			UI_Top_TopBar.SetData({"REFRESHBOX": {"REFRESHRATE": {"value": 1/data}}})
 	pass
 
 

@@ -7,10 +7,12 @@
 		"sideLabelText":
 		  {"eng":  "Genome File Name"}
 	},
-	"CORTICALAREAS" : {
+	"Corticalareas_Box":{
+		"CORTICALAREAS" : {
 	  "sideLabelText":
 		{"eng": "Cortical Areas"}
-	},
+	}
+},
 	"NEURONMORPHOLOGIES" : {
 		"sideLabelText":
 		  {"eng": "Neuron Morphologies"} 
