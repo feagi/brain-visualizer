@@ -222,6 +222,10 @@ func cortical_is_clicked():
 				var button = $"..".UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
 				if button.text == "Click any cortical":
 					button.text = iteration_name
+			if $"..".UI_QUICKCONNECT.GetReferenceByID("DESTINATION").visible:
+				var button = $"..".UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
+				if button.text == "Click any cortical":
+					button.text = iteration_name
 		var grab_id_cortical = ""
 		grab_id_cortical = name_to_id(iteration_name)
 		update_cortical_map_name(grab_id_cortical)
