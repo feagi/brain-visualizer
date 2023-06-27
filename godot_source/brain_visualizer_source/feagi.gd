@@ -276,25 +276,25 @@ func generate_single_cortical(x,y,z,width, depth, height, name_input):
 		generate_one_model(create_textbox, x,y,z,width, height, depth, name_input)
 
 func _on_Update_pressed(data_input):
-	var x = data_input.GetReferenceByID("XYZ").get_node("counter_Pos_X").get_node("counter_Pos_X").value;
-	var y = data_input.GetReferenceByID("XYZ").get_node("counter_Pos_Y").get_node("counter_Pos_Y").value;
-	var z = data_input.GetReferenceByID("XYZ").get_node("counter_Pos_Z").get_node("counter_Pos_Z").value;
+	var x = data_input.GetReferenceByID("Pos_X").get_node("counter_Pos_X").value;
+	var y = data_input.GetReferenceByID("Pos_Y").get_node("counter_Pos_Y").value;
+	var z = data_input.GetReferenceByID("Pos_Z").get_node("counter_Pos_Z").value;
 	var id_input = str(data_input.GetReferenceByID("CorticalID").get_node("sideLabel_CorticalID").text);
-	var width= data_input.GetReferenceByID("WHD").get_node("counter_W").get_node("counter_W").value;
-	var height = data_input.GetReferenceByID("WHD").get_node("counter_H").get_node("counter_H").value;
-	var depth = data_input.GetReferenceByID("WHD").get_node("counter_D").get_node("counter_D").value;
-	var cortical_neuron_per_vox_count = data_input.GetReferenceByID("VoxelNeuronDensity").get_node("counter_VoxelNeuronDensity").value;
-	var synaptic_attractivity = data_input.GetReferenceByID("SynapticAttractivity").get_node("counter_SynapticAttractivity").value;
-	var post_synaptic_potential = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("PostSynapticPotential").get_node("floatField_PostSynapticPotential").value;
+	var width= data_input.GetReferenceByID("W").get_node("counter_W").value;
+	var height = data_input.GetReferenceByID("H").get_node("counter_H").value;
+	var depth = data_input.GetReferenceByID("D").get_node("counter_D").value;
+	var cortical_neuron_per_vox_count = data_input.GetReferenceByID("VoxelNeuronDensity").get_node("intfield_VoxelNeuronDensity").text;
+	var synaptic_attractivity = data_input.GetReferenceByID("SynapticAttractivity").get_node("intfield_SynapticAttractivity").text;
+	var post_synaptic_potential = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("PostSynapticPotential").get_node("floatField_PostSynapticPotential").text;
 	var post_synaptic_potential_max = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("PSPMax").get_node("floatField_PSPMax").value);
 	var plasticity_coef = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("PlasticityConstant").get_node("floatField_PlasticityConstant").value);
 	var fire_threshold = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("FireThreshold").get_node("floatField_FireThreshold").value);
-	var fire_threshold_limit = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("Thresholdlimit").get_node("counter_Thresholdlimit").value;
-	var refractory_period = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("RefactoryPeriod").get_node("counter_RefactoryPeriod").value;
+	var fire_threshold_limit = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("Thresholdlimit").get_node("intfield_Thresholdlimit").text;
+	var refractory_period = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("RefactoryPeriod").get_node("intfield_RefactoryPeriod").text;
 	var leak_coefficient = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("LeakConstant").get_node("floatField_LeakConstant").value);
 	var leak_variability = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("LeakVaribility").get_node("floatField_LeakVaribility").value);
 	var fire_threshold_increment = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("ThresholdINC").get_node("floatField_ThresholdINC").value);
-	var consecutive_fire_count = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("ConsecutiveFireCount").get_node("counter_ConsecutiveFireCount").value;
+	var consecutive_fire_count = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("ConsecutiveFireCount").get_node("intfield_ConsecutiveFireCount").text;
 	var snooze_period = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("SnoozePeriod").get_node("floatField_SnoozePeriod").value);
 	var degenerecy_coefficient = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("DegeneracyConstant").get_node("floatField_DegeneracyConstant").value);
 	var psp_uniform_distribution = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("PSPUNI").get_node("checkButton_PSPUNI").is_pressed()
@@ -1079,7 +1079,6 @@ func _on_get_morphology_request_completed(_result, _response_code, _headers, bod
 
 
 func _morphology_button_inside_red(node):
-	var vectors = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Vectors")
 	var patterns = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Patterns")
 	var i = node.GetReferenceByID("header_type").get_node("field_header_type").text
 	if i == "patterns":

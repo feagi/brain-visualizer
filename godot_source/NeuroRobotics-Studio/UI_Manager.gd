@@ -24,6 +24,7 @@ var UI_LeftBar: Newnit_Popup
 var UI_CreateCorticalBar : Newnit_Popup
 var UI_ManageNeuronMorphology : Newnit_Popup
 var UI_morphologyLIST : Newnit_Popup
+var UI_CORTICALLIST : Newnit_Popup
 var UI_MappingDefinition : Newnit_Popup
 var UI_CircuitImport : Newnit_Popup
 var UI_QUICKCONNECT: Newnit_Popup
@@ -78,9 +79,9 @@ func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar.Activate(activation)
 	UI_Top_TopBar.DataUp.connect(TopBarInput)
 	# TODO best not to connect to Element children, better to connect to element signals itself
-	# This may work for now but can cause weird issues later
-	#var import_circuit = UI_Top_TopBar.GetReferenceByID("NEURONAL_CIRCUITS_HEADER").get_node("sideButton_NEURONAL_CIRCUITS_HEADER")
-	#import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
+	# https://media.tenor.com/pb0kIF-blqsAAAAC/minion-typing.gif
+	var import_circuit = UI_Top_TopBar.GetReferenceByID("IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON").get_node("textureButton_IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON")
+	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
 ####################################
@@ -91,7 +92,7 @@ signal DataUp(data: Dictionary)
 
 ######### Top Bar Control ##########
 # We should be using this to make things more streamline
-func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
 		# Lets keep this in order from Left to Right
@@ -105,7 +106,19 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 		
 		# CORTICAL_AREAS_BOX
 		"LIST_CORTICAL_AREAS_TEXTURE_BUTTON":
-			pass # Cannot do anything right now without way to list
+			UI_CORTICALLIST = Newnit_Popup.new()
+			var corticallistDICT = HelperFuncs.GenerateDefinedUnitDict("CORTICALLISTONLY", currentLanguageISO)
+			add_child(UI_CORTICALLIST)
+			UI_CORTICALLIST.Activate(corticallistDICT)
+			UI_holders.append(UI_CORTICALLIST)
+			
+			# Copy n paste cus no reason to do extra work
+			const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+			var morphologyOptions: Array = cache.genome_corticalAreaIDList
+			var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
+			for i in morphologyOptions:
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": $Brain_Visualizer.id_to_name(i)})
+				spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
 		"QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON":
@@ -116,37 +129,9 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 			if not UI_CreateMorphology: SpawnCreateMophology()
 		"MANAGE_NEURON_MORPHOLOGIES": 
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
-		
-# TODO previous iteration of above, some parts still missing, keep as reference for now
-#		"CORTICAL_AREAS_HEADER":
-#			if "selectedIndex" in data.keys():
-#				var name_from_dropdown = UI_Top_TopBar.GetReferenceByID("CORTICAL_AREAS_HEADER").get_node("dropDown_CORTICAL_AREAS_HEADER").text
-#				$Brain_Visualizer.camera_list_selected(name_from_dropdown)
-#			if "sideButton" in data.keys():
-#				if not UI_CreateCorticalBar:
-#					SpawnCorticalCreate()
-#				else:
-#					UI_CreateCorticalBar.queue_free()
-#		"NEURONMORPHOLOGIES":
-#			if "selectedIndex" in data.keys():
-#				if UI_ManageNeuronMorphology != null:
-#					UI_ManageNeuronMorphology.queue_free()
-#				var rule_name = UI_Top_TopBar.GetReferenceByID("NEURONMORPHOLOGIES").get_node("dropDown_NEURONMORPHOLOGIES").text
-#				if rule_name != " ":
-#					if "+" in rule_name:
-#						rule_name = rule_name.replace("+", "%2B")
-#					if "[" in rule_name:
-#						rule_name = rule_name.replace("[", "%5B")
-#					if "]" in rule_name:
-#						rule_name = rule_name.replace("]", "%5D")
-#					if ", " in rule_name:
-#						rule_name = rule_name.replace(", ", "%2C%20")
-#					$"..".Get_Morphology_information(rule_name)
-#					$"..".GET_USUAGE_MORPHOLOGY(rule_name)
-#				SpawnNeuronManager()
-#				UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
-func CreateMorphologyInput(data: Dictionary, ElementID: String, ElementRef: Node):
+func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
+
 	match(ElementID):
 		"MorphologyType":
 		#Drop down is changed, toggle between available morphology wizards
@@ -177,7 +162,7 @@ func LeftBarInput(data: Dictionary, _compRef, _unitRef):
 #			_sideBarChangedValues["cortical_id"] = UI_LeftBar.data["CorticalName"]
 			$"..".Update_Genome_CorticalArea(_sideBarChangedValues)
 			_sideBarChangedValues = {} # reset
-		_:
+		_: # ????
 			# Check if this is a neuron property, if so cache change for Update
 			if _isNeuronProperty(data["ID"]):
 				_sideBarChangedValues[data["ID"]] = data["value"]
@@ -199,8 +184,9 @@ func _isNeuronProperty(ID: String) -> bool:
 	if ID == "DegeneracyConstant": return true
 	return false
 	
-func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
+	
 	match(ElementID):
 		"SRC_CORTICAL":
 			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
@@ -225,7 +211,7 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node
 			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 			button.text = "Click any cortical"
 
-func CorticalCreateInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	match(ElementID):
 		"CORTICALAREA":
 			if data["selectedIndex"] == 1:
@@ -494,7 +480,6 @@ func SpawnNeuronManager():
 	composite.visible = false
 	patterns.visible = false
 	vectors_bar.visible = false
-#	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
@@ -508,7 +493,7 @@ func SpawnNeuronManager():
 		spawnedItem.connect("DataUp", Callable(self,"button_rule"))
 	
 
-func button_rule(data: Dictionary, originatingID: StringName, originatingRef: Node):
+func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	var rule_name = originatingRef.text
 	if rule_name != " ":
 		if "+" in rule_name:
@@ -526,6 +511,9 @@ func button_rule(data: Dictionary, originatingID: StringName, originatingRef: No
 func arrow_name_updater(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = originatingRef.text
 	UI_morphologyLIST.queue_free()
+func camera_focus(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
+	$Brain_Visualizer.camera_list_selected($Brain_Visualizer.name_to_id(originatingRef.text))
+	UI_CORTICALLIST.queue_free()
 
 func SpawnQuickConnect():
 	var quickconnectdict = HelperFuncs.GenerateDefinedUnitDict("QUICKCONNECT", currentLanguageISO)

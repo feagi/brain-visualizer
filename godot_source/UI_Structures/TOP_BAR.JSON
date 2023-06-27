@@ -70,7 +70,8 @@
 		 "components":[
 			{
 			   "type":"header",
-			   "ID":"CORTICAL_AREAS_HEADER"
+			   "ID":"CORTICAL_AREAS_HEADER",
+				"text": "Cortical Areas"
 			},
 			{
 			   "type":"texturebutton",

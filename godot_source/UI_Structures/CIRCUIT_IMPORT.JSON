@@ -1,10 +1,11 @@
 {
 	"ID": "CIRCUIT_IMPORT",
   	"enableTitleBar": true,
-  	"titleBarTitle": "Import",
+  	"titleBarText": "Import Circuit",
 	"positionX": 500,
 	"positionY": 400,
 	"enableCloseButton": true,
+	"enablePanel": true,
 	"components": [
 		{
 			"ID": "INPUT_TITLE",
