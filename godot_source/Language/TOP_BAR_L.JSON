@@ -1,7 +1,7 @@
 {
    "REFRESH_RATE_BOX":{
 	  "REFRESH_RATE_FLOATFIELD":{
-		 "tooltip_text":{
+		 "toolTipText":{
 			"eng":"FEAGI Refresh Rate"
 		 }
 	  }
@@ -19,9 +19,9 @@
 			"eng":"Cortical Areas"
 		 }
 	  },
-	  "IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON":{
-		 "tooltip_text":{
-			"eng":"Import Neuronal Circuit"
+	  "LIST_CORTICAL_AREAS_TEXTURE_BUTTON":{
+		 "toolTipText":{
+			"eng":"List Cortical Areas"
 		 }
 	  }
    },

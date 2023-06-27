@@ -38,3 +38,6 @@ func _getChildData() -> Dictionary:
 # This never gets called, but here for compatibility reasons
 func _DataUpProxy(_data) -> void:
 	DataUp.emit(_data, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_label.tooltip_text = toolTip

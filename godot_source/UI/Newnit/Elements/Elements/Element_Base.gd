@@ -99,6 +99,7 @@ const D_labelText = ""
 const D_sideButtonText = ""
 const D_sideButtonEditable = true
 const D_expandSideLabel = true
+const D_toolTipText = ""
 
 var sideLabelText: String:
 	get: return _sideLabelText
@@ -127,6 +128,8 @@ var expand: bool:
 		else:
 			if vertical: _sideLabel.size_flags_vertical = 1
 			else: _sideLabel.size_flags_horizontal = 1
+var toolTipText: String:
+	set(v): _SetToolTipText(v)
 
 var _has_label: bool
 var _has_button: bool
@@ -141,7 +144,8 @@ const settableProperties := {
 	"vertical": TYPE_INT,
 	"sideLabelText": TYPE_STRING,
 	"sideButtonText": TYPE_STRING,
-	"sideButtonEditable": TYPE_BOOL}
+	"sideButtonEditable": TYPE_BOOL,
+	"toolTipText": TYPE_STRING}
 
 # Base Element Activation
 func _ActivationPrimary(settings: Dictionary) -> void:
@@ -169,6 +173,7 @@ func _ActivationPrimary(settings: Dictionary) -> void:
 	expand = HelperFuncs.GetIfCan(settings, "expand", D_expandSideLabel)
 	
 	_ActivationSecondary(settings)
+	toolTipText = HelperFuncs.GetIfCan(settings, "toolTipText", D_toolTipText)
 
 
 func _SpawnSubElements(componentTypes: Array) -> void:
@@ -249,3 +254,7 @@ func _PopulateSubElements() -> Array:
 	@warning_ignore("assert_always_false")
 	assert(false, "_PopulateSubElements function not overriden correctly!")	
 	return []
+
+func _SetToolTipText(_toolTip: String) -> void:
+	@warning_ignore("assert_always_false")
+	assert(false, "_SetToolTipText function not overriden correctly!")
