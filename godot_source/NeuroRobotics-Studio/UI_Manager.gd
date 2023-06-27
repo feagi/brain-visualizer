@@ -21,12 +21,12 @@ var cache: FeagiCache
 
 var UI_Top_TopBar: Newnit_Box
 var UI_LeftBar: Newnit_Popup
-var UI_CreateCorticalBar : Newnit_Box
+var UI_CreateCorticalBar : Newnit_Popup
 var UI_ManageNeuronMorphology : Newnit_Popup
-var UI_MappingDefinition : Newnit_Box
-var UI_CircuitImport : Newnit_Box
+var UI_MappingDefinition : Newnit_Popup
+var UI_CircuitImport : Newnit_Popup
 var UI_GraphCore: GraphCore
-var UI_CreateMorphology: Newnit_Box
+var UI_CreateMorphology: Newnit_Popup
 var UI_INDICATOR: Newnit_Box
 var vectors_holder := []
 var src_global 
@@ -370,7 +370,7 @@ func mapping_definition_button(node):
 
 func SpawnCreateMophology():
 	var CMDict = HelperFuncs.GenerateDefinedUnitDict("CREATEMORPHOLOGY", currentLanguageISO)
-	UI_CreateMorphology = Newnit_Box.new()
+	UI_CreateMorphology = Newnit_Popup.new()
 	add_child(UI_CreateMorphology)
 	UI_CreateMorphology.Activate(CMDict)
 	var composite = UI_CreateMorphology.GetReferenceByID("Composite")
@@ -393,7 +393,7 @@ func SpawnCreateMophology():
 	
 
 func SpawnCorticalCreate():
-	UI_CreateCorticalBar = Newnit_Box.new()
+	UI_CreateCorticalBar = Newnit_Popup.new()
 	var createcorticalBar = HelperFuncs.GenerateDefinedUnitDict("CORTICAL_CREATE", currentLanguageISO)
 	add_child(UI_CreateCorticalBar)
 	UI_CreateCorticalBar.Activate(createcorticalBar)
@@ -428,7 +428,7 @@ func SpawnIndicator(activation: Dictionary):
 
 
 func SpawnCircuitImport(activation: Dictionary):
-	UI_CircuitImport = Newnit_Box.new()
+	UI_CircuitImport = Newnit_Popup.new()
 	add_child(UI_CircuitImport)
 	UI_CircuitImport.Activate(activation)
 	UI_holders.append(UI_CircuitImport)
@@ -500,7 +500,7 @@ func SpawnMappingDefinition(src, dst, activation):
 	if is_instance_valid(UI_MappingDefinition):
 		UI_MappingDefinition.queue_free()
 		$Brain_Visualizer.plus_node.clear()
-	UI_MappingDefinition = Newnit_Box.new()
+	UI_MappingDefinition = Newnit_Popup.new()
 	add_child(UI_MappingDefinition)
 	UI_MappingDefinition.Activate(activation)
 	UI_holders.append(UI_MappingDefinition)
