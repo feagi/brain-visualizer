@@ -24,6 +24,7 @@ var UI_LeftBar: Newnit_Popup
 var UI_CreateCorticalBar : Newnit_Popup
 var UI_ManageNeuronMorphology : Newnit_Popup
 var UI_morphologyLIST : Newnit_Popup
+var UI_CORTICALLIST : Newnit_Popup
 var UI_MappingDefinition : Newnit_Popup
 var UI_CircuitImport : Newnit_Popup
 var UI_QUICKCONNECT: Newnit_Popup
@@ -105,7 +106,20 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 		
 		# CORTICAL_AREAS_BOX
 		"LIST_CORTICAL_AREAS_TEXTURE_BUTTON":
-			pass # Cannot do anything right now without way to list
+			UI_CORTICALLIST = Newnit_Popup.new()
+			var corticallistDICT = HelperFuncs.GenerateDefinedUnitDict("CORTICALLISTONLY", currentLanguageISO)
+			add_child(UI_CORTICALLIST)
+			UI_CORTICALLIST.Activate(corticallistDICT)
+			UI_holders.append(UI_CORTICALLIST)
+			UI_CORTICALLIST.DataUp.connect(corticallistONLYINPUT)
+			
+			# Copy n paste cus no reason to do extra work
+			const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+			var morphologyOptions: Array = cache.genome_corticalAreaIDList
+			var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
+			for i in morphologyOptions:
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
+				spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
 		"QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON":
@@ -116,19 +130,10 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 			if not UI_CreateMorphology: SpawnCreateMophology()
 		"MANAGE_NEURON_MORPHOLOGIES": 
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
-		
-# TODO previous iteration of above, some parts still missing, keep as reference for now
-#		"CORTICAL_AREAS_HEADER":
-#			if "selectedIndex" in data.keys():
-#				var name_from_dropdown = UI_Top_TopBar.GetReferenceByID("CORTICAL_AREAS_HEADER").get_node("dropDown_CORTICAL_AREAS_HEADER").text
-#				$Brain_Visualizer.camera_list_selected(name_from_dropdown)
-#			if "sideButton" in data.keys():
-#				if not UI_CreateCorticalBar:
-#					SpawnCorticalCreate()
-#				else:
-#					UI_CreateCorticalBar.queue_free()
 
 
+func corticallistONLYINPUT(data: Dictionary, ElementID: String, ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID)
 
 func CreateMorphologyInput(data: Dictionary, ElementID: String, ElementRef: Node):
 	match(ElementID):
@@ -184,6 +189,7 @@ func _isNeuronProperty(ID: String) -> bool:
 	
 func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
+	
 	match(ElementID):
 		"SRC_CORTICAL":
 			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
@@ -476,7 +482,6 @@ func SpawnNeuronManager():
 	composite.visible = false
 	patterns.visible = false
 	vectors_bar.visible = false
-#	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
@@ -508,6 +513,9 @@ func button_rule(data: Dictionary, originatingID: StringName, originatingRef: No
 func arrow_name_updater(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = originatingRef.text
 	UI_morphologyLIST.queue_free()
+func camera_focus(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
+	$Brain_Visualizer.camera_list_selected(originatingRef.text)
+	UI_CORTICALLIST.queue_free()
 
 func SpawnQuickConnect():
 	var quickconnectdict = HelperFuncs.GenerateDefinedUnitDict("QUICKCONNECT", currentLanguageISO)
