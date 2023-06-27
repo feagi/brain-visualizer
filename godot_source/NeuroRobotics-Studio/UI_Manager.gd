@@ -92,7 +92,7 @@ signal DataUp(data: Dictionary)
 
 ######### Top Bar Control ##########
 # We should be using this to make things more streamline
-func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
 		# Lets keep this in order from Left to Right
@@ -111,7 +111,6 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 			add_child(UI_CORTICALLIST)
 			UI_CORTICALLIST.Activate(corticallistDICT)
 			UI_holders.append(UI_CORTICALLIST)
-			UI_CORTICALLIST.DataUp.connect(corticallistONLYINPUT)
 			
 			# Copy n paste cus no reason to do extra work
 			const ButtonItem := { "type": "button", "ID": "morphologyOption"}
@@ -132,10 +131,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
 
 
-func corticallistONLYINPUT(data: Dictionary, ElementID: String, ElementRef: Node):
-	print("data: ", data, "elementid: ", ElementID)
-
-func CreateMorphologyInput(data: Dictionary, ElementID: String, ElementRef: Node):
+func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
 	match(ElementID):
 		"MorphologyType":
 		#Drop down is changed, toggle between available morphology wizards
@@ -187,7 +183,7 @@ func _isNeuronProperty(ID: String) -> bool:
 	if ID == "DegeneracyConstant": return true
 	return false
 	
-func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	
 	match(ElementID):
@@ -214,7 +210,7 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node
 			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 			button.text = "Click any cortical"
 
-func CorticalCreateInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	match(ElementID):
 		"CORTICALAREA":
 			if data["selectedIndex"] == 1:
@@ -495,7 +491,7 @@ func SpawnNeuronManager():
 		spawnedItem.connect("DataUp", Callable(self,"button_rule"))
 	
 
-func button_rule(data: Dictionary, originatingID: StringName, originatingRef: Node):
+func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	var rule_name = originatingRef.text
 	if rule_name != " ":
 		if "+" in rule_name:

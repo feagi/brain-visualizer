@@ -1079,7 +1079,6 @@ func _on_get_morphology_request_completed(_result, _response_code, _headers, bod
 
 
 func _morphology_button_inside_red(node):
-	var vectors = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Vectors")
 	var patterns = $"..".UI_ManageNeuronMorphology.GetReferenceByID("Patterns")
 	var i = node.GetReferenceByID("header_type").get_node("field_header_type").text
 	if i == "patterns":
