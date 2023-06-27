@@ -41,7 +41,6 @@
 			{
 			   "type":"header",
 			   "ID":"NEURONAL_CIRCUITS_HEADER",
-			   "text":"Neuronal Circuits"
 			},
 			{
 			   "type":"texturebutton",
@@ -116,7 +115,6 @@
 			{
 			   "type":"header",
 			   "ID":"NEURON_MORPHOLOGIES_HEADER",
-			   "text":"Neuron Morphologies"
 			},
 			{
 			   "type":"texturebutton",

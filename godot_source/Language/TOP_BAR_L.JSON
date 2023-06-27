@@ -1,29 +1,35 @@
 {
-   "TITLE":{
-	  "text":{
-		 "eng":""
-	  }
-   },
-   "GENOMEFILENAME":{
-	  "sideLabelText":{
-		 "eng":"Genome File Name"
-	  }
-   },
-   "Corticalareas_Box":{
-	  "CORTICALAREAS":{
-		 "sideLabelText":{
-			"eng":"Cortical Areas"
+   "REFRESH_RATE_BOX":{
+	  "REFRESH_RATE_FLOATFIELD":{
+		 "tooltip_text":{
+			"eng":"FEAGI Refresh Rate"
 		 }
 	  }
    },
-   "NEURONMORPHOLOGIES":{
-	  "sideLabelText":{
-		 "eng":"Neuron Morphologies"
+   "NEURONAL_CIRCUITS_BOX":{
+	  "NEURONAL_CIRCUITS_HEADER":{
+		 "text":{
+			"eng":"Neuronal Circuits"
+		 },
 	  }
    },
-   "blank":{
-	  "sideLabelText":{
-		 "eng":""
+   "CORTICAL_AREAS_BOX":{
+	  "CORTICAL_AREAS_HEADER":{
+		 "text":{
+			"eng":"Cortical Areas"
+		 }
+	  },
+	  "IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON":{
+		 "tooltip_text":{
+			"eng":"Import Neuronal Circuit"
+		 }
+	  }
+   },
+   "NEURON_MORPHOLOGIES_BOX":{
+	  "NEURON_MORPHOLOGIES_HEADER":{
+		 "text":{
+			"eng":"Neuron Morphologies"
+		 }
 	  }
    }
 }
