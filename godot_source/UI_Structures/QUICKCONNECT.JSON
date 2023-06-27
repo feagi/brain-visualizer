@@ -1,0 +1,76 @@
+{
+	"ID": "QUICKCONNECT",
+	"positionX": 450,
+	"positionY": 600,
+	"type": "popup",
+	"titleBarText":"QUICKCONNECT",
+	"enablePanel": true,
+   "vertical": true,
+	"components": [
+        {
+           "ID": "OUTSIDEBOX",
+           "vertical": false,
+           "type": "box",
+           "components": [
+               {
+                 "ID": "FIRSTBOX",
+                 "vertical": false,
+                 "type": "box",
+                 "components": [
+                       {
+                          "type": "button",
+                          "ID": "SRC_CORTICAL",
+                          "text": "Source"
+                       }
+                    ]
+             },
+               {
+                 "ID": "SECONDBOX",
+                 "vertical": false,
+                 "type": "box",
+                 "components": [
+                    {
+                       "type": "button",
+                       "ID": "ARROW",
+                       "text": "ARROW PLACEHOLDER"
+                    }
+                    ]
+             },
+              {
+                 "ID": "THIRDBOX",
+                 "vertical": false,
+                 "type": "box",
+                 "components": [
+                    {
+                       "type": "button",
+                       "ID": "DESTINATION",
+                       "text": "Destination"
+                    }
+                    ]
+             }
+           ]
+        },
+         {
+            "ID":"CONNECTORCANCEL",
+            "vertical":false,
+            "type": "box",
+            "components":[
+               {
+                  "type": "header",
+                  "ID": "SPACE1",
+                  "text": "                      "
+               },
+               {
+                  "type": "button",
+                  "ID": "CONNECT",
+                  "text": "Connect"
+               },
+               {
+                  "type": "button",
+                  "ID": "CANCEL",
+                  "text": "Cancel"
+               }
+            ]
+         }
+    ]
+}

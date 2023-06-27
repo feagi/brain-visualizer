@@ -21,8 +21,10 @@ var UI_Top_TopBar: Newnit_Box
 var UI_LeftBar: Newnit_Popup
 var UI_createcorticalBar : Newnit_Box
 var UI_ManageNeuronMorphology : Newnit_Popup
+var UI_morphologyLIST : Newnit_Popup
 var UI_MappingDefinition : Newnit_Box
 var UI_CircuitImport : Newnit_Box
+var UI_QUICKCONNECT: Newnit_Popup
 var UI_GraphCore: GraphCore
 var UI_CreateMorphology: Newnit_Box
 var UI_INDICATOR: Newnit_Box
@@ -55,6 +57,7 @@ func Activate(langISO: String):
 	test_json_conv.parse(filess.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	filess.close()
+	SpawnQuickConnect()
 	
 #	SpawnIndicator(createindicator)
 #	SpawnNeuronManager()
@@ -176,6 +179,32 @@ func _isNeuronProperty(ID: String) -> bool:
 	if ID == "SnoozePeriod": return true
 	if ID == "DegeneracyConstant": return true
 	return false
+	
+func QuickConnectINPUT(data: Dictionary, ElementID: StringName, ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID)
+	match(ElementID):
+		"SRC_CORTICAL":
+			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
+			button.text = "Click any cortical"
+		"ARROW":
+			if UI_morphologyLIST:
+				if UI_morphologyLIST != null:
+					UI_morphologyLIST.queue_free()
+			UI_morphologyLIST = Newnit_Popup.new()
+			var morphologylistDICT = HelperFuncs.GenerateDefinedUnitDict("MORPHOLOGYLISTONLY", currentLanguageISO)
+			add_child(UI_morphologyLIST)
+			UI_morphologyLIST.Activate(morphologylistDICT)
+			UI_holders.append(UI_morphologyLIST)
+			const ButtonItem := { "type": "texturebutton", "ID": "morphologyOption"}
+			var morphologyOptions: Array = ["block_to_block.png"]
+			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
+			for i in morphologyOptions:
+				print("i: ", i)
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"default_texture_path": "res://brain_visualizer_source/menu_assets/image/" + str(i), "internal_custom_minimum_sizeX": 50,"internal_custom_minimum_sizeY": 50})
+				spawnedItem.connect("DataUp", Callable(self,"arrow_name_updater"))
+		"DESTINATION":
+			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
+			button.text = "Click any cortical"
 
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 	match(ElementID):
@@ -459,7 +488,7 @@ func SpawnNeuronManager():
 	for i in morphologyOptions:
 		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
 		spawnedItem.connect("DataUp", Callable(self,"button_rule"))
-
+	
 
 func button_rule(data: Dictionary, originatingID: StringName, originatingRef: Node):
 	var rule_name = originatingRef.text
@@ -476,6 +505,19 @@ func button_rule(data: Dictionary, originatingID: StringName, originatingRef: No
 		$"..".GET_USUAGE_MORPHOLOGY(rule_name)
 		UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
+func arrow_name_updater(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
+	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = originatingRef.text
+	UI_morphologyLIST.queue_free()
+
+func SpawnQuickConnect():
+	var quickconnectdict = HelperFuncs.GenerateDefinedUnitDict("QUICKCONNECT", currentLanguageISO)
+	UI_QUICKCONNECT = Newnit_Popup.new()
+	add_child(UI_QUICKCONNECT)
+	UI_QUICKCONNECT.Activate(quickconnectdict)
+	UI_holders.append(UI_QUICKCONNECT)
+	UI_QUICKCONNECT.DataUp.connect(QuickConnectINPUT)
+	
+	
 
 func SpawnMappingDefinition(src, dst, activation):
 	if is_instance_valid(UI_MappingDefinition):
