@@ -313,10 +313,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 60, 100)
 [node name="color_indicator" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 1.0
-offset_top = 45.0
-offset_right = 159.0
-offset_bottom = 57.248
+offset_right = 158.0
+offset_bottom = 12.248
 
 [node name="ColorRect" type="ColorRect" parent="color_indicator"]
 layout_mode = 0
