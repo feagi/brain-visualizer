@@ -49,10 +49,8 @@
 					"type": "texturebutton",
 					"ID": "PLUS_ONE",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"ignore_texture_size": true,
-					"stretch_mode": 2,
-					"custom_minimum_sizeX": 50,
-					"custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 50,
+					"internal_custom_minimum_sizeY": 50
 				}
 			]
 		},
@@ -80,28 +78,22 @@
 					"type": "texturebutton",
 					"ID": "DROPDOWN_CORTICAL",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/eye.png",
-					"ignore_texture_size": true,
-					"stretch_mode": 2,
-					"custom_minimum_sizeX": 5,
-					"custom_minimum_sizeY": 5
+					"internal_custom_minimum_sizeX": 50,
+					"internal_custom_minimum_sizeY": 50
 				},
 				{
 					"type": "texturebutton",
 					"ID": "PLUS_THREE",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"ignore_texture_size": true,
-					"stretch_mode": 2,
-					"custom_minimum_sizeX": 5,
-					"custom_minimum_sizeY": 5
+					"internal_custom_minimum_sizeX": 50,
+					"internal_custom_minimum_sizeY": 50
 				},
 				{
 					"type": "texturebutton",
 					"ID": "CONNECT_CORTICAL",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/connect.png",
-					"ignore_texture_size": true,
-					"stretch_mode": 2,
-					"custom_minimum_sizeX": 5,
-					"custom_minimum_sizeY": 5
+					"internal_custom_minimum_sizeX": 50,
+					"internal_custom_minimum_sizeY": 50
 				}
 			]
 		},
@@ -130,19 +122,15 @@
 					"type": "texturebutton",
 					"ID": "PLUS_TWO",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"ignore_texture_size": true,
-					"stretch_mode": 2,
-					"custom_minimum_sizeX": 50,
-					"custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 50,
+					"internal_custom_minimum_sizeY": 50
 				},
 				{
 					"type": "texturebutton",
 					"ID": "TESTEST",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/setting.png",
-					"ignore_texture_size": true,
-					"stretch_mode": 2,
-					"custom_minimum_sizeX": 5,
-					"custom_minimum_sizeY": 5
+					"internal_custom_minimum_sizeX": 50,
+					"internal_custom_minimum_sizeY": 50
 				}
 			]
 		}
