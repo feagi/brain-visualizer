@@ -25,7 +25,6 @@ var UI_MappingDefinition : Newnit_Box
 var UI_CircuitImport : Newnit_Box
 var UI_GraphCore: GraphCore
 var UI_CreateMorphology: Newnit_Box
-var UI_TEST: Newnit_Box
 var UI_INDICATOR: Newnit_Box
 var cache: FeagiCache
 var vectors_holder = []
@@ -56,11 +55,6 @@ func Activate(langISO: String):
 	test_json_conv.parse(filess.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	filess.close()
-	var test_dict = HelperFuncs.GenerateDefinedUnitDict("TEST", currentLanguageISO)
-	UI_TEST = Newnit_Box.new()
-	add_child(UI_TEST)
-	UI_TEST.Activate(test_dict)
-	UI_TEST.DataUp.connect(TopBarInput)
 	
 #	SpawnIndicator(createindicator)
 #	SpawnNeuronManager()
@@ -252,14 +246,14 @@ func RelayDownwards(callType, data) -> void:
 #		REF.FROM.pns_current_opu:
 #			pass
 		REF.FROM.genome_corticalAreaIdList:
-			if UI_Top_TopBar:
-				UI_Top_TopBar.SetData({"CORTICALAREAS": {"options":data}})
+#			if UI_Top_TopBar:
+#				UI_Top_TopBar.SetData({"Corticalareas_Box": {"CORTICALAREAS": {"options":data}}})
 			if UI_MappingDefinition:
 				UI_MappingDefinition.SetData({"testlabel": {"SOURCECORTICALAREA":{"options": data, "value": src_global}}})
 				UI_MappingDefinition.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"options": data, "value": dst_global}}})
 		REF.FROM.genome_morphologyList:
 			if UI_Top_TopBar:
-				UI_Top_TopBar.SetData({"NEURONMORPHOLOGIES": {"options":data}})
+				UI_Top_TopBar.SetData({"NEURONMORPHOLOGIESBOX": {"NEURONMORPHOLOGIES": {"options":data}}})
 			if UI_MappingDefinition != null:
 				UI_MappingDefinition.SetData({"third_box": {"mappingdefinitions": {"options": data}}})
 				var original_dropdown = UI_MappingDefinition.get_node("box_third_box").get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions")
@@ -321,7 +315,7 @@ func RelayDownwards(callType, data) -> void:
 			UI_LeftBar.SetData(cortical_properties)
 			$"..".Update_Afferent_list(data["cortical_id"])
 		REF.FROM.burstEngine:
-			UI_Top_TopBar.SetData({"REFRESHRATE": {"value": 1/data}})
+			UI_Top_TopBar.SetData({"REFRESHBOX": {"REFRESHRATE": {"value": 1/data}}})
 	pass
 
 
