@@ -78,9 +78,9 @@ func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar.Activate(activation)
 	UI_Top_TopBar.DataUp.connect(TopBarInput)
 	# TODO best not to connect to Element children, better to connect to element signals itself
-	# This may work for now but can cause weird issues later
-	#var import_circuit = UI_Top_TopBar.GetReferenceByID("NEURONAL_CIRCUITS_HEADER").get_node("sideButton_NEURONAL_CIRCUITS_HEADER")
-	#import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
+	# https://media.tenor.com/pb0kIF-blqsAAAAC/minion-typing.gif
+	var import_circuit = UI_Top_TopBar.GetReferenceByID("IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON").get_node("textureButton_IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON")
+	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
 ####################################
@@ -127,25 +127,6 @@ func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
 #					SpawnCorticalCreate()
 #				else:
 #					UI_CreateCorticalBar.queue_free()
-#		"NEURONMORPHOLOGIES":
-#			if "selectedIndex" in data.keys():
-#				if UI_ManageNeuronMorphology != null:
-#					UI_ManageNeuronMorphology.queue_free()
-#				var rule_name = UI_Top_TopBar.GetReferenceByID("NEURONMORPHOLOGIES").get_node("dropDown_NEURONMORPHOLOGIES").text
-#				if rule_name != " ":
-#					if "+" in rule_name:
-#						rule_name = rule_name.replace("+", "%2B")
-#					if "[" in rule_name:
-#						rule_name = rule_name.replace("[", "%5B")
-#					if "]" in rule_name:
-#						rule_name = rule_name.replace("]", "%5D")
-#					if ", " in rule_name:
-#						rule_name = rule_name.replace(", ", "%2C%20")
-#					$"..".Get_Morphology_information(rule_name)
-#					$"..".GET_USUAGE_MORPHOLOGY(rule_name)
-#				SpawnNeuronManager()
-#				UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
-
 
 
 
