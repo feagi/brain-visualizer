@@ -422,13 +422,13 @@ func _on_information_button_request_completed(_result, _response_code, _headers,
 	if _response_code == 200 and not api_data.has("Request failed..."):
 		var new_name = ""
 		var UI_LeftBar = $"..".UI_LeftBar
+		const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+		var morphologyScroll: Newnit_Scroll = UI_LeftBar.GetReferenceByID("efferent_list")
 		for i in api_data:
-			var new_node = UI_LeftBar.GetReferenceByID("blank_efferent").get_node("button_blank_efferent").duplicate()
-			UI_LeftBar.GetReferenceByID("blank_efferent").add_child(new_node)
-			child_node_holder.append(new_node)
-			new_name = id_to_name(i)
-			new_node.text = new_name
+			var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": id_to_name(i)})
+			var new_node = spawnedItem.get_node("button_morphologyOption")
 			new_node.connect("pressed",Callable($"..","mapping_definition_button").bind(new_node))
+			
 #		map_colorful()
 	#	$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 10 + $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.size.y + $".."/".."/".."/Menu/cortical_mapping.position.y
 	else:
