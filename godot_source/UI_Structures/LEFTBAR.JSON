@@ -180,8 +180,16 @@
 			   "sideButtonText":"+"
 			},
 			{
-			   "type":"button",
-			   "ID":"blank_efferent"
+				"ID": "efferent_list",
+				"type": "scrollbar",
+				"custom_minimum_sizeX": 199,
+				"custom_minimum_sizeY": 399,
+				"vertical": true,
+				"childBaseID": "Morphology",
+				"titleBarText": "Morphology",
+				"components": [
+
+					]
 			}
 		 ],
 		 "vertical":true
