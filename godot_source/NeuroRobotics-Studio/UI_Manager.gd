@@ -117,7 +117,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 			var morphologyOptions: Array = cache.genome_corticalAreaIDList
 			var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
 			for i in morphologyOptions:
-				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": $Brain_Visualizer.id_to_name(i)})
 				spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
@@ -161,7 +161,7 @@ func LeftBarInput(data: Dictionary, _compRef, _unitRef):
 #			_sideBarChangedValues["cortical_id"] = UI_LeftBar.data["CorticalName"]
 			$"..".Update_Genome_CorticalArea(_sideBarChangedValues)
 			_sideBarChangedValues = {} # reset
-		_:
+		_: # ????
 			# Check if this is a neuron property, if so cache change for Update
 			if _isNeuronProperty(data["ID"]):
 				_sideBarChangedValues[data["ID"]] = data["value"]
@@ -510,7 +510,7 @@ func arrow_name_updater(_data: Dictionary, _originatingID: StringName, originati
 	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = originatingRef.text
 	UI_morphologyLIST.queue_free()
 func camera_focus(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
-	$Brain_Visualizer.camera_list_selected(originatingRef.text)
+	$Brain_Visualizer.camera_list_selected($Brain_Visualizer.name_to_id(originatingRef.text))
 	UI_CORTICALLIST.queue_free()
 
 func SpawnQuickConnect():
