@@ -130,8 +130,8 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 		"MANAGE_NEURON_MORPHOLOGIES": 
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
 
-
 func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
+
 	match(ElementID):
 		"MorphologyType":
 		#Drop down is changed, toggle between available morphology wizards
@@ -150,6 +150,7 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Nod
 				$Brain_Visualizer.new_morphology_clear()
 				composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
 				morphology_creation_add_button.emit_signal("pressed")
+
 ######### Side Bar Control #########
 
 func LeftBarInput(data: Dictionary, _compRef, _unitRef):
@@ -242,6 +243,7 @@ func GraphEditInput(data: Dictionary):
 func WindowSizedChanged():
 	var viewPortSize: Vector2 = get_viewport_rect().size
 	UI_GraphCore.size = viewPortSize
+
 
 ####################################
 ###### Relay Feagi Dependents ######

@@ -18,6 +18,10 @@ var editable: bool:
 	get: return _LineEditFF.editable
 	set(v): _LineEditFF.editable = v
 
+var tooltipText: String:
+	get: return _LineEditFF.tooltip_text
+	set(v): _LineEditFF.tooltip_text = v
+
 var _LineEditFF: LineEdit_ff_Sub
 
 func _ActivationSecondary(settings: Dictionary) -> void:
@@ -37,3 +41,6 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(newFloat) -> void:
 	DataUp.emit({"value": newFloat}, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_LineEditFF.tooltip_text = toolTip
