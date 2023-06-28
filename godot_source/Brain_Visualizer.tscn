@@ -321,7 +321,7 @@ layout_mode = 0
 offset_left = 8.0
 offset_top = 8.0
 offset_right = 28.0
-offset_bottom = 77.0
+offset_bottom = 59.0
 tooltip_text = "burst_engine"
 color = Color(0, 0, 0, 1)
 
@@ -330,25 +330,27 @@ layout_mode = 0
 offset_left = 32.0
 offset_top = 8.0
 offset_right = 52.0
-offset_bottom = 77.0
+offset_bottom = 59.0
 tooltip_text = "genome_availability"
+color = Color(0, 0, 0, 1)
 
 [node name="ColorRect3" type="ColorRect" parent="color_indicator"]
 layout_mode = 0
 offset_left = 56.0
 offset_top = 8.0
 offset_right = 76.0
-offset_bottom = 77.0
+offset_bottom = 59.0
 tooltip_text = "genome_validity"
+color = Color(0, 0, 0, 1)
 
 [node name="ColorRect4" type="ColorRect" parent="color_indicator"]
 layout_mode = 0
 offset_left = 80.0
 offset_top = 8.0
 offset_right = 100.0
-offset_bottom = 77.0
+offset_bottom = 59.0
 tooltip_text = "brain_readiness"
-color = Color(0, 0.713726, 0, 1)
+color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="Button" to="." method="_on_button_pressed"]
 [connection signal="pressed" from="animation_button" to="animation_button" method="_on_pressed"]
