@@ -390,8 +390,10 @@
 								"sideLabelText": "Description: "
 							},
 							{
-								"type": "field",
-								"ID": "FIELDFORDESCRIPTION"
+								"type": "textbox",
+								"ID": "FIELDFORDESCRIPTION",
+								"custom_minimum_sizeX": 400,
+								"custom_minimum_sizeY": 100
 							}
 						]
 					}]
