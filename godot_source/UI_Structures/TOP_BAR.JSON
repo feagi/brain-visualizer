@@ -41,8 +41,8 @@
 					"type": "texturebutton",
 					"ID": "IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 30,
+					"internal_custom_minimum_sizeY": 30
 				}
 			]
 		},
@@ -69,22 +69,22 @@
 					"type": "texturebutton",
 					"ID": "LIST_CORTICAL_AREAS_TEXTURE_BUTTON",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/eye.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 30,
+					"internal_custom_minimum_sizeY": 30
 				},
 				{
 					"type": "texturebutton",
 					"ID": "CREATE_CORTICAL_AREA_TEXTURE_BUTTON",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 30,
+					"internal_custom_minimum_sizeY": 30
 				},
 				{
 					"type": "texturebutton",
 					"ID": "QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/connect.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 30,
+					"internal_custom_minimum_sizeY": 30
 				}
 			]
 		},
@@ -110,15 +110,15 @@
 					"type": "texturebutton",
 					"ID": "CREATE_NEURON_MORPHOLOGY_TEXTURE_BOX",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/plus.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 30,
+					"internal_custom_minimum_sizeY": 30
 				},
 				{
 					"type": "texturebutton",
 					"ID": "MANAGE_NEURON_MORPHOLOGIES",
 					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/setting.png",
-					"internal_custom_minimum_sizeX": 50,
-					"internal_custom_minimum_sizeY": 50
+					"internal_custom_minimum_sizeX": 30,
+					"internal_custom_minimum_sizeY": 30
 				}
 			]
 		}
