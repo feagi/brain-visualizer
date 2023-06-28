@@ -105,19 +105,20 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 		
 		# CORTICAL_AREAS_BOX
 		"LIST_CORTICAL_AREAS_TEXTURE_BUTTON":
-			UI_CORTICALLIST = Newnit_Popup.new()
-			var corticallistDICT = HelperFuncs.GenerateDefinedUnitDict("CORTICALLISTONLY", currentLanguageISO)
-			add_child(UI_CORTICALLIST)
-			UI_CORTICALLIST.Activate(corticallistDICT)
-			UI_holders.append(UI_CORTICALLIST)
+			if not UI_CORTICALLIST:
+				UI_CORTICALLIST = Newnit_Popup.new()
+				var corticallistDICT = HelperFuncs.GenerateDefinedUnitDict("CORTICALLISTONLY", currentLanguageISO)
+				add_child(UI_CORTICALLIST)
+				UI_CORTICALLIST.Activate(corticallistDICT)
+				UI_holders.append(UI_CORTICALLIST)
 			
-			# Copy n paste cus no reason to do extra work
-			const ButtonItem := { "type": "button", "ID": "morphologyOption"}
-			var morphologyOptions: Array = cache.genome_corticalAreaIDList
-			var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
-			for i in morphologyOptions:
-				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": $Brain_Visualizer.id_to_name(i)})
-				spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
+				# Copy n paste cus no reason to do extra work
+				const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+				var morphologyOptions: Array = cache.genome_corticalAreaIDList
+				var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
+				for i in morphologyOptions:
+					var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": $Brain_Visualizer.id_to_name(i)})
+					spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
 		"QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON":
