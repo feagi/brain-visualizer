@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://c0650xa4eujml" path="res://circuit_build/Main.tscn" id="2_l206u"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Button_to_Autoload.gd" id="2_t7fr6"]
 [ext_resource type="Script" path="res://brain_visualizer_source/box_loading.gd" id="10_uh1ag"]
-[ext_resource type="FontFile" uid="uid://bdljrwtul42nf" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
+[ext_resource type="FontFile" uid="uid://cdxmoen7qfd4y" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
 [ext_resource type="Script" path="res://Official_world_scripts/scene_transition.gd" id="31_pws3t"]
 [ext_resource type="Script" path="res://NeuroRobotics-Studio/Core.gd" id="31_vv2v0"]
 [ext_resource type="PackedScene" uid="uid://c7v5wwar1gqjo" path="res://NeuroRobotics-Studio/UI_Manager.tscn" id="32_fbal3"]
@@ -321,7 +321,7 @@ layout_mode = 0
 offset_left = 8.0
 offset_top = 8.0
 offset_right = 28.0
-offset_bottom = 56.0
+offset_bottom = 77.0
 tooltip_text = "burst_engine"
 color = Color(0, 0, 0, 1)
 
@@ -330,7 +330,7 @@ layout_mode = 0
 offset_left = 32.0
 offset_top = 8.0
 offset_right = 52.0
-offset_bottom = 56.0
+offset_bottom = 77.0
 tooltip_text = "genome_availability"
 
 [node name="ColorRect3" type="ColorRect" parent="color_indicator"]
@@ -338,7 +338,7 @@ layout_mode = 0
 offset_left = 56.0
 offset_top = 8.0
 offset_right = 76.0
-offset_bottom = 56.0
+offset_bottom = 77.0
 tooltip_text = "genome_validity"
 
 [node name="ColorRect4" type="ColorRect" parent="color_indicator"]
@@ -346,7 +346,7 @@ layout_mode = 0
 offset_left = 80.0
 offset_top = 8.0
 offset_right = 100.0
-offset_bottom = 56.0
+offset_bottom = 77.0
 tooltip_text = "brain_readiness"
 color = Color(0, 0.713726, 0, 1)
 
