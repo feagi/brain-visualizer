@@ -4,6 +4,7 @@
 	"positionY": 400,
 	"type": "box",
 	"enableCloseButton": true,
+	"titleBarText": "Mapping Definition",
 	"enablePanel": true,
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"components": [{
