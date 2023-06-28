@@ -2,7 +2,7 @@
 	"ID": "TOP_BAR",
 	"vertical": false,
 	"type": "box",
-	"positionX": 120,
+	"positionX": 110,
 	"positionY": 8,
 	"enablePanel": true,
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],

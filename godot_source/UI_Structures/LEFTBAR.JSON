@@ -1,7 +1,7 @@
 {
 	"ID": "LEFTBAR",
 	"positionX": 0,
-	"positionY": 70,
+	"positionY": 80,
 	"type": "popup",
 	"titleBarText": "Cortical Properties",
 	"widthAlignment": 1,
