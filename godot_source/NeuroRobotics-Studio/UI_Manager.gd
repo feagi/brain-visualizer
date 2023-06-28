@@ -503,6 +503,8 @@ func SpawnNeuronManager():
 
 func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	var rule_name = originatingRef.text
+	var path_string = "res://brain_visualizer_source/menu_assets/image/" + str(rule_name) + ".png"
+	UI_ManageNeuronMorphology.SetData({"box_one": {"MISCMORPRHOLOGYLIST": {"MORPHOLOGY_PICTURE": {"default_texture_path": path_string}}}})
 	if rule_name != " ":
 		if "+" in rule_name:
 			rule_name = rule_name.replace("+", "%2B")
