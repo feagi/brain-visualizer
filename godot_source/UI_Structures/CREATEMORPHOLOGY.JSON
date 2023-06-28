@@ -9,6 +9,7 @@
 	"widthAlignment": 1,
 	"positionX": 1370,
 	"positionY": 200,
+	"custom_minimum_sizeX": 400,
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"components": [{
 			"type": "field",
