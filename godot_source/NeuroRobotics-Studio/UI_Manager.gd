@@ -218,6 +218,7 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Nod
 			$Brain_Visualizer.quick_connect_to_feagi(src, morphology_name, dest)
 
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID, " ref: ", _ElementRef)
 	match(ElementID):
 		"CORTICALAREA":
 			if data["selectedIndex"] == 1:
@@ -234,6 +235,8 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+		"POPUP_TOPBAR":
+			$Brain_Visualizer._clear_single_cortical("example", Godot_list.godot_list)
 
 ############ Graph Edit ############
 

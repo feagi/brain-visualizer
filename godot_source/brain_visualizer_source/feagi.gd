@@ -885,8 +885,8 @@ func _on_insert_button_pressed(full_data):
 	var combine_url = $"../..".SEC + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/genome/append?circuit_name=' + full_data[0].get_item_text(full_data[0].selected) + "&circuit_origin_x=" + str(full_data[1].value) + "&circuit_origin_y=" + str(full_data[2].value) + "&circuit_origin_z=" + str(full_data[3].value)
 	var new_data = ["placeholder"]
 	Autoload_variable.BV_Core.POST_Request_Brain_visualizer(combine_url, new_data)
-#	$"..".import_close_button.emit_signal("pressed") # what happen to this?
 	$"..".UI_CircuitImport.queue_free()
+	_clear_single_cortical("example", Godot_list.godot_list)
 
 func _on_import_pressed():
 	if not $"..".UI_CircuitImport:
@@ -895,7 +895,6 @@ func _on_import_pressed():
 		$"..".SpawnCircuitImport(create_circuitimport)
 	else:
 		$"..".UI_CircuitImport.queue_free()
-		print("Godot list: ", Godot_list.godot_list)
 		_clear_single_cortical("example", Godot_list.godot_list)
 
 func _on_ItemList_item_selected(index, node):
