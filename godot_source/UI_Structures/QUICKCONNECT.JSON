@@ -1,7 +1,7 @@
 {
 	"ID": "QUICKCONNECT",
-	"positionX": 450,
-	"positionY": 600,
+	"positionX": 780,
+	"positionY": 470,
 	"type": "popup",
 	"titleBarText": "QUICKCONNECT",
 	"enablePanel": true,

@@ -1,7 +1,7 @@
 {
 	"ID": "MORPHOLOGYLISTONLY",
-	"positionX": 850,
-	"positionY": 600,
+	"positionX": 1170,
+	"positionY": 450,
 	"type": "popup",
 	"titleBarText": "Pick a Morphology",
 	"enablePanel": true,

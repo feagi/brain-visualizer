@@ -1,19 +1,17 @@
 {
 	"ID": "MANAGE_NEURON_MORPHOLOGY",
-	"positionX": 700,
-	"positionY": 100,
+	"positionX": 400,
+	"positionY": 80,
 	"widthAlignment": 1,
 	"enablePanel": true,
 	"titleBarText": "Manage Neuron Morphology",
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"type": "box",
-	"components": [
-		{
+	"components": [{
 			"ID": "box_one",
 			"type": "box",
 			"vertical": false,
-			"components": [
-				{
+			"components": [{
 					"ID": "morphology_list",
 					"type": "scrollbar",
 					"custom_minimum_sizeX": 199,
@@ -370,22 +368,36 @@
 					"type": "box",
 					"vertical": false,
 					"titleBarText": "Morphology",
-					"components": [
-						{
+					"components": [{
 						"ID": "CURRENTUSUAGE",
 						"type": "box",
 						"vertical": true,
-						"components": [{
-								"type": "header",
-								"ID": "CURRENTINFO",
-								"sideLabelText": "Current Usuage: "
-							},
+						"components": [
+									{
+										"type": "header",
+										"ID": "CURRENTINFO",
+										"sideLabelText": "Current Usuage: "
+									},
 							{
-								"type": "textbox",
-								"ID": "FIELDFORCURRENTINFO",
-								"editable": false,
-								"custom_minimum_sizeX": 400,
-								"custom_minimum_sizeY": 100
+								"ID": "PICBOX",
+								"type": "box",
+								"vertical": false,
+								"components": [
+									{
+										"type": "textbox",
+										"ID": "FIELDFORCURRENTINFO",
+										"editable": false,
+										"custom_minimum_sizeX": 400,
+										"custom_minimum_sizeY": 100
+									},
+									{
+										"type": "texturebutton",
+										"ID": "MORPHOLOGY_PICTURE",
+										"default_texture_path": "res://brain_visualizer_source/menu_assets/image/block_to_block.png",
+										"internal_custom_minimum_sizeX": 200,
+										"internal_custom_minimum_sizeY": 200
+									}
+								]
 							},
 							{
 								"type": "header",
@@ -399,15 +411,7 @@
 								"custom_minimum_sizeY": 100
 							}
 						]
-					},
-						{
-							"type": "texturebutton",
-							"ID": "MORPHOLOGY_PICTURE",
-							"default_texture_path": "res://brain_visualizer_source/menu_assets/image/block_to_block.png",
-							"internal_custom_minimum_sizeX": 300,
-							"internal_custom_minimum_sizeY": 300
-						}
-					]
+					}]
 				}
 			]
 		},

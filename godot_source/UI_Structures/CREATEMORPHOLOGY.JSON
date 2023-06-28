@@ -7,7 +7,7 @@
 	"vertical": true,
 	"enablePanel": true,
 	"widthAlignment": 1,
-	"positionX": 400,
+	"positionX": 1370,
 	"positionY": 200,
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"components": [{
