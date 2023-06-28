@@ -61,7 +61,6 @@ func Activate(langISO: String):
 	test_json_conv.parse(files.get_as_text())
 	global_json_data = test_json_conv.get_data()
 	files.close()
-	SpawnQuickConnect()
 
 	# Initialize GraphCore
 	UI_GraphCore = $graphCore #TODO: this is very temporary
@@ -122,7 +121,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
 		"QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON":
-			pass
+			if not UI_QUICKCONNECT: SpawnQuickConnect()
 		
 		# NEURON_MORPHOLOGIES_BOX
 		"CREATE_NEURON_MORPHOLOGY_TEXTURE_BOX":
@@ -186,7 +185,6 @@ func _isNeuronProperty(ID: String) -> bool:
 	
 func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
-	
 	match(ElementID):
 		"SRC_CORTICAL":
 			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
@@ -200,16 +198,23 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Nod
 			add_child(UI_morphologyLIST)
 			UI_morphologyLIST.Activate(morphologylistDICT)
 			UI_holders.append(UI_morphologyLIST)
-			const ButtonItem := { "type": "texturebutton", "ID": "morphologyOption"}
-			var morphologyOptions: Array = ["block_to_block.png"]
+			const ButtonItem := { "type": "texturebutton", 
+				"ID": "morphologyOption",
+				"internal_custom_minimum_size": Vector2(200,200)}
+			var morphologyOptions: Array = ["block_to_block", "all_to_all", "Latheral+X", "Latteral+Y", "Latteral-Y"]
 			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
 			for i in morphologyOptions:
-				print("i: ", i)
-				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"default_texture_path": "res://brain_visualizer_source/menu_assets/image/" + str(i), "internal_custom_minimum_sizeX": 50,"internal_custom_minimum_sizeY": 50})
-				spawnedItem.connect("DataUp", Callable(self,"arrow_name_updater"))
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem)
+				spawnedItem.get_node("textureButton_morphologyOption").connect("pressed", Callable(self, "arrow_name_updater").bind(i))
+				spawnedItem.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(i) + ".png")
 		"DESTINATION":
 			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 			button.text = "Click any cortical"
+		"CONNECT":
+			var src = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL").text
+			var morphology_name = UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text
+			var dest = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION").text
+			$Brain_Visualizer.quick_connect_to_feagi(src, morphology_name, dest)
 
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	match(ElementID):
@@ -376,7 +381,6 @@ func SpawnLeftBar(cortexName: String, activation: Dictionary):
 	update1.connect("pressed", Callable($Brain_Visualizer,"_on_Update_pressed").bind(UI_LeftBar))
 	add_row_button.connect("pressed", Callable($Brain_Visualizer,"_on_cortical_mapping_add_pressed").bind(cortexName))
 
-
 func mapping_definition_button(node):
 	var src_id = UI_LeftBar.GetReferenceByID("CorticalName").get_node("sideLabel_CorticalName").text
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
@@ -508,8 +512,8 @@ func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: 
 		$"..".GET_USUAGE_MORPHOLOGY(rule_name)
 		UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
-func arrow_name_updater(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
-	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = originatingRef.text
+func arrow_name_updater(data):
+	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = data
 	UI_morphologyLIST.queue_free()
 func camera_focus(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	$Brain_Visualizer.camera_list_selected($Brain_Visualizer.name_to_id(originatingRef.text))
