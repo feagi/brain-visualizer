@@ -201,7 +201,7 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Nod
 			const ButtonItem := { "type": "texturebutton", 
 				"ID": "morphologyOption",
 				"internal_custom_minimum_size": Vector2(200,200)}
-			var morphologyOptions: Array = ["block_to_block", "all_to_all", "Latheral+X", "Latteral+Y", "Latteral-Y"]
+			var morphologyOptions: Array = ["block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
 			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
 			for i in morphologyOptions:
 				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem)
