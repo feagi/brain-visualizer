@@ -131,7 +131,6 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
 
 func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
-
 	match(ElementID):
 		"MorphologyType":
 		#Drop down is changed, toggle between available morphology wizards
@@ -185,7 +184,6 @@ func _isNeuronProperty(ID: String) -> bool:
 	return false
 	
 func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Node):
-	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
 		"SRC_CORTICAL":
 			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
@@ -218,23 +216,56 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Nod
 			$Brain_Visualizer.quick_connect_to_feagi(src, morphology_name, dest)
 
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
-	print("data: ", data, "elementid: ", ElementID, " ref: ", _ElementRef)
+	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
+		"CORTICALAREAFIELD":
+				var box = UI_CreateCorticalBar.GetReferenceByID("XYZ")
+				var boxx = UI_CreateCorticalBar.GetReferenceByID("WHD")
+				var update = UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
+				if data["value"] == "":
+					if box.visible:
+						update.disabled = true
+						box.visible = false
+				else:
+					if not box.visible:
+						update.disabled = false
+						box.visible = true
+				if data["value"] == "":
+					if boxx.visible:
+						boxx.visible = false
+				else:
+					if not boxx.visible:
+						boxx.visible = true
 		"CORTICALAREA":
 			if data["selectedIndex"] == 1:
+				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
 				$"..".GET_OPU('OPU')
 			elif data["selectedIndex"] == 2:
+				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
 				$"..".GET_IPU('IPU')
 			elif data["selectedIndex"] == 3:
+				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
+			else:
+				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
 		"POPUP_TOPBAR":
 			$Brain_Visualizer._clear_single_cortical("example", Godot_list.godot_list)
 
@@ -422,6 +453,12 @@ func SpawnCorticalCreate():
 	UI_CreateCorticalBar.DataUp.connect(CorticalCreateInput)
 	UI_holders.append(UI_CreateCorticalBar)
 	UI_CreateCorticalBar.SetData({"CORTICALAREA": {"options": (global_json_data["option"])}})
+	UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
 	var update = UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
 	var whd = UI_CreateCorticalBar.GetReferenceByID("WHD")
 	var xyz = UI_CreateCorticalBar.GetReferenceByID("XYZ")
