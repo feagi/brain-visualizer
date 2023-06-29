@@ -64,11 +64,6 @@ func GetReferenceByID(searchID: StringName): # returns either a bool or a Node
 			return result
 	return false
 
-func UpdatePosition(newPosition: Vector2) -> void:
-	if panelRef != null: _panelRef.position = newPosition; return
-	if marginRef != null: _marginRef.position = newPosition; return
-	else: position = newPosition
-
 func UpdateMargins(TopRightBottomLeftMargins: Array) -> void:
 	NEWNIT_CORE.Func_UpdateMargin(self, TopRightBottomLeftMargins)
 
@@ -79,8 +74,8 @@ func _ResizePanel() -> void:
 		return
 	_panelRef.size = size
 
-func _get_drag_data(at_position: Vector2):
-	if draggable: UpdatePosition(at_position)
+#func _get_drag_data(at_position: Vector2):
+#	if draggable: UpdatePosition(at_position)
 
 func _notification(what):
 	if (what == NOTIFICATION_PREDELETE):
