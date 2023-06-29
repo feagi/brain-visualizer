@@ -107,6 +107,13 @@ var sideLabelText: String:
 		if(!_has_label): return
 		_sideLabelText = v
 		_sideLabel.text = v
+var sideLabelTextCentering: int:
+	get:
+		if !_has_label: return -1
+		return _sideLabel.horizontal_alignment
+	set(v):
+		if !_has_label: return
+		_sideLabel.horizontal_alignment = v
 var sideButtonText: String:
 	get: return _sideButtonText
 	set(v):
@@ -146,7 +153,8 @@ const settableProperties := {
 	"sideButtonText": TYPE_STRING,
 	"sideButtonEditable": TYPE_BOOL,
 	"toolTipText": TYPE_STRING,
-	"expand": TYPE_BOOL}
+	"expand": TYPE_BOOL,
+	"sideLabelTextCentering": TYPE_INT}
 
 # Base Element Activation
 func _ActivationPrimary(settings: Dictionary) -> void:
@@ -175,6 +183,8 @@ func _ActivationPrimary(settings: Dictionary) -> void:
 	
 	_ActivationSecondary(settings)
 	toolTipText = HelperFuncs.GetIfCan(settings, "toolTipText", D_toolTipText)
+	if "sideLabelTextCentering" in settings.keys():
+		sideLabelTextCentering = settings["sideLabelTextCentering"]
 
 
 func _SpawnSubElements(componentTypes: Array) -> void:
