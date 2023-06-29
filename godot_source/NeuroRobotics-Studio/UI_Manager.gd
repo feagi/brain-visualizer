@@ -183,7 +183,7 @@ func _isNeuronProperty(ID: String) -> bool:
 	if ID == "DegeneracyConstant": return true
 	return false
 	
-func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Node):
+func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	match(ElementID):
 		"SRC_CORTICAL":
 			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
@@ -219,6 +219,8 @@ func QuickConnectINPUT(data: Dictionary, ElementID: StringName, _ElementRef: Nod
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
+		"UpdateButton":
+			UI_CreateCorticalBar.queue_free()
 		"CORTICALAREAFIELD":
 				var box = UI_CreateCorticalBar.GetReferenceByID("XYZ")
 				var boxx = UI_CreateCorticalBar.GetReferenceByID("WHD")
