@@ -947,21 +947,21 @@ func _on_get_morphology_usuage_request_completed(_result, _response_code, _heade
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_morphology_usuage_request_completed", "/v1/feagi/genome/morphology")
 
 func _morphology_button_pressed(node):
-	var dropdown_selected = node.get_node("dropdown_MorphologyType").get_node("dropDown_MorphologyType").text
-	if dropdown_selected == "Patterns":
-		var new_node = node.GetReferenceByID("Patterns").get_node("box_PatternRow0").duplicate()
-		node.GetReferenceByID("Patterns").add_child(new_node)
-		new_morphology_node.append(new_node)
-		new_node.visible = true
-		new_node.get_node("button_RemoveSelfRowButton").get_node("button_RemoveSelfRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
-	elif dropdown_selected == "Vectors":
-		var new_node = node.GetReferenceByID("Vectors").get_node("box_XYZ").duplicate()
-		new_morphology_node.append(new_node)
-		new_node.visible = true
-		node.GetReferenceByID("Vectors").add_child(new_node)
-		new_node.visible = true
-		new_node.get_node("button_RemoveRowButton").get_node("button_RemoveRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
-
+#	var dropdown_selected = node.get_node("dropdown_MorphologyType").get_node("dropDown_MorphologyType").text
+#	if dropdown_selected == "Patterns":
+#		var new_node = node.GetReferenceByID("Patterns").get_node("box_PatternRow0").duplicate()
+#		node.GetReferenceByID("Patterns").add_child(new_node)
+#		new_morphology_node.append(new_node)
+#		new_node.visible = true
+#		new_node.get_node("button_RemoveSelfRowButton").get_node("button_RemoveSelfRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
+#	elif dropdown_selected == "Vectors":
+#		var new_node = node.GetReferenceByID("Vectors").get_node("box_XYZ").duplicate()
+#		new_morphology_node.append(new_node)
+#		new_node.visible = true
+#		node.GetReferenceByID("Vectors").add_child(new_node)
+#		new_node.visible = true
+#		new_node.get_node("button_RemoveRowButton").get_node("button_RemoveRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
+	pass
 
 func _morphology_add_row(dropdown, row_node, parent_node, button, create_button):
 		var counter = 0

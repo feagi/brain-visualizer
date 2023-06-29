@@ -131,12 +131,12 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
 
 func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
+	var composite = UI_CreateMorphology.GetReferenceByID("Composite")
+	var patterns = UI_CreateMorphology.GetReferenceByID("Patterns")
+	var vectors = UI_CreateMorphology.GetReferenceByID("Vectors")
 	match(ElementID):
 		"MorphologyType":
 		#Drop down is changed, toggle between available morphology wizards
-			var composite = UI_CreateMorphology.GetReferenceByID("Composite")
-			var patterns = UI_CreateMorphology.GetReferenceByID("Patterns")
-			var vectors = UI_CreateMorphology.GetReferenceByID("Vectors")
 			if data["selectedIndex"] == 0:
 				$Brain_Visualizer.new_morphology_clear()
 				composite.visible = true; patterns.visible = false; vectors.visible = false; morphology_creation_add_button.visible = false
@@ -149,6 +149,18 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Nod
 				$Brain_Visualizer.new_morphology_clear()
 				composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
 				morphology_creation_add_button.emit_signal("pressed")
+		"RCOMPOSITE":
+			$Brain_Visualizer.new_morphology_clear()
+			composite.visible = true; patterns.visible = false; vectors.visible = false; morphology_creation_add_button.visible = false
+			UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": optionbutton_holder}}}})
+		"RPATTERNS":
+			$Brain_Visualizer.new_morphology_clear()
+			morphology_creation_add_button.emit_signal("pressed")
+			composite.visible = false; patterns.visible = true; vectors.visible = false; morphology_creation_add_button.visible = true
+		"RVECTORS":
+			$Brain_Visualizer.new_morphology_clear()
+			composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
+			morphology_creation_add_button.emit_signal("pressed")
 
 ######### Side Bar Control #########
 
