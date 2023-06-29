@@ -44,3 +44,6 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(_data) -> void:
 	DataUp.emit({"value": true}, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_Button.tooltip_text = toolTip

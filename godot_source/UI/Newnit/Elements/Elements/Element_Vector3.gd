@@ -65,3 +65,8 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(_data) -> void: # The data from a single FF is irrelevant, send the whole vector
 	DataUp.emit({"value": vectorValue}, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_Labels[0].tooltip_text = toolTip
+	_Labels[1].tooltip_text = toolTip
+	_Labels[2].tooltip_text = toolTip

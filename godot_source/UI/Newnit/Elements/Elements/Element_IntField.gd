@@ -37,3 +37,6 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(newInt) -> void:
 	DataUp.emit({"value": newInt}, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_LineEditINT.tooltip_text = toolTip

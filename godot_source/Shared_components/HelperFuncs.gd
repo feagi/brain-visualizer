@@ -59,7 +59,7 @@ static func _BuildUnitActivation(struct: Dictionary, lang: Dictionary,
 		if givenComponent_struct["ID"] in data.keys():
 			givenComponent_data = data[givenComponent_struct["ID"]]
 		
-		if (givenComponent_struct["type"] == "tab") or (givenComponent_struct["type"] == "box") or (givenComponent_struct["type"] == "popup") or (givenComponent_struct["type"] == "collapsible"):
+		if (givenComponent_struct["type"] in ["tab", "box", "popup", "collapsible"]):
 			
 			# We are dealing with a subunit, time for recursion
 			# This is not particuarly efficient. Too Bad!
@@ -274,3 +274,6 @@ static func SpawnNewnitOfType(type: String) -> Node:
 			print("Invalid child of type ", type, " attempted to spawn. Skipping...")
 			return
 	return newChild
+
+static func ShortText(text: String, maxLength = 16) -> String:
+	return text.left(maxLength)

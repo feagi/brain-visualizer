@@ -1,18 +1,17 @@
 {
 	"ID": "MANAGE_NEURON_MORPHOLOGY",
-	"positionX": 700,
-	"positionY": 100,
+	"positionX": 400,
+	"positionY": 80,
 	"widthAlignment": 1,
 	"enablePanel": true,
-	"titleBarText":"Manage Neuron Morphology",
+	"titleBarText": "Manage Neuron Morphology",
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"type": "box",
-	"components": [
-		{
+	"components": [{
 			"ID": "box_one",
 			"type": "box",
 			"vertical": false,
-			"components": [
-				{
+			"components": [{
 					"ID": "morphology_list",
 					"type": "scrollbar",
 					"custom_minimum_sizeX": 199,
@@ -27,51 +26,43 @@
 					"ID": "box_three",
 					"type": "box",
 					"vertical": true,
-					"components": [
-						{
+					"components": [{
 							"ID": "box_of_title",
 							"type": "box",
 							"vertical": false,
-							"components": [
-								{
-									"type": "field",
-									"ID": "header_title",
-									"sideLabelText": "Title: "
-								}
-							]
+							"components": [{
+								"type": "field",
+								"ID": "header_title",
+								"sideLabelText": "Title: "
+							}]
 						},
 						{
 							"ID": "box_of_type",
 							"type": "box",
 							"vertical": false,
-							"components": [
-								{
-									"type": "field",
-									"ID": "header_type",
-									"sideLabelText": "Type: "
-								}
-							]
+							"components": [{
+								"type": "field",
+								"ID": "header_type",
+								"sideLabelText": "Type: "
+							}]
 						},
 						{
 							"ID": "box_of_definition",
 							"type": "box",
 							"vertical": false,
-							"components": [
-								{
-									"type": "header",
-									"ID": "header_definition",
-									"text": "Definition: ",
-									"sideButtonText": "+"
-								}
-							]
+							"components": [{
+								"type": "header",
+								"ID": "header_definition",
+								"text": "Definition: ",
+								"sideButtonText": "+"
+							}]
 						},
 						{
 							"type": "box",
 							"ID": "Composite",
 							"vertical": true,
 							"visibility": 0,
-							"components": [
-								{
+							"components": [{
 									"type": "header",
 									"ID": "Seed",
 									"sideLabelText": "Seed: "
@@ -81,8 +72,7 @@
 									"ID": "inner_composite",
 									"vertical": false,
 									"visibility": 0,
-									"components": [
-										{
+									"components": [{
 											"type": "floatfield",
 											"ID": "X_SEED",
 											"sideLabelText": "X"
@@ -108,13 +98,11 @@
 									"type": "box",
 									"ID": "XYZ_s1",
 									"vertical": false,
-									"components": [
-										{
+									"components": [{
 											"type": "box",
 											"ID": "XYZ_1",
 											"vertical": true,
-											"components": [
-												{
+											"components": [{
 													"type": "header",
 													"ID": "X_title",
 													"sideLabelText": "X:"
@@ -123,8 +111,7 @@
 													"type": "box",
 													"ID": "XYZ_X",
 													"vertical": true,
-													"components": [
-														{
+													"components": [{
 															"type": "counter",
 															"ID": "C1",
 															"sideLabelText": "C",
@@ -146,8 +133,7 @@
 											"type": "box",
 											"ID": "XYZ_Y",
 											"vertical": true,
-											"components": [
-												{
+											"components": [{
 													"type": "header",
 													"ID": "Y_title",
 													"sideLabelText": "Y:"
@@ -156,8 +142,7 @@
 													"type": "box",
 													"ID": "XYZ_2",
 													"vertical": true,
-													"components": [
-														{
+													"components": [{
 															"type": "counter",
 															"ID": "C2",
 															"sideLabelText": "C",
@@ -179,8 +164,7 @@
 											"type": "box",
 											"ID": "XYZ_Z",
 											"vertical": true,
-											"components": [
-												{
+											"components": [{
 													"type": "header",
 													"ID": "Z_title",
 													"sideLabelText": "Z:",
@@ -191,8 +175,7 @@
 													"type": "box",
 													"ID": "XYZ_3",
 													"vertical": true,
-													"components": [
-														{
+													"components": [{
 															"type": "counter",
 															"ID": "C3",
 															"sideLabelText": "C",
@@ -216,13 +199,11 @@
 									"type": "box",
 									"ID": "MAPPING_DROPDOWN",
 									"vertical": false,
-									"components": [
-										{
-											"type": "dropdown",
-											"ID": "MAPPINGDROPDOWN",
-											"sideLabelText": "Mapping: "
-										}
-									]
+									"components": [{
+										"type": "dropdown",
+										"ID": "MAPPINGDROPDOWN",
+										"sideLabelText": "Mapping: "
+									}]
 								}
 							]
 						},
@@ -231,8 +212,7 @@
 							"ID": "Patterns",
 							"vertical": true,
 							"visibility": 0,
-							"components": [
-								{
+							"components": [{
 									"type": "box",
 									"ID": "xyz_letters",
 									"vertical": false,
@@ -240,32 +220,47 @@
 										{
 											"type": "header",
 											"ID": "X1",
-											"sideLabelText": "X"
+											"sideLabelText": "     X"
+										},
+										{
+											"type": "header",
+											"ID": "SPACE1",
+											"sideLabelText": "			"
 										},
 										{
 											"type": "header",
 											"ID": "Y1",
-											"sideLabelText": "Y"
+											"sideLabelText": "         Y"
+										},
+										{
+											"type": "header",
+											"ID": "SPACE2",
+											"sideLabelText": "			    "
 										},
 										{
 											"type": "header",
 											"ID": "Z1",
-											"sideLabelText": "Z"
+											"sideLabelText": "         Z"
+										},
+										{
+											"type": "header",
+											"ID": "SPACE3",
+											"sideLabelText": "			    					"
 										},
 										{
 											"type": "header",
 											"ID": "X2",
-											"sideLabelText": "X"
+											"sideLabelText": "            X"
 										},
 										{
 											"type": "header",
 											"ID": "Y2",
-											"sideLabelText": "Y"
+											"sideLabelText": "            Y"
 										},
 										{
 											"type": "header",
 											"ID": "Z2",
-											"sideLabelText": "Z"
+											"sideLabelText": "            Z"
 										}
 									]
 								},
@@ -273,8 +268,7 @@
 									"type": "box",
 									"ID": "PatternRow0",
 									"vertical": false,
-									"components": [
-										{
+									"components": [{
 											"type": "floatfield",
 											"ID": "Xi",
 											"label": "X"
@@ -323,26 +317,24 @@
 							"ID": "Vectors",
 							"vertical": true,
 							"visibility": 0,
-							"components": [
-								{
+							"components": [{
 									"type": "box",
 									"ID": "xyz_letters",
 									"vertical": false,
-									"components": [
-										{
+									"components": [{
 											"type": "header",
 											"ID": "X1",
-											"sideLabelText": "X"
+											"sideLabelText": "    X"
 										},
 										{
 											"type": "header",
 											"ID": "Y1",
-											"sideLabelText": "Y"
+											"sideLabelText": "                 Y"
 										},
 										{
 											"type": "header",
 											"ID": "Z1",
-											"sideLabelText": "Z"
+											"sideLabelText": "                 Z"
 										}
 									]
 								},
@@ -350,41 +342,38 @@
 									"type": "box",
 									"ID": "parent_XYZ",
 									"vertical": true,
-									"components": [
-										{
-											"type": "box",
-											"ID": "XYZ",
-											"vertical": false,
-											"components": [
-												{
-													"type": "counter",
-													"ID": "X",
-													"max_value": 99999999,
-													"min_value": -99999999,
-													"label": "X"
-												},
-												{
-													"type": "counter",
-													"ID": "Y",
-													"max_value": 99999999,
-													"min_value": -99999999,
-													"label": "Y"
-												},
-												{
-													"type": "counter",
-													"ID": "Z",
-													"max_value": 99999999,
-													"min_value": -99999999,
-													"label": "Z"
-												},
-												{
-													"type": "button",
-													"ID": "RemoveRowButton",
-													"text": "-"
-												}
-											]
-										}
-									]
+									"components": [{
+										"type": "box",
+										"ID": "XYZ",
+										"vertical": false,
+										"components": [{
+												"type": "counter",
+												"ID": "X",
+												"max_value": 99999999,
+												"min_value": -99999999,
+												"label": "X"
+											},
+											{
+												"type": "counter",
+												"ID": "Y",
+												"max_value": 99999999,
+												"min_value": -99999999,
+												"label": "Y"
+											},
+											{
+												"type": "counter",
+												"ID": "Z",
+												"max_value": 99999999,
+												"min_value": -99999999,
+												"label": "Z"
+											},
+											{
+												"type": "button",
+												"ID": "RemoveRowButton",
+												"text": "-"
+											}
+										]
+									}]
 								}
 							]
 						}
@@ -395,36 +384,50 @@
 					"type": "box",
 					"vertical": false,
 					"titleBarText": "Morphology",
-					"components": [
-						{
-							"ID": "CURRENTUSUAGE",
-							"type": "box",
-							"vertical": true,
-							"components": [
-								{
-									"type": "header",
-									"ID": "CURRENTINFO",
-									"sideLabelText": "Current Usuage: "
-								},
-								{
-									"type": "textbox",
-									"ID": "FIELDFORCURRENTINFO",
-									"editable": false,
-									"custom_minimum_sizeX": 400,
-									"custom_minimum_sizeY": 100
-								},
-								{
-									"type": "header",
-									"ID": "DESCRIPTION",
-									"sideLabelText": "Description: "
-								},
-								{
-									"type": "field",
-									"ID": "FIELDFORDESCRIPTION"
-								}
-							]
-						}
-					]
+					"components": [{
+						"ID": "CURRENTUSUAGE",
+						"type": "box",
+						"vertical": true,
+						"components": [
+									{
+										"type": "header",
+										"ID": "CURRENTINFO",
+										"sideLabelText": "Current Usuage: "
+									},
+							{
+								"ID": "PICBOX",
+								"type": "box",
+								"vertical": false,
+								"components": [
+									{
+										"type": "textbox",
+										"ID": "FIELDFORCURRENTINFO",
+										"editable": false,
+										"custom_minimum_sizeX": 400,
+										"custom_minimum_sizeY": 100
+									},
+									{
+										"type": "texturebutton",
+										"ID": "MORPHOLOGY_PICTURE",
+										"default_texture_path": "res://brain_visualizer_source/menu_assets/image/block_to_block.png",
+										"internal_custom_minimum_sizeX": 200,
+										"internal_custom_minimum_sizeY": 200
+									}
+								]
+							},
+							{
+								"type": "header",
+								"ID": "DESCRIPTION",
+								"sideLabelText": "Description: "
+							},
+							{
+								"type": "textbox",
+								"ID": "FIELDFORDESCRIPTION",
+								"custom_minimum_sizeX": 400,
+								"custom_minimum_sizeY": 100
+							}
+						]
+					}]
 				}
 			]
 		},
@@ -432,14 +435,12 @@
 			"ID": "savedeletebox",
 			"type": "box",
 			"vertical": true,
-			"components": [
-				{
-					"type": "button",
-					"ID": "SAVEDELETE",
-					"text": "Save",
-					"sideButtonText": "Delete"
-				}
-			]
+			"components": [{
+				"type": "button",
+				"ID": "SAVEDELETE",
+				"text": "Save",
+				"sideButtonText": "Delete"
+			}]
 		}
 	]
 }

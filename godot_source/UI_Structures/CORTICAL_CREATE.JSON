@@ -1,13 +1,13 @@
 {
 	"ID": "CREATE_CORTICAL",
-	"positionX": 100,
-	"positionY": 400,
-	"type":"popup",
-	"titleBarTitle": "Add New Cortical Area",
-	"widthAlignment":1,
-   	"enablePanel": true,
-	"components": [
-		{
+	"positionX": 780,
+	"positionY": 600,
+	"type": "popup",
+	"titleBarText": "Add New Cortical Area",
+	"widthAlignment": 1,
+	"enablePanel": true,
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [{
 			"ID": "CORTICALAREA",
 			"type": "dropdown"
 		},
@@ -15,44 +15,37 @@
 			"type": "box",
 			"visibility": 2,
 			"ID": "corticalnametext",
-			"components": [
-				{
-					"type": "field",
-					"ID": "CORTICALAREAFIELD"
-				}
-			],
+			"components": [{
+				"type": "field",
+				"ID": "CORTICALAREAFIELD"
+			}],
 			"vertical": true
 		},
 		{
 			"type": "box",
 			"visibility": 0,
 			"ID": "corticalnamedrop",
-			"components": [
-				{
-					"type": "dropdown",
-					"ID": "CORTICALAREADROPDOWNINBOX"
-				}
-			],
+			"components": [{
+				"type": "dropdown",
+				"ID": "CORTICALAREADROPDOWNINBOX"
+			}],
 			"vertical": true
 		},
 		{
 			"type": "box",
 			"visibility": 0,
 			"ID": "OPUIPU",
-			"components": [
-				{
-					"type": "counter",
-					"ID": "CHANNELCOUNT"
-				}
-			],
+			"components": [{
+				"type": "counter",
+				"ID": "CHANNELCOUNT"
+			}],
 			"vertical": true
 		},
 		{
 			"type": "box",
 			"ID": "XYZ",
-		 	"visibility": 2,
-			"components": [
-				{
+			"visibility": 2,
+			"components": [{
 					"type": "counter",
 					"ID": "Pos_X",
 					"max_value": 99999999,
@@ -77,8 +70,7 @@
 			"type": "box",
 			"visibility": 2,
 			"ID": "WHD",
-			"components": [
-				{
+			"components": [{
 					"type": "counter",
 					"ID": "W",
 					"max_value": 99999999,
