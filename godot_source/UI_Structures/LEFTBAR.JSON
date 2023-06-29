@@ -32,18 +32,21 @@
 					"components": [{
 							"type": "counter",
 							"ID": "Pos_X",
+							"sideLabelText": "X",
 							"max_value": 99999999,
 							"min_value": -99999999
 						},
 						{
 							"type": "counter",
 							"ID": "Pos_Y",
+							"sideLabelText": "Y",
 							"max_value": 99999999,
 							"min_value": -99999999
 						},
 						{
 							"type": "counter",
 							"ID": "Pos_Z",
+							"sideLabelText": "Z",
 							"max_value": 99999999,
 							"min_value": -99999999
 						}

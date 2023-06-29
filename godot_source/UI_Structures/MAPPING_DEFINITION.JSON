@@ -6,6 +6,7 @@
 	"enableCloseButton": true,
 	"titleBarText": "Mapping Definition",
 	"enablePanel": true,
+	"custom_minimum_sizeX": 700,
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"components": [{
 			"type": "box",
@@ -43,7 +44,7 @@
 				{
 					"type": "header",
 					"ID": "PSPMULTIPLER",
-					"text": "PSP Multiplier Plasticity"
+					"text": "             PSP Multiplier Plasticity"
 				}
 			],
 			"vertical": false
@@ -65,7 +66,8 @@
 						{
 							"type": "box",
 							"ID": "XYZ",
-							"components": [{
+							"components": [
+								{
 									"type": "floatfield",
 									"ID": "Pos_X"
 								},
@@ -82,6 +84,11 @@
 						}
 					],
 					"vertical": true
+				},
+				{
+					"type": "header",
+					"ID": "SPACE1",
+					"text": "        "
 				},
 				{
 					"type": "floatfield",
