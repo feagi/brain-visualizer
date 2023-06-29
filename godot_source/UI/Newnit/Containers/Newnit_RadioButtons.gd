@@ -138,7 +138,7 @@ var _buttonGroup: ButtonGroup = ButtonGroup.new()
 func _ActivationPrimary(settings: Dictionary) -> void:
 	
 	for element in settings["components"]:
-		assert(element["type"] == "checkbox", "All elements of RadioButtons must be checkboxes!")
+		assert(element["type"] == "checkBox", "All elements of RadioButtons must be checkBoxes!")
 	
 	SpawnMultipleChildren(settings["components"])
 	alignment = HelperFuncs.GetIfCan(settings, "alignment", NEWNIT_CONTAINER_CORE.D_alignment)
@@ -147,7 +147,7 @@ func _ActivationPrimary(settings: Dictionary) -> void:
 	
 	
 	for checkbox in children:
-		checkbox.button_group = _buttonGroup
+		checkbox._CheckBox.button_group = _buttonGroup
 	
 	type = "radiobutton"
 
