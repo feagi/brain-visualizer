@@ -123,19 +123,11 @@ var expand: bool:
 	set(v): 
 		if !_has_label: return
 		if v:
-			if vertical:
-				_sideLabel.size_flags_vertical = 2
-				size_flags_vertical = 2 
-			else:
-				_sideLabel.size_flags_horizontal = 2
-				size_flags_horizontal = 2
+			if vertical: _sideLabel.size_flags_vertical = 2
+			else: _sideLabel.size_flags_horizontal = 2
 		else:
-			if vertical:
-				_sideLabel.size_flags_vertical = 1
-				size_flags_vertical = 1
-			else:
-				_sideLabel.size_flags_horizontal = 1
-				size_flags_horizontal = 1
+			if vertical: _sideLabel.size_flags_vertical = 1
+			else: _sideLabel.size_flags_horizontal = 1
 var toolTipText: String:
 	set(v): _SetToolTipText(v)
 

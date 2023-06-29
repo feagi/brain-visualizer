@@ -3,14 +3,15 @@
 	"positionX": 600,
 	"positionY": 400,
 	"type": "box",
-  	"enableCloseButton": true,
+	"enableCloseButton": true,
+	"titleBarText": "Mapping Definition",
 	"enablePanel": true,
-	"components": [
-		{
+	"custom_minimum_sizeX": 700,
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [{
 			"type": "box",
 			"ID": "testlabel",
-			"components": [
-				{
+			"components": [{
 					"ID": "SOURCECORTICALAREA",
 					"type": "dropdown"
 				},
@@ -24,8 +25,7 @@
 		{
 			"type": "box",
 			"ID": "vector_title",
-			"components": [
-				{
+			"components": [{
 					"type": "header",
 					"ID": "MAPPINGDEFINITION",
 					"side": 1
@@ -44,7 +44,7 @@
 				{
 					"type": "header",
 					"ID": "PSPMULTIPLER",
-					"text": "PSP Multiplier Plasticity"
+					"text": "             PSP Multiplier Plasticity"
 				}
 			],
 			"vertical": false
@@ -52,16 +52,14 @@
 		{
 			"type": "box",
 			"ID": "third_box",
-			"components": [
-				{
+			"components": [{
 					"type": "dropdown",
 					"ID": "mappingdefinitions"
 				},
 				{
 					"type": "box",
 					"ID": "overwritescalar",
-					"components": [
-						{
+					"components": [{
 							"type": "header",
 							"ID": "overwritescalartitle"
 						},
@@ -88,6 +86,11 @@
 					"vertical": true
 				},
 				{
+					"type": "header",
+					"ID": "SPACE1",
+					"text": "        "
+				},
+				{
 					"type": "floatfield",
 					"ID": "PSPMULTIPLER"
 				},
@@ -95,8 +98,7 @@
 					"type": "box",
 					"ID": "third_box1",
 					"vertical": false,
-					"components": [
-						{
+					"components": [{
 							"type": "header",
 							"ID": "Plasticitytitle"
 						},
@@ -104,7 +106,8 @@
 							"type": "checkbutton",
 							"ID": "PSPTOGGLE"
 						}
-						]},
+					]
+				},
 				{
 					"type": "button",
 					"ID": "mappingdefbuttonminus",
@@ -115,9 +118,9 @@
 			"vertical": false
 		},
 		{
-				"type": "button",
-				"ID": "updatebutton",
-				"text": "Update"
-			}
+			"type": "button",
+			"ID": "updatebutton",
+			"text": "Update"
+		}
 	]
 }
