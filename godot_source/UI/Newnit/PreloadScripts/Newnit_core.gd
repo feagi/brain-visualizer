@@ -56,9 +56,6 @@ static func Func_Activate(settings: Dictionary, NewnitObject: Node) -> void:
 	
 	NewnitObject.UpdatePosition(HelperFuncs.GetIfCan(settings, "position", D_position))
 	
-	# Dragging Stuff
-	NewnitObject.draggable = HelperFuncs.GetIfCan(settings, "draggable", D_draggable)
-	
 	NewnitObject._ActivationPrimary(settings)
 	NewnitObject._isActivated = true
 

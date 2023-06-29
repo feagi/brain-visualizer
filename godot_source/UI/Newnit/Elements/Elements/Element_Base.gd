@@ -37,7 +37,6 @@ var marginRef: Node:
 var hasNewnitParent: bool:
 	get: return _hasNewnitParent
 
-var draggable: bool
 
 var _ID: StringName
 var _isActivated := false
@@ -78,9 +77,6 @@ func _ResizePanel() -> void:
 		panelRef.size = size + Vector2(20,20)
 		return
 	_panelRef.size = size
-
-func _get_drag_data(at_position: Vector2):
-	if draggable: UpdatePosition(at_position)
 
 func _notification(what):
 	if (what == NOTIFICATION_PREDELETE):
@@ -231,6 +227,7 @@ func _SpawnSubElements(componentTypes: Array) -> void:
 			"textbox": subComp = TextEdit_Sub.new()
 			"intfield": subComp = LineEdit_int_Sub.new()
 			"textureButton": subComp = TextureButton_Sub.new()
+			"titlebar": subComp = Label_Sub.new()  # acts like Label
 			# More Types!
 			_:
 				@warning_ignore("assert_always_false")
