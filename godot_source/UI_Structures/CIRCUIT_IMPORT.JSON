@@ -91,7 +91,9 @@
 		},
 		{
 			"ID": "descrption_textbox",
-			"type": "field"
+			"type": "textbox",
+			"custom_minimum_sizeX": 300,
+			"custom_minimum_sizeY": 100
 		}
 	]
 }

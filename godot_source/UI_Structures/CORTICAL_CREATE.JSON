@@ -3,6 +3,7 @@
 	"positionX": 780,
 	"positionY": 600,
 	"type": "popup",
+	"custom_minimum_sizeX": 350,
 	"titleBarText": "Add New Cortical Area",
 	"widthAlignment": 1,
 	"enablePanel": true,
