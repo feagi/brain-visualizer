@@ -420,7 +420,6 @@ func _on_information_button_request_completed(_result, _response_code, _headers,
 	var api_data = test_json_conv.get_data()
 	
 	if _response_code == 200 and not api_data.has("Request failed..."):
-		var new_name = ""
 		var UI_LeftBar = $"..".UI_LeftBar
 		const ButtonItem := { "type": "button", "ID": "morphologyOption"}
 		var morphologyScroll: Newnit_Scroll = UI_LeftBar.GetReferenceByID("efferent_list")
@@ -476,7 +475,6 @@ func _on_add_pressed(node=[]):
 			Autoload_variable.BV_Core.Update_custom_cortical_area(json_data)
 			node[8].release_focus()
 			$Node3D/Camera3D.transform.origin=Vector3(json_data["cortical_coordinates"][0]-20,json_data["cortical_coordinates"][1],json_data["cortical_coordinates"][2]+20)
-			$"..".UI_createcorticalBar.queue_free()
 			Godot_list.Node_2D_control = false
 	Autoload_variable.BV_Core.Update_CorticalAreaNameList()
 
@@ -780,12 +778,10 @@ func _on_afferent_request_completed(_result, _response_code, _headers, body):
 	var UI_LeftBar = $"..".UI_LeftBar
 	if UI_LeftBar:
 		afferent_holder_clear()
+		const ButtonItem := { "type": "field", "ID": "blank_afferent", "editable": false}
+		var morphologyScroll: Newnit_Scroll = UI_LeftBar.GetReferenceByID("afferent_list")
 		for i in api_data:
-			var new_node = UI_LeftBar.GetReferenceByID("blank_afferent").get_node("field_blank_afferent").duplicate()
-			UI_LeftBar.GetReferenceByID("blank_afferent").add_child(new_node)
-			afferent_child_holder.append(new_node)
-			new_node.visible = true
-			new_node.text = id_to_name(i)
+			morphologyScroll.SpawnItem(ButtonItem, {"value": id_to_name(i)})
 	$notification.generate_notification_message(api_data, _response_code, "_on_afferent_request_completed", "/v1/feagi/genome/cortical_mappings/afferents")
 
 func afferent_holder_clear():
