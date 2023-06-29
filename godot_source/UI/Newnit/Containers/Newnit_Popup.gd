@@ -67,6 +67,11 @@ func UpdatePosition(newPosition: Vector2) -> void:
 	if marginRef != null: _marginRef.position = newPosition; return
 	else: position = newPosition
 
+func GetTopPosition() -> Vector2:
+	if panelRef != null: return _panelRef.position
+	if marginRef != null: return _marginRef.position
+	return position
+
 func UpdateMargins(TopRightBottomLeftMargins: Array) -> void:
 	NEWNIT_CORE.Func_UpdateMargin(self, TopRightBottomLeftMargins)
 

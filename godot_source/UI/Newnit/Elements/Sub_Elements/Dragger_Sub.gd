@@ -16,3 +16,7 @@ func _ready():
 
 func _process(delta):
 	value_edited.emit(get_viewport().get_mouse_position() + _mouseOffset)
+
+func _input(event):
+	if event is InputEventMouseButton:
+		queue_free()
