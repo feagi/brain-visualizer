@@ -3,7 +3,7 @@
 	"positionX": 0,
 	"positionY": 80,
 	"type": "popup",
-	"titleBarText": "Cortical Properties",
+	"titleBarText": "",
 	"widthAlignment": 1,
 	"enablePanel": true,
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],

@@ -216,35 +216,51 @@
 									"type": "box",
 									"ID": "xyz_letters",
 									"vertical": false,
-									"components": [{
+									"components": [
+										{
 											"type": "header",
 											"ID": "X1",
-											"sideLabelText": "X"
+											"sideLabelText": "     X"
+										},
+										{
+											"type": "header",
+											"ID": "SPACE1",
+											"sideLabelText": "			"
 										},
 										{
 											"type": "header",
 											"ID": "Y1",
-											"sideLabelText": "Y"
+											"sideLabelText": "         Y"
+										},
+										{
+											"type": "header",
+											"ID": "SPACE2",
+											"sideLabelText": "			    "
 										},
 										{
 											"type": "header",
 											"ID": "Z1",
-											"sideLabelText": "Z"
+											"sideLabelText": "         Z"
+										},
+										{
+											"type": "header",
+											"ID": "SPACE3",
+											"sideLabelText": "			    					"
 										},
 										{
 											"type": "header",
 											"ID": "X2",
-											"sideLabelText": "X"
+											"sideLabelText": "            X"
 										},
 										{
 											"type": "header",
 											"ID": "Y2",
-											"sideLabelText": "Y"
+											"sideLabelText": "            Y"
 										},
 										{
 											"type": "header",
 											"ID": "Z2",
-											"sideLabelText": "Z"
+											"sideLabelText": "            Z"
 										}
 									]
 								},
@@ -308,17 +324,17 @@
 									"components": [{
 											"type": "header",
 											"ID": "X1",
-											"sideLabelText": "X"
+											"sideLabelText": "    X"
 										},
 										{
 											"type": "header",
 											"ID": "Y1",
-											"sideLabelText": "Y"
+											"sideLabelText": "                 Y"
 										},
 										{
 											"type": "header",
 											"ID": "Z1",
-											"sideLabelText": "Z"
+											"sideLabelText": "                 Z"
 										}
 									]
 								},
