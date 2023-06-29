@@ -12,8 +12,7 @@ func _init(rootPosition: Vector2):
 	_mouseOffset = rootPosition
 
 func _ready():
-	_mouseOffset = get_viewport().get_mouse_position() - _mouseOffset
+	_mouseOffset = _mouseOffset - get_viewport().get_mouse_position()
 
-func _input(event):
-	if event != InputEventMouseMotion: return
-	value_edited.emit(event.position + _mouseOffset)
+func _process(delta):
+	value_edited.emit(get_viewport().get_mouse_position() + _mouseOffset)

@@ -18,6 +18,10 @@ func _get_drag_data(at_position: Vector2):
 	if !isDraggable: return
 	_dragger = Dragger_Sub.new(parent.position) # Can only do this since its a popup
 	_dragger.value_edited.connect(parent._DragUpProxy)
+	parent.add_child(_dragger)
+
+func _drop_data(at_position, data):
+	_dragger.queue_free()
 
 func _PopulateSubElements() -> Array:
 	# used during Activation Primary to add Counter
