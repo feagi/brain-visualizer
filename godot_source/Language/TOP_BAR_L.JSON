@@ -10,7 +10,12 @@
 	  "NEURONAL_CIRCUITS_HEADER":{
 		 "text":{
 			"eng":"Neuronal Circuits"
-		 },
+		 }
+	  },
+	  "IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON":{
+		 "toolTipText":{
+			"eng":"Add Neuronal Circuit"
+		 }
 	  }
    },
    "CORTICAL_AREAS_BOX":{
@@ -23,12 +28,32 @@
 		 "toolTipText":{
 			"eng":"List Cortical Areas"
 		 }
+	  },
+	  "CREATE_CORTICAL_AREA_TEXTURE_BUTTON":{
+		 "toolTipText":{
+			"eng":"Add Cortical Area"
+		 }
+	  },
+	  "QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON":{
+		 "toolTipText":{
+			"eng":"Quick-Connect Cortical Areas"
+		 }
 	  }
    },
    "NEURON_MORPHOLOGIES_BOX":{
 	  "NEURON_MORPHOLOGIES_HEADER":{
 		 "text":{
 			"eng":"Neuron Morphologies"
+		 }
+	  },
+	  "CREATE_NEURON_MORPHOLOGY_TEXTURE_BOX":{
+		 "toolTipText":{
+			"eng":"Create Neuron Morphology"
+		 }
+	  },
+	  "MANAGE_NEURON_MORPHOLOGIES":{
+		 "toolTipText":{
+			"eng":"Manage Neuron Morphologies"
 		 }
 	  }
    }
