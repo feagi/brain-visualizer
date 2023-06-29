@@ -37,8 +37,6 @@ var marginRef: Node:
 var hasNewnitParent: bool:
 	get: return _hasNewnitParent
 
-var draggable: bool
-
 var _ID: StringName
 var _isActivated := false
 var _isTopLevel := true
