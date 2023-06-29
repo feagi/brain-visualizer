@@ -197,10 +197,16 @@
 			"ID": "AFFERENTLABEL"
 		},
 		{
-			"type": "field",
-			"editable": false,
-			"alignmentWidth": 1,
-			"ID": "blank_afferent"
+			"ID": "afferent_list",
+			"type": "scrollbar",
+			"custom_minimum_sizeX": 50,
+			"custom_minimum_sizeY": 100,
+			"vertical": true,
+			"childBaseID": "Morphology",
+			"titleBarText": "Morphology",
+			"components": [
+
+			]
 		},
 		{
 			"type": "box",
