@@ -377,9 +377,9 @@ func RelayDownwards(callType, data) -> void:
 				"PSPUNI": {"value": data["neuron_psp_uniform_distribution"]}
 			}
 			var cortical_properties = {
-				"CorticalPropertiesSection": {"CorticalName": {"sideLabelText": data["cortical_name"]},
-				"CorticalID": {"sideLabelText": data["cortical_id"]},
-				"CorticalArea": {"sideLabelText": data["cortical_group"]},
+				"CorticalPropertiesSection": {"CorticalName": {"value": data["cortical_name"]},
+				"CorticalID": {"value": data["cortical_id"]},
+				"CorticalArea": {"value": data["cortical_group"]},
 				"XYZ": {"Pos_X": {"value": int(data["cortical_coordinates"][0])}, "Pos_Y": {"value": int(data["cortical_coordinates"][1])}, "Pos_Z": {"value": int(data["cortical_coordinates"][2])}},
 				"WHD": {"W": {"value": int(data["cortical_dimensions"][0])}, "H": {"value": int(data["cortical_dimensions"][1])}, "D": {"value": int(data["cortical_dimensions"][2])}}}
 			}
@@ -417,7 +417,7 @@ func SpawnLeftBar(cortexName: String, activation: Dictionary):
 	add_row_button.connect("pressed", Callable($Brain_Visualizer,"_on_cortical_mapping_add_pressed").bind(cortexName))
 
 func mapping_definition_button(node):
-	var src_id = UI_LeftBar.GetReferenceByID("CorticalName").get_node("sideLabel_CorticalName").text
+	var src_id = UI_LeftBar.GetReferenceByID("CorticalName").get_node("field_CorticalName").text
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
 	SpawnMappingDefinition(src_id, node.text, mappingdefinitiongenerated)
 

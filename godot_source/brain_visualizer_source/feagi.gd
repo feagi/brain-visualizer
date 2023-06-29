@@ -279,7 +279,7 @@ func _on_Update_pressed(data_input):
 	var x = data_input.GetReferenceByID("Pos_X").get_node("counter_Pos_X").value;
 	var y = data_input.GetReferenceByID("Pos_Y").get_node("counter_Pos_Y").value;
 	var z = data_input.GetReferenceByID("Pos_Z").get_node("counter_Pos_Z").value;
-	var id_input = str(data_input.GetReferenceByID("CorticalID").get_node("sideLabel_CorticalID").text);
+	var id_input = str(data_input.GetReferenceByID("CorticalID").get_node("field_CorticalID").text);
 	var width= data_input.GetReferenceByID("W").get_node("counter_W").value;
 	var height = data_input.GetReferenceByID("H").get_node("counter_H").value;
 	var depth = data_input.GetReferenceByID("D").get_node("counter_D").value;
@@ -299,7 +299,7 @@ func _on_Update_pressed(data_input):
 	var degenerecy_coefficient = float(data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("DegeneracyConstant").get_node("floatField_DegeneracyConstant").value);
 	var psp_uniform_distribution = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("PSPUNI").get_node("checkButton_PSPUNI").is_pressed()
 	var MP_accumulation = data_input.GetReferenceByID("NeuronParametersSection").GetReferenceByID("ChargeACC").get_node("checkButton_ChargeACC").is_pressed()
-	var name_input = data_input.GetReferenceByID("CorticalName").get_node("sideLabel_CorticalName").text
+	var name_input = data_input.GetReferenceByID("CorticalName").get_node("field_CorticalName").text
 	var copy = duplicate_model.duplicate()
 	var create_textbox = textbox_display.duplicate() #generate a new node to re-use the model
 	var viewport = create_textbox.get_node("SubViewport")
@@ -481,7 +481,7 @@ func _on_add_pressed(node=[]):
 	Autoload_variable.BV_Core.Update_CorticalAreaNameList()
 
 func _on_remove_pressed(node):
-	var get_name_data = node.get_node("sideLabel_CorticalID").text
+	var get_name_data = node.get_node("field_CorticalID").text
 	_clear_single_cortical(id_to_name(get_name_data), global_name_list)
 	Autoload_variable.BV_Core.Delete_cortical_area(get_name_data)
 
@@ -668,7 +668,7 @@ func _on_get_cortical_dst_request_completed(_result, _response_code, _headers, b
 						if i in Godot_list.genome_data["genome"][x][7]:
 							dst_data[i] = api_data["cortical_destinations"][i]
 		dst_data_holder = dst_data.duplicate()
-		Autoload_variable.BV_Core.Get_mem_data($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("sideLabel_CorticalID").text)
+		Autoload_variable.BV_Core.Get_mem_data($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_cortical_dst_request_completed", "/v1/feagi/genome/cortical_area")
 
 func _on_cortical_mapping_add_pressed(name_input):
@@ -866,7 +866,7 @@ func _on_mem_request_request_completed(_result, _response_code, _headers, body):
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	$"..".UI_LeftBar.GetReferenceByID("Mem_potent").get_node("checkButton_Mem_potent").set_pressed(api_data)
-	Autoload_variable.BV_Core.Get_syn_data($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("sideLabel_CorticalID").text)
+	Autoload_variable.BV_Core.Get_syn_data($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_mem_request_request_completed", "/v1/feagi/monitoring/neuron/membrane_potential")
 
 func _on_syn_request_request_completed(_result, _response_code, _headers, body):
