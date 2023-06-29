@@ -227,6 +227,7 @@ func _SpawnSubElements(componentTypes: Array) -> void:
 			"textbox": subComp = TextEdit_Sub.new()
 			"intfield": subComp = LineEdit_int_Sub.new()
 			"textureButton": subComp = TextureButton_Sub.new()
+			"titlebar": subComp = Label_Sub.new()  # acts like Label
 			# More Types!
 			_:
 				@warning_ignore("assert_always_false")

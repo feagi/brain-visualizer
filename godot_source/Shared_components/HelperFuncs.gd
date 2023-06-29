@@ -269,6 +269,7 @@ static func SpawnNewnitOfType(type: String) -> Node:
 		"collapsible": newChild = Newnit_Collapsible.new()
 		"textbox": newChild = Element_TextBox.new()
 		"texturebutton": newChild = Element_TextureButton.new()
+		"titleBar": newChild = Element_Internal_TitleBar.new()
 		# TODO: More types!
 		_:
 			print("Invalid child of type ", type, " attempted to spawn. Skipping...")

@@ -9,9 +9,11 @@ var _mouseOffset: Vector2
 
 func _init(rootPosition: Vector2):
 	super()
-	_mouseOffset = get_viewport().get_mouse_position() - rootPosition
+	_mouseOffset = rootPosition
 
+func _ready():
+	_mouseOffset = get_viewport().get_mouse_position() - _mouseOffset
 
 func _input(event):
 	if event != InputEventMouseMotion: return
-	value_edited.emit(get_viewport().get_mouse_position() + _mouseOffset)
+	value_edited.emit(event.position + _mouseOffset)

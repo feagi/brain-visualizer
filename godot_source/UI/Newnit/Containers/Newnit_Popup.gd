@@ -62,6 +62,11 @@ func GetReferenceByID(searchID: StringName): # returns either a bool or a Node
 			return result
 	return false
 
+func UpdatePosition(newPosition: Vector2) -> void:
+	if panelRef != null: _panelRef.position = newPosition; return
+	if marginRef != null: _marginRef.position = newPosition; return
+	else: position = newPosition
+
 func UpdateMargins(TopRightBottomLeftMargins: Array) -> void:
 	NEWNIT_CORE.Func_UpdateMargin(self, TopRightBottomLeftMargins)
 
@@ -124,7 +129,7 @@ var specificSettableProps := {
 	"isDraggable": TYPE_BOOL
 }
 
-var _titleBar: Element_Label:
+var _titleBar: Element_Internal_TitleBar:
 	get: return children[0]
 
 func _ActivationPrimary(settings: Dictionary) -> void:
@@ -138,10 +143,13 @@ func _ActivationPrimary(settings: Dictionary) -> void:
 	titleBarText = HelperFuncs.GetIfCan(settings, "titleBarText", NEWNIT_CONTAINER_CORE.D_Title)
 	_runtimeSettableProperties.merge(specificSettableProps)
 	
-	_titleBar.DataUp.connect(_closeButton)
+	_titleBar.DataUp.connect(_TitleBarInput)
 	type = "popup"
 
 
-func _closeButton(data: Dictionary, originatingID: String, reference: Node) -> void:
+func _TitleBarInput(data: Dictionary, originatingID: String, reference: Node) -> void:
 	if originatingID != "POPUP_TOPBAR": return
 	queue_free()
+
+func _DragUpProxy(newPosition: Vector2):
+	UpdatePosition(newPosition)
