@@ -10,7 +10,7 @@
 	"components": [{
 		"ID": "morphology_list",
 		"type": "scrollbar",
-		"custom_minimum_sizeX": 199,
+		"custom_minimum_sizeX": 250,
 		"custom_minimum_sizeY": 699,
 		"vertical": true,
 		"childBaseID": "Morphology",
