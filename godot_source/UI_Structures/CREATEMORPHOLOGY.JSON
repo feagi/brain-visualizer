@@ -184,32 +184,32 @@
 					"components": [{
 							"type": "header",
 							"ID": "X1",
-							"sideLabelText": "X"
+							"sideLabelText": "        X"
 						},
 						{
 							"type": "header",
 							"ID": "Y1",
-							"sideLabelText": "Y"
+							"sideLabelText": "            Y"
 						},
 						{
 							"type": "header",
 							"ID": "Z1",
-							"sideLabelText": "Z"
+							"sideLabelText": "            Z"
 						},
 						{
 							"type": "header",
 							"ID": "X2",
-							"sideLabelText": "X"
+							"sideLabelText": "                 X"
 						},
 						{
 							"type": "header",
 							"ID": "Y2",
-							"sideLabelText": "Y"
+							"sideLabelText": "            Y"
 						},
 						{
 							"type": "header",
 							"ID": "Z2",
-							"sideLabelText": "Z"
+							"sideLabelText": "              Z"
 						}
 					]
 				},
@@ -273,17 +273,17 @@
 					"components": [{
 							"type": "header",
 							"ID": "X1",
-							"sideLabelText": "X"
+							"sideLabelText": "     X"
 						},
 						{
 							"type": "header",
 							"ID": "Y1",
-							"sideLabelText": "Y"
+							"sideLabelText": "                  Y"
 						},
 						{
 							"type": "header",
 							"ID": "Z1",
-							"sideLabelText": "Z"
+							"sideLabelText": "                   Z"
 						}
 					]
 				},

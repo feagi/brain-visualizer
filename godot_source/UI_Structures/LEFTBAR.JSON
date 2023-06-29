@@ -211,7 +211,8 @@
 		{
 			"type": "box",
 			"ID": "efferent_unit",
-			"components": [{
+			"components": [
+				{
 					"type": "header",
 					"ID": "EFFERENTLABEL",
 					"sideButtonText": "+"
