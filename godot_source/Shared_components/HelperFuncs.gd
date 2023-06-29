@@ -274,3 +274,6 @@ static func SpawnNewnitOfType(type: String) -> Node:
 			print("Invalid child of type ", type, " attempted to spawn. Skipping...")
 			return
 	return newChild
+
+static func ShortText(text: String, maxLength = 16) -> String:
+	return text.left(maxLength)

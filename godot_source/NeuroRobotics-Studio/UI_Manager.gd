@@ -199,13 +199,14 @@ func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: No
 			UI_holders.append(UI_morphologyLIST)
 			const ButtonItem := { "type": "texturebutton", 
 				"ID": "morphologyOption",
-				"internal_custom_minimum_size": Vector2(200,200)}
-			var morphologyOptions: Array = ["block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
+				"internal_custom_minimum_size": Vector2(300,300)}
+			var morphologyOptions: Array = ["block_to_block.png"]
 			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
 			for i in morphologyOptions:
-				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem)
-				spawnedItem.get_node("textureButton_morphologyOption").connect("pressed", Callable(self, "arrow_name_updater").bind(i))
-				spawnedItem.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(i) + ".png")
+				print("i: ", i)
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, { "internal_custom_minimum_sizeX": 300,"internal_custom_minimum_sizeY": 300})
+				spawnedItem.connect("DataUp", Callable(self,"arrow_name_updater"))
+				spawnedItem.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(i))
 		"DESTINATION":
 			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 			button.text = "Click any cortical"
