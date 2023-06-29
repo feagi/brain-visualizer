@@ -102,7 +102,7 @@ func _DataUpProxy(data: Dictionary, recievedID: String, reference: Node) -> void
 ### Start Box Container Unique
 
 const _TITLEBAR_BUTTON := {
-	"type": "header",
+	"type": "titleBar",
 	"sideButtonText": "X",
 	"text": "CUSTOM_TITLE_HERE",
 	"ID": "POPUP_TOPBAR",
@@ -120,7 +120,8 @@ var children: Array:
 var specificSettableProps := {
 	"alignment": TYPE_INT,
 	"vertical": TYPE_INT,
-	"titleBarText": TYPE_STRING
+	"titleBarText": TYPE_STRING,
+	"isDraggable": TYPE_BOOL
 }
 
 var _titleBar: Element_Label:
