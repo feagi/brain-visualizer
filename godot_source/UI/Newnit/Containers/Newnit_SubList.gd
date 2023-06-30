@@ -36,8 +36,6 @@ var marginRef: Node:
 var hasNewnitParent: bool:
 	get: return _hasNewnitParent
 
-var draggable: bool
-
 var _ID: StringName
 var _isActivated := false
 var _isTopLevel := true
@@ -68,6 +66,11 @@ func UpdatePosition(newPosition: Vector2) -> void:
 	if marginRef != null: _marginRef.position = newPosition; return
 	else: position = newPosition
 
+func GetTopPosition() -> Vector2:
+	if panelRef != null: return _panelRef.position
+	if marginRef != null: return _marginRef.position
+	return position
+
 func UpdateMargins(TopRightBottomLeftMargins: Array) -> void:
 	NEWNIT_CORE.Func_UpdateMargin(self, TopRightBottomLeftMargins)
 
@@ -78,8 +81,8 @@ func _ResizePanel() -> void:
 		return
 	_panelRef.size = size
 
-func _get_drag_data(at_position: Vector2):
-	if draggable: UpdatePosition(at_position)
+#func _get_drag_data(at_position: Vector2):
+#	if draggable: UpdatePosition(at_position)
 
 func _notification(what):
 	if (what == NOTIFICATION_PREDELETE):
