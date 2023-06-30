@@ -30,6 +30,8 @@ var UI_CircuitImport : Newnit_Popup
 var UI_QUICKCONNECT: Newnit_Popup
 var UI_GraphCore: GraphCore
 var UI_CreateMorphology: Newnit_Popup
+var UI_TUTORIAL_DIALOGUE: Newnit_Popup
+var UI_TUTORIAL: Newnit_Popup
 var UI_INDICATOR: Newnit_Box
 var vectors_holder := []
 var src_global 
@@ -40,6 +42,8 @@ var global_json_data # TODO replace dependent with Newnit library system
 var optionbutton_holder
 var morphology_creation_add_button
 var name_selected_morphology = ""
+var tutorial_holder = []
+var current_image = 0
 
 # Internal cached vars
 var _sideBarChangedValues := {}
@@ -55,6 +59,7 @@ func Activate(langISO: String):
 	# Initialize TopBar
 	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOP_BAR", currentLanguageISO)
 	_SpawnTopBar(topBarDict)
+	SpawnTUTORIAL()
 	
 	# Write to global_json_data
 	var files = FileAccess.open("res://brain_visualizer_source/type_option.json", FileAccess.READ)
@@ -170,7 +175,52 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Nod
 					composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
 					morphology_creation_add_button.emit_signal("pressed")
 
-######### Side Bar Control #########
+func TUTORIALINPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
+	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
+	SpawnTUTORIALdialogue()
+	UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(ElementID))
+	for i in range(len(tutorial_holder)):
+		if ElementID == tutorial_holder[i]:
+			current_image = i
+	if current_image == len(tutorial_holder)-1:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+	else:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+	if current_image == 0:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+	else:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+	
+func TUTORIALDIA_INPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
+	if "value" in data.keys():
+		if current_image - 1 >= 0:
+			current_image -= 1
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + tutorial_holder[current_image])
+		if current_image == 0:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+		if current_image == len(tutorial_holder)-1:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "FINISHED"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "NEXT"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+	if "sideButton" in data.keys():
+		if current_image + 1 <= len(tutorial_holder)-1:
+			current_image += 1
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + tutorial_holder[current_image])
+		if current_image == len(tutorial_holder)-1:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "FINISHED"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "NEXT"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+		if current_image == 0:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+	######### Side Bar Control #########
 
 func LeftBarInput(data: Dictionary, _compRef, _unitRef):
 #	print(JSON.stringify(data)) # useful for debugging
@@ -423,6 +473,32 @@ func RelayDownwards(callType, data) -> void:
 ####################################
 ############# Internals ############
 ####################################
+
+func SpawnTUTORIAL():
+	if UI_TUTORIAL != null:
+		UI_TUTORIAL.queue_free() # We don't need this. We need to make it look prettier
+	UI_TUTORIAL = Newnit_Popup.new()
+	var TUTORIALDICT = HelperFuncs.GenerateDefinedUnitDict("TUTORIAL", currentLanguageISO)
+	UI_TUTORIAL.DataUp.connect(TUTORIALINPUT)
+	add_child(UI_TUTORIAL)
+	UI_TUTORIAL.Activate(TUTORIALDICT)
+	UI_holders.append(UI_TUTORIAL)
+	for i in UI_TUTORIAL.get_children():
+		if "_box" in i.get_name():
+			for x in i.get_children():
+				tutorial_holder.append(x.ID)
+	
+	
+func SpawnTUTORIALdialogue():
+	if UI_TUTORIAL_DIALOGUE != null:
+		UI_TUTORIAL_DIALOGUE.queue_free() # We don't need this. We need to make it look prettier
+	UI_TUTORIAL_DIALOGUE = Newnit_Popup.new()
+	var TUTORIALDICT_dialogue = HelperFuncs.GenerateDefinedUnitDict("DIALOGUE", currentLanguageISO)
+	UI_TUTORIAL_DIALOGUE.DataUp.connect(TUTORIALDIA_INPUT)
+	add_child(UI_TUTORIAL_DIALOGUE)
+	UI_TUTORIAL_DIALOGUE.Activate(TUTORIALDICT_dialogue)
+	UI_holders.append(UI_TUTORIAL_DIALOGUE)
+
 
 func SpawnLeftBar(cortexName: String, activation: Dictionary):
 	if UI_LeftBar != null:
