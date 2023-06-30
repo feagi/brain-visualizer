@@ -81,12 +81,20 @@ func _on_Area_input_event(_camera, event, _position, _normal, _shape_idx):
 func _on_Area_mouse_entered():
 	if get_surface_override_material(0) == global_material.selected:
 		set_surface_override_material(0, global_material.selected)
+	elif get_surface_override_material(0) == global_material.glow:
+		set_surface_override_material(0, global_material.glow)
+	elif get_surface_override_material(0) == global_material.destination:
+		set_surface_override_material(0, global_material.destination)
 	else:
 		set_surface_override_material(0, global_material.white)
 
 func _on_Area_mouse_exited():
 	if get_surface_override_material(0) == global_material.selected:
 		set_surface_override_material(0, global_material.selected)
+	elif get_surface_override_material(0) == global_material.glow:
+		set_surface_override_material(0, global_material.glow)
+	elif get_surface_override_material(0) == global_material.destination:
+		set_surface_override_material(0, global_material.destination)
 	else:
 		set_surface_override_material(0, global_material.deselected)
 
