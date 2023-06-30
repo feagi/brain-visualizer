@@ -16,8 +16,23 @@
 			"ID": "MorphologyName"
 		},
 		{
-			"type": "dropdown",
-			"ID": "MorphologyType"
+			"type": "radiobutton",
+			"ID": "MorphologyType",
+			"vertical": false,
+			"components": [
+				{
+					"type": "checkBox",
+					"ID": "RCOMPOSITE",
+				},
+				{
+					"type": "checkBox",
+					"ID": "RPATTERNS",
+				},
+				{
+					"type": "checkBox",
+					"ID": "RVECTORS",
+				},
+			]
 		},
 		{
 			"type": "header",

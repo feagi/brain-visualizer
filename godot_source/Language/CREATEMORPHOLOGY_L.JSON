@@ -1,90 +1,94 @@
 {
-	"MorphologyName": {
-		"sideLabelText": {
-			"eng": "Morphology Name"
-		}
-	},
-	"MorphologyType": {
-		"sideLabelText": {
-			"eng": "Morphology Type"
-		},
-		"options": {
-			"eng": [
-				"Composite",
-				"Patterns",
-				"Vectors"
-			]
-		}
-	},
-	"MorphologyDefinition": {
-		"sideLabelText": {
-			"eng": "Morphology Definition"
-		}
-	},
-	"Composite": {
-		"Seed": {
-			"sideLabelText": {
-				"eng": "Seed"
+   "MorphologyName":{
+	  "sideLabelText":{
+		 "eng":"Morphology Name"
+	  }
+   },
+   "MorphologyType":{
+	  "RCOMPOSITE":{
+		 "sideLabelText":{
+			"eng":"Composite"
+		 }
+	  },
+	  "RPATTERNS":{
+		 "sideLabelText":{
+			"eng":"Patterns"
+		 }
+	  },
+	  "RVECTORS":{
+		 "sideLabelText":{
+			"eng":"Vectors"
+		 }
+	  }
+   },
+   "MorphologyDefinition":{
+	  "sideLabelText":{
+		 "eng":"Morphology Definition"
+	  }
+   },
+   "Composite":{
+	  "Seed":{
+		 "sideLabelText":{
+			"eng":"Seed"
+		 }
+	  },
+	  "XYZ_Seed":{
+		 "X":{
+			"sideLabelText":{
+			   "eng":"X"
 			}
-		},
-		"XYZ_Seed": {
-			"X": {
-				"sideLabelText": {
-					"eng": "X"
-				}
-			},
-
-			"Y": {
-				"sideLabelText": {
-					"eng": "Y"
-				}
-			},
-			"Z": {
-				"sideLabelText": {
-					"eng": "Z"
-				}
+		 },
+		 "Y":{
+			"sideLabelText":{
+			   "eng":"Y"
 			}
-		},
-		"Pattern": {
-			"sideLabelText": {
-				"eng": "Pattern"
+		 },
+		 "Z":{
+			"sideLabelText":{
+			   "eng":"Z"
 			}
-		},
-		"Mapper": {
-			"sideLabelText": {
-				"eng": "Morphology Type: "
+		 }
+	  },
+	  "Pattern":{
+		 "sideLabelText":{
+			"eng":"Pattern"
+		 }
+	  },
+	  "Mapper":{
+		 "sideLabelText":{
+			"eng":"Morphology Type: "
+		 }
+	  }
+   },
+   "Patterns":{
+	  "AddRowButton":{
+		 "sideLabelText":{
+			"eng":""
+		 }
+	  },
+	  "PatternRow0":{
+		 "arrow":{
+			"sideLabelText":{
+			   "eng":">"
 			}
-		}
-	},
-	"Patterns": {
-		"AddRowButton": {
-			"sideLabelText": {
-				"eng": ""
-			}
-		},
-		"PatternRow0": {
-			"arrow": {
-				"sideLabelText": {
-					"eng": ">"
-				}
-			}
-		}
-	},
-	"Vectors": {
-		"AddRowButton": {
-			"sideLabelText": {
-				"eng": ""
-			}
-		}
-	},
-	"CreateButton": {
-		"sideLabelText": {
-			"eng": ""
-		}
-	},
-	"MAPPINGDROPDOWN": {
-		"sideLabelText": {
-			"eng": "Mapping: "
-		}
-	}
+		 }
+	  }
+   },
+   "Vectors":{
+	  "AddRowButton":{
+		 "sideLabelText":{
+			"eng":""
+		 }
+	  }
+   },
+   "CreateButton":{
+	  "sideLabelText":{
+		 "eng":""
+	  }
+   },
+   "MAPPINGDROPDOWN":{
+	  "sideLabelText":{
+		 "eng":"Mapping: "
+	  }
+   }
 }

@@ -1,5 +1,5 @@
-extends TabContainer
-class_name Newnit_Tabs
+extends BoxContainer
+class_name Newnit_RadioButtons
 
 # This base class is used to construct all Elements, which are parallel in 
 # implmentation to Newnits but insteadof holding containers, are UI elements
@@ -37,6 +37,8 @@ var marginRef: Node:
 var hasNewnitParent: bool:
 	get: return _hasNewnitParent
 
+var draggable: bool
+
 var _ID: StringName
 var _isActivated := false
 var _isTopLevel := true
@@ -67,11 +69,6 @@ func UpdatePosition(newPosition: Vector2) -> void:
 	if marginRef != null: _marginRef.position = newPosition; return
 	else: position = newPosition
 
-func GetTopPosition() -> Vector2:
-	if panelRef != null: return _panelRef.position
-	if marginRef != null: return _marginRef.position
-	return position
-
 func UpdateMargins(TopRightBottomLeftMargins: Array) -> void:
 	NEWNIT_CORE.Func_UpdateMargin(self, TopRightBottomLeftMargins)
 
@@ -82,8 +79,8 @@ func _ResizePanel() -> void:
 		return
 	_panelRef.size = size
 
-#func _get_drag_data(at_position: Vector2):
-#	if draggable: UpdatePosition(at_position)
+func _get_drag_data(at_position: Vector2):
+	if draggable: UpdatePosition(at_position)
 
 func _notification(what):
 	if (what == NOTIFICATION_PREDELETE):
@@ -101,10 +98,6 @@ func SpawnChild(childActivationSettings: Dictionary) -> void:
 func SpawnMultipleChildren(childrenActivationSettings: Array) -> void:
 	NEWNIT_CONTAINER_CORE.Func_SpawnMultipleChildren(childrenActivationSettings, self)
 
-func _ActivationPrimary(settings: Dictionary) -> void:
-	if(_AlternateActivationPath(settings)): return
-	NEWNIT_CONTAINER_CORE.Func__ActivationPrimary(settings, self)
-
 func _getChildData() -> Dictionary:
 	return NEWNIT_CONTAINER_CORE.Func__getChildData(self)
 
@@ -113,60 +106,49 @@ func _DataUpProxy(data: Dictionary, recievedID: String, reference: Node) -> void
 
 ################################################# END Newnit Containers Parallel #######################
 
-### Start Tab Container Unique
+### Start Box Container Unique
 
 var children: Array:
 	get: return NEWNIT_CONTAINER_CORE.Get_children(self)
 
+var numButtons: int:
+	get: return _numButtons
+
 var specificSettableProps := {
-	"current_tab": TYPE_INT,
-	"tab_alignment": TYPE_INT,
-	"use_hidden_tabs_for_min_size": TYPE_BOOL,
-	"tab_titles": TYPE_ARRAY,
-	"tabs_enabled": TYPE_ARRAY
+	"alignment": TYPE_INT,
+	"vertical": TYPE_INT,
+	"buttonNames": TYPE_ARRAY
 }
+
+var buttonNames: Array:
+	get:
+		var output: Array
+		var childrenCache = children
+		for child in childrenCache:
+			output.append(child.sideLabelText)
+		return output
+	set(v):
+		var childrenCache = children
+		for i in range(len(childrenCache)):
+			childrenCache[i].sideLabelText = v[i]
+
+var _numButtons: int
+var _buttonGroup: ButtonGroup = ButtonGroup.new()
+
+func _ActivationPrimary(settings: Dictionary) -> void:
 	
-var ALL_ENABLED: Array:
-	get:
-		var o := []
-		for i in children:
-			o.append(true)
-		return o
-
-var ALL_DISABLED: Array:
-	get:
-		var o := []
-		for i in children:
-			o.append(false)
-		return o
-
-# Allows for mass setting of tab titles
-var tab_titles: Array:
-	set(v): _SetAllTabTitles(v)
-
-# Allows for mass setting of tab enablement states
-var tabs_enabled: Array:
-	set(v): _SetAllTabEnableState(v)
-
-func _AlternateActivationPath(settings: Dictionary) -> bool:
-	# No alternate activation path for Tabs, skipping...
-	return false
-
-func _ActivationSecondary(settings: Dictionary) -> void:
+	for element in settings["components"]:
+		assert(element["type"] == "checkBox", "All elements of RadioButtons must be checkBoxes!")
+	
+	SpawnMultipleChildren(settings["components"])
+	alignment = HelperFuncs.GetIfCan(settings, "alignment", NEWNIT_CONTAINER_CORE.D_alignment)
+	vertical = HelperFuncs.GetIfCan(settings, "vertical", NEWNIT_CONTAINER_CORE.D_vertical)
 	_runtimeSettableProperties.merge(specificSettableProps)
 	
-	current_tab = HelperFuncs.GetIfCan(settings, "current_tab", NEWNIT_CONTAINER_CORE.D_current_tab)
-	tab_alignment = HelperFuncs.GetIfCan(settings, "tab_alignment", NEWNIT_CONTAINER_CORE.D_tab_alignment)
-	use_hidden_tabs_for_min_size = HelperFuncs.GetIfCan(settings, "use_hidden_tabs_for_min_size", NEWNIT_CONTAINER_CORE.D_use_hidden_tabs_for_min_size)
-	tab_titles = HelperFuncs.GetIfCan(settings, "tab_titles", [])
-	tabs_enabled = HelperFuncs.GetIfCan(settings, "tabs_enabled", ALL_ENABLED)
-	type = "tab"
 	
+	for checkbox in children:
+		checkbox._CheckBox.button_group = _buttonGroup
 	
-func _SetAllTabTitles(titles: Array) -> void:
-	for i in range(len(titles)):
-		set_tab_title(i, titles[i])
+	type = "radiobutton"
 
-func _SetAllTabEnableState(whichEnabled: Array) -> void:
-	for i in range(len(whichEnabled)):
-		set_tab_hidden(i, whichEnabled[i])
+
