@@ -187,14 +187,14 @@ static func ColorToV3I(input: Color) -> Vector3i:
 	output.z = input.b8
 	return output
 
-static func clampToRange(input: float, min: float, max: float) -> float:
-	if input < min: return min
-	if input > max: return max
+static func clampToRange(input: float, min_value: float, max_value: float) -> float:
+	if input < min_value: return min_value
+	if input > max_value: return max_value
 	return input
 
-static func clampToIntRange(input: int, min: int, max: int) -> int:
-	if input < min: return min
-	if input > max: return max
+static func clampToIntRange(input: int, min_value: int, max_value: int) -> int:
+	if input < min_value: return min_value
+	if input > max_value: return max_value
 	return input
 
 # Remaps X Y floats from activation JSON into a vector
