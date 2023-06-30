@@ -206,6 +206,7 @@ func _isNeuronProperty(ID: String) -> bool:
 func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	match(ElementID):
 		"SRC_CORTICAL":
+			$Brain_Visualizer.glow_reset()
 			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
 			button.text = "Click any cortical"
 		"ARROW":
@@ -227,6 +228,7 @@ func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: No
 				spawnedItem.get_node("textureButton_morphologyOption").connect("pressed", Callable(self, "arrow_name_updater").bind(i))
 				spawnedItem.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(i) + ".png")
 		"DESTINATION":
+			$Brain_Visualizer.destination_reset()
 			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 			button.text = "Click any cortical"
 		"CONNECT":
@@ -234,7 +236,11 @@ func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: No
 			var morphology_name = UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text
 			var dest = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION").text
 			$Brain_Visualizer.quick_connect_to_feagi(src, morphology_name, dest)
-
+			$Brain_Visualizer.glow_reset()
+			$Brain_Visualizer.destination_reset()
+		"POPUP_TOPBAR":
+			$Brain_Visualizer.glow_reset()
+			$Brain_Visualizer.destination_reset()
 func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
