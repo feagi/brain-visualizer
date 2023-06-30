@@ -39,6 +39,7 @@ var UI_holders := []
 var global_json_data # TODO replace dependent with Newnit library system
 var optionbutton_holder
 var morphology_creation_add_button
+var name_selected_morphology = ""
 
 # Internal cached vars
 var _sideBarChangedValues := {}
@@ -131,6 +132,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
 
 func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
+	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
 	var composite = UI_CreateMorphology.GetReferenceByID("Composite")
 	var patterns = UI_CreateMorphology.GetReferenceByID("Patterns")
 	var vectors = UI_CreateMorphology.GetReferenceByID("Vectors")
@@ -149,18 +151,24 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Nod
 				$Brain_Visualizer.new_morphology_clear()
 				composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
 				morphology_creation_add_button.emit_signal("pressed")
-		"RCOMPOSITE":
-			$Brain_Visualizer.new_morphology_clear()
-			composite.visible = true; patterns.visible = false; vectors.visible = false; morphology_creation_add_button.visible = false
-			UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": optionbutton_holder}}}})
-		"RPATTERNS":
-			$Brain_Visualizer.new_morphology_clear()
-			morphology_creation_add_button.emit_signal("pressed")
-			composite.visible = false; patterns.visible = true; vectors.visible = false; morphology_creation_add_button.visible = true
-		"RVECTORS":
-			$Brain_Visualizer.new_morphology_clear()
-			composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
-			morphology_creation_add_button.emit_signal("pressed")
+		"RPATTERNS", "RCOMPOSITE", "RVECTORS":
+			for i in UI_CreateMorphology.GetReferenceByID("MorphologyType").get_children():
+				if i.get_child(1).is_pressed():
+					name_selected_morphology = i.get_name()
+					name_selected_morphology = name_selected_morphology.replace("checkBox_R", "").capitalize()
+			match(ElementID):
+				"RCOMPOSITE":
+					$Brain_Visualizer.new_morphology_clear()
+					composite.visible = true; patterns.visible = false; vectors.visible = false; morphology_creation_add_button.visible = false
+					UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": optionbutton_holder}}}})
+				"RPATTERNS":
+					$Brain_Visualizer.new_morphology_clear()
+					morphology_creation_add_button.emit_signal("pressed")
+					composite.visible = false; patterns.visible = true; vectors.visible = false; morphology_creation_add_button.visible = true
+				"RVECTORS":
+					$Brain_Visualizer.new_morphology_clear()
+					composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
+					morphology_creation_add_button.emit_signal("pressed")
 
 ######### Side Bar Control #########
 
