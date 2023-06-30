@@ -53,6 +53,8 @@ var new_morphology_node = []
 var latest_send_feagi = ""
 var type = ""
 var SEC
+var glow_holder = []
+var destination_holder = []
 
 func _ready():
 	# # # Initalize the bridge # # # 
@@ -226,13 +228,20 @@ func cortical_is_clicked():
 						for x in i:
 							if iteration_name == x:
 								if i[x][0].get_class() == "MeshInstance3D":
-									print(i[x][0].set_surface_override_material(0, global_material.glow))
+									i[x][0].set_surface_override_material(0, global_material.glow)
+									glow_holder.append(i[x][0])
 					select_cortical.selected.pop_front()
 					return true
 			if $"..".UI_QUICKCONNECT.GetReferenceByID("DESTINATION").visible:
 				var button = $"..".UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 				if button.text == "Click any cortical":
 					button.text = iteration_name
+					for i in global_name_list:
+						for x in i:
+							if iteration_name == x:
+								if i[x][0].get_class() == "MeshInstance3D":
+									i[x][0].set_surface_override_material(0, global_material.destination)
+									destination_holder.append(i[x][0])
 					select_cortical.selected.pop_front()
 					return true
 		var grab_id_cortical = ""
@@ -441,6 +450,18 @@ func _on_information_button_request_completed(_result, _response_code, _headers,
 	#	$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 10 + $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.size.y + $".."/".."/".."/Menu/cortical_mapping.position.y
 	else:
 		$notification.generate_notification_message(api_data, _response_code, "_on_information_button_request_completed", "/v1/feagi/genome/cortical_mappings/efferents")
+
+func glow_reset():
+	if glow_holder:
+		for i in glow_holder:
+			i.set_surface_override_material(0, global_material.deselected)
+		glow_holder = []
+
+func destination_reset():
+	if destination_holder:
+		for i in destination_holder:
+			i.set_surface_override_material(0, global_material.deselected)
+		destination_holder = []
 
 func child_holder_clear():
 	# Clear duplicate cortical maps name up
