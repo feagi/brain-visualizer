@@ -53,6 +53,8 @@ var new_morphology_node = []
 var latest_send_feagi = ""
 var type = ""
 var SEC
+var glow_holder = []
+var destination_holder = []
 
 func _ready():
 	# # # Initalize the bridge # # # 
@@ -222,10 +224,26 @@ func cortical_is_clicked():
 				var button = $"..".UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
 				if button.text == "Click any cortical":
 					button.text = iteration_name
+					for i in global_name_list:
+						for x in i:
+							if iteration_name == x:
+								if i[x][0].get_class() == "MeshInstance3D":
+									i[x][0].set_surface_override_material(0, global_material.glow)
+									glow_holder.append(i[x][0])
+					select_cortical.selected.pop_front()
+					return true
 			if $"..".UI_QUICKCONNECT.GetReferenceByID("DESTINATION").visible:
 				var button = $"..".UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
 				if button.text == "Click any cortical":
 					button.text = iteration_name
+					for i in global_name_list:
+						for x in i:
+							if iteration_name == x:
+								if i[x][0].get_class() == "MeshInstance3D":
+									i[x][0].set_surface_override_material(0, global_material.destination)
+									destination_holder.append(i[x][0])
+					select_cortical.selected.pop_front()
+					return true
 		var grab_id_cortical = ""
 		grab_id_cortical = name_to_id(iteration_name)
 		update_cortical_map_name(grab_id_cortical)
@@ -432,6 +450,18 @@ func _on_information_button_request_completed(_result, _response_code, _headers,
 	#	$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 10 + $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.size.y + $".."/".."/".."/Menu/cortical_mapping.position.y
 	else:
 		$notification.generate_notification_message(api_data, _response_code, "_on_information_button_request_completed", "/v1/feagi/genome/cortical_mappings/efferents")
+
+func glow_reset():
+	if glow_holder:
+		for i in glow_holder:
+			i.set_surface_override_material(0, global_material.deselected)
+		glow_holder = []
+
+func destination_reset():
+	if destination_holder:
+		for i in destination_holder:
+			i.set_surface_override_material(0, global_material.deselected)
+		destination_holder = []
 
 func child_holder_clear():
 	# Clear duplicate cortical maps name up
@@ -710,7 +740,7 @@ func _on_burst_value_focus_exited():
 
 func _on_create_pressed(node):
 	var name_input = node.GetReferenceByID("MorphologyName").get_node("field_MorphologyName").text
-	var dropdown_selected = node.GetReferenceByID("MorphologyType").get_node("dropDown_MorphologyType").text
+	var dropdown_selected = $"..".name_selected_morphology
 	if name_input != "":
 		if dropdown_selected == "Patterns":
 			var json = {}
@@ -720,7 +750,6 @@ func _on_create_pressed(node):
 			var full_array = []
 			var empty_flag = 0
 			for i in new_morphology_node:
-				print("new morp node: ", new_morphology_node)
 				empty_flag = 0
 				full_array = []
 				var empty_array1 = [i.get_node("floatfield_Xi").get_node("floatField_Xi").text, i.get_node("floatfield_Yi").get_node("floatField_Yi").text, i.get_node("floatfield_Zi").get_node("floatField_Zi").text]
@@ -947,21 +976,20 @@ func _on_get_morphology_usuage_request_completed(_result, _response_code, _heade
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_morphology_usuage_request_completed", "/v1/feagi/genome/morphology")
 
 func _morphology_button_pressed(node):
-#	var dropdown_selected = node.get_node("dropdown_MorphologyType").get_node("dropDown_MorphologyType").text
-#	if dropdown_selected == "Patterns":
-#		var new_node = node.GetReferenceByID("Patterns").get_node("box_PatternRow0").duplicate()
-#		node.GetReferenceByID("Patterns").add_child(new_node)
-#		new_morphology_node.append(new_node)
-#		new_node.visible = true
-#		new_node.get_node("button_RemoveSelfRowButton").get_node("button_RemoveSelfRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
-#	elif dropdown_selected == "Vectors":
-#		var new_node = node.GetReferenceByID("Vectors").get_node("box_XYZ").duplicate()
-#		new_morphology_node.append(new_node)
-#		new_node.visible = true
-#		node.GetReferenceByID("Vectors").add_child(new_node)
-#		new_node.visible = true
-#		new_node.get_node("button_RemoveRowButton").get_node("button_RemoveRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
-	pass
+	var dropdown_selected = $"..".name_selected_morphology
+	if dropdown_selected == "Patterns":
+		var new_node = node.GetReferenceByID("Patterns").get_node("box_PatternRow0").duplicate()
+		node.GetReferenceByID("Patterns").add_child(new_node)
+		new_morphology_node.append(new_node)
+		new_node.visible = true
+		new_node.get_node("button_RemoveSelfRowButton").get_node("button_RemoveSelfRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
+	elif dropdown_selected == "Vectors":
+		var new_node = node.GetReferenceByID("Vectors").get_node("box_XYZ").duplicate()
+		new_morphology_node.append(new_node)
+		new_node.visible = true
+		node.GetReferenceByID("Vectors").add_child(new_node)
+		new_node.visible = true
+		new_node.get_node("button_RemoveRowButton").get_node("button_RemoveRowButton").connect("pressed",Callable(self,"delete_morphology").bind(new_node))
 
 func _morphology_add_row(dropdown, row_node, parent_node, button, create_button):
 		var counter = 0

@@ -231,27 +231,6 @@
 				}
 			],
 			"vertical": true
-		},
-		{
-			"type": "radiobutton",
-			"ID": "CHECkBOX_TEST",
-			"components": [
-				{
-					"type": "checkBox",
-					"ID": "c1",
-					"sideLabelText": "c1"
-				},
-				{
-					"type": "checkBox",
-					"ID": "c2",
-					"sideLabelText": "c2"
-				},
-				{
-					"type": "checkBox",
-					"ID": "c3",
-					"sideLabelText": "c3"
-				},
-			]
 		}
 	]
 }
