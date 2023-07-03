@@ -103,7 +103,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 		# Lets keep this in order from Left to Right
 		# REFRESH_RATE_BOX
 		"REFRESH_RATE_FLOATFIELD":
-			DataUp.emit({"updatedBurstRate": data["value"]})
+			DataUp.emit({"updatedBurstRate": 1/data["value"]})
 		
 		# NEURONAL_CIRCUITS_BOX
 		"IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON":
