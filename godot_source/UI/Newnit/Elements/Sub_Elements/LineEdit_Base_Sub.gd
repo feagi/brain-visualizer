@@ -22,7 +22,7 @@ func SetText(input: String, backup: String) -> void:
 	_emitValChangedIfChanged(rootText)
 	text = prefix + rootText + suffix
 
-func _emitValChangedIfChanged(newRootText: String) -> void:
+func _emitValChangedIfChanged(newRootText: String = rootText) -> void:
 	if _cachedRootText != newRootText:
 		_cachedRootText = newRootText
 		value_edited.emit(newRootText)
@@ -34,6 +34,8 @@ func _FilterText(input: String, _replacementIncorrect: String) -> String:
 # TODO this camera focusing system is flawed, and should be replaced
 func _ready():
 	alignment = HORIZONTAL_ALIGNMENT
+	focus_exited.connect(_emitValChangedIfChanged)
+	text_submitted.connect(_emitValChangedIfChanged)
 	mouse_entered.connect(_toggleCamUsageOn)
 	mouse_exited.connect(_toggleCamUsageOff)
 
