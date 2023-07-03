@@ -278,4 +278,5 @@ static func SpawnNewnitOfType(type: String) -> Node:
 	return newChild
 
 static func ShortText(text: String, maxLength = 16) -> String:
-	return text.left(maxLength)
+	if len(text) < maxLength: return text
+	return text.left(maxLength - 3) + "..."
