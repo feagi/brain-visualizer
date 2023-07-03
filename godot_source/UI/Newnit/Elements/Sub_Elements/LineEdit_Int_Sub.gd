@@ -1,30 +1,30 @@
-extends LineEdit
+extends LineEdit_Base_Sub
 class_name LineEdit_int_Sub
 
-#TODO - minimum, maximum, prefix, suffix
-
-signal value_edited(val: int)
-
-var minWidth: float:
-	get: return get_theme_font("font").get_string_size(text).x
-
 var value: int:
-	get: return int(_cachedText)
-	set(v): text = str(v); _cachedText = str(v)
+	get: return int(rootText)
+	set(v): SetText( str(v), str(rootText))
 
-var min_value: int = -INF
-var max_value: int = INF
+# Function to filter inplausible text, override in child classes
+func _FilterText(input: String, replacementIncorrect: String) -> String:
+	var val: int
+	if !input.is_valid_int(): 
+		if !input.is_valid_float(): return replacementIncorrect
+		val = int(float(input))
+	val = int(input)
+	val = HelperFuncs.clampToIntRange(val, min_value, max_value)
+	return str(val)
 
-var _cachedText: String = "0"
+# Function to emit values, override in child classes for different formats
+func _EmitNewValue(output: String) -> void:
+	value_edited.emit(output.to_int())
 
-func _ready():
-	text_changed.connect(_TextChangedRelay)
+var min_value: int = -99999999
+var max_value: int = 99999999
 
-func _TextChangedRelay(input: String) -> void:
-	if !input.is_valid_int(): return
-	_cachedText = input
-	
-	value_edited.emit(int(input))
+func _ready() -> void:
+	super._ready()
+	rootText = "0"
 
 # built in vars
 # text: String

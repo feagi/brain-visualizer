@@ -76,7 +76,7 @@ func Activate(langISO: String):
 	get_tree().get_root().size_changed.connect(WindowSizedChanged)
 
 	Activated = true
-
+	focus_entered.connect(FocusControl)
 
 func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar = Newnit_Box.new()
@@ -119,11 +119,11 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 				UI_holders.append(UI_CORTICALLIST)
 			
 				# Copy n paste cus no reason to do extra work
-				const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+				const ButtonItem := { "type": "button", "ID": "morphologyOption", "alignment": 0}
 				var morphologyOptions: Array = cache.genome_corticalAreaIDList
 				var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
 				for i in morphologyOptions:
-					var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": $Brain_Visualizer.id_to_name(i)})
+					var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"fullText": $Brain_Visualizer.id_to_name(i)})
 					spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
@@ -473,6 +473,10 @@ func RelayDownwards(callType, data) -> void:
 ####################################
 ############# Internals ############
 ####################################
+
+func FocusControl():
+	print("Background now focused!")
+	grab_focus()
 
 func SpawnTUTORIAL():
 	if UI_TUTORIAL != null:
