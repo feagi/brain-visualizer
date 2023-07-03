@@ -119,7 +119,7 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 				UI_holders.append(UI_CORTICALLIST)
 			
 				# Copy n paste cus no reason to do extra work
-				const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+				const ButtonItem := { "type": "button", "ID": "morphologyOption", "alignment": 0}
 				var morphologyOptions: Array = cache.genome_corticalAreaIDList
 				var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
 				for i in morphologyOptions:
