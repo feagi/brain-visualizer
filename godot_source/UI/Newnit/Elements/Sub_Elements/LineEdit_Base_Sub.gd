@@ -23,19 +23,27 @@ func SetText(input: String, backup: String) -> void:
 	text = prefix + rootText + suffix
 
 func _emitValChangedIfChanged(newRootText: String = rootText) -> void:
-	if _cachedRootText != newRootText:
-		_cachedRootText = newRootText
-		value_edited.emit(newRootText)
+	release_focus()
+	if _cachedRootText == newRootText: return
+	_cachedRootText = newRootText
+	_EmitNewValue(newRootText)
+
+func _UIUpdateText(newText: String = text) -> void:
+	SetText(newText, rootText)
 
 # Function to filter inplausible text, override in child classes
 func _FilterText(input: String, _replacementIncorrect: String) -> String:
 	return input
 
+# Function to emit values, override in child classes for different formats
+func _EmitNewValue(output: String) -> void:
+	value_edited.emit(output)
+
 # TODO this camera focusing system is flawed, and should be replaced
 func _ready():
 	alignment = HORIZONTAL_ALIGNMENT
-	focus_exited.connect(_emitValChangedIfChanged)
-	text_submitted.connect(_emitValChangedIfChanged)
+	focus_exited.connect(_UIUpdateText)
+	text_submitted.connect(_UIUpdateText)
 	mouse_entered.connect(_toggleCamUsageOn)
 	mouse_exited.connect(_toggleCamUsageOff)
 

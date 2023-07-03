@@ -76,7 +76,7 @@ func Activate(langISO: String):
 	get_tree().get_root().size_changed.connect(WindowSizedChanged)
 
 	Activated = true
-
+	focus_entered.connect(FocusControl)
 
 func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar = Newnit_Box.new()
@@ -473,6 +473,10 @@ func RelayDownwards(callType, data) -> void:
 ####################################
 ############# Internals ############
 ####################################
+
+func FocusControl():
+	print("Background now focused!")
+	grab_focus()
 
 func SpawnTUTORIAL():
 	if UI_TUTORIAL != null:
