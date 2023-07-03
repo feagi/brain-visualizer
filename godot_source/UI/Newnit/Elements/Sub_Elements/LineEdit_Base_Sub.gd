@@ -44,8 +44,8 @@ func _ready():
 	alignment = HORIZONTAL_ALIGNMENT
 	focus_exited.connect(_UIUpdateText)
 	text_submitted.connect(_UIUpdateText)
-	mouse_entered.connect(_toggleCamUsageOn)
-	mouse_exited.connect(_toggleCamUsageOff)
+	focus_entered.connect(_toggleCamUsageOn)
+	focus_exited.connect(_toggleCamUsageOff)
 
 func _toggleCamUsageOn():
 	Godot_list.Node_2D_control = true

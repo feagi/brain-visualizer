@@ -21,7 +21,7 @@ var min_value: float = -99999999.0
 var max_value: float = 99999999.0
 
 func _ready() -> void:
-	super()
+	super._ready()
 	rootText = "0"
 
 
