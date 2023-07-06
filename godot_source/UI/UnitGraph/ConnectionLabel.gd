@@ -2,12 +2,6 @@ extends Newnit_Box
 class_name Connection_Label
 
 
-var connectionMorphology: String:
-	get: return _connectionMorphology
-	set(v):
-		_connectionMorphology = v
-		UpdateText()
-
 var numConnections: int:
 	get: return _numConnections
 	set(v):
@@ -16,15 +10,15 @@ var numConnections: int:
 
 var _sourceNode: CortexNode
 var _destinationNode: CortexNode
-var _connectionMorphology: String
 var _numConnections: int
 var _buttonElement: Element_Base
 
-func _init(sourceNode: CortexNode, destinationNode: CortexNode, 
-morphology: String, numberConnections: int, graph: GraphCore):
+func _init(sourceNode: CortexNode, destinationNode: CortexNode,
+ numberConnections: int, graph: GraphCore):
 	
+	graph.add_child(self)
 	var activationDict = {
-		"ID": morphology + "_" + sourceNode.corticalID + "_" + destinationNode.corticalID,
+		"ID": sourceNode.corticalID + "_" + destinationNode.corticalID,
 		"type": "box",
 		"components": [
 			{
@@ -39,9 +33,7 @@ morphology: String, numberConnections: int, graph: GraphCore):
 	_buttonElement = children[0]
 	_sourceNode = sourceNode
 	_destinationNode = destinationNode
-	_connectionMorphology = morphology
 	numConnections = numberConnections
-	graph.add_child(self)
 	
 	
 	UpdateConnectionPosition()
@@ -59,5 +51,5 @@ func ConnectingNodeClosed() -> void:
 	queue_free()
 
 func UpdateText() -> void:
-	_buttonElement.fullText = connectionMorphology + ":" + str(numConnections)
+	_buttonElement.fullText = str(numConnections)
 	pass
