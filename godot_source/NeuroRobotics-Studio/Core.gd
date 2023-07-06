@@ -114,6 +114,7 @@ func GET_OPU(input_name: String): Call_GET(ADD_OPU+input_name, _Relay_update_OPU
 func GET_IPU(input_name: String): Call_GET(ADD_IPU+input_name, _Relay_update_IPU)
 func GET_BurstRate(): Call_GET(ADD_GET_stimulation_period, _Relay_Get_BurstRate)
 func GET_health_status(): Call_GET(GET_HEALTH_STATUS, _Relay_Get_Health)
+func GET_Connectome_CorticalAreas_Detailed(): Call_GET(ADD_GET_ConnectomCorticalAreasListDetailed, _Relay_ConnectomeCorticalAreasListDetailed)
 
 func Update_BurstRate(newBurstRate: float):
 	Call_POST(ADD_POST_BurstEngine, _Relay_ChangedBurstRate, {"burst_duration": newBurstRate})
@@ -333,7 +334,9 @@ func _Relay_update_IPU(_result, _response_code, _headers, _body):
 	var api_data = test_json_conv.get_data()
 	UIManager.RelayDownwards(REF.FROM.IPULIST, api_data)
 #	Autoload_variable.Core_addition._on_IPU_list_request_completed(_result, _response_code, _headers, _body)
-	
+
+func _Relay_ConnectomeCorticalAreasListDetailed(_result, _response_code, _headers, _body):
+	pass
 
 func _Relay_Efferent(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Efferent"); return
@@ -412,6 +415,8 @@ var ADD_GET_GenomeFileName:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/file_name"
 var ADD_GET_ConnectomeMappingReport:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/connectome/properties/mappings"
+var ADD_GET_ConnectomCorticalAreasListDetailed:
+	get: return SEC + FEAGI_RootAddress + "/v1/feagi/connectome/cortical_areas/list/detailed"
 var ADD_GET_CorticalAreaNameList:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area_name_list"
 var ADD_GET_CorticalAreaNameLOCATION:
@@ -442,7 +447,6 @@ var ADD_GET_Morphology_information:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/morphology?morphology_name="
 var ADD_GET_Morphology_USUAGE_information:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/morphology_usage?morphology_name="
-
 var ADD_GET_mem:
 	get: return SEC + FEAGI_RootAddress + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
 var ADD_GET_syn:
