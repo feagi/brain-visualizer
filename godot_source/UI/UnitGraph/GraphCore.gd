@@ -46,8 +46,7 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 	var cortex: Dictionary
 	for cortexID in fullCorticalData.keys():
 		cortex = fullCorticalData[cortexID]
-		var spawnedNode = _SpawnCorticalNode(cortexID, cortex["friendlyName"])
-		#TODO positioning!
+		var spawnedNode = _SpawnCorticalNode(cortexID, cortex)
 	
 	# This loop runs under the assumption that the connectome mapping only shows in -> out
 	# Yes we need a seperate for loop for this. Too Bad!
@@ -58,8 +57,6 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 			for connection in cortex["connectionsStrIDs"]:
 				_ProcessCortexConnectionRequest(cortexID, 0, connection, 0)
 	
-	# make everything pretty
-			# arrange_nodes()
 	
 	pass
 
@@ -76,3 +73,5 @@ func _ConnectAllNodeSignals() -> void:
 	for child in nodeChildren:
 		pass
 
+#func _GetNodeByID() -> CortexNode:
+#	pass
