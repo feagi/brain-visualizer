@@ -23,6 +23,20 @@ var _buttonElement: Element_Base
 func _init(sourceNode: CortexNode, destinationNode: CortexNode, 
 morphology: String, numberConnections: int, graph: GraphCore):
 	
+	var activationDict = {
+		"ID": morphology + "_" + sourceNode.corticalID + "_" + destinationNode.corticalID,
+		"type": "box",
+		"components": [
+			{
+				"type":"button",
+				"ID":"openMorphologyButton",
+			},
+		]
+		
+	}
+	Activate(activationDict)
+	
+	_buttonElement = children[0]
 	_sourceNode = sourceNode
 	_destinationNode = destinationNode
 	_connectionMorphology = morphology
