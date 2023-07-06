@@ -59,7 +59,7 @@ static func _BuildUnitActivation(struct: Dictionary, lang: Dictionary,
 		if givenComponent_struct["ID"] in data.keys():
 			givenComponent_data = data[givenComponent_struct["ID"]]
 		
-		if (givenComponent_struct["type"] == "tab") or (givenComponent_struct["type"] == "box") or (givenComponent_struct["type"] == "popup") or (givenComponent_struct["type"] == "collapsible"):
+		if (givenComponent_struct["type"] in ["tab", "box", "popup", "collapsible", "radiobutton"]):
 			
 			# We are dealing with a subunit, time for recursion
 			# This is not particuarly efficient. Too Bad!
@@ -187,14 +187,14 @@ static func ColorToV3I(input: Color) -> Vector3i:
 	output.z = input.b8
 	return output
 
-static func clampToRange(input: float, min: float, max: float) -> float:
-	if input < min: return min
-	if input > max: return max
+static func clampToRange(input: float, min_value: float, max_value: float) -> float:
+	if input < min_value: return min_value
+	if input > max_value: return max_value
 	return input
 
-static func clampToIntRange(input: int, min: int, max: int) -> int:
-	if input < min: return min
-	if input > max: return max
+static func clampToIntRange(input: int, min_value: int, max_value: int) -> int:
+	if input < min_value: return min_value
+	if input > max_value: return max_value
 	return input
 
 # Remaps X Y floats from activation JSON into a vector
@@ -253,7 +253,7 @@ static func SpawnNewnitOfType(type: String) -> Node:
 	match type:
 		"counter": newChild = Element_Counter.new()
 		"button": newChild = Element_Button.new()
-		"checkbox": newChild = Element_CheckBox.new()
+		"checkBox": newChild = Element_CheckBox.new()
 		"checkbutton": newChild = Element_CheckButton.new()
 		"dropdown": newChild = Element_DropDown.new()
 		"field": newChild = Element_Field.new()
@@ -269,8 +269,14 @@ static func SpawnNewnitOfType(type: String) -> Node:
 		"collapsible": newChild = Newnit_Collapsible.new()
 		"textbox": newChild = Element_TextBox.new()
 		"texturebutton": newChild = Element_TextureButton.new()
+		"titleBar": newChild = Element_Internal_TitleBar.new()
+		"radiobutton": newChild = Newnit_RadioButtons.new()
 		# TODO: More types!
 		_:
 			print("Invalid child of type ", type, " attempted to spawn. Skipping...")
 			return
 	return newChild
+
+static func ShortText(text: String, maxLength = 16) -> String:
+	if len(text) < maxLength: return text
+	return text.left(maxLength - 3) + "..."

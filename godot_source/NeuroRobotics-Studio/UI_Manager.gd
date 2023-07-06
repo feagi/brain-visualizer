@@ -17,24 +17,33 @@ var currentLanguageISO: String:
 var Activated: bool = false
 
 # References
+var cache: FeagiCache
+
 var UI_Top_TopBar: Newnit_Box
 var UI_LeftBar: Newnit_Popup
-var UI_createcorticalBar : Newnit_Box
+var UI_CreateCorticalBar : Newnit_Popup
 var UI_ManageNeuronMorphology : Newnit_Popup
-var UI_MappingDefinition : Newnit_Box
-var UI_CircuitImport : Newnit_Box
+var UI_morphologyLIST : Newnit_Popup
+var UI_CORTICALLIST : Newnit_Popup
+var UI_MappingDefinition : Newnit_Popup
+var UI_CircuitImport : Newnit_Popup
+var UI_QUICKCONNECT: Newnit_Popup
 var UI_GraphCore: GraphCore
-var UI_CreateMorphology: Newnit_Box
+var UI_CreateMorphology: Newnit_Popup
+var UI_TUTORIAL_DIALOGUE: Newnit_Popup
+var UI_TUTORIAL: Newnit_Popup
 var UI_INDICATOR: Newnit_Box
-var cache: FeagiCache
-var vectors_holder = []
+var vectors_holder := []
 var src_global 
 var dst_global
 var import_close_button
-var UI_holders = []
-var global_json_data
+var UI_holders := []
+var global_json_data # TODO replace dependent with Newnit library system
 var optionbutton_holder
 var morphology_creation_add_button
+var name_selected_morphology = ""
+var tutorial_holder = []
+var current_image = 0
 
 # Internal cached vars
 var _sideBarChangedValues := {}
@@ -48,16 +57,17 @@ func Activate(langISO: String):
 	# Initialize UI
 	
 	# Initialize TopBar
-	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOPBAR", currentLanguageISO)
+	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOP_BAR", currentLanguageISO)
 	_SpawnTopBar(topBarDict)
-	var filess = FileAccess.open("res://brain_visualizer_source/type_option.json", FileAccess.READ)
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(filess.get_as_text())
-	global_json_data = test_json_conv.get_data()
-	filess.close()
+	SpawnTUTORIAL()
 	
-#	SpawnIndicator(createindicator)
-#	SpawnNeuronManager()
+	# Write to global_json_data
+	var files = FileAccess.open("res://brain_visualizer_source/type_option.json", FileAccess.READ)
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(files.get_as_text())
+	global_json_data = test_json_conv.get_data()
+	files.close()
+
 	# Initialize GraphCore
 	UI_GraphCore = $graphCore #TODO: this is very temporary
 	UI_GraphCore.DataUp.connect(GraphEditInput)
@@ -66,7 +76,7 @@ func Activate(langISO: String):
 	get_tree().get_root().size_changed.connect(WindowSizedChanged)
 
 	Activated = true
-	
+	focus_entered.connect(FocusControl)
 
 func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar = Newnit_Box.new()
@@ -74,8 +84,8 @@ func _SpawnTopBar(activation: Dictionary):
 	UI_Top_TopBar.Activate(activation)
 	UI_Top_TopBar.DataUp.connect(TopBarInput)
 	# TODO best not to connect to Element children, better to connect to element signals itself
-	# This may work for now but can cause weird issues later
-	var import_circuit = UI_Top_TopBar.GetReferenceByID("HEADER_NEURONALCIRCUITS").get_node("sideButton_HEADER_NEURONALCIRCUITS")
+	# https://media.tenor.com/pb0kIF-blqsAAAAC/minion-typing.gif
+	var import_circuit = UI_Top_TopBar.GetReferenceByID("IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON").get_node("textureButton_IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON")
 	import_circuit.connect("pressed", Callable($Brain_Visualizer,"_on_import_pressed"))
 
 
@@ -87,51 +97,53 @@ signal DataUp(data: Dictionary)
 
 ######### Top Bar Control ##########
 # We should be using this to make things more streamline
-func TopBarInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
-		"CORTICALAREAS":
-			if "selectedIndex" in data.keys():
-				var name_from_dropdown = UI_Top_TopBar.GetReferenceByID("CORTICALAREAS").get_node("dropDown_CORTICALAREAS").text
-				$Brain_Visualizer.camera_list_selected(name_from_dropdown)
-			if "sideButton" in data.keys():
-				if not UI_createcorticalBar:
-					SpawnCorticalCrete()
-				else:
-					UI_createcorticalBar.queue_free()
-		"NEURONMORPHOLOGIES":
-			if "sideButton" in data.keys():
-				if not UI_CreateMorphology:
-					SpawnCreateMophology()
-				else:
-					UI_CreateMorphology.queue_free()
-			if "selectedIndex" in data.keys():
-				if UI_ManageNeuronMorphology != null:
-					UI_ManageNeuronMorphology.queue_free()
-				var rule_name = UI_Top_TopBar.GetReferenceByID("NEURONMORPHOLOGIES").get_node("dropDown_NEURONMORPHOLOGIES").text
-				if rule_name != " ":
-					if "+" in rule_name:
-						rule_name = rule_name.replace("+", "%2B")
-					if "[" in rule_name:
-						rule_name = rule_name.replace("[", "%5B")
-					if "]" in rule_name:
-						rule_name = rule_name.replace("]", "%5D")
-					if ", " in rule_name:
-						rule_name = rule_name.replace(", ", "%2C%20")
-					$"..".Get_Morphology_information(rule_name)
-					$"..".GET_USUAGE_MORPHOLOGY(rule_name)
-				SpawnNeuronManager()
-				UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
-		"REFRESHRATE":
-			DataUp.emit({"updatedBurstRate": data["value"]})
+		# Lets keep this in order from Left to Right
+		# REFRESH_RATE_BOX
+		"REFRESH_RATE_FLOATFIELD":
+			DataUp.emit({"updatedBurstRate": 1/data["value"]})
+		
+		# NEURONAL_CIRCUITS_BOX
+		"IMPORT_NEURONAL_CIRCUIT_TEXTUREBUTTON":
+			pass
+		
+		# CORTICAL_AREAS_BOX
+		"LIST_CORTICAL_AREAS_TEXTURE_BUTTON":
+			if not UI_CORTICALLIST:
+				UI_CORTICALLIST = Newnit_Popup.new()
+				var corticallistDICT = HelperFuncs.GenerateDefinedUnitDict("CORTICALLISTONLY", currentLanguageISO)
+				add_child(UI_CORTICALLIST)
+				UI_CORTICALLIST.Activate(corticallistDICT)
+				UI_holders.append(UI_CORTICALLIST)
+			
+				# Copy n paste cus no reason to do extra work
+				const ButtonItem := { "type": "button", "ID": "morphologyOption", "alignment": 0}
+				var morphologyOptions: Array = cache.genome_corticalAreaIDList
+				var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
+				for i in morphologyOptions:
+					var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"fullText": $Brain_Visualizer.id_to_name(i)})
+					spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
+		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
+			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
+		"QUICK_CONNECT_CORTICAL_AREAS_TEXTURE_BUTTON":
+			if not UI_QUICKCONNECT: SpawnQuickConnect()
+		
+		# NEURON_MORPHOLOGIES_BOX
+		"CREATE_NEURON_MORPHOLOGY_TEXTURE_BOX":
+			if not UI_CreateMorphology: SpawnCreateMophology()
+		"MANAGE_NEURON_MORPHOLOGIES": 
+			if not UI_ManageNeuronMorphology: SpawnNeuronManager()
 
-func CreateMorphologyInput(data: Dictionary, ElementID: String, ElementRef: Node):
+func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Node):
+	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
+	var composite = UI_CreateMorphology.GetReferenceByID("Composite")
+	var patterns = UI_CreateMorphology.GetReferenceByID("Patterns")
+	var vectors = UI_CreateMorphology.GetReferenceByID("Vectors")
 	match(ElementID):
 		"MorphologyType":
 		#Drop down is changed, toggle between available morphology wizards
-			var composite = UI_CreateMorphology.GetReferenceByID("Composite")
-			var patterns = UI_CreateMorphology.GetReferenceByID("Patterns")
-			var vectors = UI_CreateMorphology.GetReferenceByID("Vectors")
 			if data["selectedIndex"] == 0:
 				$Brain_Visualizer.new_morphology_clear()
 				composite.visible = true; patterns.visible = false; vectors.visible = false; morphology_creation_add_button.visible = false
@@ -144,7 +156,71 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, ElementRef: Node
 				$Brain_Visualizer.new_morphology_clear()
 				composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
 				morphology_creation_add_button.emit_signal("pressed")
-######### Side Bar Control #########
+		"RPATTERNS", "RCOMPOSITE", "RVECTORS":
+			for i in UI_CreateMorphology.GetReferenceByID("MorphologyType").get_children():
+				if i.get_child(1).is_pressed():
+					name_selected_morphology = i.get_name()
+					name_selected_morphology = name_selected_morphology.replace("checkBox_R", "").capitalize()
+			match(ElementID):
+				"RCOMPOSITE":
+					$Brain_Visualizer.new_morphology_clear()
+					composite.visible = true; patterns.visible = false; vectors.visible = false; morphology_creation_add_button.visible = false
+					UI_CreateMorphology.SetData({"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN":{"options": optionbutton_holder}}}})
+				"RPATTERNS":
+					$Brain_Visualizer.new_morphology_clear()
+					morphology_creation_add_button.emit_signal("pressed")
+					composite.visible = false; patterns.visible = true; vectors.visible = false; morphology_creation_add_button.visible = true
+				"RVECTORS":
+					$Brain_Visualizer.new_morphology_clear()
+					composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
+					morphology_creation_add_button.emit_signal("pressed")
+
+func TUTORIALINPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
+	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
+	SpawnTUTORIALdialogue()
+	UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(ElementID))
+	for i in range(len(tutorial_holder)):
+		if ElementID == tutorial_holder[i]:
+			current_image = i
+	if current_image == len(tutorial_holder)-1:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+	else:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+	if current_image == 0:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+	else:
+		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+	
+func TUTORIALDIA_INPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
+	if "value" in data.keys():
+		if current_image - 1 >= 0:
+			current_image -= 1
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + tutorial_holder[current_image])
+		if current_image == 0:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+		if current_image == len(tutorial_holder)-1:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "FINISHED"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "NEXT"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+	if "sideButton" in data.keys():
+		if current_image + 1 <= len(tutorial_holder)-1:
+			current_image += 1
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + tutorial_holder[current_image])
+		if current_image == len(tutorial_holder)-1:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "FINISHED"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").text = "NEXT"
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+		if current_image == 0:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+		else:
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+	######### Side Bar Control #########
 
 func LeftBarInput(data: Dictionary, _compRef, _unitRef):
 #	print(JSON.stringify(data)) # useful for debugging
@@ -155,7 +231,7 @@ func LeftBarInput(data: Dictionary, _compRef, _unitRef):
 #			_sideBarChangedValues["cortical_id"] = UI_LeftBar.data["CorticalName"]
 			$"..".Update_Genome_CorticalArea(_sideBarChangedValues)
 			_sideBarChangedValues = {} # reset
-		_:
+		_: # ????
 			# Check if this is a neuron property, if so cache change for Update
 			if _isNeuronProperty(data["ID"]):
 				_sideBarChangedValues[data["ID"]] = data["value"]
@@ -176,24 +252,100 @@ func _isNeuronProperty(ID: String) -> bool:
 	if ID == "SnoozePeriod": return true
 	if ID == "DegeneracyConstant": return true
 	return false
-
-func CorticalCreateInput(data: Dictionary, ElementID: StringName, ElementRef: Node):
+	
+func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	match(ElementID):
+		"SRC_CORTICAL":
+			$Brain_Visualizer.glow_reset()
+			var button = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL")
+			button.text = "Click any cortical"
+		"ARROW":
+			if UI_morphologyLIST:
+				if UI_morphologyLIST != null:
+					UI_morphologyLIST.queue_free()
+			UI_morphologyLIST = Newnit_Popup.new()
+			var morphologylistDICT = HelperFuncs.GenerateDefinedUnitDict("MORPHOLOGYLISTONLY", currentLanguageISO)
+			add_child(UI_morphologyLIST)
+			UI_morphologyLIST.Activate(morphologylistDICT)
+			UI_holders.append(UI_morphologyLIST)
+			const ButtonItem := { "type": "texturebutton", 
+				"ID": "morphologyOption",
+				"internal_custom_minimum_size": Vector2(200,200)}
+			var morphologyOptions: Array = ["block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
+			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
+			for i in morphologyOptions:
+				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem)
+				spawnedItem.get_node("textureButton_morphologyOption").connect("pressed", Callable(self, "arrow_name_updater").bind(i))
+				spawnedItem.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(i) + ".png")
+		"DESTINATION":
+			$Brain_Visualizer.destination_reset()
+			var button = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION")
+			button.text = "Click any cortical"
+		"CONNECT":
+			var src = UI_QUICKCONNECT.GetReferenceByID("SRC_CORTICAL").get_node("button_SRC_CORTICAL").text
+			var morphology_name = UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text
+			var dest = UI_QUICKCONNECT.GetReferenceByID("DESTINATION").get_node("button_DESTINATION").text
+			$Brain_Visualizer.quick_connect_to_feagi(src, morphology_name, dest)
+			$Brain_Visualizer.glow_reset()
+			$Brain_Visualizer.destination_reset()
+		"POPUP_TOPBAR":
+			$Brain_Visualizer.glow_reset()
+			$Brain_Visualizer.destination_reset()
+func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
+	print("data: ", data, "elementid: ", ElementID)
+	match(ElementID):
+		"UpdateButton":
+			UI_CreateCorticalBar.queue_free()
+		"CORTICALAREAFIELD":
+				var box = UI_CreateCorticalBar.GetReferenceByID("XYZ")
+				var boxx = UI_CreateCorticalBar.GetReferenceByID("WHD")
+				var update = UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
+				if data["value"] == "":
+					if box.visible:
+						update.disabled = true
+						box.visible = false
+				else:
+					if not box.visible:
+						update.disabled = false
+						box.visible = true
+				if data["value"] == "":
+					if boxx.visible:
+						boxx.visible = false
+				else:
+					if not boxx.visible:
+						boxx.visible = true
 		"CORTICALAREA":
 			if data["selectedIndex"] == 1:
-				UI_createcorticalBar.GetReferenceByID("corticalnamedrop").visible = true
-				UI_createcorticalBar.GetReferenceByID("OPUIPU").visible = true
-				UI_createcorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
+				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
 				$"..".GET_OPU('OPU')
 			elif data["selectedIndex"] == 2:
-				UI_createcorticalBar.GetReferenceByID("corticalnamedrop").visible = true
-				UI_createcorticalBar.GetReferenceByID("OPUIPU").visible = true
-				UI_createcorticalBar.GetReferenceByID("corticalnametext").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
+				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
 				$"..".GET_IPU('IPU')
 			elif data["selectedIndex"] == 3:
-				UI_createcorticalBar.GetReferenceByID("corticalnamedrop").visible = false
-				UI_createcorticalBar.GetReferenceByID("corticalnametext").visible = true
-				UI_createcorticalBar.GetReferenceByID("OPUIPU").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
+				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
+			else:
+				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
+		"POPUP_TOPBAR":
+			$Brain_Visualizer._clear_single_cortical("example", Godot_list.godot_list)
 
 ############ Graph Edit ############
 
@@ -209,6 +361,7 @@ func GraphEditInput(data: Dictionary):
 func WindowSizedChanged():
 	var viewPortSize: Vector2 = get_viewport_rect().size
 	UI_GraphCore.size = viewPortSize
+
 
 ####################################
 ###### Relay Feagi Dependents ######
@@ -246,8 +399,6 @@ func RelayDownwards(callType, data) -> void:
 #		REF.FROM.pns_current_opu:
 #			pass
 		REF.FROM.genome_corticalAreaIdList:
-#			if UI_Top_TopBar:
-#				UI_Top_TopBar.SetData({"Corticalareas_Box": {"CORTICALAREAS": {"options":data}}})
 			if UI_MappingDefinition:
 				UI_MappingDefinition.SetData({"testlabel": {"SOURCECORTICALAREA":{"options": data, "value": src_global}}})
 				UI_MappingDefinition.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"options": data, "value": dst_global}}})
@@ -273,11 +424,11 @@ func RelayDownwards(callType, data) -> void:
 #		REF.FROM.godot_fullCorticalData:
 #			UI_GraphCore.RelayDownwards(REF.FROM.godot_fullCorticalData, data)
 		REF.FROM.OPULIST:
-			if UI_createcorticalBar:
-				UI_createcorticalBar.SetData({"corticalnamedrop": {"CORTICALAREADROPDOWNINBOX": {"options": data}}})
+			if UI_CreateCorticalBar:
+				UI_CreateCorticalBar.SetData({"corticalnamedrop": {"CORTICALAREADROPDOWNINBOX": {"options": data}}})
 		REF.FROM.IPULIST:
-			if UI_createcorticalBar:
-				UI_createcorticalBar.SetData({"corticalnamedrop": {"CORTICALAREADROPDOWNINBOX": {"options": data}}})
+			if UI_CreateCorticalBar:
+				UI_CreateCorticalBar.SetData({"corticalnamedrop": {"CORTICALAREADROPDOWNINBOX": {"options": data}}})
 		REF.FROM.genome_corticalArea:
 #			# Data for Specific Cortical Area
 #			# Race conditions are technically possible. Verify input
@@ -304,9 +455,9 @@ func RelayDownwards(callType, data) -> void:
 				"PSPUNI": {"value": data["neuron_psp_uniform_distribution"]}
 			}
 			var cortical_properties = {
-				"CorticalPropertiesSection": {"CorticalName": {"sideLabelText": data["cortical_name"]},
-				"CorticalID": {"sideLabelText": data["cortical_id"]},
-				"CorticalArea": {"sideLabelText": data["cortical_group"]},
+				"CorticalPropertiesSection": {"CorticalName": {"value": data["cortical_name"]},
+				"CorticalID": {"value": data["cortical_id"]},
+				"CorticalArea": {"value": data["cortical_group"]},
 				"XYZ": {"Pos_X": {"value": int(data["cortical_coordinates"][0])}, "Pos_Y": {"value": int(data["cortical_coordinates"][1])}, "Pos_Z": {"value": int(data["cortical_coordinates"][2])}},
 				"WHD": {"W": {"value": int(data["cortical_dimensions"][0])}, "H": {"value": int(data["cortical_dimensions"][1])}, "D": {"value": int(data["cortical_dimensions"][2])}}}
 			}
@@ -315,13 +466,43 @@ func RelayDownwards(callType, data) -> void:
 			UI_LeftBar.SetData(cortical_properties)
 			$"..".Update_Afferent_list(data["cortical_id"])
 		REF.FROM.burstEngine:
-			UI_Top_TopBar.SetData({"REFRESHBOX": {"REFRESHRATE": {"value": 1/data}}})
+			UI_Top_TopBar.SetData({"REFRESH_RATE_BOX": {"REFRESH_RATE_FLOATFIELD": {"value": 1/data}}})
 	pass
 
 
 ####################################
 ############# Internals ############
 ####################################
+
+func FocusControl():
+	print("Background now focused!")
+	grab_focus()
+
+func SpawnTUTORIAL():
+	if UI_TUTORIAL != null:
+		UI_TUTORIAL.queue_free() # We don't need this. We need to make it look prettier
+	UI_TUTORIAL = Newnit_Popup.new()
+	var TUTORIALDICT = HelperFuncs.GenerateDefinedUnitDict("TUTORIAL", currentLanguageISO)
+	UI_TUTORIAL.DataUp.connect(TUTORIALINPUT)
+	add_child(UI_TUTORIAL)
+	UI_TUTORIAL.Activate(TUTORIALDICT)
+	UI_holders.append(UI_TUTORIAL)
+	for i in UI_TUTORIAL.get_children():
+		if "_box" in i.get_name():
+			for x in i.get_children():
+				tutorial_holder.append(x.ID)
+	
+	
+func SpawnTUTORIALdialogue():
+	if UI_TUTORIAL_DIALOGUE != null:
+		UI_TUTORIAL_DIALOGUE.queue_free() # We don't need this. We need to make it look prettier
+	UI_TUTORIAL_DIALOGUE = Newnit_Popup.new()
+	var TUTORIALDICT_dialogue = HelperFuncs.GenerateDefinedUnitDict("DIALOGUE", currentLanguageISO)
+	UI_TUTORIAL_DIALOGUE.DataUp.connect(TUTORIALDIA_INPUT)
+	add_child(UI_TUTORIAL_DIALOGUE)
+	UI_TUTORIAL_DIALOGUE.Activate(TUTORIALDICT_dialogue)
+	UI_holders.append(UI_TUTORIAL_DIALOGUE)
+
 
 func SpawnLeftBar(cortexName: String, activation: Dictionary):
 	if UI_LeftBar != null:
@@ -343,15 +524,14 @@ func SpawnLeftBar(cortexName: String, activation: Dictionary):
 	update1.connect("pressed", Callable($Brain_Visualizer,"_on_Update_pressed").bind(UI_LeftBar))
 	add_row_button.connect("pressed", Callable($Brain_Visualizer,"_on_cortical_mapping_add_pressed").bind(cortexName))
 
-
 func mapping_definition_button(node):
-	var src_id = UI_LeftBar.GetReferenceByID("CorticalName").get_node("sideLabel_CorticalName").text
+	var src_id = UI_LeftBar.GetReferenceByID("CorticalName").get_node("field_CorticalName").text
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
 	SpawnMappingDefinition(src_id, node.text, mappingdefinitiongenerated)
 
 func SpawnCreateMophology():
 	var CMDict = HelperFuncs.GenerateDefinedUnitDict("CREATEMORPHOLOGY", currentLanguageISO)
-	UI_CreateMorphology = Newnit_Box.new()
+	UI_CreateMorphology = Newnit_Popup.new()
 	add_child(UI_CreateMorphology)
 	UI_CreateMorphology.Activate(CMDict)
 	var composite = UI_CreateMorphology.GetReferenceByID("Composite")
@@ -373,19 +553,25 @@ func SpawnCreateMophology():
 	create_button.connect("pressed", Callable($Brain_Visualizer,"_on_create_pressed").bind(UI_CreateMorphology))
 	
 
-func SpawnCorticalCrete():
-	UI_createcorticalBar = Newnit_Box.new()
+func SpawnCorticalCreate():
+	UI_CreateCorticalBar = Newnit_Popup.new()
 	var createcorticalBar = HelperFuncs.GenerateDefinedUnitDict("CORTICAL_CREATE", currentLanguageISO)
-	add_child(UI_createcorticalBar)
-	UI_createcorticalBar.Activate(createcorticalBar)
-	UI_createcorticalBar.DataUp.connect(CorticalCreateInput)
-	UI_holders.append(UI_createcorticalBar)
-	UI_createcorticalBar.SetData({"CORTICALAREA": {"options": (global_json_data["option"])}})
-	var update = UI_createcorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
-	var whd = UI_createcorticalBar.GetReferenceByID("WHD")
-	var xyz = UI_createcorticalBar.GetReferenceByID("XYZ")
-	var name_input = UI_createcorticalBar.GetReferenceByID("corticalnametext").get_node("field_CORTICALAREAFIELD").get_node("field_CORTICALAREAFIELD")
-	var optionlist = UI_createcorticalBar.GetReferenceByID("CORTICALAREA").get_node("dropDown_CORTICALAREA")
+	add_child(UI_CreateCorticalBar)
+	UI_CreateCorticalBar.Activate(createcorticalBar)
+	UI_CreateCorticalBar.DataUp.connect(CorticalCreateInput)
+	UI_holders.append(UI_CreateCorticalBar)
+	UI_CreateCorticalBar.SetData({"CORTICALAREA": {"options": (global_json_data["option"])}})
+	UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
+	UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
+	var update = UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
+	var whd = UI_CreateCorticalBar.GetReferenceByID("WHD")
+	var xyz = UI_CreateCorticalBar.GetReferenceByID("XYZ")
+	var name_input = UI_CreateCorticalBar.GetReferenceByID("corticalnametext").get_node("field_CORTICALAREAFIELD").get_node("field_CORTICALAREAFIELD")
+	var optionlist = UI_CreateCorticalBar.GetReferenceByID("CORTICALAREA").get_node("dropDown_CORTICALAREA")
 	var w = whd.get_node("counter_W").get_node("counter_W")
 	var h = whd.get_node("counter_H").get_node("counter_H")
 	var d = whd.get_node("counter_D").get_node("counter_D")
@@ -409,7 +595,7 @@ func SpawnIndicator(activation: Dictionary):
 
 
 func SpawnCircuitImport(activation: Dictionary):
-	UI_CircuitImport = Newnit_Box.new()
+	UI_CircuitImport = Newnit_Popup.new()
 	add_child(UI_CircuitImport)
 	UI_CircuitImport.Activate(activation)
 	UI_holders.append(UI_CircuitImport)
@@ -447,7 +633,6 @@ func SpawnNeuronManager():
 	composite.visible = false
 	patterns.visible = false
 	vectors_bar.visible = false
-#	UI_ManageNeuronMorphology.GetReferenceByID("button1").get_node("button_button1").visible = false
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
@@ -459,10 +644,12 @@ func SpawnNeuronManager():
 	for i in morphologyOptions:
 		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
 		spawnedItem.connect("DataUp", Callable(self,"button_rule"))
+	
 
-
-func button_rule(data: Dictionary, originatingID: StringName, originatingRef: Node):
+func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
 	var rule_name = originatingRef.text
+	var path_string = "res://brain_visualizer_source/menu_assets/image/" + str(rule_name) + ".png"
+	UI_ManageNeuronMorphology.SetData({"box_one": {"MISCMORPRHOLOGYLIST": {"MORPHOLOGY_PICTURE": {"default_texture_path": path_string}}}})
 	if rule_name != " ":
 		if "+" in rule_name:
 			rule_name = rule_name.replace("+", "%2B")
@@ -476,12 +663,28 @@ func button_rule(data: Dictionary, originatingID: StringName, originatingRef: No
 		$"..".GET_USUAGE_MORPHOLOGY(rule_name)
 		UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
+func arrow_name_updater(data):
+	UI_QUICKCONNECT.GetReferenceByID("ARROW").get_node("button_ARROW").text = data
+	UI_morphologyLIST.queue_free()
+func camera_focus(_data: Dictionary, _originatingID: StringName, originatingRef: Node):
+	$Brain_Visualizer.camera_list_selected($Brain_Visualizer.name_to_id(originatingRef.text))
+	UI_CORTICALLIST.queue_free()
+
+func SpawnQuickConnect():
+	var quickconnectdict = HelperFuncs.GenerateDefinedUnitDict("QUICKCONNECT", currentLanguageISO)
+	UI_QUICKCONNECT = Newnit_Popup.new()
+	add_child(UI_QUICKCONNECT)
+	UI_QUICKCONNECT.Activate(quickconnectdict)
+	UI_holders.append(UI_QUICKCONNECT)
+	UI_QUICKCONNECT.DataUp.connect(QuickConnectINPUT)
+	
+	
 
 func SpawnMappingDefinition(src, dst, activation):
 	if is_instance_valid(UI_MappingDefinition):
 		UI_MappingDefinition.queue_free()
 		$Brain_Visualizer.plus_node.clear()
-	UI_MappingDefinition = Newnit_Box.new()
+	UI_MappingDefinition = Newnit_Popup.new()
 	add_child(UI_MappingDefinition)
 	UI_MappingDefinition.Activate(activation)
 	UI_holders.append(UI_MappingDefinition)

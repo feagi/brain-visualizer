@@ -1,12 +1,13 @@
 {
 	"ID": "CIRCUIT_IMPORT",
-  	"enableTitleBar": true,
-  	"titleBarTitle": "Import",
-	"positionX": 500,
-	"positionY": 400,
+	"enableTitleBar": true,
+	"titleBarText": "Import Circuit",
+	"positionX": 430,
+	"positionY": 520,
 	"enableCloseButton": true,
-	"components": [
-		{
+	"enablePanel": true,
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [{
 			"ID": "INPUT_TITLE",
 			"type": "header"
 		},
@@ -21,9 +22,8 @@
 		{
 			"type": "box",
 			"ID": "XYZ",
-		 	"visibility": 0,
-			"components": [
-				{
+			"visibility": 0,
+			"components": [{
 					"type": "counter",
 					"ID": "Pos_X",
 					"max_value": 99999999,
@@ -47,7 +47,7 @@
 		{
 			"type": "button",
 			"text": "Import",
-				"ID": "UpdateButtonTop"
+			"ID": "UpdateButtonTop"
 		},
 		{
 			"ID": "CIRCUITINIT",
@@ -61,8 +61,7 @@
 			"type": "box",
 			"visibility": 0,
 			"ID": "WHD",
-			"components": [
-				{
+			"components": [{
 					"type": "counter",
 					"editable": false,
 					"ID": "W",
@@ -92,7 +91,9 @@
 		},
 		{
 			"ID": "descrption_textbox",
-			"type": "field"
+			"type": "textbox",
+			"custom_minimum_sizeX": 300,
+			"custom_minimum_sizeY": 100
 		}
 	]
 }

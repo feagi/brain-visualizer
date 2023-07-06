@@ -1,0 +1,68 @@
+{
+	"ID": "TUTORIAL",
+	"positionX": 550,
+	"positionY": 55,
+	"type": "popup",
+	"titleBarText": "Tutorial",
+	"enablePanel": true,
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"vertical": true,
+	"components": [
+		{
+			"type": "box",
+			"ID": "first_box",
+			"vertical": false,
+			"components": [
+				{
+					"type": "texturebutton",
+					"ID": "block_to_block.png",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/block_to_block.png",
+					"internal_custom_minimum_sizeX": 100,
+					"internal_custom_minimum_sizeY": 100
+				},
+				{
+					"type": "texturebutton",
+					"ID": "any_to_any.png",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/any_to_any.png",
+					"internal_custom_minimum_sizeX": 100,
+					"internal_custom_minimum_sizeY": 100
+				},
+				{
+					"type": "texturebutton",
+					"ID": "lateral_+x.png",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/lateral_+x.png",
+					"internal_custom_minimum_sizeX": 100,
+					"internal_custom_minimum_sizeY": 100
+				}
+			]
+		},
+		{
+			"type": "box",
+			"ID": "second_box",
+			"vertical": false,
+			"components": [
+				{
+					"type": "texturebutton",
+					"ID": "lateral_+y.png",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/lateral_+y.png",
+					"internal_custom_minimum_sizeX": 100,
+					"internal_custom_minimum_sizeY": 100
+				},
+				{
+					"type": "texturebutton",
+					"ID": "lateral_-y.png",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/lateral_-y.png",
+					"internal_custom_minimum_sizeX": 100,
+					"internal_custom_minimum_sizeY": 100
+				},
+				{
+					"type": "texturebutton",
+					"ID": "connect.png",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/connect.png",
+					"internal_custom_minimum_sizeX": 100,
+					"internal_custom_minimum_sizeY": 100
+				}
+			]
+		}
+	]
+}

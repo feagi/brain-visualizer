@@ -1,0 +1,39 @@
+{
+	"ID": "OPENED_DIALOGUE",
+	"positionX": 550,
+	"positionY": 55,
+	"type": "popup",
+	"titleBarText": "Tutorial",
+	"enablePanel": true,
+	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"vertical": true,
+	"components": [
+		{
+			"type": "box",
+			"ID": "first_box",
+			"vertical": true,
+			"components": [
+              		{
+                        "type": "box",
+                        "ID": "inner_box",
+                        "vertical": false,
+                        "components": [
+                          {
+                            "type": "texturebutton",
+                            "ID": "TUTORIAL_IMAGE",
+                            "default_texture_path": "res://brain_visualizer_source/menu_assets/image/block_to_block.png",
+                            "internal_custom_minimum_sizeX": 300,
+                            "internal_custom_minimum_sizeY": 300
+                          }
+                        ]
+                    },
+              {
+                "type": "button",
+                "ID": "BUTTONS",
+                "sideButtonText": "NEXT",
+                "text": "BACK"
+              }
+			]
+		}
+	]
+}

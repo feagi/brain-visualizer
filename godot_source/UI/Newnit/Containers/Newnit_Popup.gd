@@ -37,8 +37,6 @@ var marginRef: Node:
 var hasNewnitParent: bool:
 	get: return _hasNewnitParent
 
-var draggable: bool
-
 var _ID: StringName
 var _isActivated := false
 var _isTopLevel := true
@@ -69,6 +67,11 @@ func UpdatePosition(newPosition: Vector2) -> void:
 	if marginRef != null: _marginRef.position = newPosition; return
 	else: position = newPosition
 
+func GetTopPosition() -> Vector2:
+	if panelRef != null: return _panelRef.position
+	if marginRef != null: return _marginRef.position
+	return position
+
 func UpdateMargins(TopRightBottomLeftMargins: Array) -> void:
 	NEWNIT_CORE.Func_UpdateMargin(self, TopRightBottomLeftMargins)
 
@@ -79,8 +82,8 @@ func _ResizePanel() -> void:
 		return
 	_panelRef.size = size
 
-func _get_drag_data(at_position: Vector2):
-	if draggable: UpdatePosition(at_position)
+#func _get_drag_data(at_position: Vector2):
+#	if draggable: UpdatePosition(at_position)
 
 func _notification(what):
 	if (what == NOTIFICATION_PREDELETE):
@@ -109,10 +112,11 @@ func _DataUpProxy(data: Dictionary, recievedID: String, reference: Node) -> void
 ### Start Box Container Unique
 
 const _TITLEBAR_BUTTON := {
-	"type": "header",
+	"type": "titleBar",
 	"sideButtonText": "X",
 	"text": "CUSTOM_TITLE_HERE",
-	"ID": "POPUP_TOPBAR"
+	"ID": "POPUP_TOPBAR",
+	"manual_size_flags_horizontal": 6,
 }
 
 
@@ -126,10 +130,11 @@ var children: Array:
 var specificSettableProps := {
 	"alignment": TYPE_INT,
 	"vertical": TYPE_INT,
-	"titleBarText": TYPE_STRING
+	"titleBarText": TYPE_STRING,
+	"isDraggable": TYPE_BOOL
 }
 
-var _titleBar: Element_Label:
+var _titleBar: Element_Internal_TitleBar:
 	get: return children[0]
 
 func _ActivationPrimary(settings: Dictionary) -> void:
@@ -143,10 +148,13 @@ func _ActivationPrimary(settings: Dictionary) -> void:
 	titleBarText = HelperFuncs.GetIfCan(settings, "titleBarText", NEWNIT_CONTAINER_CORE.D_Title)
 	_runtimeSettableProperties.merge(specificSettableProps)
 	
-	_titleBar.DataUp.connect(_closeButton)
+	_titleBar.DataUp.connect(_TitleBarInput)
 	type = "popup"
 
 
-func _closeButton(data: Dictionary, originatingID: String, reference: Node) -> void:
+func _TitleBarInput(data: Dictionary, originatingID: String, reference: Node) -> void:
 	if originatingID != "POPUP_TOPBAR": return
 	queue_free()
+
+func _DragUpProxy(newPosition: Vector2):
+	UpdatePosition(newPosition)

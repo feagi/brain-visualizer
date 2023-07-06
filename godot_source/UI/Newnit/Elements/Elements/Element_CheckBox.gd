@@ -27,7 +27,7 @@ func _ActivationSecondary(settings: Dictionary) -> void:
 
 func _PopulateSubElements() -> Array:
 	# used during Activation Primary to add Counter
-	return ["checkbox"]
+	return ["checkBox"]
 
 func _getChildData() -> Dictionary:
 	return {
@@ -36,3 +36,6 @@ func _getChildData() -> Dictionary:
 
 func _DataUpProxy(_data) -> void:
 	DataUp.emit({"value": true}, ID, self)
+
+func _SetToolTipText(toolTip: String) -> void:
+	_CheckBox.tooltip_text = toolTip

@@ -42,6 +42,24 @@
 			}
 		 }
 	  },
+
+	  "XYZ":{
+		 "X":{
+			"sideLabelText":{
+			   "eng":"X"
+			}
+		 },
+		 "Y":{
+			"sideLabelText":{
+			   "eng":"Y"
+			}
+		 },
+		 "Z":{
+			"sideLabelText":{
+			   "eng":"Z"
+			}
+		 }
+	  },
 	  "UpdateButtonTop":{
 		 "sideLabelText":{
 			"eng":""
