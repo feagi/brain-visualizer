@@ -74,7 +74,8 @@ func Activate(langISO: String):
 	
 	# Connect window size change function
 	get_tree().get_root().size_changed.connect(WindowSizedChanged)
-
+	WindowSizedChanged()
+	
 	Activated = true
 	focus_entered.connect(FocusControl)
 
@@ -421,8 +422,8 @@ func RelayDownwards(callType, data) -> void:
 #			UI_Top_TopBar.SetData({"GENOMEFILENAME": {"sideLabelText":data}})
 #		REF.FROM.connectome_properties_mappings:
 #			pass
-#		REF.FROM.godot_fullCorticalData:
-#			UI_GraphCore.RelayDownwards(REF.FROM.godot_fullCorticalData, data)
+		REF.FROM.godot_fullCorticalData:
+			UI_GraphCore.RelayDownwards(REF.FROM.godot_fullCorticalData, data)
 		REF.FROM.OPULIST:
 			if UI_CreateCorticalBar:
 				UI_CreateCorticalBar.SetData({"corticalnamedrop": {"CORTICALAREADROPDOWNINBOX": {"options": data}}})

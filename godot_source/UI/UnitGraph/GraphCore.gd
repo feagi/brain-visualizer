@@ -3,17 +3,14 @@ class_name GraphCore
 
 var isActivated := false
 
-
-var _unitNodePrefab := preload("res://UI/UnitGraph/UnitNodes/cortexNode.tscn")
-
 signal DataUp(data: Dictionary)
 
 func _ready():
 	Activate() # Temp
+	arrange_nodes_button_hidden = true
 
 
 func Activate():
-	# why... these cursed self connects...
 	self.connection_request.connect(_ProcessCortexConnectionRequest)
 	self.node_selected.connect(_NodeSelected)
 	_ConnectAllNodeSignals()
@@ -49,7 +46,7 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 	var cortex: Dictionary
 	for cortexID in fullCorticalData.keys():
 		cortex = fullCorticalData[cortexID]
-		_SpawnCorticalNode(cortexID, cortex["friendlyName"])
+		var spawnedNode = _SpawnCorticalNode(cortexID, cortex)
 	
 	# This loop runs under the assumption that the connectome mapping only shows in -> out
 	# Yes we need a seperate for loop for this. Too Bad!
@@ -60,18 +57,14 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 			for connection in cortex["connectionsStrIDs"]:
 				_ProcessCortexConnectionRequest(cortexID, 0, connection, 0)
 	
-	# make everything pretty
-			# arrange_nodes()
 	
 	pass
 
 # Spawns a individual node with its required settings (not connections)
-func _SpawnCorticalNode(ID: String, friendlyName: String) -> void:
-	var newNode: CortexNode = _unitNodePrefab.instantiate()
+func _SpawnCorticalNode(ID: String, CortexOverview: Dictionary) -> CortexNode:
+	var newNode: CortexNode = CortexNode.new(ID, CortexOverview)
 	add_child(newNode)
-	newNode.title = ID # Title Bar, can optionally be removed
-	newNode.name = ID # Name in Hiearchy, do NOT change
-	newNode.friendlyName = friendlyName # name in the center of the node
+	return newNode
 
 # TODO finish me!
 # Called on initialization to connect existing cortex signals
@@ -80,3 +73,5 @@ func _ConnectAllNodeSignals() -> void:
 	for child in nodeChildren:
 		pass
 
+#func _GetNodeByID() -> CortexNode:
+#	pass
