@@ -1,9 +1,12 @@
 extends GraphEdit
 class_name GraphCore
 
+signal DataUp(data: Dictionary)
+
 var isActivated := false
 
-signal DataUp(data: Dictionary)
+const DEFAULT_SPAWN_WIDTH = 150.0
+const DEFAULT_HEIGHT_GAP = 10.0
 
 func _ready():
 	Activate() # Temp
@@ -44,10 +47,25 @@ func _NodeSelected(nodeReference):
 # Assuming a blank grid, spawn nodes with connections as per most recently cached FEAGI state
 func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 	var cortex: Dictionary
+	
+	var numColumns = REF.CORTICALTYPE.size()
+	var widths: PackedFloat32Array; widths.resize(numColumns)
+	var heights: PackedFloat32Array; heights.resize(numColumns)
+	heights.fill(0.0)
+	for i in range(numColumns):
+		widths[i] = ((DEFAULT_SPAWN_WIDTH / -2) * numColumns) + (i * DEFAULT_SPAWN_WIDTH)
+	
+	
 	for cortexID in fullCorticalData.keys():
 		cortex = fullCorticalData[cortexID]
 		var spawnedNode = _SpawnCorticalNode(cortexID, cortex)
-	
+		var type: String = cortex.type.to_upper()
+		var nodeCategoryIndex: int = REF.CORTICALTYPE[type]
+		spawnedNode.position_offset = Vector2(widths[nodeCategoryIndex], heights[nodeCategoryIndex])
+		heights[nodeCategoryIndex] = heights[nodeCategoryIndex] + spawnedNode.size.y + DEFAULT_HEIGHT_GAP
+
+
+
 	# This loop runs under the assumption that the connectome mapping only shows in -> out
 	# Yes we need a seperate for loop for this. Too Bad!
 	for cortexID in fullCorticalData.keys():
@@ -56,6 +74,7 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 			# we have connections to map
 			for connection in cortex["connectedTo"]:
 				_ProcessCortexConnectionRequest(cortexID, 0, connection, 0)
+	
 
 
 # Spawns a individual node with its required settings (not connections)
