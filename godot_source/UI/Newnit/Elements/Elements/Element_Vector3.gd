@@ -41,11 +41,13 @@ var _Conts: Array
 func _ActivationSecondary(settings: Dictionary) -> void:
 	_Conts = get_children()
 	if(_has_label): _Conts.remove_at(0)
-	
-	for i in range(3):
-		_Labels.append(_Conts[i].get_child(0))
-		_LineEdits.append(_Conts[i].get_child(1))
-		_LineEdits[i].value_edited.connect(_DataUpProxy)
+	var total_children = _Conts[0].get_children()
+	for i in total_children:
+		if i.get_class() == "Label":
+			_Labels.append(i)
+		if i.get_class() == "LineEdit":
+			_LineEdits.append(i)
+			i.value_edited.connect(_DataUpProxy)
 	
 	editable = HelperFuncs.GetIfCan(settings, "editable", D_editable)
 	vectorValue = HelperFuncs.GetIfCan(settings, "vectorValue", D_vectorValue)
