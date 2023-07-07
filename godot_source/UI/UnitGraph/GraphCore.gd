@@ -52,13 +52,11 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 	# Yes we need a seperate for loop for this. Too Bad!
 	for cortexID in fullCorticalData.keys():
 		cortex = fullCorticalData[cortexID]
-		if cortex["connectionsStrIDs"] != []:
+		if cortex["connectedTo"] != []:
 			# we have connections to map
-			for connection in cortex["connectionsStrIDs"]:
+			for connection in cortex["connectedTo"]:
 				_ProcessCortexConnectionRequest(cortexID, 0, connection, 0)
-	
-	
-	pass
+
 
 # Spawns a individual node with its required settings (not connections)
 func _SpawnCorticalNode(ID: String, CortexOverview: Dictionary) -> CortexNode:
