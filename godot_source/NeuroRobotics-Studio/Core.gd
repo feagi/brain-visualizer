@@ -63,6 +63,7 @@ func _ready():
 	Update_CorticalAreaNameList()
 	Update_CorticalMap()
 	GET_health_status()
+	GET_Connectome_CorticalAreas_Detailed()
 
 ####################################
 ####### Process From Below ########
@@ -335,8 +336,13 @@ func _Relay_update_IPU(_result, _response_code, _headers, _body):
 	UIManager.RelayDownwards(REF.FROM.IPULIST, api_data)
 #	Autoload_variable.Core_addition._on_IPU_list_request_completed(_result, _response_code, _headers, _body)
 
-func _Relay_ConnectomeCorticalAreasListDetailed(_result, _response_code, _headers, _body):
-	pass
+func _Relay_ConnectomeCorticalAreasListDetailed(_result, _response_code, _headers, body):
+	if LogNetworkError(_result): print("Unable to get Connectome Cortical Area List Detailed"); return
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(body.get_string_from_utf8())
+	var api_data = test_json_conv.get_data()
+	if api_data != null:
+		FeagiCache.connectome_corticalAreas_detailed = JSON.parse_string(body.get_string_from_utf8())
 
 func _Relay_Efferent(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Efferent"); return

@@ -28,7 +28,8 @@ var genome_fileName: String:
 	set(v): _genome_fileName = v
 	get: return _genome_fileName
 var genome_corticalAreaIDList: Array:
-	set(v): _genome_corticalAreaIDList = v; FCD_CorticalIDListRdy = true; Update_FullCorticalData()
+	set(v): 
+		_genome_corticalAreaIDList = v; 
 	get: return _genome_corticalAreaIDList
 var genome_corticalAreaNameList: Array:
 	set(v): _genome_corticalAreaNameList = v
@@ -36,8 +37,6 @@ var genome_corticalAreaNameList: Array:
 var genome_cortical_id_name_mapping: Dictionary:
 	set(v): 
 		_genome_cortical_id_name_mapping = v
-		FCD_CorticalNameDictRdy = true
-		Update_FullCorticalData()
 	get: return _genome_cortical_id_name_mapping
 var circuit_list: Array:
 	set(v): _circuit_list = v;
@@ -58,6 +57,7 @@ var connectome_corticalAreas_detailed: Dictionary:
 		_connectome_corticalAreas_detailed = v
 		FCD_ConnectomeCorticalAreasDetailed = true
 		Update_FullCorticalData()
+	get: return _connectome_corticalAreas_detailed
 
 var burst_rate: float:
 	set(v): _burst_rate = v
@@ -91,18 +91,14 @@ var _allConnectionReferencess: Array # IDs used to connect cortexes to each othe
 
 
 
-var FCD_CorticalIDListRdy = false; var FCD_CorticalNameDictRdy = false; var FCD_ConnectomePropertiesMappings = false
-var FCD_ConnectomeCorticalAreasDetailed = false
+var FCD_ConnectomePropertiesMappings = false; var FCD_ConnectomeCorticalAreasDetailed = false
 var fullCorticalData := {}
 func Update_FullCorticalData(): # Update an easy to use dictionary with mappings easily set up
 	# check if prerequisites are ready to go
-	if(!FCD_CorticalIDListRdy): return
-	if(!FCD_CorticalNameDictRdy): return
 	if(!FCD_ConnectomePropertiesMappings): return
 	if(!FCD_ConnectomeCorticalAreasDetailed): return
-	# prereqs passed, reset them and continue
-	FCD_CorticalIDListRdy = false; FCD_CorticalNameDictRdy = false; FCD_ConnectomePropertiesMappings = false
-	fullCorticalData = InitMappingData(connectome_properties_mappings, genome_corticalAreaIDList, genome_cortical_id_name_mapping, connectome_corticalAreas_detailed)
+	# prereqs passed
+	fullCorticalData = InitMappingData(connectome_properties_mappings, connectome_corticalAreas_detailed)
 	FullCorticalData_Updated.emit(fullCorticalData)
 
 
@@ -114,46 +110,25 @@ func Update_FullCorticalData(): # Update an easy to use dictionary with mappings
 # Convert Raw Connectome data from feagi to a dictionary structure usable by the node graph
 # Dictionary {
 # 	StringIDOfCortex:
-#		{ "cortexReference": IntId (required by node Graph) - a randomized and unique int identifier for this cortex,
-#		  "friendlyName: String,
-#		  "connectionsIntIDs": [int array of connected cortexes, using their cortexReference],
-#		  "connectionsStrIDs": [Str Array of connected cortexes, using the cortex IDs from FEAGI directly}
-func InitMappingData(rawConnectomeMappings: Dictionary, orderedIDList: Array, 
-FriendlyName_IDMapping: Dictionary, connectomeDetailed: Dictionary) -> Dictionary:
-	# lets abuse the fact that connectomeMappings includes a connectome list too!
+#		{ 
+#		  "friendlyName: String, human readable name of cortex
+#		  "connectedTo": [Str Array of connected cortexes, using the cortex IDs from FEAGI directly]
+#		  "type": String, IPU, OPU, Memory, Custom
+#		  "position": Vector2, but only if given
+func InitMappingData(rawConnectomeMappings: Dictionary, connectomeDetailed: Dictionary) -> Dictionary:
 	
-	# clear old values
-	_allConnectionReferencess = []
-	
+	var output := {}
 	# preinit to minimize garbage collection
-	var cortexData := {}
-	var cortexReferenceArrCache: Array
+	var specificCortexData := {}
 	
+	for cortexID in connectomeDetailed.keys():
+		specificCortexData["friendlyName"] = connectomeDetailed[cortexID]["name"]
+		specificCortexData["connectedTo"] = rawConnectomeMappings[cortexID]
+		specificCortexData["type"] = connectomeDetailed[cortexID]["type"]
+		if len(connectomeDetailed[cortexID]["position"]) == 2:
+			specificCortexData["position"] = Vector2(connectomeDetailed[cortexID]["position"][0], connectomeDetailed[cortexID]["position"][1])
+		
+		output[cortexID] = specificCortexData.duplicate()
+		specificCortexData = {}
 	
-	
-	
-	
-	
-	
-	
-	
-	# 2 for loops is not particuarly efficient. Too Bad!
-	
-	# Generate base connection mapping without connections (we need to generate 
-	# connection IDs for graphEdit connections)
-	for i in range(orderedIDList.size()):
-		cortexData[orderedIDList[i]] = {
-			"connectionsIntIDs": [],
-			"connectionsStrIDs": [],
-			"friendlyName": FriendlyName_IDMapping[orderedIDList[i]]}
-	
-	# add in the connections
-	for key in cortexData.keys():
-		cortexReferenceArrCache = []
-		for connection in rawConnectomeMappings[key]:
-			# we need to match the string ID with the int ID
-				cortexReferenceArrCache.append(cortexData[connection]["cortexReference"]) 
-		cortexData[key]["connectionsIntIDs"] = cortexReferenceArrCache
-		cortexData[key]["connectionsStrIDs"] = rawConnectomeMappings[key]
-	
-	return cortexData
+	return output
