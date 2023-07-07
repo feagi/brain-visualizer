@@ -61,8 +61,11 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 		var spawnedNode = _SpawnCorticalNode(cortexID, cortex)
 		var type: String = cortex.type.to_upper()
 		var nodeCategoryIndex: int = REF.CORTICALTYPE[type]
-		spawnedNode.position_offset = Vector2(widths[nodeCategoryIndex], heights[nodeCategoryIndex])
-		heights[nodeCategoryIndex] = heights[nodeCategoryIndex] + spawnedNode.size.y + DEFAULT_HEIGHT_GAP
+		if "position" not in cortex.keys():
+			spawnedNode.position_offset = Vector2(widths[nodeCategoryIndex], heights[nodeCategoryIndex])
+			heights[nodeCategoryIndex] = heights[nodeCategoryIndex] + spawnedNode.size.y + DEFAULT_HEIGHT_GAP
+		else:
+			spawnedNode.position_offset = cortex["position"]
 
 
 
@@ -74,7 +77,7 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 			# we have connections to map
 			for connection in cortex["connectedTo"]:
 				_ProcessCortexConnectionRequest(cortexID, 0, connection, 0)
-	
+				var conLabel: Connection_Label = Connection_Label.new(_GetNodeByID(cortexID), _GetNodeByID(connection), 1, self)
 
 
 # Spawns a individual node with its required settings (not connections)
@@ -90,5 +93,10 @@ func _ConnectAllNodeSignals() -> void:
 	for child in nodeChildren:
 		pass
 
-#func _GetNodeByID() -> CortexNode:
-#	pass
+func _GetNodeByID(ID: String) -> CortexNode:
+	var children: Array = get_children()
+	for child in children:
+		if child.corticalID == ID:
+			return child
+	assert(false, "Unable to find cortex by ID of " + ID)
+	return CortexNode.new("" , {}) # just to allow function to compile, never to be called
