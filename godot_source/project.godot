@@ -141,6 +141,7 @@ limits/websocket_server/max_out_packets=1000000000
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 driver/depth_prepass/enable=false
+limits/global_shader_variables/buffer_size=16000
 quality/driver/driver_name="GLES2"
 quality/shadows/filter_mode=0
 quality/reflections/high_quality_ggx=false

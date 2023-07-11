@@ -12,13 +12,6 @@
 	  10
    ],
    "components":[
-	
-	  {
-		 "ID": "Test",
-		 "type": "colorrect",
-		 "internal_custom_minimum_sizeX":50
-	  },
-	
 	  {
 		 "ID":"REFRESH_RATE_BOX",
 		 "vertical":false,
