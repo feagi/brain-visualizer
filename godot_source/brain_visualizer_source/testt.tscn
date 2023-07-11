@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://l53a3lbxibvn"]
+
+[ext_resource type="PackedScene" uid="uid://b2wmhi0wr7n5o" path="res://brain_visualizer_source/3d_indicator.glb" id="1_0r2gm"]
+
+[node name="3d_indicator" instance=ExtResource("1_0r2gm")]
+
+[node name="Cube" parent="." index="0"]
+transform = Transform3D(0, 0, 6, 0, 1, 0, -1, 0, 0, -6, 0, 0)
+
+[node name="Text" parent="." index="3"]
+visible = false
+
+[node name="Text001" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -17.5205, -1.1, -1.72)
+visible = false
+
+[node name="Text002" parent="." index="5"]
+transform = Transform3D(0, 1, -2.98023e-08, 2.98023e-08, 0, -1, -1, -2.98023e-08, 0, -14.4205, -1.1, 1.04)
+
+[node name="Text004" parent="." index="7"]
+visible = false
