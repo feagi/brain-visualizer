@@ -1,17 +1,18 @@
-[gd_scene load_steps=31 format=3 uid="uid://bxto6lw73h6ee"]
+[gd_scene load_steps=32 format=3 uid="uid://bxto6lw73h6ee"]
 
 [ext_resource type="MeshLibrary" uid="uid://tlxay5fog4pt" path="res://brain_visualizer_source/voxel.meshlib" id="1"]
 [ext_resource type="Script" path="res://brain_visualizer_source/camera.gd" id="2"]
 [ext_resource type="Script" path="res://brain_visualizer_source/feagi.gd" id="3"]
 [ext_resource type="MeshLibrary" uid="uid://ds0k427cj023b" path="res://brain_visualizer_source/Cortical_area_box.meshlib" id="5"]
-[ext_resource type="FontFile" uid="uid://cpbcrm02oiw5x" path="res://brain_visualizer_source/RobotoCondensed-Bold.ttf" id="6"]
+[ext_resource type="FontFile" uid="uid://4fitqrryv4fe" path="res://brain_visualizer_source/RobotoCondensed-Bold.ttf" id="6"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Spatial_camera.gd" id="7"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Cortical_area.gd" id="9"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://brain_visualizer_source/cortical_area.material" id="11"]
-[ext_resource type="PackedScene" uid="uid://6qwpg0eii7fv" path="res://brain_visualizer_source/3d_indicator.glb" id="12_73nof"]
+[ext_resource type="Script" path="res://brain_visualizer_source/3d_indicator.gd" id="13_uy8lu"]
+[ext_resource type="PackedScene" uid="uid://l53a3lbxibvn" path="res://brain_visualizer_source/testt.tscn" id="14_b1kj3"]
 [ext_resource type="Script" path="res://brain_visualizer_source/menu_assets/notification.gd" id="22"]
-[ext_resource type="FontFile" uid="uid://b4x2dp4vo3n2a" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="23"]
-[ext_resource type="FontFile" uid="uid://c4phj41t4ref8" path="res://brain_visualizer_source/Montserrat-Medium.ttf" id="40"]
+[ext_resource type="FontFile" uid="uid://bjwhrgkmn6x4x" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="23"]
+[ext_resource type="FontFile" uid="uid://dxwl40pd2jar" path="res://brain_visualizer_source/Montserrat-Medium.ttf" id="40"]
 
 [sub_resource type="FontFile" id="54"]
 subpixel_positioning = 0
@@ -81,7 +82,7 @@ data = {
 }
 
 [sub_resource type="ImageTexture" id="22"]
-image = SubResource("Image_evecf")
+image = SubResource("Image_evecf")  
 
 [sub_resource type="MeshLibrary" id="30"]
 item/0/name = "MeshInstance3D"
@@ -310,8 +311,9 @@ shape = SubResource("16")
 cast_shadow = 0
 multimesh = SubResource("36")
 
-[node name="3d_indicator" parent="." instance=ExtResource("12_73nof")]
-transform = Transform3D(-2.18557e-08, 0, -0.5, 0, 0.5, 0, 0.5, 0, -2.18557e-08, 0, 0, 0)
+[node name="3d_indicator2" parent="." instance=ExtResource("14_b1kj3")]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0, 0, 0)
+script = ExtResource("13_uy8lu")
 
 [connection signal="input_event" from="Cortical_area/Area3D" to="Cortical_area" method="_on_Area_input_event"]
 [connection signal="mouse_entered" from="Cortical_area/Area3D" to="Cortical_area" method="_on_Area_mouse_entered"]

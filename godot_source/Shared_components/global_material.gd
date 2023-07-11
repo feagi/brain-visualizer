@@ -6,6 +6,7 @@ extends Node
 @onready var selected = preload("res://brain_visualizer_source/selected.material")
 @onready var glow = preload("res://brain_visualizer_source/glow.material")
 @onready var destination = preload("res://brain_visualizer_source/destination.material")
+@onready var red = preload("res://brain_visualizer_source/red.material")
 
 func ready():
 	print("material created and ready now.")
