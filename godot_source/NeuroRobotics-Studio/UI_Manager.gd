@@ -352,10 +352,17 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 
 # Takes input from GraphEdit
 func GraphEditInput(data: Dictionary):
+	
 	if "CortexSelected" in data.keys():
 		# Cortex has been selected, pop up side bar
 #		SpawnLeftBar(data["CortexSelected"])
 		DataUp.emit(data)
+	
+	# Redo this TODO
+	if "event" in data.keys():
+		var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
+		SpawnMappingDefinition(data["source"], data["destination"], mappingdefinitiongenerated)	
+	
 	pass
 
 # Is called whenever the game window size changes

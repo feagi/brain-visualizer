@@ -36,6 +36,9 @@ func RelayDownwards(callType, data: Dictionary = {}):
 func _ProcessCortexConnectionRequest(fromNode: StringName, fromPort: int, toNode: StringName, toPort: int) -> void:
 	connect_node(fromNode, fromPort, toNode, toPort)
 
+func _ProcessConnectionButtonPress(data: Dictionary):
+	DataUp.emit(data)
+
 # Handles Node Selection Event
 func _NodeSelected(nodeReference):
 	DataUp.emit({"CortexSelected": nodeReference.name})
@@ -101,3 +104,4 @@ func _GetNodeByID(ID: String) -> CortexNode:
 			return child
 	assert(false, "Unable to find cortex by ID of " + ID)
 	return CortexNode.new("" , {}) # just to allow function to compile, never to be called
+
