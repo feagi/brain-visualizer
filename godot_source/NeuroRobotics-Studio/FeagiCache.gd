@@ -39,7 +39,10 @@ var genome_cortical_id_name_mapping: Dictionary:
 		_genome_cortical_id_name_mapping = v
 	get: return _genome_cortical_id_name_mapping
 var genome_corticalMappings: Dictionary:
-	set(v): _genome_corticalMappings = v
+	set(v): 
+		_genome_corticalMappings = v
+		FCD_Genome_CorticalMappings = true
+		Update_FullCorticalData()
 	get: return _genome_corticalMappings
 var circuit_list: Array:
 	set(v): _circuit_list = v;
@@ -51,8 +54,6 @@ var circuit_size: Array:
 var connectome_properties_mappings: Dictionary:
 	set(v): 
 		_connectome_properties_mappings = v
-		FCD_ConnectomePropertiesMappings = true
-		Update_FullCorticalData()
 	get: return _connectome_properties_mappings
 
 var connectome_corticalAreas_detailed: Dictionary:
@@ -95,14 +96,15 @@ var _allConnectionReferencess: Array # IDs used to connect cortexes to each othe
 
 
 
-var FCD_ConnectomePropertiesMappings = false; var FCD_ConnectomeCorticalAreasDetailed = false
+var FCD_ConnectomeCorticalAreasDetailed = false
+var FCD_Genome_CorticalMappings = false
 var fullCorticalData := {}
 func Update_FullCorticalData(): # Update an easy to use dictionary with mappings easily set up
 	# check if prerequisites are ready to go
-	if(!FCD_ConnectomePropertiesMappings): return
 	if(!FCD_ConnectomeCorticalAreasDetailed): return
+	if(!FCD_Genome_CorticalMappings): return
 	# prereqs passed
-	fullCorticalData = InitMappingData(connectome_properties_mappings, connectome_corticalAreas_detailed)
+	fullCorticalData = InitMappingData(connectome_corticalAreas_detailed, genome_corticalMappings)
 	FullCorticalData_Updated.emit(fullCorticalData)
 
 
@@ -119,7 +121,7 @@ func Update_FullCorticalData(): # Update an easy to use dictionary with mappings
 #		  "connectedTo": [Str Array of connected cortexes, using the cortex IDs from FEAGI directly]
 #		  "type": String, IPU, OPU, Memory, Custom
 #		  "position": Vector2, but only if given
-func InitMappingData(rawConnectomeMappings: Dictionary, connectomeDetailed: Dictionary) -> Dictionary:
+func InitMappingData(connectomeDetailed: Dictionary, corticalMapping: Dictionary) -> Dictionary:
 	
 	var output := {}
 	# preinit to minimize garbage collection
@@ -127,12 +129,12 @@ func InitMappingData(rawConnectomeMappings: Dictionary, connectomeDetailed: Dict
 	
 	for cortexID in connectomeDetailed.keys():
 		specificCortexData["friendlyName"] = connectomeDetailed[cortexID]["name"]
-		specificCortexData["connectedTo"] = rawConnectomeMappings[cortexID]
+		specificCortexData["connectedTo"] = corticalMapping[cortexID]
 		specificCortexData["type"] = connectomeDetailed[cortexID]["type"]
 		if len(connectomeDetailed[cortexID]["position"]) == 2:
 			specificCortexData["position"] = Vector2(connectomeDetailed[cortexID]["position"][0], connectomeDetailed[cortexID]["position"][1])
 		
 		output[cortexID] = specificCortexData.duplicate()
-		specificCortexData = {}
+		specificCortexData = {}  # reset
 	
 	return output
