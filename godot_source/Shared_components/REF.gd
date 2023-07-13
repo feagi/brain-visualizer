@@ -26,3 +26,4 @@ enum TO {
 	burstEngine
 }
 
+enum CORTICALTYPE {IPU, CORE, MEMORY, CUSTOM, OPU}
