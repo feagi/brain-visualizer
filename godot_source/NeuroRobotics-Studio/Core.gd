@@ -63,6 +63,7 @@ func _ready():
 	Update_CorticalAreaNameList()
 	Update_CorticalMap()
 	GET_health_status()
+	Update_Genome_CorticalMappings()
 
 ####################################
 ####### Process From Below ########
@@ -93,6 +94,7 @@ func Update_OPUs(): Call_GET(ADD_GET_OPUList, _Relay_OPUs)
 func Update_CortinalAreasIDs(): Call_GET(ADD_GET_CorticalAreasIDs, _Relay_CorticalAreasIDs)
 func Update_MorphologyList(): Call_GET(ADD_GET_MorphologyList, _Relay_MorphologyList)
 func Update_GenomeFileName(): Call_GET(ADD_GET_GenomeFileName, _Relay_GenomeFileName)
+func Update_Genome_CorticalMappings(): Call_GET(ADD_GET_Genome_CorticalMap, _Relay_Genome_CorticalMappings)
 func Update_ConnectomeMappingReport(): Call_GET(ADD_GET_ConnectomeMappingReport, _Relay_ConnectomeMappingReport)
 func Update_CorticalAreaNameList(): Call_GET(ADD_GET_CorticalAreaNameList, _Relay_CorticalAreaNameList)
 func GOTO_CORTICALLOCATION(input_name): Call_GET(ADD_GET_CorticalAreaNameLOCATION+input_name, _Relay_CorticalAreaLOCATION)
@@ -347,6 +349,14 @@ func _Relay_ConnectomeMappingReport(_result, _response_code, _headers, body: Pac
 	if api_data != null:
 		FeagiCache.connectome_properties_mappings = JSON.parse_string(body.get_string_from_utf8())
 
+func _Relay_Genome_CorticalMappings(_result, _response_code, _headers, body: PackedByteArray):
+	if LogNetworkError(_result): print("Unable to get Connectome Mapping Report"); return
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(body.get_string_from_utf8())
+	var api_data = test_json_conv.get_data()
+	if api_data != null:
+		FeagiCache.genome_corticalMappings = JSON.parse_string(body.get_string_from_utf8())
+
 func _Relay_PUT_Genome_CorticalArea(_result, _response_code, _headers, _body: PackedByteArray):
 	pass 
 
@@ -418,6 +428,8 @@ var ADD_GET_CorticalAreaNameLOCATION:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_name_location?cortical_name="
 var ADD_GET_Genome_CorticalArea:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area?cortical_area="
+var ADD_GET_Genome_CorticalMap:
+	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_map"
 var ADD_GET_Afferent:
 	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_mappings/afferents?cortical_area="
 var ADD_GET_Efferent:
