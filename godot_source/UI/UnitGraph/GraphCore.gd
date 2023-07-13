@@ -68,16 +68,17 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 			spawnedNode.position_offset = cortex["position"]
 
 
-
+	var connectionCount: int  # init here to reduce GC
 	# This loop runs under the assumption that the connectome mapping only shows in -> out
 	# Yes we need a seperate for loop for this. Too Bad!
 	for cortexID in fullCorticalData.keys():
 		cortex = fullCorticalData[cortexID]
-		if cortex["connectedTo"] != []:
+		if cortex["connectedTo"] != {}:
 			# we have connections to map
-			for connection in cortex["connectedTo"]:
-				_ProcessCortexConnectionRequest(cortexID, 0, connection, 0)
-				var conLabel: Connection_Label = Connection_Label.new(_GetNodeByID(cortexID), _GetNodeByID(connection), 1, self)
+			for connectionName in cortex["connectedTo"].keys():
+				connectionCount = cortex["connectedTo"][connectionName]
+				_ProcessCortexConnectionRequest(cortexID, 0, connectionName, 0)
+				var conLabel: Connection_Label = Connection_Label.new(_GetNodeByID(cortexID), _GetNodeByID(connectionName), connectionCount, self)
 
 
 # Spawns a individual node with its required settings (not connections)
