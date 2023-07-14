@@ -11,6 +11,7 @@ const DEFAULT_HEIGHT_GAP = 10.0
 func _ready():
 	Activate() # Temp
 	arrange_nodes_button_hidden = true
+	connection_request.connect(_ConnectingNodesTogether)
 
 
 func Activate():
@@ -42,6 +43,16 @@ func _ProcessConnectionButtonPress(data: Dictionary):
 # Handles Node Selection Event
 func _NodeSelected(nodeReference):
 	DataUp.emit({"CortexSelected": nodeReference.name})
+
+func _ConnectingNodesTogether(sourceNodeID: String, _fromPort: int, destNodeID: String, _toPort: int):
+		var sourceNode: CortexNode = _GetNodeByID(sourceNodeID)
+		var destNode: CortexNode = _GetNodeByID(destNodeID)
+		var data := {
+		"event": "NodesLinked",
+		"source": sourceNode.friendlyName,
+		"destination": destNode.friendlyName
+		}
+		DataUp.emit(data)
 
 ####################################
 ######### Node Management ##########
