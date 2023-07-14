@@ -54,8 +54,8 @@ func UpdateText() -> void:
 func buttonClicked():
 	var data := {
 		"event": "ConnectionButtonPressed",
-		"source": sourceNode.corticalID,
-		"destination": destinationNode.corticalID
+		"source": sourceNode.friendlyName,
+		"destination": destinationNode.friendlyName
 	}
 	buttonPressed.emit(data)
 	

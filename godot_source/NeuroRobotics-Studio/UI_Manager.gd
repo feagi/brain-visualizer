@@ -688,7 +688,7 @@ func SpawnQuickConnect():
 	
 	
 
-func SpawnMappingDefinition(src, dst, activation):
+func SpawnMappingDefinition(src: String, dst: String, activation):
 	if is_instance_valid(UI_MappingDefinition):
 		UI_MappingDefinition.queue_free()
 		$Brain_Visualizer.plus_node.clear()
