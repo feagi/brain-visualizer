@@ -60,7 +60,6 @@ func Activate(langISO: String):
 	# Initialize TopBar
 	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOP_BAR", currentLanguageISO)
 	_SpawnTopBar(topBarDict)
-	button_spawn()
 	
 	# Write to global_json_data
 	var files = FileAccess.open("res://brain_visualizer_source/type_option.json", FileAccess.READ)
@@ -102,6 +101,22 @@ signal DataUp(data: Dictionary)
 func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
+		"tutorial_button":
+			if not UI_TUTORIAL: SpawnTUTORIAL()
+		"CB_AND_BV_BUTTON":
+			var get_name = UI_Top_TopBar.GetReferenceByID("CBANDBV").text
+			print(get_name)
+			if get_name == "Circuit builder":
+				$graphCore.visible = true
+				$Brain_Visualizer.visible = false
+				UI_Top_TopBar.SetData({"CBANDBV":{"text": "Brain Visualizer"}})
+				UI_Top_TopBar.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/BV.png")
+			elif get_name == "Brain Visualizer":
+				$graphCore.visible = false
+				$Brain_Visualizer.visible = true
+				UI_Top_TopBar.SetData({"CBANDBV":{"text": "Circuit builder"}})
+				UI_Top_TopBar.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/CB.png")
+
 		# Lets keep this in order from Left to Right
 		# REFRESH_RATE_BOX
 		"REFRESH_RATE_FLOATFIELD":
@@ -176,25 +191,6 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Nod
 					$Brain_Visualizer.new_morphology_clear()
 					composite.visible = false; patterns.visible = false; vectors.visible = true; morphology_creation_add_button.visible = true
 					morphology_creation_add_button.emit_signal("pressed")
-func UI_BUTTON_INPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
-	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
-	match(ElementID):
-		"tutorial_button":
-			if not UI_TUTORIAL: SpawnTUTORIAL()
-		"CB_AND_BV_BUTTON":
-			var get_name = UI_BUTTON.GetReferenceByID("CBANDBV").text
-			print(get_name)
-			if get_name == "Circuit builder":
-				$graphCore.visible = true
-				$Brain_Visualizer.visible = false
-				UI_BUTTON.SetData({"CBANDBV":{"text": "Brain Visualizer"}})
-				UI_BUTTON.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/BV.png")
-			elif get_name == "Brain Visualizer":
-				$graphCore.visible = false
-				$Brain_Visualizer.visible = true
-				UI_BUTTON.SetData({"CBANDBV":{"text": "Circuit builder"}})
-				UI_BUTTON.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/CB.png")
-
 
 func TUTORIALINPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
 	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
@@ -508,14 +504,6 @@ func FocusControl():
 	print("Background now focused!")
 	grab_focus()
 	
-func button_spawn():
-	if UI_BUTTON != null:
-		UI_BUTTON.queue_free() # We don't need this. We need to make it look prettier
-	UI_BUTTON = Newnit_Box.new()
-	var UI_BUTTON_DICT = HelperFuncs.GenerateDefinedUnitDict("SWITCH_AND_TUTORIAL_BUTTON", currentLanguageISO)
-	add_child(UI_BUTTON)
-	UI_BUTTON.Activate(UI_BUTTON_DICT)
-	UI_BUTTON.DataUp.connect(UI_BUTTON_INPUT)
 
 func SpawnTUTORIAL():
 	if UI_TUTORIAL != null:
