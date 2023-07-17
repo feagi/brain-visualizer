@@ -3,11 +3,13 @@ class_name CorticalArea
 
 # This object is intended to be used as a 'cache' for a specific cortical area
 
-var timeOfLastUpdate: float:
-	get: return _lastUpdatedUnixTimeStamp
 
-var secondsSinceLastUpdate: float:
-	get: return  _lastUpdatedUnixTimeStamp - Time.get_unix_time_from_system()
+
+var timeOfLastCorticalAreaUpdate: float:
+	get: return _lastCorticalAreaUpdatedUnixTimeStamp
+
+var secondsSinceLastCorticalAreaUpdate: float:
+	get: return  _lastCorticalAreaUpdatedUnixTimeStamp - Time.get_unix_time_from_system()
 
 var ID: CortexID:
 	get: return _ID
@@ -121,7 +123,8 @@ var neuron_mp_charge_accumulation: bool:
 	set(v):
 		_neuron_mp_charge_accumulation = v
 
-var _lastUpdatedUnixTimeStamp: float
+
+var _lastCorticalAreaUpdatedUnixTimeStamp: float = -1.0
 var _ID: CortexID
 var _cortical_name: String
 var _cortical_group: String
@@ -172,9 +175,11 @@ func ApplyDictionary(data: Dictionary) -> void:
 	if "neuron_psp_uniform_distribution" in data.keys(): _neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
 	if "neuron_mp_charge_accumulation" in data.keys(): _neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
 
-func Update_Genome() -> void:
-	# TODO
-	_lastUpdatedUnixTimeStamp = Time.get_unix_time_from_system()
+func Update_Genome_CortialArea() -> void:
+	# This function calls for an update from feagi of the current cortical area information.
+	# This takes time, and thus is NOT instant, please beware while using this in code
+	
+	_lastCorticalAreaUpdatedUnixTimeStamp = Time.get_unix_time_from_system()
 	
 
 
