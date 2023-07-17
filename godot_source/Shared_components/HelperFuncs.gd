@@ -281,3 +281,13 @@ static func SpawnNewnitOfType(type: String) -> Node:
 static func ShortText(text: String, maxLength = 16) -> String:
 	if len(text) < maxLength: return text
 	return text.left(maxLength - 3) + "..."
+
+static func Array2Vector3(arr: Array) -> Vector3:
+	var output: Vector3
+	output.x = arr[0]; output.y = arr[1]; output.z = arr[2]
+	return output
+
+static func Array2Vector2(arr: Array) -> Vector2:
+	var output: Vector2
+	output.x = arr[0]; output.y = arr[1]
+	return output
