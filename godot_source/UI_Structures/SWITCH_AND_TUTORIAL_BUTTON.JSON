@@ -1,7 +1,7 @@
 {
 	"ID": "SWITCH",
     "type": "box",
-	"positionX": 1400,
+	"positionX": 1580,
 	"positionY": 8,
     "vertical": false,
   "enablePanel": true,
