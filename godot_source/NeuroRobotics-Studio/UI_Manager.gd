@@ -327,7 +327,7 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 			elif data["selectedIndex"] == 2:
 				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
+				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true 
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true

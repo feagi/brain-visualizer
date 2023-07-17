@@ -71,9 +71,10 @@ func _ready():
 ####################################
 
 # Respond to any events at the core level
+# TODO this should be going through cache
 func RetrieveEvents(data: Dictionary) -> void:
 	if "CortexSelected" in data.keys():
-			Update_GenomeCorticalArea_SPECIFC(data["CortexSelected"])
+			Update_Genome_CorticalArea_SPECIFIC(data["CortexSelected"])
 	if "updatedBurstRate" in data.keys():
 			Update_BurstRate(data["updatedBurstRate"])
 	pass
@@ -99,7 +100,7 @@ func Update_Genome_CorticalMappings(): Call_GET(AddressList.GET_genome_corticalM
 func Update_ConnectomeMappingReport(): Call_GET(AddressList.GET_connectome_properties_mappings, _Relay_ConnectomeMappingReport)
 func Update_CorticalAreaNameList(): Call_GET(AddressList.GET_genome_corticalAreaNameList, _Relay_CorticalAreaNameList)
 func GOTO_CORTICALLOCATION(input_name): Call_GET(AddressList.GET_genome_corticalNameLocation_CORTICALNAMEEQUALS+input_name, _Relay_CorticalAreaLOCATION)
-func Update_GenomeCorticalArea_SPECIFC(corticalArea: String): Call_GET(AddressList.GET_genome_corticalArea_CORTICALAREAEQUALS, _Relay_GET_Genome_CorticalArea, corticalArea ) 
+func Update_Genome_CorticalArea_SPECIFIC(corticalAreaID: String): Call_GET(AddressList.GET_genome_corticalArea_CORTICALAREAEQUALS, _Relay_GET_Genome_CorticalArea, corticalAreaID ) 
 func Update_Dimensions(): Call_GET(AddressList.GET_connectome_properties_dimensions, _Relay_Dimensions)
 func Update_Refresh_Rate(): Call_GET(AddressList.GET_burstEngine_stimulationPeriod, _Relay_Get_BurstRate)
 func Update_Cortical_grab_id(input): Call_GET(AddressList.GET_genome_corticalIDNameMapping+input, _Relay_Cortical_grab_id)
@@ -272,6 +273,8 @@ func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: Pac
 	for key in specificCortex.keys():
 		if specificCortex[key] is int:
 			specificCortex[key] = float(specificCortex[key])
+	
+	are we going to update FROM cache or here?
 	UIManager.RelayDownwards(REF.FROM.genome_corticalArea, specificCortex)
 	Autoload_variable.Core_notification.generate_notification_message(specificCortex, _response_code, "_Relay_GET_Genome_CorticalArea", "/v1/feagi/genome/cortical_area")
 
@@ -416,7 +419,7 @@ var NetworkAPI : SimpleNetworkAPI
 var UIManager : UI_Manager
 var FeagiCache: FeagiCache
 
-
+# TODO: delete this comment block, code now resides in address list. Keep it now for debugging temporarily
 #var ADD_GET_IPUList:
 #	get: return SEC + FEAGI_RootAddress + "/v1/feagi/feagi/pns/current/ipu"
 #var ADD_GET_OPUList:

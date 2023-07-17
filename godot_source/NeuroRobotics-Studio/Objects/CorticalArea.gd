@@ -39,7 +39,11 @@ var cortical_coordinates_3D: Vector3:
 		_cortical_coordinates_3D = v
 
 var cortical_coordinates_2D: Vector2:
-	get: return _cortical_coordinates_2D
+	get: 
+		if _2D_coordinates_isDefined:
+			return _cortical_coordinates_2D
+		print("Trying to load 2D coordinates when none exist for cortex " + ID.str)
+		return Vector2(0,0) # must be here to allow compiling
 	set(v):
 		_cortical_coordinates_2D = v
 
@@ -123,7 +127,11 @@ var neuron_mp_charge_accumulation: bool:
 	set(v):
 		_neuron_mp_charge_accumulation = v
 
+var connectedTowards: Dictionary:
+	get: return _connectedTowards
 
+
+var _coreRef: Core
 var _lastCorticalAreaUpdatedUnixTimeStamp: float = -1.0
 var _ID: CortexID
 var _cortical_name: String
@@ -133,6 +141,7 @@ var _cortical_visibility: bool
 var _cortical_synaptic_attractivity: int
 var _cortical_coordinates_3D: Vector3
 var _cortical_coordinates_2D: Vector2
+var _2D_coordinates_isDefined: bool = false
 var _cortical_dimensions: Vector3
 var _cortical_destinations: Dictionary
 var _neuron_post_synaptic_potential: float
@@ -149,6 +158,8 @@ var _neuron_snooze_period: float
 var _neuron_degeneracy_coefficient: float
 var _neuron_psp_uniform_distribution: bool
 var _neuron_mp_charge_accumulation: bool
+var _connectedTowards: Dictionary = {}
+
 
 func ApplyDictionary(data: Dictionary) -> void:
 	if "cortical_name" in data.keys(): _cortical_name = data["cortical_name"]
@@ -157,7 +168,7 @@ func ApplyDictionary(data: Dictionary) -> void:
 	if "cortical_visibility" in data.keys(): _cortical_visibility = data["cortical_visibility"]
 	if "cortical_synaptic_attractivity" in data.keys(): _cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
 	if "cortical_coordinates" in data.keys(): _cortical_coordinates_3D = HelperFuncs.Array2Vector3(data["cortical_coordinates"])
-	if "cortical_coordinates_2d" in data.keys(): _cortical_coordinates_2D = HelperFuncs.Array2Vector2(data["cortical_coordinates_2d"])
+	if "cortical_coordinates_2d" in data.keys(): _cortical_coordinates_2D = HelperFuncs.Array2Vector2(data["cortical_coordinates_2d"]); _2D_coordinates_isDefined = true
 	if "cortical_dimensions" in data.keys(): _cortical_dimensions = HelperFuncs.Array2Vector3(data["cortical_dimensions"])
 	if "cortical_destinations" in data.keys(): _cortical_destinations = data["cortical_destinations"]
 	if "neuron_post_synaptic_potential" in data.keys(): _neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
@@ -175,19 +186,23 @@ func ApplyDictionary(data: Dictionary) -> void:
 	if "neuron_psp_uniform_distribution" in data.keys(): _neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
 	if "neuron_mp_charge_accumulation" in data.keys(): _neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
 
-func Update_Genome_CortialArea() -> void:
+func ProxyUpdate_Genome_CortialArea() -> void:
 	# This function calls for an update from feagi of the current cortical area information.
 	# This takes time, and thus is NOT instant, please beware while using this in code
-	
-	_lastCorticalAreaUpdatedUnixTimeStamp = Time.get_unix_time_from_system()
+	_coreRef.Update_Genome_CorticalArea_SPECIFIC(ID.str)
 	
 
 
-func _init(corticalID: String, corticalName: String, data: Dictionary = {}):
+func _init(corticalID: String, corticalName: String, coreReference: Core, data: Dictionary = {}):
 	_ID = CortexID.new(corticalID)
 	_cortical_name = corticalName
+	_coreRef = coreReference
 	ApplyDictionary(data)
 
+func _Update_Genome_CorticalArea(data: Dictionary) -> void:
+	_lastCorticalAreaUpdatedUnixTimeStamp = Time.get_unix_time_from_system()
+	ApplyDictionary(data)
+	
 
 func _ConfirmValidGroup(checking: String) -> void:
 	

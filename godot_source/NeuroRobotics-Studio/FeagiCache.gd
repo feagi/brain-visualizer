@@ -67,6 +67,9 @@ var burst_rate: float:
 	set(v): _burst_rate = v
 	get: return _burst_rate
 
+var corticalAreaObjects: Dictionary = {}
+
+
 ######### Internal Caching #########
 var _pns_current_IPU: Dictionary
 var _pns_current_OPU: Dictionary
@@ -94,15 +97,26 @@ var _allConnectionReferencess: Array # IDs used to connect cortexes to each othe
 ####################################
 # These vars have been processed, often because they have multiple dependencies
 
-
-
 var FCD_ConnectomeCorticalAreasDetailed = false
 var FCD_Genome_CorticalMappings = false
+func InitCortexes() -> void:
+	if(!FCD_ConnectomeCorticalAreasDetailed): return
+	if(!FCD_Genome_CorticalMappings): return
+	
+	corticalAreaObjects = {}
+	for cortexIDStr in connectomeDetailed.keys():
+		corticalAreaObjects[cortexIDStr] = 
+
+
+
+
 var fullCorticalData := {}
 func Update_FullCorticalData(): # Update an easy to use dictionary with mappings easily set up
 	# check if prerequisites are ready to go
 	if(!FCD_ConnectomeCorticalAreasDetailed): return
 	if(!FCD_Genome_CorticalMappings): return
+	
+	
 	# prereqs passed
 	fullCorticalData = InitMappingData(connectome_corticalAreas_detailed, genome_corticalMappings)
 	FullCorticalData_Updated.emit(fullCorticalData)
@@ -112,6 +126,8 @@ func Update_FullCorticalData(): # Update an easy to use dictionary with mappings
 ####################################
 ######### Data Management ##########
 ####################################
+
+
 
 # Convert Raw Connectome data from feagi to a dictionary structure usable by the node graph
 # Dictionary {
