@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://c0650xa4eujml" path="res://circuit_build/Main.tscn" id="2_l206u"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Button_to_Autoload.gd" id="2_t7fr6"]
 [ext_resource type="Script" path="res://brain_visualizer_source/box_loading.gd" id="10_uh1ag"]
-[ext_resource type="FontFile" uid="uid://bhpma0bv70q76" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
+[ext_resource type="FontFile" uid="uid://h413plnvvnvp" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
 [ext_resource type="Script" path="res://Official_world_scripts/scene_transition.gd" id="31_pws3t"]
 [ext_resource type="Script" path="res://NeuroRobotics-Studio/Core.gd" id="31_vv2v0"]
 [ext_resource type="PackedScene" uid="uid://c7v5wwar1gqjo" path="res://NeuroRobotics-Studio/UI_Manager.tscn" id="32_fbal3"]
@@ -284,6 +284,7 @@ theme_override_fonts/font = SubResource("FontFile_jm7r5")
 text = "Loading genome.."
 
 [node name="Button" type="Button" parent="."]
+visible = false
 anchors_preset = -1
 anchor_left = 0.785
 anchor_right = 0.788
