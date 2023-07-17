@@ -56,5 +56,15 @@
 			"eng":"Manage Neuron Morphologies"
 		 }
 	  }
-   }
+   },
+	  "CBANDBV":{
+		 "text":{
+			"eng":"Circuit builder"
+		 }
+	  },
+	"tutorial": {
+		"text": {
+			"eng": "Tutorials"
+		}
+	}
 }
