@@ -323,7 +323,7 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
-				$"..".GET_OPU('OPU')
+				$"..".Get_CorticalTypeOptions('OPU')
 			elif data["selectedIndex"] == 2:
 				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
@@ -331,7 +331,7 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
-				$"..".GET_IPU('IPU')
+				$"..".Get_CorticalTypeOptions('IPU')
 			elif data["selectedIndex"] == 3:
 				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false

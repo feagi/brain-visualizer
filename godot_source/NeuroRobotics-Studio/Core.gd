@@ -37,7 +37,7 @@ func _ready():
 	if port_disabled == "true":
 		AddressList.rootAddress = str(network_setting.api_ip_address)
 	else:
-		AddressList.rootAddress = str(network_setting.api_ip_address) + ":"+ str(network_setting.api_port_address)
+		AddressList.rootAddress = str(network_setting.api_ip_address) + ":" + str(network_setting.api_port_address)
 	print("CORE FEAGI ROOTADDRESS: ", AddressList.rootAddress)
 	# # # Build the bridge # # # 
 	Autoload_variable.Core_BV = $GlobalUISystem/Brain_Visualizer
@@ -98,7 +98,7 @@ func Update_GenomeFileName(): Call_GET(AddressList.GET_genome_fileName, _Relay_G
 func Update_Genome_CorticalMappings(): Call_GET(AddressList.GET_genome_corticalMap, _Relay_Genome_CorticalMappings)
 func Update_ConnectomeMappingReport(): Call_GET(AddressList.GET_connectome_properties_mappings, _Relay_ConnectomeMappingReport)
 func Update_CorticalAreaNameList(): Call_GET(AddressList.GET_genome_corticalAreaNameList, _Relay_CorticalAreaNameList)
-func GOTO_CORTICALLOCATION(input_name): Call_GET(AddressList.GET_genome_corticalArea_CORTICALAREAEQUALS+input_name, _Relay_CorticalAreaLOCATION)
+func GOTO_CORTICALLOCATION(input_name): Call_GET(AddressList.GET_genome_corticalNameLocation_CORTICALNAMEEQUALS+input_name, _Relay_CorticalAreaLOCATION)
 func Update_GenomeCorticalArea_SPECIFC(corticalArea: String): Call_GET(AddressList.GET_genome_corticalArea_CORTICALAREAEQUALS, _Relay_GET_Genome_CorticalArea, corticalArea ) 
 func Update_Dimensions(): Call_GET(AddressList.GET_connectome_properties_dimensions, _Relay_Dimensions)
 func Update_Refresh_Rate(): Call_GET(AddressList.GET_burstEngine_stimulationPeriod, _Relay_Get_BurstRate)

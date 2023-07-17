@@ -1,8 +1,8 @@
-extends Object
+extends Node
 # Just a list of addresses to feagi 
 
 
-var rootAddress = ""
+var rootAddress := ""
 var security = "HTTP://" # this should be changed to const when development workflow improves
 
 var GET_feagi_pns_current_ipu: String:
