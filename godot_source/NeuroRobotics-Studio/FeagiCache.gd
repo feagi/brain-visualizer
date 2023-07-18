@@ -18,15 +18,11 @@ var pns_current_OPU: Dictionary: #TODO clean
 	set(v): _pns_current_OPU = v
 	get: return _pns_current_OPU
 
-var genome_morphologyList: Array:
-	set(v): _genome_morphologyList = v
-	get: return _genome_morphologyList
 var genome_fileName: String:
 	set(v): _genome_fileName = v
 	get: return _genome_fileName
 var genome_corticalAreaIDList: Array:
-	set(v): 
-		_genome_corticalAreaIDList = v; 
+	set(v): _genome_corticalAreaIDList = v; 
 	get: return _genome_corticalAreaIDList
 var genome_corticalAreaNameList: Array:
 	set(v): _genome_corticalAreaNameList = v
@@ -64,6 +60,7 @@ var burst_rate: float:
 	set(v): _burst_rate = v
 	get: return _burst_rate
 
+var morphologies: MorphologiesHolder
 var corticalAreaObjects: Dictionary = {}
 
 
@@ -71,7 +68,6 @@ var corticalAreaObjects: Dictionary = {}
 var _pns_current_IPU: Dictionary
 var _pns_current_OPU: Dictionary
 
-var _genome_morphologyList: Array
 var _genome_fileName: String
 var _genome_corticalAreaIDList: Array
 var _genome_corticalAreaNameList: Array

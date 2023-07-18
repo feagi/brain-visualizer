@@ -291,3 +291,14 @@ static func Array2Vector2(arr: Array) -> Vector2:
 	var output: Vector2
 	output.x = arr[0]; output.y = arr[1]
 	return output
+
+static func Array2Vector3i(arr: Array) -> Vector3i:
+	var output: Vector3i
+	output.x = arr[0]; output.y = arr[1]; output.z = arr[2]
+	return output
+
+static func Array2Vector2i(arr: Array) -> Vector2i:
+	var output: Vector2i
+	output.x = arr[0]; output.y = arr[1]
+	return output
+
