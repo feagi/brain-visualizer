@@ -4,7 +4,7 @@ class_name MorphologyBase
 
 signal morphologyUpdated(MorphologyBase)
 
-var name: String:
+var name: MorphologyName:
 	get: return _name
 
 var timeOfLastMorphologyUpdate: float:
@@ -13,10 +13,10 @@ var timeOfLastMorphologyUpdate: float:
 var secondsSinceLastMorphologyUpdate: float:
 	get: return  _timeOfLastMorphologyUpdate - Time.get_unix_time_from_system()
 
-var _name: String
+var _name: MorphologyName
 var _timeOfLastMorphologyUpdate: float
 
-func _init(morphologyName: String):
-	_name = morphologyName
+func _init(morphologyNameStr: String):
+	_name = MorphologyName.new(morphologyNameStr)
 	_timeOfLastMorphologyUpdate = Time.get_unix_time_from_system()
 

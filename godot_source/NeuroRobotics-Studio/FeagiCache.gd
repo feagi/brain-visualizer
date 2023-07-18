@@ -11,16 +11,13 @@ signal FullCorticalData_Updated(FullCorticalData: Dictionary)
 # These vars come directly from FEAGI (with minimal cleanup processing)
 
 ######### Directly Usable ##########
-var pns_current_IPU: Dictionary:
+var pns_current_IPU: Dictionary: #TODO clean
 	set(v): _pns_current_IPU = v
 	get: return _pns_current_IPU
-var pns_current_OPU: Dictionary:
+var pns_current_OPU: Dictionary: #TODO clean
 	set(v): _pns_current_OPU = v
 	get: return _pns_current_OPU
 
-var genome_areaIDList: Dictionary:
-	set(v): _genome_areaIDList = v
-	get: return _genome_areaIDList
 var genome_morphologyList: Array:
 	set(v): _genome_morphologyList = v
 	get: return _genome_morphologyList
@@ -74,7 +71,6 @@ var corticalAreaObjects: Dictionary = {}
 var _pns_current_IPU: Dictionary
 var _pns_current_OPU: Dictionary
 
-var _genome_areaIDList: Dictionary
 var _genome_morphologyList: Array
 var _genome_fileName: String
 var _genome_corticalAreaIDList: Array
