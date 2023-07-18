@@ -91,6 +91,7 @@ func RetrieveEvents(data: Dictionary) -> void:
 # Run these to grab latest information from Feagi, and eventually trigger an update on all dependents
 # WARNING: due to network latency, there is a delay between calling this and results appearing.
 # Design your code with this in mind, it may be best to include any changes you desire in the _Relay function
+# Note: _CR means custom relay function
 func Update_IPUs(): Call_GET(AddressList.GET_feagi_pns_current_ipu, _Relay_IPUs)
 func Update_OPUs(): Call_GET(AddressList.GET_feagi_pns_current_opu, _Relay_OPUs)
 func Update_CortinalAreasIDs(): Call_GET(AddressList.GET_genome_corticalAreaIDList, _Relay_CorticalAreasIDs)
@@ -106,7 +107,8 @@ func Update_Refresh_Rate(): Call_GET(AddressList.GET_burstEngine_stimulationPeri
 func Update_Cortical_grab_id(input): Call_GET(AddressList.GET_genome_corticalIDNameMapping+input, _Relay_Cortical_grab_id)
 func Update_Afferent_list(input): Call_GET(AddressList.GET_genome_corticalMappings_afferents_corticalArea_CORTICALAREAEQUALS+input, _Relay_Afferent)
 func Update_Efferent_list(input): Call_GET(AddressList.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS+input, _Relay_Efferent)
-func Get_Morphology_information(input): Call_GET(AddressList.GET_genome_morphologyNameEQUALS+input, _Relay_Morphology_information)
+func Get_Morphology_information(morphologyName: String): Call_GET(AddressList.GET_genome_morphologyNameEQUALS+morphologyName, _Relay_Morphology_information)
+func Get_Morphology_information_CR(morphologyName: String, relayFunc): Call_GET(AddressList.GET_genome_morphologyNameEQUALS+morphologyName, relayFunc)
 func GET_USUAGE_MORPHOLOGY(input): Call_GET(AddressList.GET_genome_morphologyUsage_MORPHOLOGYNAMEEQUALS+input, _Relay_Morphology_usuage)
 func Update_destination(input): Call_GET(AddressList.GET_genome_mappingProperties_CORTICALAREAEQUALS+input, _Relay_Update_Destination)
 func Get_circuit_list(): Call_GET(AddressList.GET_genome_circuits, _Relay_circuit_list)

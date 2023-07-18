@@ -1,5 +1,5 @@
 extends Object
-class_name MorphologyHolder
+class_name MorphologiesHolder
 
 
 
@@ -19,6 +19,7 @@ var cachedMorphologies: Dictionary: # Only stores morphologies that have at some
 var _timeOfLastMorphologyArrayUpdate: float
 var _morphologiesArray: PackedStringArray
 var _cachedMorphologies: Dictionary
+var _coreRef: Core
 
 func _init(initialMorphologyNames: PackedStringArray) -> void:
 	_morphologiesArray = initialMorphologyNames
@@ -33,7 +34,7 @@ func CallUpdateMorphology(morphologyName: StringName) -> void:
 		print("Requesting non-existant morphology " + morphologyName + ". Ignoring...")
 		return
 	
-	how do we call when getting morphology doesnt return name
+	
 	
 
 func _ProcessUpdatedMorphology(name: StringName, type: StringName, data: Dictionary) -> void:
