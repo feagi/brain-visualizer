@@ -95,13 +95,13 @@ var _allConnectionReferencess: Array # IDs used to connect cortexes to each othe
 
 var FCD_ConnectomeCorticalAreasDetailed = false
 var FCD_Genome_CorticalMappings = false
-func InitCortexes() -> void:
-	if(!FCD_ConnectomeCorticalAreasDetailed): return
-	if(!FCD_Genome_CorticalMappings): return
-	
-	corticalAreaObjects = {}
-	for cortexIDStr in connectomeDetailed.keys():
-		corticalAreaObjects[cortexIDStr] = 
+#func InitCortexes() -> void:
+#	if(!FCD_ConnectomeCorticalAreasDetailed): return
+#	if(!FCD_Genome_CorticalMappings): return
+#
+#	corticalAreaObjects = {}
+#	for cortexIDStr in connectomeDetailed.keys():
+#		corticalAreaObjects[cortexIDStr] = 
 
 
 

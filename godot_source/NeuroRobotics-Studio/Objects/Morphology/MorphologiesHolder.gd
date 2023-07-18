@@ -21,9 +21,10 @@ var _morphologiesArray: PackedStringArray
 var _cachedMorphologies: Dictionary
 var _coreRef: Core
 
-func _init(initialMorphologyNames: PackedStringArray) -> void:
+func _init(initialMorphologyNames: PackedStringArray, coreReference: Core) -> void:
 	_morphologiesArray = initialMorphologyNames
 	_timeOfLastMorphologyArrayUpdate = Time.get_unix_time_from_system()
+	_coreRef = coreReference
 
 func CallUpdateMorphology(morphologyName: StringName) -> void:
 	# Updates a morphology by string name
@@ -34,10 +35,9 @@ func CallUpdateMorphology(morphologyName: StringName) -> void:
 		print("Requesting non-existant morphology " + morphologyName + ". Ignoring...")
 		return
 	
-	
+	_coreRef.Get_Morphology_information_CR(morphologyName, _ProcessUpdatedMorphology)
 	
 
-func _ProcessUpdatedMorphology(name: StringName, type: StringName, data: Dictionary) -> void:
 	
 
 

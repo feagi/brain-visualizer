@@ -2,7 +2,7 @@ extends Node
 class_name SimpleNetworkAPI
 
 # Default Config
-const DEF_MINWORKERSALIVE = 5
+const DEF_MINWORKERSALIVE = 10
 const DEF_HEADERSTOUSE = ["Content-Type: application/json"]
 
 var minWorkersAlive: int = DEF_MINWORKERSALIVE
@@ -24,6 +24,7 @@ func Call(request: String, method: int, functionToRecieveData, dataIn = {}) -> v
 	else: 
 		worker = _SpawnWorker()
 	worker.Call(request, method, functionToRecieveData, dataIn)
+
 
 
 func _init() -> void:

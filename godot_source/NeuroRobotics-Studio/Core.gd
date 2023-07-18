@@ -276,7 +276,7 @@ func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: Pac
 		if specificCortex[key] is int:
 			specificCortex[key] = float(specificCortex[key])
 	
-	are we going to update FROM cache or here?
+	#are we going to update FROM cache or here?
 	UIManager.RelayDownwards(REF.FROM.genome_corticalArea, specificCortex)
 	Autoload_variable.Core_notification.generate_notification_message(specificCortex, _response_code, "_Relay_GET_Genome_CorticalArea", "/v1/feagi/genome/cortical_area")
 

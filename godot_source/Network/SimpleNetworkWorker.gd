@@ -25,7 +25,7 @@ func Call(requestAddress: String, method: int, functionToRecieveData, dataIn) ->
 
 
 func _init() -> void:
-	self.use_threads = false # enable simple multithreading
+	self.use_threads = false # enable simple multithreading, disable for web export
 
 
 func request_completed_t(_result, _response_code, _headers, _body) -> void:
