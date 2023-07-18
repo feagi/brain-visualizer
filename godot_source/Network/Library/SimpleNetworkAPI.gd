@@ -13,7 +13,7 @@ var headersToUse: Array:
 var numWorkersAvailable: int:
 	get: return immediateWorkersAvailable.size()
 
-var _workerScene: PackedScene = preload("res://Network/SimpleNetworkWorker.tscn")
+var _workerScene: PackedScene = preload("res://Network/Library/SimpleNetworkWorker.tscn")
 var _headersToUse: Array = DEF_HEADERSTOUSE
 
 ## Used to make a network call
