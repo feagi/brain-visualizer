@@ -35,8 +35,9 @@ func CallMorphology(morphologyName: StringName) -> void:
 	
 	_coreRef.Get_Morphology_information(morphologyName)
 
-func StoreMorphologyDataFromFEAGI(morphologyName: StringName, dataFromFEAGI: Dictionary) -> void:
+func StoreMorphologyDataFromFEAGI(dataFromFEAGI: Dictionary) -> void:
 	var morphology
+	var morphologyName: String = dataFromFEAGI["morphology_name"]
 	match(dataFromFEAGI["type"]):
 		"patterns":
 			morphology = MorphologyPatterns.new(morphologyName, dataFromFEAGI["parameters"]["patterns"][0], dataFromFEAGI["parameters"]["patterns"][1])
