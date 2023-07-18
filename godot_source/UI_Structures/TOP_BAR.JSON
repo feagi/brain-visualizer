@@ -18,6 +18,11 @@
 		 "type":"box",
 		 "components":[
 			{
+			   "type":"header",
+			   "text":"Refresh Rate",
+			   "ID":"RR"
+			},
+			 {
 			   "type":"floatfield",
 			   "ID":"REFRESH_RATE_FLOATFIELD",
 			   "minValue":0.01,
@@ -109,7 +114,7 @@
 		 "components":[
 			{
 			   "type":"header",
-			   "text":"                        ",
+			   "text":"            ",
 			   "ID":"SPACE3"
 			}
 		 ]
@@ -138,6 +143,38 @@
 			   "internal_custom_minimum_sizeY":30
 			}
 		 ]
-	  }
+	  },
+		{
+		   "type":"header",
+		   "text":"            ",
+		   "ID":"SPACE4"
+		},
+      {
+         "type":"header",
+         "ID":"CBANDBV"
+      },
+      {
+        "type": "texturebutton",
+        "ID": "CB_AND_BV_BUTTON",
+        "default_texture_path": "res://brain_visualizer_source/menu_assets/image/CB.png",
+        "internal_custom_minimum_sizeX": 30,
+        "internal_custom_minimum_sizeY": 30
+      },
+		{
+		   "type":"header",
+		   "text":"            ",
+		   "ID":"SPACE5"
+		},
+		{
+	   		"type":"header",
+	   		"ID":"tutorial"
+		},
+		  {
+			"type": "texturebutton",
+			"ID": "tutorial_button",
+			"default_texture_path": "res://brain_visualizer_source/menu_assets/image/tutorial.png",
+			"internal_custom_minimum_sizeX": 30,
+			"internal_custom_minimum_sizeY": 30
+		  }
    ]
 }

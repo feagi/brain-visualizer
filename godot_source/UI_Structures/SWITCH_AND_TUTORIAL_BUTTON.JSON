@@ -1,0 +1,33 @@
+{
+	"ID": "SWITCH",
+    "type": "box",
+	"positionX": 1580,
+	"positionY": 8,
+    "vertical": false,
+  "enablePanel": true,
+  "PaddingTopRightBottomLeft": [10, 10, 10, 10],
+	"components": [
+      {
+         "type":"header",
+         "ID":"CBANDBV"
+      },
+      {
+        "type": "texturebutton",
+        "ID": "CB_AND_BV_BUTTON",
+        "default_texture_path": "res://brain_visualizer_source/menu_assets/image/CB.png",
+        "internal_custom_minimum_sizeX": 30,
+        "internal_custom_minimum_sizeY": 30
+      },
+      			{
+			   "type":"header",
+			   "ID":"tutorial"
+			},
+      {
+        "type": "texturebutton",
+        "ID": "tutorial_button",
+        "default_texture_path": "res://brain_visualizer_source/menu_assets/image/tutorial.png",
+        "internal_custom_minimum_sizeX": 30,
+        "internal_custom_minimum_sizeY": 30
+      }
+    ]
+}
