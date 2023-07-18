@@ -65,8 +65,6 @@ func _process(_delta):
 	socket.poll()
 	state = socket.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
-		pass
-#		socket.send("Hello!".to_utf8_buffer())
 		while socket.get_available_packet_count():
 			var socket_data = socket.get_packet()
 			if socket_data.get_string_from_utf8() == "updated":

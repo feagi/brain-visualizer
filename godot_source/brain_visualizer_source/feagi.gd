@@ -75,6 +75,7 @@ func _ready():
 		elif select_cortical.selected.is_empty() != true:
 			select_cortical.selected.pop_front()
 		_process(self)
+#		print("FROM PYTHON: ", data, "  len: ", len(global_name_list), " and type: ", typeof(data))
 #		print("FROM PYTHON: ", data)
 		if data != null:
 			if "update" in data:
@@ -93,7 +94,11 @@ func _ready():
 			else:
 				network_setting.send("lagged")
 		else:
+			if len(global_name_list) != 0:
+				_clear_node_name_list(global_name_list)
+				stored_value = []
 			await get_tree().create_timer(0.01).timeout
+#		print("data: ", data, " network: ", network_setting.one_frame, " stored: ", stored_value)
 
 func _process(_delta):
 	data = network_setting.one_frame

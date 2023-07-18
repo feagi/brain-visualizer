@@ -20,6 +20,7 @@ var Activated: bool = false
 var cache: FeagiCache
 
 var UI_Top_TopBar: Newnit_Box
+var UI_BUTTON: Newnit_Box
 var UI_LeftBar: Newnit_Popup
 var UI_CreateCorticalBar : Newnit_Popup
 var UI_ManageNeuronMorphology : Newnit_Popup
@@ -59,7 +60,6 @@ func Activate(langISO: String):
 	# Initialize TopBar
 	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOP_BAR", currentLanguageISO)
 	_SpawnTopBar(topBarDict)
-	SpawnTUTORIAL()
 	
 	# Write to global_json_data
 	var files = FileAccess.open("res://brain_visualizer_source/type_option.json", FileAccess.READ)
@@ -101,6 +101,22 @@ signal DataUp(data: Dictionary)
 func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 	print("data: ", data, "elementid: ", ElementID)
 	match(ElementID):
+		"tutorial_button":
+			if not UI_TUTORIAL: SpawnTUTORIAL()
+		"CB_AND_BV_BUTTON":
+			var get_name = UI_Top_TopBar.GetReferenceByID("CBANDBV").text
+			print(get_name)
+			if get_name == "Circuit builder":
+				$graphCore.visible = true
+				$Brain_Visualizer.visible = false
+				UI_Top_TopBar.SetData({"CBANDBV":{"text": "Brain Visualizer"}})
+				UI_Top_TopBar.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/BV.png")
+			elif get_name == "Brain Visualizer":
+				$graphCore.visible = false
+				$Brain_Visualizer.visible = true
+				UI_Top_TopBar.SetData({"CBANDBV":{"text": "Circuit builder"}})
+				UI_Top_TopBar.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/CB.png")
+
 		# Lets keep this in order from Left to Right
 		# REFRESH_RATE_BOX
 		"REFRESH_RATE_FLOATFIELD":
@@ -178,19 +194,21 @@ func CreateMorphologyInput(data: Dictionary, ElementID: String, _ElementRef: Nod
 
 func TUTORIALINPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
 	print("data: ", data, " elementid: ", ElementID, " ElementRef: ", _ElementRef)
-	SpawnTUTORIALdialogue()
-	UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(ElementID))
-	for i in range(len(tutorial_holder)):
-		if ElementID == tutorial_holder[i]:
-			current_image = i
-	if current_image == len(tutorial_holder)-1:
-		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
-	else:
-		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
-	if current_image == 0:
-		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
-	else:
-		UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+	match(ElementID):
+		"t2.png":
+			SpawnTUTORIALdialogue()
+			UI_TUTORIAL_DIALOGUE.GetReferenceByID("TUTORIAL_IMAGE").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/" + str(ElementID))
+			for i in range(len(tutorial_holder)):
+				if ElementID == tutorial_holder[i]:
+					current_image = i
+			if current_image == len(tutorial_holder)-1:
+				UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = true
+			else:
+				UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("sideButton_BUTTONS").disabled = false
+			if current_image == 0:
+				UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
+			else:
+				UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
 	
 func TUTORIALDIA_INPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
 	if "value" in data.keys():
@@ -485,6 +503,7 @@ func RelayDownwards(callType, data) -> void:
 func FocusControl():
 	print("Background now focused!")
 	grab_focus()
+	
 
 func SpawnTUTORIAL():
 	if UI_TUTORIAL != null:
@@ -495,10 +514,17 @@ func SpawnTUTORIAL():
 	add_child(UI_TUTORIAL)
 	UI_TUTORIAL.Activate(TUTORIALDICT)
 	UI_holders.append(UI_TUTORIAL)
-	for i in UI_TUTORIAL.get_children():
-		if "_box" in i.get_name():
-			for x in i.get_children():
-				tutorial_holder.append(x.ID)
+	var testbox = []
+	for i in range(1, 10):
+		testbox.append("t" + str(i+1) + ".png")
+	for i in testbox:
+		tutorial_holder.append(i)
+#	print("tutorial: ", tutorial_holder) # WORST approach ever in history but it was urgent so....
+#	for i in UI_TUTORIAL.get_children():
+#		if "_box" in i.get_name():
+#			for x in i.get_children():
+#				print("x.ID: ", x.ID)
+#				tutorial_holder.append(x.ID)
 	
 	
 func SpawnTUTORIALdialogue():
