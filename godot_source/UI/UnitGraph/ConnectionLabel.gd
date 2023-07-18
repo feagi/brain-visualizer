@@ -42,7 +42,9 @@ func _init(sourceNode: CortexNode, destinationNode: CortexNode,
 
 
 func UpdateConnectionPosition() -> void:
-	position_offset = (_sourceNode.position_offset + _destinationNode.position_offset) / 2.0
+	var sourceRightPos: Vector2 = _sourceNode.position_offset + Vector2(_sourceNode.size.y / 2.0, 0.0)
+	var desRightPos: Vector2 = _destinationNode.position_offset + Vector2(_destinationNode.size.y / 2.0, 0.0)
+	position_offset = (sourceRightPos  + desRightPos) / 2.0
 
 func ConnectingNodeClosed() -> void:
 	queue_free()
