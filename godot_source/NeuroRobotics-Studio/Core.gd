@@ -11,7 +11,23 @@ class_name Core
 
 @export var languageISO := "eng" #TODO proxy changes to UI manager
 
+
+# References
+var UIManager: UI_Manager
+var FeagiCache: FeagiCache
+
+var NetworkAPI : SimpleNetworkAPI
+var callLib: Call
+var FEAGIAddresses: AddressList
+var FEAGICalls: AddressCalls 
+
 func _ready():
+	var SSL: String
+	var FEAGIRoot: String
+	NetworkAPI = $GlobalNetworkSystem
+	UIManager = $GlobalUISystem
+	FeagiCache = $FeagiCache
+	
 	var http_type = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
@@ -23,7 +39,7 @@ func _ready():
 		get_port();
 		""")
 	if http_type != null:
-		AddressList.FEAGI_SEC = http_type
+		SSL = http_type
 	var port_disabled = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
@@ -35,18 +51,19 @@ func _ready():
 		get_port();
 		""")
 	if port_disabled == "true":
-		AddressList.rootAddress = str(network_setting.api_ip_address)
+		FEAGIRoot = str(network_setting.api_ip_address)
 	else:
-		AddressList.rootAddress = str(network_setting.api_ip_address) + ":" + str(network_setting.api_port_address)
-	print("CORE FEAGI ROOTADDRESS: ", AddressList.rootAddress)
+		FEAGIRoot = str(network_setting.api_ip_address) + ":" + str(network_setting.api_port_address)
+	print("CORE FEAGI ROOTADDRESS: ", FEAGIRoot)
+
+	callLib = Call.new(NetworkAPI)
+	FEAGIAddresses = AddressList.new(FEAGIRoot, SSL)
+	FEAGICalls = AddressCalls.new(FEAGIAddresses, callLib)
 	# # # Build the bridge # # # 
 	Autoload_variable.Core_BV = $GlobalUISystem/Brain_Visualizer
 	Autoload_variable.Core_notification = $GlobalUISystem/Brain_Visualizer/notification
 	Autoload_variable.Core_Camera = $GlobalUISystem/Brain_Visualizer/Node3D/Camera3D
 	# Retrieve relvant Child Nodes
-	NetworkAPI = $GlobalNetworkSystem
-	UIManager = $GlobalUISystem
-	FeagiCache = $FeagiCache
 	# Connect Cache First
 	FeagiCache.FullCorticalData_Updated.connect(Relay_fullCorticalData)
 	
@@ -56,15 +73,11 @@ func _ready():
 	UIManager.cache = $FeagiCache
 	
 	# Lets pull latest info from FEAGI and trigger respective updates
-	Update_CortinalAreasIDs()
-	Update_MorphologyList()
-	Update_GenomeFileName()
-	Update_ConnectomeMappingReport()
-	Update_CorticalAreaNameList()
-	Update_Genome_CorticalMappings()
-	GET_health_status()
-	Update_Genome_CorticalMappings()
-	GET_Connectome_CorticalAreas_Detailed()
+	FEAGICalls.GET_genome_morphologyList()
+	FEAGICalls.GET_genome_fileName()
+	FEAGICalls.GET_genome_corticalMap()
+	FEAGICalls.GET_healthCheck()
+	FEAGICalls.GET_connectome_corticalAreas_list_detailed()
 
 ####################################
 ####### Process From Below ########
@@ -74,80 +87,10 @@ func _ready():
 # TODO this should be going through cache
 func RetrieveEvents(data: Dictionary) -> void:
 	if "CortexSelected" in data.keys():
-			Update_Genome_CorticalArea_SPECIFIC(data["CortexSelected"])
+			FEAGICalls.GET_genome_corticalArea_CORTICALAREAEQUALS(data["CortexSelected"])
 	if "updatedBurstRate" in data.keys():
-			Update_BurstRate(data["updatedBurstRate"])
+			FEAGICalls.POST_feagi_burstEngine(data["updatedBurstRate"])
 	pass
-	
-####################################
-##### Update Feagi Dependents ######
-####################################
-
-# These are used to update certain elements from Feagi Directly
-
-# The Godot Style guide can't stop me because I can't read!
-# HTTP://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html#one-statement-per-line
-#TODO name these functions much better to be consistant
-# Run these to grab latest information from Feagi, and eventually trigger an update on all dependents
-# WARNING: due to network latency, there is a delay between calling this and results appearing.
-# Design your code with this in mind, it may be best to include any changes you desire in the _Relay function
-# Note: _CR means custom relay function
-#func Update_IPUs(): Call_GET(AddressList.GET_feagi_pns_current_ipu, _Relay_IPUs)
-#func Update_OPUs(): Call_GET(AddressList.GET_feagi_pns_current_opu, _Relay_OPUs)
-#func Update_CortinalAreasIDs(): Call_GET(AddressList.GET_genome_corticalAreaIDList, _Relay_CorticalAreasIDs)
-#func Update_MorphologyList(): Call_GET(AddressList.GET_genome_morphologyList, _Relay_MorphologyList)
-#func Update_GenomeFileName(): Call_GET(AddressList.GET_genome_fileName, _Relay_GenomeFileName)
-#func Update_Genome_CorticalMappings(): Call_GET(AddressList.GET_genome_corticalMap, _Relay_Genome_CorticalMappings)
-#func Update_ConnectomeMappingReport(): Call_GET(AddressList.GET_connectome_properties_mappings, _Relay_ConnectomeMappingReport)
-#func Update_CorticalAreaNameList(): Call_GET(AddressList.GET_genome_corticalAreaNameList, _Relay_CorticalAreaNameList)
-#func GOTO_CORTICALLOCATION(input_name): Call_GET(AddressList.GET_genome_corticalNameLocation_CORTICALNAMEEQUALS+input_name, _Relay_CorticalAreaLOCATION)
-#func Update_Genome_CorticalArea_SPECIFIC(corticalAreaID: String): Call_GET(AddressList.GET_genome_corticalArea_CORTICALAREAEQUALS, _Relay_GET_Genome_CorticalArea, corticalAreaID ) 
-#func Update_Dimensions(): Call_GET(AddressList.GET_connectome_properties_dimensions, _Relay_Dimensions)
-#func Update_Refresh_Rate(): Call_GET(AddressList.GET_burstEngine_stimulationPeriod, _Relay_Get_BurstRate)
-#func Update_Cortical_grab_id(input): Call_GET(AddressList.GET_genome_corticalIDNameMapping+input, _Relay_Cortical_grab_id)
-#func Update_Afferent_list(input): Call_GET(AddressList.GET_genome_corticalMappings_afferents_corticalArea_CORTICALAREAEQUALS+input, _Relay_Afferent)
-#func Update_Efferent_list(input): Call_GET(AddressList.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS+input, _Relay_Efferent)
-#func Get_Morphology_information(morphologyName: String): Call_GET(AddressList.GET_genome_morphologyNameEQUALS+morphologyName, _Relay_Morphology_information)
-#func Get_Morphology_information_CR(morphologyName: String, relayFunc): Call_GET(AddressList.GET_genome_morphologyNameEQUALS+morphologyName, relayFunc)
-#func GET_USUAGE_MORPHOLOGY(input): Call_GET(AddressList.GET_genome_morphologyUsage_MORPHOLOGYNAMEEQUALS+input, _Relay_Morphology_usuage)
-#func Update_destination(input): Call_GET(AddressList.GET_genome_mappingProperties_CORTICALAREAEQUALS+input, _Relay_Update_Destination)
-#func Get_circuit_list(): Call_GET(AddressList.GET_genome_circuits, _Relay_circuit_list)
-#func Get_circuit_size(name_input): Call_GET(AddressList.GET_genome_circuitSize_CIRCUITNAMEEQUALS+name_input, _Relay_circuit_size)
-#func Get_mem_data(input_name: String): Call_GET(AddressList.GET_monitoring_neuron_membranePotential_CORTICALAREAEQUALS+input_name, _Relay_Update_mem)
-#func Get_syn_data(input_name: String): Call_GET(AddressList.GET_monitoring_neuron_synapticPotential_CORTICALAREAEQUALS+input_name, _Relay_Update_syn)
-#func Get_CorticalTypeOptions(input_name: String): Call_GET(AddressList.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS+input_name, _Relay_update_OPU)
-#func GET_BurstRate(): Call_GET(AddressList.GET_burstEngine_stimulationPeriod, _Relay_Get_BurstRate)
-#func GET_health_status(): Call_GET(AddressList.GET_healthCheck, _Relay_Get_Health)
-#func GET_Connectome_CorticalAreas_Detailed(): Call_GET(AddressList.GET_connectome_corticalAreas_list_detailed, _Relay_ConnectomeCorticalAreasListDetailed)
-#
-#func Update_BurstRate(newBurstRate: float):
-#	Call_POST(AddressList.POST_feagi_burstEngine, _Relay_ChangedBurstRate, {"burst_duration": newBurstRate})
-#
-#
-#func Update_cortical_area(input):
-#	Call_POST(AddressList.POST_genome_corticalArea, _Relay_updated_cortical, input)
-#
-#func Update_custom_cortical_area(input):
-#	#using _Relay_updated_cortical since they both pass, thats it. leverage the same to save space
-#	Call_POST(AddressList.POST_genome_customCorticalArea, _Relay_updated_cortical, input)
-#
-#func POST_Request_Brain_visualizer(url, dataIn):
-#	#using _Relay_updated_cortical since they both pass, thats it. leverage the same to save space
-#	Call_POST(url, _Relay_updated_cortical, dataIn)
-#
-#func Update_Mapping_Properties(dataIn, extra_name =""): 
-#	Call_PUT(AddressList.PUT_genome_mappingProperties + extra_name, _Relay_PUT_Mapping_Properties, dataIn)
-#
-#func PUT_Request_Brain_visualizer(url, dataIn): 
-#	Call_PUT(url, _Relay_PUT_BV_functions, dataIn)
-#
-#func Delete_cortical_area(dataIn): 
-#	Call_DELETE(AddressList.DELETE_genome_corticalArea_CORTICALAREANAMEEQUALS + dataIn, _Relay_DELETE_Cortical_area)
-#
-#func DELETE_Request_Brain_visualizer(url):
-#	Call_DELETE(url, _Relay_DELETE_Cortical_area)
-#
-#func Update_Genome_CorticalArea(dataIn: Dictionary): Call_PUT(AddressList.PUT_genome_corticalArea, _Relay_PUT_Genome_CorticalArea, dataIn)
 
 ####################################
 ###### Relay Feagi Dependents ######
@@ -423,11 +366,6 @@ func Call_DELETE(address: String, proxiedFunction):
 ####################################
 ############# Internals ############
 ####################################
-
-# References
-var NetworkAPI : SimpleNetworkAPI
-var UIManager : UI_Manager
-var FeagiCache: FeagiCache
 
 # TODO: delete this comment block, code now resides in address list. Keep it now for debugging temporarily
 #var ADD_GET_IPUList:
