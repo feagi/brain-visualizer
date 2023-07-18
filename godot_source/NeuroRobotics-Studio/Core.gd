@@ -346,24 +346,6 @@ func Relay_fullCorticalData(dataIn: Dictionary):
 
 
 ####################################
-############## Calls ###############
-####################################
-
-# TODO add error handling should network fail!
-func Call_GET(address: String, proxiedFunction, stringToAppend: String = ""):
-	NetworkAPI.Call(address + stringToAppend, HTTPClient.METHOD_GET, proxiedFunction)
-
-func Call_POST(address: String, proxiedFunction, data2Send):
-	NetworkAPI.Call(address, HTTPClient.METHOD_POST, proxiedFunction, data2Send)
-
-func Call_PUT(address: String, proxiedFunction, data2Send):
-	NetworkAPI.Call(address, HTTPClient.METHOD_PUT, proxiedFunction, data2Send)
-	
-func Call_DELETE(address: String, proxiedFunction):
-	NetworkAPI.Call(address, HTTPClient.METHOD_DELETE, proxiedFunction)
-
-
-####################################
 ############# Internals ############
 ####################################
 
