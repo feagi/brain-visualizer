@@ -44,11 +44,11 @@ func StoreMorphologyDataFromFEAGI(dataFromFEAGI: Dictionary) -> void:
 			_cachedMorphologies[morphologyName] = morphology
 			return
 		"vectors":
-			morphology = MorphologyVectors.new(morphologyName, HelperFuncs.Array2Vector3i(dataFromFEAGI["parameters"]["vectors"]))
+			morphology = MorphologyVectors.new(morphologyName, dataFromFEAGI["parameters"]["vectors"])
 			_cachedMorphologies[morphologyName] = morphology
 			return
 		"composite":
-			morphology = MorphologyComposite.new(morphologyName, HelperFuncs.Array2Vector3i(dataFromFEAGI["parameters"]["src_seed"]), HelperFuncs.Array2Vector3i(dataFromFEAGI["parameters"]["src_pattern"]))
+			morphology = MorphologyComposite.new(morphologyName, dataFromFEAGI["parameters"]["src_seed"], dataFromFEAGI["parameters"]["src_pattern"])
 			_cachedMorphologies[morphologyName] = morphology
 			return
 		"functions":

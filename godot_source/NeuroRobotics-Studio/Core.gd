@@ -58,7 +58,7 @@ func _ready():
 
 	callLib = Call.new(NetworkAPI)
 	FEAGIAddresses = AddressList.new(FEAGIRoot, SSL)
-	FEAGICalls = AddressCalls.new(FEAGIAddresses, callLib)
+	FEAGICalls = AddressCalls.new(self, FEAGIAddresses, callLib)
 	# # # Build the bridge # # # 
 	Autoload_variable.Core_BV = $GlobalUISystem/Brain_Visualizer
 	Autoload_variable.Core_notification = $GlobalUISystem/Brain_Visualizer/notification

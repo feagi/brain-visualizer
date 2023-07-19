@@ -3,7 +3,7 @@ class_name CacheSignals
 
 # Broad FEAGI
 signal burstEngine_stimulationPeriod(burstRate: float)
-signal genome_fileName(fileName: String)
+signal genome_fileName(fileName: StringName)
 signal genome_morphologyList(morphologyArray: PackedStringArray)
 signal genome_corticalMap(corticalMap: Dictionary)
 signal healthCheck(serviceStatuses: Dictionary)

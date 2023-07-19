@@ -16,9 +16,10 @@ var _CALL: Call
 var _coreRef: Core
 
 
-func _init(addressListRef: AddressList, networkCallRef: Call):
+func _init(coreReference: Core, addressListRef: AddressList, networkCallRef: Call):
 	_ADD = addressListRef
 	_CALL = networkCallRef
+	_coreRef = coreReference
 
 func GET_feagi_pns_current_ipu(): _CALL.GET(_ADD.GET_feagi_pns_current_ipu, _coreRef._Relay_IPUs)
 func GET_feagi_pns_current_opu(): _CALL.GET(_ADD.GET_feagi_pns_current_opu, _coreRef._Relay_OPUs)

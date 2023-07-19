@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://c7v5wwar1gqjo" path="res://NeuroRobotics-Studio/UI_Manager.tscn" id="32_fbal3"]
 [ext_resource type="PackedScene" uid="uid://drgmyyduq6gd2" path="res://UI/UnitGraph/graphCore.tscn" id="33_6l54b"]
 [ext_resource type="PackedScene" uid="uid://bxto6lw73h6ee" path="res://brain_visualizer_source/FEAGI_monitor.tscn" id="34_jfnov"]
-[ext_resource type="PackedScene" path="res://Network/Library/SimpleNetworkAPI.tscn" id="35_aljtt"]
+[ext_resource type="PackedScene" uid="uid://bfnfbf56w0t5p" path="res://Network/Library/SimpleNetworkAPI.tscn" id="35_aljtt"]
 [ext_resource type="Script" path="res://NeuroRobotics-Studio/FeagiCache.gd" id="36_hp4op"]
 [ext_resource type="Script" path="res://animation_teaser.gd" id="38_kkmm1"]
 

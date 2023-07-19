@@ -10,6 +10,6 @@ var vector: Vector3i:
 var _vector: Vector3i
 
 
-func _init(morphologyName: String, vec: Vector3i):
+func _init(morphologyName: String, vec: Array):
 	super(morphologyName)
-	vector = vec
+	vector = HelperFuncs.Array2Vector3i(vec)

@@ -64,7 +64,7 @@ func _ready():
 	SEC = 'HTTP://' + network_setting.api_ip_address + ':' + network_setting.api_port_address
 	set_physics_process(false)
 #	add_3D_indicator()
-	Autoload_variable.BV_Core.Update_Dimensions() # Grab genome list
+	Autoload_variable.BV_Core.FEAGICalls.GET_connectome_properties_dimensions() # Grab genome list
 
 	while true:
 		if Godot_list.genome_data["genome"] != previous_genome_data:
