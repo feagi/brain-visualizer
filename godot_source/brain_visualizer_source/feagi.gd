@@ -94,11 +94,13 @@ func _ready():
 			else:
 				network_setting.send("lagged")
 		else:
-			if len(global_name_list) != 0:
-				_clear_node_name_list(global_name_list)
-				stored_value = []
 			await get_tree().create_timer(0.01).timeout
-#		print("data: ", data, " network: ", network_setting.one_frame, " stored: ", stored_value)
+		if network_setting.state != 1:
+			if Autoload_variable.feagi_flag:
+				if len(global_name_list) != 0:
+					_clear_node_name_list(global_name_list)
+					stored_value = []
+					Autoload_variable.feagi_flag = false
 
 func _process(_delta):
 	data = network_setting.one_frame
