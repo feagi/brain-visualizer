@@ -5,6 +5,8 @@ class_name FeagiCache
 
 signal FullCorticalData_Updated(FullCorticalData: Dictionary)
 
+var _coreRef: Core
+
 ####################################
 ####### FEAGI Direct Inputs ########
 ####################################
@@ -60,7 +62,7 @@ var burst_rate: float:
 	set(v): _burst_rate = v
 	get: return _burst_rate
 
-var morphologies: MorphologiesHolder
+var morphologies: MorphologiesHolder # Init from Core
 var corticalAreaObjects: Dictionary = {}
 
 
@@ -83,6 +85,8 @@ var _burst_rate: float
 
 ###### Other Internal Values #######
 var _allConnectionReferencess: Array # IDs used to connect cortexes to each other
+
+
 
 ####################################
 ###### FEAGI Processed Inputs ######

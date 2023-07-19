@@ -24,6 +24,9 @@ var _coreRef: Core
 func _init(coreReference: Core) -> void:
 	_coreRef = coreReference
 
+func StoreMorphologyListFromFeagi(dataFromFEAGI: Array) -> void:
+	_morphologiesArray = PackedStringArray(dataFromFEAGI)
+
 func CallMorphology(morphologyName: StringName) -> void:
 	# Updates a morphology cache by string name
 	# Remember, these are network calls thus NOT INSTANT
@@ -35,7 +38,7 @@ func CallMorphology(morphologyName: StringName) -> void:
 	
 	_coreRef.Get_Morphology_information(morphologyName)
 
-func StoreMorphologyDataFromFEAGI(dataFromFEAGI: Dictionary) -> void:
+func StoreSpecificMorphologyDataFromFEAGI(dataFromFEAGI: Dictionary) -> void:
 	var morphology
 	var morphologyName: String = dataFromFEAGI["morphology_name"]
 	match(dataFromFEAGI["type"]):

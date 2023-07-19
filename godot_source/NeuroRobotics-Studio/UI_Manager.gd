@@ -579,7 +579,7 @@ func SpawnCreateMophology():
 	add_row.visible = false
 	vectors.get_node("box_XYZ").visible = false
 	patterns.get_node("box_PatternRow0").visible = false
-	$"..".Update_MorphologyList()
+	$"..".FEAGICalls.GET_genome_morphologyList()
 	UI_CreateMorphology.DataUp.connect(CreateMorphologyInput)
 	UI_holders.append(UI_CreateMorphology)
 	morphology_creation_add_button = add_row
@@ -673,7 +673,7 @@ func SpawnNeuronManager():
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
 	
 	const ButtonItem := { "type": "button", "ID": "morphologyOption"}
-	var morphologyOptions: Array = cache.genome_morphologyList
+	var morphologyOptions: Array = cache.morphologies.morphologiesStrArray
 	var morphologyScroll: Newnit_Scroll = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
 	for i in morphologyOptions:
 		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})

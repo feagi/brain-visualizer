@@ -22,7 +22,7 @@ var FEAGIAddresses: AddressList
 var FEAGICalls: AddressCalls 
 
 func _ready():
-	var SSL: String
+	var SSL: String = "HTTP://"
 	var FEAGIRoot: String
 	NetworkAPI = $GlobalNetworkSystem
 	UIManager = $GlobalUISystem
@@ -71,6 +71,9 @@ func _ready():
 	UIManager.Activate(languageISO)
 	UIManager.DataUp.connect(RetrieveEvents)
 	UIManager.cache = $FeagiCache
+	
+	FeagiCache._coreRef = self
+	FeagiCache.morphologies = MorphologiesHolder.new(self)
 	
 	# Lets pull latest info from FEAGI and trigger respective updates
 	FEAGICalls.GET_genome_morphologyList()
@@ -181,8 +184,8 @@ func _Relay_MorphologyList(_result, _response_code, _headers, body: PackedByteAr
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
-		FeagiCache.genome_morphologyList = JSON.parse_string(body.get_string_from_utf8())
-		UIManager.RelayDownwards(REF.FROM.genome_morphologyList, FeagiCache.genome_morphologyList)
+		FeagiCache.morphologies.StoreMorphologyListFromFeagi(JSON.parse_string(body.get_string_from_utf8()))
+		UIManager.RelayDownwards(REF.FROM.genome_morphologyList, FeagiCache.morphologies.morphologiesStrArray)
 	$GlobalUISystem/Brain_Visualizer/notification.generate_notification_message(api_data, _response_code, "_on_morphology_list_request_completed", "/v1/feagi/genome/morphology_list")
 
 func _Relay_GenomeFileName(_result, _response_code, _headers, body: PackedByteArray):
