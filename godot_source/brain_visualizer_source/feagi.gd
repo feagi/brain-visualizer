@@ -1060,7 +1060,7 @@ func _on_get_morphology_request_completed(_result, _response_code, _headers, bod
 							new_node.get_node("floatfield_Zo").get_node("floatField_Zo").text = str(a[1][2])
 						else:
 							print("This morphology is outdated! Please use the manage neuron morphology to update the morphology.")
-							print("The last array: ", x, " and the name of morphology: ", $".."/".."/".."/Menu/rule_properties/mapping_rule_options.get_item_text($".."/".."/".."/Menu/rule_properties/mapping_rule_options.get_selected_id()))
+							#print("The last array: ", x, " and the name of morphology: ", $".."/".."/".."/Menu/rule_properties/mapping_rule_options.get_item_text($".."/".."/".."/Menu/rule_properties/mapping_rule_options.get_selected_id()))
 							break
 				elif x == "vectors":
 					composite.visible = false; vectors.visible = true;patterns.visible = false
