@@ -341,7 +341,7 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
-				$"..".Get_CorticalTypeOptions('OPU')
+				$"..".FEAGICalls.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS('OPU')
 			elif data["selectedIndex"] == 2:
 				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
@@ -349,7 +349,7 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
 				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
 				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
-				$"..".Get_CorticalTypeOptions('IPU')
+				$"..".FEAGICalls.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS('IPU')
 			elif data["selectedIndex"] == 3:
 				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
 				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
@@ -693,8 +693,8 @@ func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: 
 			rule_name = rule_name.replace("]", "%5D")
 		if ", " in rule_name:
 			rule_name = rule_name.replace(", ", "%2C%20")
-		$"..".Get_Morphology_information(rule_name)
-		$"..".GET_USUAGE_MORPHOLOGY(rule_name)
+		$"..".FEAGICalls.GET_genome_morphologyNameEQUALS(rule_name)
+		$"..".FEAGICalls.GET_genome_morphologyUsage_MORPHOLOGYNAMEEQUALS(rule_name)
 		UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
 func arrow_name_updater(data):
@@ -722,14 +722,14 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 	add_child(UI_MappingDefinition)
 	UI_MappingDefinition.Activate(activation)
 	UI_holders.append(UI_MappingDefinition)
-	$"..".Update_CortinalAreasIDs()
-	$"..".Update_MorphologyList()
+	$"..".FEAGICalls.GET_genome_corticalAreaIDList()
+	$"..".FEAGICalls.GET_genome_morphologyList()
 	var get_id_from_dst = $Brain_Visualizer.name_to_id(dst)
 	src_global = $Brain_Visualizer.name_to_id(src)
 	dst_global = get_id_from_dst
 	var combine_url = '#&dst_cortical_area=$'.replace("#", src_global)
 	combine_url= combine_url.replace("$", get_id_from_dst)
-	Autoload_variable.BV_Core.Update_destination(combine_url)
+	Autoload_variable.BV_Core.FEAGICalls.GET_genome_mappingProperties_CORTICALAREAEQUALS(combine_url)
 	# Link with BV buttons
 	var add_morphology = UI_MappingDefinition.GetReferenceByID("ADDMAPPING").get_node("button_ADDMAPPING")
 	var update_button = UI_MappingDefinition.GetReferenceByID("updatebutton").get_node("button_updatebutton")

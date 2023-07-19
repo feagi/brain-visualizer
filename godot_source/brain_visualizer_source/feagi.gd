@@ -930,7 +930,7 @@ func _on_import_pressed():
 func _on_ItemList_item_selected(index, node):
 	var name_text = node.get_item_text(index)
 	name_text = symbols_checker_for_api(name_text)
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_circuitSize_CIRCUITSIZEQUALS(name_text)
+	Autoload_variable.BV_Core.FEAGICalls.GET_genome_circuitSize_CIRCUITNAMEEQUALS(name_text)
 
 func symbols_checker_for_api(string_data):
 	if " " in string_data:
