@@ -24,6 +24,12 @@ func _init(sourceNode: CortexNode, destinationNode: CortexNode,
  numberConnections: int, graph: GraphCore):
 	
 	graph.add_child(self)
+	
+	comment = true
+	var style: StyleBox = StyleBox.new()
+	add_theme_stylebox_override("comment", style)
+	add_theme_constant_override("title_offset", 0)
+	
 	_button = Button.new()
 	_button.pressed.connect(buttonClicked)
 	add_child(_button)
@@ -36,10 +42,8 @@ func _init(sourceNode: CortexNode, destinationNode: CortexNode,
 	sourceNode.position_offset_changed.connect(UpdateConnectionPosition)
 	destinationNode.position_offset_changed.connect(UpdateConnectionPosition)
 	buttonPressed.connect(get_parent()._ProcessConnectionButtonPress)
-	
 	draggable = false
 	selectable = false
-
 
 func UpdateConnectionPosition() -> void:
 	var sourceRightPos: Vector2 = _sourceNode.position_offset + Vector2(_sourceNode.size.y / 2.0, 0.0)
