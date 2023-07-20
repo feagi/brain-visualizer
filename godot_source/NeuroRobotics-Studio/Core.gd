@@ -17,7 +17,7 @@ var UIManager: UI_Manager
 var FeagiCache: FeagiCache
 
 var NetworkAPI : SimpleNetworkAPI
-var callLib: Call
+var callLib: NetworkCall
 var FEAGIAddresses: AddressList
 var FEAGICalls: AddressCalls 
 
@@ -56,7 +56,7 @@ func _ready():
 		FEAGIRoot = str(network_setting.api_ip_address) + ":" + str(network_setting.api_port_address)
 	print("CORE FEAGI ROOTADDRESS: ", FEAGIRoot)
 
-	callLib = Call.new(NetworkAPI)
+	callLib = NetworkCall.new(NetworkAPI)
 	FEAGIAddresses = AddressList.new(FEAGIRoot, SSL)
 	FEAGICalls = AddressCalls.new(self, FEAGIAddresses, callLib)
 	# # # Build the bridge # # # 
@@ -76,11 +76,11 @@ func _ready():
 	FeagiCache.morphologies = MorphologiesHolder.new(self)
 	
 	# Lets pull latest info from FEAGI and trigger respective updates
-	FEAGICalls.GET_genome_morphologyList()
-	FEAGICalls.GET_genome_fileName()
-	FEAGICalls.GET_genome_corticalMap()
+	FEAGICalls.GET_GE_morphologyList()
+	FEAGICalls.GET_GE_fileName()
+	FEAGICalls.GET_GE_corticalMap()
 	FEAGICalls.GET_healthCheck()
-	FEAGICalls.GET_connectome_corticalAreas_list_detailed()
+	FEAGICalls.GET_CO_corticalAreas_list_detailed()
 
 ####################################
 ####### Process From Below ########
@@ -90,9 +90,9 @@ func _ready():
 # TODO this should be going through cache
 func RetrieveEvents(data: Dictionary) -> void:
 	if "CortexSelected" in data.keys():
-			FEAGICalls.GET_genome_corticalArea_CORTICALAREAEQUALS(data["CortexSelected"])
+			FEAGICalls.GET_GE_corticalArea_CORTICALAREAEQUALS(data["CortexSelected"])
 	if "updatedBurstRate" in data.keys():
-			FEAGICalls.POST_feagi_burstEngine(data["updatedBurstRate"])
+			FEAGICalls.POST_FE_burstEngine(data["updatedBurstRate"])
 	pass
 
 ####################################
@@ -214,7 +214,7 @@ func _Relay_CorticalAreaNameList(_result, _response_code, _headers, body: Packed
 		FeagiCache.genome_corticalAreaNameList = JSON.parse_string(body.get_string_from_utf8())
 		UIManager.RelayDownwards(REF.FROM.genome_corticalAreaNameList, FeagiCache.genome_corticalAreaNameList)
 	
-func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: PackedByteArray):
+func _Relay_GET_GE_corticalArea(_result, _response_code, _headers, body: PackedByteArray):
 	# Note, this is for a specific cortical Area
 	if LogNetworkError(_result): print("Unable to get Specific Cortical Area"); return
 	var specificCortex = JSON.parse_string(body.get_string_from_utf8())
@@ -225,7 +225,7 @@ func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: Pac
 	
 	#are we going to update FROM cache or here?
 	UIManager.RelayDownwards(REF.FROM.genome_corticalArea, specificCortex)
-	Autoload_variable.Core_notification.generate_notification_message(specificCortex, _response_code, "_Relay_GET_Genome_CorticalArea", "/v1/feagi/genome/cortical_area")
+	Autoload_variable.Core_notification.generate_notification_message(specificCortex, _response_code, "_Relay_GET_GE_corticalArea", "/v1/feagi/genome/cortical_area")
 
 func _Relay_CorticalMap(_result, _response_code, _headers, body: PackedByteArray):
 	# FEAGI updating cortical ID - Name mappings
@@ -317,7 +317,7 @@ func _Relay_Genome_CorticalMappings(_result, _response_code, _headers, body: Pac
 	if api_data != null:
 		FeagiCache.genome_corticalMappings = JSON.parse_string(body.get_string_from_utf8())
 
-func _Relay_PUT_Genome_CorticalArea(_result, _response_code, _headers, _body: PackedByteArray):
+func _Relay_PUT_GE_corticalArea(_result, _response_code, _headers, _body: PackedByteArray):
 	pass 
 
 func _Relay_PUT_Mapping_Properties(_result, _response_code, _headers, _body: PackedByteArray):

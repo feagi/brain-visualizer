@@ -32,7 +32,7 @@ var GET_genome_mappingProperties_CORTICALAREAEQUALS: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/mapping_properties?src_cortical_area="
 var GET_genome_circuits: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/circuits"
-var GET_genome_circuitSize_CIRCUITNAMEEQUALS: String:
+var GET_genome_circuitsize_CIRCUITNAMEEQUALS: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/circuit_size?circuit_name="
 var GET_connectome_properties_dimensions: String:
 	get: return  _security + _rootAddress + "/v1/feagi/connectome/properties/dimensions"

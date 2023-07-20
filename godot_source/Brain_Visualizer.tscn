@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://c0650xa4eujml" path="res://circuit_build/Main.tscn" id="2_l206u"]
 [ext_resource type="Script" path="res://brain_visualizer_source/Button_to_Autoload.gd" id="2_t7fr6"]
 [ext_resource type="Script" path="res://brain_visualizer_source/box_loading.gd" id="10_uh1ag"]
-[ext_resource type="FontFile" uid="uid://diex4x3gogmwt" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
+[ext_resource type="FontFile" uid="uid://r3gf2inl8vx3" path="res://brain_visualizer_source/Glegoo-Bold.ttf" id="21_ptep2"]
 [ext_resource type="Script" path="res://Official_world_scripts/scene_transition.gd" id="31_pws3t"]
 [ext_resource type="Script" path="res://NeuroRobotics-Studio/Core.gd" id="31_vv2v0"]
 [ext_resource type="PackedScene" uid="uid://c7v5wwar1gqjo" path="res://NeuroRobotics-Studio/UI_Manager.tscn" id="32_fbal3"]
@@ -235,6 +235,7 @@ libraries = {
 [node name="Core" type="Node3D" parent="."]
 process_priority = 1
 script = ExtResource("31_vv2v0")
+languageISO = null
 
 [node name="GlobalNetworkSystem" parent="Core" instance=ExtResource("35_aljtt")]
 

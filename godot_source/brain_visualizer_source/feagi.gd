@@ -64,7 +64,7 @@ func _ready():
 	SEC = 'HTTP://' + network_setting.api_ip_address + ':' + network_setting.api_port_address
 	set_physics_process(false)
 #	add_3D_indicator()
-	Autoload_variable.BV_Core.FEAGICalls.GET_connectome_properties_dimensions() # Grab genome list
+	Autoload_variable.BV_Core.FEAGICalls.GET_CO_properties_dimensions() # Grab genome list
 
 	while true:
 		if Godot_list.genome_data["genome"] != previous_genome_data:
@@ -80,7 +80,7 @@ func _ready():
 		if data != null:
 			if "update" in data:
 				timer_api.loading_box_timer = true
-				Autoload_variable.BV_Core.FEAGICalls.GET_connectome_properties_dimensions()
+				Autoload_variable.BV_Core.FEAGICalls.GET_CO_properties_dimensions()
 				Autoload_variable.BV_Core.FEAGICalls.GET_healthCheck()
 				stored_value= ""
 			else:
@@ -187,7 +187,7 @@ func _csv_generator(): # After you are done with testing, change the name to gen
 			generate_model(create_textbox, x,y,z,width, depth, height, name_input)
 		else:
 			generate_one_model(create_textbox, x,y,z,width, depth, height, name_input)
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_fileName()
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_fileName()
 
 func _clear_node_name_list(node_name):
 	"""
@@ -256,7 +256,7 @@ func cortical_is_clicked():
 		update_cortical_map_name(grab_id_cortical)
 		var LeftBarDict = HelperFuncs.GenerateDefinedUnitDict("LEFTBAR", $"..".currentLanguageISO)
 		$"..".SpawnLeftBar(grab_id_cortical, LeftBarDict)
-		Autoload_variable.BV_Core.FEAGICalls.GET_genome_corticalIDNameMapping(grab_id_cortical)
+		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalArea(grab_id_cortical)
 		select_cortical.selected.pop_front()
 		return true
 	return false
@@ -365,7 +365,7 @@ func _on_Update_pressed(data_input):
 	last_cortical_selected["neuron_degeneracy_coefficient"] = degenerecy_coefficient
 	last_cortical_selected["neuron_psp_uniform_distribution"] = psp_uniform_distribution
 	last_cortical_selected["neuron_mp_charge_accumulation"] = bool(MP_accumulation)
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_corticalArea_CORTICALAREAEQUALS(last_cortical_selected)
+	Autoload_variable.BV_Core.FEAGICalls.POST_GE_corticalArea(last_cortical_selected)
 
 	var list_size = global_name_list.size()
 	for i in list_size:
@@ -432,7 +432,7 @@ func _on_info_pressed():
 	plus_node.clear()
 
 func update_cortical_map_name(name_input):
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS(name_input)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalMappings_efferents_corticalArea(name_input)
 
 func _on_information_button_request_completed(_result, _response_code, _headers, body):
 	# Do not touch here. THis is for information iteration_namebutton only and will dedicate
@@ -487,7 +487,7 @@ func _on_get_genome_name_request_completed(_result, _response_code, _headers, bo
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
-		Autoload_variable.BV_Core.FEAGICalls.GET_burstEngine_stimulationPeriod()
+		Autoload_variable.BV_Core.FEAGICalls.GET_BU_stimulationPeriod()
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_genome_name_request_completed", "/v1/feagi/genome/file_name")
 
 func _on_download_pressed():
@@ -509,16 +509,16 @@ func _on_add_pressed(node=[]):
 			json_data["cortical_dimensions"].append(node[1].value)
 			json_data["cortical_dimensions"].append(node[2].value)
 			generate_single_cortical(json_data["cortical_coordinates"][0], json_data["cortical_coordinates"][1], json_data["cortical_coordinates"][2], json_data["cortical_dimensions"][0], json_data["cortical_dimensions"][1], json_data["cortical_dimensions"][2], json_data["cortical_name"])
-			Autoload_variable.BV_Core.POST_genome_customCorticalArea(json_data)
+			Autoload_variable.BV_Core.FEAGICalls.POST_GE_customCorticalArea(json_data)
 			node[8].release_focus()
 			$Node3D/Camera3D.transform.origin=Vector3(json_data["cortical_coordinates"][0]-20,json_data["cortical_coordinates"][1],json_data["cortical_coordinates"][2]+20)
 			Godot_list.Node_2D_control = false
-	Autoload_variable.BV_Core.GET_genome_corticalAreaNameList()
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalAreaNameList()
 
 func _on_remove_pressed(node):
 	var get_name_data = node.get_node("field_CorticalID").text
 	_clear_single_cortical(id_to_name(get_name_data), global_name_list)
-	Autoload_variable.BV_Core.FEAGICalls.DELETE_genome_corticalArea_CORTICALAREANAMEEQUALS(get_name_data)
+	Autoload_variable.BV_Core.FEAGICalls.DELETE_GE_corticalArea(get_name_data)
 
 
 func _on_update_destination_info_request_completed(_result, _response_code, _headers, body):
@@ -572,7 +572,7 @@ func _on_remove_cortical_request_completed(_result, _response_code, _headers, _b
 
 func map_info_pressed(node_duplicated):
 	var name_selected = node_duplicated.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions").get_item_text(node_duplicated.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions").selected)
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_morphologyNameEQUALS(name_selected)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_morphologyEQUALS(name_selected)
 
 func remove_button_inside_dst(node_duplicated):
 	plus_node.erase(node_duplicated)
@@ -596,7 +596,7 @@ func dst_remove_pressed(duplicated_node_lineedit):
 		for x in number_holder:
 			child_node_holder.pop_at(x - counter)
 			counter += 1
-		Autoload_variable.BV_Core.PUT_genome_mappingProperties([],combine_url)
+		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties([],combine_url)
 		$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 10 + $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.size.y + $".."/".."/".."/Menu/cortical_mapping.position.y
 		$".."/".."/".."/Menu/cortical_mapping.position.y = $".."/".."/".."/Menu/cortical_mapping.position.y - (number_holder.size() * 5)
 
@@ -703,7 +703,7 @@ func _on_get_cortical_dst_request_completed(_result, _response_code, _headers, b
 						if i in Godot_list.genome_data["genome"][x][7]:
 							dst_data[i] = api_data["cortical_destinations"][i]
 		dst_data_holder = dst_data.duplicate()
-		Autoload_variable.BV_Core.FEAGICalls.GET_monitoring_neuron_membranePotential_CORTICALAREAEQUALS($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
+		Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_membranePotential_CORTICALAREAEQUALS($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_cortical_dst_request_completed", "/v1/feagi/genome/cortical_area")
 
 func _on_cortical_mapping_add_pressed(name_input):
@@ -732,7 +732,7 @@ func _on_burst_value_text_entered(new_text):
 		json["burst_duration"] = float(1/float(1))
 	else:
 		json["burst_duration"] = float(1/float(new_text))
-	Autoload_variable.BV_Core.FEAGICalls.POST_feagi_burstEngine(json["burst_duration"])
+	Autoload_variable.BV_Core.FEAGICalls.POST_FE_burstEngine(json["burst_duration"])
 	$".."/".."/".."/Menu/information_menu/burst_duration_label/burst_value.release_focus()
 
 func _on_burst_value_focus_exited():
@@ -742,7 +742,7 @@ func _on_burst_value_focus_exited():
 		json["burst_duration"] = float(1/float(1))
 	else:
 		json["burst_duration"] = float(1/float(new_text))
-	Autoload_variable.BV_Core.FEAGICalls.POST_feagi_burstEngine(json["burst_duration"])
+	Autoload_variable.BV_Core.FEAGICalls.POST_FE_burstEngine(json["burst_duration"])
 	$".."/".."/".."/Menu/information_menu/burst_duration_label/burst_value.release_focus()
 
 func _on_create_pressed(node):
@@ -872,9 +872,9 @@ func _on_update_inside_map_pressed(node):
 			dst_data["cortical_destinations"][get_id] = []
 			dst_data["cortical_destinations"][get_id].append(dst)
 	if dst_data["cortical_destinations"].has(get_id):
-		Autoload_variable.BV_Core.FEAGICalls.PUT_genome_mappingProperties(dst_data["cortical_destinations"][get_id],combine_url)
+		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties(dst_data["cortical_destinations"][get_id],combine_url)
 	else:
-		Autoload_variable.BV_Core.FEAGICalls.PUT_genome_mappingProperties([],combine_url)
+		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties([],combine_url)
 	node.queue_free()
 
 #func map_colorful():
@@ -914,7 +914,7 @@ func _on_syn_pressed():
 	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,$".."/".."/".."/Menu/button_choice/Control/syn.is_pressed())
 	
 func _on_insert_button_pressed(full_data):
-	var combine_url = $"../..".SEC + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/genome/append?circuit_name=' + full_data[0].get_item_text(full_data[0].selected) + "&circuit_origin_x=" + str(full_data[1].value) + "&circuit_origin_y=" + str(full_data[2].value) + "&circuit_origin_z=" + str(full_data[3].value)
+	var combine_url = $"../..".FEAGICalls.FEAGISecurity + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/genome/append?circuit_name=' + full_data[0].get_item_text(full_data[0].selected) + "&circuit_origin_x=" + str(full_data[1].value) + "&circuit_origin_y=" + str(full_data[2].value) + "&circuit_origin_z=" + str(full_data[3].value)
 	var new_data = ["placeholder"]
 	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url, new_data)
 	$"..".UI_CircuitImport.queue_free()
@@ -922,7 +922,7 @@ func _on_insert_button_pressed(full_data):
 
 func _on_import_pressed():
 	if not $"..".UI_CircuitImport:
-		Autoload_variable.BV_Core.FEAGICalls.GET_genome_circuits()
+		Autoload_variable.BV_Core.FEAGICalls.GET_GE_circuits()
 		var create_circuitimport = HelperFuncs.GenerateDefinedUnitDict("CIRCUIT_IMPORT", $"..".currentLanguageISO)
 		$"..".SpawnCircuitImport(create_circuitimport)
 	else:
@@ -932,7 +932,7 @@ func _on_import_pressed():
 func _on_ItemList_item_selected(index, node):
 	var name_text = node.get_item_text(index)
 	name_text = symbols_checker_for_api(name_text)
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_circuitSize_CIRCUITNAMEEQUALS(name_text)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_circuitsize(name_text)
 
 func symbols_checker_for_api(string_data):
 	if " " in string_data:
@@ -956,7 +956,7 @@ func _on_z_spinbox_value_changed(_value, array_data):
 	demo_new_cortical()
 
 func _on_Mapping_def_pressed():
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_morphologyList()
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_morphologyList()
 
 func _on_text_changed(new_text, node_input):
 	Godot_list.Node_2D_control = true
@@ -1197,7 +1197,7 @@ func quick_connect_to_feagi(src, morphology_name, dest):
 		dst["postSynapticCurrent_multiplier"] = float(1.0)
 		dst["plasticity_flag"] = false
 		dst_data["cortical_destinations"][src].append(dst)
-		Autoload_variable.BV_Core.FEAGICalls.PUT_genome_mappingProperties(dst_data["cortical_destinations"][src],combine_url)
+		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties(dst_data["cortical_destinations"][src],combine_url)
 		$"..".UI_QUICKCONNECT.queue_free()
 
 func demo_new_cortical():

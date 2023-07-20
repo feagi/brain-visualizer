@@ -1,5 +1,5 @@
 extends Object
-class_name Call
+class_name NetworkCall
 # Seperate script to hold actual network call functions through the networkAPI
 
 
