@@ -90,7 +90,7 @@ func _ready():
 # TODO this should be going through cache
 func RetrieveEvents(data: Dictionary) -> void:
 	if "CortexSelected" in data.keys():
-			FEAGICalls.GET_GE_corticalArea_CORTICALAREAEQUALS(data["CortexSelected"])
+			FEAGICalls.GET_GE_corticalArea(data["CortexSelected"])
 	if "updatedBurstRate" in data.keys():
 			FEAGICalls.POST_FE_burstEngine(data["updatedBurstRate"])
 	pass

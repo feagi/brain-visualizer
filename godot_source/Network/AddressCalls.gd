@@ -38,7 +38,7 @@ func GET_GE_corticalMappings_afferents_corticalArea(corticalArea: String): _CALL
 func GET_GE_corticalMappings_efferents_corticalArea(corticalArea: String): _CALL.GET(_ADD.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS+corticalArea, _coreRef._Relay_Efferent)
 func GET_GE_morphology(morphologyName: String): _CALL.GET(_ADD.GET_genome_morphology+morphologyName, _coreRef._Relay_Morphology_information)
 func GET_GE_morphologyUsage(morphologyName: String): _CALL.GET(_ADD.GET_genome_morphologyUsage+morphologyName, _coreRef._Relay_Morphology_usuage)
-func GET_GE_mappingProperties(sourceCorticalName: String, destinationCorticalName: String): _CALL.GET(_ADD.GET_genome_mappingProperties+sourceCorticalName+"&dst_cortical_area="+destinationCorticalName, _coreRef._Relay_Update_Destination)
+func GET_GE_mappingProperties(sourceCorticalName: String, destinationCorticalName: String): _CALL.GET(_ADD.GET_genome_mappingProperties_CORTICALAREAEQUALS+sourceCorticalName+"&dst_cortical_area="+destinationCorticalName, _coreRef._Relay_Update_Destination)
 func GET_GE_circuits(): _CALL.GET(_ADD.GET_genome_circuits, _coreRef._Relay_circuit_list)
 func GET_GE_circuitsize(circuitName: String): _CALL.GET(_ADD.GET_genome_circuitsize_CIRCUITNAMEEQUALS+circuitName, _coreRef._Relay_circuit_size)
 func GET_MO_neuron_membranePotential(corticalArea: String): _CALL.GET(_ADD.GET_monitoring_neuron_membranePotential+corticalArea, _coreRef._Relay_Update_mem)
