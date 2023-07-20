@@ -8,11 +8,13 @@ var isActivated := false
 const DEFAULT_SPAWN_WIDTH = 150.0
 const DEFAULT_HEIGHT_GAP = 10.0
 
+var UIMan: UI_Manager
+
 func _ready():
 	Activate() # Temp
 	arrange_nodes_button_hidden = true
 	connection_request.connect(_ConnectingNodesTogether)
-
+	UIMan = get_parent()
 
 func Activate():
 	self.connection_request.connect(_ProcessCortexConnectionRequest)
@@ -53,6 +55,7 @@ func _ConnectingNodesTogether(sourceNodeID: String, _fromPort: int, destNodeID: 
 		"destination": destNode.friendlyName
 		}
 		DataUp.emit(data)
+		#UIMan.Windows.MappingDefinition.Open(sourceNode.corticalID, destNode.corticalID)
 
 ####################################
 ######### Node Management ##########

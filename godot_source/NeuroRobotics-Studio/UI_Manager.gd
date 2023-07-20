@@ -18,6 +18,8 @@ var Activated: bool = false
 
 # References
 var cache: FeagiCache
+var Windows: WindowManager
+
 
 var UI_Top_TopBar: Newnit_Box
 var UI_BUTTON: Newnit_Box
@@ -56,6 +58,8 @@ func Activate(langISO: String):
 	# Initialize Vars
 	currentLanguageISO = langISO #TODO Better language handling
 	# Initialize UI
+	Windows = WindowManager.new(self, currentLanguageISO)
+	
 	
 	# Initialize TopBar
 	var topBarDict = HelperFuncs.GenerateDefinedUnitDict("TOP_BAR", currentLanguageISO)
@@ -727,9 +731,7 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 	var get_id_from_dst = $Brain_Visualizer.name_to_id(dst)
 	src_global = $Brain_Visualizer.name_to_id(src)
 	dst_global = get_id_from_dst
-	var combine_url = '#&dst_cortical_area=$'.replace("#", src_global)
-	combine_url= combine_url.replace("$", get_id_from_dst)
-	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(combine_url)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(src_global, dst_global)
 	# Link with BV buttons
 	var add_morphology = UI_MappingDefinition.GetReferenceByID("ADDMAPPING").get_node("button_ADDMAPPING")
 	var update_button = UI_MappingDefinition.GetReferenceByID("updatebutton").get_node("button_updatebutton")

@@ -1,11 +1,6 @@
 extends Object
 class_name WindowBase
 
-var isWindowActive: bool:
-	get: return _isWindowActive
-	set(v):
-		_isWindowActive = v
-		# TODO
 
 var newnit
 var _isWindowActive: bool = false
@@ -20,13 +15,15 @@ func _init(newnitObjectType: StringName, activation: Dictionary, parentRef: Node
 	_parentRef.add_child(newnit)
 	pass
 
-func _onClose() -> void:
+func Close() -> void:
 	newnit.queue_free()
 
-func _onOpen() -> void:
-	newnit = ClassDB.instantiate(_newnitType)
+func Open() -> void:
+	#newnit = ClassDB.instantiate(_newnitType)
+	newnit = Newnit_Popup.new() # TODO THIS IS A HACK AND MUST BE REMOVED
 	_parentRef.add_child(newnit)
-	newnit.Activate()
+	newnit.Activate(_NewnitActivation)
+	newnit.DataUp.connect(_DataFromNewnit)
 
 func _DataFromNewnit(data: Dictionary) -> void:
 	@warning_ignore("assert_always_false")
