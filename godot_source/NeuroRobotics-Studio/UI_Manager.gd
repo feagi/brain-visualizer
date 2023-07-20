@@ -699,7 +699,7 @@ func button_rule(_data: Dictionary, _originatingID: StringName, originatingRef: 
 			rule_name = rule_name.replace("]", "%5D")
 		if ", " in rule_name:
 			rule_name = rule_name.replace(", ", "%2C%20")
-		$"..".FEAGICalls.GET_GE_morphologyEQUALS(rule_name)
+		$"..".FEAGICalls.GET_GE_morphology(rule_name)
 		$"..".FEAGICalls.GET_GE_morphologyUsage(rule_name)
 		UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = rule_name
 
