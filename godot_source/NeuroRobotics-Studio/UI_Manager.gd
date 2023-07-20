@@ -120,7 +120,10 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 				$Brain_Visualizer.visible = true
 				UI_Top_TopBar.SetData({"CBANDBV":{"text": "Circuit builder"}})
 				UI_Top_TopBar.GetReferenceByID("CB_AND_BV_BUTTON").LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/CB.png")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/staging
 		# Lets keep this in order from Left to Right
 		# REFRESH_RATE_BOX
 		"REFRESH_RATE_FLOATFIELD":
@@ -213,7 +216,10 @@ func TUTORIALINPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
 				UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = true
 			else:
 				UI_TUTORIAL_DIALOGUE.GetReferenceByID("BUTTONS").get_node("button_BUTTONS").disabled = false
+<<<<<<< HEAD
 	
+=======
+>>>>>>> origin/staging
 func TUTORIALDIA_INPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
 	if "value" in data.keys():
 		if current_image - 1 >= 0:
@@ -523,12 +529,15 @@ func SpawnTUTORIAL():
 		testbox.append("t" + str(i+1) + ".png")
 	for i in testbox:
 		tutorial_holder.append(i)
+<<<<<<< HEAD
 #	print("tutorial: ", tutorial_holder) # WORST approach ever in history but it was urgent so....
 #	for i in UI_TUTORIAL.get_children():
 #		if "_box" in i.get_name():
 #			for x in i.get_children():
 #				print("x.ID: ", x.ID)
 #				tutorial_holder.append(x.ID)
+=======
+>>>>>>> origin/staging
 	
 	
 func SpawnTUTORIALdialogue():

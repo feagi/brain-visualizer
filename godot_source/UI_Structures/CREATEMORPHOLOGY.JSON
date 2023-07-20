@@ -233,17 +233,17 @@
 					"ID": "PatternRow0",
 					"vertical": false,
 					"components": [{
-							"type": "floatfield",
+							"type": "field",
 							"ID": "Xi",
 							"label": "X"
 						},
 						{
-							"type": "floatfield",
+							"type": "field",
 							"ID": "Yi",
 							"label": "Y"
 						},
 						{
-							"type": "floatfield",
+							"type": "field",
 							"ID": "Zi",
 							"label": "Z"
 						},
@@ -253,17 +253,17 @@
 							"label": "->"
 						},
 						{
-							"type": "floatfield",
+							"type": "field",
 							"ID": "Xo",
 							"label": "X"
 						},
 						{
-							"type": "floatfield",
+							"type": "field",
 							"ID": "Yo",
 							"label": "Y"
 						},
 						{
-							"type": "floatfield",
+							"type": "field",
 							"ID": "Zo",
 							"label": "Z"
 						},

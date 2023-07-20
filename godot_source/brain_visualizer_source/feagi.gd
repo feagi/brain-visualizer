@@ -644,8 +644,8 @@ func _on_save_pressed(node):
 			full_array = []
 			empty_array1 = []
 			empty_array2 = []
-			empty_array1 = [i.get_node("floatfield_Xi").get_node("floatField_Xi").text, i.get_node("floatfield_Yi").get_node("floatField_Yi").text, i.get_node("floatfield_Zi").get_node("floatField_Zi").text]
-			empty_array2 = [i.get_node("floatfield_Xo").get_node("floatField_Xo").text, i.get_node("floatfield_Yo").get_node("floatField_Yo").text, i.get_node("floatfield_Zo").get_node("floatField_Zo").text]
+			empty_array1 = [i.get_node("field_Xi").get_node("field_Xi").text, i.get_node("field_Yi").get_node("field_Yi").text, i.get_node("field_Zi").get_node("field_Zi").text]
+			empty_array2 = [i.get_node("field_Xo").get_node("field_Xo").text, i.get_node("field_Yo").get_node("field_Yo").text, i.get_node("field_Zo").get_node("field_Zo").text]
 			var symbols_to_check = ["?", "*"]
 			for x in empty_array1:
 				if x in symbols_to_check:
@@ -759,8 +759,8 @@ func _on_create_pressed(node):
 			for i in new_morphology_node:
 				empty_flag = 0
 				full_array = []
-				var empty_array1 = [i.get_node("floatfield_Xi").get_node("floatField_Xi").text, i.get_node("floatfield_Yi").get_node("floatField_Yi").text, i.get_node("floatfield_Zi").get_node("floatField_Zi").text]
-				var empty_array2 = [i.get_node("floatfield_Xo").get_node("floatField_Xo").text, i.get_node("floatfield_Yo").get_node("floatField_Yo").text, i.get_node("floatfield_Zo").get_node("floatField_Zo").text]
+				var empty_array1 = [i.get_node("field_Xi").get_node("field_Xi").text, i.get_node("field_Yi").get_node("field_Yi").text, i.get_node("field_Zi").get_node("field_Zi").text]
+				var empty_array2 = [i.get_node("field_Xo").get_node("field_Xo").text, i.get_node("field_Yo").get_node("field_Yo").text, i.get_node("field_Zo").get_node("field_Zo").text]
 				var symbols_to_check = ["?", "*"]
 				for x in empty_array1:
 					if x in symbols_to_check:
@@ -1052,12 +1052,12 @@ func _on_get_morphology_request_completed(_result, _response_code, _headers, bod
 						new_node.visible = true
 						remove.connect("pressed",Callable(self,"delete_morphology").bind(new_node))
 						if len(a) == 2:
-							new_node.get_node("floatfield_Xi").get_node("floatField_Xi").text = str(a[0][0])
-							new_node.get_node("floatfield_Yi").get_node("floatField_Yi").text = str(a[0][1])
-							new_node.get_node("floatfield_Zi").get_node("floatField_Zi").text = str(a[0][2])
-							new_node.get_node("floatfield_Xo").get_node("floatField_Xo").text = str(a[1][0])
-							new_node.get_node("floatfield_Yo").get_node("floatField_Yo").text = str(a[1][1])
-							new_node.get_node("floatfield_Zo").get_node("floatField_Zo").text = str(a[1][2])
+							new_node.get_node("field_Xi").get_node("field_Xi").text = str(a[0][0])
+							new_node.get_node("field_Yi").get_node("field_Yi").text = str(a[0][1])
+							new_node.get_node("field_Zi").get_node("field_Zi").text = str(a[0][2])
+							new_node.get_node("field_Xo").get_node("field_Xo").text = str(a[1][0])
+							new_node.get_node("field_Yo").get_node("field_Yo").text = str(a[1][1])
+							new_node.get_node("field_Zo").get_node("field_Zo").text = str(a[1][2])
 						else:
 							print("This morphology is outdated! Please use the manage neuron morphology to update the morphology.")
 							#print("The last array: ", x, " and the name of morphology: ", $".."/".."/".."/Menu/rule_properties/mapping_rule_options.get_item_text($".."/".."/".."/Menu/rule_properties/mapping_rule_options.get_selected_id()))
@@ -1118,12 +1118,12 @@ func _morphology_button_inside_red(node):
 		var remove = new_node.get_node("button_RemoveSelfRowButton").get_node("button_RemoveSelfRowButton")
 		new_node.visible = true
 		remove.connect("pressed",Callable(self,"delete_morphology").bind(new_node))
-		new_node.get_node("floatfield_Xi").get_node("floatField_Xi").text = str(1)
-		new_node.get_node("floatfield_Yi").get_node("floatField_Yi").text = str(1)
-		new_node.get_node("floatfield_Zi").get_node("floatField_Zi").text = str(1)
-		new_node.get_node("floatfield_Xo").get_node("floatField_Xo").text = str(1)
-		new_node.get_node("floatfield_Yo").get_node("floatField_Yo").text = str(1)
-		new_node.get_node("floatfield_Zo").get_node("floatField_Zo").text = str(1)
+		new_node.get_node("field_Xi").get_node("field_Xi").text = str(1)
+		new_node.get_node("field_Yi").get_node("field_Yi").text = str(1)
+		new_node.get_node("field_Zi").get_node("field_Zi").text = str(1)
+		new_node.get_node("field_Xo").get_node("field_Xo").text = str(1)
+		new_node.get_node("field_Yo").get_node("field_Yo").text = str(1)
+		new_node.get_node("field_Zo").get_node("field_Zo").text = str(1)
 	elif i == "vectors":
 		var new_node = $"..".UI_ManageNeuronMorphology.GetReferenceByID("XYZ").duplicate()
 		new_morphology_node.append(new_node)
