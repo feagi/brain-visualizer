@@ -37,7 +37,8 @@ func RelayDownwards(callType, data: Dictionary = {}):
 
 # Applying Node connection requests, because for some reason this isn't a built in feature
 func _ProcessCortexConnectionRequest(fromNode: StringName, fromPort: int, toNode: StringName, toPort: int) -> void:
-	connect_node(fromNode, fromPort, toNode, toPort)
+	#connect_node(fromNode, fromPort, toNode, toPort)
+	pass
 
 func _ProcessConnectionButtonPress(data: Dictionary):
 	DataUp.emit(data)
