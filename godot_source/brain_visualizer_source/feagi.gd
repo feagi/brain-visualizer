@@ -432,7 +432,7 @@ func _on_info_pressed():
 	plus_node.clear()
 
 func update_cortical_map_name(name_input):
-	Autoload_variable.BV_Core.FEAGICalls.GET_genome_corticalMappings_efferences_corticalArea_CORTICALAREAEQUALS(name_input)
+	Autoload_variable.BV_Core.FEAGICalls.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS(name_input)
 
 func _on_information_button_request_completed(_result, _response_code, _headers, body):
 	# Do not touch here. THis is for information iteration_namebutton only and will dedicate
