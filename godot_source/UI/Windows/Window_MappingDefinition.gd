@@ -15,7 +15,7 @@ var destinationCortexID: StringName:
 		newnit.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"value": v}}})
 
 
-func Open(srcCortexID: StringName = "", destCortexID: StringName = ""):
+func Open(activation: Dictionary = _NewnitActivation, srcCortexID: StringName = "", destCortexID: StringName = "") -> void:
 	super()
 	
 	#newnit.GetReferenceByID("corticalnamedrop").visible = false

@@ -26,6 +26,7 @@ select_cortical="*res://Shared_components/selected_cortical.gd"
 timer_api="*res://Shared_components/timer_api.gd"
 REF="*res://Shared_components/REF.gd"
 Autoload_variable="*res://Shared_components/autoload_variables.gd"
+FeagiCache="*res://NeuroRobotics-Studio/FeagiCache.gd"
 
 [debug]
 

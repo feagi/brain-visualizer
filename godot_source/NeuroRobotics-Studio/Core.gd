@@ -14,7 +14,6 @@ class_name Core
 
 # References
 var UIManager: UI_Manager
-var FeagiCache: FeagiCache
 
 var NetworkAPI : SimpleNetworkAPI
 var callLib: NetworkCall
@@ -26,7 +25,6 @@ func _ready():
 	var FEAGIRoot: String
 	NetworkAPI = $GlobalNetworkSystem
 	UIManager = $GlobalUISystem
-	FeagiCache = $FeagiCache
 	
 	var http_type = JavaScriptBridge.eval(""" 
 		function get_port() {

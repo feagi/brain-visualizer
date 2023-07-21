@@ -1,5 +1,4 @@
 extends Node
-class_name FeagiCache
 
 # This script holds cached data for feagi, both directly and in processed forms
 
