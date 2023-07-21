@@ -37,7 +37,7 @@ var burst_rate: float:
 		FeagiVarUpdates.burstEngine_stimulationPeriod.emit(v)
 
 var morphologies: MorphologiesHolder 
-var corticalAreas: CorticalAreasHolder 
+var corticalAreas: CorticalAreasHolder
 
 
 ######### Internal Caching #########
@@ -55,41 +55,5 @@ var _connectome_corticalAreas_detailed: Dictionary
 var _burst_rate: float
 
 
-# Vars required for activation
-var _activated: bool = false
-var _morphologyListRetrieved: bool = false
-var _corticalAreaListRetrieved: bool = false
-## Ran from Core, will only proceed once all required values are retrieved
-func Activation() -> void:
-	if _activated: return
-	if !_morphologyListRetrieved: return
-	if !_corticalAreaListRetrieved: return
-	
 
 
-
-# Convert Raw Connectome data from feagi to a dictionary structure usable by the node graph
-# Dictionary {
-# 	StringIDOfCortex:
-#		{ 
-#		  "friendlyName: String, human readable name of cortex
-#		  "connectedTo": [Str Array of connected cortexes, using the cortex IDs from FEAGI directly]
-#		  "type": String, IPU, OPU, Memory, Custom
-#		  "position": Vector2, but only if given
-func InitMappingData(connectomeDetailed: Dictionary, corticalMapping: Dictionary) -> Dictionary:
-	
-	var output := {}
-	# preinit to minimize garbage collection
-	var specificCortexData := {}
-	
-	for cortexID in connectomeDetailed.keys():
-		specificCortexData["friendlyName"] = connectomeDetailed[cortexID]["name"]
-		specificCortexData["connectedTo"] = corticalMapping[cortexID]
-		specificCortexData["type"] = connectomeDetailed[cortexID]["type"]
-		if len(connectomeDetailed[cortexID]["position"]) == 2:
-			specificCortexData["position"] = Vector2(connectomeDetailed[cortexID]["position"][0], connectomeDetailed[cortexID]["position"][1])
-		
-		output[cortexID] = specificCortexData.duplicate()
-		specificCortexData = {}  # reset
-	
-	return output

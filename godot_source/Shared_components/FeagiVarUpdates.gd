@@ -9,6 +9,9 @@ signal genome_corticalMap(corticalMap: Dictionary)
 signal healthCheck(serviceStatuses: Dictionary)
 signal connectome_corticalAreas_list_detailed(corticalAreasMappings: Dictionary)
 
+# Internal Broad
+signal Internal_corticalMapSummary(summary: Dictionary)
+
 # Specific
 signal corticalAreaUpdated( corticalArea: CorticalArea)
 signal morphologyUpdated( morphology: MorphologyBase)

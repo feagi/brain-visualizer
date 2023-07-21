@@ -21,6 +21,8 @@ func Activate():
 	self.node_selected.connect(_NodeSelected)
 	_ConnectAllNodeSignals()
 	
+	# TODO this may not want to be here
+	FeagiVarUpdates.Internal_corticalMapSummary.connect(_SpawnNodesFromFullCorticalData)
 	pass
 
 
