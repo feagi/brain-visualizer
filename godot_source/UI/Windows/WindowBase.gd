@@ -20,7 +20,7 @@ func Close() -> void:
 
 func Open() -> void:
 	#newnit = ClassDB.instantiate(_newnitType)
-	newnit = Newnit_Popup.new() # TODO THIS IS A HACK AND MUST BE REMOVED
+	newnit = _ReturnNewnitType()
 	_parentRef.add_child(newnit)
 	newnit.Activate(_NewnitActivation)
 	newnit.DataUp.connect(_DataFromNewnit)
@@ -28,3 +28,10 @@ func Open() -> void:
 func _DataFromNewnit(data: Dictionary) -> void:
 	@warning_ignore("assert_always_false")
 	assert(false, "_DataFromNewnit function not overriden correctly!")
+
+func _ReturnNewnitType() -> Object:
+	# A utterly stupid workaround for the limitation that ClassDB still doesn't register custom classes
+	# without some cursed hackery I do not wish to apply here
+	@warning_ignore("assert_always_false")
+	assert(false, "_ReturnNewnitType function not overriden correctly!")
+	return Newnit_Popup.new() # Example
