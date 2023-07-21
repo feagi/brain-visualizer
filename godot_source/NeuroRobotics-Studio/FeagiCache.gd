@@ -2,8 +2,6 @@ extends Node
 
 # This script holds cached data for feagi, both directly and in processed forms
 
-signal FullCorticalData_Updated(FullCorticalData: Dictionary)
-
 var _coreRef: Core
 
 ####################################
@@ -114,7 +112,6 @@ func Update_FullCorticalData(): # Update an easy to use dictionary with mappings
 	
 	# prereqs passed
 	fullCorticalData = InitMappingData(connectome_corticalAreas_detailed, genome_corticalMappings)
-	FullCorticalData_Updated.emit(fullCorticalData)
 
 
 

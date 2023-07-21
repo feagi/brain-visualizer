@@ -63,7 +63,7 @@ func _ready():
 	Autoload_variable.Core_Camera = $GlobalUISystem/Brain_Visualizer/Node3D/Camera3D
 	# Retrieve relvant Child Nodes
 	# Connect Cache First
-	FeagiCache.FullCorticalData_Updated.connect(Relay_fullCorticalData)
+	#FeagiCache.FullCorticalData_Updated.connect(Relay_fullCorticalData)
 	
 	# Activate Children
 	UIManager.Activate(languageISO)
