@@ -1,5 +1,5 @@
-extends Object
-class_name CacheSignals
+extends Node
+# Autoloaded object (Named "FeagiVarUpdates") to store all signals that are emitted when a variable changes
 
 # Broad FEAGI
 signal burstEngine_stimulationPeriod(burstRate: float)
