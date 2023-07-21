@@ -44,7 +44,7 @@ var corticalAreas: CorticalAreasHolder
 var _pns_current_IPU: Dictionary
 var _pns_current_OPU: Dictionary
 var _genome_fileName: String
-var _genome_corticalAreaIDList: Array
+var genome_corticalAreaIDList # DELETE ME
 var _genome_corticalAreaNameList: Array
 var _genome_cortical_id_name_mapping: Dictionary
 var _genome_corticalMappings: Dictionary

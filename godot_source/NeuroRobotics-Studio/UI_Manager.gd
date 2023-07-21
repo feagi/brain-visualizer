@@ -679,7 +679,7 @@ func SpawnNeuronManager():
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
 	
 	const ButtonItem := { "type": "button", "ID": "morphologyOption"}
-	var morphologyOptions: Array = cache.morphologies.morphologiesStrArray
+	var morphologyOptions: Array = FeagiCache.morphologies.morphologiesStrArray
 	var morphologyScroll: Newnit_Scroll = UI_ManageNeuronMorphology.GetReferenceByID("morphology_list")
 	for i in morphologyOptions:
 		var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": i})
@@ -742,3 +742,5 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 
 # proxys for properties
 var _currentLanguageISO: String 
+
+

@@ -17,7 +17,6 @@ func _ready():
 	UIMan = get_parent()
 
 func Activate():
-	self.connection_request.connect(_ProcessCortexConnectionRequest)
 	self.node_selected.connect(_NodeSelected)
 	_ConnectAllNodeSignals()
 	
@@ -38,9 +37,8 @@ func RelayDownwards(callType, data: Dictionary = {}):
 ####################################
 
 # Applying Node connection requests, because for some reason this isn't a built in feature
-func _ProcessCortexConnectionRequest(fromNode: StringName, fromPort: int, toNode: StringName, toPort: int) -> void:
-	#connect_node(fromNode, fromPort, toNode, toPort)
-	pass
+func VisuallyConnectNodes(fromNode: StringName, fromPort: int, toNode: StringName, toPort: int) -> void:
+	connect_node(fromNode, fromPort, toNode, toPort)
 
 func _ProcessConnectionButtonPress(data: Dictionary):
 	DataUp.emit(data)
@@ -58,6 +56,7 @@ func _ConnectingNodesTogether(sourceNodeID: String, _fromPort: int, destNodeID: 
 		"destination": destNode.friendlyName
 		}
 		DataUp.emit(data)
+		#UIMan.GraphEditInput(data)
 		#UIMan.Windows.MappingDefinition.Open(sourceNode.corticalID, destNode.corticalID)
 
 ####################################
@@ -97,7 +96,7 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 			# we have connections to map
 			for connectionName in cortex["connectedTo"].keys():
 				connectionCount = cortex["connectedTo"][connectionName]
-				_ProcessCortexConnectionRequest(cortexID, 0, connectionName, 0)
+				VisuallyConnectNodes(cortexID, 0, connectionName, 0)
 				var conLabel: Connection_Label = Connection_Label.new(_GetNodeByID(cortexID), _GetNodeByID(connectionName), connectionCount, self)
 
 
