@@ -33,19 +33,20 @@ var cortical_synaptic_attractivity: int:
 	set(v):
 		_cortical_synaptic_attractivity = v
 
-var cortical_coordinates_3D: Vector3:
+var cortical_coordinates_3D: Vector3i:
 	get: return _cortical_coordinates_3D
 	set(v):
 		_cortical_coordinates_3D = v
 
-var cortical_coordinates_2D: Vector2:
+var cortical_coordinates_2D: Vector2i:
 	get: 
 		if _2D_coordinates_isDefined:
 			return _cortical_coordinates_2D
-		print("Trying to load 2D coordinates when none exist for cortex " + ID.str)
+		push_warning("Trying to load 2D coordinates when none exist for cortex " + ID.str)
 		return Vector2(0,0) # must be here to allow compiling
 	set(v):
 		_cortical_coordinates_2D = v
+		_2D_coordinates_isDefined = true
 
 var cortical_dimensions: Vector3:
 	get: return _cortical_dimensions
@@ -139,8 +140,8 @@ var _cortical_group: String
 var _cortical_neuron_per_vox_count: int
 var _cortical_visibility: bool
 var _cortical_synaptic_attractivity: int
-var _cortical_coordinates_3D: Vector3
-var _cortical_coordinates_2D: Vector2
+var _cortical_coordinates_3D: Vector3i = Vector3i(0,0,0)
+var _cortical_coordinates_2D: Vector2i
 var _2D_coordinates_isDefined: bool = false
 var _cortical_dimensions: Vector3
 var _cortical_destinations: Dictionary
@@ -162,13 +163,14 @@ var _connectedTowards: Dictionary = {}
 
 
 func ApplyDictionary(data: Dictionary) -> void:
+	
 	if "cortical_name" in data.keys(): _cortical_name = data["cortical_name"]
 	if "cortical_group" in data.keys(): _ConfirmValidGroup(data["cortical_group"])
 	if "cortical_neuron_per_vox_count" in data.keys(): _cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
 	if "cortical_visibility" in data.keys(): _cortical_visibility = data["cortical_visibility"]
 	if "cortical_synaptic_attractivity" in data.keys(): _cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
-	if "cortical_coordinates" in data.keys(): _cortical_coordinates_3D = HelperFuncs.Array2Vector3(data["cortical_coordinates"])
-	if "cortical_coordinates_2d" in data.keys(): _cortical_coordinates_2D = HelperFuncs.Array2Vector2(data["cortical_coordinates_2d"]); _2D_coordinates_isDefined = true
+	if "cortical_coordinates" in data.keys(): _cortical_coordinates_3D = HelperFuncs.Array2Vector3i(data["cortical_coordinates"])
+	if "cortical_coordinates_2d" in data.keys(): _cortical_coordinates_2D = HelperFuncs.Array2Vector2i(data["cortical_coordinates_2d"]); _2D_coordinates_isDefined = true
 	if "cortical_dimensions" in data.keys(): _cortical_dimensions = HelperFuncs.Array2Vector3(data["cortical_dimensions"])
 	if "cortical_destinations" in data.keys(): _cortical_destinations = data["cortical_destinations"]
 	if "neuron_post_synaptic_potential" in data.keys(): _neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
@@ -210,6 +212,6 @@ func _ConfirmValidGroup(checking: String) -> void:
 		_cortical_group = checking
 		return
 	@warning_ignore("assert_always_false")
-	assert(false, "Invalid cortical area type:" + checking)
+	assert(false, "Invalid cortical area group:" + checking)
 
 
