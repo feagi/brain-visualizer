@@ -24,6 +24,7 @@ var _coreRef: Core
 func _init(coreReference: Core) -> void:
 	_coreRef = coreReference
 
+
 func StoreMorphologyListFromFeagi(dataFromFEAGI: Array) -> void:
 	_morphologiesArray = PackedStringArray(dataFromFEAGI)
 

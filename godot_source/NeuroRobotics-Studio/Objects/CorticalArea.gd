@@ -164,6 +164,7 @@ var _connectedTowards: Dictionary = {}
 
 func ApplyDictionary(data: Dictionary) -> void:
 	
+	if "cortical_id" in data.keys(): _ID = CortexID.new(data["cortical_id"])
 	if "cortical_name" in data.keys(): _cortical_name = data["cortical_name"]
 	if "cortical_group" in data.keys(): _ConfirmValidGroup(data["cortical_group"])
 	if "cortical_neuron_per_vox_count" in data.keys(): _cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
