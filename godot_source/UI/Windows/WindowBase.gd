@@ -18,11 +18,10 @@ func _init(newnitObjectType: StringName, activation: Dictionary, parentRef: Node
 func Close() -> void:
 	newnit.queue_free()
 
-func Open() -> void:
-	#newnit = ClassDB.instantiate(_newnitType)
+func Open(activation: Dictionary = _NewnitActivation) -> void:
 	newnit = _ReturnNewnitType()
 	_parentRef.add_child(newnit)
-	newnit.Activate(_NewnitActivation)
+	newnit.Activate(activation)
 	newnit.DataUp.connect(_DataFromNewnit)
 
 func _DataFromNewnit(data: Dictionary) -> void:

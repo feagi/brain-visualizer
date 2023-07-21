@@ -38,3 +38,6 @@ func Open(srcCortexID: StringName = "", destCortexID: StringName = ""):
 func _DataFromNewnit(data: Dictionary):
 	print(data)
 	print("A")
+
+func _ReturnNewnitType() -> Object:
+	return Newnit_Popup.new()
