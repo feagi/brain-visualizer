@@ -209,8 +209,8 @@ func _Relay_CorticalAreaNameList(_result, _response_code, _headers, body: Packed
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
-		FeagiCache.genome_corticalAreaNameList = JSON.parse_string(body.get_string_from_utf8())
-		UIManager.RelayDownwards(REF.FROM.genome_corticalAreaNameList, FeagiCache.genome_corticalAreaNameList)
+		FeagiCache._genome_corticalAreaNameList = JSON.parse_string(body.get_string_from_utf8())
+		UIManager.RelayDownwards(REF.FROM.genome_corticalAreaNameList, FeagiCache._genome_corticalAreaNameList)
 	
 func _Relay_GET_GE_corticalArea(_result, _response_code, _headers, body: PackedByteArray):
 	# Note, this is for a specific cortical Area
