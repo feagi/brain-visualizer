@@ -86,10 +86,11 @@ static func Func_SetData(input: Dictionary, NewnitObject) -> void:
 				if (typeof(inputVar) == 3) && (typeof(NewnitObject[key]) == 2):
 					# auto convert from float to int
 					inputVar = int(inputVar)
+				elif (typeof(NewnitObject[key]) == 28 && typeof(input[key]) > 28):
+					inputVar = Array(inputVar) # TODO not efficient to convert packed arrays to arrays!
 				else:
 					push_warning("Input is of type ", typeof(input[key]), " when expected ", typeof(NewnitObject[key]), "! Skipping!")
 					continue
-			
 			NewnitObject[key] = inputVar # This is blasphemy
 			continue
 	
