@@ -75,7 +75,7 @@ var PUT_genome_mappingProperties: String:
 
 	
 # Delete Requests
-var DELETE_genome_corticalArea_CORTICALAREANAMEEQUALS: String:
+var DELETE_GE_corticalArea: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/cortical_area?cortical_area_name="
 
 func _init(FEAGIRootAddress: StringName, securitySSL: StringName) -> void:
