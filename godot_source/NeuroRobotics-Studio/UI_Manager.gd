@@ -17,7 +17,6 @@ var currentLanguageISO: String:
 var Activated: bool = false
 
 # References
-var cache: FeagiCache
 var Windows: WindowManager
 
 
@@ -141,10 +140,10 @@ func TopBarInput(data: Dictionary, ElementID: StringName, _ElementRef: Node):
 			
 				# Copy n paste cus no reason to do extra work
 				const ButtonItem := { "type": "button", "ID": "morphologyOption", "alignment": 0}
-				var morphologyOptions: Array = cache.genome_corticalAreaIDList
+				var morphologyOptions: Array = FeagiCache.morphologies.morphologiesStrArray
 				var morphologyScroll: Newnit_Scroll = UI_CORTICALLIST.GetReferenceByID("morphology_list")
 				for i in morphologyOptions:
-					var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"fullText": $Brain_Visualizer.id_to_name(i)})
+					var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"fullText": i})
 					spawnedItem.connect("DataUp", Callable(self,"camera_focus"))
 		"CREATE_CORTICAL_AREA_TEXTURE_BUTTON":
 			if not UI_CreateCorticalBar: SpawnCorticalCreate() # Only spawn if not already up
