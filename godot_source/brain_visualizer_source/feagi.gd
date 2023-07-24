@@ -365,7 +365,7 @@ func _on_Update_pressed(data_input):
 	last_cortical_selected["neuron_degeneracy_coefficient"] = degenerecy_coefficient
 	last_cortical_selected["neuron_psp_uniform_distribution"] = psp_uniform_distribution
 	last_cortical_selected["neuron_mp_charge_accumulation"] = bool(MP_accumulation)
-	Autoload_variable.BV_Core.FEAGICalls.POST_GE_corticalArea(last_cortical_selected)
+	Autoload_variable.BV_Core.FEAGICalls.PUT_GE_corticalArea(last_cortical_selected)
 
 	var list_size = global_name_list.size()
 	for i in list_size:
