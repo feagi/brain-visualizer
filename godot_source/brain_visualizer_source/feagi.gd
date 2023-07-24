@@ -680,7 +680,7 @@ func _on_save_pressed(node):
 		json_data["src_pattern"] = [[node.GetReferenceByID("Composite").get_node("box_XYZ_s1").get_node("box_XYZ_1").get_node("box_XYZ_X").get_node("counter_C1").get_node("counter_C1").value, node.GetReferenceByID("Composite").get_node("box_XYZ_s1").get_node("box_XYZ_1").get_node("box_XYZ_X").get_node("counter_S1").get_node("counter_S1").value], [node.GetReferenceByID("Composite").get_node("box_XYZ_s1").get_node("box_XYZ_Y").get_node("box_XYZ_2").get_node("counter_C2").get_node("counter_C2").value, node.GetReferenceByID("Composite").get_node("box_XYZ_s1").get_node("box_XYZ_Y").get_node("box_XYZ_2").get_node("counter_S2").get_node("counter_S2").value], [node.GetReferenceByID("Composite").get_node("box_XYZ_s1").get_node("box_XYZ_Z").get_node("box_XYZ_3").get_node("counter_C3").get_node("counter_C3").value, node.GetReferenceByID("Composite").get_node("box_XYZ_s1").get_node("box_XYZ_Z").get_node("box_XYZ_3").get_node("counter_S3").get_node("counter_S3").value]]
 		json_data["mapper_morphology"] = node.GetReferenceByID("Composite").get_node("box_MAPPING_DROPDOWN").get_node("dropdown_MAPPINGDROPDOWN").get_node("dropDown_MAPPINGDROPDOWN").text
 	var combine_url = '/v1/feagi/genome/morphology?morphology_name=' + symbols_checker_for_api(new_name) + '&morphology_type=' + new_type
-	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_Visualizer(SEC + combine_url, json_data)
+	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(SEC + combine_url, json_data)
 
 func _on_delete_pressed(node):
 	var grab_name_rule = node.GetReferenceByID("header_title").get_node("field_header_title").text
