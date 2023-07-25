@@ -549,8 +549,8 @@ func _on_update_destination_info_request_completed(_result, _response_code, _hea
 				new_node.get_node("box_overwritescalar").get_node("box_XYZ").get_child(2).get_child(1).value = api_data[i]["morphology_scalar"][2]
 				new_node.get_node("floatfield_PSPMULTIPLER").get_node("floatField_PSPMULTIPLER").text = str(api_data[i]["postSynapticCurrent_multiplier"])
 				new_node.get_node("box_third_box1").get_node("checkbutton_PSPTOGGLE").get_node("checkButton_PSPTOGGLE").set_pressed(api_data[i]["plasticity_flag"])
-				new_node.get_node("button_mappingdefbuttonminus").get_node("button_mappingdefbuttonminus").connect("pressed",Callable(self,"map_info_pressed").bind(new_node))
-				new_node.get_node("button_mappingdefbuttonminus").get_node("sideButton_mappingdefbuttonminus").connect("pressed",Callable(self,"remove_button_inside_dst").bind(new_node))
+				new_node.get_node("texturebutton_mappingdefbuttonminus").get_node("textureButton_mappingdefbuttonminus").connect("pressed",Callable(self,"map_info_pressed").bind(new_node))
+				new_node.get_node("texturebutton_sideButtonText").get_node("textureButton_sideButtonText").connect("pressed",Callable(self,"remove_button_inside_dst").bind(new_node))
 	$notification.generate_notification_message(api_data, _response_code, "_on_update_destination_info_request_completed", "/v1/feagi/genome/mapping_properties")
 
 func _on_genome_data_request_completed(_result, _response_code, _headers, body):
@@ -572,7 +572,10 @@ func _on_remove_cortical_request_completed(_result, _response_code, _headers, _b
 
 func map_info_pressed(node_duplicated):
 	var name_selected = node_duplicated.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions").get_item_text(node_duplicated.get_node("dropdown_mappingdefinitions").get_node("dropDown_mappingdefinitions").selected)
-	Autoload_variable.BV_Core.FEAGICalls.GET_GE_morphologyEQUALS(name_selected)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_morphology(name_selected)
+	if $"..".UI_ManageNeuronMorphology == null:
+		$"..".SpawnNeuronManager()
+	$"..".UI_ManageNeuronMorphology.GetReferenceByID("header_title").get_node("field_header_title").text = name_selected
 
 func remove_button_inside_dst(node_duplicated):
 	plus_node.erase(node_duplicated)
@@ -625,8 +628,8 @@ func _on_plus_add_pressed():
 	new_node.get_node("box_overwritescalar").get_node("box_XYZ").get_child(2).get_child(1).value = 1
 	new_node.get_node("floatfield_PSPMULTIPLER").get_node("floatField_PSPMULTIPLER").text = str(1)
 	new_node.get_node("box_third_box1").get_node("checkbutton_PSPTOGGLE").get_node("checkButton_PSPTOGGLE").set_pressed(false)
-	new_node.get_node("button_mappingdefbuttonminus").get_node("button_mappingdefbuttonminus").connect("pressed",Callable(self,"map_info_pressed").bind(new_node))
-	new_node.get_node("button_mappingdefbuttonminus").get_node("sideButton_mappingdefbuttonminus").connect("pressed",Callable(self,"remove_button_inside_dst").bind(new_node))
+	new_node.get_node("texturebutton_mappingdefbuttonminus").get_node("textureButton_mappingdefbuttonminus").connect("pressed",Callable(self,"map_info_pressed").bind(new_node))
+	new_node.get_node("texturebutton_sideButtonText").get_node("textureButton_sideButtonText").connect("pressed",Callable(self,"remove_button_inside_dst").bind(new_node))
 
 func _on_save_pressed(node):
 	var json_data = {}
@@ -703,7 +706,7 @@ func _on_get_cortical_dst_request_completed(_result, _response_code, _headers, b
 						if i in Godot_list.genome_data["genome"][x][7]:
 							dst_data[i] = api_data["cortical_destinations"][i]
 		dst_data_holder = dst_data.duplicate()
-		Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_membranePotential_CORTICALAREAEQUALS($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
+		Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_membranePotential($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_get_cortical_dst_request_completed", "/v1/feagi/genome/cortical_area")
 
 func _on_cortical_mapping_add_pressed(name_input):
@@ -899,7 +902,7 @@ func _on_mem_request_request_completed(_result, _response_code, _headers, body):
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	$"..".UI_LeftBar.GetReferenceByID("Mem_potent").get_node("checkButton_Mem_potent").set_pressed(api_data)
-	Autoload_variable.BV_Core.FEAGICalls.GET_monitoring_neuron_synampticPotential_CORTICALAREAEQUALS($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
+	Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_synapticPotential($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
 	$notification.generate_notification_message(api_data, _response_code, "_on_mem_request_request_completed", "/v1/feagi/monitoring/neuron/membrane_potential")
 
 func _on_syn_request_request_completed(_result, _response_code, _headers, body):
