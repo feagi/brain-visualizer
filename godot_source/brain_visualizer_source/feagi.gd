@@ -61,7 +61,7 @@ func _ready():
 	Autoload_variable.BV_Core = get_parent().get_parent()
 	Autoload_variable.BV_UI = get_parent()
 	await get_tree().create_timer(1.5).timeout
-	SEC = 'HTTP://' + network_setting.api_ip_address + ':' + network_setting.api_port_address
+	SEC =  $"../..".SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address
 	set_physics_process(false)
 #	add_3D_indicator()
 	Autoload_variable.BV_Core.FEAGICalls.GET_CO_properties_dimensions() # Grab genome list
@@ -1216,7 +1216,8 @@ func demo_new_cortical():
 					global_name_list[i]["example"][0].get_child(0).get_child(0).text = $".."/".."/".."/Menu/addition_menu/addition_menu/cortical_name_textbox/type.text
 
 func camera_list_selected(name_input):
-		Autoload_variable.BV_Core.GOTO_CORTICALLOCATION(id_to_name(name_input))
+		print("name: ", name_input)
+		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalNameLocation(id_to_name(name_input))
 
 # DE BUG ONLY:
 func calculateSceneSize(node: Node) -> int:
