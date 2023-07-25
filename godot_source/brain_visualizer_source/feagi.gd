@@ -447,13 +447,18 @@ func _on_information_button_request_completed(_result, _response_code, _headers,
 	if _response_code == 200 and not api_data.has("Request failed..."):
 		var UI_LeftBar = $"..".UI_LeftBar
 		const ButtonItem := { "type": "button", "ID": "morphologyOption"}
+		const TextureButtonItem := { "type": "texturebutton", 
+				"ID": "morphologyOption",
+				"internal_custom_minimum_size": Vector2(30,30)}
 		var morphologyScroll: Newnit_Scroll = UI_LeftBar.GetReferenceByID("efferent_list")
 		for i in api_data:
 			var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": id_to_name(i)})
 			var new_node = spawnedItem.get_node("button_morphologyOption")
+			var spawnedItemtexture = morphologyScroll.SpawnItem(TextureButtonItem)
+			spawnedItemtexture.get_node("textureButton_morphologyOption").connect("pressed", Callable(self, "dst_remove_pressed").bind(spawnedItemtexture.get_node("textureButton_morphologyOption"), new_node))
+			spawnedItemtexture.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/remove.png")
 			new_node.connect("pressed",Callable($"..","mapping_definition_button").bind(new_node))
-			
-#		map_colorful()
+	#		map_colorful()
 	#	$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 10 + $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.size.y + $".."/".."/".."/Menu/cortical_mapping.position.y
 	else:
 		$notification.generate_notification_message(api_data, _response_code, "_on_information_button_request_completed", "/v1/feagi/genome/cortical_mappings/efferents")
@@ -581,28 +586,22 @@ func remove_button_inside_dst(node_duplicated):
 	plus_node.erase(node_duplicated)
 	node_duplicated.queue_free()
 
-func dst_remove_pressed(duplicated_node_lineedit):
+func dst_remove_pressed(image_node, node):
 	_on_info_pressed() # leveraging the same function to clear all infos on the box
-	$".."/".."/".."/Menu/Mapping_Properties.visible = false
-	$".."/".."/".."/Menu/Mapping_Properties/cortical_dropdown.select(0)
-	var dst_id = name_to_id(duplicated_node_lineedit.text)
-	var grab_id = $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text
+	var dst_id = name_to_id(node.text)
+	var grab_id = $"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text
 	var combine_url = '?src_cortical_area=#&dst_cortical_area=$'.replace("#", grab_id)
 	if dst_id != null:
 		combine_url= combine_url.replace("$", dst_id)
 		var number_holder = []
 		for i in range(child_node_holder.size()):
-			if child_node_holder[i].text == duplicated_node_lineedit.text:
+			if child_node_holder[i].text == node.text:
 				child_node_holder[i].queue_free()
 				number_holder.append(i)
-		var counter = 0
-		for x in number_holder:
-			child_node_holder.pop_at(x - counter)
-			counter += 1
 		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties([],combine_url)
-		$".."/".."/".."/Menu/cortical_menu/Control/Update.position.y = 10 + $".."/".."/".."/Menu/cortical_mapping/Control/ScrollContainer/VBoxContainer.size.y + $".."/".."/".."/Menu/cortical_mapping.position.y
-		$".."/".."/".."/Menu/cortical_mapping.position.y = $".."/".."/".."/Menu/cortical_mapping.position.y - (number_holder.size() * 5)
-
+		node.queue_free()
+		image_node.queue_free()
+	
 func delete_morphology(input_node):
 	print("erasing: ", input_node)
 	input_node.queue_free()
