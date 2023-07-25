@@ -45,6 +45,8 @@ func _init(inputNode: CortexNode, outputNode: CortexNode,
 	draggable = false
 	selectable = false
 
+	_VisuallyConnectNodes()
+
 func DestroyConnection() -> void:
 	_VisuallyDisconnectNodes()
 	queue_free()
