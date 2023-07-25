@@ -18,7 +18,7 @@ var GET_genome_fileName: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/file_name"
 var GET_genome_corticalAreaNameList: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/cortical_area_name_list"
-var GET_genome_corticalNameLocation_CORTICALNAMEEQUALS: String:
+var GET_genome_corticalNameLocation: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/cortical_name_location?cortical_name="
 var GET_genome_corticalArea_CORTICALAREAEQUALS: String:
 	get: return  _security + _rootAddress + "/v1/feagi/genome/cortical_area?cortical_area="
@@ -58,7 +58,7 @@ var GET_monitoring_neuron_membranePotential_CORTICALAREAEQUALS: String:
 	get: return  _security + _rootAddress + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
 var GET_monitoring_neuron_synapticPotential_CORTICALAREAEQUALS: String:
 	get: return  _security + _rootAddress + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
-
+	
 # Post Requests
 var POST_feagi_burstEngine: String:
 	get: return  _security + _rootAddress + "/v1/feagi/feagi/burst_engine"
