@@ -11,6 +11,9 @@ var ID: StringName:
 var str: StringName:
 	get: return _ID
 
+var STR: StringName:
+	get: return _ID
+
 var _ID: StringName
 
 func _init(id: StringName):
