@@ -1216,7 +1216,6 @@ func demo_new_cortical():
 					global_name_list[i]["example"][0].get_child(0).get_child(0).text = $".."/".."/".."/Menu/addition_menu/addition_menu/cortical_name_textbox/type.text
 
 func camera_list_selected(name_input):
-		print("name: ", name_input)
 		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalNameLocation(id_to_name(name_input))
 
 # DE BUG ONLY:
