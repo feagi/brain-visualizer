@@ -429,8 +429,11 @@ func RelayDownwards(callType, data) -> void:
 #			pass
 		REF.FROM.genome_corticalAreaIdList:
 			if UI_MappingDefinition:
-				UI_MappingDefinition.SetData({"testlabel": {"SOURCECORTICALAREA":{"options": data, "value": src_global}}})
-				UI_MappingDefinition.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"options": data, "value": dst_global}}})
+				var updated_list = []
+				for i in data:
+					updated_list.append($Brain_Visualizer.id_to_name(i))
+				UI_MappingDefinition.SetData({"testlabel": {"SOURCECORTICALAREA":{"options": updated_list, "value": $Brain_Visualizer.id_to_name(src_global)}}})
+				UI_MappingDefinition.SetData({"testlabel": {"DESTINATIONCORTICALAREA":{"options": updated_list, "value": $Brain_Visualizer.id_to_name(dst_global)}}})
 		REF.FROM.genome_morphologyList:
 #			if UI_Top_TopBar:
 #				UI_Top_TopBar.SetData({"NEURONMORPHOLOGIESBOX": {"NEURONMORPHOLOGIES": {"options":data}}})
