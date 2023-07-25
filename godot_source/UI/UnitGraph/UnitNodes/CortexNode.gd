@@ -16,13 +16,13 @@ var corticalID: CortexID:
 		_Label.name = v.str
 		
 var corticalType: REF.CORTICALTYPE
-var usingCustomLocation: bool = false
+var isPositionFromFeagi: bool = false
 
 var _corticalID: CortexID
 var _Label: Label_Sub
 
 # We have to use a positionArr because gdscript doesn't allow null statics
-func _init(cortexID: CortexID, niceName: String, positionArr: PackedInt32Array = []):
+func _init(cortexID: CortexID, niceName: String, positionFromFeagi: Vector2i, isPositionDefinedFromFeagi: bool):
 	super()
 	_Label = Label_Sub.new()
 	add_child(_Label)
@@ -36,10 +36,9 @@ func _init(cortexID: CortexID, niceName: String, positionArr: PackedInt32Array =
 	set_slot_type_left(0, int(CONNECTIONTYPES.Default))
 	set_slot_type_right(0, int(CONNECTIONTYPES.Default))
 	
-	if positionArr.size() == 0: return
-		
-	position_offset = HelperFuncs.Array2Vector2i(positionArr)
-	usingCustomLocation = true
+	isPositionFromFeagi = isPositionDefinedFromFeagi
+	position_offset = positionFromFeagi
+
 	
 
 
