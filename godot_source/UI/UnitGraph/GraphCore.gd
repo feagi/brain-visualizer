@@ -2,9 +2,9 @@ extends GraphEdit
 class_name GraphCore
 
 signal CortexSelected(cortex: CortexID)
-signal ConnectionSelected(sourceNode: CortexID, destinationNode: CortexID)
-signal ConnectionRequest(sourceNode: CortexID, destinationNode: CortexID)
-signal DisconnectionRequest(sourceNode: CortexID, destinationNode: CortexID)
+signal ConnectionSelected(source: CortexID, destination: CortexID)
+signal ConnectionRequest(source: CortexID, destination: CortexID)
+signal DisconnectionRequest(source: CortexID, destination: CortexID)
 
 
 const DEFAULT_SPAWN_WIDTH: int = 150
@@ -125,10 +125,10 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 		cortexContext = fullCorticalData[srcCortexIDStr]
 		if cortexContext["connectedTo"] != {}:
 			# we have connections to map
-			for connectionName in cortexContext["connectedTo"].keys():
-				connectionCount = cortexContext["connectedTo"][connectionName]
-				_srcCortex = cortexNodes[curCortexID.str]
-				_dstCortex = cortexNodes[connectionName]
+			for dstCortexIDStr in cortexContext["connectedTo"].keys():
+				connectionCount = cortexContext["connectedTo"][dstCortexIDStr]
+				_srcCortex = cortexNodes[srcCortexIDStr]
+				_dstCortex = cortexNodes[dstCortexIDStr]
 				CreateVisibleConnection(_srcCortex, _dstCortex, connectionCount)
 
 # Removes all Visual Connections for a specific Cortical Area Node

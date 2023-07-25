@@ -30,7 +30,7 @@ var UI_CORTICALLIST : Newnit_Popup
 var UI_MappingDefinition : Newnit_Popup
 var UI_CircuitImport : Newnit_Popup
 var UI_QUICKCONNECT: Newnit_Popup
-var UI_GraphCore: GraphCore
+
 var UI_CreateMorphology: Newnit_Popup
 var UI_TUTORIAL_DIALOGUE: Newnit_Popup
 var UI_TUTORIAL: Newnit_Popup
@@ -49,6 +49,70 @@ var current_image = 0
 
 # Internal cached vars
 var _sideBarChangedValues := {}
+
+
+
+
+
+####################################
+############### Vars ###############
+####################################
+
+var CoreRef: Core
+var UI_GraphCore: GraphCore
+
+
+
+####################################
+##### Required Initialization ######
+####################################
+
+
+func _ready():
+
+	CoreRef = get_parent()
+	_initGraphCore()
+
+
+
+func _initGraphCore() -> void:
+	UI_GraphCore = $graphCore
+	UI_GraphCore.CortexSelected.connect(CortexSelected)
+
+
+
+####################################
+####### Input Event Handling #######
+####################################
+
+
+func CortexSelected(cortex: CortexID) -> void:
+	CoreRef.FEAGICalls.GET_GE_corticalArea(cortex.ID)
+	#TODO switch to WM
+	SpawnLeftBar(cortex.ID)
+
+func RequestConnection(source: CortexID, destination: CortexID) -> void:
+	#TODO switch to WM
+	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
+	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Below is old and needs redoing. Pushing down to remember what was worked on
 
 #####################################
 # Initialization
@@ -71,9 +135,7 @@ func Activate(langISO: String):
 	global_json_data = test_json_conv.get_data()
 	files.close()
 
-	# Initialize GraphCore
-	UI_GraphCore = $graphCore #TODO: this is very temporary
-	UI_GraphCore.DataUp.connect(GraphEditInput)
+
 	
 	# Connect window size change function
 	get_tree().get_root().size_changed.connect(WindowSizedChanged)
@@ -98,6 +160,8 @@ func _SpawnTopBar(activation: Dictionary):
 ####################################
 
 signal DataUp(data: Dictionary)
+
+
 
 ######### Top Bar Control ##########
 # We should be using this to make things more streamline
@@ -372,19 +436,19 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 ############ Graph Edit ############
 
 # Takes input from GraphEdit
-func GraphEditInput(data: Dictionary):
-	
-	if "CortexSelected" in data.keys():
-		# Cortex has been selected, pop up side bar
+#func GraphEditInput(data: Dictionary):
+#	
+#	if "CortexSelected" in data.keys():
+#		# Cortex has been selected, pop up side bar
 #		SpawnLeftBar(data["CortexSelected"])
-		DataUp.emit(data)
-	
-	# Redo this TODO
-	if "event" in data.keys():
-		var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
-		SpawnMappingDefinition(data["source"], data["destination"], mappingdefinitiongenerated)	
-	
-	pass
+#		DataUp.emit(data)
+#	
+#	# Redo this TODO
+#	if "event" in data.keys():
+#		var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
+#		SpawnMappingDefinition(data["source"], data["destination"], mappingdefinitiongenerated)	
+#	
+#	pass
 
 # Is called whenever the game window size changes
 func WindowSizedChanged():
@@ -453,8 +517,6 @@ func RelayDownwards(callType, data) -> void:
 #			UI_Top_TopBar.SetData({"GENOMEFILENAME": {"sideLabelText":data}})
 #		REF.FROM.connectome_properties_mappings:
 #			pass
-		REF.FROM.godot_fullCorticalData:
-			UI_GraphCore.RelayDownwards(REF.FROM.godot_fullCorticalData, data)
 		REF.FROM.OPULIST:
 			if UI_CreateCorticalBar:
 				UI_CreateCorticalBar.SetData({"corticalnamedrop": {"CORTICALAREADROPDOWNINBOX": {"options": data}}})
@@ -546,12 +608,13 @@ func SpawnTUTORIALdialogue():
 	UI_holders.append(UI_TUTORIAL_DIALOGUE)
 
 
-func SpawnLeftBar(cortexName: String, activation: Dictionary):
+func SpawnLeftBar(cortexName: String):
 	if UI_LeftBar != null:
 		UI_LeftBar.queue_free() # We don't need this. We need to make it look prettier
 	$"..".FEAGICalls.GET_GE_corticalArea(cortexName) # Tell core to update cortex Info
 	UI_LeftBar = Newnit_Popup.new()
 	add_child(UI_LeftBar)
+	var activation = HelperFuncs.GenerateDefinedUnitDict("LEFTBAR", "eng")
 	UI_LeftBar.Activate(activation)
 	UI_holders.append(UI_LeftBar)
 
