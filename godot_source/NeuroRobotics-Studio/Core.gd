@@ -19,9 +19,9 @@ var NetworkAPI : SimpleNetworkAPI
 var callLib: NetworkCall
 var FEAGIAddresses: AddressList
 var FEAGICalls: AddressCalls 
+var SSL: String = "HTTP://"
 
 func _ready():
-	var SSL: String = "HTTP://"
 	var FEAGIRoot: String
 	NetworkAPI = $GlobalNetworkSystem
 	UIManager = $GlobalUISystem
@@ -52,7 +52,7 @@ func _ready():
 		FEAGIRoot = str(network_setting.api_ip_address)
 	else:
 		FEAGIRoot = str(network_setting.api_ip_address) + ":" + str(network_setting.api_port_address)
-	print("CORE FEAGI ROOTADDRESS: ", FEAGIRoot)
+	print("CORE FEAGI ROOTADDRESS: ", FEAGIRoot, " SSL: ", SSL)
 
 	callLib = NetworkCall.new(NetworkAPI)
 	FEAGIAddresses = AddressList.new(FEAGIRoot, SSL)
