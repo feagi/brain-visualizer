@@ -8,7 +8,7 @@
 	"PaddingTopRightBottomLeft": [10, 10, 10, 10],
 	"vertical": true,
 	"components": [{
-		"ID": "morphology_list",
+		"ID": "cortical_list",
 		"type": "scrollbar",
 		"custom_minimum_sizeX": 199,
 		"custom_minimum_sizeY": 399,
