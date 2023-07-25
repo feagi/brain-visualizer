@@ -44,7 +44,8 @@ func _init(cortexID: CortexID, niceName: String, isPositionDefinedFromFeagi: boo
 	isPositionFromFeagi = isPositionDefinedFromFeagi
 	position_offset = positionFromFeagi
 
-	
 
+func DestroySelf() -> void:
+	queue_free()
 
 

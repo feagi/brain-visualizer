@@ -11,7 +11,8 @@ const DEFAULT_SPAWN_WIDTH: int = 150
 const DEFAULT_HEIGHT_GAP: int = 10
 
 var cortexNodes: Dictionary # CortexIDStr -> CortexNode
-var connectionLabels: Dictionary # srcCortexIDStr -> dstCortexIDStr -> ConnectionLabel
+var connections: CBConnectionDB
+
 # NOTE, THe above data structure is not efficient, REPLACE
 var _UIManRef: UI_Manager
 
@@ -25,8 +26,7 @@ func _ready():
 	arrange_nodes_button_hidden = true
 	right_disconnects = true
 	_UIManRef = get_parent()
-
-
+	connections = CBConnectionDB.new()
 
 ####################################
 ############ User Input ############
@@ -55,31 +55,30 @@ func _DisconnectingNodesFromEachOther(sourceNodeID: String, _fromPort: int, dest
 # Spawns a individual node with its required settings (not connections)
 func SpawnCorticalNode(ID: CortexID, friendlyName: String, positionFromFeagi: Vector2i, isPositionDefinedFromFeagi: bool) -> CortexNode:
 	var newNode: CortexNode = CortexNode.new(ID, friendlyName, isPositionDefinedFromFeagi, self, positionFromFeagi)
-	cortexNodes[ID.str] = newNode
+	cortexNodes[ID.ID] = newNode
 	return newNode
 
 # Spawns a Label (which also automatically negotiates a connection line) connecting 2 nodes together
 func CreateVisibleConnection(srcNode: CortexNode, dstNode: CortexNode, numConnections: int) -> Connection_Label:
 	var newLabel: Connection_Label = Connection_Label.new(srcNode, dstNode, numConnections, self)
 	newLabel.ButtonPressed.connect(_ConnectionLabelPressed)
-
-	if srcNode.corticalID.str not in connectionLabels.keys():
-		connectionLabels[srcNode.corticalID.str] = {dstNode.corticalID.str: newLabel}
-	else:
-		connectionLabels[srcNode.corticalID.str][dstNode.corticalID.str] = newLabel
+	connections.AddConnection(srcNode.corticalID, dstNode.corticalID, newLabel)
 	return newLabel
-	
 
-func FullyRemoveConnection(srcNode: CortexNode, dstNode: CortexNode) -> void:
-	var label: Connection_Label = connectionLabels[srcNode.corticalID.str][dstNode.corticalID.str]
+# Removes a cortical Area from CB, and by default also all the connections to and from it
+func RemoveCorticalNode(ID: CortexID, automaticallyRemoveVisualConnections: bool = true) -> void:
+	var deletingNode: CortexNode = cortexNodes[ID.ID]
+	cortexNodes.erase(ID.ID)
+	if automaticallyRemoveVisualConnections:
+		_RemoveAllVisualConnectionsToCorticalArea(ID)
+
+	deletingNode.DestroySelf()
+
+# Removes a Connection from CB
+func RemoveVisibleConnection(srcNode: CortexNode, dstNode: CortexNode) -> void:
+	var label: Connection_Label = connections.GetSpecificConnectionLabel(srcNode.corticalID, dstNode.corticalID)
 	label.DestroyConnection()
-	connectionLabels[srcNode.corticalID.str].erase(dstNode.corticalID.str)
-	if connectionLabels[srcNode.corticalID.str] == {}:
-		connectionLabels.erase(srcNode.corticalID.str)
-
-
-
-
+	connections.RemoveConnection(srcNode.corticalID, dstNode.corticalID)
 
 
 ####################################
@@ -95,10 +94,6 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 	var spawnedNode: CortexNode
 	var cortexType: StringName
 	var cortexTypeIndex: int
-
-	
-
-	
 	
 	var numColumns = REF.CORTICALTYPE.size()
 	var widths: PackedInt32Array = []
@@ -135,3 +130,13 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 				_srcCortex = cortexNodes[curCortexID.str]
 				_dstCortex = cortexNodes[connectionName]
 				CreateVisibleConnection(_srcCortex, _dstCortex, connectionCount)
+
+# Removes all Visual Connections for a specific Cortical Area Node
+func _RemoveAllVisualConnectionsToCorticalArea(area: CortexID) -> void:
+	var preceedingConnections: Array[Connection_Label] = connections.GetConnectionLabelsWithSource(area)
+	var followingConnections: Array[Connection_Label] = connections.GetConnectionLabelsWithDestination(area)
+
+	for c in preceedingConnections:
+		c.DestroyConnection()
+	for c in followingConnections:
+		c.DestroyConnection()

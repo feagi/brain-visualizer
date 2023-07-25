@@ -14,7 +14,7 @@ var sourceNode: CortexNode:
 
 var destinationNode: CortexNode:
 	get: return _destinationNode
-	
+
 var _sourceNode: CortexNode
 var _destinationNode: CortexNode
 var _numConnections: int
