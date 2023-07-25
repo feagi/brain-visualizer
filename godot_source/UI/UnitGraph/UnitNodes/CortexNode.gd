@@ -20,10 +20,15 @@ var isPositionFromFeagi: bool = false
 
 var _corticalID: CortexID
 var _Label: Label_Sub
+var _graphCoreRef: GraphCore
 
-# We have to use a positionArr because gdscript doesn't allow null statics
-func _init(cortexID: CortexID, niceName: String, positionFromFeagi: Vector2i, isPositionDefinedFromFeagi: bool):
+
+func _init(cortexID: CortexID, niceName: String, isPositionDefinedFromFeagi: bool, graph: GraphCore, positionFromFeagi: Vector2i):
+	
 	super()
+	_graphCoreRef = graph
+	_graphCoreRef.add_child(self)
+
 	_Label = Label_Sub.new()
 	add_child(_Label)
 	
@@ -40,11 +45,6 @@ func _init(cortexID: CortexID, niceName: String, positionFromFeagi: Vector2i, is
 	position_offset = positionFromFeagi
 
 	
-
-
-
-
-
 
 
 
