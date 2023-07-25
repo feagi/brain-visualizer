@@ -78,7 +78,8 @@ func _ready():
 func _initGraphCore() -> void:
 	UI_GraphCore = $graphCore
 	UI_GraphCore.CortexSelected.connect(CortexSelected)
-
+	UI_GraphCore.ConnectionRequest.connect(RequestConnection)
+	UI_GraphCore.DisconnectionRequest.connect(RequestConnectionDeletion)
 
 
 ####################################
@@ -96,8 +97,8 @@ func RequestConnection(source: CortexID, destination: CortexID) -> void:
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
 	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
 
-
-
+func RequestConnectionDeletion(source: CortexID, destination: CortexID) -> void:
+	CoreRef.FEAGICalls.PUT_GE_mappingProperties(source.ID, destination.ID, "[]")
 
 
 
@@ -799,7 +800,7 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 	var get_id_from_dst = $Brain_Visualizer.name_to_id(dst)
 	src_global = $Brain_Visualizer.name_to_id(src)
 	dst_global = get_id_from_dst
-	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(src_global, dst_global)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(src, dst)
 	# Link with BV buttons
 	var add_morphology = UI_MappingDefinition.GetReferenceByID("ADDMAPPING").get_node("button_ADDMAPPING")
 	var update_button = UI_MappingDefinition.GetReferenceByID("updatebutton").get_node("button_updatebutton")

@@ -46,6 +46,8 @@ func _ConnectingNodesTogether(sourceNodeID: String, _fromPort: int, destNodeID: 
 # Proxy for signal for user disconnecting nodes
 func _DisconnectingNodesFromEachOther(sourceNodeID: String, _fromPort: int, destNodeID: String, _toPort: int) -> void:
 	DisconnectionRequest.emit(CortexID.new(sourceNodeID), CortexID.new(destNodeID))
+	# Temp Until more work with Cache
+	RemoveVisibleConnection(cortexNodes[sourceNodeID], cortexNodes[destNodeID])
 
 
 ####################################
