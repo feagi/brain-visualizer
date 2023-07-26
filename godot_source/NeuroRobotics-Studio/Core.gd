@@ -20,9 +20,9 @@ var callLib: NetworkCall
 var FEAGIAddresses: AddressList
 var FEAGICalls: AddressCalls 
 var SSL = network_setting.SSL
+var FEAGIRoot: String
 
 func _ready():
-	var FEAGIRoot: String
 	NetworkAPI = $GlobalNetworkSystem
 	UIManager = $GlobalUISystem
 	var http_type = JavaScriptBridge.eval(""" 
