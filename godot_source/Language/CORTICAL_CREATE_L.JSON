@@ -4,11 +4,28 @@
 			"eng": "Add New Cortical Area"
 		}
 	},
-	"CORTICALAREA": {
+	"PICKONE": {
 		"sideLabelText": {
-			"eng": "Cortical Area Type"
+			"eng": "Cortical Area Type:"
 		}
 	},
+   "CORTICALAREA":{
+	  "OPU":{
+		 "sideLabelText":{
+			"eng":"OPU"
+		 }
+	  },
+	  "IPU":{
+		 "sideLabelText":{
+			"eng":"IPU"
+		 }
+	  },
+	  "CUSTOM":{
+		 "sideLabelText":{
+			"eng":"Custom"
+		 }
+	  }
+   },
 	"corticalnametext": {
 		"CORTICALAREAFIELD": {
 			"sideLabelText": {
