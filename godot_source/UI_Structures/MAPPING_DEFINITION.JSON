@@ -109,10 +109,18 @@
 					]
 				},
 				{
-					"type": "button",
+					"type": "texturebutton",
 					"ID": "mappingdefbuttonminus",
-					"text": "i",
-					"sideButtonText": "-"
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/info.png",
+				   	"internal_custom_minimum_sizeX": 30,
+				   	"internal_custom_minimum_sizeY": 31
+				},
+				{
+					"type": "texturebutton",
+					"ID": "sideButtonText",
+					"default_texture_path": "res://brain_visualizer_source/menu_assets/image/remove.png",
+				   	"internal_custom_minimum_sizeX": 30,
+				   	"internal_custom_minimum_sizeY": 31
 				}
 			],
 			"vertical": false

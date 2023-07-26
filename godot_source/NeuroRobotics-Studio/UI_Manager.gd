@@ -369,7 +369,7 @@ func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: No
 			const ButtonItem := { "type": "texturebutton", 
 				"ID": "morphologyOption",
 				"internal_custom_minimum_size": Vector2(200,200)}
-			var morphologyOptions: Array = ["block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
+			var morphologyOptions: Array = ["projector", "block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
 			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
 			for i in morphologyOptions:
 				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem)
@@ -412,36 +412,29 @@ func CorticalCreateInput(data: Dictionary, ElementID: StringName, _ElementRef: N
 				else:
 					if not boxx.visible:
 						boxx.visible = true
-		"CORTICALAREA":
-			if data["selectedIndex"] == 1:
-				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
-				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
-				$"..".FEAGICalls.GET_GE_corticalTypeOptions('OPU')
-			elif data["selectedIndex"] == 2:
-				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
-				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true 
-				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
-				$"..".FEAGICalls.GET_GE_corticalTypeOptions('IPU')
-			elif data["selectedIndex"] == 3:
-				UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
-				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = true
-				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
-			else:
-				UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
-				UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
+		"OPU":
+			UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
+			UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
+			UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true
+			UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+			UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
+			UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
+			$"..".FEAGICalls.GET_GE_corticalTypeOptions('OPU')
+		"IPU":
+			UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = false
+			UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = true
+			UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = true 
+			UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
+			UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = true
+			UI_CreateCorticalBar.GetReferenceByID("WHD").visible = true
+			$"..".FEAGICalls.GET_GE_corticalTypeOptions('IPU')
+		"CUSTOM":
+			UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton").disabled = true
+			UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
+			UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = true
+			UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
+			UI_CreateCorticalBar.GetReferenceByID("XYZ").visible = false
+			UI_CreateCorticalBar.GetReferenceByID("WHD").visible = false
 		"POPUP_TOPBAR":
 			$Brain_Visualizer._clear_single_cortical("example", Godot_list.godot_list)
 
@@ -677,7 +670,6 @@ func SpawnCorticalCreate():
 	UI_CreateCorticalBar.Activate(createcorticalBar)
 	UI_CreateCorticalBar.DataUp.connect(CorticalCreateInput)
 	UI_holders.append(UI_CreateCorticalBar)
-	UI_CreateCorticalBar.SetData({"CORTICALAREA": {"options": (global_json_data["option"])}})
 	UI_CreateCorticalBar.GetReferenceByID("corticalnamedrop").visible = false
 	UI_CreateCorticalBar.GetReferenceByID("OPUIPU").visible = false
 	UI_CreateCorticalBar.GetReferenceByID("corticalnametext").visible = false
@@ -701,6 +693,7 @@ func SpawnCorticalCreate():
 	x.connect("value_changed",Callable($Brain_Visualizer,"_on_X_SpinBox_value_changed").bind([w,h,d,x,y,z]))
 	y.connect("value_changed",Callable($Brain_Visualizer,"_on_Y_Spinbox_value_changed").bind([w,h,d,x,y,z]))
 	z.connect("value_changed",Callable($Brain_Visualizer,"_on_Z_Spinbox_value_changed").bind([w,h,d,x,y,z]))
+	name_input.connect("text_changed", Callable($Brain_Visualizer,"_on_type_text_changed"))
 	name_input.connect("text_changed",Callable($"../../Button_to_Autoload","_on_type_text_changed"))
 	update.connect("pressed",Callable($Brain_Visualizer,"_on_add_pressed").bind([w,h,d,x,y,z, name_input, optionlist, update]))
 
@@ -754,6 +747,7 @@ func SpawnNeuronManager():
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
+	print("TEST: ", optionbutton_holder)
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
 	
 	const ButtonItem := { "type": "button", "ID": "morphologyOption"}

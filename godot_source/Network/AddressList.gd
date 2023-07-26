@@ -2,7 +2,7 @@ extends Object
 class_name AddressList
 # Just a list of addresses to feagi 
 
-var _security = "HTTP://" # this should be changed to const when development workflow improves
+var _security = network_setting.SSL
 var _rootAddress := ""
 
 
