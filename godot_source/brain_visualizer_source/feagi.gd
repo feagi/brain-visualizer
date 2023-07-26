@@ -1220,10 +1220,18 @@ func demo_new_cortical():
 func camera_list_selected(name_input):
 		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalNameLocation(id_to_name(name_input))
 
-# DE BUG ONLY:
-func calculateSceneSize(node: Node) -> int:
-	var size = node.get_memory_usage()
-	for child in node.get_children():
-		size += calculateSceneSize(child)
+func _on_type_text_changed(text_data):
+	# This is for UI_CreateCorticalBar only
+	var UI_CreateCorticalBar = $"..".UI_CreateCorticalBar 
+	var box = UI_CreateCorticalBar.GetReferenceByID("XYZ")
+	var boxx = UI_CreateCorticalBar.GetReferenceByID("WHD")
+	var update = UI_CreateCorticalBar.GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
+	if text_data != "":
+		box.visible = true
+		boxx.visible = true
+		update.disabled = false
+	else:
+		box.visible = false
+		boxx.visible = false
+		update.disabled = true
 
-	return size
