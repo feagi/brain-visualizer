@@ -22,16 +22,16 @@
 			"components": [
 				{
 					"type": "checkBox",
-					"ID": "RCOMPOSITE",
+					"ID": "RCOMPOSITE"
 				},
 				{
 					"type": "checkBox",
-					"ID": "RPATTERNS",
+					"ID": "RPATTERNS"
 				},
 				{
 					"type": "checkBox",
-					"ID": "RVECTORS",
-				},
+					"ID": "RVECTORS"
+				}
 			]
 		},
 		{
