@@ -293,7 +293,7 @@ func QuickConnectINPUT(_data: Dictionary, ElementID: StringName, _ElementRef: No
 			const ButtonItem := { "type": "texturebutton", 
 				"ID": "morphologyOption",
 				"internal_custom_minimum_size": Vector2(200,200)}
-			var morphologyOptions: Array = ["block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
+			var morphologyOptions: Array = ["projector", "block_to_block", "any_to_any", "lateral_+x", "lateral_+y", "lateral_-y"]
 			var morphologyScroll: Newnit_Scroll = UI_morphologyLIST.GetReferenceByID("morphology_list")
 			for i in morphologyOptions:
 				var spawnedItem = morphologyScroll.SpawnItem(ButtonItem)
@@ -679,6 +679,7 @@ func SpawnNeuronManager():
 	add_button.connect("pressed", Callable($Brain_Visualizer,"_morphology_button_inside_red").bind(UI_ManageNeuronMorphology))
 	save_button.connect("pressed", Callable($Brain_Visualizer,"_on_save_pressed").bind(UI_ManageNeuronMorphology))
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_delete_pressed").bind(UI_ManageNeuronMorphology))
+	print("TEST: ", optionbutton_holder)
 	UI_ManageNeuronMorphology.SetData({"box_one": {"box_three": {"Composite": {"MAPPING_DROPDOWN": {"MAPPINGDROPDOWN": {"options": optionbutton_holder}}}}}})
 	
 	const ButtonItem := { "type": "button", "ID": "morphologyOption"}
