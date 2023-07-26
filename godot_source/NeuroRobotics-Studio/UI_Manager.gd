@@ -680,7 +680,7 @@ func SpawnCorticalCreate():
 	var whd = UI_CreateCorticalBar.GetReferenceByID("WHD")
 	var xyz = UI_CreateCorticalBar.GetReferenceByID("XYZ")
 	var name_input = UI_CreateCorticalBar.GetReferenceByID("corticalnametext").get_node("field_CORTICALAREAFIELD").get_node("field_CORTICALAREAFIELD")
-	var optionlist = UI_CreateCorticalBar.GetReferenceByID("CORTICALAREA").get_node("dropDown_CORTICALAREA")
+	var checkbutton_node = UI_CreateCorticalBar.GetReferenceByID("CORTICALAREA")
 	var w = whd.get_node("counter_W").get_node("counter_W")
 	var h = whd.get_node("counter_H").get_node("counter_H")
 	var d = whd.get_node("counter_D").get_node("counter_D")
@@ -695,7 +695,7 @@ func SpawnCorticalCreate():
 	z.connect("value_changed",Callable($Brain_Visualizer,"_on_Z_Spinbox_value_changed").bind([w,h,d,x,y,z]))
 	name_input.connect("text_changed", Callable($Brain_Visualizer,"_on_type_text_changed"))
 	name_input.connect("text_changed",Callable($"../../Button_to_Autoload","_on_type_text_changed"))
-	update.connect("pressed",Callable($Brain_Visualizer,"_on_add_pressed").bind([w,h,d,x,y,z, name_input, optionlist, update]))
+	update.connect("pressed",Callable($Brain_Visualizer,"_on_add_pressed").bind([w,h,d,x,y,z, name_input, checkbutton_node, update]))
 
 func SpawnIndicator(activation: Dictionary):
 	UI_INDICATOR = Newnit_Box.new()

@@ -502,7 +502,11 @@ func _on_download_pressed():
 
 func _on_add_pressed(node=[]):
 	var json_data = {}
-	if node[7].selected == 3:
+	if node[7].get_node("checkBox_IPU").get_node("checkBox_IPU").is_pressed():
+		pass #needs rework
+	elif node[7].get_node("checkBox_OPU").get_node("checkBox_OPU").is_pressed():
+		pass
+	elif node[7].get_node("checkBox_CUSTOM").get_node("checkBox_CUSTOM").is_pressed():
 			json_data["cortical_type"] = "CUSTOM"
 			json_data["cortical_name"] = node[6].text
 			json_data["cortical_coordinates"] = []
