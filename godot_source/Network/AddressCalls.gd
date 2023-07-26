@@ -67,7 +67,7 @@ func PUT_Request_Brain_visualizer(url, dataIn):
 	_CALL.PUT(url, _coreRef._Relay_PUT_BV_functions, dataIn)
 
 func DELETE_GE_corticalArea(corticalID: String): 
-	_CALL.DELETE(_ADD.DELETE_genome_corticalArea + corticalID, _coreRef._Relay_DELETE_Cortical_area)
+	_CALL.DELETE(_ADD.DELETE_GE_corticalArea + corticalID, _coreRef._Relay_DELETE_Cortical_area)
 
 func DELETE_Request_Brain_visualizer(url):
 	_CALL.DELETE(url, _coreRef._Relay_DELETE_Cortical_area)
