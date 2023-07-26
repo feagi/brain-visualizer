@@ -25,6 +25,19 @@ func _ready():
 	var FEAGIRoot: String
 	NetworkAPI = $GlobalNetworkSystem
 	UIManager = $GlobalUISystem
+	var http_type = JavaScriptBridge.eval(""" 
+		function get_port() {
+			var url_string = window.location.href;
+			var url = new URL(url_string);
+			const searchParams = new URLSearchParams(url.search);
+			const ipAddress = searchParams.get("http_type");
+			return ipAddress;
+		}
+		get_port();
+		""")
+	if http_type != null:
+		network_setting.SSL = http_type
+		SSL = http_type
 	var port_disabled = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
