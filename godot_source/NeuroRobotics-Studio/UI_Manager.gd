@@ -810,22 +810,13 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 	$"..".FEAGICalls.GET_GE_morphologyList()
 	var get_id_from_dst = $Brain_Visualizer.name_to_id(dst)
 	src_global = $Brain_Visualizer.name_to_id(src)
-	
-	var tempNameSrc = $Brain_Visualizer.id_to_name(src)
-	var tempNameDst = $Brain_Visualizer.id_to_name(dst)
-	
 	dst_global = get_id_from_dst
-	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(src, dst)
+	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(src_global, dst_global)
 	# Link with BV buttons
 	var add_morphology = UI_MappingDefinition.GetReferenceByID("ADDMAPPING").get_node("button_ADDMAPPING")
 	var update_button = UI_MappingDefinition.GetReferenceByID("updatebutton").get_node("button_updatebutton")
-	
-	#UI_MappingDefinition.GetReferenceByID("SOURCECORTICALAREA").value = tempNameSrc
-	#UI_MappingDefinition.GetReferenceByID("DESTINATIONCORTICALAREA").value = tempNameDst
-	
 	add_morphology.connect("pressed", Callable($Brain_Visualizer,"_on_plus_add_pressed"))
 	update_button.connect("pressed", Callable($Brain_Visualizer,"_on_update_inside_map_pressed").bind(UI_MappingDefinition))
-
 # proxys for properties
 var _currentLanguageISO: String 
 
