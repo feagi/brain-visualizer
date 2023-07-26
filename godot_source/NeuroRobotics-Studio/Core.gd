@@ -325,6 +325,11 @@ func _Relay_PUT_BV_functions(_result, _response_code, _headers, _body: PackedByt
 	pass 
 
 func _Relay_DELETE_Cortical_area(_result, _response_code, _headers, _body):
+	if LogNetworkError(_result): push_warning("Unexpected Response from Delete Cortical Area"); return
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(_body.get_string_from_utf8())
+	var api_data = test_json_conv.get_data()
+	#UIManager.DeleteCortex(
 	pass
 
 ##### Proxied from FEAGICache ######

@@ -79,6 +79,7 @@ func _initGraphCore() -> void:
 	UI_GraphCore = $graphCore
 	UI_GraphCore.CortexSelected.connect(CortexSelected)
 	UI_GraphCore.ConnectionRequest.connect(RequestConnection)
+	UI_GraphCore.ConnectionSelected.connect(EditConnection)
 	UI_GraphCore.DisconnectionRequest.connect(RequestConnectionDeletion)
 
 
@@ -98,13 +99,22 @@ func RequestConnection(source: CortexID, destination: CortexID) -> void:
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
 	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
 
+func EditConnection(source: CortexID, destination: CortexID) -> void:
+	#TODO switch to WM
+	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
+	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
+
 func RequestConnectionDeletion(source: CortexID, destination: CortexID) -> void:
 	CoreRef.FEAGICalls.PUT_GE_mappingProperties(source.ID, destination.ID, [])
 
 
+####################################
+###### Output Event Handling #######
+####################################
 
-
-
+# Tells ui to delete a cortical area from view (and any connections to / from it)
+func DeleteCortex(cortex: CortexID) -> void:
+	UI_GraphCore.RemoveCorticalNode(cortex)
 
 
 
@@ -800,11 +810,19 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 	$"..".FEAGICalls.GET_GE_morphologyList()
 	var get_id_from_dst = $Brain_Visualizer.name_to_id(dst)
 	src_global = $Brain_Visualizer.name_to_id(src)
+	
+	var tempNameSrc = $Brain_Visualizer.id_to_name(src)
+	var tempNameDst = $Brain_Visualizer.id_to_name(dst)
+	
 	dst_global = get_id_from_dst
 	Autoload_variable.BV_Core.FEAGICalls.GET_GE_mappingProperties(src, dst)
 	# Link with BV buttons
 	var add_morphology = UI_MappingDefinition.GetReferenceByID("ADDMAPPING").get_node("button_ADDMAPPING")
 	var update_button = UI_MappingDefinition.GetReferenceByID("updatebutton").get_node("button_updatebutton")
+	
+	#UI_MappingDefinition.GetReferenceByID("SOURCECORTICALAREA").value = tempNameSrc
+	#UI_MappingDefinition.GetReferenceByID("DESTINATIONCORTICALAREA").value = tempNameDst
+	
 	add_morphology.connect("pressed", Callable($Brain_Visualizer,"_on_plus_add_pressed"))
 	update_button.connect("pressed", Callable($Brain_Visualizer,"_on_update_inside_map_pressed").bind(UI_MappingDefinition))
 
