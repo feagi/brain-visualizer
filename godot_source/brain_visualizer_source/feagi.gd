@@ -61,7 +61,7 @@ func _ready():
 	Autoload_variable.BV_Core = get_parent().get_parent()
 	Autoload_variable.BV_UI = get_parent()
 	await get_tree().create_timer(1.5).timeout
-	SEC =  $"../..".SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address
+	SEC =  network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address
 	set_physics_process(false)
 #	add_3D_indicator()
 	Autoload_variable.BV_Core.FEAGICalls.GET_CO_properties_dimensions() # Grab genome list
@@ -687,7 +687,7 @@ func _on_save_pressed(node):
 func _on_delete_pressed(node):
 	var grab_name_rule = node.GetReferenceByID("header_title").get_node("field_header_title").text
 	grab_name_rule = symbols_checker_for_api(grab_name_rule)
-	var combine_url = 'HTTP://' + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/genome/morphology?morphology_name=' + grab_name_rule
+	var combine_url = network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/genome/morphology?morphology_name=' + grab_name_rule
 	Autoload_variable.BV_Core.FEAGICalls.DELETE_Request_Brain_visualizer(combine_url)
 	node.queue_free()
 
@@ -893,7 +893,7 @@ func _on_update_inside_map_pressed(node):
 #				print("here: ", x)
 
 func _on_mem_pressed():
-	var combine_url = 'HTTP://' + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area=' + $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text + '&state=' + str($".."/".."/".."/Menu/button_choice/Control/mem.is_pressed())
+	var combine_url = network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area=' + $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text + '&state=' + str($".."/".."/".."/Menu/button_choice/Control/mem.is_pressed())
 	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,$".."/".."/".."/Menu/button_choice/Control/mem.is_pressed())
 
 func _on_mem_request_request_completed(_result, _response_code, _headers, body):
@@ -913,7 +913,7 @@ func _on_syn_request_request_completed(_result, _response_code, _headers, body):
 	$notification.generate_notification_message(api_data, _response_code, "_on_syn_request_request_completed", "/v1/feagi/monitoring/neuron/synaptic_potential")
 
 func _on_syn_pressed():
-	var combine_url = 'HTTP://' + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area=' + $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text + '&state=' + str($".."/".."/".."/Menu/button_choice/Control/syn.is_pressed())
+	var combine_url = network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area=' + $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text + '&state=' + str($".."/".."/".."/Menu/button_choice/Control/syn.is_pressed())
 	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,$".."/".."/".."/Menu/button_choice/Control/syn.is_pressed())
 	
 func _on_insert_button_pressed(full_data):
