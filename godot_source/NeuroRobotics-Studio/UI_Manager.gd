@@ -98,7 +98,7 @@ func RequestConnection(source: CortexID, destination: CortexID) -> void:
 	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
 
 func RequestConnectionDeletion(source: CortexID, destination: CortexID) -> void:
-	CoreRef.FEAGICalls.PUT_GE_mappingProperties(source.ID, destination.ID, "[]")
+	CoreRef.FEAGICalls.PUT_GE_mappingProperties(source.ID, destination.ID, [])
 
 
 

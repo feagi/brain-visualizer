@@ -255,7 +255,7 @@ func cortical_is_clicked():
 		grab_id_cortical = name_to_id(iteration_name)
 		update_cortical_map_name(grab_id_cortical)
 		var LeftBarDict = HelperFuncs.GenerateDefinedUnitDict("LEFTBAR", $"..".currentLanguageISO)
-		$"..".SpawnLeftBar(grab_id_cortical, LeftBarDict)
+		$"..".SpawnLeftBar(grab_id_cortical)
 		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalArea(grab_id_cortical)
 		select_cortical.selected.pop_front()
 		return true
