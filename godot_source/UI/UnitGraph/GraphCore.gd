@@ -37,7 +37,7 @@ func _NodeSelected(nodeReference: CortexNode) -> void:
 	CortexSelected.emit(nodeReference.corticalID)
 
 func _ConnectionLabelPressed(label: Connection_Label) -> void:
-	ConnectionSelected.emit(label.sourceNode.corticalID, label.destinationNode.corticalID)
+	ConnectionSelected.emit(label.sourceNode.friendlyName, label.destinationNode.friendlyName) # TODO these need to be IDs with later BV change
 
 # Proxy for signal for user connecting nodes
 func _ConnectingNodesTogether(sourceNodeID: String, _fromPort: int, destNodeID: String, _toPort: int) -> void:

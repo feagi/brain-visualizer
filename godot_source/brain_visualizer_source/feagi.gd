@@ -859,6 +859,7 @@ func _on_update_inside_map_pressed(node):
 	var combine_url = '?src_cortical_area=#&dst_cortical_area=$'
 	var get_id = name_to_id(node.GetReferenceByID("testlabel").get_node("dropdown_SOURCECORTICALAREA").get_node("dropDown_SOURCECORTICALAREA").text)
 	var get_dst_data = name_to_id(node.GetReferenceByID("testlabel").get_node("dropdown_DESTINATIONCORTICALAREA").get_node("dropDown_DESTINATIONCORTICALAREA").text)
+	Autoload_variable.BV_UI.RequestConnection(CortexID.new(get_id), CortexID.new(get_dst_data))
 	var dst_data = {}
 	dst_data["cortical_destinations"] = {}
 	combine_url = combine_url.replace("#", get_id)

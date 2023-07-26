@@ -58,9 +58,11 @@ func POST_Request_Brain_visualizer(url, dataIn):
 	#using _coreRef._Relay_updated_cortical since they both pass, thats it. leverage the same to save space
 	_CALL.POST(url, _coreRef._Relay_updated_cortical, dataIn)
 
-
-func PUT_GE_mappingProperties(srcCortex: String, dstCortex: String, mappingProperties: Array[Dictionary]): # We should rename these variables
+# TODO replace with BV
+func PUT_GE_mappingProperties_T(srcCortex: String, dstCortex: String, mappingProperties: Array[Dictionary]): # We should rename these variables
 	_CALL.PUT(_ADD.PUT_genome_mappingProperties + "?src_cortical_area=" + srcCortex + "&dst_cortical_area=" + dstCortex, _coreRef._Relay_PUT_Mapping_Properties, mappingProperties)
+func PUT_GE_mappingProperties(dataIn, url): # We should rename these variables
+	_CALL.PUT(url, _coreRef._Relay_PUT_Mapping_Properties, dataIn)
 	
 
 func PUT_Request_Brain_visualizer(url, dataIn): 

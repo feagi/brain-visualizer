@@ -48,6 +48,8 @@ func Get_UpdateCorticalArea(corticalAreaID: CortexID, data: Dictionary) -> void:
 		return
 	#_CorticalAreasMapped2IDs[corticalAreaID.str] = CorticalArea.new(corticalAreaID, )
 
+func ID2Name(ID: CortexID) -> String:
+	return CO_corticalAreas_list_detailed[ID.ID]["name"]
 
 # Dictionary {
 # 	StringIDOfCortex:

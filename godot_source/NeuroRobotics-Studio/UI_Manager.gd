@@ -97,15 +97,18 @@ func CortexSelected(cortex: CortexID) -> void:
 func RequestConnection(source: CortexID, destination: CortexID) -> void:
 	#TODO switch to WM
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
-	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
+	#SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	# TODO change from friendly name to ID with BV update
+	SpawnMappingDefinition(FeagiCache.corticalAreas.ID2Name(source), FeagiCache.corticalAreas.ID2Name(destination), mappingdefinitiongenerated)
 
 func EditConnection(source: CortexID, destination: CortexID) -> void:
 	#TODO switch to WM
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", currentLanguageISO)
-	SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	
+	#SpawnMappingDefinition(source.ID, destination.ID, mappingdefinitiongenerated)	# TODO change from friendly name to ID with BV update
+	SpawnMappingDefinition(FeagiCache.corticalAreas.ID2Name(source), FeagiCache.corticalAreas.ID2Name(destination), mappingdefinitiongenerated)
 
 func RequestConnectionDeletion(source: CortexID, destination: CortexID) -> void:
-	CoreRef.FEAGICalls.PUT_GE_mappingProperties(source.ID, destination.ID, [])
+	CoreRef.FEAGICalls.PUT_GE_mappingProperties_T(source.ID, destination.ID, [])
+
 
 
 ####################################
@@ -811,6 +814,7 @@ func SpawnMappingDefinition(src: String, dst: String, activation):
 	var update_button = UI_MappingDefinition.GetReferenceByID("updatebutton").get_node("button_updatebutton")
 	add_morphology.connect("pressed", Callable($Brain_Visualizer,"_on_plus_add_pressed"))
 	update_button.connect("pressed", Callable($Brain_Visualizer,"_on_update_inside_map_pressed").bind(UI_MappingDefinition))
+	
 # proxys for properties
 var _currentLanguageISO: String 
 

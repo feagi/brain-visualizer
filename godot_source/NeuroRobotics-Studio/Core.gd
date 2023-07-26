@@ -319,7 +319,8 @@ func _Relay_PUT_GE_corticalArea(_result, _response_code, _headers, _body: Packed
 	pass 
 
 func _Relay_PUT_Mapping_Properties(_result, _response_code, _headers, _body: PackedByteArray):
-	pass 
+	if LogNetworkError(_result): push_warning("Unexpected Response from mapping Properties PUT"); return
+	
 
 func _Relay_PUT_BV_functions(_result, _response_code, _headers, _body: PackedByteArray):
 	pass 
