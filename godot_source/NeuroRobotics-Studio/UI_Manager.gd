@@ -89,6 +89,7 @@ func _initGraphCore() -> void:
 
 func CortexSelected(cortex: CortexID) -> void:
 	CoreRef.FEAGICalls.GET_GE_corticalArea(cortex.ID)
+	$Brain_Visualizer.update_cortical_map_name(cortex.ID)
 	#TODO switch to WM
 	SpawnLeftBar(cortex.ID)
 
