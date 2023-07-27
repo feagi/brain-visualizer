@@ -152,6 +152,7 @@ func _csv_generator(): # After you are done with testing, change the name to gen
 	if reload: # This will reload after BV generated. So, when there's new cortical area, it will
 		# Update the CB and BV at the same time. This is solely done by bridge's notification.
 		Autoload_variable.BV_Core.FEAGICalls.GET_CO_corticalAreas_list_detailed()
+		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalMap()
 	if not reload:
 		reload = true # One time only. Without this, it will cause issue with CB. Avoid modify CB, do this
 	for key in Godot_list.godot_list["data"]["direct_stimulation"]:

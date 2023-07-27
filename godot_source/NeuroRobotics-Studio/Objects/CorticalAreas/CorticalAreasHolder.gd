@@ -5,9 +5,19 @@ class_name CorticalAreasHolder
 
 var CO_corticalAreas_list_detailed: Dictionary:
 	get: return _connectome_corticalAreas_list_detailed
+	set(v):
+		_connectome_corticalAreas_list_detailed = v
+		_connectome_corticalAreas_list_detailed_justUpdated = true
+		_Update_internal_corticalMapSummary()
+		FeagiVarUpdates.connectome_corticalAreas_list_detailed.emit(v)
 
 var GE_corticalMap: Dictionary:
 	get: return _genome_corticalMap
+	set(v):
+		_genome_corticalMap = v
+		_genome_corticalMap_justUpdated = true
+		_Update_internal_corticalMapSummary()
+		FeagiVarUpdates.genome_corticalMap.emit(v)
 
 var IN_corticalMapSummary: Dictionary:
 	get: return _internal_corticalMapSummary
@@ -27,19 +37,13 @@ var _internal_corticalMapSummary: Dictionary
 var _CorticalAreasMapped2IDs: Dictionary
 var _coreRef: Core
 
+# for use for updating internal
+var _genome_corticalMap_justUpdated: bool = false
+var _connectome_corticalAreas_list_detailed_justUpdated = false
+
 
 func _init(coreReference: Core) -> void:
 	_coreRef = coreReference
-
-func Get_connectome_corticalAreas_list_detailed( mapping: Dictionary) -> void:
-	_connectome_corticalAreas_list_detailed = mapping
-	FeagiVarUpdates.connectome_corticalAreas_list_detailed.emit(mapping)
-	Update_internal_corticalMapSummary()
-
-func Get_genome_corticalMap(mapping: Dictionary) -> void:
-	_genome_corticalMap = mapping
-	FeagiVarUpdates.genome_corticalMap.emit(mapping)
-	Update_internal_corticalMapSummary()
 
 func Get_UpdateCorticalArea(corticalAreaID: CortexID, data: Dictionary) -> void:
 	if corticalAreaID.str in _CorticalAreasMapped2IDs.keys():
@@ -61,8 +65,11 @@ func ID2Name(ID: CortexID) -> String:
 #		  "connectedTo": [Str Array of connected cortexes, using the cortex IDs from FEAGI directly]
 #		  "type": String, IPU, OPU, Memory, Custom
 #		  "position": Vector2, but only if given
-func Update_internal_corticalMapSummary() -> void:
-	if _connectome_corticalAreas_list_detailed == {} || _genome_corticalMap == {}: return
+func _Update_internal_corticalMapSummary() -> void:
+	if !(_genome_corticalMap_justUpdated && _genome_corticalMap_justUpdated): return
+	
+	_genome_corticalMap_justUpdated = false
+	_genome_corticalMap_justUpdated = false
 	
 	var output := {}
 	# preinit to minimize garbage collection
