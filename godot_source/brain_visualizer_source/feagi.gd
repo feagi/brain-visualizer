@@ -336,7 +336,7 @@ func _on_Update_pressed(data_input):
 	add_child(create_textbox) # Copied the node to new node
 	create_textbox.scale = Vector3(1,1,1)
 
-	last_cortical_selected["cortical_coordinates"] = []
+	last_cortical_selected["coordinates_3d"] = []
 #	last_cortical_selected["cortical_destinations"] = {}
 	last_cortical_selected["cortical_dimensions"] = []
 
@@ -344,9 +344,9 @@ func _on_Update_pressed(data_input):
 	last_cortical_selected["cortical_name"] = name_input
 #	last_cortical_selected["cortical_group"] = last_cortical_selected["cortical_group"]
 	last_cortical_selected["cortical_neuron_per_vox_count"] = cortical_neuron_per_vox_count
-	last_cortical_selected["cortical_coordinates"].append(x)
-	last_cortical_selected["cortical_coordinates"].append(y)
-	last_cortical_selected["cortical_coordinates"].append(z)
+	last_cortical_selected["coordinates_3d"].append(x)
+	last_cortical_selected["coordinates_3d"].append(y)
+	last_cortical_selected["coordinates_3d"].append(z)
 	last_cortical_selected["cortical_dimensions"].append(width)
 	last_cortical_selected["cortical_dimensions"].append(height)
 	last_cortical_selected["cortical_dimensions"].append(depth)
@@ -509,18 +509,18 @@ func _on_add_pressed(node=[]):
 	elif node[7].get_node("checkBox_CUSTOM").get_node("checkBox_CUSTOM").is_pressed():
 			json_data["cortical_type"] = "CUSTOM"
 			json_data["cortical_name"] = node[6].text
-			json_data["cortical_coordinates"] = []
+			json_data["coordinates_3d"] = []
 			json_data["cortical_dimensions"] = []
-			json_data["cortical_coordinates"].append(node[3].value)
-			json_data["cortical_coordinates"].append(node[4].value)
-			json_data["cortical_coordinates"].append(node[5].value)
+			json_data["coordinates_3d"].append(node[3].value)
+			json_data["coordinates_3d"].append(node[4].value)
+			json_data["coordinates_3d"].append(node[5].value)
 			json_data["cortical_dimensions"].append(node[0].value)
 			json_data["cortical_dimensions"].append(node[1].value)
 			json_data["cortical_dimensions"].append(node[2].value)
-			generate_single_cortical(json_data["cortical_coordinates"][0], json_data["cortical_coordinates"][1], json_data["cortical_coordinates"][2], json_data["cortical_dimensions"][0], json_data["cortical_dimensions"][1], json_data["cortical_dimensions"][2], json_data["cortical_name"])
+			generate_single_cortical(json_data["coordinates_3d"][0], json_data["coordinates_3d"][1], json_data["coordinates_3d"][2], json_data["cortical_dimensions"][0], json_data["cortical_dimensions"][1], json_data["cortical_dimensions"][2], json_data["cortical_name"])
 			Autoload_variable.BV_Core.FEAGICalls.POST_GE_customCorticalArea(json_data)
 			node[8].release_focus()
-			$Node3D/Camera3D.transform.origin=Vector3(json_data["cortical_coordinates"][0]-20,json_data["cortical_coordinates"][1],json_data["cortical_coordinates"][2]+20)
+			$Node3D/Camera3D.transform.origin=Vector3(json_data["coordinates_3d"][0]-20,json_data["coordinates_3d"][1],json_data["coordinates_3d"][2]+20)
 			Godot_list.Node_2D_control = false
 	Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalAreaNameList()
 
@@ -1205,6 +1205,7 @@ func quick_connect_to_feagi(src, morphology_name, dest):
 		dst["postSynapticCurrent_multiplier"] = float(1.0)
 		dst["plasticity_flag"] = false
 		dst_data["cortical_destinations"][src].append(dst)
+		print("dst data: ", dst_data)
 		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties(dst_data["cortical_destinations"][src],combine_url)
 		$"..".UI_QUICKCONNECT.queue_free()
 
