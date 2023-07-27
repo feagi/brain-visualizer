@@ -31,7 +31,6 @@ var _coreRef: Core
 func _init(coreReference: Core) -> void:
 	_coreRef = coreReference
 
-
 func Get_connectome_corticalAreas_list_detailed( mapping: Dictionary) -> void:
 	_connectome_corticalAreas_list_detailed = mapping
 	FeagiVarUpdates.connectome_corticalAreas_list_detailed.emit(mapping)
@@ -47,6 +46,9 @@ func Get_UpdateCorticalArea(corticalAreaID: CortexID, data: Dictionary) -> void:
 		_CorticalAreasMapped2IDs[corticalAreaID.str].ApplyDictionary(data)
 		return
 	#_CorticalAreasMapped2IDs[corticalAreaID.str] = CorticalArea.new(corticalAreaID, )
+
+#func Add_CorticalArea(corticalAreaID: CortexID, friendlyName: String)
+# TODO later
 
 # Temp do not keep TODO
 func ID2Name(ID: CortexID) -> String:
