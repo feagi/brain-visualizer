@@ -149,10 +149,11 @@ func install_voxel_inside(x_input,y_input,z_input):
 	$GridMap.set_cell_item( Vector3(x_input,y_input,z_input) ,0)
 
 func _csv_generator(): # After you are done with testing, change the name to genome_generator.
-	if reload:
+	if reload: # This will reload after BV generated. So, when there's new cortical area, it will
+		# Update the CB and BV at the same time. This is solely done by bridge's notification.
 		Autoload_variable.BV_Core.FEAGICalls.GET_CO_corticalAreas_list_detailed()
 	if not reload:
-		reload = true
+		reload = true # One time only. Without this, it will cause issue with CB. Avoid modify CB, do this
 	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
 		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 	_clear_node_name_list(global_name_list)
