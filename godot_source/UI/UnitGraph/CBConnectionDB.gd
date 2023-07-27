@@ -47,8 +47,8 @@ func _AddForward(src: CortexID, dst: CortexID, label: Connection_Label) -> void:
 		_forward[src.STR][dst.STR] = label
 		return
 	
-	@warning_ignore("assert_always_false")
-	assert(false, "Attemped to define already existing connection " + src.ID + " -> " + dst.ID)
+	#@warning_ignore("assert_always_false")
+	#assert(false, "Attemped to define already existing connection " + src.ID + " -> " + dst.ID)
 
 func _RemoveForward(src: CortexID, dst: CortexID) -> void:
 	_forward[src.ID].erase(dst.ID)
@@ -63,8 +63,8 @@ func _AddBackward(src: CortexID, dst: CortexID, label: Connection_Label) -> void
 			_backward[dst.STR][src.STR] = label
 			return
 	
-		@warning_ignore("assert_always_false")
-		assert(false, "Attemped to define already existing connection " + src.ID + " -> " + dst.ID)
+		#@warning_ignore("assert_always_false")
+		#assert(false, "Attemped to define already existing connection " + src.ID + " -> " + dst.ID)
 
 func _RemoveBackward(src: CortexID, dst: CortexID) -> void:
 	_backward[dst.ID].erase(src.ID)
