@@ -61,8 +61,8 @@ func POST_Request_Brain_visualizer(url, dataIn):
 # TODO replace with BV
 func PUT_GE_mappingProperties_T(srcCortex: String, dstCortex: String, mappingProperties: Array[Dictionary]): # We should rename these variables
 	_CALL.PUT(_ADD.PUT_genome_mappingProperties + "?src_cortical_area=" + srcCortex + "&dst_cortical_area=" + dstCortex, _coreRef._Relay_PUT_Mapping_Properties, mappingProperties)
-func PUT_GE_mappingProperties(dataIn, url): # We should rename these variables
-	_CALL.PUT(url, _coreRef._Relay_PUT_Mapping_Properties, dataIn)
+func PUT_GE_mappingProperties(dataIn, extra_name := ""): # We should rename these variables
+	_CALL.PUT(_ADD.PUT_genome_mappingProperties + extra_name, _coreRef._Relay_PUT_Mapping_Properties, dataIn)
 	
 
 func PUT_Request_Brain_visualizer(url, dataIn): 
