@@ -55,6 +55,7 @@ var type = ""
 var SEC
 var glow_holder = []
 var destination_holder = []
+var reload = false
 
 func _ready():
 	# # # Initalize the bridge # # # 
@@ -148,6 +149,10 @@ func install_voxel_inside(x_input,y_input,z_input):
 	$GridMap.set_cell_item( Vector3(x_input,y_input,z_input) ,0)
 
 func _csv_generator(): # After you are done with testing, change the name to genome_generator.
+	if reload:
+		Autoload_variable.BV_Core.FEAGICalls.GET_CO_corticalAreas_list_detailed()
+	if not reload:
+		reload = true
 	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
 		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 	_clear_node_name_list(global_name_list)
