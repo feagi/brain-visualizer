@@ -295,7 +295,6 @@ func _Relay_ConnectomeCorticalAreasListDetailed(_result, _response_code, _header
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
 		FeagiCache.corticalAreas.Get_connectome_corticalAreas_list_detailed(JSON.parse_string(body.get_string_from_utf8()))
-
 func _Relay_Efferent(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Efferent"); return
 	Autoload_variable.Core_BV._on_information_button_request_completed(_result, _response_code, _headers, _body)
@@ -317,7 +316,6 @@ func _Relay_Genome_CorticalMappings(_result, _response_code, _headers, body: Pac
 		FeagiCache.corticalAreas.Get_genome_corticalMap(JSON.parse_string(body.get_string_from_utf8()))
 
 func _Relay_PUT_GE_corticalArea(_result, _response_code, _headers, _body: PackedByteArray):
-	FEAGICalls.GET_CO_corticalAreas_list_detailed()
 	pass 
 
 func _Relay_PUT_Mapping_Properties(_result, _response_code, _headers, _body: PackedByteArray):
@@ -333,7 +331,6 @@ func _Relay_DELETE_Cortical_area(_result, _response_code, _headers, _body):
 	test_json_conv.parse(_body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	#UIManager.DeleteCortex(
-	FEAGICalls.GET_CO_corticalAreas_list_detailed() # temp update
 	pass
 
 ##### Proxied from FEAGICache ######
