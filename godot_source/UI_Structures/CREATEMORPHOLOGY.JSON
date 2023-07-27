@@ -22,16 +22,16 @@
 			"components": [
 				{
 					"type": "checkBox",
-					"ID": "RCOMPOSITE",
+					"ID": "RCOMPOSITE"
 				},
 				{
 					"type": "checkBox",
-					"ID": "RPATTERNS",
+					"ID": "RPATTERNS"
 				},
 				{
 					"type": "checkBox",
-					"ID": "RVECTORS",
-				},
+					"ID": "RVECTORS"
+				}
 			]
 		},
 		{
@@ -103,7 +103,7 @@
 											"ID": "S1",
 											"sideLabelText": "S",
 											"max_value": 99999999,
-											"min_value": 1
+											"min_value": 0
 										}
 									]
 								}
@@ -134,7 +134,7 @@
 											"ID": "S2",
 											"sideLabelText": "S",
 											"max_value": 99999999,
-											"min_value": 1
+											"min_value": 0
 										}
 									]
 								}
@@ -167,7 +167,7 @@
 											"ID": "S3",
 											"sideLabelText": "S",
 											"max_value": 99999999,
-											"min_value": 1
+											"min_value": 0
 										}
 									]
 								}
@@ -268,9 +268,11 @@
 							"label": "Z"
 						},
 						{
-							"type": "button",
+							"type": "texturebutton",
 							"ID": "RemoveSelfRowButton",
-							"text": "-"
+						   "internal_custom_minimum_sizeX":30,
+						   "internal_custom_minimum_sizeY":31,
+							"default_texture_path": "res://brain_visualizer_source/menu_assets/image/remove.png"
 						}
 					]
 				}
@@ -328,9 +330,11 @@
 							"label": "Z"
 						},
 						{
-							"type": "button",
+							"type": "texturebutton",
 							"ID": "RemoveRowButton",
-							"text": "-"
+						   "internal_custom_minimum_sizeX":30,
+						   "internal_custom_minimum_sizeY":31,
+							"default_texture_path": "res://brain_visualizer_source/menu_assets/image/remove.png"
 						}
 					]
 				}

@@ -11,8 +11,21 @@ var websocket_ip_address = "127.0.0.1" # Setting the global variable
 # For Websocket Port
 var websocket_port_address = "9050"
 var state = ""
+var SSL = "HTTP://"
 
 func _ready():
+	var http_type = JavaScriptBridge.eval(""" 
+		function get_port() {
+			var url_string = window.location.href;
+			var url = new URL(url_string);
+			const searchParams = new URLSearchParams(url.search);
+			const ipAddress = searchParams.get("http_type");
+			return ipAddress;
+		}
+		get_port();
+		""")
+	if http_type != null:
+		SSL = http_type
 	var ip_result = JavaScriptBridge.eval(""" 
 		function getIPAddress() {
 			var url_string = window.location.href;
@@ -65,8 +78,6 @@ func _process(_delta):
 	socket.poll()
 	state = socket.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
-		pass
-#		socket.send("Hello!".to_utf8_buffer())
 		while socket.get_available_packet_count():
 			var socket_data = socket.get_packet()
 			if socket_data.get_string_from_utf8() == "updated":

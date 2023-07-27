@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5fyxsalu2g2x"]
+
+[ext_resource type="Script" path="res://Network/Library/SimpleNetworkWorker.gd" id="1_tp3ix"]
+
+[node name="SimpleNetworkWorker" type="HTTPRequest"]
+script = ExtResource("1_tp3ix")

@@ -4,14 +4,27 @@ class_name Core
 ####################################
 ####### Configuration & Setup ######
 ####################################
-var FEAGI_RootAddress = ""
-
-# Get Requests
-var SEC = "HTTP://"
+#var FEAGI_RootAddress = ""
+#
+## Get Requests
+#var SEC = "HTTP://"
 
 @export var languageISO := "eng" #TODO proxy changes to UI manager
 
+
+# References
+var UIManager: UI_Manager
+
+var NetworkAPI : SimpleNetworkAPI
+var callLib: NetworkCall
+var FEAGIAddresses: AddressList
+var FEAGICalls: AddressCalls 
+var SSL = network_setting.SSL
+var FEAGIRoot: String
+
 func _ready():
+	NetworkAPI = $GlobalNetworkSystem
+	UIManager = $GlobalUISystem
 	var http_type = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
@@ -23,7 +36,8 @@ func _ready():
 		get_port();
 		""")
 	if http_type != null:
-		SEC = http_type
+		network_setting.SSL = http_type
+		SSL = http_type
 	var port_disabled = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
@@ -35,115 +49,50 @@ func _ready():
 		get_port();
 		""")
 	if port_disabled == "true":
-		FEAGI_RootAddress = str(network_setting.api_ip_address)
+		FEAGIRoot = str(network_setting.api_ip_address)
 	else:
-		FEAGI_RootAddress = str(network_setting.api_ip_address) + ":"+ str(network_setting.api_port_address)
-	print("CORE FEAGI ROOTADDRESS: ", FEAGI_RootAddress)
+		FEAGIRoot = str(network_setting.api_ip_address) + ":" + str(network_setting.api_port_address)
+	print("CORE FEAGI ROOTADDRESS: ", FEAGIRoot, " SSL: ", SSL)
+
+	callLib = NetworkCall.new(NetworkAPI)
+	FEAGIAddresses = AddressList.new(FEAGIRoot, SSL)
+	FEAGICalls = AddressCalls.new(self, FEAGIAddresses, callLib)
 	# # # Build the bridge # # # 
 	Autoload_variable.Core_BV = $GlobalUISystem/Brain_Visualizer
 	Autoload_variable.Core_notification = $GlobalUISystem/Brain_Visualizer/notification
 	Autoload_variable.Core_Camera = $GlobalUISystem/Brain_Visualizer/Node3D/Camera3D
 	# Retrieve relvant Child Nodes
-	NetworkAPI = $GlobalNetworkSystem
-	UIManager = $GlobalUISystem
-	FeagiCache = $FeagiCache
 	# Connect Cache First
-	FeagiCache.FullCorticalData_Updated.connect(Relay_fullCorticalData)
+	#FeagiCache.FullCorticalData_Updated.connect(Relay_fullCorticalData)
 	
 	# Activate Children
 	UIManager.Activate(languageISO)
 	UIManager.DataUp.connect(RetrieveEvents)
-	UIManager.cache = $FeagiCache
+	
+	FeagiCache._coreRef = self
+	FeagiCache.morphologies = MorphologiesHolder.new(self)
+	FeagiCache.corticalAreas = CorticalAreasHolder.new(self)
 	
 	# Lets pull latest info from FEAGI and trigger respective updates
-	Update_CortinalAreasIDs()
-	Update_MorphologyList()
-	Update_GenomeFileName()
-	Update_ConnectomeMappingReport()
-	Update_CorticalAreaNameList()
-	Update_CorticalMap()
-	GET_health_status()
+	FEAGICalls.GET_GE_morphologyList()
+	FEAGICalls.GET_GE_fileName()
+	FEAGICalls.GET_GE_corticalMap()
+	FEAGICalls.GET_healthCheck()
+	FEAGICalls.GET_CO_corticalAreas_list_detailed()
 
 ####################################
 ####### Process From Below ########
 ####################################
 
 # Respond to any events at the core level
+# TODO this should be going through cache
 func RetrieveEvents(data: Dictionary) -> void:
 	if "CortexSelected" in data.keys():
-			Update_GenomeCorticalArea_SPECIFC(data["CortexSelected"])
+			FEAGICalls.GET_GE_corticalArea(data["CortexSelected"])
 	if "updatedBurstRate" in data.keys():
-			Update_BurstRate(data["updatedBurstRate"])
+			FEAGICalls.POST_FE_burstEngine(data["updatedBurstRate"])
 	pass
-	
-####################################
-##### Update Feagi Dependents ######
-####################################
 
-# These are used to update certain elements from Feagi Directly
-
-# The Godot Style guide can't stop me because I can't read!
-# HTTP://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html#one-statement-per-line
-
-# Run these to grab latest information from Feagi, and eventually trigger an update on all dependents
-# WARNING: due to network latency, there is a delay between calling this and results appearing.
-# Design your code with this in mind, it may be best to include any changes you desire in the _Relay function
-func Update_IPUs(): Call_GET(ADD_GET_IPUList, _Relay_IPUs)
-func Update_OPUs(): Call_GET(ADD_GET_OPUList, _Relay_OPUs)
-func Update_CortinalAreasIDs(): Call_GET(ADD_GET_CorticalAreasIDs, _Relay_CorticalAreasIDs)
-func Update_MorphologyList(): Call_GET(ADD_GET_MorphologyList, _Relay_MorphologyList)
-func Update_GenomeFileName(): Call_GET(ADD_GET_GenomeFileName, _Relay_GenomeFileName)
-func Update_ConnectomeMappingReport(): Call_GET(ADD_GET_ConnectomeMappingReport, _Relay_ConnectomeMappingReport)
-func Update_CorticalAreaNameList(): Call_GET(ADD_GET_CorticalAreaNameList, _Relay_CorticalAreaNameList)
-func GOTO_CORTICALLOCATION(input_name): Call_GET(ADD_GET_CorticalAreaNameLOCATION+input_name, _Relay_CorticalAreaLOCATION)
-func Update_CorticalMap(): Call_GET(ADD_Cortical_Name_Map, _Relay_CorticalMap)
-func Update_GenomeCorticalArea_SPECIFC(corticalArea: String): Call_GET(ADD_GET_Genome_CorticalArea, _Relay_GET_Genome_CorticalArea, corticalArea ) 
-func Update_Dimensions(): Call_GET(ADD_GET_Dimensions, _Relay_Dimensions)
-func Update_Refresh_Rate(): Call_GET(ADD_GET_stimulation_period, _Relay_Get_BurstRate)
-func Update_Cortical_grab_id(input): Call_GET(ADD_GET_cortical_id+input, _Relay_Cortical_grab_id)
-func Update_Afferent_list(input): Call_GET(ADD_GET_Afferent+input, _Relay_Afferent)
-func Update_Efferent_information(input): Call_GET(ADD_GET_Efferent+input, _Relay_Efferent)
-func Get_Morphology_information(input): Call_GET(ADD_GET_Morphology_information+input, _Relay_Morphology_information)
-func GET_USUAGE_MORPHOLOGY(input): Call_GET(ADD_GET_Morphology_USUAGE_information+input, _Relay_Morphology_usuage)
-func Update_destination(input): Call_GET(ADD_GET_update_destination+input, _Relay_Update_Destination)
-func Get_circuit_list(): Call_GET(ADD_GET_circuit_list, _Relay_circuit_list)
-func Get_circuit_size(name_input): Call_GET(ADD_GET_circuit_size+name_input, _Relay_circuit_size)
-func Get_mem_data(input_name: String): Call_GET(ADD_GET_mem+input_name, _Relay_Update_mem)
-func Get_syn_data(input_name: String): Call_GET(ADD_GET_syn+input_name, _Relay_Update_syn)
-func GET_OPU(input_name: String): Call_GET(ADD_OPU+input_name, _Relay_update_OPU)
-func GET_IPU(input_name: String): Call_GET(ADD_IPU+input_name, _Relay_update_IPU)
-func GET_BurstRate(): Call_GET(ADD_GET_stimulation_period, _Relay_Get_BurstRate)
-func GET_health_status(): Call_GET(GET_HEALTH_STATUS, _Relay_Get_Health)
-func GET_Connectome_CorticalAreas_Detailed(): Call_GET(ADD_GET_ConnectomCorticalAreasListDetailed, _Relay_ConnectomeCorticalAreasListDetailed)
-
-func Update_BurstRate(newBurstRate: float):
-	Call_POST(ADD_POST_BurstEngine, _Relay_ChangedBurstRate, {"burst_duration": newBurstRate})
-	
-
-func Update_cortical_area(input):
-	Call_POST(ADD_POST_Add_Cortical, _Relay_updated_cortical, input)
-	
-func Update_custom_cortical_area(input):
-	#using _Relay_updated_cortical since they both pass, thats it. leverage the same to save space
-	Call_POST(ADD_POST_Add_Custom_Cortical, _Relay_updated_cortical, input)
-	
-func POST_Request_Brain_visualizer(url, dataIn):
-	#using _Relay_updated_cortical since they both pass, thats it. leverage the same to save space
-	Call_POST(url, _Relay_updated_cortical, dataIn)
-	
-func Update_Mapping_Properties(dataIn, extra_name =""): 
-	Call_PUT(ADD_PUT_Mapping_Properties + extra_name, _Relay_PUT_Mapping_Properties, dataIn)
-
-func PUT_Request_Brain_visualizer(url, dataIn): 
-	Call_PUT(url, _Relay_PUT_BV_functions, dataIn)
-
-func Delete_cortical_area(dataIn): 
-	Call_DELETE(ADD_DELETE_remove_cortical_area + dataIn, _Relay_DELETE_Cortical_area)
-
-func DELETE_Request_Brain_visualizer(url):
-	Call_DELETE(url, _Relay_DELETE_Cortical_area)
-
-func Update_Genome_CorticalArea(dataIn: Dictionary): Call_PUT(ADD_PUT_Genome_CorticalArea, _Relay_PUT_Genome_CorticalArea, dataIn)
 ####################################
 ###### Relay Feagi Dependents ######
 ####################################
@@ -184,11 +133,12 @@ func _Relay_ChangedBurstRate(_result, _response_code, _headers, _body: PackedByt
 	#GET_BurstRate() #Confirm new burst rate
 
 func _Relay_updated_cortical(_result, _response_code, _headers, _body: PackedByteArray):
+	#if LogNetworkError(_result): print("Unable to get Cortical"); return
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(_body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	Autoload_variable.Core_notification.generate_notification_message(api_data, _response_code, "_Relay_updated_cortical", "/v1/feagi/genome/cortical_area", "POST")
-	if LogNetworkError(_result): print("Unable to get Cortical"); return
+	#UIManager.UI_GraphCore.
 #	Autoload_variable.Core_BV._on_send_feagi_request_completed(api_data, _response_code, "_Relay_updated_cortical", "/v1/feagi/genome/cortical_area")
 	
 func _Relay_Get_BurstRate(_result, _response_code, _headers, body: PackedByteArray):
@@ -233,8 +183,8 @@ func _Relay_MorphologyList(_result, _response_code, _headers, body: PackedByteAr
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
-		FeagiCache.genome_morphologyList = JSON.parse_string(body.get_string_from_utf8())
-		UIManager.RelayDownwards(REF.FROM.genome_morphologyList, FeagiCache.genome_morphologyList)
+		FeagiCache.morphologies.StoreMorphologyListFromFeagi(JSON.parse_string(body.get_string_from_utf8()))
+		UIManager.RelayDownwards(REF.FROM.genome_morphologyList, FeagiCache.morphologies.morphologiesStrArray)
 	$GlobalUISystem/Brain_Visualizer/notification.generate_notification_message(api_data, _response_code, "_on_morphology_list_request_completed", "/v1/feagi/genome/morphology_list")
 
 func _Relay_GenomeFileName(_result, _response_code, _headers, body: PackedByteArray):
@@ -260,10 +210,10 @@ func _Relay_CorticalAreaNameList(_result, _response_code, _headers, body: Packed
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	if api_data != null:
-		FeagiCache.genome_corticalAreaNameList = JSON.parse_string(body.get_string_from_utf8())
-		UIManager.RelayDownwards(REF.FROM.genome_corticalAreaNameList, FeagiCache.genome_corticalAreaNameList)
+		FeagiCache._genome_corticalAreaNameList = JSON.parse_string(body.get_string_from_utf8())
+		UIManager.RelayDownwards(REF.FROM.genome_corticalAreaNameList, FeagiCache._genome_corticalAreaNameList)
 	
-func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: PackedByteArray):
+func _Relay_GET_GE_corticalArea(_result, _response_code, _headers, body: PackedByteArray):
 	# Note, this is for a specific cortical Area
 	if LogNetworkError(_result): print("Unable to get Specific Cortical Area"); return
 	var specificCortex = JSON.parse_string(body.get_string_from_utf8())
@@ -271,8 +221,10 @@ func _Relay_GET_Genome_CorticalArea(_result, _response_code, _headers, body: Pac
 	for key in specificCortex.keys():
 		if specificCortex[key] is int:
 			specificCortex[key] = float(specificCortex[key])
+	
+	#are we going to update FROM cache or here?
 	UIManager.RelayDownwards(REF.FROM.genome_corticalArea, specificCortex)
-	Autoload_variable.Core_notification.generate_notification_message(specificCortex, _response_code, "_Relay_GET_Genome_CorticalArea", "/v1/feagi/genome/cortical_area")
+	Autoload_variable.Core_notification.generate_notification_message(specificCortex, _response_code, "_Relay_GET_GE_corticalArea", "/v1/feagi/genome/cortical_area")
 
 func _Relay_CorticalMap(_result, _response_code, _headers, body: PackedByteArray):
 	# FEAGI updating cortical ID - Name mappings
@@ -286,10 +238,11 @@ func _Relay_CorticalMap(_result, _response_code, _headers, body: PackedByteArray
 
 func _Relay_Morphology_information(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Morphology Information"); return
+	
 	Autoload_variable.Core_BV._on_get_morphology_request_completed(_result, _response_code, _headers, _body)
 
 func _Relay_Morphology_usuage(_result, _response_code, _headers, _body: PackedByteArray):
-	if LogNetworkError(_result): print("Unable to get Morphology Information"); return
+	if LogNetworkError(_result): print("Unable to get Morphology Usage"); return
 	Autoload_variable.Core_BV._on_get_morphology_usuage_request_completed(_result, _response_code, _headers, _body)
 	
 func _Relay_Update_Destination(_result, _response_code, _headers, _body: PackedByteArray):
@@ -335,9 +288,14 @@ func _Relay_update_IPU(_result, _response_code, _headers, _body):
 	UIManager.RelayDownwards(REF.FROM.IPULIST, api_data)
 #	Autoload_variable.Core_addition._on_IPU_list_request_completed(_result, _response_code, _headers, _body)
 
-func _Relay_ConnectomeCorticalAreasListDetailed(_result, _response_code, _headers, _body):
-	pass
-
+func _Relay_ConnectomeCorticalAreasListDetailed(_result, _response_code, _headers, body):
+	if LogNetworkError(_result): print("Unable to get Connectome Cortical Area List Detailed"); return
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(body.get_string_from_utf8())
+	var api_data = test_json_conv.get_data()
+	if api_data != null:
+		
+		FeagiCache.corticalAreas.CO_corticalAreas_list_detailed = (JSON.parse_string(body.get_string_from_utf8()))
 func _Relay_Efferent(_result, _response_code, _headers, _body: PackedByteArray):
 	if LogNetworkError(_result): print("Unable to get Efferent"); return
 	Autoload_variable.Core_BV._on_information_button_request_completed(_result, _response_code, _headers, _body)
@@ -350,16 +308,30 @@ func _Relay_ConnectomeMappingReport(_result, _response_code, _headers, body: Pac
 	if api_data != null:
 		FeagiCache.connectome_properties_mappings = JSON.parse_string(body.get_string_from_utf8())
 
-func _Relay_PUT_Genome_CorticalArea(_result, _response_code, _headers, _body: PackedByteArray):
+func _Relay_Genome_CorticalMappings(_result, _response_code, _headers, body: PackedByteArray):
+	if LogNetworkError(_result): print("Unable to get Connectome Mapping Report"); return
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(body.get_string_from_utf8())
+	var api_data = test_json_conv.get_data()
+	if api_data != null:
+		FeagiCache.corticalAreas.GE_corticalMap = (JSON.parse_string(body.get_string_from_utf8()))
+
+func _Relay_PUT_GE_corticalArea(_result, _response_code, _headers, _body: PackedByteArray):
 	pass 
 
 func _Relay_PUT_Mapping_Properties(_result, _response_code, _headers, _body: PackedByteArray):
-	pass 
+	if LogNetworkError(_result): push_warning("Unexpected Response from mapping Properties PUT"); return
+	
 
 func _Relay_PUT_BV_functions(_result, _response_code, _headers, _body: PackedByteArray):
 	pass 
 
 func _Relay_DELETE_Cortical_area(_result, _response_code, _headers, _body):
+	if LogNetworkError(_result): push_warning("Unexpected Response from Delete Cortical Area"); return
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(_body.get_string_from_utf8())
+	var api_data = test_json_conv.get_data()
+	#UIManager.DeleteCortex(
 	pass
 
 ##### Proxied from FEAGICache ######
@@ -375,110 +347,6 @@ func Relay_fullCorticalData(dataIn: Dictionary):
 	pass
 
 
-####################################
-############## Calls ###############
-####################################
-
-# TODO add error handling should network fail!
-func Call_GET(address: String, proxiedFunction, stringToAppend: String = ""):
-	NetworkAPI.Call(address + stringToAppend, HTTPClient.METHOD_GET, proxiedFunction)
-
-func Call_POST(address: String, proxiedFunction, data2Send):
-	NetworkAPI.Call(address, HTTPClient.METHOD_POST, proxiedFunction, data2Send)
-
-func Call_PUT(address: String, proxiedFunction, data2Send):
-	NetworkAPI.Call(address, HTTPClient.METHOD_PUT, proxiedFunction, data2Send)
-	
-func Call_DELETE(address: String, proxiedFunction):
-	NetworkAPI.Call(address, HTTPClient.METHOD_DELETE, proxiedFunction)
-
-
-####################################
-############# Internals ############
-####################################
-
-# References
-var NetworkAPI : SimpleNetworkAPI
-var UIManager : UI_Manager
-var FeagiCache: FeagiCache
-
-
-var ADD_GET_IPUList:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/feagi/pns/current/ipu"
-var ADD_GET_OPUList:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/feagi/pns/current/opu"
-var ADD_GET_CorticalAreasIDs:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area_id_list"
-var ADD_GET_MorphologyList:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/morphology_list"
-var ADD_GET_GenomeFileName:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/file_name"
-var ADD_GET_ConnectomeMappingReport:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/connectome/properties/mappings"
-var ADD_GET_ConnectomCorticalAreasListDetailed:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/connectome/cortical_areas/list/detailed"
-var ADD_GET_CorticalAreaNameList:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area_name_list"
-var ADD_GET_CorticalAreaNameLOCATION:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_name_location?cortical_name="
-var ADD_GET_Genome_CorticalArea:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area?cortical_area="
-var ADD_GET_Afferent:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_mappings/afferents?cortical_area="
-var ADD_GET_Efferent:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
-var ADD_GET_update_destination:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/mapping_properties?src_cortical_area="
-var ADD_GET_circuit_list:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/circuits"
-var ADD_GET_circuit_size:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/circuit_size?circuit_name="
-var ADD_GET_Dimensions:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/connectome/properties/dimensions"
-var ADD_GET_Morphology_types:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/morphology_types"
-var ADD_GET_stimulation_period:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/feagi/burst_engine/stimulation_period"
-var GET_HEALTH_STATUS:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/health_check"
-var ADD_GET_cortical_id:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area?cortical_area="
-var ADD_GET_Morphology_information:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/morphology?morphology_name="
-var ADD_GET_Morphology_USUAGE_information:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/morphology_usage?morphology_name="
-var ADD_GET_mem:
-	get: return SEC + FEAGI_RootAddress + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
-var ADD_GET_syn:
-	get: return SEC + FEAGI_RootAddress + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
-var ADD_OPU:
-	get: return SEC + FEAGI_RootAddress + '/v1/feagi/genome/cortical_type_options?cortical_type='
-var ADD_IPU:
-	get: return SEC + FEAGI_RootAddress + '/v1/feagi/genome/cortical_type_options?cortical_type='
-var ADD_Cortical_Name_Map:
-	get: return SEC + FEAGI_RootAddress + '/v1/feagi/genome/cortical_id_name_mapping'
-
-# Post Requests
-var ADD_POST_BurstEngine:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/feagi/burst_engine"
-var ADD_POST_Add_Cortical:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area"
-var ADD_POST_Add_Custom_Cortical:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/custom_cortical_area"
-
-# Put Requests
-var ADD_PUT_Genome_CorticalArea:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area"
-
-var ADD_PUT_Mapping_Properties:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/mapping_properties"
-
-	
-# Delete Requests
-var ADD_DELETE_remove_cortical_area:
-	get: return SEC + FEAGI_RootAddress + "/v1/feagi/genome/cortical_area?cortical_area_name="
-
-# Error Checking for network requests. Returns true if there was an error
 func LogNetworkError(result: int) -> bool:
 	match result:
 		0: return false # no error

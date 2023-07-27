@@ -86,22 +86,23 @@ static func Func_SetData(input: Dictionary, NewnitObject) -> void:
 				if (typeof(inputVar) == 3) && (typeof(NewnitObject[key]) == 2):
 					# auto convert from float to int
 					inputVar = int(inputVar)
+				elif (typeof(NewnitObject[key]) == 28 && typeof(input[key]) > 28):
+					inputVar = Array(inputVar) # TODO not efficient to convert packed arrays to arrays!
 				else:
-					print("Input is of type ", typeof(input[key]), " when expected ", typeof(NewnitObject[key]), "! Skipping!")
+					push_warning("Input is of type ", typeof(input[key]), " when expected ", typeof(NewnitObject[key]), "! Skipping!")
 					continue
-			
 			NewnitObject[key] = inputVar # This is blasphemy
 			continue
 	
 		# On the odd case where the key is the ID of this object
 		if key == NewnitObject.ID:
 			# This may be a mistake, but we can use recursion to deal with this
-			print("Recursive ID path detected, readjusting...\nYou may want to fix this...")
+			push_warning("Recursive ID path detected, readjusting...\nYou may want to fix this...")
 			NewnitObject.SetData(input[key])
 			continue
 		
 		# Key not found!
-		print("Property ", key, " does not exist!")
+		push_error("Property ", key, " does not exist!")
 		continue
 
 static func Func_AddExtraneousParents(NewnitObject: Node, addingPanel: bool, addingMargins: bool) -> void:

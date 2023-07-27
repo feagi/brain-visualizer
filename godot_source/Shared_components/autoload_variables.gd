@@ -15,6 +15,7 @@ var Core_addition = ""
 var Core_notification = ""
 var Camera_Core = ""
 var Core_Camera = ""
+var feagi_flag = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
