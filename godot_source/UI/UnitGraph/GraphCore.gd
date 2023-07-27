@@ -82,6 +82,8 @@ func RemoveVisibleConnection(srcNode: CortexNode, dstNode: CortexNode) -> void:
 	label.DestroyConnection()
 	connections.RemoveConnection(srcNode.corticalID, dstNode.corticalID)
 
+func GetCortexNodeFromID(ID: CortexID) -> CortexNode:
+	return cortexNodes[ID.ID]
 
 ####################################
 ####### Mass Entity Handling #######

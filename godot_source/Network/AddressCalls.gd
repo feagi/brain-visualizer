@@ -49,9 +49,9 @@ func GET_CO_corticalAreas_list_detailed(): _CALL.GET(_ADD.GET_connectome_cortica
 
 func POST_FE_burstEngine(newBurstRate: float): _CALL.POST(_ADD.POST_feagi_burstEngine, _coreRef._Relay_ChangedBurstRate, {"burst_duration": newBurstRate})
 	
-
+# Adds cortical area
 func POST_GE_corticalArea(corticalProperties: Dictionary): _CALL.POST(_ADD.POST_genome_corticalArea, _coreRef._Relay_updated_cortical, corticalProperties)
-	
+# Above and Below accomplish same thing, hence the same return function
 func POST_GE_customCorticalArea(corticalProperties: Dictionary): _CALL.POST(_ADD.POST_genome_customCorticalArea, _coreRef._Relay_updated_cortical, corticalProperties)
 	
 func POST_Request_Brain_visualizer(url, dataIn):

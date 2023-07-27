@@ -133,11 +133,12 @@ func _Relay_ChangedBurstRate(_result, _response_code, _headers, _body: PackedByt
 	#GET_BurstRate() #Confirm new burst rate
 
 func _Relay_updated_cortical(_result, _response_code, _headers, _body: PackedByteArray):
+	#if LogNetworkError(_result): print("Unable to get Cortical"); return
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(_body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
 	Autoload_variable.Core_notification.generate_notification_message(api_data, _response_code, "_Relay_updated_cortical", "/v1/feagi/genome/cortical_area", "POST")
-	if LogNetworkError(_result): print("Unable to get Cortical"); return
+	#UIManager.UI_GraphCore.
 #	Autoload_variable.Core_BV._on_send_feagi_request_completed(api_data, _response_code, "_Relay_updated_cortical", "/v1/feagi/genome/cortical_area")
 	
 func _Relay_Get_BurstRate(_result, _response_code, _headers, body: PackedByteArray):

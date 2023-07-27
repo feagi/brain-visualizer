@@ -881,7 +881,14 @@ func _on_update_inside_map_pressed(node):
 		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties(dst_data["cortical_destinations"][get_id],combine_url)
 	else:
 		Autoload_variable.BV_Core.FEAGICalls.PUT_GE_mappingProperties([],combine_url)
-	#Autoload_variable.BV_UI.UI_GraphCore.VisuallyConnectNodes(get_id, 0, get_dst_data,0)
+	
+	# TODO this is temp and is set for rewriting!
+	var numConnections: int = 0
+	for cName in dst_data["cortical_destinations"].keys():
+		numConnections = numConnections + dst_data["cortical_destinations"][cName].size()
+	
+		
+	Autoload_variable.BV_UI.UI_GraphCore.CreateVisibleConnection(Autoload_variable.BV_UI.UI_GraphCore.GetCortexNodeFromID(CortexID.new(get_id)), Autoload_variable.BV_UI.UI_GraphCore.GetCortexNodeFromID(CortexID.new(get_dst_data)),numConnections)
 	node.queue_free()
 
 #func map_colorful():
