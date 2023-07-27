@@ -56,6 +56,7 @@ func _DisconnectingNodesFromEachOther(sourceNodeID: String, _fromPort: int, dest
 
 # Spawns a individual node with its required settings (not connections)
 func SpawnCorticalNode(ID: CortexID, friendlyName: String, positionFromFeagi: Vector2i, isPositionDefinedFromFeagi: bool) -> CortexNode:
+	if ID.ID in cortexNodes.keys(): return
 	var newNode: CortexNode = CortexNode.new(ID, friendlyName, isPositionDefinedFromFeagi, self, positionFromFeagi)
 	cortexNodes[ID.ID] = newNode
 	return newNode
@@ -109,6 +110,7 @@ func _SpawnNodesFromFullCorticalData(fullCorticalData: Dictionary) -> void:
 		widths[i] = ((DEFAULT_SPAWN_WIDTH / -2) * numColumns) + (i * DEFAULT_SPAWN_WIDTH)
 	
 	for cortexIDStr in fullCorticalData.keys():
+		if cortexIDStr in cortexNodes.keys(): continue
 		curCortexID = CortexID.new(cortexIDStr)
 		cortexContext = fullCorticalData[curCortexID.str]
 		cortexType = cortexContext.type.to_upper()
