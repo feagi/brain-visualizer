@@ -336,7 +336,7 @@ func _on_Update_pressed(data_input):
 	add_child(create_textbox) # Copied the node to new node
 	create_textbox.scale = Vector3(1,1,1)
 
-	last_cortical_selected["coordinates_3d"] = []
+	last_cortical_selected["cortical_coordinates"] = []
 #	last_cortical_selected["cortical_destinations"] = {}
 	last_cortical_selected["cortical_dimensions"] = []
 
@@ -344,9 +344,9 @@ func _on_Update_pressed(data_input):
 	last_cortical_selected["cortical_name"] = name_input
 #	last_cortical_selected["cortical_group"] = last_cortical_selected["cortical_group"]
 	last_cortical_selected["cortical_neuron_per_vox_count"] = cortical_neuron_per_vox_count
-	last_cortical_selected["coordinates_3d"].append(x)
-	last_cortical_selected["coordinates_3d"].append(y)
-	last_cortical_selected["coordinates_3d"].append(z)
+	last_cortical_selected["cortical_coordinates"].append(x)
+	last_cortical_selected["cortical_coordinates"].append(y)
+	last_cortical_selected["cortical_coordinates"].append(z)
 	last_cortical_selected["cortical_dimensions"].append(width)
 	last_cortical_selected["cortical_dimensions"].append(height)
 	last_cortical_selected["cortical_dimensions"].append(depth)
@@ -859,7 +859,6 @@ func _on_update_inside_map_pressed(node):
 	var combine_url = '?src_cortical_area=#&dst_cortical_area=$'
 	var get_id = name_to_id(node.GetReferenceByID("testlabel").get_node("dropdown_SOURCECORTICALAREA").get_node("dropDown_SOURCECORTICALAREA").text)
 	var get_dst_data = name_to_id(node.GetReferenceByID("testlabel").get_node("dropdown_DESTINATIONCORTICALAREA").get_node("dropDown_DESTINATIONCORTICALAREA").text)
-	Autoload_variable.BV_UI.RequestConnection(CortexID.new(get_id), CortexID.new(get_dst_data))
 	var dst_data = {}
 	dst_data["cortical_destinations"] = {}
 	combine_url = combine_url.replace("#", get_id)
