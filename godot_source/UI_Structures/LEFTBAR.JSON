@@ -40,20 +40,21 @@
 						},
 						{
 							"type": "counter",
-							"ID": "Pos_Y",
-							"sideLabelText": "Y",
+							"ID": " Pos_Y",
+							"sideLabelText": " Y",
 							"max_value": 99999999,
 							"min_value": -99999999
 						},
 						{
 							"type": "counter",
-							"ID": "Pos_Z",
-							"sideLabelText": "Z",
+							"ID": " Pos_Z",
+							"sideLabelText": " Z",
 							"max_value": 99999999,
 							"min_value": -99999999
 						}
 					],
-					"vertical": false
+					"vertical": false,
+					"alignment": 1
 				},
 				{
 					"type": "box",
@@ -77,7 +78,8 @@
 							"min_value": -99999999
 						}
 					],
-					"vertical": false
+					"vertical": false,
+					"alignment": 1
 				},
 				{
 					"type": "button",
@@ -177,11 +179,14 @@
 				},
 				{
 					"type": "checkbutton",
-					"ID": "PSPUNI"
+					"ID": "PSPUNI",
+					"paddingX": 30
+					
 				},
 				{
 					"type": "checkbutton",
-					"ID": "ChargeACC"
+					"ID": "ChargeACC",
+					"offset_left": 101
 				},
 				{
 					"type": "button",
