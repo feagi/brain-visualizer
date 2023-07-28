@@ -54,9 +54,9 @@ var GET_burstEngine_stimulationPeriod: String:
 	get: return  _security + _rootAddress + "/v1/feagi/feagi/burst_engine/stimulation_period"
 var GET_healthCheck: String:
 	get: return  _security + _rootAddress + "/v1/feagi/health_check"
-var GET_monitoring_neuron_membranePotential_CORTICALAREAEQUALS: String:
+var GET_monitoring_neuron_membranePotential: String:
 	get: return  _security + _rootAddress + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
-var GET_monitoring_neuron_synapticPotential_CORTICALAREAEQUALS: String:
+var GET_monitoring_neuron_synapticPotential: String:
 	get: return  _security + _rootAddress + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
 	
 # Post Requests
