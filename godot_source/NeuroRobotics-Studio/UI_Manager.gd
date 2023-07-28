@@ -325,6 +325,7 @@ func TUTORIALDIA_INPUT(data: Dictionary, ElementID: String, _ElementRef: Node):
 
 func LeftBarInput(data: Dictionary, _compRef, _unitRef):
 #	print(JSON.stringify(data)) # useful for debugging
+#	print("data: ", data, " compref: ", _compRef, " unitref: ", _unitRef)
 	match(data["ID"]):
 		"UpdateButton":
 			# Push update to cortex
@@ -630,12 +631,15 @@ func SpawnLeftBar(cortexName: String):
 	var delete_button = UI_LeftBar.GetReferenceByID("UpdateButtonTop").get_node("sideButton_UpdateButtonTop")
 	var update1 = UI_LeftBar.GetReferenceByID("UpdateButtonTop").get_node("button_UpdateButtonTop")
 	var update=UI_LeftBar.GetReferenceByID("NeuronParametersSection").GetReferenceByID("UpdateButton").get_node("button_UpdateButton")
-
+	var mem_button = UI_LeftBar.GetReferenceByID("Mem_potent").get_node("checkButton_Mem_potent")
+	var syn_button = UI_LeftBar.GetReferenceByID("syn_potent").get_node("checkButton_syn_potent")
 	var add_row_button = UI_LeftBar.GetReferenceByID("EFFERENTLABEL").get_node("sideButton_EFFERENTLABEL")
 	delete_button.connect("pressed", Callable($Brain_Visualizer,"_on_remove_pressed").bind(UI_LeftBar.GetReferenceByID("CorticalID")))
 	update.connect("pressed", Callable($Brain_Visualizer,"_on_Update_pressed").bind(UI_LeftBar))
 	update1.connect("pressed", Callable($Brain_Visualizer,"_on_Update_pressed").bind(UI_LeftBar))
 	add_row_button.connect("pressed", Callable($Brain_Visualizer,"_on_cortical_mapping_add_pressed").bind(cortexName))
+	mem_button.connect("pressed", Callable($Brain_Visualizer,"_on_mem_pressed"))
+	syn_button.connect("pressed", Callable($Brain_Visualizer,"_on_syn_pressed"))
 
 func mapping_definition_button(node):
 	var src_id = UI_LeftBar.GetReferenceByID("CorticalName").get_node("field_CorticalName").text
