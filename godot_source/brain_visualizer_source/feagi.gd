@@ -264,6 +264,7 @@ func cortical_is_clicked():
 		var LeftBarDict = HelperFuncs.GenerateDefinedUnitDict("LEFTBAR", $"..".currentLanguageISO)
 		$"..".SpawnLeftBar(grab_id_cortical)
 		Autoload_variable.BV_Core.FEAGICalls.GET_GE_corticalArea(grab_id_cortical)
+		Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_membranePotential(grab_id_cortical)
 		select_cortical.selected.pop_front()
 		return true
 	return false
@@ -702,22 +703,23 @@ func _on_delete_pressed(node):
 	Autoload_variable.BV_Core.FEAGICalls.DELETE_Request_Brain_visualizer(combine_url)
 	node.queue_free()
 
-func _on_get_cortical_dst_request_completed(_result, _response_code, _headers, body):
-	var test_json_conv = JSON.new()
-	test_json_conv.parse(body.get_string_from_utf8())
-	var api_data = test_json_conv.get_data()
-	
-	if _response_code == 200:
-		var dst_data = {}
-		for i in api_data["cortical_destinations"]:
-			for x in Godot_list.genome_data["genome"]:
-				for b in child_node_holder:
-					if x == b.text:
-						if i in Godot_list.genome_data["genome"][x][7]:
-							dst_data[i] = api_data["cortical_destinations"][i]
-		dst_data_holder = dst_data.duplicate()
-		Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_membranePotential($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
-	$notification.generate_notification_message(api_data, _response_code, "_on_get_cortical_dst_request_completed", "/v1/feagi/genome/cortical_area")
+#func _on_get_cortical_dst_request_completed(_result, _response_code, _headers, body):
+#	var test_json_conv = JSON.new()
+#	test_json_conv.parse(body.get_string_from_utf8())
+#	var api_data = test_json_conv.get_data()
+#	print("TEST: ", api_data)
+#	if _response_code == 200:
+#		var dst_data = {}
+#		for i in api_data["cortical_destinations"]:
+#			for x in Godot_list.genome_data["genome"]:
+#				for b in child_node_holder:
+#					if x == b.text:
+#						if i in Godot_list.genome_data["genome"][x][7]:
+#							dst_data[i] = api_data["cortical_destinations"][i]
+#		dst_data_holder = dst_data.duplicate()
+#		print("HERE")
+#		Autoload_variable.BV_Core.FEAGICalls.GET_MO_neuron_membranePotential($"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text)
+#	$notification.generate_notification_message(api_data, _response_code, "_on_get_cortical_dst_request_completed", "/v1/feagi/genome/cortical_area")
 
 func _on_cortical_mapping_add_pressed(name_input):
 	var mappingdefinitiongenerated = HelperFuncs.GenerateDefinedUnitDict("MAPPING_DEFINITION", $"..".currentLanguageISO)
@@ -911,8 +913,8 @@ func _on_update_inside_map_pressed(node):
 #				print("here: ", x)
 
 func _on_mem_pressed():
-	var combine_url = SEC + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area=' + $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text + '&state=' + str($".."/".."/".."/Menu/button_choice/Control/mem.is_pressed())
-	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,$".."/".."/".."/Menu/button_choice/Control/mem.is_pressed())
+	var combine_url = SEC + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area=' + $"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text + '&state=' + str($"..".UI_LeftBar.GetReferenceByID("Mem_potent").get_node("checkButton_Mem_potent").is_pressed())
+	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,"")
 
 func _on_mem_request_request_completed(_result, _response_code, _headers, body):
 	var test_json_conv = JSON.new()
@@ -931,8 +933,8 @@ func _on_syn_request_request_completed(_result, _response_code, _headers, body):
 	$notification.generate_notification_message(api_data, _response_code, "_on_syn_request_request_completed", "/v1/feagi/monitoring/neuron/synaptic_potential")
 
 func _on_syn_pressed():
-	var combine_url = network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area=' + $".."/".."/".."/Menu/cortical_menu/Control/cortical_id.text + '&state=' + str($".."/".."/".."/Menu/button_choice/Control/syn.is_pressed())
-	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,$".."/".."/".."/Menu/button_choice/Control/syn.is_pressed())
+	var combine_url = network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area=' + $"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text + '&state=' + str($"..".UI_LeftBar.GetReferenceByID("syn_potent").get_node("checkButton_syn_potent").is_pressed())
+	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,"")
 	
 func _on_insert_button_pressed(full_data):
 	var combine_url = SEC + '/v1/feagi/genome/append?circuit_name=' + full_data[0].get_item_text(full_data[0].selected) + "&circuit_origin_x=" + str(full_data[1].value) + "&circuit_origin_y=" + str(full_data[2].value) + "&circuit_origin_z=" + str(full_data[3].value)
