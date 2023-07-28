@@ -17,16 +17,21 @@ var connections: CBConnectionDB
 var _UIManRef: UI_Manager
 
 func _ready():
+	# Connect with required Signals
 	FeagiVarUpdates.Internal_corticalMapSummary.connect(_SpawnNodesFromFullCorticalData)
-
 	connection_request.connect(_ConnectingNodesTogether)
 	disconnection_request.connect(_DisconnectingNodesFromEachOther)
 	node_selected.connect(_NodeSelected)
 
-	arrange_nodes_button_hidden = true
-	right_disconnects = true
+	# Get Required References
 	_UIManRef = get_parent()
 	connections = CBConnectionDB.new()
+
+	# Setp GraphEdit itself
+	right_disconnects = true
+	arrange_nodes_button_hidden = true
+	var cornerButtons: HBoxContainer = get_zoom_hbox()
+	cornerButtons.visible = false
 
 ####################################
 ############ User Input ############
