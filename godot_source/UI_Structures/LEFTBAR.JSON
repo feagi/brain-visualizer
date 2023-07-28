@@ -14,12 +14,14 @@
 			"components": [{
 					"type": "field",
 					"editable": false,
-					"ID": "CorticalName"
+					"ID": "CorticalName",
+					"expand_to_text_length": true
 				},
 				{
 					"type": "field",
 					"editable": false,
-					"ID": "CorticalID"
+					"ID": "CorticalID",
+					"expand_to_text_length": true
 				},
 				{
 					"ID": "CorticalArea",
