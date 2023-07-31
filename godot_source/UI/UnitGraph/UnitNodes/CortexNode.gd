@@ -51,4 +51,4 @@ func DestroySelf() -> void:
 func saveNewPositionInFEAGI() -> void:
 	isPositionFromFeagi = true
 	var posToSend: Dictionary = {"cortical_coordinates_2d": HelperFuncs.Vector2i2Array(position_offset) }
-	_graphCoreRef._UIManRef.CoreRef.FEAGICalls.PUT_GE_corticalArea(posToSend, corticalID.STR)
+	#_graphCoreRef._UIManRef.CoreRef.FEAGICalls.PUT_GE_corticalArea(posToSend, corticalID.STR)
