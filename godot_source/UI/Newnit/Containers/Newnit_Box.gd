@@ -116,7 +116,7 @@ var children: Array:
 
 var specificSettableProps := {
 	"alignment": TYPE_INT,
-	"vertical": TYPE_INT
+	"vertical": TYPE_BOOL
 }
 
 func _ActivationPrimary(settings: Dictionary) -> void:

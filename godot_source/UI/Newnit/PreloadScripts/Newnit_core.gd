@@ -148,6 +148,7 @@ static func Get_data(NewnitObject: Node) -> Dictionary:
 	return o
 
 static func Get_ParentID(NewnitObject: Node) -> StringName:
+	if !NewnitObject.parent: return StringName("No ID Found!")
 	if "ID" in NewnitObject.parent:
 		return NewnitObject.parent.ID
 	return StringName("No ID Found!")
