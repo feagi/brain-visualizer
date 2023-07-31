@@ -23,6 +23,11 @@
 			"vertical": true
 		},
 		{
+			"type": "button",
+			"ID": "updatebutton",
+			"text": "Update"
+		},
+		{
 			"type": "box",
 			"ID": "vector_title",
 			"components": [{
@@ -121,11 +126,6 @@
 				}
 			],
 			"vertical": false
-		},
-		{
-			"type": "button",
-			"ID": "updatebutton",
-			"text": "Update"
 		}
 	]
 }
