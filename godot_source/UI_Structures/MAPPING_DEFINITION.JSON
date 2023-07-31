@@ -59,10 +59,7 @@
 				{
 					"type": "box",
 					"ID": "overwritescalar",
-					"components": [{
-							"type": "header",
-							"ID": "overwritescalartitle"
-						},
+					"components": [
 						{
 							"type": "box",
 							"ID": "XYZ",
@@ -80,7 +77,7 @@
 									"ID": "Pos_Z"
 								}
 							],
-							"vertical": false
+							"vertical": false,
 						}
 					],
 					"vertical": true
