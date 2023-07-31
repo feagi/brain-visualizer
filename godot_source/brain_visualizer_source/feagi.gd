@@ -453,16 +453,27 @@ func _on_information_button_request_completed(_result, _response_code, _headers,
 	
 	if _response_code == 200 and not api_data.has("Request failed..."):
 		var UI_LeftBar = $"..".UI_LeftBar
-		const ButtonItem := { "type": "button", "ID": "morphologyOption"}
-		const TextureButtonItem := { "type": "texturebutton", 
-				"ID": "morphologyOption",
-				"internal_custom_minimum_size": Vector2(30,30)}
 		var morphologyScroll: Newnit_Scroll = UI_LeftBar.GetReferenceByID("efferent_list")
 		for i in api_data:
-			var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {"text": id_to_name(i)})
-			var new_node = spawnedItem.get_node("button_morphologyOption")
-			var spawnedItemtexture = morphologyScroll.SpawnItem(TextureButtonItem)
-			spawnedItemtexture.get_node("textureButton_morphologyOption").connect("pressed", Callable(self, "dst_remove_pressed").bind(spawnedItemtexture.get_node("textureButton_morphologyOption"), new_node))
+			var ButtonItem := { 
+			"type": "box",
+			"ID": "MorphologyListing",
+			"vertical": false,
+			"components": [
+				{"type": "button", 
+				"ID": "morphologyOption",
+				"text": id_to_name(i)},
+				{ "type": "texturebutton", 
+				"ID": "morphologyOption_T",
+				"internal_custom_minimum_size": Vector2(30,30)}
+				]
+			}
+			var spawnedItem = morphologyScroll.SpawnItem(ButtonItem, {})
+			var new_node = spawnedItem.GetReferenceByID("morphologyOption")._Button
+			#var spawnedItemtexture = morphologyScroll.SpawnItem(TextureButtonItem)
+			var spawnedItemtexture: Element_TextureButton = spawnedItem.GetReferenceByID("morphologyOption_T")
+			var spawnedItemtextureButton = spawnedItemtexture._Button
+			spawnedItemtextureButton.connect("pressed", Callable(self, "dst_remove_pressed").bind(spawnedItemtextureButton, new_node))
 			spawnedItemtexture.LoadTextureFromPath("res://brain_visualizer_source/menu_assets/image/remove.png")
 			new_node.connect("pressed",Callable($"..","mapping_definition_button").bind(new_node))
 	#		map_colorful()
@@ -598,9 +609,13 @@ func remove_button_inside_dst(node_duplicated):
 	node_duplicated.queue_free()
 
 func dst_remove_pressed(image_node, node):
-	_on_info_pressed() # leveraging the same function to clear all infos on the box
+	#_on_info_pressed() # leveraging the same function to clear all infos on the box
+	
 	var dst_id = name_to_id(node.text)
+	
 	var grab_id = $"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text
+	var gc: GraphCore = $"..".get_node("graphCore")
+	gc.RemoveVisibleConnection(gc.GetCortexNodeFromID(CortexID.new(grab_id)), gc.GetCortexNodeFromID(CortexID.new(dst_id)))
 	var combine_url = '?src_cortical_area=#&dst_cortical_area=$'.replace("#", grab_id)
 	if dst_id != null:
 		combine_url= combine_url.replace("$", dst_id)
