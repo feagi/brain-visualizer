@@ -43,9 +43,12 @@ func _init(cortexID: CortexID, niceName: String, isPositionDefinedFromFeagi: boo
 	
 	isPositionFromFeagi = isPositionDefinedFromFeagi
 	position_offset = positionFromFeagi
-
+	node_deselected.connect(saveNewPositionInFEAGI)
 
 func DestroySelf() -> void:
 	queue_free()
 
-
+func saveNewPositionInFEAGI() -> void:
+	isPositionFromFeagi = true
+	var posToSend: Dictionary = {"cortical_coordinates_2d": HelperFuncs.Vector2i2Array(position_offset) }
+	_graphCoreRef._UIManRef.CoreRef.FEAGICalls.PUT_GE_corticalArea(posToSend, corticalID.STR)

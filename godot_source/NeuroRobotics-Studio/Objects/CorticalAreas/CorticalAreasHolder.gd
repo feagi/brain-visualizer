@@ -79,7 +79,7 @@ func _Update_internal_corticalMapSummary() -> void:
 		specificCortexData["connectedTo"] = _genome_corticalMap[cortexID]
 		specificCortexData["type"] = _connectome_corticalAreas_list_detailed[cortexID]["type"]
 		if len(_connectome_corticalAreas_list_detailed[cortexID]["position"]) == 2:
-			specificCortexData["position"] = Vector2(_connectome_corticalAreas_list_detailed[cortexID]["position"][0], _connectome_corticalAreas_list_detailed[cortexID]["position"][1])
+			specificCortexData["position"] = Vector2(_connectome_corticalAreas_list_detailed[cortexID]["cortical_coordinates_2d"][0], _connectome_corticalAreas_list_detailed[cortexID]["cortical_coordinates_2d"][1])
 		
 		output[cortexID] = specificCortexData.duplicate()
 		specificCortexData = {}  # reset

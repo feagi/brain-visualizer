@@ -74,4 +74,15 @@ func DELETE_GE_corticalArea(corticalID: String):
 func DELETE_Request_Brain_visualizer(url):
 	_CALL.DELETE(url, _coreRef._Relay_DELETE_Cortical_area)
 
-func PUT_GE_corticalArea(dataIn: Dictionary): _CALL.PUT(_ADD.PUT_genome_corticalArea, _coreRef._Relay_PUT_GE_corticalArea, dataIn)
+func PUT_GE_corticalArea(dataIn: Dictionary, corticalIDStr: String = ""): 
+	TEMP = dataIn
+	if corticalIDStr == "": corticalIDStr = dataIn["cortical_id"]
+	_CALL.GET(_ADD.GET_genome_corticalArea_CORTICALAREAEQUALS + corticalIDStr, RELAYED_PUT_GE_CORTICALAREA)
+
+
+func RELAYED_PUT_GE_CORTICALAREA(_result, _response_code, _headers, body: PackedByteArray):
+	var specificCortex: Dictionary = JSON.parse_string(body.get_string_from_utf8())
+	specificCortex.merge(TEMP, true)
+	_CALL.PUT(_ADD.PUT_genome_corticalArea, _coreRef._Relay_PUT_GE_corticalArea, specificCortex)
+
+var TEMP: Dictionary # Just used to proxy cortical put requests. This is BAD code thats here just for now

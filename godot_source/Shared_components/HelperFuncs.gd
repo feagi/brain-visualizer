@@ -248,6 +248,13 @@ static func GetIntFromStringWInt(strWInt: String, seperator: String = "___") -> 
 	var intString = strWInt.get_slice(seperator, 1)
 	return intString.to_int()
 
+static func Array2String(arr: Array) -> String:
+	var output: String = "["
+	for i in arr:
+		output = output + str(i) + ","
+	output = output.left(output.length() - 1) # remove last trailing comma
+	return output + "]"
+
 static func SpawnNewnitOfType(type: String) -> Node:
 	var newChild: Node
 	match type:
@@ -292,6 +299,9 @@ static func Array2Vector2(arr: Array) -> Vector2:
 	output.x = arr[0]; output.y = arr[1]
 	return output
 
+static func Vector22Array(vec: Vector2) -> Array[float]:
+	return [vec.x, vec.y]
+
 static func Array2Vector3i(arr: Array) -> Vector3i:
 	var output: Vector3i
 	output.x = arr[0]; output.y = arr[1]; output.z = arr[2]
@@ -302,3 +312,5 @@ static func Array2Vector2i(arr: Array) -> Vector2i:
 	output.x = arr[0]; output.y = arr[1]
 	return output
 
+static func Vector2i2Array(vec: Vector2) -> Array[int]:
+	return [vec.x, vec.y]
