@@ -67,7 +67,7 @@ func _ready():
 #	add_3D_indicator()
 	Autoload_variable.BV_Core.FEAGICalls.GET_CO_properties_dimensions() # Grab genome list
 
-	while true:
+func _process(_delta):
 		if Godot_list.genome_data["genome"] != previous_genome_data:
 			previous_genome_data = Godot_list.genome_data["genome"].duplicate()
 			_csv_generator()
@@ -75,9 +75,7 @@ func _ready():
 			pass
 		elif select_cortical.selected.is_empty() != true:
 			select_cortical.selected.pop_front()
-		_process(self)
-#		print("FROM PYTHON: ", data, "  len: ", len(global_name_list), " and type: ", typeof(data))
-#		print("FROM PYTHON: ", data)
+		data = network_setting.one_frame
 		if data != null:
 			if "update" in data:
 				timer_api.loading_box_timer = true
@@ -87,24 +85,21 @@ func _ready():
 			else:
 				stored_value = data
 			start = Time.get_ticks_msec() # This will time the engine at start
-			await get_tree().create_timer(0.01).timeout
+#			await get_tree().create_timer(0.01).timeout
 			end = Time.get_ticks_msec()
 			var time_total = end - start
 			if time_total < 500: # Generate voxels as long as you are on the tab
 				generate_voxels()
 			else:
 				network_setting.send("lagged")
-		else:
-			await get_tree().create_timer(0.01).timeout
+#		else:
+#			await get_tree().create_timer(0.01).timeout
 		if network_setting.state != 1:
 			if Autoload_variable.feagi_flag:
 				if len(global_name_list) != 0:
 					_clear_node_name_list(global_name_list)
 					stored_value = []
 					Autoload_variable.feagi_flag = false
-
-func _process(_delta):
-	data = network_setting.one_frame
 
 func generate_one_model(node, x_input, y_input, z_input, width_input, depth_input, height_input, name_input):
 	var new = get_node("Cortical_area").duplicate()
@@ -219,15 +214,17 @@ func _clear_single_cortical(cortical_name, node_list):
 		$Floor_grid.clear()
 
 func generate_voxels():
-	if stored_value != null:
-		total = len(stored_value)
-		$red_voxel.multimesh.instance_count = total
-		$red_voxel.multimesh.visible_instance_count = total
-		flag = 0
-		for i in stored_value:
-			var new_position = Transform3D().translated(Vector3(i[0], i[1], -i[2]))
-			$red_voxel.multimesh.set_instance_transform(flag, new_position)
-			flag += 1
+	if stored_value == null: # Checks if it's null. When it is, it clear red voxels
+		$red_voxel.multimesh.instance_count = 0
+		$red_voxel.multimesh.visible_instance_count = 0
+		return # skip the function
+	var total = stored_value.size() # Fetch the full length of array
+	$red_voxel.multimesh.instance_count = total
+	$red_voxel.multimesh.visible_instance_count = total
+	for flag in range(total): # Not sure if this helps? It helped in some ways but meh.Is there better one?
+		var voxel_data = stored_value[flag]
+		var new_position = Transform3D().translated(Vector3(voxel_data[0], voxel_data[1], -voxel_data[2]))
+		$red_voxel.multimesh.set_instance_transform(flag, new_position)
 
 func cortical_is_clicked():
 	if select_cortical.selected.is_empty() != true:
