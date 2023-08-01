@@ -58,6 +58,12 @@ func POST_GE_customCorticalArea(corticalProperties: Dictionary): _CALL.POST(_ADD
 	
 func POST_Request_Brain_visualizer(url, dataIn):
 	#using _coreRef._Relay_updated_cortical since they both pass, thats it. leverage the same to save space
+	if "/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area" in url: # Oh, god. Look at what I've fallen into. So so so so bad solution ever. Literally ashamed to be programmer
+		_coreRef.url = "/v1/feagi/monitoring/neuron/synaptic_potential"
+	if "/v1/feagi/genome/morphology?morphology_name" in url:
+		_coreRef.url = "/v1/feagi/genome/morphology"
+	if "/v1/feagi/monitoring/neuron/membrane_potential" in url:
+		_coreRef.url = "/v1/feagi/monitoring/neuron/membrane_potential"
 	_CALL.POST(url, _coreRef._Relay_updated_cortical, dataIn)
 
 # TODO replace with BV

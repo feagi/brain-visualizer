@@ -25,7 +25,7 @@ var _graphCoreRef: GraphCore
 
 func _init(cortexID: CortexID, niceName: String, isPositionDefinedFromFeagi: bool, graph: GraphCore, positionFromFeagi: Vector2i):
 	
-	super()
+#	super()
 	_graphCoreRef = graph
 	_graphCoreRef.add_child(self)
 

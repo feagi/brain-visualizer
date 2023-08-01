@@ -8,7 +8,7 @@ signal value_edited(Vector2)
 var _mouseOffset: Vector2
 
 func _init(rootPosition: Vector2):
-	super()
+#	super()
 	_mouseOffset = rootPosition
 
 func _ready():

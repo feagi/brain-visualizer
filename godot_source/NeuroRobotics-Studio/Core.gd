@@ -21,6 +21,7 @@ var FEAGIAddresses: AddressList
 var FEAGICalls: AddressCalls 
 var SSL = network_setting.SSL
 var FEAGIRoot: String
+var url = ""
 
 func _ready():
 	NetworkAPI = $GlobalNetworkSystem
@@ -142,7 +143,7 @@ func _Relay_updated_cortical(_result, _response_code, _headers, _body: PackedByt
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(_body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
-	Autoload_variable.Core_notification.generate_notification_message(api_data, _response_code, "_Relay_updated_cortical", "/v1/feagi/genome/cortical_area", "POST")
+	Autoload_variable.Core_notification.generate_notification_message(api_data, _response_code, "_Relay_updated_cortical", url, "POST")
 	#UIManager.UI_GraphCore.
 #	Autoload_variable.Core_BV._on_send_feagi_request_completed(api_data, _response_code, "_Relay_updated_cortical", "/v1/feagi/genome/cortical_area")
 	
