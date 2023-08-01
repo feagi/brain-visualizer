@@ -74,12 +74,13 @@ func _ready():
 	FeagiCache.corticalAreas = CorticalAreasHolder.new(self)
 	
 	# Lets pull latest info from FEAGI and trigger respective updates
+	FEAGICalls.GET_GE_CorticalLocations2D()
 	FEAGICalls.GET_GE_morphologyList()
 	FEAGICalls.GET_GE_fileName()
 	FEAGICalls.GET_GE_corticalMap()
 	FEAGICalls.GET_healthCheck()
 	FEAGICalls.GET_CO_corticalAreas_list_detailed()
-
+	
 ####################################
 ####### Process From Below ########
 ####################################
@@ -101,6 +102,10 @@ func RetrieveEvents(data: Dictionary) -> void:
 # In this section, add any code that must be called when FEAGI updates these
 # values
 #TODO error handling
+
+func _Relay_CorticalAreaLocations2D(_result, _response_code, _headers, body: PackedByteArray):
+	FeagiCache.corticalAreas.GE_corticalLocations2D = JSON.parse_string(body.get_string_from_utf8())
+	
 
 func _Relay_IPUs(_result, _response_code, _headers, body: PackedByteArray):
 	var test_json_conv = JSON.new()
