@@ -943,12 +943,11 @@ func _on_syn_request_request_completed(_result, _response_code, _headers, body):
 	var test_json_conv = JSON.new()
 	test_json_conv.parse(body.get_string_from_utf8())
 	var api_data = test_json_conv.get_data()
-	
 	$"..".UI_LeftBar.GetReferenceByID("syn_potent").get_node("checkButton_syn_potent").set_pressed(api_data)
 	$notification.generate_notification_message(api_data, _response_code, "_on_syn_request_request_completed", "/v1/feagi/monitoring/neuron/synaptic_potential")
 
 func _on_syn_pressed():
-	var combine_url = network_setting.SSL + network_setting.api_ip_address + ':' + network_setting.api_port_address + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area=' + $"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text + '&state=' + str($"..".UI_LeftBar.GetReferenceByID("syn_potent").get_node("checkButton_syn_potent").is_pressed())
+	var combine_url = SEC + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area=' + $"..".UI_LeftBar.GetReferenceByID("CorticalID").get_node("field_CorticalID").text + '&state=' + str($"..".UI_LeftBar.GetReferenceByID("syn_potent").get_node("checkButton_syn_potent").is_pressed())
 	Autoload_variable.BV_Core.FEAGICalls.POST_Request_Brain_visualizer(combine_url,"")
 	
 func _on_insert_button_pressed(full_data):
