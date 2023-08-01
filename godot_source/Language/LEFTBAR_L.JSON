@@ -28,17 +28,17 @@
 	  "WHD":{
 		 "W":{
 			"sideLabelText":{
-			   "eng":"W"
+			   "eng":"W "
 			}
 		 },
 		 "H":{
 			"sideLabelText":{
-			   "eng":"H"
+			   "eng":"   H "
 			}
 		 },
 		 "D":{
 			"sideLabelText":{
-			   "eng":"D"
+			   "eng":"   D "
 			}
 		 }
 	  },

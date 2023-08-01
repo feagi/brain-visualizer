@@ -1,11 +1,14 @@
 extends SpinBox
 class_name Spinbox_Sub
 
+const HORIZONTAL_ALIGNMENT = 1
+
 signal value_edited(newValue: int) # Bit more failsafe than stock signal
 
 var _prevValue: float
 
 func _ready():
+	alignment = HORIZONTAL_ALIGNMENT
 	_prevValue = value
 
 func GaurdProxyValueChange(checkingValue) -> void:
