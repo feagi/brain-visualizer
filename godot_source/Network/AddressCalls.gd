@@ -41,11 +41,13 @@ func GET_GE_morphologyUsage(morphologyName: String): _CALL.GET(_ADD.GET_genome_m
 func GET_GE_mappingProperties(sourceCorticalID: String, destinationCorticalID: String): _CALL.GET(_ADD.GET_genome_mappingProperties_CORTICALAREAEQUALS+sourceCorticalID+"&dst_cortical_area="+destinationCorticalID, _coreRef._Relay_Update_Destination)
 func GET_GE_circuits(): _CALL.GET(_ADD.GET_genome_circuits, _coreRef._Relay_circuit_list)
 func GET_GE_circuitsize(circuitName: String): _CALL.GET(_ADD.GET_genome_circuitsize_CIRCUITNAMEEQUALS+circuitName, _coreRef._Relay_circuit_size)
+func GET_GE_CorticalLocations2D(): _CALL.GET(_ADD.GET_genome_corticalLocations2D , _coreRef._Relay_CorticalAreaLocations2D)
 func GET_MO_neuron_membranePotential(corticalID: String): _CALL.GET(_ADD.GET_monitoring_neuron_membranePotential+corticalID, _coreRef._Relay_Update_mem)
 func GET_MO_neuron_synapticPotential(corticalID: String): _CALL.GET(_ADD.GET_monitoring_neuron_synapticPotential+corticalID, _coreRef._Relay_Update_syn)
 func GET_GE_corticalTypeOptions(corticalType: String): _CALL.GET(_ADD.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS+corticalType, _coreRef._Relay_update_OPU)
 func GET_healthCheck(): _CALL.GET(_ADD.GET_healthCheck, _coreRef._Relay_Get_Health)
 func GET_CO_corticalAreas_list_detailed(): _CALL.GET(_ADD.GET_connectome_corticalAreas_list_detailed, _coreRef._Relay_ConnectomeCorticalAreasListDetailed)
+
 
 func POST_FE_burstEngine(newBurstRate: float): _CALL.POST(_ADD.POST_feagi_burstEngine, _coreRef._Relay_ChangedBurstRate, {"burst_duration": newBurstRate})
 	

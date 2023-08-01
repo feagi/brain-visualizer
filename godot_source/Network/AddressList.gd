@@ -46,6 +46,8 @@ var GET_genome_corticalTypeOptions_CORTICALTYPEQUALS: String:
 	get: return  _security + _rootAddress + '/v1/feagi/genome/cortical_type_options?cortical_type='
 var GET_genome_corticalIDNameMapping: String:
 	get: return  _security + _rootAddress + '/v1/feagi/genome/cortical_id_name_mapping'
+var GET_genome_corticalLocations2D: String:
+	get: return  _security + _rootAddress + '/v1/feagi/genome/cortical_locations_2d'
 var GET_connectome_properties_mappings: String:
 	get: return  _security + _rootAddress + "/v1/feagi/connectome/properties/mappings"
 var GET_connectome_corticalAreas_list_detailed: String:
@@ -58,7 +60,8 @@ var GET_monitoring_neuron_membranePotential_CORTICALAREAEQUALS: String:
 	get: return  _security + _rootAddress + '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
 var GET_monitoring_neuron_synapticPotential_CORTICALAREAEQUALS: String:
 	get: return  _security + _rootAddress + '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
-	
+
+
 # Post Requests
 var POST_feagi_burstEngine: String:
 	get: return  _security + _rootAddress + "/v1/feagi/feagi/burst_engine"
