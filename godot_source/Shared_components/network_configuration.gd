@@ -79,7 +79,7 @@ func _process(_delta):
 	state = socket.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
 		while socket.get_available_packet_count():
-			var socket_data = socket.get_packet()
+			var socket_data = socket.get_packet().decompress(100000000000, 3)
 			if socket_data.get_string_from_utf8() == "updated":
 				one_frame = "updated"
 			else:
@@ -96,4 +96,4 @@ func _process(_delta):
 
 func send(data):
 	if state == WebSocketPeer.STATE_OPEN:
-		socket.send(data.to_ascii_buffer())
+		socket.send((data.to_ascii_buffer()).compress(3))
