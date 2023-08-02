@@ -1,0 +1,77 @@
+extends Object
+class_name AddressList
+## Essentially a list of endpoints to FEAGI
+
+var GET_feagi_pns_current_ipu: StringName = "/v1/feagi/feagi/pns/current/ipu"
+var GET_feagi_pns_current_opu: StringName = "/v1/feagi/feagi/pns/current/opu"
+var GET_genome_corticalAreaIDList: StringName = "/v1/feagi/genome/cortical_area_id_list"
+var GET_genome_morphologyList: StringName = "/v1/feagi/genome/morphology_list"
+var GET_genome_fileName: StringName = "/v1/feagi/genome/file_name"
+var GET_genome_corticalAreaNameList: StringName = "/v1/feagi/genome/cortical_area_name_list"
+var GET_genome_corticalNameLocation: StringName = "/v1/feagi/genome/cortical_name_location?cortical_name="
+var GET_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area="
+var GET_genome_corticalMap: StringName = "/v1/feagi/genome/cortical_map"
+var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/afferents?cortical_area="
+var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
+var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
+var GET_genome_circuits: StringName = "/v1/feagi/genome/circuits"
+var GET_genome_circuitsize: StringName = "/v1/feagi/genome/circuit_size?circuit_name="
+var GET_connectome_properties_dimensions: StringName = "/v1/feagi/connectome/properties/dimensions"
+var GET_genome_morphology_types: StringName = "/v1/feagi/genome/morphology_types"
+var GET_genome_morphologyName: StringName = "/v1/feagi/genome/morphology?morphology_name="
+var GET_genome_morphologyUsage: StringName = "/v1/feagi/genome/morphology_usage?morphology_name="
+var GET_genome_corticalTypeOptions: StringName = '/v1/feagi/genome/cortical_type_options?cortical_type='
+var GET_genome_corticalIDNameMapping: StringName = '/v1/feagi/genome/cortical_id_name_mapping'
+var GET_genome_corticalLocations2D: StringName = '/v1/feagi/genome/cortical_locations_2d'
+var GET_connectome_properties_mappings: StringName = "/v1/feagi/connectome/properties/mappings"
+var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/feagi/connectome/cortical_areas/list/detailed"
+var GET_burstEngine_stimulationPeriod: StringName = "/v1/feagi/feagi/burst_engine/stimulation_period"
+var GET_healthCheck: StringName = "/v1/feagi/health_check"
+var GET_monitoring_neuron_membranePotential: StringName = '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
+var GET_monitoring_neuron_synapticPotential: StringName = '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
+
+# Post Requests
+var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
+var POST_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
+var POST_genome_customCorticalArea: StringName = "/v1/feagi/genome/custom_cortical_area"
+
+# Put Requests
+var PUT_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
+var PUT_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties"
+
+# Delete Requests
+var DELETE_GE_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area_name="
+
+func _init(FEAGIRootAddress: StringName, securitySSL: StringName) -> void:
+    GET_feagi_pns_current_ipu = securitySSL + FEAGIRootAddress + GET_feagi_pns_current_ipu
+    GET_feagi_pns_current_opu = securitySSL + FEAGIRootAddress + GET_feagi_pns_current_opu
+    GET_genome_corticalAreaIDList = securitySSL + FEAGIRootAddress + GET_genome_corticalAreaIDList
+    GET_genome_morphologyList = securitySSL + FEAGIRootAddress + GET_genome_morphologyList
+    GET_genome_fileName = securitySSL + FEAGIRootAddress + GET_genome_fileName
+    GET_genome_corticalAreaNameList = securitySSL + FEAGIRootAddress + GET_genome_corticalAreaNameList
+    GET_genome_corticalNameLocation = securitySSL + FEAGIRootAddress + GET_genome_corticalNameLocation
+    GET_genome_corticalArea = securitySSL + FEAGIRootAddress + GET_genome_corticalArea
+    GET_genome_corticalMap = securitySSL + FEAGIRootAddress + GET_genome_corticalMap
+    GET_genome_corticalMappings_afferents_corticalArea = securitySSL + FEAGIRootAddress + GET_genome_corticalMappings_afferents_corticalArea
+    GET_genome_corticalMappings_efferents_corticalArea = securitySSL + FEAGIRootAddress + GET_genome_corticalMappings_efferents_corticalArea
+    GET_genome_mappingProperties = securitySSL + FEAGIRootAddress + GET_genome_mappingProperties
+    GET_genome_circuits = securitySSL + FEAGIRootAddress + GET_genome_circuits
+    GET_genome_circuitsize = securitySSL + FEAGIRootAddress + GET_genome_circuitsize
+    GET_connectome_properties_dimensions = securitySSL + FEAGIRootAddress + GET_connectome_properties_dimensions
+    GET_genome_morphology_types = securitySSL + FEAGIRootAddress + GET_genome_morphology_types
+    GET_genome_morphologyName = securitySSL + FEAGIRootAddress + GET_genome_morphologyName
+    GET_genome_morphologyUsage = securitySSL + FEAGIRootAddress + GET_genome_morphologyUsage
+    GET_genome_corticalTypeOptions = securitySSL + FEAGIRootAddress + GET_genome_corticalTypeOptions
+    GET_genome_corticalIDNameMapping = securitySSL + FEAGIRootAddress + GET_genome_corticalIDNameMapping
+    GET_genome_corticalLocations2D = securitySSL + FEAGIRootAddress + GET_genome_corticalLocations2D
+    GET_connectome_properties_mappings = securitySSL + FEAGIRootAddress + GET_connectome_properties_mappings
+    GET_burstEngine_stimulationPeriod = securitySSL + FEAGIRootAddress + GET_burstEngine_stimulationPeriod
+    GET_healthCheck = securitySSL + FEAGIRootAddress + GET_healthCheck
+    GET_monitoring_neuron_membranePotential = securitySSL + FEAGIRootAddress + GET_monitoring_neuron_membranePotential
+    GET_monitoring_neuron_synapticPotential = securitySSL + FEAGIRootAddress + GET_monitoring_neuron_synapticPotential
+    POST_feagi_burstEngine = securitySSL + FEAGIRootAddress + POST_feagi_burstEngine
+    POST_genome_corticalArea = securitySSL + FEAGIRootAddress + POST_genome_corticalArea
+    POST_genome_customCorticalArea = securitySSL + FEAGIRootAddress + POST_genome_customCorticalArea
+    PUT_genome_corticalArea = securitySSL + FEAGIRootAddress + PUT_genome_corticalArea
+    PUT_genome_mappingProperties = securitySSL + FEAGIRootAddress + PUT_genome_mappingProperties
+    DELETE_GE_corticalArea = securitySSL + FEAGIRootAddress + DELETE_GE_corticalArea

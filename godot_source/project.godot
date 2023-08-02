@@ -11,5 +11,6 @@ config_version=5
 [application]
 
 config/name="FEAGI-Godot-Interface"
+run/main_scene="res://Feagi-Godot-Interface/FeagiRoot.tscn"
 config/features=PackedStringArray("4.1", "Forward Plus")
 config/icon="res://icon.svg"
