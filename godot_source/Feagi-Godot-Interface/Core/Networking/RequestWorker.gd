@@ -63,7 +63,7 @@ func _on_request_completed(result: Result, response_code: int, _incoming_headers
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
 func _QueryForDestruction() -> void:
-	if network_interface.num_workers_available < network_interface.num_workers_to_keep_available:
+	if network_interface.num_workers_available <= network_interface.num_workers_to_keep_available:
 		network_interface.workers_available.push_back(self)
 	else:
 		queue_free()
