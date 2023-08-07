@@ -9,7 +9,7 @@ class_name NetworkInterface
 # Static Network Configuration
 const DEF_MINWORKERSAVAILABLE: int = 5
 const DEF_HEADERSTOUSE: PackedStringArray = ["Content-Type: application/json"]
-const DEF_FEAGI_TLD: StringName = "localhost"
+const DEF_FEAGI_TLD: StringName = "127.0.0.1"
 const DEF_FEAGI_SSL: StringName = "http://"
 const DEF_WEB_PORT: int = 8000
 
@@ -32,7 +32,7 @@ var _multithreading_enabled: bool # cannot be changed after init
 
 ## Used to init the network interface
 ## Required before usage
-func init_network() -> void:
+func init_network(worker_parent_root: Node) -> void:
     #var SSL: String = JavaScriptBridge.eval(""" 
     #function get_port() {
     #    var url_string = window.location.href;
@@ -55,6 +55,7 @@ func init_network() -> void:
 
 
     # With collected data, init what we can
+    _request_worker_parent = worker_parent_root
     feagi_root_web_address = feagi_SSL + feagi_TLD + ":" + str(feagi_web_port)
     endpoints = AddressList.new(feagi_root_web_address)
     _spawn_initial_workers()
