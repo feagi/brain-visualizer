@@ -14,3 +14,14 @@ config/name="FEAGI-Godot-Interface"
 run/main_scene="res://Feagi-Godot-Interface/FeagiRoot.tscn"
 config/features=PackedStringArray("4.1", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+FeagiUtils="*res://Feagi-Godot-Interface/Core/FEAGIUtils.gd"
+FeagiCacheEvents="*res://Feagi-Godot-Interface/Core/FEAGICacheEvents.gd"
+FeagiInterface="*res://Feagi-Godot-Interface/Core/FEAGIInterface.gd"
+FeagiRequests="*res://Feagi-Godot-Interface/Core/FEAGIRequests.gd"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
