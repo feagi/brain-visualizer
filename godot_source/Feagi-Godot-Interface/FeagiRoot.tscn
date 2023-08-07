@@ -1,3 +1,8 @@
-[gd_scene format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=2 format=3 uid="uid://ctm7g8pe4n1dn"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 
 [node name="FeagiRoot" type="Node3D"]
+
+[node name="FEAGIInterface" type="Node" parent="."]
+script = ExtResource("1_43i4l")

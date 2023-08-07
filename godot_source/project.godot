@@ -19,7 +19,6 @@ config/icon="res://icon.svg"
 
 FeagiUtils="*res://Feagi-Godot-Interface/Core/FEAGIUtils.gd"
 FeagiCacheEvents="*res://Feagi-Godot-Interface/Core/FEAGICacheEvents.gd"
-FeagiInterface="*res://Feagi-Godot-Interface/Core/FEAGIInterface.gd"
 FeagiRequests="*res://Feagi-Godot-Interface/Core/FEAGIRequests.gd"
 
 [rendering]
