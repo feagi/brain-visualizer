@@ -2,6 +2,7 @@ extends HTTPRequest
 class_name  RequestWorker
 ## GET/POST/PUT/DELETE worker for [NetworkInterface]
 ##
+## On initialization, toggles multiThreading, sets internals, and parents itself to a given parent (this does not need to be done seperately)
 ## Sits idle but when given a network call, will run it then return the output to the given relay function._add_constant_central_force
 ## After this point, will return to the queue in [NetworkInterface] if there is enough room, otherwise will destroy itself
 ##
@@ -63,7 +64,7 @@ func _on_request_completed(result: Result, response_code: int, _incoming_headers
 ## Otherwise, destroy self
 func _QueryForDestruction() -> void:
     if network_interface.num_workers_available < network_interface.num_workers_to_keep_available:
-        network_interface._workers_available.push_back(self)
+        network_interface.workers_available.push_back(self)
     else:
         queue_free()
 
