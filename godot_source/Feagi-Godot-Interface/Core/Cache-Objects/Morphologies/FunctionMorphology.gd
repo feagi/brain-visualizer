@@ -4,7 +4,8 @@ class_name FunctionMorphology
 
 var parameters: Dictionary
 
-func _init(morphology_name: StringName, morphology_type: TYPE, custom_parameters: Dictionary):
-    super(morphology_name, morphology_type)
+func _init(morphology_name: StringName, custom_parameters: Dictionary):
+    super(morphology_name)
+    type = MORPHOLOGY_TYPE.FUNCTION
     parameters = custom_parameters
 

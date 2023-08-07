@@ -2,7 +2,7 @@ extends Object
 class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
 
-enum TYPE {
+enum MORPHOLOGY_TYPE {
     PATTERN,
     VECTOR,
     FUNCTION,
@@ -10,8 +10,7 @@ enum TYPE {
 }
 
 var name: StringName
-var type: TYPE
+var type: MORPHOLOGY_TYPE
 
-func _init(morphology_name: StringName, morphology_type: TYPE):
+func _init(morphology_name: StringName):
     name = morphology_name
-    type = morphology_type
