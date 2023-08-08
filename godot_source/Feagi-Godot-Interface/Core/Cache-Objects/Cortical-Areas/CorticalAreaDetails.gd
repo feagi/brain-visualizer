@@ -113,28 +113,30 @@ var neuron_mp_charge_accumulation: bool:
         _neuron_mp_charge_accumulation = v
         property_changed.emit({"neuron_mp_charge_accumulation": v})
 
-var _cortical_neuron_per_vox_count: int
-var _cortical_visibility: bool
-var _cortical_synaptic_attractivity: int
-var _cortical_destinations: Dictionary
-var _neuron_post_synaptic_potential: float
-var _neuron_post_synaptic_potential_max: float
-var _neuron_plasticity_constant: float
-var _neuron_fire_threshold: float
-var _neuron_fire_threshold_increment: float
-var _neuron_firing_threshold_limit: float
-var _neuron_refractory_period: float
-var _neuron_leak_coefficient: float
-var _neuron_leak_variability: float
-var _neuron_consecutive_fire_count: float
-var _neuron_snooze_period: float
-var _neuron_degeneracy_coefficient: float
-var _neuron_psp_uniform_distribution: bool
-var _neuron_mp_charge_accumulation: bool
+var _cortical_neuron_per_vox_count: int = 0
+var _cortical_visibility: bool = false
+var _cortical_synaptic_attractivity: int = 0
+var _cortical_destinations: Dictionary = {}
+var _neuron_post_synaptic_potential: float = 0
+var _neuron_post_synaptic_potential_max: float = 0
+var _neuron_plasticity_constant: float = 0
+var _neuron_fire_threshold: float = 0
+var _neuron_fire_threshold_increment: float = 0
+var _neuron_firing_threshold_limit: float = 0
+var _neuron_refractory_period: float = 0
+var _neuron_leak_coefficient: float = 0
+var _neuron_leak_variability: float = 0
+var _neuron_consecutive_fire_count: float = 0
+var _neuron_snooze_period: float = 0
+var _neuron_degeneracy_coefficient: float = 0
+var _neuron_psp_uniform_distribution: bool = false
+var _neuron_mp_charge_accumulation: bool = false
 
 ## Updates all variables in here from a dict from FEAGI
-func ApplyDictionary(data: Dictionary) -> void:
+func apply_dicitonary(data: Dictionary) -> void:
     
+    if data == {}:
+        return
     if "cortical_neuron_per_vox_count" in data.keys(): 
         _cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
     if "cortical_visibility" in data.keys(): 
