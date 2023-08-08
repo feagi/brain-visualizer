@@ -31,7 +31,7 @@ static func _raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Arr
     var Y: PatternVal
     var Z: PatternVal
     var pair: Array = [null, null]
-    var output: Array[PatternVector3Pairs] # Don't believe Godot's lies, output is in fact being used
+    var output: Array[PatternVector3Pairs] = []
     for pair_in in raw_array:
         for pair_in_index in [0,1]:
             for vector_raw in pair_in[pair_in_index]:
