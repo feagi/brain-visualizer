@@ -1,5 +1,6 @@
 extends Node
 ## Holds all objects responsible for communicating to and recieving data from FEAGI directly
+## NOT AUTOLOADED - since we need to interact with the tree, this is on the "FEAGIInterface" node
 class_name FEAGIInterface
 
 var net: NetworkInterface

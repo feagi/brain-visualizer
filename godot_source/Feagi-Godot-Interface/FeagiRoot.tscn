@@ -1,8 +1,32 @@
-[gd_scene load_steps=2 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=5 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
+[ext_resource type="Shader" uid="uid://bk02oitxvyw1a" path="res://Feagi-Godot-Interface/UI/Graph/Graph_Shader.tres" id="2_1a0bu"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jg12a"]
+render_priority = 0
+shader = ExtResource("2_1a0bu")
+shader_parameter/Position_Offset = Vector2(0, 0)
+shader_parameter/Zoom_Out = 4.0
+shader_parameter/LineWidth = 0.05
+shader_parameter/Line_Color = Color(1, 1, 1, 1)
+shader_parameter/Background_Color = Color(0.076836, 0.076836, 0.076836, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_otomw"]
+material = SubResource("ShaderMaterial_jg12a")
 
 [node name="FeagiRoot" type="Node3D"]
 
 [node name="FEAGIInterface" type="Node" parent="."]
 script = ExtResource("1_43i4l")
+
+[node name="UI" type="Node" parent="."]
+
+[node name="Mixed_Camera" type="Node" parent="UI"]
+
+[node name="Camera3D" type="Camera3D" parent="UI/Mixed_Camera"]
+current = true
+
+[node name="NodeGraph" type="MeshInstance3D" parent="UI"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.814703)
+mesh = SubResource("QuadMesh_otomw")
