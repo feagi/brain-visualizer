@@ -133,7 +133,7 @@ var _neuron_psp_uniform_distribution: bool = false
 var _neuron_mp_charge_accumulation: bool = false
 
 ## Updates all variables in here from a dict from FEAGI
-func apply_dicitonary(data: Dictionary) -> void:
+func apply_dictionary(data: Dictionary) -> void:
     
     if data == {}:
         return
