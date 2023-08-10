@@ -4,24 +4,41 @@ class_name MorphologyFactory
 
 ## Spawns correct morphology type given dict from FEAGI
 static func create(morphology_details: Dictionary) -> Morphology:
-    var name: String = morphology_details["morphology_name"]
+    var name: StringName = morphology_details["morphology_name"]
     var parameters: Dictionary = morphology_details["Dictionary"]
-    var type_str: String = morphology_details["type"]
+    var type_str: StringName = morphology_details["type"]
     var type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE.find_key(type_str.to_upper())
     match type:
         Morphology.MORPHOLOGY_TYPE.FUNCTION:
-            return FunctionMorphology.new(name, parameters["parameters"])
+            return FunctionMorphology.new(name, false, parameters["parameters"])
         Morphology.MORPHOLOGY_TYPE.VECTOR:
-            return VectorMorphology.new(name, FEAGIUtils.array_of_arrays_to_vector3i_array(parameters["vectors"]))
+            return VectorMorphology.new(name, false, FEAGIUtils.array_of_arrays_to_vector3i_array(parameters["vectors"]))
         Morphology.MORPHOLOGY_TYPE.PATTERN:
-            return PatternMorphology.new(name, _raw_pattern_nested_array_to_array_of_PatternVector3s(parameters["patterns"]))
+            return PatternMorphology.new(name, false, _raw_pattern_nested_array_to_array_of_PatternVector3s(parameters["patterns"]))
         Morphology.MORPHOLOGY_TYPE.COMPOSITE:
-            return CompositeMorphology.new(name, FEAGIUtils.array_to_vector3i(parameters["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(parameters["src_pattern"]), parameters["mapper_morphology"])
+            return CompositeMorphology.new(name, false, FEAGIUtils.array_to_vector3i(parameters["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(parameters["src_pattern"]), parameters["mapper_morphology"])
         _:
             # Something else? Error out
             @warning_ignore("assert_always_false")
             assert(false, "Invalid Morphology attempted to spawn")
-            return Morphology.new("null") # Doesn't do anything, just needed to compile
+            return Morphology.new("null", false) # Doesn't do anything, just needed to compile
+
+## creates a morphology object but fills data with placeholder data until FEAGI responds
+static func create_placeholder(name: StringName, type: Morphology.MORPHOLOGY_TYPE) -> Morphology:
+    match type:
+        Morphology.MORPHOLOGY_TYPE.FUNCTION:
+            return FunctionMorphology.new(name, true, {})
+        Morphology.MORPHOLOGY_TYPE.VECTOR:
+            return VectorMorphology.new(name, true, [])
+        Morphology.MORPHOLOGY_TYPE.PATTERN:
+            return PatternMorphology.new(name, true, [])
+        Morphology.MORPHOLOGY_TYPE.COMPOSITE:
+            return CompositeMorphology.new(name, true, Vector3i(1,1,1), [], "NOT_SET")
+        _:
+            # Something else? Error out
+            @warning_ignore("assert_always_false")
+            assert(false, "Invalid Morphology attempted to spawn")
+            return Morphology.new("null", false) # Doesn't do anything, just needed to compile
 
 
 ## Converts an array of arrays from the pattern morphologies into an array of PatternVector3s
