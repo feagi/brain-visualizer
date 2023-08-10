@@ -95,6 +95,10 @@ func GET_GE_circuitsize(circuitName: String):
 func GET_GE_CorticalLocations2D():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalLocations2D , _response_functions_ref.GET_GE_CorticalLocations2D)
 
+## returns dict by cortical ID of cortical name, type, visibility, 2d and 3d positions, and dimensions
+func GET_GE_CorticalArea_geometry():
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_geometry , _response_functions_ref.GET_GE_CorticalArea_geometry)
+
 
 func GET_MO_neuron_membranePotential(corticalID: StringName):
 	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MO_neuron_membranePotential)
