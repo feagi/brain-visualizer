@@ -30,7 +30,7 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 		added.append(new)
 		continue
 	
-	# At this point, added has all names of elements that need to be added, while removed has all elements that need to be removed
+	# At this point, 'added' has all names of elements that need to be added, while 'removed' has all elements that need to be removed
 	
 	# remove removed morphologies
 	for remove in removed:
@@ -41,8 +41,8 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 	# add added morphologies
 	for add in added:
 		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
-		var adding_type = Morphology.MORPHOLOGY_TYPE[(_new_listing_with_types[add].to_upper())]
-		var adding_morphology = MorphologyFactory.create_placeholder(add, adding_type)
+		var adding_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[(_new_listing_with_types[add].to_upper())]
+		var adding_morphology: Morphology = MorphologyFactory.create_placeholder(add, adding_type)
 		_available_morphologies[add] = adding_morphology
 		FeagiCacheEvents.morphology_added.emit(adding_morphology)
 	
