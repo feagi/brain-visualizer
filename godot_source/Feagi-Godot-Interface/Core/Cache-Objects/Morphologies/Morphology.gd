@@ -3,10 +3,10 @@ class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
 
 enum MORPHOLOGY_TYPE {
-    PATTERN,
-    VECTOR,
-    FUNCTION,
-    COMPOSITE,
+    PATTERNS,
+    VECTORS,
+    FUNCTIONS,
+    COMPOSITES,
 }
 
 var name: StringName
