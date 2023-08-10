@@ -11,6 +11,8 @@ enum MORPHOLOGY_TYPE {
 
 var name: StringName
 var type: MORPHOLOGY_TYPE
+var is_placeholder_data: bool
 
-func _init(morphology_name: StringName):
+func _init(morphology_name: StringName, is_using_placeholder_data: bool):
     name = morphology_name
+    is_placeholder_data = is_using_placeholder_data
