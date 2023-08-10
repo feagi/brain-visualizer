@@ -9,11 +9,11 @@ static func create(morphology_details: Dictionary) -> Morphology:
     var type_str: StringName = morphology_details["type"]
     var type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE.find_key(type_str.to_upper())
     match type:
-        Morphology.MORPHOLOGY_TYPE.FUNCTION:
+        Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
             return FunctionMorphology.new(name, false, parameters["parameters"])
-        Morphology.MORPHOLOGY_TYPE.VECTOR:
+        Morphology.MORPHOLOGY_TYPE.VECTORS:
             return VectorMorphology.new(name, false, FEAGIUtils.array_of_arrays_to_vector3i_array(parameters["vectors"]))
-        Morphology.MORPHOLOGY_TYPE.PATTERN:
+        Morphology.MORPHOLOGY_TYPE.PATTERNS:
             return PatternMorphology.new(name, false, _raw_pattern_nested_array_to_array_of_PatternVector3s(parameters["patterns"]))
         Morphology.MORPHOLOGY_TYPE.COMPOSITE:
             return CompositeMorphology.new(name, false, FEAGIUtils.array_to_vector3i(parameters["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(parameters["src_pattern"]), parameters["mapper_morphology"])
@@ -26,11 +26,11 @@ static func create(morphology_details: Dictionary) -> Morphology:
 ## creates a morphology object but fills data with placeholder data until FEAGI responds
 static func create_placeholder(name: StringName, type: Morphology.MORPHOLOGY_TYPE) -> Morphology:
     match type:
-        Morphology.MORPHOLOGY_TYPE.FUNCTION:
+        Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
             return FunctionMorphology.new(name, true, {})
-        Morphology.MORPHOLOGY_TYPE.VECTOR:
+        Morphology.MORPHOLOGY_TYPE.VECTORS:
             return VectorMorphology.new(name, true, [])
-        Morphology.MORPHOLOGY_TYPE.PATTERN:
+        Morphology.MORPHOLOGY_TYPE.PATTERNS:
             return PatternMorphology.new(name, true, [])
         Morphology.MORPHOLOGY_TYPE.COMPOSITE:
             return CompositeMorphology.new(name, true, Vector3i(1,1,1), [], "NOT_SET")

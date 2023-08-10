@@ -6,7 +6,7 @@ enum MORPHOLOGY_TYPE {
     PATTERNS,
     VECTORS,
     FUNCTIONS,
-    COMPOSITES,
+    COMPOSITE,
 }
 
 var name: StringName
