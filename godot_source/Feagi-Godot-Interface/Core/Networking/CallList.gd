@@ -48,8 +48,8 @@ func GET_GE_corticalNameLocation(corticalName: String):
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalNameLocation+corticalName, _response_functions_ref.GET_GE_corticalNameLocation)
 
 ## By corticalID, returns dictionary of all cortical area details
-func GET_GE_corticalArea(corticalID: CorticalID):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_CORTICALAREAEQUALS + corticalID.ID, _response_functions_ref.GET_GE_corticalArea)
+func GET_GE_corticalArea(corticalID: StringName):
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_CORTICALAREAEQUALS + corticalID, _response_functions_ref.GET_GE_corticalArea)
 
 ## returns dict of cortical names, mapped to an array of positions, unknown boolean, size, and ID
 func GET_CO_properties_dimensions():
@@ -64,12 +64,12 @@ func GET_GE_corticalIDNameMapping():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalIDNameMapping, _response_functions_ref.GET_GE_corticalIDNameMapping)
 
 ## returns list of connected cortical IDs upsteam given ID
-func GET_GE_corticalMappings_afferents_corticalArea(corticalID: CorticalID):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalMappings_afferents_corticalArea_CORTICALAREAEQUALS+corticalID.string, _response_functions_ref.GET_GE_corticalMappings_afferents_corticalArea)
+func GET_GE_corticalMappings_afferents_corticalArea(corticalID: StringName):
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalMappings_afferents_corticalArea_CORTICALAREAEQUALS+corticalID, _response_functions_ref.GET_GE_corticalMappings_afferents_corticalArea)
 
 ## returns list of connected cortical IDs downstream given ID
-func GET_GE_corticalMappings_efferents_corticalArea(corticalID: CorticalID):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS+corticalID.string, _response_functions_ref.GET_GE_corticalMappings_efferents_corticalArea)
+func GET_GE_corticalMappings_efferents_corticalArea(corticalID: StringName):
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalMappings_efferents_corticalArea_CORTICALAREAEQUALS+corticalID, _response_functions_ref.GET_GE_corticalMappings_efferents_corticalArea)
 
 ## given name of morphology, returns dict of morphlogy details
 func GET_GE_morphology(morphologyName: String):
@@ -80,8 +80,8 @@ func GET_GE_morphologyUsage(morphologyName: String):
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_morphologyUsage_MORPHOLOGYNAMEEQUALS+morphologyName, _response_functions_ref.GET_GE_morphologyUsage)
 
 ## returns an array of dicts of morphology details of morphologies used between 2 cortical areas
-func GET_GE_mappingProperties(sourceCorticalID: CorticalID, destinationCorticalID: CorticalID):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_mappingProperties_CORTICALAREAEQUALS+sourceCorticalID.string+"&dst_cortical_area="+destinationCorticalID.string, _response_functions_ref.GET_GE_mappingProperties)
+func GET_GE_mappingProperties(sourceCorticalID: StringName, destinationCorticalID: StringName):
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_mappingProperties_CORTICALAREAEQUALS+sourceCorticalID+"&dst_cortical_area="+destinationCorticalID, _response_functions_ref.GET_GE_mappingProperties)
 
 ## returns a string array of circuit file names found in feagi
 func GET_GE_circuits():
@@ -96,12 +96,12 @@ func GET_GE_CorticalLocations2D():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalLocations2D , _response_functions_ref.GET_GE_CorticalLocations2D)
 
 
-func GET_MO_neuron_membranePotential(corticalID: CorticalID):
-	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID.string, _response_functions_ref.GET_MO_neuron_membranePotential)
+func GET_MO_neuron_membranePotential(corticalID: StringName):
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MO_neuron_membranePotential)
 
 
-func GET_MO_neuron_synapticPotential(corticalID: CorticalID):
-	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID.string, _response_functions_ref.GET_MO_neuron_synapticPotential)
+func GET_MO_neuron_synapticPotential(corticalID: StringName):
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, _response_functions_ref.GET_MO_neuron_synapticPotential)
 
 
 func GET_GE_corticalTypeOptions(corticalType: String):
@@ -134,8 +134,8 @@ func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename the
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + extra_name, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
 	
  ## deletes cortical area
-func DELETE_GE_corticalArea(corticalID: CorticalID):
-	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID.str, _response_functions_ref.DELETE_GE_corticalArea)
+func DELETE_GE_corticalArea(corticalID: StringName):
+	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea)
 
 
 func PUT_GE_corticalArea(dataIn: Dictionary, corticalIDStr: String = ""):
