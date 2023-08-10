@@ -26,3 +26,4 @@ func _ready():
 ## Put any calls here that need to be made for initial summary data to spawn initial UI elements
 func initial_FEAGI_calls() -> void:
 	FeagiRequests.refresh_morphology_list()
+	FeagiRequests.refresh_cortical_areas()
