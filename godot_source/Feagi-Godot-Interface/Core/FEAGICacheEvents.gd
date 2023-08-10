@@ -5,7 +5,7 @@ extends Node
 
 ################################# Morphologies ##################################
 signal morphology_added(new_morphology: Morphology) # For when singular morphology is added
-signal morphology_removed(removed_morphology: Morphology)  # For when singular morphology is added
+signal morphology_removed(removed_morphology: Morphology)  # For when singular morphology is removed
 signal morphology_updated(updated_morphology: Morphology) # For when a morphology is updated in cache (COMMON USE: morphology objects are init'd with placeholder values until FEAGI responds with the correct one)
 
 
