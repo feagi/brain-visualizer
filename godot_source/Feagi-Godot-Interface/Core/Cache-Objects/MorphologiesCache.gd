@@ -1,7 +1,6 @@
 extends Object
 class_name MorphologiesCache
-## Stores the (names) of all morphologies available in the genome
-## TODO -  we may add more details here later
+## Stores all morphologies available in the genome
 
 ## A list of all available morphologies in the FEAGI genome by name
 var available_morphologies: Dictionary:

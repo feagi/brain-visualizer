@@ -10,12 +10,6 @@ var cortical_neuron_per_vox_count: int:
         _cortical_neuron_per_vox_count = v
         property_changed.emit({"cortical_neuron_per_vox_count": v})
 
-var cortical_visibility: bool:
-    get: return _cortical_visibility
-    set(v):
-        _cortical_visibility = v
-        property_changed.emit({"cortical_visibility": v})
-
 var cortical_synaptic_attractivity: int:
     get: return _cortical_synaptic_attractivity
     set(v):
@@ -114,7 +108,6 @@ var neuron_mp_charge_accumulation: bool:
         property_changed.emit({"neuron_mp_charge_accumulation": v})
 
 var _cortical_neuron_per_vox_count: int = 0
-var _cortical_visibility: bool = false
 var _cortical_synaptic_attractivity: int = 0
 var _cortical_destinations: Dictionary = {}
 var _neuron_post_synaptic_potential: float = 0
@@ -139,8 +132,6 @@ func apply_dictionary(data: Dictionary) -> void:
         return
     if "cortical_neuron_per_vox_count" in data.keys(): 
         _cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
-    if "cortical_visibility" in data.keys(): 
-        _cortical_visibility = data["cortical_visibility"]
     if "cortical_synaptic_attractivity" in data.keys(): 
         _cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
     if "cortical_destinations" in data.keys(): 

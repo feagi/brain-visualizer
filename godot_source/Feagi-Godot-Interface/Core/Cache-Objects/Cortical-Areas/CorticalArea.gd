@@ -6,6 +6,7 @@ class_name CorticalArea
 signal dimensions_updated(ID: StringName, dim: Vector3i)
 signal coordinates_3D_updated(ID: StringName, coords: Vector3i)
 signal coordinates_2D_updated(ID: StringName, coords: Vector2i)
+signal cortical_visibility_updated(ID: StringName, visibility: bool)
 signal details_updated(ID: StringName, data: Dictionary) # Beware of CorticalMappingProperties
 
 
@@ -17,6 +18,7 @@ enum CORTICAL_AREA_TYPE {
     OPU
 }
 
+var details: CorticalAreaDetails
 var cortical_ID: StringName:
     get:
         return _cortical_ID
@@ -26,7 +28,12 @@ var name: StringName:
 var group: CORTICAL_AREA_TYPE:
     get:
         return _group
-var details: CorticalAreaDetails
+var cortical_visibility: bool:
+    get:
+        return _cortical_visiblity
+    set(v):
+        _cortical_visiblity = v
+
 var dimensions: Vector3i:
     get:
         return _dimensions
@@ -56,15 +63,20 @@ var _coordinates_2D: Vector2i = Vector2i(0,0)
 var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
+var _cortical_visiblity: bool = true
+var _cortical_details_acquired: bool = false
 
 
-func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE,  cortical_details_raw: Dictionary = {}):
+func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE,  cortical_details_raw: Dictionary = {}, visibility: bool = true):
     _cortical_ID = ID
     _name = cortical_name
     _group = group_type
     details = CorticalAreaDetails.new()
     details.apply_dictionary(cortical_details_raw)
     details.property_changed.connect(_details_updated)
+    _cortical_visiblity = visibility
+
+#TODO data update functions
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:
