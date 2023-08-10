@@ -115,6 +115,9 @@ func GET_healthCheck():
 func GET_CO_corticalAreas_list_detailed():
 	_interface_ref.FEAGI_GET(_address_list.GET_connectome_corticalAreas_list_detailed, _response_functions_ref.GET_CO_corticalAreas_list_detailed)
 
+## returns dict of morphology names keyd to their type string
+func GET_MO_list_types(): # USED 1x
+	_interface_ref.FEAGI_GET(_address_list.GET_morphologies_list_types, _response_functions_ref.GET_MO_list_types)
 
 
 ## sets delay between bursts in seconds

@@ -2,6 +2,7 @@ extends Object
 class_name AddressList
 ## Essentially a list of endpoints to FEAGI
 
+# Get Requests
 var GET_feagi_pns_current_ipu: StringName = "/v1/feagi/feagi/pns/current/ipu"
 var GET_feagi_pns_current_opu: StringName = "/v1/feagi/feagi/pns/current/opu"
 var GET_genome_corticalAreaIDList: StringName = "/v1/feagi/genome/cortical_area_id_list"
@@ -29,6 +30,7 @@ var GET_burstEngine_stimulationPeriod: StringName = "/v1/feagi/feagi/burst_engin
 var GET_healthCheck: StringName = "/v1/feagi/health_check"
 var GET_monitoring_neuron_membranePotential: StringName = '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
 var GET_monitoring_neuron_synapticPotential: StringName = '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
+var GET_morphologies_list_types: StringName = '/v1/feagi/morphologies/list/types'
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
@@ -69,6 +71,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
     GET_healthCheck = FEAGIFullAddress + GET_healthCheck
     GET_monitoring_neuron_membranePotential = FEAGIFullAddress + GET_monitoring_neuron_membranePotential
     GET_monitoring_neuron_synapticPotential = FEAGIFullAddress + GET_monitoring_neuron_synapticPotential
+    GET_morphologies_list_types = FEAGIFullAddress + GET_morphologies_list_types
     POST_feagi_burstEngine = FEAGIFullAddress + POST_feagi_burstEngine
     POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea
     POST_genome_customCorticalArea = FEAGIFullAddress + POST_genome_customCorticalArea
