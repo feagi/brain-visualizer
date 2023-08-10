@@ -55,6 +55,7 @@ var coordinates_3D: Vector3i:
         _coordinates_3D = v
         _coordinates_3D_available = true
 
+
 var _cortical_ID: StringName
 var _name: StringName
 var _group: CORTICAL_AREA_TYPE
@@ -64,7 +65,7 @@ var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
 var _cortical_visiblity: bool = true
-var _cortical_details_acquired: bool = false
+
 
 
 func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE,  cortical_details_raw: Dictionary = {}, visibility: bool = true):

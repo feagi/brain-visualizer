@@ -4,6 +4,7 @@ class_name CorticalAreaDetails
 
 signal property_changed(property_changed_with_value: Dictionary)
 
+var is_placeholder_data: bool = true
 var cortical_neuron_per_vox_count: int:
     get: return _cortical_neuron_per_vox_count
     set(v):
@@ -130,6 +131,7 @@ func apply_dictionary(data: Dictionary) -> void:
     
     if data == {}:
         return
+    is_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
     if "cortical_neuron_per_vox_count" in data.keys(): 
         _cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
     if "cortical_synaptic_attractivity" in data.keys(): 
