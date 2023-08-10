@@ -68,13 +68,14 @@ var _cortical_visiblity: bool = true
 
 
 
-func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE,  cortical_details_raw: Dictionary = {}, visibility: bool = true):
+func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}):
     _cortical_ID = ID
     _name = cortical_name
     _group = group_type
     details = CorticalAreaDetails.new()
     details.apply_dictionary(cortical_details_raw)
     details.property_changed.connect(_details_updated)
+    _dimensions = cortical_dimensions
     _cortical_visiblity = visibility
 
 #TODO data update functions
