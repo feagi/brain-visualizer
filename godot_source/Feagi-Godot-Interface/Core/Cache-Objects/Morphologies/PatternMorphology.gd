@@ -5,6 +5,6 @@ class_name PatternMorphology
 var patterns: Array[PatternVector3Pairs]
 
 func _init(morphology_name: StringName, is_using_placeholder_data: bool, morphology_patterns: Array[PatternVector3Pairs]):
-    super(morphology_name, is_using_placeholder_data)
-    type = MORPHOLOGY_TYPE.PATTERN
-    patterns = morphology_patterns
+	super(morphology_name, is_using_placeholder_data)
+	type = MORPHOLOGY_TYPE.PATTERNS
+	patterns = morphology_patterns
