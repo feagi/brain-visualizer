@@ -6,7 +6,7 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_n7dde"]
 shader = ExtResource("1_uv3ga")
 shader_parameter/offset = Vector2(0, 0)
-shader_parameter/zoom = 1.0
+shader_parameter/zoom = 3.0
 shader_parameter/lineThickness = 0.05
 shader_parameter/colorBackground = Vector4(0.15, 0.1, 0.15, 1)
 shader_parameter/colorLine = Vector4(0.9, 0.9, 0.9, 1)
@@ -18,5 +18,3 @@ material = SubResource("ShaderMaterial_n7dde")
 position = Vector2(575.5, 323.5)
 scale = Vector2(8.99219, 5.05469)
 texture = ExtResource("1_n1i8l")
-
-[node name="MouseControls" type="Node" parent="."]
