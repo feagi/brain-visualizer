@@ -12,7 +12,7 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP or the below will crash!
 ## Requests from FEAGI summary of all cortical areas (name, dimensions, 2D/3D location, and visibility)
 ## Triggers an update in FEAGI Cached cortical areas, which cascades to signals for cortical areas added / removed
 func refresh_cortical_areas() -> void:
-    _feagi_interface.calls.GET_GE_CorticalArea_geometry()
+	_feagi_interface.calls.GET_GE_CorticalArea_geometry()
 
 
 ################################# Morphologies ##################################
@@ -20,4 +20,4 @@ func refresh_cortical_areas() -> void:
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
-    _feagi_interface.calls.GET_MO_list_types()
+	_feagi_interface.calls.GET_MO_list_types()

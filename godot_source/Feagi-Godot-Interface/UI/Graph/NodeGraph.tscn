@@ -18,3 +18,5 @@ material = SubResource("ShaderMaterial_n7dde")
 position = Vector2(575.5, 323.5)
 scale = Vector2(8.99219, 5.05469)
 texture = ExtResource("1_n1i8l")
+
+[node name="MouseControls" type="Node" parent="."]

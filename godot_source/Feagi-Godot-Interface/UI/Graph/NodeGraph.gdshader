@@ -1,7 +1,7 @@
 shader_type canvas_item;
 
-uniform vec2 offset = vec2(0.0,0.0);
-uniform float zoom = 1.0;
+uniform vec2 offset = vec2(0.4,0.0);
+uniform float zoom = 3.0;
 uniform float lineThickness = 0.05;
 uniform vec4 colorBackground = vec4(0.15,0.1,0.15,1);
 uniform vec4 colorLine = vec4(0.9,0.9,0.9,1);
