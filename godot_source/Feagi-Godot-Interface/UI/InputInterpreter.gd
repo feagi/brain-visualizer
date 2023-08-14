@@ -8,12 +8,12 @@ signal pan_changed(new_pan: Vector2)  # Random Crits not included
 
 @export var zoom_limit_upper: float = 10
 @export var zoom_limit_lower: float = 0.1
+@export var pan_speed: float = 1.0
 
 @export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var mouse_alt_click_button: MouseButton = MOUSE_BUTTON_RIGHT
 @export var mouse_pan_button: MouseButton = MOUSE_BUTTON_MIDDLE
 @export var mouse_scroll_speed: float = 1.0
-@export var mouse_pan_speed: float = 1.0
 
 var zoom_current: float:
 	get: return _zoom_current
@@ -30,22 +30,24 @@ var _is_panning: bool = false
 #var _touching_points: Dictionary = {}
 var _zoom_current: float = 1
 var _pan_current: Vector2 = Vector2(0.0,0.0)
+var _screen_size: Vector2
 
-
+func _ready():
+	_screen_size = get_viewport().get_visible_rect().size
 func _input(event):
 
-	match(event.get_class()):
-		InputEventScreenTouch:
-			# user touched screen
-			pass
-		InputEventMouseButton:
-			# user used mouse
-			_handle_click(event)
-			pass
-		InputEventScreenDrag:
-			# dragging with the mouse OR the touchscreen
-			_handle_drag(event)
-			pass
+	if event is InputEventScreenTouch:
+		# user touched screen
+		pass
+	if event is InputEventScreenDrag:
+		# user dragged on touchscreen
+		pass
+	if event is InputEventMouseButton:
+		# user clicked mouse
+		_handle_click(event)
+	if event is InputEventMouseMotion:
+		_handle_mouse_move(event)
+		pass
 
 
 ## for responding to touch events (tap and double tap)
@@ -93,19 +95,9 @@ func _handle_click(event: InputEventMouseButton) -> void:
 			# if pan button is selected
 			_is_panning = event.pressed
 
-
-
-## for responding to  drag events
-func _handle_drag(event: InputEventScreenDrag) -> void:
-	
+func _handle_mouse_move(event: InputEventMouseMotion) -> void:
 	if _is_panning:
-		pan_current = pan_current + event.relative #TODO this may act weird on touchscreens
-
-
-
-	
-
-
+		pan_current = pan_current - ((event.relative * pan_speed) / _screen_size)
 
 	
 
