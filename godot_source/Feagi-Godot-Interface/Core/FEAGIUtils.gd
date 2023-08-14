@@ -23,3 +23,11 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	for sub_array in input:
 		output.append(array_to_vector2i(sub_array))
 	return output
+
+## Keeps input within defined bounds
+static func bounds(input: float, lower: float, upper: float) -> float:
+	if input < lower:
+		return lower
+	if input > upper:
+		return upper
+	return input
