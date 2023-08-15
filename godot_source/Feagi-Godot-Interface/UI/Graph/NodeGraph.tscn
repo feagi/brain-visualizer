@@ -1,17 +1,18 @@
-[gd_scene load_steps=7 format=3 uid="uid://1p2hhnitls41"]
+[gd_scene load_steps=8 format=3 uid="uid://1p2hhnitls41"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.gd" id="1_yypaa"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/InputInterpreter.gd" id="3_64ero"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
-[ext_resource type="Texture2D" uid="uid://dq31tiat3fvlh" path="res://Feagi-Godot-Interface/UI/Graph/Logo/logo.png" id="4_7qpjb"]
+[ext_resource type="PackedScene" uid="uid://d0jn7l0vs7yor" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn" id="4_dkt82"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Logo/CBLogo.gd" id="5_n7656"]
+[ext_resource type="Texture2D" uid="uid://dq31tiat3fvlh" path="res://Feagi-Godot-Interface/UI/Resources/logo.png" id="5_tfar4"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_su1b5"]
 shader = ExtResource("3_svpbn")
 shader_parameter/offset = Vector2(0, 0)
 shader_parameter/zoom = 4.0
 shader_parameter/lineThickness = 0.05
-shader_parameter/colorBackground = Vector4(0.15, 0.1, 0.15, 1)
+shader_parameter/colorBackground = Vector4(0.35, 0.3, 0.35, 1)
 shader_parameter/colorLine = Vector4(0.9, 0.9, 0.9, 1)
 
 [node name="NodeGraph" type="Control"]
@@ -33,8 +34,11 @@ layout_mode = 0
 offset_right = 1153.0
 offset_bottom = 645.0
 
+[node name="Panel" parent="Background" instance=ExtResource("4_dkt82")]
+layout_mode = 0
+
 [node name="Logo" type="Sprite2D" parent="."]
 position = Vector2(578, 324)
 scale = Vector2(0.4, 0.4)
-texture = ExtResource("4_7qpjb")
+texture = ExtResource("5_tfar4")
 script = ExtResource("5_n7656")

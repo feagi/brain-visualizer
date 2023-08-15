@@ -191,6 +191,7 @@ void fragment() {
 
 }
 "
+graph_offset = Vector2(89.1201, 92.8304)
 nodes/fragment/0/position = Vector2(900, -420)
 nodes/fragment/2/node = SubResource("VisualShaderNodeFloatFunc_ewyve")
 nodes/fragment/2/position = Vector2(-1660, 160)

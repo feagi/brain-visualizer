@@ -31,3 +31,9 @@ static func bounds(input: float, lower: float, upper: float) -> float:
 	if input > upper:
 		return upper
 	return input
+
+## Limits text length to a certain length, if too long, cuts off end and replaces with '...'
+static func limit_text_length(input: String, limit: int) -> String:
+	if input.length() > (limit - 3):
+		input = input.left(limit - 3) + "..."
+	return input
