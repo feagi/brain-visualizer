@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 class_name NodeGraph
 
 var panning: Vector2:
@@ -24,6 +24,7 @@ func _ready():
 	_input = $InputInterpreter
 	_input.pan_changed.connect(_apply_pan)
 	_input.zoom_changed.connect(_apply_zoom)
+	VisConfig.screen_size_changed.connect(_apply_resize)
 
 
 func _apply_pan(new_pan: Vector2) -> void:
@@ -33,3 +34,6 @@ func _apply_pan(new_pan: Vector2) -> void:
 func _apply_zoom(new_zoom: float) -> void:
 	_zoom = new_zoom
 	_background.set_shader_parameter("zoom", new_zoom)
+
+func _apply_resize(new_size: Vector2) -> void:
+	size = new_size

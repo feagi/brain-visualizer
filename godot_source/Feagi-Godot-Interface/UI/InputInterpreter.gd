@@ -31,10 +31,7 @@ var _is_panning: bool = false
 #var _touching_points: Dictionary = {}
 var _zoom_current: float = 1
 var _pan_current: Vector2 = Vector2(0.0,0.0)
-var _screen_size: Vector2
 
-func _ready():
-	_screen_size = get_viewport().get_visible_rect().size
 func _input(event):
 
 	if event is InputEventScreenTouch:
@@ -52,9 +49,9 @@ func _input(event):
 
 
 ## for responding to touch events (tap and double tap)
-func _handle_press_touch(event: InputEventScreenTouch) -> void:
+#func _handle_press_touch(event: InputEventScreenTouch) -> void:
 
-	pass
+#	pass
 #	if event.double_tap:
 #		pass
 #	if event.pressed:
@@ -104,7 +101,7 @@ func _handle_click(event: InputEventMouseButton) -> void:
 
 func _handle_mouse_move(event: InputEventMouseMotion) -> void:
 	if _is_panning:
-		pan_current = pan_current - ((event.relative * pan_speed) / _screen_size)
+		pan_current = pan_current - ((event.relative * pan_speed) / VisConfig.screen_size)
 
 	
 
