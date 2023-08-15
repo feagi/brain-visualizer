@@ -7,7 +7,8 @@ signal zoom_changed(new_zoom: float)
 signal pan_changed(new_pan: Vector2)  # Random Crits not included
 
 @export var zoom_limit_upper: float = 10
-@export var zoom_limit_lower: float = 0.1
+@export var zoom_limit_lower: float = 2
+@export var zoom_speed: float = 0.2
 @export var pan_speed: float = 1.0
 
 @export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
@@ -43,7 +44,7 @@ func _input(event):
 		# user dragged on touchscreen
 		pass
 	if event is InputEventMouseButton:
-		# user clicked mouse
+		# user clicked mouse (or clicked / scrolled mouse wheel)
 		_handle_click(event)
 	if event is InputEventMouseMotion:
 		_handle_mouse_move(event)
@@ -94,6 +95,12 @@ func _handle_click(event: InputEventMouseButton) -> void:
 		mouse_pan_button:
 			# if pan button is selected
 			_is_panning = event.pressed
+		MOUSE_BUTTON_WHEEL_DOWN:
+			# scroll down
+			zoom_current =  _zoom_current + zoom_speed
+		MOUSE_BUTTON_WHEEL_UP:
+			# scroll up
+			zoom_current =  _zoom_current - zoom_speed
 
 func _handle_mouse_move(event: InputEventMouseMotion) -> void:
 	if _is_panning:
