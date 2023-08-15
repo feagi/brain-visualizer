@@ -22,5 +22,7 @@ position = Vector2(575.5, 323.5)
 scale = Vector2(8.99219, 5.05469)
 texture = ExtResource("1_n1i8l")
 
+[node name="Center" type="Node2D" parent="Background"]
+
 [node name="InputInterpreter" type="Node" parent="."]
 script = ExtResource("3_64ero")
