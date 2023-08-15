@@ -1,42 +1,32 @@
-[gd_scene load_steps=6 format=3 uid="uid://1p2hhnitls41"]
+[gd_scene load_steps=5 format=3 uid="uid://1p2hhnitls41"]
 
-[ext_resource type="Texture2D" uid="uid://ckuqx7k365r6e" path="res://icon.svg" id="1_n1i8l"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.gdshader" id="1_uv3ga"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.gd" id="1_yypaa"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/InputInterpreter.gd" id="3_64ero"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_n7dde"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_su1b5"]
 shader = ExtResource("1_uv3ga")
-shader_parameter/offset = Vector2(0, 0)
+shader_parameter/offset = Vector2(0.4, 0)
 shader_parameter/zoom = 3.0
 shader_parameter/lineThickness = 0.05
 shader_parameter/colorBackground = Vector4(0.15, 0.1, 0.15, 1)
 shader_parameter/colorLine = Vector4(0.9, 0.9, 0.9, 1)
 
 [node name="NodeGraph" type="Control"]
-clip_contents = true
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -575.5
-offset_top = -324.0
-offset_right = 575.5
-offset_bottom = 324.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
 mouse_filter = 1
 script = ExtResource("1_yypaa")
 
 [node name="InputInterpreter" type="Node" parent="."]
 script = ExtResource("3_64ero")
 
-[node name="Background" type="Sprite2D" parent="."]
-material = SubResource("ShaderMaterial_n7dde")
-position = Vector2(575.5, 323.5)
-scale = Vector2(8.99219, 5.05469)
-texture = ExtResource("1_n1i8l")
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_su1b5")
+layout_mode = 0
+offset_right = 1153.0
+offset_bottom = 645.0

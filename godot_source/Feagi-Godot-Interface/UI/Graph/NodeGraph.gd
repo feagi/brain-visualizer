@@ -14,13 +14,15 @@ var zoom: float:
 		_apply_zoom(v)
 
 var _input: InputInterpreter
-var _background: Material
+var _background: Control
+var _background_shader: Material
 
 var _panning: Vector2 = Vector2(0.0, 0.0)
 var _zoom: float = 1.0
 
 func _ready():
-	_background = ($Background).material
+	_background = $Background
+	_background_shader = _background.material
 	_input = $InputInterpreter
 	_input.pan_changed.connect(_apply_pan)
 	_input.zoom_changed.connect(_apply_zoom)
@@ -29,11 +31,12 @@ func _ready():
 
 func _apply_pan(new_pan: Vector2) -> void:
 	_panning = new_pan
-	_background.set_shader_parameter("offset", new_pan)
+	_background_shader.set_shader_parameter("offset", new_pan)
 
 func _apply_zoom(new_zoom: float) -> void:
 	_zoom = new_zoom
-	_background.set_shader_parameter("zoom", new_zoom)
+	_background_shader.set_shader_parameter("zoom", new_zoom)
 
 func _apply_resize(new_size: Vector2) -> void:
-	size = new_size
+	_background.size = new_size
+	print(new_size)
