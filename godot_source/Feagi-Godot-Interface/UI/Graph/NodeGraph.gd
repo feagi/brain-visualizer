@@ -31,14 +31,13 @@ func _ready():
 	_input.zoom_changed.connect(_apply_zoom)
 	VisConfig.screen_size_changed.connect(_apply_resize)
 
-
 func _apply_pan(new_pan: Vector2) -> void:
 	_panning = new_pan
 	_background_shader.set_shader_parameter("offset", new_pan)
 	_logo.set_background_position(new_pan)
-	print(new_pan)
 
 func _apply_zoom(new_zoom: float) -> void:
+	# TODO renable zoom at some point
 	#_zoom = new_zoom
 	#_background_shader.set_shader_parameter("zoom", new_zoom)
 	pass
