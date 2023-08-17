@@ -14,3 +14,7 @@ signal cortical_area_added(new_cortical_area: CorticalArea) # For when singular 
 signal cortical_area_removed(removed_cortical_area: CorticalArea)  # For when singular cortical area is removed
 signal cortical_area_updated(updated_cortical_area: CorticalArea) # For when a cortical area is updated in cache (COMMON USE: cortical area objects are init'd with placeholder values until FEAGI responds with the correct one)
 
+############################# Cortical Connections ##############################
+signal cortical_areas_connected(connection_data: CorticalConnection) # When any two cortical areas not connected before have become connected in some way
+signal cortical_areas_disconnected(connection_data: CorticalConnection) # When an existing conneciton is removed completely
+signal cortical_areas_connection_modified(connection_data: CorticalConnection) # When an existing connection between 2 cortical areas is modified

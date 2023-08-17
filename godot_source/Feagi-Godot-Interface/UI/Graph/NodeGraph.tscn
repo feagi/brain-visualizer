@@ -27,14 +27,14 @@ script = ExtResource("1_06pyj")
 [node name="InputInterpreter" type="Node" parent="."]
 script = ExtResource("3_64ero")
 
-[node name="Logo" type="Sprite2D" parent="."]
-position = Vector2(578, 324)
-scale = Vector2(0.4, 0.4)
-texture = ExtResource("5_tfar4")
-script = ExtResource("5_n7656")
-
 [node name="Background" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_su1b5")
 layout_mode = 0
 offset_right = 1153.0
 offset_bottom = 645.0
+
+[node name="Logo" type="Sprite2D" parent="."]
+position = Vector2(578, 324)
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("5_tfar4")
+script = ExtResource("5_n7656")
