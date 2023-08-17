@@ -1,9 +1,8 @@
-[gd_scene load_steps=8 format=3 uid="uid://1p2hhnitls41"]
+[gd_scene load_steps=7 format=3 uid="uid://1p2hhnitls41"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.gd" id="1_yypaa"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraph.gd" id="1_06pyj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/InputInterpreter.gd" id="3_64ero"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
-[ext_resource type="PackedScene" uid="uid://d0jn7l0vs7yor" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn" id="4_dkt82"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Logo/CBLogo.gd" id="5_n7656"]
 [ext_resource type="Texture2D" uid="uid://dq31tiat3fvlh" path="res://Feagi-Godot-Interface/UI/Resources/logo.png" id="5_tfar4"]
 
@@ -23,22 +22,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
-script = ExtResource("1_yypaa")
+script = ExtResource("1_06pyj")
 
 [node name="InputInterpreter" type="Node" parent="."]
 script = ExtResource("3_64ero")
-
-[node name="Background" type="ColorRect" parent="."]
-material = SubResource("ShaderMaterial_su1b5")
-layout_mode = 0
-offset_right = 1153.0
-offset_bottom = 645.0
-
-[node name="Panel" parent="Background" instance=ExtResource("4_dkt82")]
-layout_mode = 0
 
 [node name="Logo" type="Sprite2D" parent="."]
 position = Vector2(578, 324)
 scale = Vector2(0.4, 0.4)
 texture = ExtResource("5_tfar4")
 script = ExtResource("5_n7656")
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_su1b5")
+layout_mode = 0
+offset_right = 1153.0
+offset_bottom = 645.0

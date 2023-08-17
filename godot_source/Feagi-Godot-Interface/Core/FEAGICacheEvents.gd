@@ -13,3 +13,4 @@ signal morphology_updated(updated_morphology: Morphology) # For when a morpholog
 signal cortical_area_added(new_cortical_area: CorticalArea) # For when singular cortical area is added
 signal cortical_area_removed(removed_cortical_area: CorticalArea)  # For when singular cortical area is removed
 signal cortical_area_updated(updated_cortical_area: CorticalArea) # For when a cortical area is updated in cache (COMMON USE: cortical area objects are init'd with placeholder values until FEAGI responds with the correct one)
+

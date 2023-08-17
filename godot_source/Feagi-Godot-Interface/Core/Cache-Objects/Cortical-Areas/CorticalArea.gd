@@ -54,6 +54,11 @@ var coordinates_3D: Vector3i:
         coordinates_3D_updated.emit(cortical_ID, v)
         _coordinates_3D = v
         _coordinates_3D_available = true
+var is_coordinates_2D_available: bool:
+    get: return _coordinates_2D_available
+var is_coordinates_3D_available: bool:
+    get: return _coordinates_3D_available
+
 
 
 var _cortical_ID: StringName

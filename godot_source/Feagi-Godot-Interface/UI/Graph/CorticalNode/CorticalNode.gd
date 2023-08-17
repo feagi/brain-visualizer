@@ -26,7 +26,6 @@ var _title_bar: TitleBar
 var _cortical_name_text: Label_Element
 var _connection_input: ConnectionButton_Point
 var _connection_output: ConnectionButton_Point
-var _drag_offset: Vector2
 
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
@@ -45,11 +44,12 @@ func _ready():
 func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
 	position = node_position
+	_title_bar.title = _cortical_area_ref.name
+	_cortical_name_text.text = _cortical_area_ref.cortical_ID
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	pass
-
 
 
 ## User hit the X button to attempt to delete the cortical area
