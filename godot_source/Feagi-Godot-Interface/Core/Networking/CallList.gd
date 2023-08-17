@@ -142,7 +142,7 @@ func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename the
 	
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
-	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea)
+	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted
 
 
 func PUT_GE_corticalArea(dataIn: Dictionary, corticalIDStr: String = ""):

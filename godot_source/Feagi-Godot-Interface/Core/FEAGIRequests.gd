@@ -15,6 +15,11 @@ func refresh_cortical_areas() -> void:
 	_feagi_interface.calls.GET_GE_CorticalArea_geometry()
 
 
+
+func delete_cortical_area(cortical_id: StringName) -> void:
+	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
+
+
 ################################# Morphologies ##################################
 
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.

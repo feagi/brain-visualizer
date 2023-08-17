@@ -17,9 +17,16 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 	var morpholgies_and_types: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morpholgies_and_types)
 
+
+
 func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_area_summary: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
+
+func DELETE_GE_corticalArea(_response_code: int, response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
+	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
+
+
 
 
 func _body_to_string_array(response_body: PackedByteArray) -> PackedStringArray:
