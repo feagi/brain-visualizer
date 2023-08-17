@@ -16,7 +16,7 @@ var minimum_button_size_pixel: Vector2i:
 
 
 var _screen_size: Vector2
-var _minimum_button_size_pixel: Vector2i = Vector2i(40,40)
+var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4
 
 
 func _init():

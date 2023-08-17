@@ -2,7 +2,11 @@ extends Panel
 class_name TitleBar
 
 signal close_pressed()
-signal dragged(current_position: Vector2, delta_offset: Vector2) # TODO
+signal drag_started(mouse_position: Vector2)
+signal dragged(current_position: Vector2, mouse_delta_offset: Vector2) # TODO
+signal drag_finished(current_position: Vector2)
+
+@export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
 
 @export var title_gap: int:
 	get: return $Title_Text.gap
@@ -12,15 +16,49 @@ signal dragged(current_position: Vector2, delta_offset: Vector2) # TODO
 	get: return $Title_Text.text
 	set(v): $Title_Text.text = v
 
+var is_dragging: bool:
+	get: return _is_dragging
+	set(v):
+		if v == _is_dragging: 
+			return # ignore setting to the same value
+		_is_dragging = v
+		if v:
+			# we started dragging
+			pass
+		else:
+			drag_finished.emit(position)
 
 
-# Called when the node enters the scene tree for the first time.
+var _is_mousing_over: bool = false
+var _is_dragging: bool = false
+
+
 func _ready():
 	$Close_Button.pressed.connect(_proxy_close_button)
 	$Close_Button.resized.connect(_height_resized)
 	$Title_Text.resized.connect(_recalculate_title_bar_min_width)
+	mouse_entered.connect(_mouse_enter)
+	mouse_exited .connect(_mouse_leave)
+
 	_recalculate_title_bar_min_width()
-	#resized.connect(_reposition_close_button)
+
+func _input(event):
+
+	if event is InputEventScreenTouch:
+		# user touched screen
+		pass
+	if event is InputEventScreenDrag:
+		# user dragged on touchscreen
+		pass
+	if event is InputEventMouseButton:
+		# user clicked mouse (or clicked / scrolled mouse wheel)
+		_mouse_click(event)
+	if event is InputEventMouseMotion:
+		_dragging(event)
+
+
+		
+
 func _proxy_close_button():
 	close_pressed.emit()
 
@@ -34,7 +72,31 @@ func _height_resized() -> void:
 func _recalculate_title_bar_min_width() -> void:
 	custom_minimum_size.x = int($Close_Button.custom_minimum_size.y) + int($Title_Text.size.x) + title_gap # Yes, using the close button Y is intentional to avoid repositioning loops
 
-# CAN POSSIBLY REMOVE
-## Makes sure the X button stays on the left, called when title bar is resized
-func _reposition_close_button() -> void:
-	$Close_Button.position.x = size.x - $Close_Button.size.x
+func _mouse_enter() -> void:
+	_is_mousing_over = true
+
+func _mouse_leave() -> void:
+	_is_mousing_over = false
+
+
+func _mouse_click(click: InputEventMouseButton) -> void:
+	if click.button_index != mouse_normal_click_button:
+		return
+	
+	# if click while mousing over, start dragging
+	if click.pressed:
+		if !_is_mousing_over:
+			return
+		is_dragging = true
+		drag_started.emit(click.position)
+	else:
+		is_dragging = false
+
+func _dragging(drag: InputEventMouseMotion) -> void:
+	if !is_dragging:
+		return # if we arent dragging, don't do anything!
+	
+	dragged.emit(position, drag.relative)
+
+func _end_drag() -> void:
+	drag_finished.emit(position)
