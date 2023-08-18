@@ -1,22 +1,28 @@
-[gd_scene load_steps=8 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=9 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/brain_visualizer_main_script.gd" id="3_1xkbx"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
+[ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/renderer.gdshader" id="5_sbo83"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
 ambient_light_source = 2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ddxqx"]
-transparency = 1
-shading_mode = 0
-diffuse_mode = 3
-albedo_color = Color(1, 1, 1, 0.345098)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_h0j4q"]
+shader = ExtResource("5_sbo83")
+shader_parameter/ballPos = Vector2(0.5, 0.5)
+shader_parameter/paddleHWidth = 0.1
+shader_parameter/paddlePosX = 0.5
+shader_parameter/isCurrentlyShocking = false
+shader_parameter/isCurrentlyRewarding = false
+shader_parameter/rewardColor = Vector4(1, 0, 0, 0)
+shader_parameter/screen_width = null
+shader_parameter/screen_height = null
 
-[sub_resource type="BoxMesh" id="BoxMesh_4f07d"]
-material = SubResource("StandardMaterial3D_ddxqx")
+[sub_resource type="BoxMesh" id="BoxMesh_nfjpt"]
+material = SubResource("ShaderMaterial_h0j4q")
 
 [node name="FeagiRoot" type="Node3D"]
 
@@ -39,5 +45,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.1087, 76.0495, 177.384)
 script = ExtResource("4_62hvk")
 
 [node name="cortical_area_box" type="MeshInstance3D" parent="UI/Brain_Visualizer"]
-mesh = SubResource("BoxMesh_4f07d")
+cast_shadow = 0
+gi_mode = 0
+mesh = SubResource("BoxMesh_nfjpt")
 skeleton = NodePath("../../..")
