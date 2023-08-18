@@ -13,5 +13,5 @@ func generate_cortical_area(cortical_area_data : CorticalArea):
 	new_node.visible = true
 	new_node.set_name(cortical_area_data.name)
 	new_node.scale = cortical_area_data.dimensions
-	new_node.transform.origin = Vector3((cortical_area_data.dimensions.x/2 + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions.z/2 + cortical_area_data.coordinates_3D.z))
+	new_node.transform.origin = Vector3((int(cortical_area_data.dimensions.x/2) + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions.z/2 + cortical_area_data.coordinates_3D.z))
 	add_child(new_node)
