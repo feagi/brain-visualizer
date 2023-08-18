@@ -42,3 +42,5 @@ skeleton = NodePath("../../..")
 [node name="Camera3D" type="Camera3D" parent="UI/Brain_Visualizer"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.1087, 76.0495, 177.384)
 script = ExtResource("4_62hvk")
+
+[node name="red_voxel" type="MultiMeshInstance3D" parent="UI/Brain_Visualizer"]

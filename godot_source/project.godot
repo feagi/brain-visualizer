@@ -22,6 +22,7 @@ FeagiCacheEvents="*res://Feagi-Godot-Interface/Core/FEAGICacheEvents.gd"
 FeagiRequests="*res://Feagi-Godot-Interface/Core/FEAGIRequests.gd"
 FeagiCache="*res://Feagi-Godot-Interface/Core/FEAGICache.gd"
 VisConfig="*res://Feagi-Godot-Interface/Core/VisConfig.gd"
+FeagiEvents="*res://Feagi-Godot-Interface/Core/FEAGIEvents.gd"
 
 [input_devices]
 

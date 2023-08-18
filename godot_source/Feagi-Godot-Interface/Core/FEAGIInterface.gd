@@ -19,11 +19,24 @@ func _init():
 
 ## Runs after _init
 func _ready():
-	initial_FEAGI_calls()
+	_initial_FEAGI_calls()
+	net.socket_state_changed.connect(_socket_changed_state)
 
+## mainly handles polling websocket
+func _process(_delta):
+	net.socket_status_poll()
 
 ## Calls to be made to FEAGI following initialization
 ## Put any calls here that need to be made for initial summary data to spawn initial UI elements
-func initial_FEAGI_calls() -> void:
+func _initial_FEAGI_calls() -> void:
 	FeagiRequests.refresh_morphology_list()
 	FeagiRequests.refresh_cortical_areas()
+
+
+
+## triggered whenever websocket changes state
+func _socket_changed_state(state: WebSocketPeer.State) -> void:
+	if state == WebSocketPeer.STATE_CLOSED:
+		set_process(false)
+
+
