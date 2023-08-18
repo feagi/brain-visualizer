@@ -28,7 +28,6 @@ var x = transform.origin.x
 var y = transform.origin.y
 var z = transform.origin.z
 var x_rotation = Vector3(13.3, 0.0, 0.0)
-var direction = Vector3(0, 0, 0)
 var velocity = Vector3(0, 0, 0)
 var flagged = false ## This allows space and del to be able to send data without being overwritten by spam "{}"
 var is_not_typing = true
