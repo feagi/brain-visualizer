@@ -15,6 +15,9 @@ const DEF_WEB_PORT: int = 8000
 const DEF_SOCKET_PORT: int = 9050
 const DEF_SOCKET_MAX_QUEUED_PACKETS: int = 10000000
 const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
+const DEF_SOCKET_BUFFER_SIZE: int = 10000000
+
+const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 
 signal socket_state_changed(state: WebSocketPeer.State)
 
@@ -38,6 +41,8 @@ var current_websocket_state: WebSocketPeer.State
 var _request_worker_parent: Node
 var _multithreading_enabled: bool # cannot be changed after init
 var _socket: WebSocketPeer
+var _cache_websocket_data: PackedByteArray
+
 
 ## Used to init the network interface
 ## Required before usage
@@ -75,11 +80,11 @@ func init_network(worker_parent_root: Node) -> void:
 
 	# init WebSocket
 	feagi_socket_address = feagi_socket_SSL + feagi_TLD + ":" + str(feagi_socket_port)
+	_log_socket_address()
 	_socket = WebSocketPeer.new()
 	_socket.connect_to_url(feagi_socket_address)
+	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 	
-
-
 
 
 ## Makes a GET API call to FEAGI which then runs the given function call (with optional pass through data)
@@ -100,6 +105,13 @@ func FEAGI_PUT(full_request_address: StringName, function_to_respond_to_FEAGI: C
 ## Makes a DELETE API call to FEAGI with given data which then runs the given function call (with optional pass through data)
 func FEAGI_DELETE(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, data_to_pass_through: Variant = null) -> void:
 	_API_FEAGI(full_request_address, HTTPClient.METHOD_DELETE , function_to_respond_to_FEAGI, null, data_to_pass_through)
+
+## attempts to send data over websocket
+func websocket_send(data: Variant) -> void:
+	if current_websocket_state != WebSocketPeer.STATE_OPEN:
+		push_warning("Unable to send data to closed socket!")
+		return
+	_socket.send((data.to_ascii_buffer()).compress(1))
 
 
 ## Makes a API call using an available [RequestWorker] (or if none are available, spawns one first)
@@ -133,16 +145,23 @@ func _log_connection_address() -> void:
 func _log_socket_address() -> void:
 	print("Using FEAGI websocket address " + feagi_socket_address)
 
-
 ## responsible for polling state of websocket, since its not event driven
-func _socket_status_poll() -> void:
+func socket_status_poll() -> void:
 	_socket.poll()
 	match _get_socket_state():
 		WebSocketPeer.STATE_OPEN:
-			pass
+			while _socket.get_available_packet_count():
+				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, FileAccess.CompressionMode.COMPRESSION_GZIP)
+				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
+					FeagiEvents.genome_was_reset.emit()  # notify that genome was updated
+				else:
+					# assume its visualization data
+					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
 		
-
-
+		WebSocketPeer.STATE_CLOSED:
+			var close_code: int = _socket.get_close_code()
+			var close_reason: String = _socket.get_close_reason()
+			push_warning("WebSocket closed with code: %d, reason %s. Clean: %s" % [close_code, close_reason, close_code != -1])
 
 ## Queries and returns the current socket state. If its changed, updates the cached state and emits a signal of so
 func _get_socket_state() -> WebSocketPeer.State:
