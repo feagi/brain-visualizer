@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=12 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -17,6 +17,16 @@ shader = ExtResource("5_sbo83")
 [sub_resource type="BoxMesh" id="BoxMesh_nfjpt"]
 material = SubResource("ShaderMaterial_h0j4q")
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jwpcr"]
+shading_mode = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_edosx"]
+material = SubResource("StandardMaterial3D_jwpcr")
+
+[sub_resource type="MultiMesh" id="MultiMesh_oeyfo"]
+transform_format = 1
+mesh = SubResource("BoxMesh_edosx")
+
 [node name="FeagiRoot" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -34,6 +44,7 @@ visible = false
 script = ExtResource("3_1xkbx")
 
 [node name="cortical_area_box" type="MeshInstance3D" parent="UI/Brain_Visualizer"]
+visible = false
 cast_shadow = 0
 gi_mode = 0
 mesh = SubResource("BoxMesh_nfjpt")
@@ -44,3 +55,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.1087, 76.0495, 177.384)
 script = ExtResource("4_62hvk")
 
 [node name="red_voxel" type="MultiMeshInstance3D" parent="UI/Brain_Visualizer"]
+multimesh = SubResource("MultiMesh_oeyfo")
