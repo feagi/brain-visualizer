@@ -11,15 +11,8 @@ background_mode = 1
 ambient_light_source = 2
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_h0j4q"]
+render_priority = 0
 shader = ExtResource("5_sbo83")
-shader_parameter/ballPos = Vector2(0.5, 0.5)
-shader_parameter/paddleHWidth = 0.1
-shader_parameter/paddlePosX = 0.5
-shader_parameter/isCurrentlyShocking = false
-shader_parameter/isCurrentlyRewarding = false
-shader_parameter/rewardColor = Vector4(1, 0, 0, 0)
-shader_parameter/screen_width = null
-shader_parameter/screen_height = null
 
 [sub_resource type="BoxMesh" id="BoxMesh_nfjpt"]
 material = SubResource("ShaderMaterial_h0j4q")
@@ -40,12 +33,12 @@ visible = false
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
 script = ExtResource("3_1xkbx")
 
-[node name="Camera3D" type="Camera3D" parent="UI/Brain_Visualizer"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.1087, 76.0495, 177.384)
-script = ExtResource("4_62hvk")
-
 [node name="cortical_area_box" type="MeshInstance3D" parent="UI/Brain_Visualizer"]
 cast_shadow = 0
 gi_mode = 0
 mesh = SubResource("BoxMesh_nfjpt")
 skeleton = NodePath("../../..")
+
+[node name="Camera3D" type="Camera3D" parent="UI/Brain_Visualizer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.1087, 76.0495, 177.384)
+script = ExtResource("4_62hvk")
