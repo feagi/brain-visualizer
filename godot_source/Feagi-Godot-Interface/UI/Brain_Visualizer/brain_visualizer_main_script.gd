@@ -2,12 +2,12 @@ extends Node3D
 var _shaderMat # EXPERIMENT
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
+#	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
 	_shaderMat = $cortical_area_box.mesh.material # EXPERIMENT
-	test()
+	FeagiEvents.retrieved_visualization_data.connect(test)
 
-func on_cortical_area_added(cortical_area: CorticalArea) -> void:
-	generate_cortical_area(cortical_area)
+#func on_cortical_area_added(cortical_area: CorticalArea) -> void:
+#	generate_cortical_area(cortical_area)
 
 func generate_cortical_area(cortical_area_data : CorticalArea):
 	var new_node = $cortical_area_box.duplicate()
@@ -17,8 +17,7 @@ func generate_cortical_area(cortical_area_data : CorticalArea):
 	new_node.transform.origin = Vector3((cortical_area_data.dimensions.x/2 + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions.z/2 + cortical_area_data.coordinates_3D.z))
 	add_child(new_node)
 
-func test():
-	var stored_value = FeagiCacheEvents.retrieved_visualization_data
+func test(stored_value):
 	if stored_value == null: # Checks if it's null. When it is, it clear red voxels
 		$red_voxel.multimesh.instance_count = 0
 		$red_voxel.multimesh.visible_instance_count = 0
