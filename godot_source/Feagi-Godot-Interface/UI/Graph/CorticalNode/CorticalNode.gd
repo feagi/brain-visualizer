@@ -49,7 +49,7 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
-	pass
+	queue_free()
 
 
 ## User hit the X button to attempt to delete the cortical area

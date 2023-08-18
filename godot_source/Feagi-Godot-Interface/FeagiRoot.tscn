@@ -12,6 +12,5 @@ script = ExtResource("1_43i4l")
 [node name="UI" type="Node" parent="."]
 
 [node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
-visible = false
 
 [node name="BrainVis" parent="UI" instance=ExtResource("3_hb3qg")]
