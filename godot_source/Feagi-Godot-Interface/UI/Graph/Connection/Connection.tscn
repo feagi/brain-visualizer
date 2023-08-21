@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://d3opaegpoum1r"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Connection/Connection_Button.gd" id="1_h0cl7"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Connection/Node_Connection.gd" id="1_tr5w1"]
+
+[node name="Node_Connection" type="Line2D"]
+joint_mode = 1
+begin_cap_mode = 2
+end_cap_mode = 2
+sharp_limit = 1.0
+script = ExtResource("1_tr5w1")
+
+[node name="Button" type="Button" parent="."]
+offset_left = 51.0
+offset_top = 91.0
+offset_right = 101.0
+offset_bottom = 141.0
+size_flags_horizontal = 4
+text = "0"
+script = ExtResource("1_h0cl7")

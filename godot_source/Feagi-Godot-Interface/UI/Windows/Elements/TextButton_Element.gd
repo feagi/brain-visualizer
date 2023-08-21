@@ -1,6 +1,5 @@
-extends TextureButton
-class_name TextureButton_Element
-
+extends Button
+class_name TextButton_Element
 
 func _ready():
 	VisConfig.UI_settings_changed.connect(_update_size)
