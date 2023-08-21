@@ -24,9 +24,34 @@ FeagiCache="*res://Feagi-Godot-Interface/Core/FEAGICache.gd"
 VisConfig="*res://Feagi-Godot-Interface/Core/VisConfig.gd"
 FeagiEvents="*res://Feagi-Godot-Interface/Core/FEAGIEvents.gd"
 
+[debug]
+
+gdscript/warnings/integer_division=0
+
 [input_devices]
 
 pointing/emulate_mouse_from_touch=false
+
+[memory]
+
+limits/message_queue/max_size_kb=1000000000
+
+[network]
+
+limits/packet_peer_stream/max_buffer_po2=100
+limits/debugger/max_chars_per_second=1000000
+limits/debugger/max_queued_messages=1000000000
+limits/debugger/max_errors_per_second=1000000000
+limits/debugger/max_warnings_per_second=1000000000
+limits/webrtc/max_channel_in_buffer_kb=1000000000
+limits/websocket_client/max_in_buffer_kb=1000000000
+limits/websocket_client/max_in_packets=1000000000
+limits/websocket_client/max_out_buffer_kb=1000000000
+limits/websocket_client/max_out_packets=1000000000
+limits/websocket_server/max_in_buffer_kb=1000000000
+limits/websocket_server/max_in_packets=1000000000
+limits/websocket_server/max_out_buffer_kb=1000000000
+limits/websocket_server/max_out_packets=1000000000
 
 [rendering]
 
