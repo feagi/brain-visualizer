@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/brain_visualizer_main_script.gd" id="3_1xkbx"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/renderer.gdshader" id="5_sbo83"]
+[ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -13,15 +14,15 @@ ambient_light_source = 2
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_h0j4q"]
 render_priority = 0
 shader = ExtResource("5_sbo83")
+shader_parameter/green_intensity = 1.0
+shader_parameter/red_intensity = 0.0
+shader_parameter/blue_intensity = 0.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_nfjpt"]
 material = SubResource("ShaderMaterial_h0j4q")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jwpcr"]
-shading_mode = 0
-
 [sub_resource type="BoxMesh" id="BoxMesh_edosx"]
-material = SubResource("StandardMaterial3D_jwpcr")
+material = ExtResource("7_jrrky")
 
 [sub_resource type="MultiMesh" id="MultiMesh_oeyfo"]
 transform_format = 1
