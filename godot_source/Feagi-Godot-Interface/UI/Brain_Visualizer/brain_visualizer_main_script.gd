@@ -2,12 +2,12 @@ extends Node3D
 var _shaderMat # EXPERIMENT
 # Called when the node enters the scene tree for the first time.
 func _ready():
-#	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
+	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
 	_shaderMat = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiEvents.retrieved_visualization_data.connect(test)
 
-#func on_cortical_area_added(cortical_area: CorticalArea) -> void:
-#	generate_cortical_area(cortical_area)
+func on_cortical_area_added(cortical_area: CorticalArea) -> void:
+	generate_cortical_area(cortical_area)
 
 func generate_cortical_area(cortical_area_data : CorticalArea):
 	var new_node = $cortical_area_box.duplicate()
