@@ -84,7 +84,7 @@ func init_network(worker_parent_root: Node) -> void:
 	_log_socket_address()
 	_socket = WebSocketPeer.new()
 	_socket.connect_to_url(feagi_socket_address)
-	_socket.set_max_queued_packets(10000000)
+#	_socket.set_max_queued_packets(10000000)
 	_socket.inbound_buffer_size = 10000000
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 	
