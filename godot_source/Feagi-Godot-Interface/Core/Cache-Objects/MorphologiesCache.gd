@@ -8,7 +8,7 @@ var available_morphologies: Dictionary:
 
 var _available_morphologies: Dictionary = {}
 
-# TODO add / remove / update morphologies
+# TODO add / update morphologies
 
 
 func remove_morphology(morphology_ID: StringName) -> void:

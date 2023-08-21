@@ -4,7 +4,6 @@ class_name MappingProperty
 
 const INT8_MAX: int = 2147483647 # This is likely the max supported int in vector3i, but you should NOT be getting this close anyways
 
-
 var morphology: StringName
 var scalar: Vector3i # must all be non-zero positive
 var post_synaptic_current_multiplier: float

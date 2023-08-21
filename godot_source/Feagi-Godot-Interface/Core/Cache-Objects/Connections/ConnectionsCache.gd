@@ -1,8 +1,6 @@
 extends Object
-class_name CorticalConnections
+class_name ConnectionsCache
 ## stores a forward and reverse dictionary for rapid connections lookup
-
-signal mass_update_connections(forward_with_counds: Dictionary)
 
 var forward_mappings_with_counts: Dictionary:
 	get:
@@ -15,31 +13,31 @@ var _forward_with_count: Dictionary = {} # cortical src -> dict of cortitcal dst
 func mass_set_connections(cortical_map: Dictionary) -> void:
 	# This function is not particuarly efficient. Too Bad!
 
-	var input_sources: Array[String] = cortical_map.keys()
-	var current_sources: Array[String] = _forward_with_count.keys()
-	var sources_to_add: Array[String] = FeagiUtils.find_missing_elements(input_sources, current_sources)
-	var sources_to_remove: Array[String] = FeagiUtils.find_missing_elements(current_sources, input_sources)
-	var sources_to_check: Array[String] = FeagiUtils.find_union(current_sources, input_sources)
+	var input_sources: Array = cortical_map.keys()
+	var current_sources: Array = _forward_with_count.keys()
+	var sources_to_add: Array = FeagiUtils.find_missing_elements(input_sources, current_sources)
+	var sources_to_remove: Array = FeagiUtils.find_missing_elements(current_sources, input_sources)
+	var sources_to_check: Array = FeagiUtils.find_union(current_sources, input_sources)
 	
 	# all connections where source is missing
 	for source in sources_to_add:
-		var destinations: Array[String] = cortical_map[source]
-		for destination in destinations:
+		var destinations: Dictionary = cortical_map[source]
+		for destination in destinations.keys():
 			add_connection(source, destination, cortical_map[source][destination])
 	
 	# all connections that need to be removed due to removed source
 	for source in sources_to_remove:
-		var destinations: Array[String] = _forward_with_count[source]
-		for destination in destinations:
+		var destinations: Dictionary = _forward_with_count[source]
+		for destination in destinations.keys():
 			remove_connection(source, destination)
 	
 	# check the source per destination
 	for source in sources_to_check:
-		var input_destinations: Array[String] = cortical_map[source].keys()
-		var current_destinations: Array[String] = _forward_with_count[source].keys()
-		var destinations_to_add: Array[String] = FeagiUtils.find_missing_elements(input_destinations, current_destinations)
-		var destinations_to_remove: Array[String] = FeagiUtils.find_missing_elements(current_destinations, input_destinations)
-		var destinations_to_check: Array[String] = FeagiUtils.find_union(current_destinations, input_destinations)
+		var input_destinations: Array = cortical_map[source].keys()
+		var current_destinations: Array = _forward_with_count[source].keys()
+		var destinations_to_add: Array = FeagiUtils.find_missing_elements(input_destinations, current_destinations)
+		var destinations_to_remove: Array = FeagiUtils.find_missing_elements(current_destinations, input_destinations)
+		var destinations_to_check: Array = FeagiUtils.find_union(current_destinations, input_destinations)
 
 		for destination_add in destinations_to_add:
 			add_connection(source, destination_add, cortical_map[source][destination_add])
