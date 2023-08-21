@@ -13,10 +13,17 @@ func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 func generate_cortical_area(cortical_area_data : CorticalArea):
 	var new_node = $cortical_area_box.duplicate() # Duplicate node
 	new_node.visible = true
+	var textbox = $blank_textbox.duplicate()
+	var viewport = textbox.get_node("SubViewport")
+	textbox.scale = Vector3(1,1,1)
+	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions.y, -1 * cortical_area_data.dimensions.z - cortical_area_data.coordinates_3D.z)
+	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.name))
+	textbox.set_texture(viewport.get_texture())
 	new_node.set_name(cortical_area_data.name)
 	new_node.scale = cortical_area_data.dimensions
 	new_node.transform.origin = Vector3((cortical_area_data.dimensions.x/2 + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions.z/2 + cortical_area_data.coordinates_3D.z))
 	add_child(new_node)
+	add_child(textbox)
 
 func test(stored_value):
 	if stored_value == null: # Checks if it's null. When it is, it clear red voxels
