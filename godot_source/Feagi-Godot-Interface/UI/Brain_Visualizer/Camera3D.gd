@@ -38,7 +38,7 @@ const CAMERA_TURN_SPEED = 200
 @export_range(0, 10, 0.01) var sensitivity : float = 3
 
 func _input(event):
-	if Input.get_mouse_mode() == Input.MOUSE_MODE_CONFINED_HIDDEN:
+	if Input.get_mouse_mode() == Input.MOUSE_MODE_HIDDEN:
 		if event is InputEventMouseMotion:
 			if Input.is_physical_key_pressed(KEY_SHIFT): # boost
 	#	        rotate_y(-event.relative.x * mouse_sensitivity)
@@ -68,7 +68,7 @@ func _input(event):
 	if event is InputEventMouseButton:
 		match event.button_index:
 			MOUSE_BUTTON_MIDDLE:
-				Input.set_mouse_mode(Input.MOUSE_MODE_CONFINED_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
+				Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
 			MOUSE_BUTTON_WHEEL_UP: # zoom in
 					var direction = Vector3(
 						0,
