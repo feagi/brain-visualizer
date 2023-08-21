@@ -10,6 +10,16 @@ var _available_morphologies: Dictionary = {}
 
 # TODO add / remove / update morphologies
 
+
+func remove_morphology(morphology_ID: StringName) -> void:
+	if morphology_ID not in _available_morphologies.keys():
+		push_error("Attemped to delete non-cached morphology %s, Skipping..." % [morphology_ID])
+		return
+	var deleting: Morphology = _available_morphologies[morphology_ID]
+	deleting.about_to_be_deleted.emit() # Tell all dependents this morphology is about to go
+	_available_morphologies.erase(morphology_ID)
+
+
 ## To update morphology listing given a dict with keys of morphology names and its value being the str type of morphology (NOT FULL OBJECT / DICTIONARY)
 func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -> void:
 	

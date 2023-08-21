@@ -2,6 +2,8 @@ extends Object
 class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
 
+signal about_to_be_deleted()
+
 enum MORPHOLOGY_TYPE {
     PATTERNS,
     VECTORS,
