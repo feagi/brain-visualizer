@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraph.gd" id="1_06pyj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/InputInterpreter.gd" id="3_64ero"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Logo/CBLogo.gd" id="5_n7656"]
-[ext_resource type="Texture2D" uid="uid://dq31tiat3fvlh" path="res://Feagi-Godot-Interface/UI/Resources/logo.png" id="5_tfar4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraphCenter.gd" id="4_g3mc4"]
+[ext_resource type="Texture2D" uid="uid://ckuqx7k365r6e" path="res://icon.svg" id="4_j21se"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_su1b5"]
 shader = ExtResource("3_svpbn")
@@ -29,12 +29,14 @@ script = ExtResource("3_64ero")
 
 [node name="Background" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_su1b5")
+clip_contents = true
 layout_mode = 0
 offset_right = 1153.0
 offset_bottom = 645.0
 
-[node name="Logo" type="Sprite2D" parent="."]
-position = Vector2(578, 324)
-scale = Vector2(0.4, 0.4)
-texture = ExtResource("5_tfar4")
-script = ExtResource("5_n7656")
+[node name="Center" type="Node2D" parent="Background"]
+position = Vector2(200, 200)
+script = ExtResource("4_g3mc4")
+
+[node name="Sprite2D" type="Sprite2D" parent="Background/Center"]
+texture = ExtResource("4_j21se")

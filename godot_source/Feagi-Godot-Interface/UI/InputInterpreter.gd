@@ -4,7 +4,7 @@ class_name InputInterpreter
 
 
 signal zoom_changed(new_zoom: float)
-signal pan_changed(new_pan: Vector2)  # Random Crits not included
+signal pan_changed(change_in_pan_normal: Vector2, change_in_pan_pixel: Vector2)  # Random Crits not included
 
 @export var zoom_limit_upper: float = 10
 @export var zoom_limit_lower: float = 2
@@ -21,16 +21,9 @@ var zoom_current: float:
 	set(v):
 		_zoom_current = FEAGIUtils.bounds(v, zoom_limit_lower, zoom_limit_upper)
 		zoom_changed.emit(_zoom_current)
-var pan_current: Vector2:
-	get: return _pan_current
-	set(v):
-		_pan_current = v
-		pan_changed.emit(v)
-
 var _is_panning: bool = false
 #var _touching_points: Dictionary = {}
 var _zoom_current: float = 1
-var _pan_current: Vector2 = Vector2(0.0,0.0)
 
 func _input(event):
 
@@ -101,7 +94,9 @@ func _handle_click(event: InputEventMouseButton) -> void:
 
 func _handle_mouse_move(event: InputEventMouseMotion) -> void:
 	if _is_panning:
-		pan_current = pan_current - ((event.relative * pan_speed) / VisConfig.screen_size)
+		var pan_delta_pixel: Vector2 = (event.relative * pan_speed)
+		var pan_delta_normalized: Vector2 = pan_delta_pixel * VisConfig.screen_size
+		pan_changed.emit(pan_delta_normalized, pan_delta_pixel)
 
 	
 
