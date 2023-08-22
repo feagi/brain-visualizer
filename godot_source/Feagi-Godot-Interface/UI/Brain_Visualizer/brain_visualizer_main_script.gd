@@ -19,7 +19,7 @@ func generate_cortical_area(cortical_area_data : CorticalArea):
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions.y, -1 * cortical_area_data.dimensions.z - cortical_area_data.coordinates_3D.z)
 	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.name))
 	textbox.set_texture(viewport.get_texture())
-	new_node.set_name(cortical_area_data.name)
+	new_node.set_name(cortical_area_data.cortical_ID)
 	new_node.scale = cortical_area_data.dimensions
 	new_node.transform.origin = Vector3((cortical_area_data.dimensions.x/2 + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions.z/2 + cortical_area_data.coordinates_3D.z))
 	add_child(new_node)

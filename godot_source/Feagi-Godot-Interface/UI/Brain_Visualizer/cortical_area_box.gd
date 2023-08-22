@@ -64,5 +64,5 @@ func _input(_event):
 	if Input.is_action_just_pressed("del"):
 		set_surface_override_material(0, global_material.deselected)
 	if Input.is_action_just_pressed("spacebar"): # Needs figure how to not send while typing
-		$"../../../FEAGIInterface".net.websocket_send(str(Godot_list.godot_list)) # GG Amir
+		$"../../../FEAGIInterface".net.websocket_send(str(Godot_list.godot_list))
 		print(Godot_list.godot_list)
