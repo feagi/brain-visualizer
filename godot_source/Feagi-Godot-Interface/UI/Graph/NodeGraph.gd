@@ -34,7 +34,7 @@ func _ready():
 func _apply_pan(new_pan: Vector2) -> void:
 	_panning = new_pan
 	_background_shader.set_shader_parameter("offset", new_pan)
-	_logo.set_background_position(new_pan)
+	#_logo.set_background_position(new_pan)
 
 func _apply_zoom(new_zoom: float) -> void:
 	# TODO renable zoom at some point
