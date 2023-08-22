@@ -15,9 +15,9 @@ func mass_set_connections(cortical_map: Dictionary) -> void:
 
 	var input_sources: Array = cortical_map.keys()
 	var current_sources: Array = _forward_with_count.keys()
-	var sources_to_add: Array = FeagiUtils.find_missing_elements(input_sources, current_sources)
-	var sources_to_remove: Array = FeagiUtils.find_missing_elements(current_sources, input_sources)
-	var sources_to_check: Array = FeagiUtils.find_union(current_sources, input_sources)
+	var sources_to_add: Array = FEAGIUtils.find_missing_elements(input_sources, current_sources)
+	var sources_to_remove: Array = FEAGIUtils.find_missing_elements(current_sources, input_sources)
+	var sources_to_check: Array = FEAGIUtils.find_union(current_sources, input_sources)
 	
 	# all connections where source is missing
 	for source in sources_to_add:
@@ -35,9 +35,9 @@ func mass_set_connections(cortical_map: Dictionary) -> void:
 	for source in sources_to_check:
 		var input_destinations: Array = cortical_map[source].keys()
 		var current_destinations: Array = _forward_with_count[source].keys()
-		var destinations_to_add: Array = FeagiUtils.find_missing_elements(input_destinations, current_destinations)
-		var destinations_to_remove: Array = FeagiUtils.find_missing_elements(current_destinations, input_destinations)
-		var destinations_to_check: Array = FeagiUtils.find_union(current_destinations, input_destinations)
+		var destinations_to_add: Array = FEAGIUtils.find_missing_elements(input_destinations, current_destinations)
+		var destinations_to_remove: Array = FEAGIUtils.find_missing_elements(current_destinations, input_destinations)
+		var destinations_to_check: Array = FEAGIUtils.find_union(current_destinations, input_destinations)
 
 		for destination_add in destinations_to_add:
 			add_connection(source, destination_add, cortical_map[source][destination_add])

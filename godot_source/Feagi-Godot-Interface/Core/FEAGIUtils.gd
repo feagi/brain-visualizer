@@ -1,4 +1,4 @@
-extends Node
+extends Object
 class_name FEAGIUtils
 ## A set of functions that are useful around the program. Treat this class as static
 
