@@ -11,7 +11,7 @@ var plasticity_flag: bool
 
 func _init(morphology_name: StringName, positive_scalar: Vector3i, current_multilpier: float, plasticity: bool):
     morphology = morphology_name
-    positive_scalar = Vector3i(FeagiUtils.bounds_int(positive_scalar.x, 1, INT8_MAX), FeagiUtils.bounds_int(positive_scalar.y, 1, INT8_MAX), FeagiUtils.bounds_int(positive_scalar.z, 1, INT8_MAX))
+    positive_scalar = Vector3i(FEAGIUtils.bounds_int(positive_scalar.x, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.y, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.z, 1, INT8_MAX))
     post_synaptic_current_multiplier = current_multilpier
     plasticity_flag = plasticity
 

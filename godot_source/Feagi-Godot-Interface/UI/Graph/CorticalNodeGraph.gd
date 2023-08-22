@@ -4,14 +4,14 @@ class_name CorticalNodeGraph
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
 
+
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
-var _connection_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/Connection.tscn")
 
 func _ready():
 	super._ready()
 	FeagiCacheEvents.cortical_area_added.connect(spawn_single_cortical_node)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical_node)
-	FeagiCacheEvents.cortical_areas_connected.connect(spawn_connection)
+	FeagiCacheEvents.cortical_areas_connected.connect(spawn_established_connection)
 
 
 
@@ -35,9 +35,10 @@ func delete_single_cortical_node(cortical_area: CorticalArea) -> void:
 	node.FEAGI_delete_cortical_area()
 	cortical_nodes.erase(cortical_area.cortical_ID)
 
-func spawn_connection(source_ID: StringName, destination_ID: StringName, mapping_count: int) -> void:
-	var connection: Node_Connection = _connection_prefab.instantiate()
+func spawn_established_connection(source_ID: StringName, destination_ID: StringName, mapping_count: int) -> void:
+	
 	var source: CorticalNode = cortical_nodes[source_ID]
 	var destination: CorticalNode = cortical_nodes[destination_ID]
-	connection.spawn_connected(source.connection_input, destination.connection_output, mapping_count, self)
-
+	var connection: EstablishConnection = EstablishConnection.new(source.connection_input, destination.connection_output, mapping_count)
+	_background_center.add_child(connection)
+	
