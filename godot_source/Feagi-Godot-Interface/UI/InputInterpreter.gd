@@ -9,12 +9,14 @@ signal pan_changed(change_in_pan_normal: Vector2, change_in_pan_pixel: Vector2) 
 @export var zoom_limit_upper: float = 10
 @export var zoom_limit_lower: float = 2
 @export var zoom_speed: float = 0.2
-@export var pan_speed: float = 1.0
+@export var pan_speed: float = 0.5
 
 @export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var mouse_alt_click_button: MouseButton = MOUSE_BUTTON_RIGHT
 @export var mouse_pan_button: MouseButton = MOUSE_BUTTON_MIDDLE
 @export var mouse_scroll_speed: float = 1.0
+
+@export var lock_mouse_while_panning: bool = true
 
 var zoom_current: float:
 	get: return _zoom_current
@@ -85,6 +87,11 @@ func _handle_click(event: InputEventMouseButton) -> void:
 		mouse_pan_button:
 			# if pan button is selected
 			_is_panning = event.pressed
+			if lock_mouse_while_panning:
+				if event.pressed:
+					Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+				else:
+					Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		MOUSE_BUTTON_WHEEL_DOWN:
 			# scroll down
 			zoom_current =  _zoom_current + zoom_speed
