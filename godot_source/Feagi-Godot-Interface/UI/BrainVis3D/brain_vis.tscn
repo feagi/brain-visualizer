@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8jciv3hkn6ub"]
-
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/BrainVis3D/demo.gd" id="1_c3e67"]
-
-[node name="BrainVis" type="Node"]
-script = ExtResource("1_c3e67")

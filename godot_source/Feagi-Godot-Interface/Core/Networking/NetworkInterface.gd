@@ -38,6 +38,7 @@ var num_workers_to_keep_available: int
 var workers_available: Array[RequestWorker]
 var current_websocket_state: WebSocketPeer.State
 
+
 var _request_worker_parent: Node
 var _multithreading_enabled: bool # cannot be changed after init
 var _socket: WebSocketPeer
@@ -83,6 +84,7 @@ func init_network(worker_parent_root: Node) -> void:
 	_log_socket_address()
 	_socket = WebSocketPeer.new()
 	_socket.connect_to_url(feagi_socket_address)
+	_socket.inbound_buffer_size = 10000000
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 	
 
@@ -151,7 +153,7 @@ func socket_status_poll() -> void:
 	match _get_socket_state():
 		WebSocketPeer.STATE_OPEN:
 			while _socket.get_available_packet_count():
-				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, FileAccess.CompressionMode.COMPRESSION_GZIP)
+				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
 					FeagiEvents.genome_was_reset.emit()  # notify that genome was updated
 				else:
