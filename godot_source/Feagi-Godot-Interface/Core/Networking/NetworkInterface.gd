@@ -163,6 +163,8 @@ func socket_status_poll() -> void:
 		WebSocketPeer.STATE_CLOSED:
 			var close_code: int = _socket.get_close_code()
 			var close_reason: String = _socket.get_close_reason()
+			_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+			FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii())) # Add to erase neurons
 			push_warning("WebSocket closed with code: %d, reason %s. Clean: %s" % [close_code, close_reason, close_code != -1])
 
 ## Queries and returns the current socket state. If its changed, updates the cached state and emits a signal of so
