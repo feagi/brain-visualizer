@@ -22,7 +22,7 @@ func spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
 	if cortical_area.is_coordinates_2D_available:
 		offset = cortical_area.coordinates_2D
 	else:
-		offset = VisConfig.screen_size / 2.0
+		offset = Vector2(0.0,0.0)
 	_background_center.add_child(cortical_node)
 	cortical_node.setup(cortical_area, offset)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
