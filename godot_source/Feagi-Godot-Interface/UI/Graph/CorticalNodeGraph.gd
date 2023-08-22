@@ -18,6 +18,7 @@ func _ready():
 ## Spawns a cortical Node, should only be called via FEAGI
 func spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()
+	cortical_node.user_started_connection_from.connect(_user_starting_drag_from)
 	var offset: Vector2
 	if cortical_area.is_coordinates_2D_available:
 		offset = cortical_area.coordinates_2D
@@ -41,4 +42,7 @@ func spawn_established_connection(source_ID: StringName, destination_ID: StringN
 	var destination: CorticalNode = cortical_nodes[destination_ID]
 	var connection: EstablishConnection = EstablishConnection.new(source, destination, mapping_count)
 	_background_center.add_child(connection)
-	
+
+func _user_starting_drag_from(cortical_area: CorticalNode) -> void:
+	print("dsda")
+	DraggingToDestinationConnection.new(cortical_area, self)

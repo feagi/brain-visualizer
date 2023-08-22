@@ -29,3 +29,14 @@ var _cortical_node_parent: CorticalNode
 
 func _ready():
 	_cortical_node_parent = get_parent()
+	pressed.connect(_pressed)
+	if button_side == CorticalIO.OUTPUT:
+		action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+
+func _pressed():
+	match button_side:
+		CorticalIO.OUTPUT:
+			print("waffle")
+			_cortical_node_parent.user_started_connection_from.emit(_cortical_node_parent)
+			
+

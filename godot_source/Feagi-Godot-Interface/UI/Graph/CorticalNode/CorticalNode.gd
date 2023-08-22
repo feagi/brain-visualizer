@@ -8,6 +8,8 @@ enum ConnectionAvailibility {
 	OUTPUT_ONLY,
 }
 
+signal user_started_connection_from(cortical_area: CorticalNode)
+
 var cortical_area_name: StringName:
 	get:
 		if(_cortical_area_ref):
@@ -24,14 +26,12 @@ var connection_input: ConnectionButton_Point:
 var connection_output: ConnectionButton_Point:
 	get: return _connection_output
 
-
-
-
 var _cortical_area_ref: CorticalArea
 var _title_bar: TitleBar
 var _cortical_name_text: Label_Element
 var _connection_input: ConnectionButton_Point
 var _connection_output: ConnectionButton_Point
+
 
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
@@ -70,3 +70,4 @@ func _on_title_bar_drag(_current_position: Vector2, delta_offset: Vector2) -> vo
 	position = position + delta_offset
 	_connection_input.moved.emit()
 	_connection_output.moved.emit()
+
