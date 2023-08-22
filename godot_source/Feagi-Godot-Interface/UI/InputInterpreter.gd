@@ -16,7 +16,7 @@ signal pan_changed(change_in_pan_normal: Vector2, change_in_pan_pixel: Vector2) 
 @export var mouse_pan_button: MouseButton = MOUSE_BUTTON_MIDDLE
 @export var mouse_scroll_speed: float = 1.0
 
-@export var lock_mouse_while_panning: bool = true
+@export var lock_mouse_while_panning: bool = false
 
 var zoom_current: float:
 	get: return _zoom_current
