@@ -58,6 +58,7 @@ func add_connection(cortical_source_ID: StringName, cortical_destination_ID: Str
 func remove_connection(cortical_source_ID: StringName, cortical_destination_ID: StringName) -> void:
 	_remove_forward(cortical_source_ID, cortical_destination_ID)
 	_remove_backward(cortical_source_ID, cortical_destination_ID)
+	FeagiCacheEvents.cortical_areas_disconnected.emit(cortical_source_ID, cortical_destination_ID)
 
 ## Edits the number of mappings a particular conneciton has
 func edit_connection_mapping_count(cortical_source_ID: StringName, cortical_destination_ID: StringName, number_of_mappings: int) -> void:
@@ -81,6 +82,27 @@ func does_connection_exist(cortical_source_ID: StringName, cortical_destination_
 	if cortical_source_ID not in _forward_with_count.keys(): return false
 	if cortical_destination_ID not in _forward_with_count[cortical_source_ID].keys(): return false
 	return true
+
+func get_all_efferent_areas(cortical_source_ID: StringName) -> Array:
+	if cortical_source_ID not in _forward_with_count.keys():
+		return []
+	return _forward_with_count[cortical_source_ID].keys()
+
+func get_all_afferent_areas(destination_source_ID: StringName) -> Array:
+	if destination_source_ID not in _backward.keys():
+		return []
+	return _backward[destination_source_ID]
+
+## if a cortical Area is deleted, FEAGI handles conneciton deletion automatically, but we need to inform all UI elements to delete all connections to the now defunct cortical area
+func cortical_area_deleted(cortical_ID: StringName) -> void:
+	var efferents: Array = get_all_efferent_areas(cortical_ID)
+	for e in efferents:
+		remove_connection(cortical_ID, e)
+	
+	var afferents: Array = get_all_afferent_areas(cortical_ID)
+	for a in afferents:
+		remove_connection(a, cortical_ID)
+
 
 func _add_forward(source_cortical_ID: StringName, destination_cortical_ID: StringName, number_of_mappings: int) -> void:
 	if source_cortical_ID not in _forward_with_count.keys():
@@ -114,11 +136,11 @@ func _remove_backward(source_cortical_ID: StringName, destination_cortical_ID: S
 		push_error("Unable to remove nonexistant destination cortical ID %s from backward connection dict!" % [source_cortical_ID])
 		return
 	
-	if source_cortical_ID not in _backward[destination_cortical_ID].keys():
+	if source_cortical_ID not in _backward[destination_cortical_ID]:
 		push_error("Unable to remove nonexistant source cortical ID %s from backward connection dict!" % [destination_cortical_ID])
 		return
 
 	_backward[destination_cortical_ID].erase(source_cortical_ID)
-	if _backward[destination_cortical_ID] == {}:
+	if _backward[destination_cortical_ID] == []:
 		_backward.erase(destination_cortical_ID)
 

@@ -29,9 +29,8 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
+	FeagiCache.connections_cache.cortical_area_deleted(deleted_cortical_ID)
 	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
-
-
 
 
 
