@@ -19,6 +19,12 @@ var cortical_area_ID: StringName:
 		if(_cortical_area_ref):
 			return _cortical_area_ref.cortical_ID
 		return "ERROR NOT SETUP"
+var connection_input: ConnectionButton_Point:
+	get: return _connection_input
+var connection_output: ConnectionButton_Point:
+	get: return _connection_output
+
+
 
 
 var _cortical_area_ref: CorticalArea
