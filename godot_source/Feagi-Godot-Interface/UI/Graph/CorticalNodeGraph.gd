@@ -39,6 +39,6 @@ func spawn_established_connection(source_ID: StringName, destination_ID: StringN
 	
 	var source: CorticalNode = cortical_nodes[source_ID]
 	var destination: CorticalNode = cortical_nodes[destination_ID]
-	var connection: EstablishConnection = EstablishConnection.new(source.connection_input, destination.connection_output, mapping_count)
+	var connection: EstablishConnection = EstablishConnection.new(source, destination, mapping_count)
 	_background_center.add_child(connection)
 	
