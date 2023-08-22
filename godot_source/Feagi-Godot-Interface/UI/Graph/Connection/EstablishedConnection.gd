@@ -24,6 +24,8 @@ func _init(start_node: CorticalNode, end_node: CorticalNode, num_mappings: int):
     _start_connector.moved.connect(_start_connection_point_moved)
     _end_connector.moved.connect(_end_connection_point_moved)
     _button.update_position(points)
+    FeagiCacheEvents.cortical_areas_disconnected.connect(_check_if_connection_is_deleted)
+    FeagiCacheEvents.cortical_areas_connection_modified.connect(_check_if_connection_is_modified)
 
 
 func _start_connection_point_moved():
@@ -37,3 +39,7 @@ func _end_connection_point_moved():
 func _check_if_connection_is_deleted(source_cortical_area: StringName, destination_cortical_area: StringName):
     if source_cortical_area == _source_cortical_area_ID and destination_cortical_area == _destination_cortical_area_ID:
         queue_free()
+
+func _check_if_connection_is_modified(source_cortical_area: StringName, destination_cortical_area: StringName, number_of_mappings: int):
+    if source_cortical_area == _source_cortical_area_ID and destination_cortical_area == _destination_cortical_area_ID:
+        _button.text = str(number_of_mappings)
