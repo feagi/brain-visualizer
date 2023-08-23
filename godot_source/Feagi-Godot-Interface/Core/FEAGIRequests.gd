@@ -41,5 +41,6 @@ func refresh_connection_list() -> void:
 func refresh_delay_between_bursts() -> void:
 	_feagi_interface.calls.GET_BU_stimulationPeriod()
 
-
+func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
+	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)
 
