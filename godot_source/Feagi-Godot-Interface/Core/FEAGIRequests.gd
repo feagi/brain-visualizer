@@ -4,8 +4,7 @@ extends Node
 ## Try to use the functions here to call feagi actions instead of through FEAGIInterface
 
 
-var _feagi_interface: FEAGIInterface # MUST be set ASAP or the below will crash!
-
+var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below will crash!
 
 ################################ Cortical Areas #################################
 
@@ -35,4 +34,12 @@ func refresh_morphology_list() -> void:
 ## NOTE FOR STARTUP: This should be called after cortical areas have been loaded into memory, otherwise cortical ID references here will be invalid
 func refresh_connection_list() -> void:
 	_feagi_interface.calls.GET_GE_corticalMap()
+
+################################# FEAGI General #################################
+
+
+func refresh_delay_between_bursts() -> void:
+	_feagi_interface.calls.GET_BU_stimulationPeriod()
+
+
 

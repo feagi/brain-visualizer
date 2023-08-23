@@ -1,6 +1,6 @@
 [gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/GrowingPanel.gd" id="1_3rruv"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_r6g23"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
 [ext_resource type="Texture2D" uid="uid://b8qrpcpsbex3x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="4_8o5ld"]
@@ -12,9 +12,9 @@
 [ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
 
 [node name="TopBar" type="Panel"]
-offset_right = 1222.0
-offset_bottom = 61.0
-script = ExtResource("1_3rruv")
+offset_right = 1220.0
+offset_bottom = 105.0
+script = ExtResource("1_f5hja")
 left_pixel_gap = 10
 right_pixel_gap = 10
 top_pixel_gap = 10

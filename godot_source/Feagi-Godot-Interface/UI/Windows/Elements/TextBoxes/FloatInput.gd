@@ -5,6 +5,7 @@ class_name FloatInput
 # useful properties inherited
 # editable
 # max_length
+# TODO: Bounds - limit number length
 
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
@@ -27,6 +28,11 @@ func _ready():
 	_set_visible_text(initial_float)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+
+## Used to update the float value externally programatically (IE not from the user)
+func external_update_float(new_float: float) -> void:
+	_previous_float = new_float
+	_set_visible_text(new_float)
 
 ## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
 func toggle_signaling_up(enable: bool) -> void:

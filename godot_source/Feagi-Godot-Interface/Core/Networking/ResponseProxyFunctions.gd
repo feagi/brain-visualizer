@@ -27,10 +27,15 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 	FeagiCache.cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
 	FeagiRequests.refresh_connection_list()
 
+func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	FeagiCache.delay_between_bursts = _body_to_float(response_body)
+
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
 	FeagiCache.connections_cache.cortical_area_deleted(deleted_cortical_ID)
 	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
+
+
 
 
 
@@ -40,3 +45,6 @@ func _body_to_string_array(response_body: PackedByteArray) -> PackedStringArray:
 
 func _body_to_dictionary(response_body: PackedByteArray) -> Dictionary:
 	return JSON.parse_string(response_body.get_string_from_utf8())
+
+func _body_to_float(response_body: PackedByteArray) -> float:
+	return (str(response_body.get_string_from_utf8())).to_float()
