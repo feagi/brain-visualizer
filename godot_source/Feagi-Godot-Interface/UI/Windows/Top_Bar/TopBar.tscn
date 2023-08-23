@@ -12,8 +12,8 @@
 [ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
 
 [node name="TopBar" type="Panel"]
-offset_right = 1141.0
-offset_bottom = 99.0
+offset_right = 1094.0
+offset_bottom = 118.0
 script = ExtResource("1_f5hja")
 left_pixel_gap = 10
 right_pixel_gap = 10
