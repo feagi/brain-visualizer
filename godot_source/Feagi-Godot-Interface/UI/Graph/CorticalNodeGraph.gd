@@ -51,5 +51,5 @@ func _user_starting_drag_from(cortical_area: CorticalNode) -> void:
 	DraggingToDestinationConnection.new(cortical_area, self)
 
 ## Used to determine spawn location of cortical nodes with no established location
-func _algorithm_cortical_area_spawn_location(cortical_node: CorticalNode) -> Vector2:
-	var type: StringName =   cortical_node.cortical_area_ref.group
+#func _algorithm_cortical_area_spawn_location(cortical_node: CorticalNode) -> Vector2:
+#	var cortical_type: StringName =   str(cortical_node.cortical_area_ref.group)
