@@ -17,7 +17,10 @@ layout_mode = 1
 offset_top = -40.0
 offset_right = 175.0
 offset_bottom = 0.0
+mouse_normal_click_button = 1
+title_gap = 0
 title = "ID"
+automatic_setup = true
 
 [node name="Cortical_Name" type="Label" parent="."]
 layout_mode = 1
