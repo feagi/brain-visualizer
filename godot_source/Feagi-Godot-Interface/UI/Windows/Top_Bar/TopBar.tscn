@@ -156,3 +156,5 @@ texture_normal = ExtResource("10_l8p1c")
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("5_14sro")
+
+[connection signal="pressed" from="HBoxContainer/TU_Button" to="HBoxContainer/TU_Button" method="_on_pressed_TU_Button"]

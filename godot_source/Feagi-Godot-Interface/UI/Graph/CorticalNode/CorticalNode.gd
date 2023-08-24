@@ -69,7 +69,6 @@ func _on_title_bar_change_size() -> void:
 	pass
 
 func _on_title_bar_drag(_current_position: Vector2, delta_offset: Vector2) -> void:
-	position = position + delta_offset
 	_connection_input.moved.emit()
 	_connection_output.moved.emit()
 

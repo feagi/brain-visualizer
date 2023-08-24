@@ -16,6 +16,12 @@ signal drag_finished(current_position: Vector2)
 	get: return $Title_Text.text
 	set(v): $Title_Text.text = v
 
+## if True, will attempt to automatically set up dragging behavior on parent window
+@export var automatic_setup_dragging: bool = true
+
+## if True, will attempt to automatically set up closing behavior on parent window
+@export var automatic_setup_closing: bool = true
+
 var is_dragging: bool:
 	get: return _is_dragging
 	set(v):
@@ -31,6 +37,7 @@ var is_dragging: bool:
 
 var _is_mousing_over: bool = false
 var _is_dragging: bool = false
+var _parent: Control
 
 
 func _ready():
@@ -41,6 +48,17 @@ func _ready():
 	mouse_exited .connect(_mouse_leave)
 
 	_recalculate_title_bar_min_width()
+	
+	if automatic_setup_dragging or automatic_setup_closing:
+		_parent = get_parent()
+
+	if automatic_setup_dragging:
+		dragged.connect(_auto_drag_move_parent)
+	
+	if automatic_setup_closing:
+		close_pressed.connect(_auto_close_parent)
+	
+
 
 func _input(event):
 
@@ -100,3 +118,11 @@ func _dragging(drag: InputEventMouseMotion) -> void:
 
 func _end_drag() -> void:
 	drag_finished.emit(position)
+
+## IF auto-setup-dragging is enabled, responsible for moving parent around
+func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -> void:
+	_parent.position = _parent.position + delta_offset
+
+## IF auto-setup-closing is enabled, responsible for moving parent around
+func _auto_close_parent() -> void:
+	_parent.queue_free()

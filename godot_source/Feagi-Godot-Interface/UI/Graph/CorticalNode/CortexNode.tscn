@@ -18,6 +18,7 @@ offset_top = -40.0
 offset_right = 175.0
 offset_bottom = 0.0
 title = "ID"
+automatic_setup_closing = false
 
 [node name="Cortical_Name" type="Label" parent="."]
 layout_mode = 1
