@@ -4,7 +4,6 @@ class_name IntInput
 
 # useful properties inherited
 # editable
-# max_length
 
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
@@ -19,6 +18,13 @@ signal int_confirmed(new_int: int)
 @export var prefix: String = ""
 ## what to add after the int
 @export var suffix: String = ""
+@export var max_value: int = 9999999999
+@export var min_value: int = -9999999999
+
+var current_int: int:
+	get: return _previous_int
+	set(v):
+		external_update_int(v)
 
 var _previous_int: int
 
@@ -27,6 +33,11 @@ func _ready():
 	_set_visible_text(initial_int)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+
+## Used to update the float value externally programatically (IE not from the user)
+func external_update_int(new_int: int) -> void:
+	_previous_int = new_int
+	_set_visible_text(new_int)
 
 ## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
 func toggle_signaling_up(enable: bool) -> void:
@@ -46,9 +57,9 @@ func _emit_if_text_changed() -> void:
 	if !text.is_valid_int():
 		_set_visible_text(_previous_int)
 		return
-	if text.to_int() == _previous_int:
+	if text.to_float() == _previous_int:
 		return
-	_previous_int = text.to_int()
+	_previous_int = FEAGIUtils.bounds_int(text.to_int(), min_value, max_value)
 	int_confirmed.emit(_previous_int)
 	_set_visible_text(_previous_int)
 
