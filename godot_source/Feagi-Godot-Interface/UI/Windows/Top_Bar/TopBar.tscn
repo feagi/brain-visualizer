@@ -1,16 +1,15 @@
-[gd_scene load_steps=12 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_r6g23"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://b8qrpcpsbex3x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="4_8o5ld"]
+[ext_resource type="Texture2D" uid="uid://dlvyvsgqjgiy8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="4_8o5ld"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_14sro"]
-[ext_resource type="Texture2D" uid="uid://b0wjhkmeoxjgx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/eye.png" id="6_1gvid"]
-[ext_resource type="Texture2D" uid="uid://dumxnv0fvc2y0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
-[ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
-[ext_resource type="Texture2D" uid="uid://dii187rhiyl8n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
-[ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
-[ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3fField.tscn" id="11_2uqyc"]
+[ext_resource type="Texture2D" uid="uid://cq4qq2c3iu2pc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/eye.png" id="6_1gvid"]
+[ext_resource type="Texture2D" uid="uid://bb6o1cr2v3dc3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
+[ext_resource type="Texture2D" uid="uid://du6p7ktr5pjm1" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
+[ext_resource type="Texture2D" uid="uid://dudtwvr2512vr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
+[ext_resource type="Texture2D" uid="uid://cg5lesvva182j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
 
 [node name="TopBar" type="Panel"]
 offset_right = 1094.0
@@ -157,26 +156,3 @@ texture_normal = ExtResource("10_l8p1c")
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("5_14sro")
-
-[node name="Vector3fField" parent="." instance=ExtResource("11_2uqyc")]
-layout_mode = 0
-offset_left = -24.0
-offset_top = 393.0
-offset_right = 239.0
-offset_bottom = 424.0
-label_x_text = null
-label_y_text = null
-label_z_text = null
-float_x_prefix = null
-float_y_prefix = null
-float_z_prefix = null
-float_x_suffix = null
-float_y_suffix = null
-float_z_suffix = null
-float_x_max = null
-float_y_max = null
-float_z_max = null
-float_x_min = null
-float_y_min = null
-float_z_min = null
-initial_vector = null
