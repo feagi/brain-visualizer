@@ -125,4 +125,5 @@ func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -
 
 ## IF auto-setup-closing is enabled, responsible for moving parent around
 func _auto_close_parent() -> void:
-	_parent.queue_free()
+	_parent.visible = false
+#	_parent.queue_free() # Temporary. This is useful for duplicated/JSON. We aren't using it
