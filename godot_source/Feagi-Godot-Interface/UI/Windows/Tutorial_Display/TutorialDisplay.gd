@@ -1,4 +1,4 @@
-extends GrowingPanel
+extends Panel
 class_name TutorialDisplay
 
 
