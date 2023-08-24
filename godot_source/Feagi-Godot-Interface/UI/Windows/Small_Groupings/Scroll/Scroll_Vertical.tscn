@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://cujhi16cmpffu"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/BaseScroll.gd" id="1_mgl7a"]
+
+[node name="Scroll_Vertical" type="ScrollContainer"]
+offset_right = 102.0
+offset_bottom = 92.0
+script = ExtResource("1_mgl7a")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
