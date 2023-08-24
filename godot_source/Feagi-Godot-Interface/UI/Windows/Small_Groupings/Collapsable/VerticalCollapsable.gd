@@ -10,6 +10,10 @@ const TRIANGLE_LEFT: CompressedTexture2D = preload("res://Feagi-Godot-Interface/
 @export var prefab_to_spawn: PackedScene
 @export var section_text: StringName
 
+## The actual node that is being toggled on and off
+var collapsing_node: Control:
+	get: return _collapsing_node
+
 ## Whether the collapsible section is open (or collapsed)
 var is_open: bool:
 	get: return _is_open
