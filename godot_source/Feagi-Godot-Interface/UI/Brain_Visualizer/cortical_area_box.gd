@@ -15,6 +15,14 @@ func _on_visible_on_screen_notifier_3d_screen_entered():
 
 func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	var name_fetch = get_name().rsplit("*")
+	if $"../../Windows/Quick_Connect".visible:
+		if event is InputEventMouseButton and event.pressed:
+			if $"../../Windows/Quick_Connect/source".text == "Select a cortical":
+				$"../../Windows/Quick_Connect/source".text = name_fetch[0]
+				set_surface_override_material(0, global_material.glow)
+			if $"../../Windows/Quick_Connect/destination".text == "Select a cortical":
+				$"../../Windows/Quick_Connect/destination".text = name_fetch[0]
+				set_surface_override_material(0, global_material.destination)
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
 			if get_surface_override_material(0) == global_material.selected:
