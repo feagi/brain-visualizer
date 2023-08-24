@@ -12,6 +12,13 @@ var _view_toggle_button: TextureButton_Element
 var _view_toggle_label: Label_Element
 var _tutorial_button: TextureButton_Element
 
+var localize_refresh_rate: StringName
+var localize_neuronal_cirtcuits: StringName
+var localize_cortical_areas: StringName
+var localize_neuron_morphologies: StringName
+var localize_toggle_mode: Array[StringName]
+var localize_tutorials: StringName
+
 
 func _ready():
 	super._ready()

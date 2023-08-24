@@ -1,9 +1,8 @@
-[gd_scene load_steps=8 format=3 uid="uid://1p2hhnitls41"]
+[gd_scene load_steps=7 format=3 uid="uid://1p2hhnitls41"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraph.gd" id="1_06pyj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/InputInterpreter.gd" id="3_64ero"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/FocusRelease.gd" id="4_828ui"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraphCenter.gd" id="4_g3mc4"]
 [ext_resource type="Texture2D" uid="uid://ckuqx7k365r6e" path="res://icon.svg" id="4_j21se"]
 
@@ -34,7 +33,7 @@ clip_contents = true
 layout_mode = 0
 offset_right = 1153.0
 offset_bottom = 645.0
-script = ExtResource("4_828ui")
+focus_mode = 2
 
 [node name="Center" type="Node2D" parent="Background"]
 position = Vector2(200, 200)
