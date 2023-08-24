@@ -1,5 +1,11 @@
 extends GrowingPanel
-class_name TutorialBar
 
 func _ready():
-	pass # Replace with function body.
+	$TitleBar.get_node("Title_Text").text = "Tutorial Menu"
+
+
+func _on_tu_button_pressed():
+	if visible:
+		visible = false
+	else:
+		visible = true
