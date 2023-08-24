@@ -20,6 +20,13 @@ signal float_confirmed(new_float: float)
 @export var prefix: String = ""
 ## what to add after the float
 @export var suffix: String = ""
+@export var max_value: float = 9999999999.0
+@export var min_value: float = -9999999999.0
+
+var current_float: float:
+	get: return _previous_float
+	set(v):
+		external_update_float(v)
 
 var _previous_float: float
 
@@ -54,7 +61,7 @@ func _emit_if_text_changed() -> void:
 		return
 	if text.to_float() == _previous_float:
 		return
-	_previous_float = text.to_float()
+	_previous_float = FEAGIUtils.bounds(text.to_float(), min_value, max_value)
 	float_confirmed.emit(_previous_float)
 	_set_visible_text(_previous_float)
 
