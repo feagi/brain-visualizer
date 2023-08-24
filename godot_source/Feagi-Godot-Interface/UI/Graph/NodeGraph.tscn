@@ -33,6 +33,7 @@ clip_contents = true
 layout_mode = 0
 offset_right = 1153.0
 offset_bottom = 645.0
+focus_mode = 2
 
 [node name="Center" type="Node2D" parent="Background"]
 position = Vector2(200, 200)

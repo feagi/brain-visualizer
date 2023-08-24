@@ -5,9 +5,7 @@ class_name CorticalAreasCache
 var cortical_areas: Dictionary:
 	get: return _cortical_areas
 
-
 var _cortical_areas: Dictionary = {}
-
 
 # TODO add / update cortical areas
 

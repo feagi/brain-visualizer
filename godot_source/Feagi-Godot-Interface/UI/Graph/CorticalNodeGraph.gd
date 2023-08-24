@@ -3,8 +3,9 @@ class_name CorticalNodeGraph
 
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
+@export var algorithm_cortical_area_spacing: Vector2i =  Vector2i(10,6)
 
-
+var _cortical_node_algorithm_positions: Dictionary = {}
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
 
 func _ready():
@@ -12,6 +13,9 @@ func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(spawn_single_cortical_node)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical_node)
 	FeagiCacheEvents.cortical_areas_connected.connect(spawn_established_connection)
+
+	for cortical_type_str in CorticalArea.CORTICAL_AREA_TYPE.keys():
+		_cortical_node_algorithm_positions[cortical_type_str] = []
 
 
 
@@ -37,7 +41,6 @@ func delete_single_cortical_node(cortical_area: CorticalArea) -> void:
 	cortical_nodes.erase(cortical_area.cortical_ID)
 
 func spawn_established_connection(source_ID: StringName, destination_ID: StringName, mapping_count: int) -> void:
-	
 	var source: CorticalNode = cortical_nodes[source_ID]
 	var destination: CorticalNode = cortical_nodes[destination_ID]
 	var connection: EstablishConnection = EstablishConnection.new(source, destination, mapping_count)
@@ -46,3 +49,7 @@ func spawn_established_connection(source_ID: StringName, destination_ID: StringN
 func _user_starting_drag_from(cortical_area: CorticalNode) -> void:
 	print("dsda")
 	DraggingToDestinationConnection.new(cortical_area, self)
+
+## Used to determine spawn location of cortical nodes with no established location
+#func _algorithm_cortical_area_spawn_location(cortical_node: CorticalNode) -> Vector2:
+#	var cortical_type: StringName =   str(cortical_node.cortical_area_ref.group)

@@ -25,6 +25,8 @@ var connection_input: ConnectionButton_Point:
 	get: return _connection_input
 var connection_output: ConnectionButton_Point:
 	get: return _connection_output
+var cortical_area_ref: CorticalArea:
+	get: return _cortical_area_ref
 
 var _cortical_area_ref: CorticalArea
 var _title_bar: TitleBar
@@ -67,7 +69,6 @@ func _on_title_bar_change_size() -> void:
 	pass
 
 func _on_title_bar_drag(_current_position: Vector2, delta_offset: Vector2) -> void:
-	position = position + delta_offset
 	_connection_input.moved.emit()
 	_connection_output.moved.emit()
 

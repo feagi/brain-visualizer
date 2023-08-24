@@ -30,7 +30,8 @@ func _process(_delta):
 ## Put any calls here that need to be made for initial summary data to spawn initial UI elements
 func _initial_FEAGI_calls() -> void:
 	FeagiRequests.refresh_morphology_list()
-	FeagiRequests.refresh_cortical_areas() # This causes a refresh of connections afterwards
+	FeagiRequests.refresh_cortical_areas() # This also causes a refresh of connections afterwards
+	FeagiRequests.refresh_delay_between_bursts()
 
 
 

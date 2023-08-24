@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=17 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -6,8 +6,9 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/renderer.gdshader" id="5_sbo83"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://pq2qv50v863l" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://chkismv2ut032" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
+[ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -45,9 +46,9 @@ script = ExtResource("1_43i4l")
 [node name="UI" type="Node" parent="."]
 
 [node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
+visible = false
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
-visible = false
 script = ExtResource("3_1xkbx")
 
 [node name="blank_textbox" type="Sprite3D" parent="UI/Brain_Visualizer"]
@@ -105,6 +106,10 @@ script = ExtResource("4_62hvk")
 
 [node name="red_voxel" type="MultiMeshInstance3D" parent="UI/Brain_Visualizer"]
 multimesh = SubResource("MultiMesh_oeyfo")
+
+[node name="Windows" type="Node" parent="UI"]
+
+[node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
