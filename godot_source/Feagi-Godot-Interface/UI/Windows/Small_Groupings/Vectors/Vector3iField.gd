@@ -1,7 +1,7 @@
 extends BoxContainer
 class_name Vector3iField
 
-signal user_updated_vector(new_vector3: Vector3)
+signal user_updated_vector(new_vector3: Vector3i)
 
 @export var label_x_text: StringName
 @export var label_y_text: StringName
@@ -18,10 +18,10 @@ signal user_updated_vector(new_vector3: Vector3)
 @export var int_x_min: int = -9999999999
 @export var int_y_min: int = -9999999999
 @export var int_z_min: int = -9999999999
-@export var initial_vector: Vector3
+@export var initial_vector: Vector3i
 
-var current_vector: Vector3:
-	get: return Vector3(_field_x.current_int, _field_y.current_int, _field_z.current_int)
+var current_vector: Vector3i:
+	get: return Vector3i(_field_x.current_int, _field_y.current_int, _field_z.current_int)
 	set(v):
 		_field_x.current_int = v.x
 		_field_y.current_int = v.y
