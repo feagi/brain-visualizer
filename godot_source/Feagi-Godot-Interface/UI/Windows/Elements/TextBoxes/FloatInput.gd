@@ -23,6 +23,10 @@ signal float_confirmed(new_float: float)
 @export var max_value: float = 9999999999.0
 @export var min_value: float = -9999999999.0
 
+var current_float: float:
+	get: return _previous_float
+	set(v):
+		external_update_float(v)
 
 var _previous_float: float
 
