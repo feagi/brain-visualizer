@@ -82,6 +82,3 @@ func _clear_node_name_list(node_name):
 			for iteration_name in global_name_list[i]:
 				global_name_list[i][iteration_name][0].queue_free()
 		global_name_list = []
-
-func update_all_node_from_cortical(name_input):
-	pass
