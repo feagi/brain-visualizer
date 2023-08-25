@@ -24,7 +24,6 @@ func _on_ca_connect_button_pressed():
 	else:
 		visible = true
 
-
 func _on_morphology_menulist_item_selected(index):
 	$arrow/Label.text = $morphology_menulist.get_item_text(index)
 	$morphology_menulist.visible = false
@@ -40,3 +39,9 @@ func _on_visibility_changed():
 		$source.text = "Source"
 		$destination.text = "Destination"
 		$arrow/Label.text = "Select a morphology"
+
+func _on_connect_pressed():
+	var source_id = FeagiCache.cortical_areas_cache.cortical_areas[$source.text]
+	var destination_id = FeagiCache.cortical_areas_cache.cortical_areas[$destination.text]
+	visible = false
+#	FeagiRequests.quick_connect_between_two_corticals(source_id, $arrow/Label.text, destination_id)
