@@ -17,7 +17,7 @@ var options: Array:
 	set(v): 
 		_set_dropdown_via_array(v)
 
-func ready():
+func _ready():
 	options = initial_items
 
 func add_option(option: StringName) -> void:

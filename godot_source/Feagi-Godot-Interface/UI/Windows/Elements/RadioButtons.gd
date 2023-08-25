@@ -1,6 +1,6 @@
 extends BoxContainer
 class_name RadioButtons
-# Holds a grouping of radio buttons. To fill, place CheckBox nodes as children
+## Holds a grouping of radio buttons. To fill, place CheckBox nodes as children
 
 signal button_pressed(button_index: int, button_label: StringName)
 
