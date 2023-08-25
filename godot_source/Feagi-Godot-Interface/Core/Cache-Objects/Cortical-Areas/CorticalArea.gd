@@ -90,6 +90,9 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 	_dimensions = cortical_dimensions
 	_cortical_visiblity = visibility
 
+## Applies cortical area properties dict from feagi on other details
+func apply_details_dict(updated_details: Dictionary) -> void:
+	details.apply_dictionary(updated_details)
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:

@@ -7,7 +7,7 @@ var cortical_areas: Dictionary:
 
 var _cortical_areas: Dictionary = {}
 
-# TODO add / update cortical areas
+# TODO update cortical areas
 
 ## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
@@ -30,7 +30,32 @@ func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> vo
 
 	_cortical_areas[new_ID] = new_area
 	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[new_ID])
+
+## Updates a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
+func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
+	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
+	if changing_ID not in _cortical_areas.keys():
+		push_error("Cortical area of ID %s does not exist in memory! Unable to Update! Skipping" % [all_cortical_area_properties["cortical_id"]])
+		return
 	
+	var updated_name: StringName = all_cortical_area_properties["cortical_name"]
+	var updated_visibility: bool = all_cortical_area_properties["cortical_visibility"]
+	var updated_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
+	
+	# these properties already have redudancy checking
+	_cortical_areas[changing_ID].name = updated_name
+	_cortical_areas[changing_ID].cortical_visibility = updated_visibility
+	_cortical_areas[changing_ID].dimensions = updated_cortical_dimensions
+
+	# coordinates may or may not be specified, check the dictionary properly
+	if all_cortical_area_properties["cortical_coordinates_2d"][0] != null: # assume either all are null or none are
+		_cortical_areas[changing_ID].coordinates_2D = FEAGIUtils.array_to_vector2i(all_cortical_area_properties["cortical_coordinates_2d"])
+	if all_cortical_area_properties["cortical_coordinates"][0] != null: # assume either all are null or none are
+		_cortical_areas[changing_ID].coordinates_3D = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_coordinates"])
+	
+	_cortical_areas[changing_ID].apply_details_dict(all_cortical_area_properties)
+	FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
+
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	if removed_cortical_ID not in _cortical_areas.keys():
@@ -40,7 +65,9 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
 	_cortical_areas.erase(removed_cortical_ID)
 
-# TODO add signal passthroughs for cortical areas
+
+
+
 
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
