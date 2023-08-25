@@ -7,4 +7,3 @@ func _ready():
 
 func _update_size() -> void:
 	custom_minimum_size = VisConfig.minimum_button_size_pixel
-
