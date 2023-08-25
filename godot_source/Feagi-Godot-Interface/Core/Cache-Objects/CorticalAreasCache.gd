@@ -7,7 +7,52 @@ var cortical_areas: Dictionary:
 
 var _cortical_areas: Dictionary = {}
 
-# TODO add / update cortical areas
+## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
+func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
+	if all_cortical_area_properties["cortical_id"] in _cortical_areas.keys():
+		push_error("Cortical area of ID %s already exists in memory! Unable to add another of the same name! Skipping" % [all_cortical_area_properties["cortical_id"]])
+		return
+
+	var new_ID: StringName = all_cortical_area_properties["cortical_id"]
+	var new_name: StringName = all_cortical_area_properties["cortical_name"]
+	var new_group: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE[all_cortical_area_properties["cortical_group"]]
+	var new_visibility: bool = all_cortical_area_properties["cortical_visibility"]
+	var new_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
+	var new_area: CorticalArea = CorticalArea.new(new_ID, new_name, new_group,  new_visibility, new_cortical_dimensions, all_cortical_area_properties)
+	
+	# coordinates may or may not be specified, check the dictionary properly
+	if all_cortical_area_properties["cortical_coordinates_2d"][0] != null: # assume either all are null or none are
+		new_area.coordinates_2D = FEAGIUtils.array_to_vector2i(all_cortical_area_properties["cortical_coordinates_2d"])
+	if all_cortical_area_properties["cortical_coordinates"][0] != null: # assume either all are null or none are
+		new_area.coordinates_3D = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_coordinates"])
+
+	_cortical_areas[new_ID] = new_area
+	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[new_ID])
+
+## Updates a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
+func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
+	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
+	if changing_ID not in _cortical_areas.keys():
+		push_error("Cortical area of ID %s does not exist in memory! Unable to Update! Skipping" % [all_cortical_area_properties["cortical_id"]])
+		return
+	
+	var updated_name: StringName = all_cortical_area_properties["cortical_name"]
+	var updated_visibility: bool = all_cortical_area_properties["cortical_visibility"]
+	var updated_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
+	
+	# these properties already have redudancy checking
+	_cortical_areas[changing_ID].name = updated_name
+	_cortical_areas[changing_ID].cortical_visibility = updated_visibility
+	_cortical_areas[changing_ID].dimensions = updated_cortical_dimensions
+
+	# coordinates may or may not be specified, check the dictionary properly
+	if all_cortical_area_properties["cortical_coordinates_2d"][0] != null: # assume either all are null or none are
+		_cortical_areas[changing_ID].coordinates_2D = FEAGIUtils.array_to_vector2i(all_cortical_area_properties["cortical_coordinates_2d"])
+	if all_cortical_area_properties["cortical_coordinates"][0] != null: # assume either all are null or none are
+		_cortical_areas[changing_ID].coordinates_3D = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_coordinates"])
+	
+	_cortical_areas[changing_ID].apply_details_dict(all_cortical_area_properties)
+	FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
@@ -18,7 +63,14 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
 	_cortical_areas.erase(removed_cortical_ID)
 
-# TODO add signal passthroughs for cortical areas
+## Returns an array of cortical areas whose name contains a given substring
+## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
+func search_for_cortical_areas_by_name(search_term: StringName) -> Array[CorticalArea]:
+	var output: Array[CorticalArea] = []
+	for cortical_area in _cortical_areas.values():
+		if cortical_area.name.to_lower().contains(search_term.to_lower()):
+			output.append(cortical_area)
+	return output
 
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
