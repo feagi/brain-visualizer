@@ -142,6 +142,7 @@ offset_bottom = 376.0
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
 

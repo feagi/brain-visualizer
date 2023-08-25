@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://cryi2oimxnjhl"]
+[gd_scene load_steps=5 format=3 uid="uid://cryi2oimxnjhl"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/Quick_Connect.gd" id="1_o7x5a"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_t1guh"]
-[ext_resource type="Texture2D" uid="uid://bk4hvtus1c5ij" path="res://Feagi-Godot-Interface/UI/Resources/general_assets/arrow.png" id="3_3k2b7"]
+[ext_resource type="Texture2D" uid="uid://b1ic58dlpsho7" path="res://Feagi-Godot-Interface/UI/Resources/general_assets/arrow.png" id="3_3k2b7"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/morphology_menulist.gd" id="4_g5jb3"]
 
 [node name="Quick_Connect" type="Panel"]
 anchors_preset = -1
@@ -20,6 +21,25 @@ anchor_right = 1.0
 offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
+
+[node name="morphology_menulist" type="ItemList" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 1.99994
+offset_top = -73.0
+offset_right = 657.0
+offset_bottom = 115.0
+grow_horizontal = 0
+grow_vertical = 2
+item_count = 2
+item_0/text = ""
+item_1/text = ""
+script = ExtResource("4_g5jb3")
 
 [node name="arrow" type="TextureButton" parent="."]
 layout_mode = 1
@@ -92,3 +112,7 @@ offset_right = 36.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Connect"
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="item_selected" from="morphology_menulist" to="." method="_on_morphology_menulist_item_selected"]
+[connection signal="pressed" from="arrow" to="." method="_on_arrow_pressed"]

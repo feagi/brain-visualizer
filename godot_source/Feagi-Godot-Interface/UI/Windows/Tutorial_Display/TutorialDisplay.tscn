@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.gd" id="1_sxgey"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_w8hwq"]
-[ext_resource type="Texture2D" uid="uid://bfpyvfbmxx1nw" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t2.png" id="3_pagi3"]
+[ext_resource type="Texture2D" uid="uid://cger56lv0em41" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t2.png" id="3_pagi3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_sgj5n"]
 
 [node name="TutorialDisplay" type="Panel"]
