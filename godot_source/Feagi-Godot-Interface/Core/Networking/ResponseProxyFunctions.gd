@@ -34,6 +34,9 @@ func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _
 	# no real error handling from FEAGI right now, so we cannot do anything here
 	pass
 
+func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	pass
+
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
 	FeagiCache.connections_cache.cortical_area_deleted(deleted_cortical_ID)
