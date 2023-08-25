@@ -7,8 +7,6 @@ var cortical_areas: Dictionary:
 
 var _cortical_areas: Dictionary = {}
 
-# TODO update cortical areas
-
 ## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
 	if all_cortical_area_properties["cortical_id"] in _cortical_areas.keys():
@@ -65,9 +63,14 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
 	_cortical_areas.erase(removed_cortical_ID)
 
-
-
-
+## Returns an array of cortical areas whose name contains a given substring
+## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
+func search_for_cortical_area_by_name(search_term: StringName) -> Array[CorticalArea]:
+	var output: Array[CorticalArea] = []
+	for cortical_area in _cortical_areas.values():
+		if cortical_area.name.contains(search_term):
+			output.append(cortical_area)
+	return output
 
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
