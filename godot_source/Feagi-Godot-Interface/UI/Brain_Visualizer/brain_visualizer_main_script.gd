@@ -90,6 +90,6 @@ func _clear_node_name_list(node_name):
 
 func update_all_node_from_cortical(name_input, material):
 	for i in global_name_list:
-		if name_input[0] in i:
+		if name_input in i:
 			for x in len(global_name_list[i]):
 				global_name_list[i][x][0].set_surface_override_material(0, material)
