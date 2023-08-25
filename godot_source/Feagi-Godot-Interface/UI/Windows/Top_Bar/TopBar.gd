@@ -46,3 +46,16 @@ func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> vo
 func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
 
+
+
+func _on_mode_button_pressed():
+	var BV = $"../../Brain_Visualizer"
+	var CB = $"../../NodeGraph"
+	if BV.visible:
+		BV.visible = false
+		CB.visible = true
+		$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/BV.png")
+	elif CB.visible:
+		BV.visible = true
+		CB.visible = false
+		$HBoxContainer/Mode_Button.texture_normal = load("res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png")

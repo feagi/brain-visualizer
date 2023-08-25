@@ -1,0 +1,98 @@
+[gd_scene load_steps=3 format=3 uid="uid://b6wg06kaa21u7"]
+
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_bx0qy"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="2_3gcwn"]
+
+[node name="Circuit_Import" type="Panel"]
+anchors_preset = -1
+anchor_right = 0.236111
+anchor_bottom = 0.62963
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleBar" parent="." instance=ExtResource("1_bx0qy")]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+offset_top = 48.0
+offset_right = 272.0
+offset_bottom = 74.0
+
+[node name="choose_label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Choose a circuit:"
+
+[node name="OptionButton" type="OptionButton" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="VBoxContainer" parent="."]
+layout_mode = 2
+offset_top = 88.0
+offset_right = 272.0
+offset_bottom = 149.0
+
+[node name="Label" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+text = "Circuit Local
+"
+
+[node name="Vector3fField" parent="HBoxContainer2" instance=ExtResource("2_3gcwn")]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+offset_left = 64.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 205.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="import" type="Button" parent="VBoxContainer"]
+layout_direction = 1
+layout_mode = 2
+text = "Import"
+
+[node name="circuit_init" type="Label" parent="."]
+layout_mode = 2
+offset_top = 208.0
+offset_right = 272.0
+offset_bottom = 234.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Circuit Details"
+horizontal_alignment = 1
+
+[node name="HBoxContainer3" type="VBoxContainer" parent="."]
+layout_mode = 2
+offset_top = 232.0
+offset_right = 272.0
+offset_bottom = 323.0
+
+[node name="Label" type="Label" parent="HBoxContainer3"]
+layout_mode = 2
+text = "Circuit Size
+"
+
+[node name="Vector3fField" parent="HBoxContainer3" instance=ExtResource("2_3gcwn")]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="HBoxContainer3"]
+layout_mode = 2
+text = "Description"
+
+[node name="TextEdit" type="TextEdit" parent="."]
+layout_mode = 2
+offset_top = 320.0
+offset_right = 272.0
+offset_bottom = 385.0
+grow_horizontal = 2
+grow_vertical = 0
