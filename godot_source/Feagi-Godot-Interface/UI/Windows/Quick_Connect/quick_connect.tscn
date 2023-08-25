@@ -99,7 +99,7 @@ grow_vertical = 2
 text = "Destination
 "
 
-[node name="Button" type="Button" parent="."]
+[node name="connect" type="Button" parent="."]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -116,3 +116,4 @@ text = "Connect"
 [connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
 [connection signal="item_selected" from="morphology_menulist" to="." method="_on_morphology_menulist_item_selected"]
 [connection signal="pressed" from="arrow" to="." method="_on_arrow_pressed"]
+[connection signal="pressed" from="connect" to="." method="_on_connect_pressed"]
