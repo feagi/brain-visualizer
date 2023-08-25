@@ -6,12 +6,12 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/renderer.gdshader" id="5_sbo83"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://hojtuxoje6oc" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://b3nhtm604rblf" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
+[ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
 [ext_resource type="PackedScene" uid="uid://cou6ppgui40tg" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.tscn" id="10_v25c0"]
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
-[ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="12_0of2g"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -112,6 +112,12 @@ multimesh = SubResource("MultiMesh_oeyfo")
 
 [node name="Windows" type="Node" parent="UI"]
 
+[node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
+anchor_left = 0.532986
+anchor_top = 0.603395
+anchor_right = 0.828993
+anchor_bottom = 0.837963
+
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 
 [node name="TutorialDisplay" parent="UI/Windows" instance=ExtResource("10_v25c0")]
@@ -124,14 +130,6 @@ offset_top = -1.0
 offset_right = 651.0
 offset_bottom = 497.0
 
-[node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("12_0of2g")]
-anchor_left = 0.0868056
-anchor_top = 0.427469
-anchor_right = 0.382813
-anchor_bottom = 0.662037
-grow_horizontal = 1
-grow_vertical = 1
-
 [node name="TutorialBar" parent="UI/Windows" instance=ExtResource("11_ugquj")]
 visible = false
 offset_left = 785.0
@@ -142,11 +140,11 @@ offset_bottom = 376.0
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
 
-[editable path="UI/Windows/TopBar"]
 [editable path="UI/Windows/Quick_Connect"]
+[editable path="UI/Windows/TopBar"]
 [editable path="UI/Windows/TutorialBar"]
