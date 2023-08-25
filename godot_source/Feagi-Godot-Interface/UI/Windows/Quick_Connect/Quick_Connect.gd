@@ -1,4 +1,6 @@
 extends Panel
+var src = ""
+var destination = ""
 
 func _ready():
 	$TitleBar/Title_Text.text = "Quick_Connect"
@@ -41,7 +43,10 @@ func _on_visibility_changed():
 		$arrow/Label.text = "Select a morphology"
 
 func _on_connect_pressed():
-	var source_id = FeagiCache.cortical_areas_cache.cortical_areas[$source.text]
-	var destination_id = FeagiCache.cortical_areas_cache.cortical_areas[$destination.text]
+	var source_id = src
+	var destination_id = destination
 	visible = false
-#	FeagiRequests.quick_connect_between_two_corticals(source_id, $arrow/Label.text, destination_id)
+	FeagiRequests.quick_connect_between_two_corticals(source_id, $arrow/Label.text, destination_id)
+	$"../../Brain_Visualizer".update_all_node_from_cortical(source_id, global_material.deselected)
+	$"../../Brain_Visualizer".update_all_node_from_cortical(destination, global_material.deselected)
+	
