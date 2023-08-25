@@ -9,6 +9,28 @@ var _cortical_areas: Dictionary = {}
 
 # TODO add / update cortical areas
 
+## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
+func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
+	if all_cortical_area_properties["cortical_id"] in _cortical_areas.keys():
+		push_error("Cortical area of ID %s already exists in memory! Unable to add another of the same name! Skipping" % [all_cortical_area_properties["cortical_id"]])
+		return
+
+	var new_ID: StringName = all_cortical_area_properties["cortical_id"]
+	var new_name: StringName = all_cortical_area_properties["cortical_name"]
+	var new_group: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE[all_cortical_area_properties["cortical_group"]]
+	var new_visibility: bool = all_cortical_area_properties["cortical_visibility"]
+	var new_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
+	var new_area: CorticalArea = CorticalArea.new(new_ID, new_name, new_group,  new_visibility, new_cortical_dimensions, all_cortical_area_properties)
+	
+	# coordinates may or may not be specified, check the dictionary properly
+	if all_cortical_area_properties["cortical_coordinates_2d"][0] != null: # assume either all are null or none are
+		new_area.coordinates_2D = FEAGIUtils.array_to_vector2i(all_cortical_area_properties["cortical_coordinates_2d"])
+	if all_cortical_area_properties["cortical_coordinates"][0] != null: # assume either all are null or none are
+		new_area.coordinates_3D = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_coordinates"])
+
+	_cortical_areas[new_ID] = new_area
+	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[new_ID])
+	
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	if removed_cortical_ID not in _cortical_areas.keys():
