@@ -1,0 +1,73 @@
+[gd_scene load_steps=3 format=3 uid="uid://cwhmgj80l7uir"]
+
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_13jjd"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="2_3afs0"]
+
+[node name="Create_Cortical" type="Panel"]
+anchors_preset = -1
+anchor_right = 0.381944
+anchor_bottom = 0.469136
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleBar" parent="." instance=ExtResource("1_13jjd")]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 64.0
+offset_right = 153.0
+offset_bottom = 90.0
+text = "Cortical Area Type:"
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 168.0
+offset_top = 64.0
+offset_right = 432.0
+offset_bottom = 95.0
+text = "PLACEHOLDER"
+
+[node name="Label2" type="Label" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 112.0
+offset_right = 118.0
+offset_bottom = 138.0
+text = "Cortical Name"
+
+[node name="LineEdit" type="LineEdit" parent="."]
+layout_mode = 0
+offset_left = 168.0
+offset_top = 112.0
+offset_right = 424.0
+offset_bottom = 143.0
+
+[node name="Vector3fField" parent="." instance=ExtResource("2_3afs0")]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 160.0
+offset_right = 343.0
+offset_bottom = 191.0
+
+[node name="Vector3fField2" parent="." instance=ExtResource("2_3afs0")]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 208.0
+offset_right = 343.0
+offset_bottom = 239.0
+
+[node name="Button2" type="Button" parent="."]
+layout_mode = 0
+offset_left = 184.0
+offset_top = 264.0
+offset_right = 256.0
+offset_bottom = 296.0
+text = "Create"
