@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://cwhmgj80l7uir"]
+
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_13jjd"]
+
+[node name="Circuit_Import" type="Panel"]
+anchors_preset = -1
+anchor_right = 0.236111
+anchor_bottom = 0.802469
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleBar" parent="." instance=ExtResource("1_13jjd")]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 47.0
+offset_right = 272.0
+offset_bottom = 73.0
+
+[node name="choose_label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Choose a circuit:"
+
+[node name="OptionButton" type="OptionButton" parent="HBoxContainer"]
+layout_mode = 2

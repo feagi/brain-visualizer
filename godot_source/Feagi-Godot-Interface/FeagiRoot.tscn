@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=21 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
 [ext_resource type="PackedScene" uid="uid://cou6ppgui40tg" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.tscn" id="10_v25c0"]
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
+[ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -137,6 +138,12 @@ offset_left = 785.0
 offset_top = 176.0
 offset_right = 985.0
 offset_bottom = 376.0
+
+[node name="Circuit_Import" parent="UI/Windows" instance=ExtResource("13_5ycas")]
+anchor_left = 0.313368
+anchor_top = 0.174383
+anchor_right = 0.549479
+anchor_bottom = 0.976852
 
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
