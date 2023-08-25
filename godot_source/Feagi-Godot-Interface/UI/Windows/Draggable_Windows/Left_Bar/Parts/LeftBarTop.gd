@@ -32,5 +32,8 @@ func _ready():
 	_vector_position = $Cortical_Position
 	_vector_dimensions = $Cortical_Size
 
+func _user_edit_3D_position(new_position: Vector3i):
+	user_requested_3D_position.emit(new_position)
 
-
+func _user_edit_dimension(new_dimension: Vector3i):
+	user_requested_dimension.emit(new_dimension)

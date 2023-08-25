@@ -5,11 +5,15 @@ class_name WindowLeftPanel
 var _cortical_area_ref: CorticalArea
 var _top_section # cannot define type due to godot bug
 
+var _cortical_area_properties_to_request_top: Dictionary = {}
+
 
 func _ready():
 	super._ready()
 	var top_collapsible = $Top_Section/VerticalCollapsible
 	_top_section = top_collapsible.collapsing_node
+	_top_section.user_requested_3D_position.connect(_user_request_3D_coordinates)
+	_top_section.user_requested_dimension.connect(_user_request_dimensions)
 
 func setup(cortical_area_reference: CorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
@@ -40,6 +44,8 @@ func _update_coordinate_3D_from_signal(coords: Vector3i) -> void:
 func _update_details_from_signal(details: Dictionary) -> void:
 	pass
 
+func _user_request_dimensions(dim: Vector3i):
+	_cortical_area_properties_to_request_top["cortical_dimensions"] = str(dim)
 
-
-
+func _user_request_3D_coordinates(coord: Vector3i):
+	_cortical_area_properties_to_request_top["cortical_dimensions"] = str(coord)
