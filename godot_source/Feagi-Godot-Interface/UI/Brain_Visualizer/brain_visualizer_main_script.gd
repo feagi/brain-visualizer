@@ -1,7 +1,7 @@
 extends Node3D
 
 var shader_material # Wait for shader 
-var global_name_list = []
+var global_name_list = {}
 
 func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
@@ -38,7 +38,10 @@ func generate_one_model(name_input, x_input, y_input, z_input, width_input, dept
 	add_child(new)
 	new.visible = true
 	new.scale = Vector3(width_input, height_input, depth_input)
-	global_name_list.append({name_input.replace(" ", "") : [new, x_input, y_input, z_input, width_input, depth_input, height_input]})
+	name_input = name_input.replace(" ", "")
+	if not name_input in global_name_list:
+		global_name_list[name_input] = []
+	global_name_list[name_input].append([new, x_input, y_input, z_input, width_input, depth_input, height_input])
 	new.transform.origin = Vector3(width_input/2 + int(x_input), height_input/2+ int(y_input), -1 * (depth_input/2 + int(z_input)))
 
 func generate_model(name_input, x_input, y_input, z_input, width_input, depth_input, height_input):
@@ -52,7 +55,9 @@ func generate_model(name_input, x_input, y_input, z_input, width_input, depth_in
 					new.set_name(name_input+ "*" + str(counter))
 					add_child(new)
 					new.visible = true
-					global_name_list.append({name_input : [new, x_input, y_input, z_input, width_input, depth_input, height_input]})
+					if not name_input in global_name_list:
+						global_name_list[name_input] = []
+					global_name_list[name_input].append([new, x_input, y_input, z_input, width_input, depth_input, height_input])
 					new.transform.origin = Vector3(x_gain+int(x_input), y_gain+int(y_input), -1 * (z_gain+int(z_input)))
 					counter += 1
 
@@ -81,4 +86,10 @@ func _clear_node_name_list(node_name):
 		for i in list_size:
 			for iteration_name in global_name_list[i]:
 				global_name_list[i][iteration_name][0].queue_free()
-		global_name_list = []
+		global_name_list = {}
+
+func update_all_node_from_cortical(name_input, material):
+	for i in global_name_list:
+		if name_input in i:
+			for x in len(global_name_list[i]):
+				global_name_list[i][x][0].set_surface_override_material(0, material)

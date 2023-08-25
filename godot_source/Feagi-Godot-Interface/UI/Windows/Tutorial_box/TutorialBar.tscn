@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/Tutorial_menu.gd" id="1_hpvxu"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_3xuvx"]
-[ext_resource type="Texture2D" uid="uid://bhxbpq3itqgv1" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t1.png" id="3_h5mpg"]
-[ext_resource type="Texture2D" uid="uid://jnijwttkcsat" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/pressed_t1.png" id="4_1ydlp"]
+[ext_resource type="Texture2D" uid="uid://bsebn8a4pwe8u" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t1.png" id="3_h5mpg"]
+[ext_resource type="Texture2D" uid="uid://dkmhpsjp70vny" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/pressed_t1.png" id="4_1ydlp"]
 
 [node name="TutorialBar" type="Panel"]
 offset_right = 200.0

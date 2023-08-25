@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CorticalNode.gd" id="1_4inyi"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_cd1fb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_21t7y"]
-[ext_resource type="Texture2D" uid="uid://bkrhcxq2ljrx0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="3_241b3"]
+[ext_resource type="Texture2D" uid="uid://bgiaof34r7k0y" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="3_241b3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/ConnectionButton_Point.gd" id="4_hpgy5"]
 
 [node name="CorticalNode" type="Panel"]

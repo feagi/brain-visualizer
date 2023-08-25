@@ -35,6 +35,22 @@ func refresh_morphology_list() -> void:
 func refresh_connection_list() -> void:
 	_feagi_interface.calls.GET_GE_corticalMap()
 
+func quick_connect_between_two_corticals(src, morphology_name, dest):
+	if (src != "Click any cortical" and src != "Source") and (dest != "Click any cortical" and dest != "Destination") and morphology_name != "ARROW_PLACEHOLDER" and morphology_name != "ARROW PLACEHOLDER":
+		var dst_data = {}
+		var combine_url = '?src_cortical_area=#&dst_cortical_area=$'
+		combine_url = combine_url.replace("#", src)
+		combine_url = combine_url.replace("$", dest)
+		dst_data["cortical_destinations"] = {}
+		dst_data["cortical_destinations"][src] = []
+		var dst = {}
+		dst["morphology_id"] = morphology_name
+		dst["morphology_scalar"] = [1,1,1]
+		dst["postSynapticCurrent_multiplier"] = float(1.0)
+		dst["plasticity_flag"] = false
+		dst_data["cortical_destinations"][src].append(dst)
+		_feagi_interface.calls.PUT_GE_mappingProperties(dst_data["cortical_destinations"][src],combine_url)
+
 ################################# FEAGI General #################################
 
 
