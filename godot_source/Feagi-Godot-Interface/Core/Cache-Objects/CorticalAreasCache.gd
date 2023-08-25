@@ -65,10 +65,10 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 
 ## Returns an array of cortical areas whose name contains a given substring
 ## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
-func search_for_cortical_area_by_name(search_term: StringName) -> Array[CorticalArea]:
+func search_for_cortical_areas_by_name(search_term: StringName) -> Array[CorticalArea]:
 	var output: Array[CorticalArea] = []
 	for cortical_area in _cortical_areas.values():
-		if cortical_area.name.contains(search_term):
+		if cortical_area.name.to_lower().contains(search_term.to_lower()):
 			output.append(cortical_area)
 	return output
 
