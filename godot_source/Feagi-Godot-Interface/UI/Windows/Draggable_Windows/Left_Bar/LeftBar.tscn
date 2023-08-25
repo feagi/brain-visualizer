@@ -15,15 +15,21 @@ offset_bottom = -436.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_k4t35")
+left_pixel_gap = 5
+right_pixel_gap = 5
+top_pixel_gap = 5
+bottom_pixel_gap = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="Top_Section" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_right = 405.0
 offset_bottom = 95.0
 
-[node name="VerticalCollapsible" parent="VBoxContainer" instance=ExtResource("2_ene5e")]
+[node name="VerticalCollapsible" parent="Top_Section" instance=ExtResource("2_ene5e")]
 layout_mode = 2
+start_open = false
 prefab_to_spawn = ExtResource("3_kfi4r")
+section_text = &"Summary"
 
 [node name="TitleBar" parent="." instance=ExtResource("2_mf5vp")]
 layout_mode = 0

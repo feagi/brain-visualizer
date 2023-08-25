@@ -13,8 +13,6 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 func refresh_cortical_areas() -> void:
 	_feagi_interface.calls.GET_GE_CorticalArea_geometry() # This will afterwards trigger "refresh_connection_list()"
 
-
-
 func delete_cortical_area(cortical_id: StringName) -> void:
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
 
