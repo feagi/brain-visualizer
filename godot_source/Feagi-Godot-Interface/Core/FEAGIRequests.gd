@@ -33,7 +33,10 @@ func refresh_morphology_list() -> void:
 func refresh_connection_list() -> void:
 	_feagi_interface.calls.GET_GE_corticalMap()
 
-func quick_connect_between_two_corticals(src, morphology_name, dest):
+func quick_connect_between_two_corticals(src: String, morphology_name: String, dest: String):
+	# docs string section begin
+	# src = source, dest = destination, morphology_name = morphology that is selected within quick connect
+	# docsstring sectin ends
 	if (src != "Click any cortical" and src != "Source") and (dest != "Click any cortical" and dest != "Destination") and morphology_name != "ARROW_PLACEHOLDER" and morphology_name != "ARROW PLACEHOLDER":
 		var dst_data = {}
 		var combine_url = '?src_cortical_area=#&dst_cortical_area=$'
