@@ -16,3 +16,27 @@ func _on_source_pressed():
 
 func _on_destination_pressed():
 	$destination.text = "Select a cortical"
+
+
+func _on_ca_connect_button_pressed():
+	if visible:
+		visible = false
+	else:
+		visible = true
+
+
+func _on_morphology_menulist_item_selected(index):
+	$arrow/Label.text = $morphology_menulist.get_item_text(index)
+	$morphology_menulist.visible = false
+
+
+func _on_arrow_pressed():
+	$morphology_menulist.visible = true
+
+
+func _on_visibility_changed():
+	if not visible:
+		$morphology_menulist.visible = false
+		$source.text = "Source"
+		$destination.text = "Destination"
+		$arrow/Label.text = "Select a morphology"
