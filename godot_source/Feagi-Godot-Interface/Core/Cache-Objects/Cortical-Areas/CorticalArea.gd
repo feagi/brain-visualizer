@@ -3,11 +3,12 @@ class_name CorticalArea
 ## Holds details pertaining to a specific cortical area
 ## Signals up if properties here are changed
 
-signal dimensions_updated(ID: StringName, dim: Vector3i)
-signal coordinates_3D_updated(ID: StringName, coords: Vector3i)
-signal coordinates_2D_updated(ID: StringName, coords: Vector2i)
-signal cortical_visibility_updated(ID: StringName, visibility: bool)
-signal details_updated(ID: StringName, data: Dictionary) # Beware of CorticalMappingProperties
+signal name_updated(cortical_name: StringName)
+signal dimensions_updated(dim: Vector3i)
+signal coordinates_3D_updated(coords: Vector3i)
+signal coordinates_2D_updated(coords: Vector2i)
+signal cortical_visibility_updated(visibility: bool)
+signal details_updated(data: Dictionary) # Beware of CorticalMappingProperties
 
 
 enum CORTICAL_AREA_TYPE {
@@ -25,6 +26,10 @@ var cortical_ID: StringName:
 var name: StringName:
     get:
         return _name
+    set(v):
+        _name = v
+        name_updated.emit(v)
+
 var group: CORTICAL_AREA_TYPE:
     get:
         return _group
@@ -38,20 +43,20 @@ var dimensions: Vector3i:
     get:
         return _dimensions
     set(v):
-        dimensions_updated.emit(cortical_ID, v)
+        dimensions_updated.emit(v)
         _dimensions = v
 var coordinates_2D: Vector2i:
     get:
         return _coordinates_2D
     set(v):
-        coordinates_2D_updated.emit(cortical_ID, v)
+        coordinates_2D_updated.emit(v)
         _coordinates_2D = v
         _coordinates_2D_available = true
 var coordinates_3D: Vector3i:
     get:
         return _coordinates_3D
     set(v):
-        coordinates_3D_updated.emit(cortical_ID, v)
+        coordinates_3D_updated.emit(v)
         _coordinates_3D = v
         _coordinates_3D_available = true
 var is_coordinates_2D_available: bool:
@@ -87,4 +92,4 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:
-    details_updated.emit(cortical_ID, changed_property)
+    details_updated.emit(changed_property)
