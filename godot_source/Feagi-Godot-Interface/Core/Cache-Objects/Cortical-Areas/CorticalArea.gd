@@ -11,53 +11,53 @@ signal details_updated(ID: StringName, data: Dictionary) # Beware of CorticalMap
 
 
 enum CORTICAL_AREA_TYPE {
-    IPU,
-    CORE,
-    MEMORY,
-    CUSTOM,
-    OPU
+	IPU,
+	CORE,
+	MEMORY,
+	CUSTOM,
+	OPU
 }
 
 var details: CorticalAreaDetails
 var cortical_ID: StringName:
-    get:
-        return _cortical_ID
+	get:
+		return _cortical_ID
 var name: StringName:
-    get:
-        return _name
+	get:
+		return _name
 var group: CORTICAL_AREA_TYPE:
-    get:
-        return _group
+	get:
+		return _group
 var cortical_visibility: bool:
-    get:
-        return _cortical_visiblity
-    set(v):
-        _cortical_visiblity = v
+	get:
+		return _cortical_visiblity
+	set(v):
+		_cortical_visiblity = v
 
 var dimensions: Vector3i:
-    get:
-        return _dimensions
-    set(v):
-        dimensions_updated.emit(cortical_ID, v)
-        _dimensions = v
+	get:
+		return _dimensions
+	set(v):
+		dimensions_updated.emit(cortical_ID, v)
+		_dimensions = v
 var coordinates_2D: Vector2i:
-    get:
-        return _coordinates_2D
-    set(v):
-        coordinates_2D_updated.emit(cortical_ID, v)
-        _coordinates_2D = v
-        _coordinates_2D_available = true
+	get:
+		return _coordinates_2D
+	set(v):
+		coordinates_2D_updated.emit(cortical_ID, v)
+		_coordinates_2D = v
+		_coordinates_2D_available = true
 var coordinates_3D: Vector3i:
-    get:
-        return _coordinates_3D
-    set(v):
-        coordinates_3D_updated.emit(cortical_ID, v)
-        _coordinates_3D = v
-        _coordinates_3D_available = true
+	get:
+		return _coordinates_3D
+	set(v):
+		coordinates_3D_updated.emit(cortical_ID, v)
+		_coordinates_3D = v
+		_coordinates_3D_available = true
 var is_coordinates_2D_available: bool:
-    get: return _coordinates_2D_available
+	get: return _coordinates_2D_available
 var is_coordinates_3D_available: bool:
-    get: return _coordinates_3D_available
+	get: return _coordinates_3D_available
 
 
 
@@ -74,17 +74,17 @@ var _cortical_visiblity: bool = true
 
 
 func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}):
-    _cortical_ID = ID
-    _name = cortical_name
-    _group = group_type
-    details = CorticalAreaDetails.new()
-    details.apply_dictionary(cortical_details_raw)
-    details.property_changed.connect(_details_updated)
-    _dimensions = cortical_dimensions
-    _cortical_visiblity = visibility
+	_cortical_ID = ID
+	_name = cortical_name
+	_group = group_type
+	details = CorticalAreaDetails.new()
+	details.apply_dictionary(cortical_details_raw)
+	details.property_changed.connect(_details_updated)
+	_dimensions = cortical_dimensions
+	_cortical_visiblity = visibility
 
 #TODO data update functions
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:
-    details_updated.emit(cortical_ID, changed_property)
+	details_updated.emit(cortical_ID, changed_property)
