@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=24 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
 [ext_resource type="PackedScene" uid="uid://cwhmgj80l7uir" path="res://Feagi-Godot-Interface/UI/Windows/Create_cortical/create_cortical.tscn" id="10_5x3e1"]
 [ext_resource type="PackedScene" uid="uid://cou6ppgui40tg" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.tscn" id="10_v25c0"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Create_cortical/create_cortical.gd" id="11_0eicd"]
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
@@ -52,9 +53,9 @@ script = ExtResource("1_43i4l")
 [node name="UI" type="Node" parent="."]
 
 [node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
+visible = false
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
-visible = false
 script = ExtResource("3_1xkbx")
 
 [node name="blank_textbox" type="Sprite3D" parent="UI/Brain_Visualizer"]
@@ -118,10 +119,13 @@ multimesh = SubResource("MultiMesh_oeyfo")
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 
 [node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
-offset_left = 402.0
-offset_top = 263.0
-offset_right = 402.0
-offset_bottom = 263.0
+anchor_left = 0.348958
+anchor_top = 0.405864
+anchor_right = 0.349
+anchor_bottom = 0.406
+offset_right = 366.952
+offset_bottom = 252.912
+script = ExtResource("11_0eicd")
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
 visible = false
@@ -172,10 +176,22 @@ grow_vertical = 1
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/Mode_Button" to="UI/Windows/TopBar" method="_on_mode_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
+[connection signal="pressed" from="UI/Windows/Create_Cortical/TitleBar/Close_Button" to="UI/Windows/Create_Cortical" method="_on_close_button_pressed"]
+[connection signal="pressed" from="UI/Windows/Create_Cortical/Button2" to="UI/Windows/Create_Cortical" method="_on_button_2_pressed"]
+[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntX" to="UI/Windows/Create_Cortical" method="_on_int_x_value_changed"]
+[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntY" to="UI/Windows/Create_Cortical" method="_on_int_y_value_changed"]
+[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntZ" to="UI/Windows/Create_Cortical" method="_on_int_z_value_changed"]
+[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/WDH/W" to="UI/Windows/Create_Cortical" method="_on_w_value_changed"]
+[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/WDH/H" to="UI/Windows/Create_Cortical" method="_on_h_value_changed"]
+[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/WDH/D" to="UI/Windows/Create_Cortical" method="_on_d_value_changed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
 
 [editable path="UI/Windows/TopBar"]
+[editable path="UI/Windows/Create_Cortical"]
+[editable path="UI/Windows/Create_Cortical/TitleBar"]
+[editable path="UI/Windows/Create_Cortical/VBoxContainer/XYZ"]
+[editable path="UI/Windows/Create_Cortical/VBoxContainer/WDH"]
 [editable path="UI/Windows/Quick_Connect"]
 [editable path="UI/Windows/TutorialBar"]
