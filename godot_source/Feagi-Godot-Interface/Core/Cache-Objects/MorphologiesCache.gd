@@ -8,14 +8,19 @@ var available_morphologies: Dictionary:
 
 var _available_morphologies: Dictionary = {}
 
-# TODO add morphologies
+func add_morphology_by_dict(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, properties: Dictionary) -> void:
+	if morphology_name in available_morphologies.keys():
+		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
+		return
+	_available_morphologies[morphology_name] = MorphologyFactory.create(morphology_name, morphology_type, properties)
+	FeagiCacheEvents.morphology_added.emit(_available_morphologies[morphology_name])
 
 func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 	var morphology_name: StringName = morphology_properties["morphology_name"]
 	if morphology_name not in _available_morphologies.keys():
 		push_error("Attemped to update non-cached morphology %s, Skipping..." % [morphology_properties["morphology_name"]])
 		return
-	var morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[morphology_properties["type"]]
+	var morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[morphology_properties["type"].to_upper()]
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
 			_available_morphologies[morphology_name].patterns = MorphologyFactory.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_properties["parameters"]["patterns"])
@@ -31,8 +36,6 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 			return
 	_available_morphologies[morphology_name].is_placeholder_data = false
 	FeagiCacheEvents.morphology_updated.emit(_available_morphologies[morphology_name])
-
-
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:
