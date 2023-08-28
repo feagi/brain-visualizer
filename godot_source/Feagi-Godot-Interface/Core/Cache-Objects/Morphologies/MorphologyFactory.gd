@@ -14,7 +14,7 @@ static func create(morphology_details: Dictionary) -> Morphology:
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			return VectorMorphology.new(name, false, FEAGIUtils.array_of_arrays_to_vector3i_array(parameters["vectors"]))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			return PatternMorphology.new(name, false, _raw_pattern_nested_array_to_array_of_PatternVector3s(parameters["patterns"]))
+			return PatternMorphology.new(name, false, raw_pattern_nested_array_to_array_of_PatternVector3s(parameters["patterns"]))
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			return CompositeMorphology.new(name, false, FEAGIUtils.array_to_vector3i(parameters["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(parameters["src_pattern"]), parameters["mapper_morphology"])
 		_:
@@ -41,8 +41,8 @@ static func create_placeholder(name: StringName, type: Morphology.MORPHOLOGY_TYP
 			return Morphology.new("null", false) # Doesn't do anything, just needed to compile
 
 
-## Converts an array of arrays from the pattern morphologies into an array of PatternVector3s
-static func _raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Array[Array]) -> Array[PatternVector3Pairs]:
+## Converts an array of arrays from the pattern morphologies into an array of PatternVector3Pairs
+static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Array[Array]) -> Array[PatternVector3Pairs]:
 	# Preinit up here to reduce GC
 	var X: PatternVal
 	var Y: PatternVal
