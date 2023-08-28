@@ -159,6 +159,13 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
 
+## Adds a morphology
+func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, parameters: Dictionary) -> void:
+	var to_buffer: Dictionary = parameters.duplicate()
+	to_buffer["type"] = morphology_type
+	to_buffer["morphology_name"] = morphology_name
+	_interface_ref.FEAGI_POST(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+str(morphology_type).to_lower(), _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
+
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
 ## Only the keys being changed should be input, no need to pull everything

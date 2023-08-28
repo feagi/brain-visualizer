@@ -70,6 +70,13 @@ func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _
 	# no real error handling from FEAGI right now, so we cannot do anything here
 	pass
 
+func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, requested_properties: Dictionary) -> void:
+	if _response_code == 422:
+		push_error("Unable to process add morphology %s, skipping!" % [requested_properties["morphology_name"]])
+		return
+	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
+	
+
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	pass
 

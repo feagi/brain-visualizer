@@ -37,6 +37,7 @@ var GET_morphologies_list_types: StringName = '/v1/feagi/morphologies/list/types
 var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
 var POST_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
 var POST_genome_customCorticalArea: StringName = "/v1/feagi/genome/custom_cortical_area"
+var POST_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
@@ -77,6 +78,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_feagi_burstEngine = FEAGIFullAddress + POST_feagi_burstEngine
 	POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea
 	POST_genome_customCorticalArea = FEAGIFullAddress + POST_genome_customCorticalArea
+	POST_genome_morphology = FEAGIFullAddress + POST_genome_morphology
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea
 	PUT_genome_mappingProperties = FEAGIFullAddress + PUT_genome_mappingProperties
 	DELETE_GE_corticalArea = FEAGIFullAddress + DELETE_GE_corticalArea

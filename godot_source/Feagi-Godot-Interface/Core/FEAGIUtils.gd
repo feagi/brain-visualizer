@@ -55,6 +55,13 @@ static func vector3i_to_string(input: Vector3i) -> String:
 static func vector2i_to_string(input: Vector2i) -> String:
 	return "[%d,%d,%d]" % vector2i_to_array(input)
 
+# This is the best name
+static func array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(input: Array[PatternVector3Pairs]) -> Array[Array]:
+	var output: Array[Array] = []
+	for pattern_pair in input:
+		output.append(pattern_pair.to_array_of_string_array())
+	return output
+
 ## Keeps input within defined bounds (floats)
 static func bounds(input: float, lower: float, upper: float) -> float:
 	if input < lower:

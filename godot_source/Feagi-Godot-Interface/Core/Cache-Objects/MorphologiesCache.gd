@@ -8,7 +8,10 @@ var available_morphologies: Dictionary:
 
 var _available_morphologies: Dictionary = {}
 
-func add_morphology_by_dict(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, properties: Dictionary) -> void:
+func add_morphology_by_dict(properties: Dictionary) -> void:
+	var morphology_name: StringName = properties["morphology_name"]
+	var morphology_type: Morphology.MORPHOLOGY_TYPE  = properties["type"]
+	
 	if morphology_name in available_morphologies.keys():
 		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
 		return
