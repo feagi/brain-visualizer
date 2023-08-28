@@ -3,9 +3,9 @@ class_name Vector3iField
 
 signal user_updated_vector(new_vector3: Vector3i)
 
-@export var label_x_text: StringName
-@export var label_y_text: StringName
-@export var label_z_text: StringName
+@export var label_x_text: StringName = &"X"
+@export var label_y_text: StringName = &"Y"
+@export var label_z_text: StringName = &"Z"
 @export var int_x_prefix: StringName
 @export var int_y_prefix: StringName
 @export var int_z_prefix: StringName

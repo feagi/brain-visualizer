@@ -22,6 +22,9 @@ signal drag_finished(current_position: Vector2)
 ## if True, will attempt to automatically set up closing behavior on parent window
 @export var automatic_setup_closing: bool = true
 
+## if True, will attempt to set the correct width of the parent window, and maintain it
+@export var automatic_maintain_width: bool = true
+
 var is_dragging: bool:
 	get: return _is_dragging
 	set(v):
@@ -49,7 +52,7 @@ func _ready():
 
 	_recalculate_title_bar_min_width()
 	
-	if automatic_setup_dragging or automatic_setup_closing:
+	if automatic_setup_dragging or automatic_setup_closing or automatic_maintain_width:
 		_parent = get_parent()
 
 	if automatic_setup_dragging:
@@ -57,6 +60,10 @@ func _ready():
 	
 	if automatic_setup_closing:
 		close_pressed.connect(_auto_close_parent)
+	
+	if automatic_maintain_width:
+		_parent.resized.connect(_auto_maintain_width)
+		_auto_maintain_width
 	
 
 
@@ -127,3 +134,6 @@ func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -
 func _auto_close_parent() -> void:
 	_parent.visible = false
 #	_parent.queue_free() # Temporary. This is useful for duplicated/JSON. We aren't using it
+
+func _auto_maintain_width() -> void:
+	custom_minimum_size.x = _parent.size.x

@@ -50,9 +50,9 @@ script = ExtResource("1_43i4l")
 [node name="UI" type="Node" parent="."]
 
 [node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
-visible = false
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
+visible = false
 script = ExtResource("3_1xkbx")
 
 [node name="blank_textbox" type="Sprite3D" parent="UI/Brain_Visualizer"]

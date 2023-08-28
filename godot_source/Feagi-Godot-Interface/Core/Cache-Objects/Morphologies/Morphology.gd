@@ -5,10 +5,10 @@ class_name Morphology
 signal about_to_be_deleted()
 
 enum MORPHOLOGY_TYPE {
-    PATTERNS,
-    VECTORS,
-    FUNCTIONS,
-    COMPOSITE,
+	PATTERNS,
+	VECTORS,
+	FUNCTIONS,
+	COMPOSITE,
 }
 
 var name: StringName
@@ -16,5 +16,5 @@ var type: MORPHOLOGY_TYPE
 var is_placeholder_data: bool
 
 func _init(morphology_name: StringName, is_using_placeholder_data: bool):
-    name = morphology_name
-    is_placeholder_data = is_using_placeholder_data
+	name = morphology_name
+	is_placeholder_data = is_using_placeholder_data
