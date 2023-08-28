@@ -18,8 +18,9 @@ func refresh_cortical_area(ID: StringName) -> void:
 	_feagi_interface.calls.GET_GE_corticalArea(ID)
 
 ## Requests from FEAGI to add a cortical area using the custom call
-func add_custom_cortical_area(cortical_properties: Dictionary) -> void:
-	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_properties)
+## the call returns the FEAGI generated cortical ID, at that point the cache will trigger a cortical area added signal
+func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), cortical_type: StringName = "CUSTOM") -> void:
+	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
 
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
@@ -45,6 +46,7 @@ func refresh_morphology_list() -> void:
 func refresh_connection_list() -> void:
 	_feagi_interface.calls.GET_GE_corticalMap()
 
+#TODO this name should be for general core use, do not use naming conventions for a single UI element
 func quick_connect_between_two_corticals(src: String, morphology_name: String, dest: String):
 	# docs string section begin
 	# src = source, dest = destination, morphology_name = morphology that is selected within quick connect

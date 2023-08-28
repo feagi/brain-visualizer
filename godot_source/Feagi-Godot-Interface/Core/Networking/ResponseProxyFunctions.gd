@@ -38,9 +38,23 @@ func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArra
 
 
 
-func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	# no real error handling from FEAGI right now, so we cannot do anything here
-	pass
+func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
+	# returns a dict of cortical ID
+	var cortical_ID_raw: Dictionary = _body_to_dictionary(response_body)
+	var is_2D_coordinates_defined: bool = true
+	if other_properties["coordinates_2d"] == "[null, null]":
+		is_2D_coordinates_defined = false
+
+	FeagiCache.cortical_areas_cache.add_cortical_area(
+		cortical_ID_raw["cortical_id"],
+		other_properties["cortical_name"],
+		other_properties["coordinates_3d"],
+		other_properties["cortical_dimensions"],
+		is_2D_coordinates_defined,
+		other_properties["coordinates_2d"],
+		other_properties["cortical_type"]
+	)
+
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here

@@ -128,13 +128,24 @@ func GET_MO_list_types(): # USED 1x
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.FEAGI_POST(_address_list.POST_feagi_burstEngine, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
 
- ## Adds cortical area
+ ## Adds cortical area (Dimensions however are autocalculated)
 func POST_GE_corticalArea(corticalProperties: Dictionary):
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_corticalArea, _response_functions_ref.POST_GE_corticalArea, corticalProperties)
 
-## Above and Below accomplish same thing, hence the same return function
-func POST_GE_customCorticalArea(corticalProperties: Dictionary):
-	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, corticalProperties)
+## Adds cortical area (with definable dimensions)
+func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), cortical_type: StringName = "CUSTOM"):
+	var cortical_properties: Dictionary = {
+		"cortical_name": name,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
+		"cortical_type": cortical_type
+	}
+	if is_coordinate_2D_defined:
+		cortical_properties["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
+	else:
+		cortical_properties["coordinates_2d"] = "[null, null]"
+	
+	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, cortical_properties, cortical_properties) # Passthrough properties so we have them to build cortical area
 	
 ## TODO clean up this
 func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename these variables
