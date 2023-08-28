@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://506fv2gitw7k"]
+[gd_scene load_steps=5 format=3 uid="uid://506fv2gitw7k"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="1_0xr58"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="2_bdwmo"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown.gd" id="3_r4uc6"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/HiderFrozenSize.gd" id="3_po83v"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_vs7fw"]
 
 [node name="LeftBarTop" type="VBoxContainer"]
 anchors_preset = 15
@@ -23,7 +24,6 @@ text = "Cortical Name"
 
 [node name="Cortical_Name" type="LineEdit" parent="Row_Cortical_Name"]
 layout_mode = 2
-editable = false
 script = ExtResource("1_0xr58")
 enable_signaling_on_ready = false
 
@@ -68,7 +68,13 @@ label_y_text = &"H"
 label_z_text = &"D"
 initial_vector = Vector3i(1, 1, 1)
 
-[node name="DropDown" type="OptionButton" parent="."]
+[node name="Update_Button_Hider" type="BoxContainer" parent="."]
 layout_mode = 2
-script = ExtResource("3_r4uc6")
-initial_items = Array[StringName]([&"option a", &"option b"])
+script = ExtResource("3_po83v")
+children_visible_at_start = false
+
+[node name="Update_Button" type="Button" parent="Update_Button_Hider"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply Update"
+script = ExtResource("4_vs7fw")
