@@ -13,8 +13,20 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 func refresh_cortical_areas() -> void:
 	_feagi_interface.calls.GET_GE_CorticalArea_geometry() # This will afterwards trigger "refresh_connection_list()"
 
+## Requests from FEAGI to send back all details of an EXISTING cortical area
+func refresh_cortical_area(ID: StringName) -> void:
+	_feagi_interface.calls.GET_GE_corticalArea(ID)
+
+## Requests from FEAGI to add a cortical area using the custom call
+func add_custom_cortical_area(cortical_properties: Dictionary) -> void:
+	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_properties)
+
+## Requests FEAGI to delete a cortical area by ID
+## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
 func delete_cortical_area(cortical_id: StringName) -> void:
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
+
+
 
 
 ################################# Morphologies ##################################
@@ -58,8 +70,6 @@ func quick_connect_between_two_corticals(src: String, morphology_name: String, d
 func refresh_delay_between_bursts() -> void:
 	_feagi_interface.calls.GET_BU_stimulationPeriod()
 
-func add_custom_cortical_area(data) -> void:
-	_feagi_interface.calls.POST_GE_customCorticalArea(data)
 
 func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
 	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)

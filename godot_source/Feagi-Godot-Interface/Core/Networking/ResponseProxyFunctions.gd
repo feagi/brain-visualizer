@@ -17,12 +17,16 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 	var morpholgies_and_types: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morpholgies_and_types)
 
+## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.connections_cache.mass_set_connections(cortical_map)
 
-func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	pass
+## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
+func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	var cortical_area_properties: Dictionary = _body_to_dictionary(response_body)
+	FeagiCache.cortical_areas_cache.update_cortical_area_from_dict(cortical_area_properties)
+
 
 func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_area_summary: Dictionary = _body_to_dictionary(response_body)
@@ -31,6 +35,12 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
+
+
+
+func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	# no real error handling from FEAGI right now, so we cannot do anything here
+	pass
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
