@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=25 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
+[ext_resource type="PackedScene" uid="uid://b3uycanyq64c7" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.tscn" id="18_fd2xm"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -177,6 +178,16 @@ offset_left = -108.0
 offset_top = 41.0
 offset_right = 108.592
 offset_bottom = 181.88
+grow_vertical = 1
+
+[node name="morphology_creation" parent="UI/Windows" instance=ExtResource("18_fd2xm")]
+anchor_left = 0.351562
+anchor_top = 0.287037
+anchor_right = 0.352
+anchor_bottom = 0.287037
+offset_right = 561.496
+offset_bottom = 382.0
+grow_horizontal = 1
 grow_vertical = 1
 
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
