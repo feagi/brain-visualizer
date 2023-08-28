@@ -35,9 +35,6 @@ func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: D
 func delete_cortical_area(cortical_id: StringName) -> void:
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
 
-
-
-
 ################################# Morphologies ##################################
 
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.
@@ -76,11 +73,14 @@ func quick_connect_between_two_corticals(src: String, morphology_name: String, d
 
 ################################# FEAGI General #################################
 
-
+## Get current burst rate
 func refresh_delay_between_bursts() -> void:
 	_feagi_interface.calls.GET_BU_stimulationPeriod()
 
-
+## Set a burst rate
 func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
 	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)
 
+## Gets the current available circuits of FEAGI
+func refresh_available_circuits() -> void:
+	_feagi_interface.calls.GET_GE_circuits()

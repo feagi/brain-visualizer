@@ -33,6 +33,9 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 	FeagiCache.cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
 	FeagiRequests.refresh_connection_list()
 
+func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	FeagiCache.available_circuits = _body_to_string_array(response_body)
+
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
 
