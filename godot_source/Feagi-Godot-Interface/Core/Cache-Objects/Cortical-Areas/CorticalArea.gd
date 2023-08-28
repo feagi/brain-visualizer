@@ -103,5 +103,4 @@ func apply_details_dict(updated_details: Dictionary) -> void:
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:
-	details_updated.emit(cortical_ID, changed_property)
 	details_updated.emit(changed_property, self)

@@ -5,9 +5,9 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_mt4v1"]
 
 [node name="VerticalCollapsible" type="VBoxContainer"]
+offset_right = 111.0
+offset_bottom = 40.0
 script = ExtResource("1_sojnc")
-start_open = false
-section_text = &"Section"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2

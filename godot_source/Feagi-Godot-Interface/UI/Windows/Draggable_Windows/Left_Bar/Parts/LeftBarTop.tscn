@@ -1,0 +1,74 @@
+[gd_scene load_steps=4 format=3 uid="uid://506fv2gitw7k"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="1_0xr58"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="2_bdwmo"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown.gd" id="3_r4uc6"]
+
+[node name="LeftBarTop" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -862.0
+offset_bottom = -404.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Row_Cortical_Name" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Row_Cortical_Name"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical Name"
+
+[node name="Cortical_Name" type="LineEdit" parent="Row_Cortical_Name"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_0xr58")
+enable_signaling_on_ready = false
+
+[node name="Row_Cortical_ID" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Row_Cortical_ID"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical ID"
+
+[node name="Cortical_ID" type="LineEdit" parent="Row_Cortical_ID"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_0xr58")
+enable_signaling_on_ready = false
+
+[node name="Row_Cortical_Type" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Row_Cortical_Type"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical Type"
+
+[node name="Cortical_Type" type="LineEdit" parent="Row_Cortical_Type"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_0xr58")
+enable_signaling_on_ready = false
+
+[node name="Cortical_Position" parent="." instance=ExtResource("2_bdwmo")]
+layout_mode = 2
+alignment = 1
+initial_vector = Vector3i(1, 1, 1)
+
+[node name="Cortical_Size" parent="." instance=ExtResource("2_bdwmo")]
+layout_mode = 2
+alignment = 1
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
+initial_vector = Vector3i(1, 1, 1)
+
+[node name="DropDown" type="OptionButton" parent="."]
+layout_mode = 2
+script = ExtResource("3_r4uc6")
+initial_items = Array[StringName]([&"option a", &"option b"])

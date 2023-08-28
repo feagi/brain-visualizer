@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3 uid="uid://5gbqaf1gqn30"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/LeftBar.gd" id="1_k4t35"]
+[ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Collapsable/VerticalCollapsible.tscn" id="2_ene5e"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_mf5vp"]
+[ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.tscn" id="3_kfi4r"]
+
+[node name="LeftBar" type="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 40.0
+offset_right = -893.0
+offset_bottom = -436.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_k4t35")
+left_pixel_gap = 5
+right_pixel_gap = 5
+top_pixel_gap = 5
+bottom_pixel_gap = 5
+
+[node name="Top_Section" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 405.0
+offset_bottom = 95.0
+
+[node name="VerticalCollapsible" parent="Top_Section" instance=ExtResource("2_ene5e")]
+layout_mode = 2
+start_open = false
+prefab_to_spawn = ExtResource("3_kfi4r")
+section_text = &"Summary"
+
+[node name="TitleBar" parent="." instance=ExtResource("2_mf5vp")]
+layout_mode = 0
+offset_top = -40.0
+offset_bottom = 0.0
+title = "Cortical Area"
