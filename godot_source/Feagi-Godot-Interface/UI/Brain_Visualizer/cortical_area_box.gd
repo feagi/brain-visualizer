@@ -30,7 +30,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
 			if get_surface_override_material(0) == global_material.selected:
-				location = Vector3(transform.origin)
+				location = Vector3(transform.origin) * Vector3(1,1,-1)
 				for item in Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]]:
 					if location == item:
 						Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]].erase(item)
