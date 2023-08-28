@@ -21,6 +21,8 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.connections_cache.mass_set_connections(cortical_map)
 
+func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	pass
 
 func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_area_summary: Dictionary = _body_to_dictionary(response_body)

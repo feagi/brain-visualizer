@@ -58,6 +58,9 @@ func quick_connect_between_two_corticals(src: String, morphology_name: String, d
 func refresh_delay_between_bursts() -> void:
 	_feagi_interface.calls.GET_BU_stimulationPeriod()
 
+func add_custom_cortical_area(data) -> void:
+	_feagi_interface.calls.POST_GE_customCorticalArea(data)
+
 func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
 	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)
 

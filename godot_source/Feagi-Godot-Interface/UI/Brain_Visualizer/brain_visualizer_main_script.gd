@@ -18,6 +18,7 @@ func generate_cortical_area(cortical_area_data : CorticalArea):
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions.y, -1 * cortical_area_data.dimensions.z - cortical_area_data.coordinates_3D.z)
 	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.name))
 	textbox.set_texture(viewport.get_texture())
+	textbox.set_name(cortical_area_data.name + str("_textbox"))
 	if int(cortical_area_data.dimensions.x) * int(cortical_area_data.dimensions.y) * int(cortical_area_data.dimensions.z) < 999: # Prevent massive cortical area
 		generate_model(cortical_area_data.cortical_ID, cortical_area_data.coordinates_3D.x,cortical_area_data.coordinates_3D.y,cortical_area_data.coordinates_3D.z,cortical_area_data.dimensions.x, cortical_area_data.dimensions.z, cortical_area_data.dimensions.y)
 	else:
@@ -93,3 +94,44 @@ func update_all_node_from_cortical(name_input, material):
 		if name_input in i:
 			for x in len(global_name_list[i]):
 				global_name_list[i][x][0].set_surface_override_material(0, material)
+				
+func demo_new_cortical():
+	"""
+	This is for add new cortical area so the name will be updated when you move it around. This is designed to use
+	the duplicated node called "example", so if it has no name, it will display as "example" but if
+	it has a letter or name, it will display as the user typed.
+	"""
+	for i in global_name_list:
+		if "example" in i:
+			for x in len(global_name_list[i]):
+				if global_name_list[i][x][0].get_child(0).get_class() == "Viewport":
+					global_name_list[i][x][0].get_child(0).get_child(0).text = "example"
+
+func delete_example():
+	"""For the cortical named "example" only"""
+	var name_list : Array = [] # To get cortical name
+	for i in global_name_list:
+		if "example" in i or "example_textbox" in i:
+			for x in len(global_name_list[i]):
+				global_name_list[i][x][0].queue_free()
+			name_list.append(i)
+	for i in name_list:
+		global_name_list.erase(i)
+
+
+func generate_single_cortical(x,y,z,width, depth, height, name_input):
+	"""Function for create cortical, import circuit"""
+	delete_example()
+	var textbox = $blank_textbox.duplicate()
+	var viewport = textbox.get_node("SubViewport")
+	textbox.scale = Vector3(1,1,1)
+	textbox.transform.origin = Vector3(x + (width/1.5), y +1 + height, -1 * depth - z)
+	textbox.set_name("example_textbox")
+	textbox.get_node("SubViewport/Label").set_text(str(name_input))
+	textbox.set_texture(viewport.get_texture())
+	if not "example_textbox" in global_name_list:
+		global_name_list["example_textbox"] =[]
+	global_name_list["example_textbox"].append([textbox, x, y, z, width, depth, height])
+	generate_one_model(name_input, x,y,z,width, depth, height)
+	add_child(textbox)
+	demo_new_cortical()
