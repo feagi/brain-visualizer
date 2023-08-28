@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=23 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -10,6 +10,7 @@
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
+[ext_resource type="PackedScene" uid="uid://cwhmgj80l7uir" path="res://Feagi-Godot-Interface/UI/Windows/Create_cortical/create_cortical.tscn" id="10_5x3e1"]
 [ext_resource type="PackedScene" uid="uid://cou6ppgui40tg" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.tscn" id="10_v25c0"]
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
@@ -115,6 +116,12 @@ multimesh = SubResource("MultiMesh_oeyfo")
 [node name="Windows" type="Node" parent="UI"]
 
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
+
+[node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
+offset_left = 402.0
+offset_top = 263.0
+offset_right = 402.0
+offset_bottom = 263.0
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
 visible = false

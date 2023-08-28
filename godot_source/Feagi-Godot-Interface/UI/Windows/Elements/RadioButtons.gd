@@ -12,7 +12,9 @@ func _ready():
 	button_group = ButtonGroup.new()
 	var children: Array = get_children()
 	for child in children:
-		child.button_group = button_group
+		if child.get_class() == "CheckBox" or child.get_class() == "Button" or child.get_class() == "CheckButton":
+			# Just to filter non-button based out.
+			child.button_group = button_group
 	button_group.allow_unpress = allow_deselecting
 	button_group.pressed.connect(_emit_pressed)
 
