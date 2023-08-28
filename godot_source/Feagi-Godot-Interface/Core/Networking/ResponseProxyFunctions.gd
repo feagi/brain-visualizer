@@ -36,8 +36,6 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
 
-
-
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
 	if _response_code == 422:
@@ -51,7 +49,6 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 		is_2D_coordinates_defined = true
 		coordinates_2D = other_properties["coordinates_2d"]
 	
-
 	FeagiCache.cortical_areas_cache.add_cortical_area(
 		cortical_ID_raw["cortical_id"],
 		other_properties["cortical_name"],
@@ -62,12 +59,20 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 		other_properties["cortical_type"]
 	)
 
-
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
 	pass
 
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	pass
+
+func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
+	if _response_code == 422:
+		push_error("Unable to process new properties for %s, skipping!" % [changed_cortical_ID])
+		return
+	
+	# Property change accepted, pull latest details
+	FeagiRequests.refresh_cortical_area(changed_cortical_ID)
 	pass
 
 ## returns nothing, so we passthrough the deleted cortical ID

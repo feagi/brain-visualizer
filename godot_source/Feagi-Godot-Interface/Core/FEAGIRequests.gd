@@ -19,8 +19,16 @@ func refresh_cortical_area(ID: StringName) -> void:
 
 ## Requests from FEAGI to add a cortical area using the custom call
 ## the call returns the FEAGI generated cortical ID, at that point the cache will trigger a cortical area added signal
-func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
+func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool,
+	coordinates_2D: Vector2i = Vector2(0,0), cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
+
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
+
+## Sets the properties of a given cortical area
+## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!
+## Convert Vectors to arrays, StringNames to Strings
+func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: Dictionary) -> void:
+	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
 
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area

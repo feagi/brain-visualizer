@@ -123,7 +123,6 @@ func GET_CO_corticalAreas_list_detailed():
 func GET_MO_list_types(): # USED 1x
 	_interface_ref.FEAGI_GET(_address_list.GET_morphologies_list_types, _response_functions_ref.GET_MO_list_types)
 
-
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.FEAGI_POST(_address_list.POST_feagi_burstEngine, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
@@ -157,8 +156,18 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = coordinates_2D
 	
-	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) # Passthrough properties so we have them to build cortical area
-	
+	# Passthrough properties so we have them to build cortical area
+	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
+
+## Sets the properties of a specific cortical area
+## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
+## Only the keys being changed should be input, no need to pull everything
+func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
+	data_to_set["cortical_id"] = str(cortical_ID)
+	# Passthrough the corticalID so we know what cortical area was updated
+	_interface_ref.FEAGI_POST(_address_list.PUT_genome_corticalArea, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
+	pass
+
 ## TODO clean up this
 func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename these variables
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + extra_name, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
@@ -167,18 +176,4 @@ func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename the
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted
 
-
-func PUT_GE_corticalArea(dataIn: Dictionary, corticalIDStr: String = ""):
-	## TODO whats this?
-	##if corticalIDStr == "": corticalIDStr = dataIn["cortical_id"]
-	##_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_CORTICALAREAEQUALS + corticalIDStr, RELAYED_PUT_GE_CORTICALAREA)
-	pass
-
-
-func RELAYED_PUT_GE_CORTICALAREA(_result, _response_code, _headers, body: PackedByteArray):
-	## TODO whats this>
-	##var specificCortex: Dictionary = JSON.parse_string(body.get_string_from_utf8())
-	##specificCortex.merge(TEMP, true)
-	##_interface_ref.PUT(_address_list.PUT_genome_corticalArea, _response_functions_ref._Relay_PUT_GE_corticalArea, specificCortex)
-	pass
 
