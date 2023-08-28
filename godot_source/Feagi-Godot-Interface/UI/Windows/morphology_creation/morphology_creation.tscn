@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="4_iery8"]
 [ext_resource type="Texture2D" uid="uid://bgxilkp40usp7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_d74uo"]
-[ext_resource type="Texture2D" uid="uid://l5hm1rl0xvy4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/triangle_left.png" id="7_erdh2"]
+[ext_resource type="Texture2D" uid="uid://dlpix0m3i8ect" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
 
 [node name="morphology_creation" type="Panel"]
 anchors_preset = -1
@@ -76,6 +76,7 @@ offset_bottom = 144.0
 text = "Morphology Definition"
 
 [node name="Vector_BOX" type="BoxContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -130,7 +131,6 @@ expand_icon = true
 script = ExtResource("6_d74uo")
 
 [node name="Patterns_BOX" type="BoxContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 0.5
@@ -161,7 +161,6 @@ text = "Z        "
 [node name="TextureRect" type="TextureRect" parent="Patterns_BOX/XYZ_letters"]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-texture = ExtResource("7_erdh2")
 expand_mode = 1
 
 [node name="Label4" type="Label" parent="Patterns_BOX/XYZ_letters"]
@@ -195,7 +194,7 @@ layout_mode = 2
 [node name="TextureRect" type="TextureRect" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-texture = ExtResource("7_erdh2")
+texture = ExtResource("7_0cxh8")
 expand_mode = 1
 
 [node name="X2" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
@@ -213,6 +212,20 @@ layout_mode = 2
 texture_normal = ExtResource("5_42u6j")
 ignore_texture_size = true
 stretch_mode = 0
+
+[node name="Composite_BOX" type="BoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="add_row" type="Button" parent="."]
 layout_mode = 2
