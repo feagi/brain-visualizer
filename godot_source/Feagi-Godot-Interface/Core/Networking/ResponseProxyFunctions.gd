@@ -40,10 +40,17 @@ func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArra
 
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
+	if _response_code == 422:
+		push_error("Unable to process new custom cortical area dict, skipping!")
+		return
+	
 	var cortical_ID_raw: Dictionary = _body_to_dictionary(response_body)
-	var is_2D_coordinates_defined: bool = true
-	if other_properties["coordinates_2d"] == "[null, null]":
-		is_2D_coordinates_defined = false
+	var is_2D_coordinates_defined: bool = false
+	var coordinates_2D: Vector2 = Vector2(0,0)
+	if "coordinates_2d" in other_properties.keys():
+		is_2D_coordinates_defined = true
+		coordinates_2D = other_properties["coordinates_2d"]
+	
 
 	FeagiCache.cortical_areas_cache.add_cortical_area(
 		cortical_ID_raw["cortical_id"],
@@ -51,7 +58,7 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 		other_properties["coordinates_3d"],
 		other_properties["cortical_dimensions"],
 		is_2D_coordinates_defined,
-		other_properties["coordinates_2d"],
+		coordinates_2D,
 		other_properties["cortical_type"]
 	)
 

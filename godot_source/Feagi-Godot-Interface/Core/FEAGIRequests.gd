@@ -19,7 +19,7 @@ func refresh_cortical_area(ID: StringName) -> void:
 
 ## Requests from FEAGI to add a cortical area using the custom call
 ## the call returns the FEAGI generated cortical ID, at that point the cache will trigger a cortical area added signal
-func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), cortical_type: StringName = "CUSTOM") -> void:
+func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
 
 ## Requests FEAGI to delete a cortical area by ID
