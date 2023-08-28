@@ -3,7 +3,7 @@ class_name FEAGIUtils
 ## A set of functions that are useful around the program. Treat this class as static
 
 ## Converts a 3 long int array to a Vector3i
-static func array_to_vector3i(input: Array) -> Vector3i:
+static func array_to_vector3i(input: Array) -> Vector3i: # cannot set array type to int due to gdscript shenanigans
 	return Vector3i(input[0], input[1], input[2])
 
 ## Converts a 2 long int array to a Vector2i
@@ -22,6 +22,16 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	var output: Array[Vector2i] = []
 	for sub_array in input:
 		output.append(array_to_vector2i(sub_array))
+	return output
+
+## Converts a Vector3i to a 3 long int array
+static func vector3i_to_array(input: Vector3i) -> Array[int]:
+	var output: Array[int] = [input.x, input.y, input.z]
+	return output
+
+## Converts a Vector2i to a 2 long int array
+static func vector2i_to_array(input: Vector2i) -> Array[int]:
+	var output: Array[int] = [input.x, input.y]
 	return output
 
 ## Keeps input within defined bounds (floats)
