@@ -84,7 +84,10 @@ func _on_line_edit_text_changed(new_text):
 
 
 func _on_ca_add_button_pressed():
-	visible = true
+	if visible:
+		visible = false
+	else:
+		visible = true
 
 
 func _on_visibility_changed():
