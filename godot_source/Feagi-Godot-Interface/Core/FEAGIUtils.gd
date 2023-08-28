@@ -25,14 +25,27 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	return output
 
 ## Converts a Vector3i to a 3 long int array
-static func vector3i_to_array(input: Vector3i) -> Array:
+static func vector3i_to_array(input: Vector3i) -> Array[int]:
 	var output: Array = [input.x, input.y, input.z]
 	return output
 
 ## Converts a Vector2i to a 2 long int array
-static func vector2i_to_array(input: Vector2i) -> Array:
+static func vector2i_to_array(input: Vector2i) -> Array[int]:
 	var output: Array = [input.x, input.y]
 	return output
+
+static func vector3i_array_to_array_of_arrays(input: Array[Vector3i]) -> Array[Array]:
+	var output: Array[Array] = []
+	for v in input:
+		output.append(vector3i_to_array(v))
+	return output
+
+static func vector2i_array_to_array_of_arrays(input: Array[Vector2i]) -> Array[Array]:
+	var output: Array[Array] = []
+	for v in input:
+		output.append(vector2i_to_array(v))
+	return output
+
 
 ## JSON library of godot does funny things, use this instead
 static func vector3i_to_string(input: Vector3i) -> String:
