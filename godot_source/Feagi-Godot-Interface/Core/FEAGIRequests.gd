@@ -9,16 +9,19 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 ################################ Cortical Areas #################################
 
 ## Requests from FEAGI summary of all cortical areas (name, dimensions, 2D/3D location, and visibility)
-## Triggers an update in FEAGI Cached cortical areas, which cascades to signals for cortical areas added / removed
+## Triggers an update in FEAGI Cached cortical areas
+## Success emits cortical_area_added, cortical_area_removed, cortical_area_updated depending on situation
 func refresh_cortical_areas() -> void:
 	_feagi_interface.calls.GET_GE_CorticalArea_geometry() # This will afterwards trigger "refresh_connection_list()"
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
+## Success emits cortical_area_updated
 func refresh_cortical_area(ID: StringName) -> void:
 	_feagi_interface.calls.GET_GE_corticalArea(ID)
 
 ## Requests from FEAGI to add a cortical area using the custom call
-## the call returns the FEAGI generated cortical ID, at that point the cache will trigger a cortical area added signal
+## the call returns the FEAGI generated cortical ID
+## Success emits cortical_area_added
 func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool,
 	coordinates_2D: Vector2i = Vector2(0,0), cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
 
@@ -27,11 +30,13 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 ## Sets the properties of a given cortical area
 ## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!
 ## Convert Vectors to arrays, StringNames to Strings
+## Success emits cortical_area_updated since this calls "refresh_cortical_area" on success
 func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: Dictionary) -> void:
 	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
 
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
+## Success calls cortical_area_removed, and possibly various morphology_removed
 func delete_cortical_area(cortical_id: StringName) -> void:
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
 
