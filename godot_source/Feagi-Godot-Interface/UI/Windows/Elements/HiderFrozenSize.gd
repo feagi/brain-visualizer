@@ -1,6 +1,6 @@
 extends BoxContainer
-class_name HiderConstantSize
-## Enables hiding of all children without affecting size / placement
+class_name HiderFrozenSize
+## Enables hiding of all control children without affecting size / placement
 
 @export var children_visible_at_start: bool = true
 

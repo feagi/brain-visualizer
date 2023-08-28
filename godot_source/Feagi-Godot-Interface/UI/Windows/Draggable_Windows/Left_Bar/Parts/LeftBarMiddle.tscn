@@ -1,0 +1,64 @@
+[gd_scene load_steps=2 format=3 uid="uid://x0wkgtc5o5vw"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="1_vwrd4"]
+
+[node name="LeftBarTop" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -862.0
+offset_bottom = -404.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Voxel_Neuron_Density" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Voxel_Neuron_Density"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Voxel Neuron Density"
+
+[node name="Voxel_Neuron_Density" type="LineEdit" parent="Voxel_Neuron_Density"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_vwrd4")
+
+[node name="Synaptic_Attractivity" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Synaptic_Attractivity"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Synaptic Attractivity"
+
+[node name="Synaptic Attractivity" type="LineEdit" parent="Synaptic_Attractivity"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_vwrd4")
+
+[node name="Post-Synaptic_Potential" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Post-Synaptic_Potential"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Post-Synaptic Potential"
+
+[node name="Post-Synaptic_Potential" type="LineEdit" parent="Post-Synaptic_Potential"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_vwrd4")
+
+[node name="PSP_Max" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PSP_Max"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PSP Max"
+
+[node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
+layout_mode = 2
+editable = false
+script = ExtResource("1_vwrd4")
