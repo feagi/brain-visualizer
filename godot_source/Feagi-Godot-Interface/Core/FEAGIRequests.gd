@@ -36,7 +36,7 @@ func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: D
 
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
-## Success calls cortical_area_removed, and possibly various morphology_removed
+## Success emits cortical_area_removed, and possibly various morphology_removed
 func delete_cortical_area(cortical_id: StringName) -> void:
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
 
@@ -46,6 +46,12 @@ func delete_cortical_area(cortical_id: StringName) -> void:
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
 	_feagi_interface.calls.GET_MO_list_types()
+
+## Requests the latest info on a specific morphology name
+## Success emits morphology_updated
+func refresh_morphology_properties(morphology_name: StringName) -> void:
+	_feagi_interface.calls.GET_GE_morphology(morphology_name)
+
 
 
 ################################## Connections ##################################

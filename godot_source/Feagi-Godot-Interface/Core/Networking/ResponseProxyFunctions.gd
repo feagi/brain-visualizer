@@ -38,7 +38,7 @@ func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrel
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
-	
+	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
 
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
