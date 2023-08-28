@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://b63y4prhuagv7"]
+
+[node name="Vector3Spinbox" type="BoxContainer"]
+
+[node name="LabelX" type="Label" parent="."]
+layout_mode = 2
+text = "W"
+
+[node name="SpacerX" type="Control" parent="."]
+layout_mode = 2
+
+[node name="W" type="SpinBox" parent="."]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+14
+value = 1.0
+alignment = 1
+
+[node name="LabelY" type="Label" parent="."]
+layout_mode = 2
+text = "H"
+
+[node name="SpacerY" type="Control" parent="."]
+layout_mode = 2
+
+[node name="H" type="SpinBox" parent="."]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+14
+value = 1.0
+alignment = 1
+
+[node name="LabelZ" type="Label" parent="."]
+layout_mode = 2
+text = "D"
+
+[node name="SpacerZ" type="Control" parent="."]
+layout_mode = 2
+
+[node name="D" type="SpinBox" parent="."]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+14
+value = 1.0
+alignment = 1
