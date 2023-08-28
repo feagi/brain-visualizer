@@ -46,26 +46,33 @@ offset_right = 222.0
 offset_bottom = 110.0
 script = ExtResource("3_d4vgy")
 
+[node name="composite" type="CheckBox" parent="RadioButtons"]
+layout_mode = 2
+
 [node name="Label" type="Label" parent="RadioButtons"]
 layout_mode = 2
 text = "Composite"
 
-[node name="composite" type="CheckBox" parent="RadioButtons"]
+[node name="TextureButton" type="TextureButton" parent="RadioButtons"]
+layout_mode = 2
+
+[node name="vectors" type="CheckBox" parent="RadioButtons"]
 layout_mode = 2
 
 [node name="Label2" type="Label" parent="RadioButtons"]
 layout_mode = 2
 text = "Vectors"
 
-[node name="vectors" type="CheckBox" parent="RadioButtons"]
+[node name="TextureButton2" type="TextureButton" parent="RadioButtons"]
+layout_mode = 2
+ignore_texture_size = true
+
+[node name="patterns" type="CheckBox" parent="RadioButtons"]
 layout_mode = 2
 
 [node name="Label3" type="Label" parent="RadioButtons"]
 layout_mode = 2
 text = "Patterns"
-
-[node name="patterns" type="CheckBox" parent="RadioButtons"]
-layout_mode = 2
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 0
@@ -129,6 +136,55 @@ layout_mode = 2
 icon = ExtResource("5_42u6j")
 expand_icon = true
 script = ExtResource("6_d74uo")
+
+[node name="Composite_BOX" type="BoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -30.5
+offset_right = 209.0
+offset_bottom = 30.5
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Composite_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+text = "Seed"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="seed_x" type="LineEdit" parent="Composite_BOX/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="seed_y" type="LineEdit" parent="Composite_BOX/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="seed_z" type="LineEdit" parent="Composite_BOX/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+text = "Patterns:"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "X:"
+
+[node name="Label2" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Y:"
+
+[node name="Label3" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Z:"
 
 [node name="Patterns_BOX" type="BoxContainer" parent="."]
 layout_mode = 1
@@ -212,20 +268,6 @@ layout_mode = 2
 texture_normal = ExtResource("5_42u6j")
 ignore_texture_size = true
 stretch_mode = 0
-
-[node name="Composite_BOX" type="BoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="add_row" type="Button" parent="."]
 layout_mode = 2
