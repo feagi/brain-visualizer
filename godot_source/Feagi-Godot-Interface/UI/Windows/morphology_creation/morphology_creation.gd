@@ -42,4 +42,10 @@ func _on_nm_add_button_pressed():
 
 
 func _on_visibility_changed():
-	pass # Replace with function body.
+	if not visible:
+		$Composite_BOX.visible = false
+		$Vector_BOX.visible = false
+		$Patterns_BOX.visible = false
+		$Composite_BOX.set_press(false)
+		$Vector_BOX.set_press(false)
+		$Patterns_BOX.set_press(false)
