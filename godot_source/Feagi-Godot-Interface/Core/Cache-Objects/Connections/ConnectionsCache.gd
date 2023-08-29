@@ -1,5 +1,5 @@
 extends Object
-class_name ConnectionsCache
+class_name ConnectionsCacheOLD
 ## stores a forward and reverse dictionary for rapid connections lookup
 ## This object in of itself does not store the mapping properties, functions here related are mere proxies to the data stored in the [CorticalArea] object
 
