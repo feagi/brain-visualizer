@@ -123,13 +123,10 @@ offset_right = 366.952
 offset_bottom = 252.912
 script = ExtResource("11_0eicd")
 
-[node name="BoxContainer2" parent="UI/Windows/Create_Cortical/VBoxContainer" index="1"]
+[node name="XYZ" parent="UI/Windows/Create_Cortical/VBoxContainer" index="4"]
 visible = false
 
-[node name="XYZ" parent="UI/Windows/Create_Cortical/VBoxContainer" index="2"]
-visible = false
-
-[node name="WDH" parent="UI/Windows/Create_Cortical/VBoxContainer" index="3"]
+[node name="WDH" parent="UI/Windows/Create_Cortical/VBoxContainer" index="5"]
 visible = false
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
@@ -181,6 +178,7 @@ offset_bottom = 181.88
 grow_vertical = 1
 
 [node name="morphology_creation" parent="UI/Windows" instance=ExtResource("18_fd2xm")]
+visible = false
 anchor_left = 0.351562
 anchor_top = 0.287037
 anchor_right = 0.352
@@ -206,7 +204,8 @@ grow_vertical = 1
 [connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/IPU" to="UI/Windows/Create_Cortical" method="_on_ipu_pressed"]
 [connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/OPU" to="UI/Windows/Create_Cortical" method="_on_opu_pressed"]
 [connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/CUSTOM" to="UI/Windows/Create_Cortical" method="_on_custom_pressed"]
-[connection signal="text_changed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer2/LineEdit" to="UI/Windows/Create_Cortical" method="_on_line_edit_text_changed"]
+[connection signal="text_changed" from="UI/Windows/Create_Cortical/VBoxContainer/name_linedit/LineEdit" to="UI/Windows/Create_Cortical" method="_on_line_edit_text_changed"]
+[connection signal="item_selected" from="UI/Windows/Create_Cortical/VBoxContainer/name_dropdown/dropdown_node" to="UI/Windows/Create_Cortical" method="_on_dropdown_node_item_selected"]
 [connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntX" to="UI/Windows/Create_Cortical" method="_on_int_x_value_changed"]
 [connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntY" to="UI/Windows/Create_Cortical" method="_on_int_y_value_changed"]
 [connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntZ" to="UI/Windows/Create_Cortical" method="_on_int_z_value_changed"]
