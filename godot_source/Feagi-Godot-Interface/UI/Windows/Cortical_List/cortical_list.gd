@@ -7,4 +7,4 @@ func _on_ca_view_button_pressed():
 		visible = true
 		for i in FeagiCache.cortical_areas_cache.cortical_areas:
 			clear() # we need to fix this without clear. 
-			add_item(FeagiCache.cortical_areas_cache.cortical_areas[i].name)		
+			add_item(FeagiCache.cortical_areas_cache.cortical_areas[i].name)
