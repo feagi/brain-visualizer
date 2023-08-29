@@ -63,7 +63,6 @@ func _ready():
 	
 	if automatic_maintain_width:
 		_parent.resized.connect(_auto_maintain_width)
-		_auto_maintain_width
 	
 
 

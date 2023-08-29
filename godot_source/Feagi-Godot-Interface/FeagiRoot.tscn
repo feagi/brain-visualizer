@@ -1,12 +1,12 @@
-[gd_scene load_steps=24 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=25 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/brain_visualizer_main_script.gd" id="3_1xkbx"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
-[ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/renderer.gdshader" id="5_sbo83"]
+[ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://pw3mhaleotlc" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://bvj2cfc5acitg" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
@@ -16,6 +16,8 @@
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
+[ext_resource type="PackedScene" uid="uid://b3uycanyq64c7" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.tscn" id="18_fd2xm"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -23,15 +25,8 @@ ambient_light_source = 2
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_g2eyt"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_h0j4q"]
-render_priority = 0
-shader = ExtResource("5_sbo83")
-shader_parameter/green_intensity = 1.0
-shader_parameter/red_intensity = 0.0
-shader_parameter/blue_intensity = 0.0
-
 [sub_resource type="BoxMesh" id="BoxMesh_nfjpt"]
-material = SubResource("ShaderMaterial_h0j4q")
+material = ExtResource("5_fjalb")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_brfu7"]
 
@@ -119,6 +114,7 @@ multimesh = SubResource("MultiMesh_oeyfo")
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 
 [node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
+visible = false
 anchor_left = 0.348958
 anchor_top = 0.405864
 anchor_right = 0.349
@@ -127,12 +123,21 @@ offset_right = 366.952
 offset_bottom = 252.912
 script = ExtResource("11_0eicd")
 
+[node name="XYZ" parent="UI/Windows/Create_Cortical/VBoxContainer" index="4"]
+visible = false
+
+[node name="WDH" parent="UI/Windows/Create_Cortical/VBoxContainer" index="5"]
+visible = false
+
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
 visible = false
 anchor_left = 0.532986
-anchor_top = 0.603395
-anchor_right = 0.828993
-anchor_bottom = 0.837963
+anchor_top = 0.603
+anchor_right = 0.533
+anchor_bottom = 0.603395
+offset_top = 0.255981
+offset_right = 357.984
+offset_bottom = 152.0
 
 [node name="TutorialDisplay" parent="UI/Windows" instance=ExtResource("10_v25c0")]
 visible = false
@@ -155,10 +160,16 @@ offset_bottom = 376.0
 visible = false
 anchor_left = 0.313368
 anchor_top = 0.174383
-anchor_right = 0.549479
-anchor_bottom = 0.976852
+anchor_right = 0.313368
+anchor_bottom = 0.174383
+offset_right = 329.0
+offset_bottom = 392.0
+grow_horizontal = 1
+grow_vertical = 1
+script = ExtResource("16_2bskm")
 
 [node name="Cortical_List" parent="UI/Windows" instance=ExtResource("14_db7m2")]
+visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -169,15 +180,35 @@ offset_right = 108.592
 offset_bottom = 181.88
 grow_vertical = 1
 
+[node name="morphology_creation" parent="UI/Windows" instance=ExtResource("18_fd2xm")]
+visible = false
+anchor_left = 0.351562
+anchor_top = 0.287037
+anchor_right = 0.352
+anchor_bottom = 0.287037
+offset_right = 575.496
+offset_bottom = 520.0
+grow_horizontal = 1
+grow_vertical = 1
+
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows/Circuit_Import" method="_on_nc_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows/Cortical_List" method="_on_ca_view_button_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows/Create_Cortical" method="_on_ca_add_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMAdd_Button" to="UI/Windows/morphology_creation" method="_on_nm_add_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/Mode_Button" to="UI/Windows/TopBar" method="_on_mode_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
+[connection signal="visibility_changed" from="UI/Windows/Create_Cortical" to="UI/Windows/Create_Cortical" method="_on_visibility_changed"]
 [connection signal="pressed" from="UI/Windows/Create_Cortical/TitleBar/Close_Button" to="UI/Windows/Create_Cortical" method="_on_close_button_pressed"]
 [connection signal="pressed" from="UI/Windows/Create_Cortical/Button2" to="UI/Windows/Create_Cortical" method="_on_button_2_pressed"]
+[connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/IPU" to="UI/Windows/Create_Cortical" method="_on_ipu_pressed"]
+[connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/OPU" to="UI/Windows/Create_Cortical" method="_on_opu_pressed"]
+[connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/CUSTOM" to="UI/Windows/Create_Cortical" method="_on_custom_pressed"]
+[connection signal="text_changed" from="UI/Windows/Create_Cortical/VBoxContainer/name_linedit/LineEdit" to="UI/Windows/Create_Cortical" method="_on_line_edit_text_changed"]
+[connection signal="item_selected" from="UI/Windows/Create_Cortical/VBoxContainer/name_dropdown/dropdown_node" to="UI/Windows/Create_Cortical" method="_on_dropdown_node_item_selected"]
 [connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntX" to="UI/Windows/Create_Cortical" method="_on_int_x_value_changed"]
 [connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntY" to="UI/Windows/Create_Cortical" method="_on_int_y_value_changed"]
 [connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntZ" to="UI/Windows/Create_Cortical" method="_on_int_z_value_changed"]
@@ -187,6 +218,9 @@ grow_vertical = 1
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
+[connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/composite" to="UI/Windows/morphology_creation" method="_on_composite_pressed"]
+[connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/vectors" to="UI/Windows/morphology_creation" method="_on_vectors_pressed"]
+[connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/patterns" to="UI/Windows/morphology_creation" method="_on_patterns_pressed"]
 
 [editable path="UI/Windows/TopBar"]
 [editable path="UI/Windows/Create_Cortical"]
@@ -195,3 +229,6 @@ grow_vertical = 1
 [editable path="UI/Windows/Create_Cortical/VBoxContainer/WDH"]
 [editable path="UI/Windows/Quick_Connect"]
 [editable path="UI/Windows/TutorialBar"]
+[editable path="UI/Windows/morphology_creation"]
+[editable path="UI/Windows/morphology_creation/Vector_BOX/Scroll_Vertical"]
+[editable path="UI/Windows/morphology_creation/Patterns_BOX/Scroll_Vertical"]

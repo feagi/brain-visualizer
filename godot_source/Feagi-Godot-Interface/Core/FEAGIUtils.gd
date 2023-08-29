@@ -25,8 +25,8 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	return output
 
 ## Converts a Vector3i to a 3 long int array
-static func vector3i_to_array(input: Vector3i) -> Array[int]:
-	var output: Array[int] = [input.x, input.y, input.z]
+static func vector3i_to_array(input: Vector3i):
+	var output: Array = [input.x, input.y, input.z]
 	return output
 
 ## Converts a Vector2i to a 2 long int array
@@ -98,4 +98,11 @@ static func find_missing_elements(is_missing: Array, is_missing_from: Array) -> 
 	for e in is_missing:
 		if e not in is_missing_from:
 			output.append(e)
+	return output
+
+## why is this so dumb
+static func untyped_array_to_int_array(input: Array) -> Array[int]:
+	var output: Array[int]
+	for i in input:
+		output.append(int(i))
 	return output

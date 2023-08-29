@@ -6,7 +6,7 @@
 
 [node name="Quick_Connect" type="Panel"]
 anchors_preset = -1
-anchor_right = 0.296007
+anchor_right = 0.315104
 anchor_bottom = 0.234568
 grow_horizontal = 2
 grow_vertical = 2

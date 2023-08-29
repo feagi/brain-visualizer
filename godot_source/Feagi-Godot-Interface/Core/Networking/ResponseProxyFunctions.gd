@@ -36,13 +36,15 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.available_circuits = _body_to_string_array(response_body)
 
+func GET_GE_circuitsize(_response_code: int, response_body: PackedByteArray, circuit_name: StringName) -> void:
+	var size_array: Array[int] = FEAGIUtils.untyped_array_to_int_array(_body_to_untyped_array(response_body))
+	FeagiEvents.retrieved_circuit_size.emit(circuit_name, FEAGIUtils.array_to_vector3i(size_array))
+	
 func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArray, source_destination_ID_str: Array) -> void:
 	if source_destination_ID_str[0] not in FeagiCache.cortical_areas_cache.cortical_areas.keys() or source_destination_ID_str[1] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
 		push_error("Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
 		return
-	
-
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
@@ -65,19 +67,20 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
-	if "coordinates_2d" in other_properties.keys():
-		is_2D_coordinates_defined = true
-		coordinates_2D = other_properties["coordinates_2d"]
-	
-	FeagiCache.cortical_areas_cache.add_cortical_area(
-		cortical_ID_raw["cortical_id"],
-		other_properties["cortical_name"],
-		other_properties["coordinates_3d"],
-		other_properties["cortical_dimensions"],
-		is_2D_coordinates_defined,
-		coordinates_2D,
-		other_properties["cortical_type"]
-	)
+	if cortical_ID_raw['cortical_id'] != null:
+		if "coordinates_2d" in other_properties.keys():
+			is_2D_coordinates_defined = true
+			coordinates_2D = other_properties["coordinates_2d"]
+		
+		FeagiCache.cortical_areas_cache.add_cortical_area(
+			cortical_ID_raw["cortical_id"],
+			other_properties["cortical_name"],
+			other_properties["coordinates_3d"]	,
+			other_properties["cortical_dimensions"],
+			is_2D_coordinates_defined,
+			coordinates_2D,
+			other_properties["cortical_type"]
+		)
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
@@ -107,10 +110,8 @@ func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray
 	FeagiCache.connections_cache.cortical_area_deleted(deleted_cortical_ID)
 	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
 
-
-
-
-
+func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
+	return JSON.parse_string(response_body.get_string_from_utf8())
 
 func _body_to_string_array(response_body: PackedByteArray) -> PackedStringArray:
 	return JSON.parse_string(response_body.get_string_from_utf8())
@@ -120,3 +121,5 @@ func _body_to_dictionary(response_body: PackedByteArray) -> Dictionary:
 
 func _body_to_float(response_body: PackedByteArray) -> float:
 	return (str(response_body.get_string_from_utf8())).to_float()
+
+

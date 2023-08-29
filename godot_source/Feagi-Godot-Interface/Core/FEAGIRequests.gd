@@ -128,3 +128,11 @@ func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
 ## Gets the current available circuits of FEAGI
 func refresh_available_circuits() -> void:
 	_feagi_interface.calls.GET_GE_circuits()
+
+## Retrieves the size of a circuit given a circuit name (include the ''.json')
+## On Success, emits signal 'retrieved_circuit_size' in autoload node FEAGIEvents
+func get_circuit_size(circuit_name: StringName) -> void:
+	if circuit_name not in FeagiCache.available_circuits:
+		push_warning("Attempted to get the size of non-cached circuit %s! Skipping! You may want to refresh available circuits first!")
+		return
+	_feagi_interface.calls.GET_GE_circuitsize(circuit_name)

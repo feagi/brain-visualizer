@@ -8,6 +8,6 @@ signal genome_was_reset()
 
 ## We got visualization data from Websocket for BV
 signal retrieved_visualization_data(data: Array)
-
-
+signal retrieved_circuit_size(circuit_name: StringName, size_whd: Vector3i)
 #signal retrieved_mapping_information(source_area: CorticalArea, destination_area: CorticalArea, mappings: CorticalMappingProperties)
+

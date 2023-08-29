@@ -1,0 +1,398 @@
+[gd_scene load_steps=8 format=3 uid="uid://b3uycanyq64c7"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.gd" id="1_v0w03"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_0hls5"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="3_d4vgy"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="4_iery8"]
+[ext_resource type="Texture2D" uid="uid://bgxilkp40usp7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_d74uo"]
+[ext_resource type="Texture2D" uid="uid://dlpix0m3i8ect" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
+
+[node name="morphology_creation" type="Panel"]
+anchors_preset = -1
+anchor_right = 0.479167
+anchor_bottom = 0.82716
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_v0w03")
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleBar" parent="." instance=ExtResource("2_0hls5")]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+
+[node name="morp_box" type="BoxContainer" parent="."]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 42.0
+offset_right = 216.0
+offset_bottom = 73.0
+
+[node name="Label" type="Label" parent="morp_box"]
+layout_mode = 2
+text = "Morphology Name                                                    "
+
+[node name="LineEdit" type="LineEdit" parent="morp_box"]
+layout_mode = 2
+
+[node name="RadioButtons" type="BoxContainer" parent="."]
+layout_mode = 0
+offset_top = 84.0
+offset_right = 222.0
+offset_bottom = 110.0
+script = ExtResource("3_d4vgy")
+
+[node name="composite" type="CheckBox" parent="RadioButtons"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RadioButtons"]
+layout_mode = 2
+text = "Composite"
+
+[node name="TextureButton" type="TextureButton" parent="RadioButtons"]
+layout_mode = 2
+
+[node name="vectors" type="CheckBox" parent="RadioButtons"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="RadioButtons"]
+layout_mode = 2
+text = "Vectors"
+
+[node name="TextureButton2" type="TextureButton" parent="RadioButtons"]
+layout_mode = 2
+ignore_texture_size = true
+
+[node name="patterns" type="CheckBox" parent="RadioButtons"]
+layout_mode = 2
+
+[node name="Label3" type="Label" parent="RadioButtons"]
+layout_mode = 2
+text = "Patterns"
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 118.0
+offset_right = 177.0
+offset_bottom = 144.0
+text = "Morphology Definition"
+
+[node name="Vector_BOX" type="BoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.444
+anchor_right = 0.5
+anchor_bottom = 0.444
+offset_left = -151.0
+offset_top = -82.484
+offset_right = 151.0
+offset_bottom = 82.516
+grow_horizontal = 2
+grow_vertical = 2
+vertical = true
+
+[node name="XYZ_letters" type="HBoxContainer" parent="Vector_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Vector_BOX/XYZ_letters"]
+layout_mode = 2
+text = "     X                  "
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="Vector_BOX/XYZ_letters"]
+layout_mode = 2
+text = "Y                     "
+
+[node name="Label3" type="Label" parent="Vector_BOX/XYZ_letters"]
+layout_mode = 2
+text = "Z"
+
+[node name="Scroll_Vertical" parent="Vector_BOX" instance=ExtResource("4_iery8")]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="XYZ_BOX" type="HBoxContainer" parent="Vector_BOX/Scroll_Vertical/VBoxContainer" index="0"]
+layout_mode = 2
+
+[node name="X" type="SpinBox" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+min_value = -1e+11
+max_value = 1e+11
+
+[node name="Y" type="SpinBox" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+min_value = -1e+11
+max_value = 1e+11
+
+[node name="Z" type="SpinBox" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+min_value = -1e+11
+max_value = 1e+11
+
+[node name="Button" type="Button" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+icon = ExtResource("5_42u6j")
+expand_icon = true
+script = ExtResource("6_d74uo")
+
+[node name="Composite_BOX" type="BoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -169.0
+offset_top = -95.5
+offset_right = 169.0
+offset_bottom = 95.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Composite_BOX"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+text = "Seed"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="seed_x" type="LineEdit" parent="Composite_BOX/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="seed_y" type="LineEdit" parent="Composite_BOX/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="seed_z" type="LineEdit" parent="Composite_BOX/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+text = "Patterns:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "           X:                        "
+
+[node name="Label2" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Y:                      "
+
+[node name="Label3" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Z:"
+
+[node name="XYZ_BOX" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="X_BOX" type="VBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer"]
+layout_mode = 2
+text = "C"
+
+[node name="C1" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+11
+value = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer2"]
+layout_mode = 2
+text = "S"
+
+[node name="S1" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer2"]
+layout_mode = 2
+
+[node name="Y_BOX" type="VBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer"]
+layout_mode = 2
+text = "   C"
+
+[node name="C2" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+11
+value = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer2"]
+layout_mode = 2
+text = "   S"
+
+[node name="S2" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer2"]
+layout_mode = 2
+
+[node name="Z_BOX" type="VBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer"]
+layout_mode = 2
+text = "   C"
+
+[node name="C3" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+11
+value = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer2"]
+layout_mode = 2
+text = "   S"
+
+[node name="S3" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer2"]
+layout_mode = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+text = "Mapping:"
+
+[node name="OptionButton" type="OptionButton" parent="Composite_BOX/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+
+[node name="Patterns_BOX" type="BoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.416
+anchor_right = 0.5
+anchor_bottom = 0.416
+offset_left = -276.0
+offset_top = -64.976
+offset_right = 276.0
+offset_bottom = 217.024
+grow_horizontal = 2
+grow_vertical = 2
+vertical = true
+
+[node name="XYZ_letters" type="HBoxContainer" parent="Patterns_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Patterns_BOX/XYZ_letters"]
+layout_mode = 2
+text = "     X               "
+
+[node name="Label2" type="Label" parent="Patterns_BOX/XYZ_letters"]
+layout_mode = 2
+text = "Y             "
+
+[node name="Label3" type="Label" parent="Patterns_BOX/XYZ_letters"]
+layout_mode = 2
+text = "Z        "
+
+[node name="TextureRect" type="TextureRect" parent="Patterns_BOX/XYZ_letters"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+expand_mode = 1
+
+[node name="Label4" type="Label" parent="Patterns_BOX/XYZ_letters"]
+layout_mode = 2
+text = "     X              "
+
+[node name="Label5" type="Label" parent="Patterns_BOX/XYZ_letters"]
+layout_mode = 2
+text = "Y              "
+
+[node name="Label6" type="Label" parent="Patterns_BOX/XYZ_letters"]
+layout_mode = 2
+text = "Z"
+
+[node name="Scroll_Vertical" parent="Patterns_BOX" instance=ExtResource("4_iery8")]
+custom_minimum_size = Vector2(300, 230)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer" index="0"]
+layout_mode = 2
+
+[node name="X1" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Y1" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Z1" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+texture = ExtResource("7_0cxh8")
+expand_mode = 1
+
+[node name="X2" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Y2" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Z2" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="TextureButton" type="TextureButton" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+texture_normal = ExtResource("5_42u6j")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="add_row" type="Button" parent="."]
+layout_mode = 2
+offset_left = 192.0
+offset_top = 440.0
+offset_right = 326.0
+offset_bottom = 471.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Add Row"
+
+[node name="create" type="Button" parent="."]
+layout_mode = 0
+offset_left = 192.0
+offset_top = 480.0
+offset_right = 326.0
+offset_bottom = 511.0
+text = "Create"
+
+[editable path="Vector_BOX/Scroll_Vertical"]
+[editable path="Patterns_BOX/Scroll_Vertical"]

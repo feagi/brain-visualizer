@@ -79,15 +79,37 @@ text = "CUSTOM"
 [node name="CUSTOM" type="CheckBox" parent="VBoxContainer/BoxContainer/RadioButtons"]
 layout_mode = 2
 
-[node name="BoxContainer2" type="BoxContainer" parent="VBoxContainer"]
+[node name="name_linedit" type="BoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="Label2" type="Label" parent="VBoxContainer/BoxContainer2"]
+[node name="Label2" type="Label" parent="VBoxContainer/name_linedit"]
 layout_mode = 2
 text = "Cortical Name"
 
-[node name="LineEdit" type="LineEdit" parent="VBoxContainer/BoxContainer2"]
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/name_linedit"]
+layout_mode = 2
+
+[node name="name_dropdown" type="BoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Label2" type="Label" parent="VBoxContainer/name_dropdown"]
+layout_mode = 2
+text = "Cortical Name"
+
+[node name="dropdown_node" type="OptionButton" parent="VBoxContainer/name_dropdown"]
+layout_mode = 2
+
+[node name="channel_count" type="BoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Label2" type="Label" parent="VBoxContainer/channel_count"]
+layout_mode = 2
+text = "Channel Count"
+
+[node name="dropdown_node" type="SpinBox" parent="VBoxContainer/channel_count"]
 layout_mode = 2
 
 [node name="XYZ" parent="VBoxContainer" instance=ExtResource("3_akmb5")]

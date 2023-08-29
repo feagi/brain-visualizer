@@ -89,8 +89,9 @@ func GET_GE_circuits():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_circuits, _response_functions_ref.GET_GE_circuits)
 
 ## returns int array of given circuit name (.json included)
-func GET_GE_circuitsize(circuitName: String):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_circuitsize_CIRCUITNAMEEQUALS+circuitName, _response_functions_ref.GET_GE_circuitsize)
+func GET_GE_circuitsize(circuit_name: String):
+	## Pass Through circuit name so we know what circuit we are referring to at the response side
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_circuitsize+circuit_name, _response_functions_ref.GET_GE_circuitsize, circuit_name)
 
 ## returns dict by cortical ID of int arrays of 2D location of cortical area (array will be null null if no location is saved in FEAGI)
 func GET_GE_CorticalLocations2D():
