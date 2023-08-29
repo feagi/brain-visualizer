@@ -130,12 +130,13 @@ visible = false
 visible = false
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
+visible = false
 anchor_left = 0.532986
 anchor_top = 0.603
 anchor_right = 0.533
 anchor_bottom = 0.603395
 offset_top = 0.255981
-offset_right = 369.984
+offset_right = 357.984
 offset_bottom = 152.0
 
 [node name="TutorialDisplay" parent="UI/Windows" instance=ExtResource("10_v25c0")]
