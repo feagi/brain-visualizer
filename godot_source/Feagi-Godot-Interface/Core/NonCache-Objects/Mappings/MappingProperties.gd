@@ -23,3 +23,4 @@ func to_array() -> Array[Dictionary]:
     for mapping in mappings:
         output.append(mapping)
     return output
+
