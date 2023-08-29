@@ -15,6 +15,9 @@ func _on_nc_button_pressed():
 	size.x = 329
 	if visible:
 		visible = false
+		$HBoxContainer3/Vector3Spinbox/W.value = 0
+		$HBoxContainer3/Vector3Spinbox/H.value = 0
+		$HBoxContainer3/Vector3Spinbox/D.value = 0
 	else:
 		visible = true
 		$HBoxContainer/OptionButton.clear()
@@ -33,5 +36,6 @@ func _on_circuit_size_updated(circuit_name: StringName, circuit_dimensions: Vect
 	if circuit_name != ($HBoxContainer/OptionButton.text):
 		push_warning("Got wrong circuit area dimensions! Skipping!")
 		return
-	# I am not sure how you set your numbers
-	print(circuit_dimensions.x)
+	$HBoxContainer3/Vector3Spinbox/W.value = circuit_dimensions.x
+	$HBoxContainer3/Vector3Spinbox/H.value = circuit_dimensions.y
+	$HBoxContainer3/Vector3Spinbox/D.value = circuit_dimensions.z
