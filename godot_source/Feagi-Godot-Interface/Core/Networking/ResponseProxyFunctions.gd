@@ -48,8 +48,13 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 	if _response_code == 422:
 		push_error("Unable to process new custom cortical area dict, skipping!")
 		return
-	
+
 	var cortical_ID_raw: Dictionary = _body_to_dictionary(response_body)
+
+	if "cortical_id" not in cortical_ID_raw.keys():
+		push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
+		return
+
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
 	if "coordinates_2d" in other_properties.keys():
