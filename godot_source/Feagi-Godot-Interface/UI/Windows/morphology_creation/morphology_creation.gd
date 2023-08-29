@@ -11,3 +11,35 @@ func _ready():
 		if i.get_class() == "TextureButton":
 			i.custom_minimum_size.x = gap
 
+func _on_composite_pressed():
+	$Composite_BOX.visible = true
+	$Vector_BOX.visible = false
+	$Patterns_BOX.visible = false
+
+
+
+func _on_vectors_pressed():
+	$Composite_BOX.visible = false
+	$Vector_BOX.visible = true
+	$Patterns_BOX.visible = false
+
+
+func _on_patterns_pressed():
+	$Composite_BOX.visible = false
+	$Vector_BOX.visible = false
+	$Patterns_BOX.visible = true
+
+
+func _on_nm_add_button_pressed():
+	if visible:
+		visible = false
+	else:
+		visible = true
+		$Composite_BOX/VBoxContainer/HBoxContainer3/OptionButton.clear()
+		$Composite_BOX/VBoxContainer/HBoxContainer3/OptionButton.add_item(" ")
+		for i in FeagiCache.morphology_cache.available_morphologies:
+			$Composite_BOX/VBoxContainer/HBoxContainer3/OptionButton.add_item(i)
+
+
+func _on_visibility_changed():
+	pass # Replace with function body.
