@@ -7,7 +7,17 @@ var cortical_areas: Dictionary:
 
 var _cortical_areas: Dictionary = {}
 
+
 ## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
+func add_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, cortical_type: CorticalArea.CORTICAL_AREA_TYPE, is_visible: bool = true) -> void:
+	var new_area: CorticalArea = CorticalArea.new(cortical_ID, cortical_name, cortical_type, is_visible, dimensions)
+	new_area.coordinates_3D = coordinates_3D
+	if is_coordinate_2D_defined:
+		new_area.coordinates_2D = coordinates_2D
+	_cortical_areas[cortical_ID] = new_area
+	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+
+## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI! Unusued Dictionary version
 func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
 	if all_cortical_area_properties["cortical_id"] in _cortical_areas.keys():
 		push_error("Cortical area of ID %s already exists in memory! Unable to add another of the same name! Skipping" % [all_cortical_area_properties["cortical_id"]])
@@ -69,6 +79,14 @@ func search_for_cortical_areas_by_name(search_term: StringName) -> Array[Cortica
 	var output: Array[CorticalArea] = []
 	for cortical_area in _cortical_areas.values():
 		if cortical_area.name.to_lower().contains(search_term.to_lower()):
+			output.append(cortical_area)
+	return output
+
+## Returns an array of cortical areas of given cortical type
+func search_for_cortical_areas_by_type(searching_cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> Array[CorticalArea]:
+	var output: Array[CorticalArea] = []
+	for cortical_area in _cortical_areas.values():
+		if cortical_area.group == searching_cortical_type:
 			output.append(cortical_area)
 	return output
 

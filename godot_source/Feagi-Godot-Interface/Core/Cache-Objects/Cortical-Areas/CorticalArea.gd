@@ -8,7 +8,8 @@ signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: CorticalArea)
 signal cortical_visibility_updated(visibility: bool, this_cortical_area: CorticalArea)
-signal details_updated(data: Dictionary, this_cortical_area: CorticalArea) # Beware of CorticalMappingProperties
+signal details_updated(data: Dictionary, this_cortical_area: CorticalArea)
+signal mappings_updated(mappings: Dictionary)
 
 
 enum CORTICAL_AREA_TYPE {
@@ -18,6 +19,10 @@ enum CORTICAL_AREA_TYPE {
 	CUSTOM,
 	OPU
 }
+
+############# ############# ############# ############# ############# ############# 
+############# These values should only be modified by FEAGI directly! ############# 
+############# ############# ############# ############# ############# ############# 
 
 var details: CorticalAreaDetails
 var cortical_ID: StringName:
@@ -71,6 +76,7 @@ var coordinates_3D: Vector3i:
 		if v == _coordinates_3D: return
 		coordinates_3D_updated.emit(v, self)
 		_coordinates_3D = v
+var detailed_mappings: Dictionary
 
 var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
@@ -86,6 +92,7 @@ var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
 var _cortical_visiblity: bool = true
+var _mappings: Dictionary = {}
 
 func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}):
 	_cortical_ID = ID
@@ -100,7 +107,12 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:
 	details.apply_dictionary(updated_details)
+	#_mappingsewf
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:
 	details_updated.emit(changed_property, self)
+
+
+#func _set_mappings()
+#
