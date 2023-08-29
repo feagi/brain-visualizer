@@ -25,7 +25,7 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	return output
 
 ## Converts a Vector3i to a 3 long int array
-static func vector3i_to_array(input: Vector3i) -> Array[int]:
+static func vector3i_to_array(input: Vector3i):
 	var output: Array = [input.x, input.y, input.z]
 	return output
 
