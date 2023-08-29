@@ -21,3 +21,4 @@ signal cortical_areas_connection_modified(source_cortical_area: StringName, dest
 ################################ Feagi General ##################################
 signal delay_between_bursts_updated(seconds_delay_between_bursts: float) # The delay from one activity burst to the next, in seconds
 signal available_circuit_listing_updated(available_circuits: PackedStringArray) # The available circuits available, by name
+signal fetch_circuit_size(circuit_size: PackedStringArray)
