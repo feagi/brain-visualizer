@@ -10,8 +10,8 @@
 
 [node name="morphology_creation" type="Panel"]
 anchors_preset = -1
-anchor_right = 0.487847
-anchor_bottom = 0.589506
+anchor_right = 0.479167
+anchor_bottom = 0.82716
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_v0w03")
@@ -34,7 +34,7 @@ offset_bottom = 73.0
 
 [node name="Label" type="Label" parent="morp_box"]
 layout_mode = 2
-text = "Morphology Name                                                                                   "
+text = "Morphology Name                                                    "
 
 [node name="LineEdit" type="LineEdit" parent="morp_box"]
 layout_mode = 2
@@ -87,13 +87,13 @@ visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
-anchor_top = 0.589
+anchor_top = 0.444
 anchor_right = 0.5
-anchor_bottom = 0.589
+anchor_bottom = 0.444
 offset_left = -151.0
-offset_top = -82.498
+offset_top = -82.484
 offset_right = 151.0
-offset_bottom = 82.502
+offset_bottom = 82.516
 grow_horizontal = 2
 grow_vertical = 2
 vertical = true
@@ -123,12 +123,18 @@ layout_mode = 2
 
 [node name="X" type="SpinBox" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
 layout_mode = 2
+min_value = -1e+11
+max_value = 1e+11
 
 [node name="Y" type="SpinBox" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
 layout_mode = 2
+min_value = -1e+11
+max_value = 1e+11
 
 [node name="Z" type="SpinBox" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
 layout_mode = 2
+min_value = -1e+11
+max_value = 1e+11
 
 [node name="Button" type="Button" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
 custom_minimum_size = Vector2(30, 0)
@@ -140,16 +146,21 @@ script = ExtResource("6_d74uo")
 [node name="Composite_BOX" type="BoxContainer" parent="."]
 visible = false
 layout_mode = 1
-anchors_preset = 4
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_top = -30.5
-offset_right = 209.0
-offset_bottom = 30.5
+offset_left = -169.0
+offset_top = -95.5
+offset_right = 169.0
+offset_bottom = 95.5
+grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Composite_BOX"]
 layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="Label" type="Label" parent="Composite_BOX/VBoxContainer"]
 layout_mode = 2
@@ -170,31 +181,127 @@ layout_mode = 2
 [node name="Label2" type="Label" parent="Composite_BOX/VBoxContainer"]
 layout_mode = 2
 text = "Patterns:"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
-text = "X:"
+text = "           X:                        "
 
 [node name="Label2" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
-text = "Y:"
+text = "Y:                      "
 
 [node name="Label3" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 text = "Z:"
 
+[node name="XYZ_BOX" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="X_BOX" type="VBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer"]
+layout_mode = 2
+text = "C"
+
+[node name="C1" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+11
+value = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer2"]
+layout_mode = 2
+text = "S"
+
+[node name="S1" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/X_BOX/HBoxContainer2"]
+layout_mode = 2
+
+[node name="Y_BOX" type="VBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer"]
+layout_mode = 2
+text = "   C"
+
+[node name="C2" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+11
+value = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer2"]
+layout_mode = 2
+text = "   S"
+
+[node name="S2" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Y_BOX/HBoxContainer2"]
+layout_mode = 2
+
+[node name="Z_BOX" type="VBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer"]
+layout_mode = 2
+text = "   C"
+
+[node name="C3" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1e+11
+value = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer2"]
+layout_mode = 2
+text = "   S"
+
+[node name="S3" type="SpinBox" parent="Composite_BOX/VBoxContainer/XYZ_BOX/Z_BOX/HBoxContainer2"]
+layout_mode = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="Composite_BOX/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Composite_BOX/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+text = "Mapping:"
+
+[node name="OptionButton" type="OptionButton" parent="Composite_BOX/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+
 [node name="Patterns_BOX" type="BoxContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
-anchor_top = 0.5
-anchor_right = 0.911
-anchor_bottom = 0.5
-offset_top = -25.9999
-offset_right = 0.0181885
-offset_bottom = 104.0
+anchor_left = 0.5
+anchor_top = 0.416
+anchor_right = 0.5
+anchor_bottom = 0.416
+offset_left = -276.0
+offset_top = -64.976
+offset_right = 276.0
+offset_bottom = 217.024
 grow_horizontal = 2
 grow_vertical = 2
 vertical = true
@@ -232,7 +339,7 @@ layout_mode = 2
 text = "Z"
 
 [node name="Scroll_Vertical" parent="Patterns_BOX" instance=ExtResource("4_iery8")]
-custom_minimum_size = Vector2(300, 100)
+custom_minimum_size = Vector2(300, 230)
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer" index="0"]
@@ -272,9 +379,9 @@ stretch_mode = 0
 [node name="add_row" type="Button" parent="."]
 layout_mode = 2
 offset_left = 192.0
-offset_top = 312.0
+offset_top = 440.0
 offset_right = 326.0
-offset_bottom = 343.0
+offset_bottom = 471.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Add Row"
@@ -282,9 +389,9 @@ text = "Add Row"
 [node name="create" type="Button" parent="."]
 layout_mode = 0
 offset_left = 192.0
-offset_top = 352.0
+offset_top = 480.0
 offset_right = 326.0
-offset_bottom = 383.0
+offset_bottom = 511.0
 text = "Create"
 
 [editable path="Vector_BOX/Scroll_Vertical"]
