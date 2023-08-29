@@ -91,6 +91,10 @@ func request_creating_pattern_morphology(morphology_name: StringName, patterns: 
 func refresh_connection_list() -> void:
 	_feagi_interface.calls.GET_GE_corticalMap()
 
+## Requests from FEAGI the mapping properties between 2 cortical areas
+func get_mapping_properties_between_two_areas(source_area: CorticalArea, destination_area: CorticalArea) -> void:
+	_feagi_interface.calls.GET_GE_mappingProperties(source_area.cortical_ID, destination_area.cortical_ID)
+
 #TODO this name should be for general core use, do not use naming conventions for a single UI element
 func quick_connect_between_two_corticals(src: String, morphology_name: String, dest: String):
 	# docs string section begin

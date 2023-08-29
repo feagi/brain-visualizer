@@ -7,7 +7,10 @@ var source_cortical_area: CorticalArea:
     get: return _src_cortical
 var destination_cortical_area: CorticalArea:
     get: return _dst_cortical
+var number_of_mappings: int:
+    get: return len(mappings)
 var mappings: Array[MappingProperty]
+
 
 var _src_cortical: CorticalArea
 var _dst_cortical: CorticalArea

@@ -36,6 +36,14 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.available_circuits = _body_to_string_array(response_body)
 
+func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArray, source_destination_ID_str: Array) -> void:
+	if source_destination_ID_str[0] not in FeagiCache.cortical_areas_cache.cortical_areas.keys() or source_destination_ID_str[1] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
+		push_error("Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
+		return
+	
+
+
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
