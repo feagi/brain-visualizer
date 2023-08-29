@@ -82,6 +82,14 @@ func search_for_cortical_areas_by_name(search_term: StringName) -> Array[Cortica
 			output.append(cortical_area)
 	return output
 
+## Returns an array of cortical areas of given cortical type
+func search_for_cortical_areas_by_type(searching_cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> Array[CorticalArea]:
+	var output: Array[CorticalArea] = []
+	for cortical_area in _cortical_areas.values():
+		if cortical_area.group == searching_cortical_type:
+			output.append(cortical_area)
+	return output
+
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
 
