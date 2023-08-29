@@ -76,6 +76,7 @@ var coordinates_3D: Vector3i:
 		if v == _coordinates_3D: return
 		coordinates_3D_updated.emit(v, self)
 		_coordinates_3D = v
+var detailed_mappings: Dictionary
 
 var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
@@ -106,9 +107,12 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:
 	details.apply_dictionary(updated_details)
-	_mappings
+	#_mappingsewf
 
 ## Proxy for when the cortical area details changes
 func _details_updated(changed_property: Dictionary) -> void:
 	details_updated.emit(changed_property, self)
 
+
+#func _set_mappings()
+#

@@ -10,4 +10,4 @@ signal genome_was_reset()
 signal retrieved_visualization_data(data: Array)
 
 
-signal retrieved_mapping_information(source_area: CorticalArea, destination_area: CorticalArea, mappings: CorticalMappingProperties)
+#signal retrieved_mapping_information(source_area: CorticalArea, destination_area: CorticalArea, mappings: CorticalMappingProperties)
