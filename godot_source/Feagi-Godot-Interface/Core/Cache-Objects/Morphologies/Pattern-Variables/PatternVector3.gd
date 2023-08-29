@@ -18,3 +18,6 @@ var _data: Array[PatternVal]
 
 func _init(X: PatternVal, Y: PatternVal, Z: PatternVal):
 	_data = [X, Y, Z]
+
+func to_string_array() -> Array[String]:
+	return [str(x.data), str(y.data), str(z.data)]

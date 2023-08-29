@@ -8,16 +8,46 @@ var available_morphologies: Dictionary:
 
 var _available_morphologies: Dictionary = {}
 
-# TODO add / update morphologies
-
-
-func remove_morphology(morphology_ID: StringName) -> void:
-	if morphology_ID not in _available_morphologies.keys():
-		push_error("Attemped to delete non-cached morphology %s, Skipping..." % [morphology_ID])
+func add_morphology_by_dict(properties: Dictionary) -> void:
+	var morphology_name: StringName = properties["morphology_name"]
+	var morphology_type: Morphology.MORPHOLOGY_TYPE  = properties["type"]
+	
+	if morphology_name in available_morphologies.keys():
+		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
 		return
-	var deleting: Morphology = _available_morphologies[morphology_ID]
+	_available_morphologies[morphology_name] = MorphologyFactory.create(morphology_name, morphology_type, properties)
+	FeagiCacheEvents.morphology_added.emit(_available_morphologies[morphology_name])
+
+func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
+	var morphology_name: StringName = morphology_properties["morphology_name"]
+	if morphology_name not in _available_morphologies.keys():
+		push_error("Attemped to update non-cached morphology %s, Skipping..." % [morphology_properties["morphology_name"]])
+		return
+	var morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[morphology_properties["type"].to_upper()]
+	match morphology_type:
+		Morphology.MORPHOLOGY_TYPE.PATTERNS:
+			_available_morphologies[morphology_name].patterns = MorphologyFactory.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_properties["parameters"]["patterns"])
+		Morphology.MORPHOLOGY_TYPE.VECTORS:
+			_available_morphologies[morphology_name].vectors = FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_properties["parameters"]["vectors"])
+		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
+			_available_morphologies[morphology_name].parameters = morphology_properties["parameters"]
+		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
+			_available_morphologies[morphology_name].source_seed = FEAGIUtils.array_to_vector3i(morphology_properties["parameters"]["src_seed"])
+			_available_morphologies[morphology_name].source_pattern = FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_properties["parameters"]["src_pattern"])
+		_:
+			push_error("Unknown Morphology Type! Skipping update!")
+			return
+	_available_morphologies[morphology_name].is_placeholder_data = false
+	FeagiCacheEvents.morphology_updated.emit(_available_morphologies[morphology_name])
+
+## Should only be called by FEAGI - removes a morphology by name
+func remove_morphology(morphology_Name: StringName) -> void:
+	if morphology_Name not in _available_morphologies.keys():
+		push_error("Attemped to delete non-cached morphology %s, Skipping..." % [morphology_Name])
+		return
+	var deleting: Morphology = _available_morphologies[morphology_Name]
 	deleting.about_to_be_deleted.emit() # Tell all dependents this morphology is about to go
-	_available_morphologies.erase(morphology_ID)
+	_available_morphologies.erase(morphology_Name)
 
 
 ## To update morphology listing given a dict with keys of morphology names and its value being the str type of morphology (NOT FULL OBJECT / DICTIONARY)
