@@ -5,3 +5,4 @@ extends Node
 
 signal genome_was_reset()
 signal retrieved_visualization_data(data: Array)
+signal retrieved_circuit_size(circuit_name: StringName, size_whd: Vector3i)

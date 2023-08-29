@@ -99,3 +99,10 @@ static func find_missing_elements(is_missing: Array, is_missing_from: Array) -> 
 		if e not in is_missing_from:
 			output.append(e)
 	return output
+
+## why is this so dumb
+static func untyped_array_to_int_array(input: Array) -> Array[int]:
+	var output: Array[int]
+	for i in input:
+		output.append(int(i))
+	return output

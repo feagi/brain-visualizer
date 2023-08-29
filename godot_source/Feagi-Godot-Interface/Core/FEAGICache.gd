@@ -9,18 +9,12 @@ var delay_between_bursts: float:
 		_delay_between_bursts = v
 		FeagiCacheEvents.delay_between_bursts_updated.emit(v)
 
+## The names of all circuits available for FEAGI to load
 var available_circuits: PackedStringArray:
 	get: return _available_circuits
 	set(v):
 		_available_circuits = v
 		FeagiCacheEvents.available_circuit_listing_updated.emit(v)
-		
-var circuit_size: PackedStringArray:
-	get: return _circuit_size
-	set(v):
-		_circuit_size = v
-		FeagiCacheEvents.fetch_circuit_size.emit(v)
-
 
 var morphology_cache: MorphologiesCache
 var cortical_areas_cache: CorticalAreasCache
@@ -29,7 +23,6 @@ var connections_cache: ConnectionsCache
 
 var _delay_between_bursts: float
 var _available_circuits: PackedStringArray = []
-var _circuit_size: PackedStringArray = []
 
 func _init():
 	morphology_cache = MorphologiesCache.new()
