@@ -1,6 +1,6 @@
 extends Object
 class_name CorticalAreaDetails
-## Holds details of a cortical area not generally required except when looking in the side bar details
+## Holds details of a cortical area not generally required except when looking in the side bar details (with the exception of cortical_destinations)
 
 signal property_changed(property_changed_with_value: Dictionary)
 
@@ -16,14 +16,6 @@ var cortical_synaptic_attractivity: int:
     set(v):
         _cortical_synaptic_attractivity = v
         property_changed.emit({"cortical_synaptic_attractivity": v})
-
-var cortical_destinations: Dictionary:
-    get: return _cortical_destinations
-    set(v):
-        _cortical_destinations = _process_cortical_destinations(v)
-        # Be wary with this one, since the dictionary was converted to an CorticalMappingProperties object. Use the 'to_dictionary' method to change it back before sending to feagi
-        property_changed.emit({"cortical_destinations": v})
-
 var neuron_post_synaptic_potential: float:
     get: return _neuron_post_synaptic_potential
     set(v):
@@ -110,7 +102,6 @@ var neuron_mp_charge_accumulation: bool:
 
 var _cortical_neuron_per_vox_count: int = 0
 var _cortical_synaptic_attractivity: int = 0
-var _cortical_destinations: Dictionary = {}
 var _neuron_post_synaptic_potential: float = 0
 var _neuron_post_synaptic_potential_max: float = 0
 var _neuron_plasticity_constant: float = 0
@@ -136,8 +127,6 @@ func apply_dictionary(data: Dictionary) -> void:
         _cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
     if "cortical_synaptic_attractivity" in data.keys(): 
         _cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
-    if "cortical_destinations" in data.keys(): 
-        _cortical_destinations = _process_cortical_destinations(data["cortical_destinations"])
     if "neuron_post_synaptic_potential" in data.keys(): 
         _neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
     if "neuron_post_synaptic_potential_max" in data.keys(): 
@@ -166,14 +155,3 @@ func apply_dictionary(data: Dictionary) -> void:
         _neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
     if "neuron_mp_charge_accumulation" in data.keys(): 
         _neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
-
-## Converts dictionary from FEAGI into dictionary referring to CorticalMappingProperties objects
-func _process_cortical_destinations(raw_dict: Dictionary) -> Dictionary:
-    var output: Dictionary = {}
-    for cortexID_str in raw_dict.keys():
-        var array_per_cortical_area: Array[CorticalMappingProperties] = []
-        for raw_CMP in raw_dict[cortexID_str]:
-            array_per_cortical_area.append(CorticalMappingProperties.new(raw_CMP))
-        output[cortexID_str] = array_per_cortical_area
-    return output
-

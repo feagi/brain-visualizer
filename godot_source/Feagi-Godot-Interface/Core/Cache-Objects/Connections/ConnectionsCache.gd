@@ -1,6 +1,7 @@
 extends Object
 class_name ConnectionsCache
 ## stores a forward and reverse dictionary for rapid connections lookup
+## This object in of itself does not store the mapping properties, functions here related are mere proxies to the data stored in the [CorticalArea] object
 
 var forward_mappings_with_counts: Dictionary:
 	get:
@@ -83,11 +84,13 @@ func does_connection_exist(cortical_source_ID: StringName, cortical_destination_
 	if cortical_destination_ID not in _forward_with_count[cortical_source_ID].keys(): return false
 	return true
 
+## Get StringName Array of all efferent cortical areas by ID
 func get_all_efferent_areas(cortical_source_ID: StringName) -> Array:
 	if cortical_source_ID not in _forward_with_count.keys():
 		return []
 	return _forward_with_count[cortical_source_ID].keys()
 
+## Get StringName Array of all afferent cortical areas by ID
 func get_all_afferent_areas(destination_source_ID: StringName) -> Array:
 	if destination_source_ID not in _backward.keys():
 		return []
