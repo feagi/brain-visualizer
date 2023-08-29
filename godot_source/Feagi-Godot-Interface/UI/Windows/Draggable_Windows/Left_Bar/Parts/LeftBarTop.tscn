@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://506fv2gitw7k"]
+[gd_scene load_steps=6 format=3 uid="uid://506fv2gitw7k"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="1_0xr58"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.gd" id="1_f8pnh"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="2_bdwmo"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/HiderFrozenSize.gd" id="3_po83v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_vs7fw"]
@@ -13,6 +14,7 @@ offset_right = -862.0
 offset_bottom = -404.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_f8pnh")
 
 [node name="Row_Cortical_Name" type="HBoxContainer" parent="."]
 layout_mode = 2

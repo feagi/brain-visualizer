@@ -6,21 +6,6 @@ class_name LeftBarTop
 ## User pressed update button, the following changes are requested
 signal user_requested_update(changed_values: Dictionary)
 
-var cortical_name: StringName:
-	set(v):
-		_line_cortical_name.text = v
-var cortical_ID: StringName:
-	set(v):
-		_line_cortical_ID.text = v
-var cortical_Type: StringName:
-	set(v):
-		_line_cortical_type.text = v
-var cortical_position: Vector3i:
-	get: return _vector_position.current_vector
-var cortical_dimension: Vector3i:
-	get: return _vector_dimensions.current_vector
-	
-
 var _line_cortical_name: TextInput
 var _line_cortical_ID: TextInput
 var _line_cortical_type: TextInput
@@ -30,7 +15,6 @@ var _hiding_container: HiderFrozenSize
 var _growing_cortical_update: Dictionary
 
 func _ready():
-	super._ready()
 	_line_cortical_name = $Row_Cortical_Name/Cortical_Name
 	_line_cortical_ID = $Row_Cortical_ID/Cortical_ID
 	_line_cortical_type = $Row_Cortical_Type/Cortical_Type
@@ -44,9 +28,24 @@ func _ready():
 	var update_button: TextButton_Element = _hiding_container.get_node("Update_Button")
 	update_button.pressed.connect(_user_requests_update)
 
+func setup(cortical_reference: CorticalArea) -> void:
+	_line_cortical_name.text = cortical_reference.name
+	_line_cortical_ID.text = cortical_reference.cortical_ID
+	_line_cortical_type.text = str(cortical_reference.group)
+	_vector_position.current_vector = cortical_reference.coordinates_3D
+	_vector_dimensions.current_vector = cortical_reference.dimensions
+
+func FEAGI_set_cortical_name(new_name: StringName):
+	_line_cortical_name.text = new_name
+
+func FEAGI_set_cortical_position(new_position: Vector3i):
+	_vector_position.current_vector = new_position
+
+func FEAGI_set_cortical_dimension(new_dimension: Vector3i):
+	_vector_dimensions.current_vector = new_dimension
 
 ## FEAGI confirmed changes, show this in the UI and clear the backend dict
-func FEAGI_confirmed_update() -> void:
+func _FEAGI_confirmed_update() -> void:
 	_growing_cortical_update = {}
 	_hiding_container.toggle_child_visibility(false)
 	# TODO change edited color of fields

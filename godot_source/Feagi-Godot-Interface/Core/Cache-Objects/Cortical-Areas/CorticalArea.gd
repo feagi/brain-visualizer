@@ -87,10 +87,6 @@ var coordinates_3D: Vector3i:
 		if v == _coordinates_3D: return
 		coordinates_3D_updated.emit(v, self)
 		_coordinates_3D = v
-var forward_mappings_light
-
-var detailed_mappings: Dictionary
-
 var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
 var is_coordinates_3D_available: bool:
@@ -99,7 +95,8 @@ var afferent_connections: Array[StringName]:
 	get: return _afferent_connections
 var efferent_connections_with_count: Dictionary:
 	get: return _efferent_connections_with_count
-
+var efferent_mappings: Dictionary:
+	get: return _efferent_mappings
 
 var _cortical_ID: StringName
 var _name: StringName

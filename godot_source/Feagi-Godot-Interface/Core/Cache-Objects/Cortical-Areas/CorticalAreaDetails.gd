@@ -16,13 +16,13 @@ var cortical_synaptic_attractivity: int:
     set(v):
         _cortical_synaptic_attractivity = v
         property_changed.emit({"cortical_synaptic_attractivity": v})
-var neuron_post_synaptic_potential: float:
+var neuron_post_synaptic_potential: int:
     get: return _neuron_post_synaptic_potential
     set(v):
         _neuron_post_synaptic_potential = v
         property_changed.emit({"neuron_post_synaptic_potential": v})
 
-var neuron_post_synaptic_potential_max: float:
+var neuron_post_synaptic_potential_max: int:
     get: return _neuron_post_synaptic_potential_max
     set(v):
         _neuron_post_synaptic_potential_max = v
@@ -34,55 +34,55 @@ var neuron_plasticity_constant: float:
         _neuron_plasticity_constant = v
         property_changed.emit({"neuron_plasticity_constant": v})
 
-var neuron_fire_threshold: float:
+var neuron_fire_threshold: int:
     get: return _neuron_fire_threshold
     set(v):
         _neuron_fire_threshold = v
         property_changed.emit({"neuron_fire_threshold": v})
 
-var neuron_fire_threshold_increment: float:
+var neuron_fire_threshold_increment: int:
     get: return _neuron_fire_threshold_increment
     set(v):
         _neuron_fire_threshold_increment = v
         property_changed.emit({"neuron_fire_threshold_increment": v})
 
-var neuron_firing_threshold_limit: float:
+var neuron_firing_threshold_limit: int:
     get: return _neuron_firing_threshold_limit
     set(v):
         _neuron_firing_threshold_limit = v
         property_changed.emit({"neuron_firing_threshold_limit": v})
 
-var neuron_refractory_period: float:
+var neuron_refractory_period: int:
     get: return _neuron_refractory_period
     set(v):
         _neuron_refractory_period = v
         property_changed.emit({"neuron_refractory_period": v})
 
-var neuron_leak_coefficient: float:
+var neuron_leak_coefficient: int:
     get: return _neuron_leak_coefficient
     set(v):
         _neuron_leak_coefficient = v
         property_changed.emit({"neuron_leak_coefficient": v})
 
-var neuron_leak_variability: float:
+var neuron_leak_variability: int:
     get: return _neuron_leak_variability
     set(v):
         _neuron_leak_variability = v
         property_changed.emit({"neuron_leak_variability": v})
 
-var neuron_consecutive_fire_count: float:
+var neuron_consecutive_fire_count: int:
     get: return _neuron_consecutive_fire_count
     set(v):
         _neuron_consecutive_fire_count = v
         property_changed.emit({"neuron_consecutive_fire_count": v})
 
-var neuron_snooze_period: float:
+var neuron_snooze_period: int:
     get: return _neuron_snooze_period
     set(v):
         _neuron_snooze_period = v
         property_changed.emit({"neuron_snooze_period": v})
 
-var neuron_degeneracy_coefficient: float:
+var neuron_degeneracy_coefficient: int:
     get: return _neuron_degeneracy_coefficient
     set(v):
         _neuron_degeneracy_coefficient = v
@@ -102,18 +102,18 @@ var neuron_mp_charge_accumulation: bool:
 
 var _cortical_neuron_per_vox_count: int = 0
 var _cortical_synaptic_attractivity: int = 0
-var _neuron_post_synaptic_potential: float = 0
-var _neuron_post_synaptic_potential_max: float = 0
+var _neuron_post_synaptic_potential: int = 0
+var _neuron_post_synaptic_potential_max: int = 0
 var _neuron_plasticity_constant: float = 0
-var _neuron_fire_threshold: float = 0
-var _neuron_fire_threshold_increment: float = 0
-var _neuron_firing_threshold_limit: float = 0
-var _neuron_refractory_period: float = 0
-var _neuron_leak_coefficient: float = 0
-var _neuron_leak_variability: float = 0
-var _neuron_consecutive_fire_count: float = 0
-var _neuron_snooze_period: float = 0
-var _neuron_degeneracy_coefficient: float = 0
+var _neuron_fire_threshold: int = 0
+var _neuron_fire_threshold_increment: int = 0
+var _neuron_firing_threshold_limit: int = 0
+var _neuron_refractory_period: int = 0
+var _neuron_leak_coefficient: int = 0
+var _neuron_leak_variability: int = 0
+var _neuron_consecutive_fire_count: int = 0
+var _neuron_snooze_period: int = 0
+var _neuron_degeneracy_coefficient: int = 0
 var _neuron_psp_uniform_distribution: bool = false
 var _neuron_mp_charge_accumulation: bool = false
 
