@@ -124,3 +124,6 @@ func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
 ## Gets the current available circuits of FEAGI
 func refresh_available_circuits() -> void:
 	_feagi_interface.calls.GET_GE_circuits()
+
+func get_circuit_size(name) -> void:
+	_feagi_interface.calls.GET_GE_circuitsize(name)
