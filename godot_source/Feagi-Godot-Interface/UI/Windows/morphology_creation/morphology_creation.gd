@@ -10,4 +10,4 @@ func _ready():
 	for i in $RadioButtons.get_children():
 		if i.get_class() == "TextureButton":
 			i.custom_minimum_size.x = gap
-			
+
