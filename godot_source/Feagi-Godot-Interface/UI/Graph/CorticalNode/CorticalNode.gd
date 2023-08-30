@@ -76,7 +76,6 @@ func _on_title_bar_drag(_current_position: Vector2, delta_offset: Vector2) -> vo
 	_connection_output.moved.emit()
 
 func _on_interact(event):
-	print("any")
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event
 	if !mouse_event.double_click: return

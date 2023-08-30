@@ -55,10 +55,9 @@ func _ready():
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
 	_Degeneracy_Constant.int_confirmed.connect(user_request_Degeneracy_Constant)
 
-
-func setup(cortical_reference: CorticalArea) -> void:
+## set initial values from FEAGI Cache
+func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	var details: CorticalAreaDetails = cortical_reference.details
-	_ready()
 	_Voxel_Neuron_Density.current_int = details.cortical_neuron_per_vox_count
 	_Synaptic_Attractivity.current_int = details.cortical_synaptic_attractivity
 	_Post_Synaptic_Potential.current_int = details.neuron_post_synaptic_potential
@@ -74,6 +73,7 @@ func setup(cortical_reference: CorticalArea) -> void:
 	_Snooze_Period.current_int = details.neuron_snooze_period
 	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
 
+## Properties changed from FEAGI side, reflect here
 func FEAGI_set_properties(properties_set: Dictionary) -> void:
 	if "cortical_neuron_per_vox_count" in properties_set.keys():
 		_Voxel_Neuron_Density.external_update_int(properties_set["cortical_neuron_per_vox_count"])
@@ -104,6 +104,7 @@ func FEAGI_set_properties(properties_set: Dictionary) -> void:
 	if "neuron_degeneracy_coefficient" in properties_set.keys():
 		_Degeneracy_Constant.external_update_int(properties_set["neuron_degeneracy_coefficient"])
 	_hiding_container.toggle_child_visibility(false)
+	_growing_cortical_update = {} # reset queued changes
 
 
 ## User pressed update button

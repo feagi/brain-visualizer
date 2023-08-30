@@ -16,7 +16,6 @@ func spawn_left_panel(cortical_area: CorticalArea) -> void:
 	
 	var left_panel: WindowLeftPanel = _prefab_left_bar.instantiate()
 	add_child(left_panel)
-	left_panel._ready()
-	left_panel.setup(cortical_area)
+	left_panel.setup_from_FEAGI(cortical_area)
 	_loaded_windows["left_bar"] = left_panel
 

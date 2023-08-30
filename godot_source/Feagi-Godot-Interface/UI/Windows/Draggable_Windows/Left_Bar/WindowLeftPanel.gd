@@ -18,14 +18,10 @@ func _ready():
 	_top_section = top_collapsible.collapsing_node
 	_middle_section = middle_collapsible.collapsing_node
 
-func setup(cortical_area_reference: CorticalArea) -> void:
+func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
-	call_deferred("delayed_setup")
 
-func delayed_setup() -> void:
-	_top_section.setup(_cortical_area_ref)
-	_middle_section.setup(_cortical_area_ref)
-
+	print("A")
 	_cortical_area_ref.dimensions_updated.connect(_top_section.FEAGI_set_cortical_dimension)
 	_cortical_area_ref.coordinates_3D_updated.connect(_top_section.FEAGI_set_cortical_position)
 	_cortical_area_ref.name_updated.connect(_top_section.FEAGI_set_cortical_name)
