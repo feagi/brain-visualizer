@@ -23,9 +23,11 @@ func setup(data: Dictionary, _main_window: Node) -> void:
 	if data["aff2this"]:
 		# afferent
 		_ID_Button.text = _source_area.cortical_ID
+		name = _source_area.cortical_ID
 	else:
 		# efferent
 		_ID_Button.text = _destination_area.cortical_ID
+		name = _destination_area.cortical_ID
 
 func _user_pressed_delete_button():
 	user_requests_mapping_deletion.emit(_source_area, _destination_area)
