@@ -5,16 +5,23 @@ class_name WindowLeftPanel
 var _cortical_area_ref: CorticalArea
 var _top_section # cannot define type due to godot bug
 var _middle_section
+var _premium_section
 
 
 func _ready():
 	super._ready()
 	var top_collapsible = $Main_Body/Top_Section
 	var middle_collapsible = $Main_Body/Middle_Section
+	var premium_collapsible = $Main_Body/Premium_Section
 	top_collapsible.setup()
 	middle_collapsible.setup()
+	premium_collapsible.setup()
+	if !(VisConfig.left_bar_allow_premium_monitoring):
+		premium_collapsible.section_title = "(PREMIUM) Cortical Area Monitoring"
+	
 	_top_section = top_collapsible.collapsing_node
 	_middle_section = middle_collapsible.collapsing_node
+	_premium_section = premium_collapsible.collapsing_node
 	_top_section.user_requested_update.connect(_user_requested_update)
 
 ## Load in initial values of the cortical area from Cache

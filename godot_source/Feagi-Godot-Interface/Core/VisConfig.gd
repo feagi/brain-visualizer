@@ -14,22 +14,19 @@ var minimum_button_size_pixel: Vector2i:
 		_minimum_button_size_pixel = v
 		UI_settings_changed.emit()
 
-var window_manager: WindowManager # set from the window manager itself when it is ready, otherwise this is null!
+## Reference to the window manager
+var window_manager: WindowManager # set from the window manager itself when it is ready, otherwise this is null!\
+
+
+var is_premium: bool = true
+var left_bar_allow_premium_monitoring: bool = true # todo: should probably tie in with above
 
 var _screen_size: Vector2
 var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4
 
-
-func _init():
-	pass
-
 func _ready():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
-
-
-
-
 
 ## Updates the screensize 
 func _update_screen_size():
