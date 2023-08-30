@@ -4,10 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_0hls5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="3_d4vgy"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="4_iery8"]
-[ext_resource type="Texture2D" uid="uid://btaygehcn7hxf" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
+[ext_resource type="Texture2D" uid="uid://b03o2vop1tl1n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_d74uo"]
-[ext_resource type="Texture2D" uid="uid://bsg0b6ex62ao4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
-
+[ext_resource type="Texture2D" uid="uid://c6swprvpla1g4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
 
 [node name="morphology_creation" type="Panel"]
 anchors_preset = -1
@@ -84,7 +83,6 @@ offset_bottom = 144.0
 text = "Morphology Definition"
 
 [node name="Vector_BOX" type="BoxContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -92,9 +90,9 @@ anchor_top = 0.444
 anchor_right = 0.5
 anchor_bottom = 0.444
 offset_left = -151.0
-offset_top = -82.484
+offset_top = -82.9839
 offset_right = 151.0
-offset_bottom = 82.516
+offset_bottom = 190.016
 grow_horizontal = 2
 grow_vertical = 2
 vertical = true
@@ -116,7 +114,7 @@ layout_mode = 2
 text = "Z"
 
 [node name="Scroll_Vertical" parent="Vector_BOX" instance=ExtResource("4_iery8")]
-custom_minimum_size = Vector2(0, 100)
+custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 
 [node name="XYZ_BOX" type="HBoxContainer" parent="Vector_BOX/Scroll_Vertical/VBoxContainer" index="0"]
