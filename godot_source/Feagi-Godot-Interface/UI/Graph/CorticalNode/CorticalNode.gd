@@ -66,6 +66,7 @@ func FEAGI_delete_cortical_area() -> void:
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:
+	print("User requesting cortical area deletion from Circuit Builder")
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 func _on_title_bar_change_size() -> void:

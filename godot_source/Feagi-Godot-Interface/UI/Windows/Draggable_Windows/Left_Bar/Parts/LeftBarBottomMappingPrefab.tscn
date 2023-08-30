@@ -1,17 +1,17 @@
 [gd_scene load_steps=5 format=3 uid="uid://da355xfk6trdo"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMapping.gd" id="1_1eg3c"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="1_klgq3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="2_dtqim"]
 [ext_resource type="Texture2D" uid="uid://bpunuth7s7jbd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="2_ru8d1"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_xmo8e"]
 
 [node name="LeftBarBottomMappingPrefab" type="HBoxContainer"]
 script = ExtResource("1_1eg3c")
 
-[node name="Cortical_ID" type="Label" parent="."]
+[node name="Cortical_ID" type="Button" parent="."]
 layout_mode = 2
 text = "ID GO HERE"
-script = ExtResource("1_klgq3")
+script = ExtResource("2_dtqim")
 
 [node name="Delete_Button" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(40, 40)

@@ -91,10 +91,13 @@ var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
 var is_coordinates_3D_available: bool:
 	get: return _coordinates_3D_available
+## All INCOMING connections
 var afferent_connections: Array[StringName]:
 	get: return _afferent_connections
+## All OUTGOING connections (with number of mappings)
 var efferent_connections_with_count: Dictionary:
 	get: return _efferent_connections_with_count
+## All OUTGOING connections (with mapping data per connection)
 var efferent_mappings: Dictionary:
 	get: return _efferent_mappings
 
@@ -107,7 +110,9 @@ var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
 var _cortical_visiblity: bool = true
+## All afferent cortical areas refrences by cortical ID
 var _afferent_connections: Array[StringName]
+## Add efferent cortical areas refrenced by cortical ID as keys with values being mapping count
 var _efferent_connections_with_count: Dictionary
 var _efferent_mappings: Dictionary = {}
 

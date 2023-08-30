@@ -56,10 +56,18 @@ editable = false
 script = ExtResource("1_0xr58")
 enable_signaling_on_ready = false
 
+[node name="Label_Position" type="Label" parent="."]
+layout_mode = 2
+text = "Position"
+
 [node name="Cortical_Position" parent="." instance=ExtResource("2_bdwmo")]
 layout_mode = 2
 alignment = 1
 initial_vector = Vector3i(1, 1, 1)
+
+[node name="Label_Dimensions" type="Label" parent="."]
+layout_mode = 2
+text = "Dimension"
 
 [node name="Cortical_Size" parent="." instance=ExtResource("2_bdwmo")]
 layout_mode = 2

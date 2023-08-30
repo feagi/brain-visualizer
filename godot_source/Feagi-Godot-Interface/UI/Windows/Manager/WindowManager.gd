@@ -19,3 +19,7 @@ func spawn_left_panel(cortical_area: CorticalArea) -> void:
 	left_panel.setup_from_FEAGI(cortical_area)
 	_loaded_windows["left_bar"] = left_panel
 
+func force_close_window(window_name: StringName) -> void:
+	if window_name in _loaded_windows.keys():
+		_loaded_windows[window_name].queue_free()
+		_loaded_windows.erase(window_name)
