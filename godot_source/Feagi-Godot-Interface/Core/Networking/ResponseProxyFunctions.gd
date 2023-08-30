@@ -31,7 +31,7 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 		# no typing of these arrays due to type cast shenanigans. Be careful!
 		var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
 		var connections_requested: Array = cortical_map[source_cortical_ID].keys()
-		var efferent_connections_already_set: Array = source_area.afferent_connections
+		var efferent_connections_already_set: Array = source_area.efferent_connections_with_count.keys()
 		var efferents_to_add: Array = FEAGIUtils.find_missing_elements(connections_requested, efferent_connections_already_set)
 		var efferents_to_remove: Array = FEAGIUtils.find_missing_elements(efferent_connections_already_set, connections_requested)
 		var efferents_to_update: Array = FEAGIUtils.find_union(efferent_connections_already_set, connections_requested)
