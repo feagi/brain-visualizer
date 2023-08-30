@@ -205,6 +205,18 @@ offset_bottom = 359.952
 metadata/_edit_use_anchors_ = true
 
 [node name="Morphology_Manager" parent="UI/Windows" instance=ExtResource("20_bolqa")]
+anchors_preset = -1
+anchor_left = 0.294
+anchor_top = 0.173
+anchor_right = 0.294
+anchor_bottom = 0.173
+offset_left = 0.312012
+offset_top = -0.104004
+offset_right = 1072.31
+offset_bottom = 567.896
+
+[node name="Composite_BOX" parent="UI/Windows/Morphology_Manager" index="3"]
+visible = true
 
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
@@ -247,3 +259,8 @@ metadata/_edit_use_anchors_ = true
 [editable path="UI/Windows/morphology_creation"]
 [editable path="UI/Windows/morphology_creation/Vector_BOX/Scroll_Vertical"]
 [editable path="UI/Windows/morphology_creation/Patterns_BOX/Scroll_Vertical"]
+[editable path="UI/Windows/Morphology_Manager"]
+[editable path="UI/Windows/Morphology_Manager/TitleBar"]
+[editable path="UI/Windows/Morphology_Manager/Vector_BOX/Scroll_Vertical"]
+[editable path="UI/Windows/Morphology_Manager/Patterns_BOX/Scroll_Vertical"]
+[editable path="UI/Windows/Morphology_Manager/Scroll_Vertical"]
