@@ -186,6 +186,7 @@ offset_bottom = 181.88
 grow_vertical = 1
 
 [node name="morphology_creation" parent="UI/Windows" instance=ExtResource("18_fd2xm")]
+visible = false
 anchor_left = 0.351562
 anchor_top = 0.287037
 anchor_right = 0.352
