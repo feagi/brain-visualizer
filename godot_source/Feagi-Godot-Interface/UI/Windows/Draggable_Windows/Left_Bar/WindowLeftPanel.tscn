@@ -7,14 +7,6 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 
 [node name="LeftBar" type="Panel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 40.0
-offset_right = -893.0
-offset_bottom = -436.0
-grow_horizontal = 2
-grow_vertical = 2
 script = ExtResource("1_1jbcd")
 left_pixel_gap = 5
 right_pixel_gap = 5
@@ -39,5 +31,6 @@ section_text = &"Details"
 [node name="TitleBar" parent="." instance=ExtResource("4_pwsxt")]
 layout_mode = 0
 offset_top = -40.0
+offset_right = 262.0
 offset_bottom = 0.0
 title = "Cortical Area"

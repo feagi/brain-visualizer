@@ -37,12 +37,15 @@ func setup(cortical_reference: CorticalArea) -> void:
 
 func FEAGI_set_cortical_name(new_name: StringName):
 	_line_cortical_name.text = new_name
+	_FEAGI_confirmed_update()
 
 func FEAGI_set_cortical_position(new_position: Vector3i):
 	_vector_position.current_vector = new_position
+	_FEAGI_confirmed_update()
 
 func FEAGI_set_cortical_dimension(new_dimension: Vector3i):
 	_vector_dimensions.current_vector = new_dimension
+	_FEAGI_confirmed_update()
 
 ## FEAGI confirmed changes, show this in the UI and clear the backend dict
 func _FEAGI_confirmed_update() -> void:

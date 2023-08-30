@@ -187,6 +187,7 @@ script = ExtResource("1_vwrd4")
 [node name="Update_Button_Hider" type="BoxContainer" parent="."]
 layout_mode = 2
 script = ExtResource("3_ms63u")
+children_visible_at_start = false
 
 [node name="TextButton_Element" type="Button" parent="Update_Button_Hider"]
 layout_mode = 2

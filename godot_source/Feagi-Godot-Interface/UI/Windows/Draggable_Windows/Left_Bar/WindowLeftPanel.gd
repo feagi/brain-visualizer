@@ -20,11 +20,12 @@ func setup(cortical_area_reference: CorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
 	
 	_top_section.setup(_cortical_area_ref)
+	_middle_section.setup(_cortical_area_ref)
 
 	_cortical_area_ref.dimensions_updated.connect(_top_section.FEAGI_set_cortical_dimension)
 	_cortical_area_ref.coordinates_3D_updated.connect(_top_section.FEAGI_set_cortical_position)
 	_cortical_area_ref.name_updated.connect(_top_section.FEAGI_set_cortical_name)
-	#_cortical_area_ref.details_updated.connect(_update_details_from_signal)
+	_cortical_area_ref.details_updated.connect(_middle_section.FEAGI_set_properties)
 
 
 

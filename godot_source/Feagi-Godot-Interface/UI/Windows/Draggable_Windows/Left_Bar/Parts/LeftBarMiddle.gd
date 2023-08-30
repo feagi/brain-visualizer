@@ -73,6 +73,38 @@ func setup(cortical_reference: CorticalArea) -> void:
 	_Snooze_Period.current_int = details.neuron_snooze_period
 	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
 
+func FEAGI_set_properties(properties_set: Dictionary) -> void:
+	if "cortical_neuron_per_vox_count" in properties_set.keys():
+		_Voxel_Neuron_Density.external_update_int(properties_set["cortical_neuron_per_vox_count"])
+	if "cortical_synaptic_attractivity" in properties_set.keys():
+		_Synaptic_Attractivity.external_update_int(properties_set["cortical_synaptic_attractivity"])
+	if "neuron_post_synaptic_potential" in properties_set.keys():
+		_Post_Synaptic_Potential.external_update_int(properties_set["neuron_post_synaptic_potential"])
+	if "neuron_post_synaptic_potential_max" in properties_set.keys():
+		_PSP_Max.external_update_int(properties_set["neuron_post_synaptic_potential_max"])
+	if "neuron_plasticity_constant" in properties_set.keys():
+		_Plasticity_Constant.external_update_float(properties_set["neuron_plasticity_constant"])
+	if "neuron_fire_threshold" in properties_set.keys():
+		_Fire_Threshold.external_update_int(properties_set["neuron_fire_threshold"])
+	if "neuron_firing_threshold_limit" in properties_set.keys():
+		_Threshold_Limit.external_update_int(properties_set["neuron_firing_threshold_limit"])
+	if "neuron_refractory_period" in properties_set.keys():
+		_Refactory_Period.external_update_int(properties_set["neuron_refractory_period"])
+	if "neuron_leak_coefficient" in properties_set.keys():
+		_Leak_Constant.external_update_int(properties_set["neuron_leak_coefficient"])
+	if "neuron_leak_variability" in properties_set.keys():
+		_Leak_Varibility.external_update_int(properties_set["neuron_leak_variability"])
+	if "neuron_fire_threshold_increment" in properties_set.keys():
+		_Threshold_Inc.external_update_int(properties_set["neuron_fire_threshold_increment"])
+	if "neuron_consecutive_fire_count" in properties_set.keys():
+		_Consecutive_Fire_Count.external_update_int(properties_set["neuron_consecutive_fire_count"])
+	if "neuron_snooze_period" in properties_set.keys():
+		_Snooze_Period.external_update_int(properties_set["neuron_snooze_period"])
+	if "neuron_degeneracy_coefficient" in properties_set.keys():
+		_Degeneracy_Constant.external_update_int(properties_set["neuron_degeneracy_coefficient"])
+	_hiding_container.toggle_child_visibility(false)
+
+
 ## User pressed update button
 func _user_requests_update() -> void:
 	user_requested_update.emit(_growing_cortical_update)
