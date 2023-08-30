@@ -38,7 +38,7 @@ func _on_button_2_pressed():
 	#var json_data: Dictionary = {}
 	if $VBoxContainer/BoxContainer/RadioButtons/CUSTOM.is_pressed():
 		FeagiRequests.add_custom_cortical_area(
-			$VBoxContainer/BoxContainer2/LineEdit.text,
+			$VBoxContainer/name_linedit/LineEdit.text,
 			Vector3($VBoxContainer/XYZ/IntX.value, $VBoxContainer/XYZ/IntY.value, $VBoxContainer/XYZ/IntZ.value),
 			Vector3($VBoxContainer/WDH/W.value, $VBoxContainer/WDH/H.value, $VBoxContainer/WDH/D.value),
 			false,
@@ -52,11 +52,11 @@ func _on_button_2_pressed():
 	$VBoxContainer/WDH/W.value = 0
 	$VBoxContainer/WDH/D.value = 0
 	$VBoxContainer/WDH/H.value = 0
-	$VBoxContainer/BoxContainer2/LineEdit.text = ""
+	$VBoxContainer/name_linedit/LineEdit.text = ""
 	$VBoxContainer/BoxContainer/RadioButtons/CUSTOM.set_pressed(false)
 	$VBoxContainer/BoxContainer/RadioButtons/OPU.set_pressed(false)
 	$VBoxContainer/BoxContainer/RadioButtons/IPU.set_pressed(false)
-	$VBoxContainer/BoxContainer2.visible = false
+	$VBoxContainer/name_linedit.visible = false
 	$VBoxContainer/XYZ.visible = false
 	$VBoxContainer/WDH.visible = false
 	visible = false

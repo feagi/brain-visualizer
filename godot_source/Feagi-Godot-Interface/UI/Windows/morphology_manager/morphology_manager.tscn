@@ -1,24 +1,18 @@
-[gd_scene load_steps=8 format=3 uid="uid://b3uycanyq64c7"]
+[gd_scene load_steps=7 format=3 uid="uid://detjfi0ycmhmx"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.gd" id="1_v0w03"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_0hls5"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="3_d4vgy"]
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="4_iery8"]
-[ext_resource type="Texture2D" uid="uid://btaygehcn7hxf" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_d74uo"]
-[ext_resource type="Texture2D" uid="uid://bsg0b6ex62ao4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_psmtv"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="2_riebx"]
+[ext_resource type="Texture2D" uid="uid://btaygehcn7hxf" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="4_678lb"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_b5yp4"]
+[ext_resource type="Texture2D" uid="uid://bsg0b6ex62ao4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="6_p2feu"]
+[ext_resource type="Texture2D" uid="uid://dlko6628wsboo" path="res://Feagi-Godot-Interface/UI/Resources/morphology_icons/all_to_all.png" id="7_g8jy7"]
 
-
-[node name="morphology_creation" type="Panel"]
-anchors_preset = -1
-anchor_right = 0.479167
-anchor_bottom = 0.82716
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_v0w03")
+[node name="Morphology_Manager" type="Panel"]
+offset_right = 1072.0
+offset_bottom = 568.0
 metadata/_edit_use_anchors_ = true
 
-[node name="TitleBar" parent="." instance=ExtResource("2_0hls5")]
+[node name="TitleBar" parent="." instance=ExtResource("1_psmtv")]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -26,75 +20,63 @@ offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
 
-[node name="morp_box" type="BoxContainer" parent="."]
+[node name="Title_Text" parent="TitleBar" index="1"]
+offset_right = 1032.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_left = 1.0
-offset_top = 42.0
-offset_right = 216.0
-offset_bottom = 73.0
+offset_left = 160.0
+offset_top = 40.0
+offset_right = 200.0
+offset_bottom = 80.0
 
-[node name="Label" type="Label" parent="morp_box"]
-layout_mode = 2
-text = "Morphology Name                                                    "
-
-[node name="LineEdit" type="LineEdit" parent="morp_box"]
+[node name="title_box" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="RadioButtons" type="BoxContainer" parent="."]
-layout_mode = 0
-offset_top = 84.0
-offset_right = 222.0
-offset_bottom = 110.0
-script = ExtResource("3_d4vgy")
+[node name="Label" type="Label" parent="VBoxContainer/title_box"]
+layout_mode = 2
+text = "Title:"
 
-[node name="composite" type="CheckBox" parent="RadioButtons"]
+[node name="title" type="LineEdit" parent="VBoxContainer/title_box"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="RadioButtons"]
-layout_mode = 2
-text = "Composite"
-
-[node name="TextureButton" type="TextureButton" parent="RadioButtons"]
+[node name="type_box" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="vectors" type="CheckBox" parent="RadioButtons"]
+[node name="Label" type="Label" parent="VBoxContainer/type_box"]
+layout_mode = 2
+text = "Type:"
+
+[node name="type" type="LineEdit" parent="VBoxContainer/type_box"]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="RadioButtons"]
-layout_mode = 2
-text = "Vectors"
-
-[node name="TextureButton2" type="TextureButton" parent="RadioButtons"]
-layout_mode = 2
-ignore_texture_size = true
-
-[node name="patterns" type="CheckBox" parent="RadioButtons"]
+[node name="def" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="Label3" type="Label" parent="RadioButtons"]
+[node name="Label" type="Label" parent="VBoxContainer/def"]
 layout_mode = 2
-text = "Patterns"
+text = "Definition:"
 
-[node name="Label" type="Label" parent="."]
-layout_mode = 0
-offset_left = 3.0
-offset_top = 118.0
-offset_right = 177.0
-offset_bottom = 144.0
-text = "Morphology Definition"
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/def"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="add_row" type="Button" parent="VBoxContainer/def"]
+layout_mode = 2
+text = "add row"
 
 [node name="Vector_BOX" type="BoxContainer" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.5
-anchor_top = 0.444
-anchor_right = 0.5
-anchor_bottom = 0.444
-offset_left = -151.0
-offset_top = -82.484
-offset_right = 151.0
-offset_bottom = 82.516
+anchor_left = 0.149
+anchor_top = 0.254
+anchor_right = 0.149
+anchor_bottom = 0.254
+offset_left = 0.272003
+offset_top = -0.272003
+offset_right = 334.272
+offset_bottom = 167.728
 grow_horizontal = 2
 grow_vertical = 2
 vertical = true
@@ -115,7 +97,7 @@ text = "Y                     "
 layout_mode = 2
 text = "Z"
 
-[node name="Scroll_Vertical" parent="Vector_BOX" instance=ExtResource("4_iery8")]
+[node name="Scroll_Vertical" parent="Vector_BOX" instance=ExtResource("2_riebx")]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 
@@ -140,22 +122,22 @@ max_value = 1e+11
 [node name="Button" type="Button" parent="Vector_BOX/Scroll_Vertical/VBoxContainer/XYZ_BOX"]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-icon = ExtResource("5_42u6j")
+icon = ExtResource("4_678lb")
 expand_icon = true
-script = ExtResource("6_d74uo")
+script = ExtResource("5_b5yp4")
 
 [node name="Composite_BOX" type="BoxContainer" parent="."]
 visible = false
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -169.0
-offset_top = -95.5
-offset_right = 169.0
-offset_bottom = 95.5
+anchors_preset = -1
+anchor_left = 0.149
+anchor_top = 0.254
+anchor_right = 0.149
+anchor_bottom = 0.254
+offset_left = 0.272003
+offset_top = -0.272003
+offset_right = 345.272
+offset_bottom = 220.728
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -295,14 +277,14 @@ layout_mode = 2
 visible = false
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.5
-anchor_top = 0.416
-anchor_right = 0.5
-anchor_bottom = 0.416
-offset_left = -276.0
-offset_top = -64.976
-offset_right = 276.0
-offset_bottom = 217.024
+anchor_left = 0.155
+anchor_top = 0.254
+anchor_right = 0.155
+anchor_bottom = 0.254
+offset_left = -0.160004
+offset_top = -1.272
+offset_right = 551.84
+offset_bottom = 280.728
 grow_horizontal = 2
 grow_vertical = 2
 vertical = true
@@ -339,7 +321,7 @@ text = "Y              "
 layout_mode = 2
 text = "Z"
 
-[node name="Scroll_Vertical" parent="Patterns_BOX" instance=ExtResource("4_iery8")]
+[node name="Scroll_Vertical" parent="Patterns_BOX" instance=ExtResource("2_riebx")]
 custom_minimum_size = Vector2(300, 230)
 layout_mode = 2
 
@@ -358,7 +340,7 @@ layout_mode = 2
 [node name="TextureRect" type="TextureRect" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-texture = ExtResource("7_0cxh8")
+texture = ExtResource("6_p2feu")
 expand_mode = 1
 
 [node name="X2" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
@@ -373,27 +355,71 @@ layout_mode = 2
 [node name="TextureButton" type="TextureButton" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-texture_normal = ExtResource("5_42u6j")
+texture_normal = ExtResource("4_678lb")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="add_row" type="Button" parent="."]
-layout_mode = 2
-offset_left = 192.0
-offset_top = 440.0
-offset_right = 326.0
-offset_bottom = 471.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Add Row"
-
-[node name="create" type="Button" parent="."]
+[node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 0
-offset_left = 192.0
-offset_top = 480.0
-offset_right = 326.0
-offset_bottom = 511.0
-text = "Create"
+offset_left = 688.0
+offset_top = 136.0
+offset_right = 1072.0
+offset_bottom = 568.0
 
+[node name="VBoxContainer2" type="VBoxContainer" parent="BoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "Current Usuage:"
+horizontal_alignment = 1
+
+[node name="TextEdit" type="TextEdit" parent="BoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 2
+editable = false
+
+[node name="BoxContainer" type="HBoxContainer" parent="BoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BoxContainer/VBoxContainer2/BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Description:"
+horizontal_alignment = 1
+
+[node name="TextEdit" type="TextEdit" parent="BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 150)
+layout_mode = 2
+editable = false
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="BoxContainer/VBoxContainer2/BoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect2" type="TextureRect" parent="BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+texture = ExtResource("7_g8jy7")
+expand_mode = 1
+
+[node name="Scroll_Vertical" parent="." instance=ExtResource("2_riebx")]
+layout_mode = 0
+offset_top = 41.0
+offset_right = 150.0
+offset_bottom = 568.0
+
+[node name="morphology_button" type="Button" parent="Scroll_Vertical/VBoxContainer" index="0"]
+layout_mode = 2
+text = "NAME_EXAMPLE"
+
+[editable path="TitleBar"]
 [editable path="Vector_BOX/Scroll_Vertical"]
 [editable path="Patterns_BOX/Scroll_Vertical"]
+[editable path="Scroll_Vertical"]

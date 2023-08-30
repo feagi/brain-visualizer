@@ -7,6 +7,7 @@ func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiEvents.retrieved_visualization_data.connect(test)
+	FeagiCacheEvents.cortical_areas_disconnected.connect(delete_single_cortical)
 
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)
@@ -94,7 +95,17 @@ func update_all_node_from_cortical(name_input, material):
 		if name_input in i:
 			for x in len(global_name_list[i]):
 				global_name_list[i][x][0].set_surface_override_material(0, material)
-				
+
+func delete_single_cortical(cortical_area_data : CorticalArea):
+	var name_list : Array = [] # To get cortical name
+	for i in global_name_list:
+		if cortical_area_data.name in i or (cortical_area_data.name + "_textbox") in i:
+			for x in len(global_name_list[i]):
+				global_name_list[i][x][0].queue_free()
+			name_list.append(i)
+	for i in name_list:
+		global_name_list.erase(i)
+	
 func demo_new_cortical():
 	"""
 	This is for add new cortical area so the name will be updated when you move it around. This is designed to use
