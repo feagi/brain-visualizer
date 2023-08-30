@@ -52,9 +52,9 @@ script = ExtResource("1_43i4l")
 [node name="UI" type="Node" parent="."]
 
 [node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
-visible = false
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
+visible = false
 script = ExtResource("3_1xkbx")
 
 [node name="blank_textbox" type="Sprite3D" parent="UI/Brain_Visualizer"]
@@ -186,7 +186,6 @@ offset_bottom = 181.88
 grow_vertical = 1
 
 [node name="morphology_creation" parent="UI/Windows" instance=ExtResource("18_fd2xm")]
-visible = false
 anchor_left = 0.351562
 anchor_top = 0.287037
 anchor_right = 0.352
@@ -195,9 +194,6 @@ offset_right = 575.496
 offset_bottom = 520.0
 grow_horizontal = 1
 grow_vertical = 1
-
-[node name="Vector_BOX" parent="UI/Windows/morphology_creation" index="4"]
-visible = false
 
 [node name="XYZ_BOX" parent="UI/Windows/morphology_creation/Vector_BOX/Scroll_Vertical/VBoxContainer" index="0"]
 visible = false
@@ -229,6 +225,9 @@ script = ExtResource("22_naj0a")
 [node name="Composite_BOX" parent="UI/Windows/Morphology_Manager" index="3"]
 visible = true
 
+[node name="HBoxContainer" parent="UI/Windows/Morphology_Manager/Patterns_BOX/Scroll_Vertical/VBoxContainer" index="0"]
+visible = false
+
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
@@ -257,10 +256,12 @@ visible = true
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
+[connection signal="visibility_changed" from="UI/Windows/morphology_creation" to="UI/Windows/morphology_creation" method="_on_visibility_changed"]
 [connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/composite" to="UI/Windows/morphology_creation" method="_on_composite_pressed"]
 [connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/vectors" to="UI/Windows/morphology_creation" method="_on_vectors_pressed"]
 [connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/patterns" to="UI/Windows/morphology_creation" method="_on_patterns_pressed"]
 [connection signal="pressed" from="UI/Windows/morphology_creation/add_row" to="UI/Windows/morphology_creation" method="_on_add_row_pressed"]
+[connection signal="pressed" from="UI/Windows/morphology_creation/create" to="UI/Windows/morphology_creation" method="_on_create_pressed"]
 
 [editable path="UI/Windows/TopBar"]
 [editable path="UI/Windows/Create_Cortical"]

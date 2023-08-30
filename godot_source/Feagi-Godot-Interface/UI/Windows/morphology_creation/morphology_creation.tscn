@@ -83,6 +83,7 @@ offset_bottom = 144.0
 text = "Morphology Definition"
 
 [node name="Vector_BOX" type="BoxContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -290,7 +291,6 @@ text = "Mapping:"
 layout_mode = 2
 
 [node name="Patterns_BOX" type="BoxContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -342,6 +342,7 @@ custom_minimum_size = Vector2(300, 230)
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer" index="0"]
+visible = false
 layout_mode = 2
 
 [node name="X1" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
@@ -368,7 +369,7 @@ layout_mode = 2
 [node name="Z2" type="LineEdit" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="TextureButton" type="TextureButton" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
+[node name="remove" type="TextureButton" parent="Patterns_BOX/Scroll_Vertical/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_42u6j")
