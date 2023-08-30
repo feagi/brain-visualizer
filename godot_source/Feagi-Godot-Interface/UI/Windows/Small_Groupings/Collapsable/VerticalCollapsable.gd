@@ -25,11 +25,6 @@ var is_open: bool:
 var _is_open: bool
 var _collapsing_button_toggle: TextureButton_Element
 var _collapsing_node: Control
-var _ready_to_go: bool = false
-
-func _ready():
-	if !_ready_to_go:
-		setup()
 
 func setup():
 	var hbox: HBoxContainer = get_child(0)
@@ -39,8 +34,6 @@ func setup():
 	add_child(_collapsing_node)
 	is_open = start_open
 	_collapsing_button_toggle.pressed.connect(_toggle_button_pressed)
-	_ready_to_go = true
-
 
 func _toggle_button_texture(is_opened: bool) -> void:
 	if is_opened:

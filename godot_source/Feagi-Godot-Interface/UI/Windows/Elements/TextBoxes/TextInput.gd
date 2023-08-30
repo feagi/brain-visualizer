@@ -14,11 +14,13 @@ signal text_confirmed(new_text: String)
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
+
 var _previous_text: String
 
 func _ready():
-	text = _previous_text
+	_previous_text = text
 	toggle_signaling_up(enable_signaling_on_ready)
+	
 
 ## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
 func toggle_signaling_up(enable: bool) -> void:
@@ -29,7 +31,8 @@ func toggle_signaling_up(enable: bool) -> void:
 	if !is_connected("focus_exited", _emit_if_text_changed): return # do not disconnect twice!
 	focus_exited.disconnect(_emit_if_text_changed)
 	return
-	
+
+
 func _emit_if_text_changed() -> void:
 	if text == _previous_text:
 		return

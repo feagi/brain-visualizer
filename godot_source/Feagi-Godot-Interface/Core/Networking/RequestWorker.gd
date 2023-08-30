@@ -35,12 +35,18 @@ func FEAGI_call(requestAddress: StringName, method: HTTPClient.Method, destinati
 			request(requestAddress, outgoing_headers, method)
 			return
 		HTTPClient.METHOD_POST:
+			# uncomment / breakpoint below to easily debug dictionary data
+			# var debug_JSON = JSON.stringify(data)
 			request(requestAddress, outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_PUT:
+			# uncomment / breakpoint below to easily debug dictionary data
+			# var debug_JSON = JSON.stringify(data)
 			request(requestAddress, outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_DELETE:
+			# uncomment / breakpoint below to easily debug dictionary data
+			# var debug_JSON = JSON.stringify(data)
 			request(requestAddress, outgoing_headers, method, JSON.stringify(data))
 			return
 	@warning_ignore("assert_always_false")

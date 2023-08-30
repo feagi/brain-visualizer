@@ -74,7 +74,8 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
 
 ## Properties changed from FEAGI side, reflect here
-func FEAGI_set_properties(properties_set: Dictionary) -> void:
+func FEAGI_set_properties(properties_set: Dictionary, _duplicate_ref: CorticalArea) -> void:
+	print("Left pane recieved new cortical details")
 	if "cortical_neuron_per_vox_count" in properties_set.keys():
 		_Voxel_Neuron_Density.external_update_int(properties_set["cortical_neuron_per_vox_count"])
 	if "cortical_synaptic_attractivity" in properties_set.keys():
@@ -109,6 +110,7 @@ func FEAGI_set_properties(properties_set: Dictionary) -> void:
 
 ## User pressed update button
 func _user_requests_update() -> void:
+	print("User requests %d changes to cortical details" % [_growing_cortical_update.size])
 	user_requested_update.emit(_growing_cortical_update)
 
 func user_request_Voxel_Neuron_Density(value: int) -> void:

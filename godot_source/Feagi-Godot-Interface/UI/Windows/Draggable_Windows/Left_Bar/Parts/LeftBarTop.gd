@@ -36,15 +36,18 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_vector_position.current_vector = cortical_reference.coordinates_3D
 	_vector_dimensions.current_vector = cortical_reference.dimensions
 
-func FEAGI_set_cortical_name(new_name: StringName):
+func FEAGI_set_cortical_name(new_name: StringName, _duplicate_ref: CorticalArea):
+	print("Left pane recieved new cortical name")
 	_line_cortical_name.text = new_name
 	_FEAGI_confirmed_update()
 
-func FEAGI_set_cortical_position(new_position: Vector3i):
+func FEAGI_set_cortical_position(new_position: Vector3i, _duplicate_ref: CorticalArea):
+	print("Left pane recieved new cortical position")
 	_vector_position.current_vector = new_position
 	_FEAGI_confirmed_update()
 
-func FEAGI_set_cortical_dimension(new_dimension: Vector3i):
+func FEAGI_set_cortical_dimension(new_dimension: Vector3i, _duplicate_ref: CorticalArea):
+	print("Left pane recieved new cortical dimensions")
 	_vector_dimensions.current_vector = new_dimension
 	_FEAGI_confirmed_update()
 
@@ -56,16 +59,20 @@ func _FEAGI_confirmed_update() -> void:
 
 ## User pressed update button
 func _user_requests_update() -> void:
+	print("User requesing Summary changes to cortical area")
 	user_requested_update.emit(_growing_cortical_update)
 
 func _user_edit_name(new_name: String) -> void:
+	print("User queued name change")
 	_growing_cortical_update["cortical_name"] = new_name
 	_hiding_container.toggle_child_visibility(true)
 
 func _user_edit_3D_position(new_position: Vector3i) -> void:
+	print("User queued position change")
 	_growing_cortical_update["cortical_coordinates"] = str(new_position)
 	_hiding_container.toggle_child_visibility(true)
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
+	print("User queued dimension change")
 	_growing_cortical_update["cortical_dimensions"] = str(new_dimension)
 	_hiding_container.toggle_child_visibility(true)

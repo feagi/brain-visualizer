@@ -8,7 +8,8 @@ signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: CorticalArea)
 signal cortical_visibility_updated(visibility: bool, this_cortical_area: CorticalArea)
-signal details_updated(data: Dictionary, this_cortical_area: CorticalArea)
+signal specific_detail_updated(data: Dictionary, this_cortical_area: CorticalArea)
+signal many_details_set(this_cortical_area: CorticalArea)
 
 signal efferent_area_added(efferent_area: CorticalArea)
 
@@ -61,7 +62,6 @@ var dimensions: Vector3i:
 	get:
 		return _dimensions
 	set(v):
-		dimensions_updated.emit(cortical_ID, v)
 		if v == _dimensions: return
 		dimensions_updated.emit(v, self)
 		_dimensions = v
@@ -69,7 +69,6 @@ var coordinates_2D: Vector2i:
 	get:
 		return _coordinates_2D
 	set(v):
-		coordinates_2D_updated.emit(cortical_ID, v)
 		_coordinates_2D = v
 		_coordinates_2D_available = true
 		_coordinates_2D_available = true
@@ -80,7 +79,6 @@ var coordinates_3D: Vector3i:
 	get:
 		return _coordinates_3D
 	set(v):
-		coordinates_3D_updated.emit(cortical_ID, v)
 		_coordinates_3D = v
 		_coordinates_3D_available = true
 		_coordinates_3D_available = true
@@ -117,7 +115,8 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 	_group = group_type
 	details = CorticalAreaDetails.new()
 	details.apply_dictionary(cortical_details_raw)
-	details.property_changed.connect(_details_updated)
+	details.property_changed.connect(_specific_detail_updated)
+	details.many_properties_set.connect(_many_details_set)
 	_dimensions = cortical_dimensions
 	_cortical_visiblity = visibility
 
@@ -184,5 +183,9 @@ func set_efferent_mapping_properties_from_FEAGI(raw_array_from_FEAGI: Array, tar
 	efferent_mapping_updated.emit(target_cortical_area, properties)
 
 ## Proxy for when the cortical area details changes
-func _details_updated(changed_property: Dictionary) -> void:
-	details_updated.emit(changed_property, self)
+func _specific_detail_updated(changed_property: Dictionary) -> void:
+	specific_detail_updated.emit(changed_property, self)
+
+## proxy for when many cortical area details change (usually from FEAGI)
+func _many_details_set() -> void:
+	many_details_set.emit(self)

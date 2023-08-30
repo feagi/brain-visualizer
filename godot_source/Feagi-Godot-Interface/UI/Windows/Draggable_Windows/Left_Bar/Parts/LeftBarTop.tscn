@@ -27,7 +27,6 @@ text = "Cortical Name"
 [node name="Cortical_Name" type="LineEdit" parent="Row_Cortical_Name"]
 layout_mode = 2
 script = ExtResource("1_0xr58")
-enable_signaling_on_ready = false
 
 [node name="Row_Cortical_ID" type="HBoxContainer" parent="."]
 layout_mode = 2
