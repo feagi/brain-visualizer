@@ -23,13 +23,13 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 	for source_cortical_ID in cortical_map.keys():
 		if cortical_map[source_cortical_ID] == {}:
 			continue # no efferent connections for the current searching source cortical ID
-		if source_cortical_ID not in FeagiCache.cortical_areas_cache.keys():
+		if source_cortical_ID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 			push_error("Retrieved mapping from nonexistant cortical area %s! Skipping!" % source_cortical_ID)
 			continue
 		
 		# This function is not particuarly efficient. Too Bad!
 		# no typing of these arrays due to type cast shenanigans. Be careful!
-		var source_area: CorticalArea = FeagiCache.cortical_areas_cache[source_cortical_ID]
+		var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
 		var connections_requested: Array = cortical_map[source_cortical_ID].keys()
 		var efferent_connections_already_set: Array = source_area.afferent_connections
 		var efferents_to_add: Array = FEAGIUtils.find_missing_elements(connections_requested, efferent_connections_already_set)
@@ -38,13 +38,13 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 		
 
 		for add_ID in efferents_to_add:
-			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache[add_ID], cortical_map[source_cortical_ID][add_ID])
+			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[add_ID], cortical_map[source_cortical_ID][add_ID])
 		
 		for remove_ID in efferents_to_remove:
-			source_area.remove_efferent_connection(FeagiCache.cortical_areas_cache[remove_ID])
+			source_area.remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])
 
 		for check_ID in efferents_to_update:
-			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache[check_ID], cortical_map[source_cortical_ID][check_ID])
+			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[check_ID], cortical_map[source_cortical_ID][check_ID])
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:

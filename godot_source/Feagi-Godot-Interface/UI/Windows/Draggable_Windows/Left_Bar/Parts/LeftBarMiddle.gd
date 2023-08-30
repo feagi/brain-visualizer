@@ -57,7 +57,8 @@ func _ready():
 
 
 func setup(cortical_reference: CorticalArea) -> void:
-	var details: CorticalAreaDetails = cortical_reference.CorticalAreaDetails
+	var details: CorticalAreaDetails = cortical_reference.details
+	_ready()
 	_Voxel_Neuron_Density.current_int = details.cortical_neuron_per_vox_count
 	_Synaptic_Attractivity.current_int = details.cortical_synaptic_attractivity
 	_Post_Synaptic_Potential.current_int = details.neuron_post_synaptic_potential

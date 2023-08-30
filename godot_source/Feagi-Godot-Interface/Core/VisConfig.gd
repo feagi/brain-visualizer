@@ -14,6 +14,7 @@ var minimum_button_size_pixel: Vector2i:
 		_minimum_button_size_pixel = v
 		UI_settings_changed.emit()
 
+var window_manager: WindowManager # set from the window manager itself when it is ready, otherwise this is null!
 
 var _screen_size: Vector2
 var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4

@@ -13,8 +13,10 @@ var _vector_position: Vector3iField
 var _vector_dimensions: Vector3iField
 var _hiding_container: HiderFrozenSize
 var _growing_cortical_update: Dictionary
+var _ready_to_go: bool = false
 
 func _ready():
+	if _ready_to_go: return
 	_line_cortical_name = $Row_Cortical_Name/Cortical_Name
 	_line_cortical_ID = $Row_Cortical_ID/Cortical_ID
 	_line_cortical_type = $Row_Cortical_Type/Cortical_Type
@@ -27,11 +29,16 @@ func _ready():
 	_vector_dimensions.user_updated_vector.connect(_user_edit_dimension)
 	var update_button: TextButton_Element = _hiding_container.get_node("Update_Button")
 	update_button.pressed.connect(_user_requests_update)
+	_ready_to_go = true
 
 func setup(cortical_reference: CorticalArea) -> void:
+	if !_ready_to_go: _ready()
+	
 	_line_cortical_name.text = cortical_reference.name
 	_line_cortical_ID.text = cortical_reference.cortical_ID
 	_line_cortical_type.text = str(cortical_reference.group)
+	_vector_position._ready() # this is terrible
+	_vector_dimensions._ready()
 	_vector_position.current_vector = cortical_reference.coordinates_3D
 	_vector_dimensions.current_vector = cortical_reference.dimensions
 

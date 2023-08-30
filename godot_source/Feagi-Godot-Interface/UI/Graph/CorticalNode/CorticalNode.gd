@@ -46,6 +46,9 @@ func _ready():
 
 	_title_bar.close_pressed.connect(_user_request_delete_cortical_area)
 	_title_bar.dragged.connect(_on_title_bar_drag)
+	gui_input.connect(_on_interact)
+
+	
 
 
 ## Since we cannot use _init for scenes, use this instead to initialize data
@@ -72,3 +75,9 @@ func _on_title_bar_drag(_current_position: Vector2, delta_offset: Vector2) -> vo
 	_connection_input.moved.emit()
 	_connection_output.moved.emit()
 
+func _on_interact(event):
+	print("any")
+	if !(event is InputEventMouseButton): return
+	var mouse_event: InputEventMouseButton = event
+	if !mouse_event.double_click: return
+	VisConfig.window_manager.spawn_left_panel(_cortical_area_ref)
