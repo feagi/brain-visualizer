@@ -26,7 +26,7 @@ var _is_open: bool
 var _collapsing_button_toggle: TextureButton_Element
 var _collapsing_node: Control
 
-func _ready():
+func setup():
 	var hbox: HBoxContainer = get_child(0)
 	hbox.get_node("Section_Title").text = section_text
 	_collapsing_button_toggle = hbox.get_node("Collapsible_Toggle")
@@ -34,7 +34,6 @@ func _ready():
 	add_child(_collapsing_node)
 	is_open = start_open
 	_collapsing_button_toggle.pressed.connect(_toggle_button_pressed)
-
 
 func _toggle_button_texture(is_opened: bool) -> void:
 	if is_opened:

@@ -20,11 +20,36 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
-	FeagiCache.connections_cache.mass_set_connections(cortical_map)
+	for source_cortical_ID in cortical_map.keys():
+		if cortical_map[source_cortical_ID] == {}:
+			continue # no efferent connections for the current searching source cortical ID
+		if source_cortical_ID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+			push_error("Retrieved mapping from nonexistant cortical area %s! Skipping!" % source_cortical_ID)
+			continue
+		
+		# This function is not particuarly efficient. Too Bad!
+		# no typing of these arrays due to type cast shenanigans. Be careful!
+		var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
+		var connections_requested: Array = cortical_map[source_cortical_ID].keys()
+		var efferent_connections_already_set: Array = source_area.efferent_connections_with_count.keys()
+		var efferents_to_add: Array = FEAGIUtils.find_missing_elements(connections_requested, efferent_connections_already_set)
+		var efferents_to_remove: Array = FEAGIUtils.find_missing_elements(efferent_connections_already_set, connections_requested)
+		var efferents_to_update: Array = FEAGIUtils.find_union(efferent_connections_already_set, connections_requested)
+		
+
+		for add_ID in efferents_to_add:
+			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[add_ID], cortical_map[source_cortical_ID][add_ID])
+		
+		for remove_ID in efferents_to_remove:
+			source_area.remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])
+
+		for check_ID in efferents_to_update:
+			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[check_ID], cortical_map[source_cortical_ID][check_ID])
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_area_properties: Dictionary = _body_to_dictionary(response_body)
+	print("Recieved from FEAGI latest cortical info for " + cortical_area_properties["cortical_id"])
 	FeagiCache.cortical_areas_cache.update_cortical_area_from_dict(cortical_area_properties)
 
 
@@ -45,6 +70,11 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
 		push_error("Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
 		return
+	var raw_mapping_properties: Array = _body_to_untyped_array(response_body)
+	var source_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[0]]
+	var destination_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]
+	source_area.set_efferent_mapping_properties_from_FEAGI(raw_mapping_properties, destination_area)
+
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
@@ -107,7 +137,6 @@ func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, c
 
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
-	FeagiCache.connections_cache.cortical_area_deleted(deleted_cortical_ID)
 	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
 
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:

@@ -49,7 +49,7 @@ func GET_GE_corticalNameLocation(corticalName: String):
 
 ## By corticalID, returns dictionary of all cortical area details
 func GET_GE_corticalArea(corticalID: StringName):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_CORTICALAREAEQUALS + corticalID, _response_functions_ref.GET_GE_corticalArea)
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea + corticalID, _response_functions_ref.GET_GE_corticalArea)
 
 ## returns dict of cortical names, mapped to an array of positions, unknown boolean, size, and ID
 func GET_CO_properties_dimensions():
@@ -174,7 +174,7 @@ func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology
 func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
 	data_to_set["cortical_id"] = str(cortical_ID)
 	# Passthrough the corticalID so we know what cortical area was updated
-	_interface_ref.FEAGI_POST(_address_list.PUT_genome_corticalArea, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
+	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_corticalArea, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
 	pass
 
 ## TODO clean up this

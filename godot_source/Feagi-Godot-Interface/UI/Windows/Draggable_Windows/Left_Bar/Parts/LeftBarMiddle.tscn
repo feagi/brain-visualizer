@@ -1,15 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://x0wkgtc5o5vw"]
+[gd_scene load_steps=6 format=3 uid="uid://x0wkgtc5o5vw"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="1_vwrd4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.gd" id="1_ydyx4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="2_goyev"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/HiderFrozenSize.gd" id="3_ms63u"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_0ph5r"]
 
-[node name="LeftBarTop2" type="VBoxContainer"]
+[node name="LeftBarMiddle" type="VBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_right = -862.0
-offset_bottom = -404.0
+offset_bottom = -127.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_ydyx4")
 
 [node name="Voxel_Neuron_Density" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -21,7 +26,6 @@ text = "Voxel Neuron Density"
 
 [node name="Voxel_Neuron_Density" type="LineEdit" parent="Voxel_Neuron_Density"]
 layout_mode = 2
-editable = false
 script = ExtResource("1_vwrd4")
 
 [node name="Synaptic_Attractivity" type="HBoxContainer" parent="."]
@@ -32,22 +36,20 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Synaptic Attractivity"
 
-[node name="Synaptic Attractivity" type="LineEdit" parent="Synaptic_Attractivity"]
+[node name="Synaptic_Attractivity" type="LineEdit" parent="Synaptic_Attractivity"]
 layout_mode = 2
-editable = false
 script = ExtResource("1_vwrd4")
 
-[node name="Post-Synaptic_Potential" type="HBoxContainer" parent="."]
+[node name="Post_Synaptic_Potential" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Post-Synaptic_Potential"]
+[node name="Label" type="Label" parent="Post_Synaptic_Potential"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Post-Synaptic Potential"
 
-[node name="Post-Synaptic_Potential" type="LineEdit" parent="Post-Synaptic_Potential"]
+[node name="Post_Synaptic_Potential" type="LineEdit" parent="Post_Synaptic_Potential"]
 layout_mode = 2
-editable = false
 script = ExtResource("1_vwrd4")
 
 [node name="PSP_Max" type="HBoxContainer" parent="."]
@@ -60,5 +62,135 @@ text = "PSP Max"
 
 [node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
 layout_mode = 2
-editable = false
 script = ExtResource("1_vwrd4")
+
+[node name="Plasticity_Constant" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Plasticity_Constant"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Plasticity_Constant"
+
+[node name="Plasticity_Constant" type="LineEdit" parent="Plasticity_Constant"]
+layout_mode = 2
+script = ExtResource("2_goyev")
+
+[node name="Fire_Threshold" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Fire_Threshold"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fire Threshold"
+
+[node name="Fire_Threshold" type="LineEdit" parent="Fire_Threshold"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Threshold_Limit" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Threshold_Limit"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Threshold Limit"
+
+[node name="Threshold_Limit" type="LineEdit" parent="Threshold_Limit"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Refactory_Period" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Refactory_Period"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Refactory Period"
+
+[node name="Refactory_Period" type="LineEdit" parent="Refactory_Period"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Leak_Constant" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Leak_Constant"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Leak Constant"
+
+[node name="Leak_Constant" type="LineEdit" parent="Leak_Constant"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Leak_Varibility" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Leak_Varibility"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Leak Varibility"
+
+[node name="Leak_Varibility" type="LineEdit" parent="Leak_Varibility"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Threshold_Inc" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Threshold_Inc"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Threshold Inc"
+
+[node name="Threshold_Inc" type="LineEdit" parent="Threshold_Inc"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Consecutive_Fire_Count" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Consecutive_Fire_Count"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Consecutive Fire Count"
+
+[node name="Consecutive_Fire_Count" type="LineEdit" parent="Consecutive_Fire_Count"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Snooze_Period" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Snooze_Period"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Snooze Period"
+
+[node name="Snooze_Period" type="LineEdit" parent="Snooze_Period"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Degeneracy_Constant" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Degeneracy_Constant"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Degeneracy Constant"
+
+[node name="Degeneracy_Constant" type="LineEdit" parent="Degeneracy_Constant"]
+layout_mode = 2
+script = ExtResource("1_vwrd4")
+
+[node name="Update_Button_Hider" type="BoxContainer" parent="."]
+layout_mode = 2
+script = ExtResource("3_ms63u")
+children_visible_at_start = false
+
+[node name="TextButton_Element" type="Button" parent="Update_Button_Hider"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply Update"
+script = ExtResource("4_0ph5r")

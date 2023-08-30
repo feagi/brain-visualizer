@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_d74uo"]
 [ext_resource type="Texture2D" uid="uid://bsg0b6ex62ao4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
 
+
 [node name="morphology_creation" type="Panel"]
 anchors_preset = -1
 anchor_right = 0.479167

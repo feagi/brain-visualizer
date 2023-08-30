@@ -17,6 +17,7 @@ func refresh_cortical_areas() -> void:
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
 ## Success emits cortical_area_updated
 func refresh_cortical_area(ID: StringName) -> void:
+	print("Pinging FEAGI latest cortical area details for " + ID)
 	_feagi_interface.calls.GET_GE_corticalArea(ID)
 
 ## Requests from FEAGI to add a cortical area using the custom call
@@ -51,6 +52,7 @@ func refresh_morphology_list() -> void:
 ## Success emits morphology_updated
 func refresh_morphology_properties(morphology_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
+
 
 func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i]) -> void:
 	var requesting_morphology: Dictionary = {
