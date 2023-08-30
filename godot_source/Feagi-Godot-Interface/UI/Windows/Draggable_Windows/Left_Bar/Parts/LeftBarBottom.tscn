@@ -1,18 +1,39 @@
-[gd_scene load_steps=4 format=3 uid="uid://bsjtfu2i0eyou"]
+[gd_scene load_steps=6 format=3 uid="uid://bsjtfu2i0eyou"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.gd" id="1_a8l7y"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="1_emqcp"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_hl6t7"]
 [ext_resource type="PackedScene" uid="uid://da355xfk6trdo" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMappingPrefab.tscn" id="2_hxmjn"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_pvvlf"]
 
 [node name="LeftBarBottom" type="VBoxContainer"]
 script = ExtResource("1_a8l7y")
 
+[node name="Label_Afferent" type="Label" parent="."]
+layout_mode = 2
+text = "Afferent Connections"
+script = ExtResource("2_hl6t7")
+max_length = 40
+label_text = "Afferent Connections"
+
 [node name="Afferent" parent="." instance=ExtResource("1_emqcp")]
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(300, 80)
 layout_mode = 2
 prefab_to_spawn = ExtResource("2_hxmjn")
 
+[node name="Label_Efferent" type="Label" parent="."]
+layout_mode = 2
+text = "Efferent Connections"
+script = ExtResource("2_hl6t7")
+max_length = 40
+label_text = "Efferent Connections"
+
 [node name="Efferent" parent="." instance=ExtResource("1_emqcp")]
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(300, 80)
 layout_mode = 2
 prefab_to_spawn = ExtResource("2_hxmjn")
+
+[node name="Delete_Button" type="Button" parent="."]
+layout_mode = 2
+text = "DELETE CORTICAL AREA"
+script = ExtResource("5_pvvlf")

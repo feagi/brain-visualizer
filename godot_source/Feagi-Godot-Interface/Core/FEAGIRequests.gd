@@ -39,6 +39,7 @@ func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: D
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
 ## Success emits cortical_area_removed, and possibly various morphology_removed
 func delete_cortical_area(cortical_id: StringName) -> void:
+	print("User requesting cortical area deletion of area " + cortical_id)
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
 
 ################################# Morphologies ##################################
