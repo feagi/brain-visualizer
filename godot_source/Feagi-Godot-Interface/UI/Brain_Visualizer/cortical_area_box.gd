@@ -52,8 +52,10 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 					Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]] = []
 					Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]].append(location)
 			set_surface_override_material(0, global_material.selected)
-#	elif event is InputEventMouseButton and event.pressed and event.button_index==1:
-#		select_cortical.selected.append(get_name())
+	elif event is InputEventMouseButton and event.pressed and event.button_index==1:
+		var cortical_name = FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]]
+		$"../../Windows".spawn_left_panel(cortical_name)
+
 func _on_area_3d_mouse_entered():
 	if get_surface_override_material(0) == global_material.selected:
 		set_surface_override_material(0, global_material.selected)
