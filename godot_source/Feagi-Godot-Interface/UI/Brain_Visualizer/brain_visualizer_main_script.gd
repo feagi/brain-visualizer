@@ -7,7 +7,7 @@ func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiEvents.retrieved_visualization_data.connect(test)
-	FeagiCacheEvents.cortical_areas_disconnected.connect(delete_single_cortical)
+	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
 
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)
@@ -20,6 +20,9 @@ func generate_cortical_area(cortical_area_data : CorticalArea):
 	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.name))
 	textbox.set_texture(viewport.get_texture())
 	textbox.set_name(cortical_area_data.name + str("_textbox"))
+	if not textbox.get_name() in global_name_list:
+		global_name_list[textbox.get_name()] = []
+	global_name_list[textbox.get_name()].append([textbox])
 	if int(cortical_area_data.dimensions.x) * int(cortical_area_data.dimensions.y) * int(cortical_area_data.dimensions.z) < 999: # Prevent massive cortical area
 		generate_model(cortical_area_data.cortical_ID, cortical_area_data.coordinates_3D.x,cortical_area_data.coordinates_3D.y,cortical_area_data.coordinates_3D.z,cortical_area_data.dimensions.x, cortical_area_data.dimensions.z, cortical_area_data.dimensions.y)
 	else:
@@ -98,8 +101,9 @@ func update_all_node_from_cortical(name_input, material):
 
 func delete_single_cortical(cortical_area_data : CorticalArea):
 	var name_list : Array = [] # To get cortical name
+	var cortical_text = cortical_area_data.name + "_textbox"
 	for i in global_name_list:
-		if cortical_area_data.name in i or (cortical_area_data.name + "_textbox") in i:
+		if cortical_area_data.cortical_ID in i or cortical_text in i:
 			for x in len(global_name_list[i]):
 				global_name_list[i][x][0].queue_free()
 			name_list.append(i)
