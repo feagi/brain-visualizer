@@ -1,0 +1,45 @@
+[gd_scene load_steps=5 format=3 uid="uid://detjfi0ycmhmx"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.gd" id="1_2rgw1"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_psmtv"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="2_riebx"]
+[ext_resource type="PackedScene" uid="uid://dy3nu6ah5d0hv" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/spawn_prefabs/Button_Prefab/ScrollButtonPrefab.tscn" id="3_p37he"]
+
+[node name="Morphology_Manager" type="Panel"]
+anchors_preset = -1
+offset_right = 702.0
+offset_bottom = 383.0
+script = ExtResource("1_2rgw1")
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleBar" parent="." instance=ExtResource("1_psmtv")]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+
+[node name="Title_Text" parent="TitleBar" index="1"]
+anchors_preset = 10
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = -40.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 1
+
+[node name="Scroll_Vertical" parent="." instance=ExtResource("2_riebx")]
+layout_mode = 0
+offset_top = 41.0
+offset_right = 150.0
+offset_bottom = 381.0
+
+[node name="ScrollButtonPrefab" parent="Scroll_Vertical/VBoxContainer" index="0" instance=ExtResource("3_p37he")]
+layout_mode = 2
+
+[editable path="TitleBar"]
+[editable path="Scroll_Vertical"]
