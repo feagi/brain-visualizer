@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckkgl10utu0i8"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.gd" id="1_6m3vf"]
+
+[node name="LeftBarPremium" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_6m3vf")
+
+[node name="Membrane" type="CheckButton" parent="."]
+layout_mode = 2
+text = "Membrane Monitoring"
+
+[node name="PostSynaptic" type="CheckButton" parent="."]
+layout_mode = 2
+text = "Post-Synaptic  Monitoring"

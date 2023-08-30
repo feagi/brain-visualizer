@@ -48,6 +48,9 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if _response_code == 422:
+		push_error("Unable to retrieve cortical area information! Skipping!")
+		return
 	var cortical_area_properties: Dictionary = _body_to_dictionary(response_body)
 	print("Recieved from FEAGI latest cortical info for " + cortical_area_properties["cortical_id"])
 	FeagiCache.cortical_areas_cache.update_cortical_area_from_dict(cortical_area_properties)

@@ -179,12 +179,11 @@ layout_mode = 2
 text = "Neuron Fire Threshold Increment"
 horizontal_alignment = 1
 script = ExtResource("4_ofdu8")
-max_length = 50
+max_length = 30
 label_text = "Neuron Fire Threshold Increment"
 
 [node name="Fire_Threshold_Increment" parent="." instance=ExtResource("5_d8t0a")]
 layout_mode = 2
-alignment = 1
 
 [node name="Update_Button_Hider" type="BoxContainer" parent="."]
 layout_mode = 2
