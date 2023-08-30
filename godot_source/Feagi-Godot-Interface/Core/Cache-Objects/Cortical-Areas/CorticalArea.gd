@@ -3,6 +3,16 @@ class_name CorticalArea
 ## Holds details pertaining to a specific cortical area
 ## Signals up if properties here are changed
 
+
+enum CORTICAL_AREA_TYPE {
+	IPU,
+	CORE,
+	MEMORY,
+	CUSTOM,
+	OPU
+}
+
+
 signal name_updated(cortical_name: StringName, this_cortical_area: CorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: CorticalArea)
@@ -23,14 +33,6 @@ signal afferent_area_added(afferent_area: CorticalArea)
 
 signal afferent_area_removed(afferent_area: CorticalArea)
 
-
-enum CORTICAL_AREA_TYPE {
-	IPU,
-	CORE,
-	MEMORY,
-	CUSTOM,
-	OPU
-}
 
 ############# ############# ############# ############# ############# ############# 
 ############# These values should only be modified by FEAGI directly! ############# 
