@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.gd" id="1_dpkpa"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/CloseButton_Element.gd" id="2_dcvn6"]
-[ext_resource type="Texture2D" uid="uid://coeariw5wgwbx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close.png" id="2_r0lhb"]
+[ext_resource type="Texture2D" uid="uid://dg03s2lb6w1wj" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close.png" id="2_r0lhb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/Title_Element.gd" id="3_etp03"]
 
 [node name="TitleBar" type="Panel"]
