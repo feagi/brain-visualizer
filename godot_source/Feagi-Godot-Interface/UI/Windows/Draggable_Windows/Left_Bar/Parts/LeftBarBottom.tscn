@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://bsjtfu2i0eyou"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.gd" id="1_a8l7y"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="1_emqcp"]
+[ext_resource type="PackedScene" uid="uid://da355xfk6trdo" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMappingPrefab.tscn" id="2_hxmjn"]
+
+[node name="LeftBarBottom" type="VBoxContainer"]
+script = ExtResource("1_a8l7y")
+
+[node name="Afferent" parent="." instance=ExtResource("1_emqcp")]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+prefab_to_spawn = ExtResource("2_hxmjn")
+
+[node name="Efferent" parent="." instance=ExtResource("1_emqcp")]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+prefab_to_spawn = ExtResource("2_hxmjn")

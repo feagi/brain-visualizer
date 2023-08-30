@@ -14,10 +14,10 @@ var _Threshold_Limit: IntInput
 var _Refactory_Period: IntInput
 var _Leak_Constant: IntInput
 var _Leak_Varibility: IntInput
-var _Threshold_Inc: IntInput
 var _Consecutive_Fire_Count: IntInput
 var _Snooze_Period: IntInput
 var _Degeneracy_Constant: IntInput
+var _Threshold_Inc: Vector3fField
 
 var _hiding_container: HiderFrozenSize
 
@@ -34,7 +34,7 @@ func _ready():
 	_Refactory_Period = $Refactory_Period/Refactory_Period
 	_Leak_Constant = $Leak_Constant/Leak_Constant
 	_Leak_Varibility = $Leak_Varibility/Leak_Varibility
-	_Threshold_Inc = $Threshold_Inc/Threshold_Inc
+	_Threshold_Inc = $Fire_Threshold_Increment
 	_Consecutive_Fire_Count = $Consecutive_Fire_Count/Consecutive_Fire_Count
 	_Snooze_Period = $Snooze_Period/Snooze_Period
 	_Degeneracy_Constant = $Degeneracy_Constant/Degeneracy_Constant
@@ -50,10 +50,10 @@ func _ready():
 	_Refactory_Period.int_confirmed.connect(user_request_Refactory_Period)
 	_Leak_Constant.int_confirmed.connect(user_request_Leak_Constant)
 	_Leak_Varibility.int_confirmed.connect(user_request_Leak_Varibility)
-	_Threshold_Inc.int_confirmed.connect(user_request_Threshold_Inc)
 	_Consecutive_Fire_Count.int_confirmed.connect(user_request_Consecutive_Fire_Count)
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
 	_Degeneracy_Constant.int_confirmed.connect(user_request_Degeneracy_Constant)
+	_Threshold_Inc.user_updated_vector.connect(user_request_Threshold_Inc)
 
 ## set initial values from FEAGI Cache
 func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
@@ -68,10 +68,10 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_Refactory_Period.current_int = details.neuron_refractory_period
 	_Leak_Constant.current_int = details.neuron_leak_coefficient
 	_Leak_Varibility.current_int = details.neuron_leak_variability
-	_Threshold_Inc.current_int = details.neuron_fire_threshold_increment
 	_Consecutive_Fire_Count.current_int = details.neuron_consecutive_fire_count
 	_Snooze_Period.current_int = details.neuron_snooze_period
 	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
+	_Threshold_Inc.current_vector = details.neuron_fire_threshold_increment
 
 ## Properties changed from FEAGI side, reflect here
 func FEAGI_set_properties(cortical_area: CorticalArea) -> void:
@@ -88,10 +88,10 @@ func FEAGI_set_properties(cortical_area: CorticalArea) -> void:
 	_Refactory_Period.external_update_int(cortical_area_details.neuron_refractory_period)
 	_Leak_Constant.external_update_int(cortical_area_details.neuron_leak_coefficient)
 	_Leak_Varibility.external_update_int(cortical_area_details.neuron_leak_variability)
-	_Threshold_Inc.external_update_int(cortical_area_details.neuron_fire_threshold_increment)
 	_Consecutive_Fire_Count.external_update_int(cortical_area_details.neuron_consecutive_fire_count)
 	_Snooze_Period.external_update_int(cortical_area_details.neuron_snooze_period)
 	_Degeneracy_Constant.external_update_int(cortical_area_details.neuron_degeneracy_coefficient)
+	_Threshold_Inc.current_vector = cortical_area_details.neuron_fire_threshold_increment
 
 	_hiding_container.toggle_child_visibility(false)
 	_growing_cortical_update = {} # reset queued changes
