@@ -47,9 +47,9 @@ func _ready():
 	_field_z.current_patternval = PatternVal.new(initial_vector.z)
 	
 
-	_field_x.patternvar_confirmed.connect(_emit_new_vector)
-	_field_y.patternvar_confirmed.connect(_emit_new_vector)
-	_field_z.patternvar_confirmed.connect(_emit_new_vector)
+	_field_x.patternval_confirmed.connect(_emit_new_vector)
+	_field_y.patternval_confirmed.connect(_emit_new_vector)
+	_field_z.patternval_confirmed.connect(_emit_new_vector)
 
 func _emit_new_vector(_dont_care: PatternVal) -> void:
 	user_updated_vector.emit(current_vector) # already builds a new object, avoiding reference conflict

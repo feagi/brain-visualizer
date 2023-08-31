@@ -10,7 +10,7 @@ class_name PatternValInput
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
 ## Only emits if user changes the text THEN focuses off the textbox
-signal patternvar_confirmed(new_patternval: PatternVal)
+signal patternval_confirmed(new_patternval: PatternVal)
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
@@ -55,10 +55,10 @@ func _on_focus():
 	text = _previous_patternval.as_StringName
 
 func _emit_if_text_changed() -> void:
-	if PatternVal.can_be_PatternVar(text):
+	if PatternVal.can_be_PatternVal(text):
 		_set_visible_text(text)
 		_previous_patternval = PatternVal.new(text)
-		patternvar_confirmed.emit(_previous_patternval.duplicate()) 
+		patternval_confirmed.emit(_previous_patternval.duplicate()) 
 		return
 	_set_visible_text(_previous_patternval.as_StringName)
 
