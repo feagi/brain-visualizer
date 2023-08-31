@@ -12,6 +12,7 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 ## Triggers an update in FEAGI Cached cortical areas
 ## Success emits cortical_area_added, cortical_area_removed, cortical_area_updated depending on situation
 func refresh_cortical_areas() -> void:
+	print("User requesting cortical area geometry data")
 	_feagi_interface.calls.GET_GE_CorticalArea_geometry() # This will afterwards trigger "refresh_connection_list()"
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area

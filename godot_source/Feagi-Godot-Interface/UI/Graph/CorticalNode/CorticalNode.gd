@@ -72,7 +72,7 @@ func _user_request_delete_cortical_area() -> void:
 func _on_title_bar_change_size() -> void:
 	pass
 
-func _on_title_bar_drag(_current_position: Vector2, delta_offset: Vector2) -> void:
+func _on_title_bar_drag(_current_position: Vector2, _delta_offset: Vector2) -> void:
 	_connection_input.moved.emit()
 	_connection_output.moved.emit()
 
