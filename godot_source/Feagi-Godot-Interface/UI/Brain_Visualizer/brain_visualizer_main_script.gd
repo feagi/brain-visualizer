@@ -8,7 +8,7 @@ func _ready():
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiEvents.retrieved_visualization_data.connect(test)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
-
+#	FeagiCacheEvents.cortical_area_updated.connect(reload_cortical) # disabled due to being triggered every click
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)
 
@@ -133,6 +133,9 @@ func delete_example():
 	for i in name_list:
 		global_name_list.erase(i)
 
+func reload_cortical(cortical_area_data : CorticalArea):
+	delete_single_cortical(cortical_area_data)
+	on_cortical_area_added(cortical_area_data)
 
 func generate_single_cortical(x,y,z,width, depth, height, name_input):
 	"""Function for create cortical, import circuit"""
