@@ -1,12 +1,12 @@
 [gd_scene load_steps=8 format=3 uid="uid://b3uycanyq64c7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.gd" id="1_v0w03"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="2_0hls5"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_0hls5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="3_d4vgy"]
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="4_iery8"]
-[ext_resource type="Texture2D" uid="uid://b03o2vop1tl1n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="4_iery8"]
+[ext_resource type="Texture2D" uid="uid://bpunuth7s7jbd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_42u6j"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_d74uo"]
-[ext_resource type="Texture2D" uid="uid://c6swprvpla1g4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
+[ext_resource type="Texture2D" uid="uid://dddettdqyrrt2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="7_0cxh8"]
 
 [node name="morphology_creation" type="Panel"]
 anchors_preset = -1

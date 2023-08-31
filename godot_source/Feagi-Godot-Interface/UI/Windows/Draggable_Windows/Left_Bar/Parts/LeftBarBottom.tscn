@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://bsjtfu2i0eyou"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.gd" id="1_a8l7y"]
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="1_emqcp"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="1_emqcp"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_hl6t7"]
 [ext_resource type="PackedScene" uid="uid://da355xfk6trdo" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMappingPrefab.tscn" id="2_hxmjn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_pvvlf"]

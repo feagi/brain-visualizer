@@ -123,6 +123,6 @@ func _on_create_pressed():
 			empty_flag += 1
 		full_array.append(empty_array1)
 		full_array.append(empty_array2)
-		string_input.append(PatternVector3Pairs(full_array))
+		#string_input.append(PatternVector3Pairs(full_array))
 	json["patterns"] = string_input
 	FeagiRequests.request_creating_pattern_morphology("Patterns", json["patterns"])

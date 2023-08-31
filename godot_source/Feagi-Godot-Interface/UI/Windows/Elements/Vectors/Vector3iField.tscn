@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://boj8wsv76jqlm"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.gd" id="1_hv1wd"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.gd" id="1_hv1wd"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_hiffw"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_vm86m"]
 
