@@ -158,7 +158,7 @@ func set_efferent_connection(target_cortical_area: CorticalArea, mapping_count: 
 	_efferent_connections_with_count[target_cortical_area.cortical_ID] = mapping_count
 	efferent_area_count_updated.emit(target_cortical_area)
 	# handle afferent call on the other cortical area
-	target_cortical_area.set_as_afferent_connection(self)
+	target_cortical_area.set_afferent_connection(self)
 
 ## remove target cortex as connection
 func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:

@@ -1,7 +1,6 @@
 extends Node
 class_name LeftBarBottomMappingPrefab
 
-signal user_requests_mapping_deletion(source_area: CorticalArea, destination_area: CorticalArea)
 signal user_requests_editing_mapping(source_area: CorticalArea, destination_area: CorticalArea)
 
 var _ID_Button: TextButton_Element
@@ -30,9 +29,14 @@ func setup(data: Dictionary, _main_window: Node) -> void:
 		name = _destination_area.cortical_ID
 
 func _user_pressed_delete_button():
-	user_requests_mapping_deletion.emit(_source_area, _destination_area)
+	print("Left Bar is requesting Cortical Connection Deletion")
+	FeagiRequests.request_delete_connection_between_corticals(_source_area, _destination_area)
+	queue_free() # TODO THIS IS BAD< WE SHOULD WAIT ON FEAGI
+	
+	
 
 func _user_pressed_edit_button():
+	print("Left Bar is requesting Cortical Connection Editing")
 	user_requests_editing_mapping.emit(_source_area, _destination_area)
 
 

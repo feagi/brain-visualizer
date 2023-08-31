@@ -38,13 +38,13 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 		
 
 		for add_ID in efferents_to_add:
-			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[add_ID], cortical_map[source_cortical_ID][add_ID])
+			source_area.set_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[add_ID], cortical_map[source_cortical_ID][add_ID])
 		
 		for remove_ID in efferents_to_remove:
 			source_area.remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])
 
 		for check_ID in efferents_to_update:
-			source_area.set_as_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[check_ID], cortical_map[source_cortical_ID][check_ID])
+			source_area.set_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[check_ID], cortical_map[source_cortical_ID][check_ID])
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
@@ -132,6 +132,7 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 		return
 	var cortical_src: CorticalArea = src_dst_data["src"]
 	var cortical_dst: CorticalArea = src_dst_data["dst"]
+	print("FEAGI sucessfully updated the mapping between %s and %s" % [cortical_src.cortical_ID, cortical_dst.cortical_ID])
 	var mapping_count: int = src_dst_data["count"]
 	if mapping_count == 0:
 		# we removed the mapping

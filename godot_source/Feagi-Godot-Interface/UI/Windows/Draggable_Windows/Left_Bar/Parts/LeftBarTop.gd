@@ -69,10 +69,10 @@ func _user_edit_name(new_name: String) -> void:
 
 func _user_edit_3D_position(new_position: Vector3i) -> void:
 	print("User queued position change")
-	_growing_cortical_update["cortical_coordinates"] = str(new_position)
+	_growing_cortical_update["cortical_coordinates"] = FEAGIUtils.vector3i_to_array(new_position)
 	_hiding_container.toggle_child_visibility(true)
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
 	print("User queued dimension change")
-	_growing_cortical_update["cortical_dimensions"] = str(new_dimension)
+	_growing_cortical_update["cortical_dimensions"] = FEAGIUtils.vector3i_to_array(new_dimension)
 	_hiding_container.toggle_child_visibility(true)
