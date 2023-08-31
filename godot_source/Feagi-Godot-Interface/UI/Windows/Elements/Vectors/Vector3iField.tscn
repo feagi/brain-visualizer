@@ -11,6 +11,7 @@ script = ExtResource("1_hv1wd")
 layout_mode = 2
 text = "X"
 script = ExtResource("2_hiffw")
+max_length = 5
 
 [node name="SpacerX" type="Control" parent="."]
 layout_mode = 2
@@ -24,6 +25,7 @@ script = ExtResource("3_vm86m")
 layout_mode = 2
 text = "Y"
 script = ExtResource("2_hiffw")
+max_length = 5
 
 [node name="SpacerY" type="Control" parent="."]
 layout_mode = 2
@@ -38,6 +40,7 @@ layout_mode = 2
 text = "Z
 "
 script = ExtResource("2_hiffw")
+max_length = 5
 
 [node name="SpacerZ" type="Control" parent="."]
 layout_mode = 2

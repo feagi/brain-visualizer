@@ -44,4 +44,5 @@ text = "TEXT"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("3_etp03")
+max_length = 30
 label_text = "TEXT"

@@ -1,0 +1,3 @@
+extends GrowingPanel
+class_name WindowCreateMorphology
+
