@@ -48,14 +48,17 @@ func delete_cortical_area(cortical_id: StringName) -> void:
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
+	print("Use requested refresh of the morphology listing")
 	_feagi_interface.calls.GET_MO_list_types()
 
 ## Requests the latest info on a specific morphology name
 ## Success emits morphology_updated
 func refresh_morphology_properties(morphology_name: StringName) -> void:
+	print("Use requested refresh of properties of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
 func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i], mapper_morphology: Morphology) -> void:
+	print("Use requested creation of composite morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
@@ -66,6 +69,7 @@ func request_creating_composite_morphology(morphology_name: StringName, source_s
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
 
 func request_creating_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]) -> void:
+	print("Use requested creation of vector morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
@@ -75,16 +79,25 @@ func request_creating_vector_morphology(morphology_name: StringName, vectors: Ar
 
 
 func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
+	print("Use requested creation of function morphology " + morphology_name)
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.FUNCTIONS, parameters)
 
 
 func request_creating_pattern_morphology(morphology_name: StringName, patterns: Array[PatternVector3Pairs]) -> void:
+	print("Use requested creation of pattern morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
 		}
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
+
+func request_delete_morphology(morphology_name: StringName) -> void:
+	print("Use requested deletion of morphology " + morphology_name)
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology_name])
+		return
+	_feagi_interface.calls.DELETE_GE_morphology(morphology_name)
 
 
 ################################## Connections ##################################

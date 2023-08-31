@@ -185,4 +185,6 @@ func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename the
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted
 
-
+## Deletes a morphology
+func DELETE_GE_morphology(morphology_name: StringName):
+	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_morphology + morphology_name, _response_functions_ref.DELETE_GE_morphology, morphology_name) # pass through morphology name to know what we deleted

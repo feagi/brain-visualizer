@@ -45,6 +45,7 @@ var PUT_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_propert
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area_name="
+var DELETE_GE_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	GET_feagi_pns_current_ipu = FEAGIFullAddress + GET_feagi_pns_current_ipu
