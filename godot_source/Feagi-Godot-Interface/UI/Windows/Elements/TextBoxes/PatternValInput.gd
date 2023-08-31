@@ -23,7 +23,7 @@ signal patternvar_confirmed(new_patternval: PatternVal)
 @export var suffix: String = ""
 
 var current_patternval: PatternVal:
-	get: return _previous_patternval
+	get: return _previous_patternval.duplicate()
 	set(v):
 		external_update_float(v)
 
@@ -31,14 +31,14 @@ var _previous_patternval: PatternVal
 
 func _ready():
 	_previous_patternval = PatternVal.new(initial_value)
-	_set_visible_text(_previous_patternval)
+	_set_visible_text(_previous_patternval.as_StringName)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
 
 ## Used to update the float value externally programatically (IE not from the user)
 func external_update_float(new_patternval: PatternVal) -> void:
 	_previous_patternval = new_patternval
-	_set_visible_text(new_patternval)
+	_set_visible_text(new_patternval.as_StringName)
 
 ## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
 func toggle_signaling_up(enable: bool) -> void:
@@ -56,8 +56,11 @@ func _on_focus():
 
 func _emit_if_text_changed() -> void:
 	if PatternVal.can_be_PatternVar(text):
-		_set_visible_text(PatternVal.new(text))
-	_set_visible_text(_previous_patternval)
+		_set_visible_text(text)
+		_previous_patternval = PatternVal.new(text)
+		patternvar_confirmed.emit(_previous_patternval.duplicate()) 
+		return
+	_set_visible_text(_previous_patternval.as_StringName)
 
-func _set_visible_text(new_patternval: PatternVal) -> void:
-	text = prefix + new_patternval.as_StringName + suffix
+func _set_visible_text(new_patternval_str: StringName) -> void:
+	text = prefix + new_patternval_str + suffix
