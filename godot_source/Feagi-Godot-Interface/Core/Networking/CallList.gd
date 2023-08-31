@@ -177,8 +177,13 @@ func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_corticalArea, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
 	pass
 
+## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
+func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):
+	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
+	 _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
+
 ## TODO clean up this
-func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename these variables
+func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + extra_name, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
 	
  ## deletes cortical area

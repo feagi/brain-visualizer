@@ -126,8 +126,21 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
 	
 
-func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	pass
+func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
+	if _response_code == 422:
+		push_error("Unable to process new mappings! Skipping!")
+		return
+	var cortical_src: CorticalArea = src_dst_data["src"]
+	var cortical_dst: CorticalArea = src_dst_data["dst"]
+	var mapping_count: int = src_dst_data["count"]
+	if mapping_count == 0:
+		# we removed the mapping
+		cortical_src.remove_efferent_connection(cortical_dst)
+		return
+	# assume we add / modify the mapping
+	cortical_src.set_efferent_connection(cortical_dst, mapping_count)
+
+
 
 func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
 	if _response_code == 422:
