@@ -96,4 +96,33 @@ func _on_add_row_pressed():
 
 
 func _on_create_pressed():
-	pass # Replace with function body.
+	var json = {}
+	var new_name = $morp_box/LineEdit.text
+	var new_type = "Patterns"
+	var empty_flag = 0
+	var string_input = []
+	var full_array = []
+	for i in duplicated_reference_name_listP: # iterate all duplicated node
+		empty_flag = 0
+		full_array = []
+		var empty_array1 = [i.get_node("X1").text, i.get_node("Y1").text, i.get_node("Z1").text]
+		var empty_array2 = [i.get_node("X2").text, i.get_node("Y2").text, i.get_node("Z2").text]
+		var symbols_to_check = ["?", "*"]
+		for x in empty_array1:
+			if x in symbols_to_check:
+				empty_array1[empty_flag] = str(x)
+			else:
+				empty_array1[empty_flag] = int(x)
+			empty_flag += 1
+		empty_flag = 0
+		for b in empty_array2:
+			if b in symbols_to_check:
+				empty_array2[empty_flag] = str(b)
+			else:
+				empty_array2[empty_flag] = int(b)
+			empty_flag += 1
+		full_array.append(empty_array1)
+		full_array.append(empty_array2)
+		#string_input.append(PatternVector3Pairs(full_array))
+	json["patterns"] = string_input
+	FeagiRequests.request_creating_pattern_morphology("Patterns", json["patterns"])

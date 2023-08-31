@@ -1,12 +1,12 @@
 [gd_scene load_steps=8 format=3 uid="uid://q5xkg5bg8wnk"]
 
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_ev3y5"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Mapping_Definition/mapping_definition.gd" id="1_vdjq8"]
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/Scroll_Vertical.tscn" id="2_ntjn1"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="3_mvpb2"]
-[ext_resource type="Texture2D" uid="uid://bsg0b6ex62ao4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="3_skqpl"]
-[ext_resource type="Texture2D" uid="uid://d366h6fq3qcbt" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="4_i7siq"]
-[ext_resource type="Texture2D" uid="uid://btaygehcn7hxf" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_44o4e"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_ntjn1"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="3_mvpb2"]
+[ext_resource type="Texture2D" uid="uid://dddettdqyrrt2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="3_skqpl"]
+[ext_resource type="Texture2D" uid="uid://bkrhcxq2ljrx0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="4_i7siq"]
+[ext_resource type="Texture2D" uid="uid://bpunuth7s7jbd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="5_44o4e"]
 
 [node name="mapping_definition" type="Panel"]
 offset_right = 1296.0
