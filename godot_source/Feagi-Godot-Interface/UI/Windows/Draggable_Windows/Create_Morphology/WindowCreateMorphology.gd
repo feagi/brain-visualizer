@@ -16,9 +16,9 @@ var _composite_patternY: Vector2iField
 var _composite_patternZ: Vector2iField
 var _composite_mapped_morphology: DropDown
 
-var _vectors_vector_list: BaseScroll
+var _vectors_vector_list: VBoxContainer
 
-var _patterns_vector_list: BaseScroll
+var _patterns_vector_list: VBoxContainer
 
 
 func _ready():
@@ -36,13 +36,15 @@ func _ready():
 	_composite_patternZ = $Container/Composite/Patterns/Z/Z
 	_composite_mapped_morphology = $Container/Composite/mapper/Available_Morphologies
 
-	_vectors_vector_list = $Container/Vectors/Vectors
+	_vectors_vector_list = $Container/Vectors/Vectors/VBoxContainer
 
-	_patterns_vector_list = $Container/Patterns/Patterns
+	_patterns_vector_list = $Container/Patterns/Patterns/VBoxContainer
 
 	_section_composite.visible = false
 	_section_vectors.visible = false
 	_section_patterns.visible = false
+	
+	_composite_mapped_morphology.options = FeagiCache.morphology_cache.available_morphologies.keys()
 
 	print("initialized create morphology window")
 	# ensure we have the latest list of morphologies
@@ -98,12 +100,14 @@ func _on_create_morphology_pressed():
 
 	match selected_morphology_type:
 		&"Composite":
+			
+			var mapping_morphology_name: StringName = _composite_mapped_morphology.selected_item
 			var source_seed: Vector3i = _composite_seed.current_vector
 			var patternX: Vector2i = _composite_patternX.current_vector
 			var patternY: Vector2i = _composite_patternY.current_vector
 			var patternZ: Vector2i = _composite_patternZ.current_vector
 			var patterns: Array[Vector2i] = [patternX, patternY, patternZ]
-			FeagiRequests.request_creating_composite_morphology(_morphology_name.text, source_seed, patterns)
+			FeagiRequests.request_creating_composite_morphology(_morphology_name.text, source_seed, patterns, FeagiCache.morphology_cache.available_morphologies[mapping_morphology_name])
 			return
 		&"Vectors":
 			var vectors: Array[Vector3i] = []

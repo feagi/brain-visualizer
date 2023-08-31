@@ -30,7 +30,7 @@ static func vector3i_to_array(input: Vector3i):
 	return output
 
 ## Converts a Vector2i to a 2 long int array
-static func vector2i_to_array(input: Vector2i) -> Array[int]:
+static func vector2i_to_array(input: Vector2i):
 	var output: Array = [input.x, input.y]
 	return output
 

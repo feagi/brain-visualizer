@@ -55,11 +55,12 @@ func refresh_morphology_list() -> void:
 func refresh_morphology_properties(morphology_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
-func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i]) -> void:
+func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i], mapper_morphology: Morphology) -> void:
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
-			"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern)
+			"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
+			"mapper_morphology": mapper_morphology.name
 		}
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
@@ -83,7 +84,7 @@ func request_creating_pattern_morphology(morphology_name: StringName, patterns: 
 			"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
 		}
 	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.VECTORS, requesting_morphology)
+	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
 
 
 ################################## Connections ##################################
