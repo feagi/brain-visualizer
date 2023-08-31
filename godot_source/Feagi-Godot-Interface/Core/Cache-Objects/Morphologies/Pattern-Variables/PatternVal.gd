@@ -26,19 +26,22 @@ var _data: Variant # either StringName or int
 func _init(input: Variant):
 	_verify(input)
 
-## Returns true if an input can be a PatternVar, otherwise returns false
+## Returns true if an input can be a PatternVar, otherwise returns false (attempting anyways will cause the value to be stored as int 0)
 static func can_be_PatternVar(input: Variant) -> bool:
 	if typeof(input) == TYPE_INT:
 		return true
-	if StringName(input) in ACCEPTABLE_CHARS: 
+	if StringName(input) in ACCEPTABLE_CHARS or StringName(input).is_valid_int(): 
 		return true
 	return false
 
 func _verify(input) -> void:
-	if typeof(input) == TYPE_INT:
+	if typeof(input) == TYPE_INT: # Optimization problem, theoretically dropping this top if statement will still allow this to work, but would it perform better?
 		_data = input
-	if StringName(input) in ACCEPTABLE_CHARS:
-		_data = StringName(input)
-	@warning_ignore("assert_always_false")
-	assert(false, "Invalid input for PatternVal!")
+		return
+	var a = StringName(input)
+	if a in ACCEPTABLE_CHARS:
+		_data = a
+		return
+	_data = a.to_int() # if completely invalid, this will force it to 0
+
 	
