@@ -19,8 +19,9 @@ var _data: Array[PatternVal]
 func _init(X: PatternVal, Y: PatternVal, Z: PatternVal):
 	_data = [X, Y, Z]
 
-func to_string_array() -> Array[String]:
-	return [str(x.data), str(y.data), str(z.data)]
+# Do not define array type due to type mixing
+func to_FEAGI_array() -> Array:
+	return [x.data, y.data, z.data]
 
 func duplicate() -> PatternVector3:
 	return PatternVector3.new(self.x, self.y, self.z)
