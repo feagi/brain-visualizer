@@ -1,14 +1,12 @@
-[gd_scene load_steps=7 format=3 uid="uid://detjfi0ycmhmx"]
+[gd_scene load_steps=6 format=3 uid="uid://detjfi0ycmhmx"]
 
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_psmtv"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_riebx"]
-[ext_resource type="Texture2D" uid="uid://b03o2vop1tl1n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="4_678lb"]
+[ext_resource type="Texture2D" uid="uid://d2hww73dcrk8a" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="4_678lb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_b5yp4"]
-[ext_resource type="Texture2D" uid="uid://c6swprvpla1g4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="6_p2feu"]
-[ext_resource type="Texture2D" uid="uid://52mpcxn7qbli" path="res://Feagi-Godot-Interface/UI/Resources/morphology_icons/all_to_all.png" id="7_g8jy7"]
+[ext_resource type="Texture2D" uid="uid://8whux134hijq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="6_p2feu"]
 
 [node name="Morphology_Manager" type="Panel"]
-anchors_preset = -1
 offset_right = 1127.0
 offset_bottom = 568.0
 metadata/_edit_use_anchors_ = true
@@ -404,11 +402,10 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 25)
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2"]
+[node name="TextureRect" type="TextureButton" parent="BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2"]
 custom_minimum_size = Vector2(150, 150)
 layout_mode = 2
-texture = ExtResource("7_g8jy7")
-expand_mode = 1
+stretch_mode = 0
 
 [node name="Scroll_Vertical" parent="." instance=ExtResource("2_riebx")]
 layout_mode = 0
