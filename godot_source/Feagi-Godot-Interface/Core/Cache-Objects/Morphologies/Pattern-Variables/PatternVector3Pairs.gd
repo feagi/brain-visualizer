@@ -18,8 +18,8 @@ func _init(going_in: PatternVector3, going_out: PatternVector3):
 	_incoming = going_in.duplicate()
 	_outgoing = going_out.duplicate()
 
-func to_array_of_string_array() -> Array[Array]:
-	return [_incoming.to_string_array(), _outgoing.to_string_array()]
+func to_array_of_arrays() -> Array[Array]:
+	return [_incoming.to_FEAGI_array(), _outgoing.to_FEAGI_array()]
 
 func duplicate() -> PatternVector3Pairs:
 	return PatternVector3Pairs.new(_incoming, _outgoing)
