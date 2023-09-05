@@ -30,11 +30,14 @@ var _LTP_multiplier: float
 var _LTD_multiplier: float
 
 
-func _init(morphology: Morphology, positive_scalar: Vector3i, current_multilpier: float, plasticity: bool, plasticity_multiplier: float = 1.0, LTP_multiplier: float = 1.0, LTD_multiplier: float = 1.0):
+func _init(morphology: Morphology, positive_scalar: Vector3i, psp_multilpier: float, plasticity: bool, plasticity_multiplier_: float = 1.0, ltp_multiplier: float = 1.0, ltd_multiplier: float = 1.0):
     _morphology_used = morphology
     _scalar = Vector3i(FEAGIUtils.bounds_int(positive_scalar.x, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.y, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.z, 1, INT8_MAX))
-    _post_synaptic_current_multiplier = current_multilpier
+    _post_synaptic_current_multiplier = psp_multilpier
     _plasticity_flag = plasticity
+    _plasticity_multiplier = plasticity_multiplier_ # not sure how to better segregate this name. Too Bad!
+    _LTP_multiplier = ltp_multiplier
+    _LTD_multiplier = ltd_multiplier
 
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_dictionary() -> Dictionary:
