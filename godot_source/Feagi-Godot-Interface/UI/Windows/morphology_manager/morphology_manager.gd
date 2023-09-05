@@ -4,7 +4,8 @@ var morphology_list = []
 var name_file = []
 
 func _ready():
-	FeagiCacheEvents.morphology_updated.connect(updated_morphology_list)
+	FeagiEvents.retrieved_latest_morphology_listing.connect(updated_morphology_list)
+	FeagiEvents.retrieved_latest_usuage_of_morphology.connect(usuage_update)
 
 func _on_nm_settings_button_pressed():
 	if visible:
@@ -33,8 +34,10 @@ func _on_texture_button_pressed(value):
 		$BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2/TextureRect.visible = false
 		$BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2/Button.visible = true
 		$BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2/Button.text = value
+	FeagiRequests.get_morphology_usuage(value)
+	FeagiRequests.refresh_morphology_properties(value)
 
-func updated_morphology_list():
+func updated_morphology_list(_dummy):
 	var dir = DirAccess.open("res://Feagi-Godot-Interface/UI/Resources/morphology_icons/")
 	if dir:
 		dir.list_dir_begin()
@@ -59,3 +62,17 @@ func updated_morphology_list():
 			file_name = dir.get_next()
 	else:
 		print("An error occurred when trying to access the path.")
+
+func usuage_update(body):
+	$BoxContainer/VBoxContainer2/TextEdit.text = ""
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(body)
+	var api_data = test_json_conv.get_data()
+	var string_list = ""
+	if api_data != null:
+		for i in api_data:
+			string_list = string_list + i[0] + " > " + i[1] + "\n"
+			$BoxContainer/VBoxContainer2/TextEdit.text += str(string_list)
+	else:
+		$BoxContainer/VBoxContainer2/TextEdit.text = ""
+#	$BoxContainer/VBoxContainer2/TextEdit.text = morphology_list
