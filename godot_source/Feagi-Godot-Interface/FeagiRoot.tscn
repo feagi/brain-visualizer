@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://pq2qv50v863l" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://cyw1xknl7qaxx" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
@@ -135,6 +135,7 @@ visible = false
 visible = false
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
+visible = false
 anchor_left = 0.532986
 anchor_top = 0.603
 anchor_right = 0.533
@@ -202,6 +203,7 @@ offset_bottom = 181.88
 grow_vertical = 1
 
 [node name="Mapping_definition" parent="UI/Windows" instance=ExtResource("19_y4dcl")]
+visible = false
 anchors_preset = -1
 anchor_left = 0.0772569
 anchor_top = 0.300926
@@ -212,7 +214,6 @@ offset_bottom = 359.952
 metadata/_edit_use_anchors_ = true
 
 [node name="Morphology_Manager" parent="UI/Windows" instance=ExtResource("20_bolqa")]
-visible = false
 anchor_left = 0.294
 anchor_top = 0.173
 anchor_right = 0.294
@@ -228,6 +229,14 @@ visible = true
 
 [node name="HBoxContainer" parent="UI/Windows/Morphology_Manager/Patterns_BOX/Scroll_Vertical/VBoxContainer" index="0"]
 visible = false
+
+[node name="TextureRect" parent="UI/Windows/Morphology_Manager/BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2" index="1"]
+visible = false
+
+[node name="Button" type="Button" parent="UI/Windows/Morphology_Manager/BoxContainer/VBoxContainer2/BoxContainer/VBoxContainer2" index="2"]
+visible = false
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
 
 [node name="morphology_button" parent="UI/Windows/Morphology_Manager/Scroll_Vertical/VBoxContainer" index="0"]
 visible = false
