@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ddbex88mr6v4h"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Scroll/BaseScroll.gd" id="1_bevrw"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/BaseScroll.gd" id="1_bevrw"]
 
 [node name="Scroll_Horizontal" type="ScrollContainer"]
 offset_right = 32.0

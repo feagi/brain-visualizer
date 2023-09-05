@@ -166,7 +166,7 @@ func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology
 	var to_buffer: Dictionary = parameters.duplicate()
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
-	_interface_ref.FEAGI_POST(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+str(morphology_type).to_lower(), _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
+	_interface_ref.FEAGI_POST(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
 
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
@@ -177,12 +177,19 @@ func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_corticalArea, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
 	pass
 
+## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
+func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):
+	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
+	 _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
+
 ## TODO clean up this
-func PUT_GE_mappingProperties(dataIn, extra_name := ""): ## We should rename these variables
+func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + extra_name, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
 	
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted
 
-
+## Deletes a morphology
+func DELETE_GE_morphology(morphology_name: StringName):
+	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_morphology + morphology_name, _response_functions_ref.DELETE_GE_morphology, morphology_name) # pass through morphology name to know what we deleted

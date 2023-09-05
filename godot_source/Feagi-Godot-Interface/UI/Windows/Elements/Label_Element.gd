@@ -1,7 +1,7 @@
 extends Label
 class_name Label_Element
 
-@export var max_length: int = 20
+@export var max_length: int
 
 @export var label_text: String:
 	get: return text

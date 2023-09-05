@@ -1,11 +1,12 @@
-[gd_scene load_steps=7 format=3 uid="uid://x0wkgtc5o5vw"]
+[gd_scene load_steps=8 format=3 uid="uid://x0wkgtc5o5vw"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="1_vwrd4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.gd" id="1_ydyx4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="2_goyev"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/HiderFrozenSize.gd" id="3_ms63u"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_0ph5r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="4_ofdu8"]
-[ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_d8t0a"]
+[ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3fField.tscn" id="5_d8t0a"]
 
 [node name="LeftBarMiddle" type="VBoxContainer"]
 anchors_preset = 15
@@ -64,6 +65,18 @@ text = "PSP Max"
 [node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
 layout_mode = 2
 script = ExtResource("1_vwrd4")
+
+[node name="Plasticity_Constant" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Plasticity_Constant"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Plasticity_Constant"
+
+[node name="Plasticity_Constant" type="LineEdit" parent="Plasticity_Constant"]
+layout_mode = 2
+script = ExtResource("2_goyev")
 
 [node name="Fire_Threshold" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -163,17 +176,14 @@ script = ExtResource("1_vwrd4")
 
 [node name="Fire_Threshold_Label" type="Label" parent="."]
 layout_mode = 2
-text = "Fire Threshold Increment"
+text = "Neuron Fire Threshold Increment"
+horizontal_alignment = 1
 script = ExtResource("4_ofdu8")
-max_length = 50
-label_text = "Fire Threshold Increment"
+max_length = 30
+label_text = "Neuron Fire Threshold Increment"
 
 [node name="Fire_Threshold_Increment" parent="." instance=ExtResource("5_d8t0a")]
 layout_mode = 2
-alignment = 1
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
 
 [node name="Update_Button_Hider" type="BoxContainer" parent="."]
 layout_mode = 2

@@ -12,6 +12,7 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 ## Triggers an update in FEAGI Cached cortical areas
 ## Success emits cortical_area_added, cortical_area_removed, cortical_area_updated depending on situation
 func refresh_cortical_areas() -> void:
+	print("User requesting cortical area geometry data")
 	_feagi_interface.calls.GET_GE_CorticalArea_geometry() # This will afterwards trigger "refresh_connection_list()"
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
@@ -39,6 +40,7 @@ func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: D
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
 ## Success emits cortical_area_removed, and possibly various morphology_removed
 func delete_cortical_area(cortical_id: StringName) -> void:
+	print("User requesting cortical area deletion of area " + cortical_id)
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
 
 ################################# Morphologies ##################################
@@ -46,24 +48,28 @@ func delete_cortical_area(cortical_id: StringName) -> void:
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
+	print("Use requested refresh of the morphology listing")
 	_feagi_interface.calls.GET_MO_list_types()
 
 ## Requests the latest info on a specific morphology name
 ## Success emits morphology_updated
 func refresh_morphology_properties(morphology_name: StringName) -> void:
+	print("Use requested refresh of properties of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
-
-func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i]) -> void:
+func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i], mapper_morphology: Morphology) -> void:
+	print("Use requested creation of composite morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
-			"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern)
+			"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
+			"mapper_morphology": mapper_morphology.name
 		}
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
 
 func request_creating_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]) -> void:
+	print("Use requested creation of vector morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
@@ -73,16 +79,25 @@ func request_creating_vector_morphology(morphology_name: StringName, vectors: Ar
 
 
 func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
+	print("Use requested creation of function morphology " + morphology_name)
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.FUNCTIONS, parameters)
 
 
 func request_creating_pattern_morphology(morphology_name: StringName, patterns: Array[PatternVector3Pairs]) -> void:
+	print("Use requested creation of pattern morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
 		"parameters": {
 			"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
 		}
 	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.VECTORS, requesting_morphology)
+	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
+
+func request_delete_morphology(morphology_name: StringName) -> void:
+	print("Use requested deletion of morphology " + morphology_name)
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology_name])
+		return
+	_feagi_interface.calls.DELETE_GE_morphology(morphology_name)
 
 
 ################################## Connections ##################################
@@ -115,7 +130,25 @@ func quick_connect_between_two_corticals(src: String, morphology_name: String, d
 		dst["postSynapticCurrent_multiplier"] = float(1.0)
 		dst["plasticity_flag"] = false
 		dst_data["cortical_destinations"][src].append(dst)
-		_feagi_interface.calls.PUT_GE_mappingProperties(dst_data["cortical_destinations"][src],combine_url)
+		_feagi_interface.calls.PUT_GE_mappingProperties_DEFUNCT(dst_data["cortical_destinations"][src],combine_url)
+
+## Requese from FEAGI to fully remove the connection between 2 cortical areas
+func request_delete_connection_between_corticals(source_area: CorticalArea, destination_area: CorticalArea) -> void:
+	print("User Requested Deletion of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
+
+	if destination_area.cortical_ID not in source_area.efferent_connections_with_count.keys():
+		push_error("Attempted to delete non-cached connection from %s to %s" % [source_area.cortical_ID, destination_area.cortical_ID])
+		return
+	
+	# This essentially works by sending an empty array for the mappings
+	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, [])
+
+
+func request_set_connection_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
+	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
+	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, mapping_data.to_array())
+
+
 
 ################################# FEAGI General #################################
 

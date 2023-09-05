@@ -14,6 +14,11 @@ const TRIANGLE_LEFT: CompressedTexture2D = preload("res://Feagi-Godot-Interface/
 var collapsing_node: Control:
 	get: return _collapsing_node
 
+var section_title: StringName:
+	get: return get_child(0).get_node("Section_Title").text
+	set(v):
+		get_child(0).get_node("Section_Title").text = v
+
 ## Whether the collapsible section is open (or collapsed)
 var is_open: bool:
 	get: return _is_open

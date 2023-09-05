@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://c10sw6pgpfy48"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.gd" id="1_dpkpa"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.gd" id="1_dpkpa"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/CloseButton_Element.gd" id="2_dcvn6"]
-[ext_resource type="Texture2D" uid="uid://dg03s2lb6w1wj" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close.png" id="2_r0lhb"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/Title_Element.gd" id="3_etp03"]
+[ext_resource type="Texture2D" uid="uid://d1ueokjbphshy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close.png" id="2_r0lhb"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/Title_Element.gd" id="3_etp03"]
 
 [node name="TitleBar" type="Panel"]
 custom_minimum_size = Vector2(0, 40)
@@ -44,4 +44,5 @@ text = "TEXT"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("3_etp03")
+max_length = 30
 label_text = "TEXT"

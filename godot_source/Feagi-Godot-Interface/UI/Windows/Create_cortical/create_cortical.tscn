@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://cwhmgj80l7uir"]
 
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/TitleBar/TitleBar.tscn" id="1_13jjd"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_13jjd"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="3_2tw0j"]
-[ext_resource type="PackedScene" uid="uid://cn63wh2rl81w2" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3Spinboxxyz.tscn" id="3_akmb5"]
-[ext_resource type="PackedScene" uid="uid://b63y4prhuagv7" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3Spinboxwdh.tscn" id="4_wv7un"]
+[ext_resource type="PackedScene" uid="uid://cn63wh2rl81w2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Spinboxxyz.tscn" id="3_akmb5"]
+[ext_resource type="PackedScene" uid="uid://b63y4prhuagv7" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Spinboxwdh.tscn" id="4_wv7un"]
 
 [node name="Create_Cortical" type="Panel"]
 anchors_preset = -1

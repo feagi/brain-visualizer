@@ -1,30 +1,49 @@
 extends Object
 class_name PatternVal
-## Some PatternMorphology values can be ints, or "*" or "?". This can hold all of those
+## PatternMorphology values can be ints, or "*" or "?". This can hold all of those
+
+## All possible characters (non ints) a pattern var can be, as Strings
+const ACCEPTABLE_CHARS: PackedStringArray = ["*", "?"]
 
 var data: Variant:
 	get: return _data
-	set(v): Verify(v)
+	set(v): _verify(v)
 
 var isInt: bool:
 	get: return typeof(_data) == TYPE_INT
 
 var isAny: bool:
-	get: return _data == StringName("*")
+	get: return str(_data) == "*"
 
 var isMatchingOther: bool:
-	get: return _data == StringName("?")
+	get: return str(_data) == "?"
 
-var _data: Variant # either StringName or int
+var as_StringName: StringName:
+	get: return str(_data)
+
+var _data: Variant = 0 # either StringName or int
 
 func _init(input: Variant):
-	Verify(input)
+	_verify(input)
 
-func Verify(input) -> void:
-	if typeof(input) == TYPE_INT:
+## Returns true if an input can be a PatternVal, otherwise returns false (attempting anyways will cause the value to be stored as int 0)
+static func can_be_PatternVal(input: Variant) -> bool:
+	if str(input) in ACCEPTABLE_CHARS or str(input).is_valid_int(): 
+		return true
+	return false
+
+## mainly used when we wish to void crossing references
+func duplicate() -> PatternVal:
+	return PatternVal.new(_data)
+
+func _verify(input) -> void:
+	if typeof(input) == TYPE_INT: # Optimization problem, theoretically dropping this top if statement will still allow this to work, but would it perform better?
 		_data = input
-	if input in ["*", "?"]:
-		_data = StringName(input)
-	@warning_ignore("assert_always_false")
-	assert(false, "Invalid input for PatternVal!")
-	
+		return
+	var a = str(input)
+	if a in ACCEPTABLE_CHARS:
+		_data = StringName(a)
+		return
+	_data = a.to_int() # if completely invalid, this will force it to 0
+
+

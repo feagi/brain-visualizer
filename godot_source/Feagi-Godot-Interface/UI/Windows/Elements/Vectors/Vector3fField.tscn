@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://do28ox8hb6e08"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3fField.gd" id="1_com4y"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.gd" id="1_com4y"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_up58r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_uer0m"]
 
@@ -11,6 +11,7 @@ script = ExtResource("1_com4y")
 layout_mode = 2
 text = "X"
 script = ExtResource("2_up58r")
+max_length = 5
 
 [node name="SpacerX" type="Control" parent="."]
 layout_mode = 2
@@ -24,6 +25,7 @@ script = ExtResource("3_uer0m")
 layout_mode = 2
 text = "Y"
 script = ExtResource("2_up58r")
+max_length = 5
 
 [node name="SpacerY" type="Control" parent="."]
 layout_mode = 2
@@ -38,6 +40,7 @@ layout_mode = 2
 text = "Z
 "
 script = ExtResource("2_up58r")
+max_length = 5
 
 [node name="SpacerZ" type="Control" parent="."]
 layout_mode = 2

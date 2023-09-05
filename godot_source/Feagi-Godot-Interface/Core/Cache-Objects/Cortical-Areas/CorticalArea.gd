@@ -91,10 +91,13 @@ var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
 var is_coordinates_3D_available: bool:
 	get: return _coordinates_3D_available
+## All INCOMING connections
 var afferent_connections: Array[StringName]:
 	get: return _afferent_connections
+## All OUTGOING connections (with number of mappings)
 var efferent_connections_with_count: Dictionary:
 	get: return _efferent_connections_with_count
+## All OUTGOING connections (with mapping data per connection)
 var efferent_mappings: Dictionary:
 	get: return _efferent_mappings
 
@@ -107,7 +110,9 @@ var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
 var _cortical_visiblity: bool = true
+## All afferent cortical areas refrences by cortical ID
 var _afferent_connections: Array[StringName]
+## Add efferent cortical areas refrenced by cortical ID as keys with values being mapping count
 var _efferent_connections_with_count: Dictionary
 var _efferent_mappings: Dictionary = {}
 
@@ -130,7 +135,7 @@ func apply_details_dict(updated_details: Dictionary) -> void:
 # remember, efferent: e for exit
 
 ## way for incoming cortical areas to declare themselves as such. DOES NOT TAKE CARE OF REVERSE DEFINITION, ONLY CALL IF YOU UNDERSTAND WHAT THIS MEANS
-func set_as_afferent_connection(incoming_cortical_area: CorticalArea) -> void:
+func set_afferent_connection(incoming_cortical_area: CorticalArea) -> void:
 	if incoming_cortical_area.cortical_ID in _afferent_connections:
 		push_warning("attempted to add cortical area %s to afferent to %s when it is already defined as such. Skipping!"% [incoming_cortical_area.cortical_ID, _cortical_ID])
 		return
@@ -147,13 +152,13 @@ func remove_afferent_connection(incoming_cortical_area: CorticalArea) -> void:
 	efferent_area_removed.emit(incoming_cortical_area)
 
 ## add / update target cortex as connection
-func set_as_efferent_connection(target_cortical_area: CorticalArea, mapping_count: int) -> void:
+func set_efferent_connection(target_cortical_area: CorticalArea, mapping_count: int) -> void:
 	if target_cortical_area.cortical_ID not in _efferent_connections_with_count.keys():
 		afferent_area_added.emit(target_cortical_area)
 	_efferent_connections_with_count[target_cortical_area.cortical_ID] = mapping_count
 	efferent_area_count_updated.emit(target_cortical_area)
 	# handle afferent call on the other cortical area
-	target_cortical_area.set_as_afferent_connection(self)
+	target_cortical_area.set_afferent_connection(self)
 
 ## remove target cortex as connection
 func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
@@ -169,13 +174,11 @@ func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
 func remove_all_connections() -> void:
 	# remove incoming
 	for afferent in _afferent_connections:
-		afferent_area_removed.emit(FeagiCache.cortical_areas_cache[afferent])
-		FeagiCache.cortical_areas_cache[afferent].remove_afferent_connection(self)
+		remove_afferent_connection(FeagiCache.cortical_areas_cache[afferent])
 	
 	# remove outgoing
 	for efferent in _efferent_connections_with_count.keys():
-		efferent_area_removed.emit(FeagiCache.cortical_areas_cache[efferent])
-		FeagiCache.cortical_areas_cache[efferent].remove_efferent_connection(self)
+		remove_efferent_connection(FeagiCache.cortical_areas_cache[efferent])
 
 ## replaced cortical mapping properties to a efferent cortical location from here
 func set_efferent_mapping_properties_from_FEAGI(raw_array_from_FEAGI: Array, target_cortical_area: CorticalArea) -> void:

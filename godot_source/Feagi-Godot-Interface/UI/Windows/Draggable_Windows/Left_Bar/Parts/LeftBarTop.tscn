@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="1_0xr58"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.gd" id="1_f8pnh"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Small_Groupings/Vectors/Vector3iField.tscn" id="2_bdwmo"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="2_bdwmo"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/HiderFrozenSize.gd" id="3_po83v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_vs7fw"]
 
@@ -56,10 +56,18 @@ editable = false
 script = ExtResource("1_0xr58")
 enable_signaling_on_ready = false
 
+[node name="Label_Position" type="Label" parent="."]
+layout_mode = 2
+text = "Position"
+
 [node name="Cortical_Position" parent="." instance=ExtResource("2_bdwmo")]
 layout_mode = 2
 alignment = 1
 initial_vector = Vector3i(1, 1, 1)
+
+[node name="Label_Dimensions" type="Label" parent="."]
+layout_mode = 2
+text = "Dimension"
 
 [node name="Cortical_Size" parent="." instance=ExtResource("2_bdwmo")]
 layout_mode = 2

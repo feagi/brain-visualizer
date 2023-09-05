@@ -49,6 +49,7 @@ func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> voi
 
 
 func _on_mode_button_pressed():
+	$HBoxContainer/Mode_Button.release_focus()
 	var BV = $"../../Brain_Visualizer"
 	var CB = $"../../NodeGraph"
 	if BV.visible:

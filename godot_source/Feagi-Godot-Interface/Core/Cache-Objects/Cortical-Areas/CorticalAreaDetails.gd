@@ -29,19 +29,13 @@ var neuron_post_synaptic_potential_max: int:
 		_neuron_post_synaptic_potential_max = v
 		property_changed.emit({"neuron_post_synaptic_potential_max": v})
 
-var neuron_plasticity_constant: float:
-	get: return _neuron_plasticity_constant
-	set(v):
-		_neuron_plasticity_constant = v
-		property_changed.emit({"neuron_plasticity_constant": v})
-
 var neuron_fire_threshold: int:
 	get: return _neuron_fire_threshold
 	set(v):
 		_neuron_fire_threshold = v
 		property_changed.emit({"neuron_fire_threshold": v})
 
-var neuron_fire_threshold_increment: int:
+var neuron_fire_threshold_increment: Vector3:
 	get: return _neuron_fire_threshold_increment
 	set(v):
 		_neuron_fire_threshold_increment = v
@@ -105,9 +99,8 @@ var _cortical_neuron_per_vox_count: int = 0
 var _cortical_synaptic_attractivity: int = 0
 var _neuron_post_synaptic_potential: int = 0
 var _neuron_post_synaptic_potential_max: int = 0
-var _neuron_plasticity_constant: float = 0
 var _neuron_fire_threshold: int = 0
-var _neuron_fire_threshold_increment: int = 0
+var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
 var _neuron_firing_threshold_limit: int = 0
 var _neuron_refractory_period: int = 0
 var _neuron_leak_coefficient: int = 0
@@ -132,12 +125,10 @@ func apply_dictionary(data: Dictionary) -> void:
 		_neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
 	if "neuron_post_synaptic_potential_max" in data.keys(): 
 		_neuron_post_synaptic_potential_max = data["neuron_post_synaptic_potential_max"]
-	if "neuron_plasticity_constant" in data.keys(): 
-		_neuron_plasticity_constant = data["neuron_plasticity_constant"]
 	if "neuron_fire_threshold" in data.keys(): 
 		_neuron_fire_threshold = data["neuron_fire_threshold"]
 	if "neuron_fire_threshold_increment" in data.keys(): 
-		_neuron_fire_threshold_increment = data["neuron_fire_threshold_increment"]
+		_neuron_fire_threshold_increment = FEAGIUtils.array_to_vector3i(data["neuron_fire_threshold_increment"])
 	if "neuron_firing_threshold_limit" in data.keys(): 
 		_neuron_firing_threshold_limit = data["neuron_firing_threshold_limit"]
 	if "neuron_refractory_period" in data.keys(): 
