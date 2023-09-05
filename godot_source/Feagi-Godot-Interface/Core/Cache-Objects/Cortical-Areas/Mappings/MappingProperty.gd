@@ -72,3 +72,6 @@ static func from_dict(mapping_property: Dictionary) -> MappingProperty:
         var LTP_multiplier_used: float = mapping_property["ltp_multiplier"]
         var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]
         return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_multiplier_used, LTP_multiplier_used, LTD_multiplier_used)
+
+static func create_default_mapping(morphology: Morphology) -> MappingProperty:
+    return MappingProperty.new(morphology, Vector3i(1,1,1), 1.0, false)
