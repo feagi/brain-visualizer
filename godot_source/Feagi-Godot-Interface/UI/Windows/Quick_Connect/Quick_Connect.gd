@@ -1,27 +1,31 @@
 extends Panel
 var src = ""
 var destination = "" # updates from cortical_area_box node's script
+var morphology_list # list of morphology
 
 func _ready():
 	$TitleBar/Title_Text.text = "Quick_Connect"
 
 
+func updated_morphology():
+	morphology_list = FeagiCache.morphology_cache.available_morphologies
+	$morphology_menulist/Scroll_Vertical._ready()
+	
 func _on_source_pressed():
 	$source.text = "Select a cortical"
 
 func _on_destination_pressed():
 	$destination.text = "Select a cortical"
 
-
 func _on_ca_connect_button_pressed():
 	if visible:
 		visible = false
 	else:
 		visible = true
-
-func _on_morphology_menulist_item_selected(index):
-	$arrow/Label.text = $morphology_menulist.get_item_text(index)
-	$morphology_menulist.visible = false
+		morphology_list = []
+		for i in FeagiCache.morphology_cache.available_morphologies:
+			morphology_list.append(i)
+		$morphology_menulist.dir_contents("res://Feagi-Godot-Interface/UI/Resources/morphology_icons/")
 
 
 func _on_arrow_pressed():
@@ -43,4 +47,7 @@ func _on_connect_pressed():
 	FeagiRequests.quick_connect_between_two_corticals(source_id, morphology_name, destination_id)
 	$"../../Brain_Visualizer".update_all_node_from_cortical(source_id, global_material.deselected)
 	$"../../Brain_Visualizer".update_all_node_from_cortical(destination, global_material.deselected)
-	
+
+func _on_texture_button_pressed(value):
+	$arrow/Label.text = value
+	$morphology_menulist.visible = false

@@ -227,12 +227,25 @@ script = ExtResource("11_tmy0u")
 
 [node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
 layout_mode = 2
-offset_top = -41.0
-offset_right = 299.0
-offset_bottom = -1.0
+offset_right = 532.0
+grow_horizontal = 2
 title = "Create Morphology"
+
+[node name="Title_Text" parent="TitleBar" index="1"]
+anchors_preset = -1
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 495.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 1
+metadata/_edit_use_anchors_ = true
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
 [connection signal="pressed" from="Container/Vectors/Add_Vector" to="Container/Vectors/Vectors" method="spawn_list_item"]
 [connection signal="pressed" from="Container/Patterns/Add_Vector_Pair" to="Container/Patterns/Patterns" method="spawn_list_item"]
 [connection signal="pressed" from="Container/CreateMorphologyButton" to="." method="_on_create_morphology_pressed"]
+
+[editable path="TitleBar"]
