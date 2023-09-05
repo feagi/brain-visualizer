@@ -46,3 +46,6 @@ static func from_MappingPropertys(mapping_properties_from_FEAGI: Array[Dictionar
 			new_mappings.append(MappingProperty.from_dict(raw_mappings))
 	return MappingProperties.new(source_area, destination_area, new_mappings)
 
+static func create_empty_mappings(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+	var empty_typed_array: Array[MappingProperty] = [] # Because the array type casting in godot is still stupid. Too Bad!
+	return MappingProperties.new(source_area, destination_area, empty_typed_array)
