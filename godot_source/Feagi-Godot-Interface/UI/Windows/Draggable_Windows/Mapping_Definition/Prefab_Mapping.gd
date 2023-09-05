@@ -31,7 +31,7 @@ func setup(data: Dictionary, _main_window) -> void:
 	_plasticity_constant.current_float = _mapping_ref.plasticity_multiplier
 	_LTP_multiplier.current_float = _mapping_ref.LTP_multiplier
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
-	_morphologies.selected_item = _mapping_ref.morphology_used.name
+	_morphologies.set_option(_mapping_ref.morphology_used.name)
 	_on_user_toggle_plasticity(_plasticity.button_pressed)
 
 # updating private members externally is bad practice. TODO address this better

@@ -1,4 +1,5 @@
 extends VBoxContainer
+class_name MappingDetails
 
 # needs to make use of signals of when cortical areas are added or removed (same with morpholopgies)
 

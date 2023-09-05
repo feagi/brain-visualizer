@@ -36,14 +36,17 @@ func remove_mapping(index: int) -> void:
 		return
 	_mappings.remove_at(index)
 
+func duplicate() -> MappingProperties:
+	return MappingProperties.new(_src_cortical, _dst_cortical, _mappings)
+
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
-static func from_MappingPropertys(mapping_properties_from_FEAGI: Array[Dictionary], source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+static func from_MappingPropertys(mapping_properties_from_FEAGI: Array, source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
 	var new_mappings: Array[MappingProperty] = []
 	for raw_mappings in mapping_properties_from_FEAGI:
 		if raw_mappings["morphology_id"] not in FeagiCache.morphology_cache.available_morphologies.keys():
 			push_error("Unable to add specific mapping due to missing morphology %s in the internal cache! Skipping!" % [raw_mappings["morphology_id"]])
 			continue
-			new_mappings.append(MappingProperty.from_dict(raw_mappings))
+		new_mappings.append(MappingProperty.from_dict(raw_mappings))
 	return MappingProperties.new(source_area, destination_area, new_mappings)
 
 ## Creates an empty mapping between a source and destination cortical area

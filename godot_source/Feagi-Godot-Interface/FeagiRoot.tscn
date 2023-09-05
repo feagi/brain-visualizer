@@ -19,7 +19,7 @@
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
 [ext_resource type="PackedScene" uid="uid://b3uycanyq64c7" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.tscn" id="18_fd2xm"]
-[ext_resource type="PackedScene" uid="uid://q5xkg5bg8wnk" path="res://Feagi-Godot-Interface/UI/Windows/Mapping_Definition/mapping_definition.tscn" id="19_y4dcl"]
+[ext_resource type="PackedScene" uid="uid://q5xkg5bg8wnk" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefnition.tscn" id="19_y4dcl"]
 [ext_resource type="PackedScene" uid="uid://detjfi0ycmhmx" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.tscn" id="20_bolqa"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.gd" id="22_naj0a"]
 

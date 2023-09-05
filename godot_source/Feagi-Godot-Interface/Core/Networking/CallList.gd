@@ -82,7 +82,7 @@ func GET_GE_morphologyUsage(morphologyName: String):
 ## returns an array of dicts of morphology details of morphologies used between 2 cortical areas
 func GET_GE_mappingProperties(sourceCorticalID: StringName, destinationCorticalID: StringName):
 	# Pass through the source and destination cortical areas
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_mappingProperties_CORTICALAREAEQUALS+sourceCorticalID+"&dst_cortical_area="+destinationCorticalID, _response_functions_ref.GET_GE_mappingProperties, [sourceCorticalID, destinationCorticalID])
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_mappingProperties+sourceCorticalID+"&dst_cortical_area="+destinationCorticalID, _response_functions_ref.GET_GE_mappingProperties, [sourceCorticalID, destinationCorticalID])
 
 ## returns a string array of circuit file names found in feagi
 func GET_GE_circuits():
