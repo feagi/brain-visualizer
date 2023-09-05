@@ -2,9 +2,9 @@
 
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_psmtv"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_riebx"]
-[ext_resource type="Texture2D" uid="uid://d2hww73dcrk8a" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="4_678lb"]
+[ext_resource type="Texture2D" uid="uid://bgrr3edhlg1a4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="4_678lb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_b5yp4"]
-[ext_resource type="Texture2D" uid="uid://8whux134hijq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="6_p2feu"]
+[ext_resource type="Texture2D" uid="uid://b7rynptesesqn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="6_p2feu"]
 
 [node name="Morphology_Manager" type="Panel"]
 offset_right = 1127.0
