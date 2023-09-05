@@ -14,8 +14,9 @@ class_name ResponseProxyFunctions
 
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	var morpholgies_and_types: Dictionary = _body_to_dictionary(response_body)
-	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morpholgies_and_types)
+	var morphologies_and_types: Dictionary = _body_to_dictionary(response_body)
+	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphologies_and_types)
+	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
 
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
