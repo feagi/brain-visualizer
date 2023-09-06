@@ -1,11 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://q5xkg5bg8wnk"]
+[gd_scene load_steps=6 format=3 uid="uid://q5xkg5bg8wnk"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.gd" id="1_1yhba"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown.gd" id="2_3qffw"]
 [ext_resource type="Texture2D" uid="uid://dddettdqyrrt2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="3_skqpl"]
 [ext_resource type="PackedScene" uid="uid://cflbcx0p0hjrp" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/MappingDetails.tscn" id="4_6ry0b"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/MappingDetails.gd" id="5_pd62k"]
 
 [node name="mapping_definition" type="Panel"]
 offset_right = 1296.0
@@ -62,7 +61,6 @@ script = ExtResource("2_3qffw")
 [node name="Mapping_Details" parent="VBoxContainer" instance=ExtResource("4_6ry0b")]
 visible = false
 layout_mode = 2
-script = ExtResource("5_pd62k")
 
 [node name="BottomButtons" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
