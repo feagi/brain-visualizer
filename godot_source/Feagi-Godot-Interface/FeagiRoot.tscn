@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=27 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://br5qcrepoc4r7" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://pq2qv50v863l" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
@@ -18,8 +18,6 @@
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
-[ext_resource type="PackedScene" uid="uid://b3uycanyq64c7" path="res://Feagi-Godot-Interface/UI/Windows/morphology_creation/morphology_creation.tscn" id="18_fd2xm"]
-[ext_resource type="PackedScene" uid="uid://q5xkg5bg8wnk" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefnition.tscn" id="19_y4dcl"]
 [ext_resource type="PackedScene" uid="uid://detjfi0ycmhmx" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.tscn" id="20_bolqa"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.gd" id="22_naj0a"]
 
@@ -176,20 +174,6 @@ grow_horizontal = 1
 grow_vertical = 1
 script = ExtResource("16_2bskm")
 
-[node name="morphology_creation" parent="UI/Windows" instance=ExtResource("18_fd2xm")]
-visible = false
-anchor_left = 0.351562
-anchor_top = 0.287037
-anchor_right = 0.352
-anchor_bottom = 0.287037
-offset_right = 575.496
-offset_bottom = 520.0
-grow_horizontal = 1
-grow_vertical = 1
-
-[node name="XYZ_BOX" parent="UI/Windows/morphology_creation/Vector_BOX/Scroll_Vertical/VBoxContainer" index="0"]
-visible = false
-
 [node name="Cortical_List" parent="UI/Windows" instance=ExtResource("14_db7m2")]
 visible = false
 anchors_preset = 5
@@ -201,17 +185,6 @@ offset_top = 41.0
 offset_right = 108.592
 offset_bottom = 181.88
 grow_vertical = 1
-
-[node name="Mapping_definition" parent="UI/Windows" instance=ExtResource("19_y4dcl")]
-visible = false
-anchors_preset = -1
-anchor_left = 0.0772569
-anchor_top = 0.300926
-anchor_right = 0.0772569
-anchor_bottom = 0.301
-offset_top = -1.52588e-05
-offset_bottom = 359.952
-metadata/_edit_use_anchors_ = true
 
 [node name="Morphology_Manager" parent="UI/Windows" instance=ExtResource("20_bolqa")]
 visible = false
@@ -281,12 +254,6 @@ visible = false
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
-[connection signal="visibility_changed" from="UI/Windows/morphology_creation" to="UI/Windows/morphology_creation" method="_on_visibility_changed"]
-[connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/composite" to="UI/Windows/morphology_creation" method="_on_composite_pressed"]
-[connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/vectors" to="UI/Windows/morphology_creation" method="_on_vectors_pressed"]
-[connection signal="pressed" from="UI/Windows/morphology_creation/RadioButtons/patterns" to="UI/Windows/morphology_creation" method="_on_patterns_pressed"]
-[connection signal="pressed" from="UI/Windows/morphology_creation/add_row" to="UI/Windows/morphology_creation" method="_on_add_row_pressed"]
-[connection signal="pressed" from="UI/Windows/morphology_creation/create" to="UI/Windows/morphology_creation" method="_on_create_pressed"]
 
 [editable path="UI/Windows/TopBar"]
 [editable path="UI/Windows/Create_Cortical"]
@@ -296,9 +263,6 @@ visible = false
 [editable path="UI/Windows/Quick_Connect"]
 [editable path="UI/Windows/Quick_Connect/morphology_menulist/Scroll_Vertical"]
 [editable path="UI/Windows/TutorialBar"]
-[editable path="UI/Windows/morphology_creation"]
-[editable path="UI/Windows/morphology_creation/Vector_BOX/Scroll_Vertical"]
-[editable path="UI/Windows/morphology_creation/Patterns_BOX/Scroll_Vertical"]
 [editable path="UI/Windows/Morphology_Manager"]
 [editable path="UI/Windows/Morphology_Manager/TitleBar"]
 [editable path="UI/Windows/Morphology_Manager/Vector_BOX/Scroll_Vertical"]
