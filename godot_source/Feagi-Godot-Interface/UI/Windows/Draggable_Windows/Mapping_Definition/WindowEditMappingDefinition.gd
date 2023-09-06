@@ -1,5 +1,6 @@
 extends GrowingPanel
 class_name WindowEditMappingDefinition
+## Window for editing the mapping definitions between 2 cortical areas
 
 var source_area: CorticalArea:
 	get: return _source_area
@@ -23,7 +24,6 @@ var _sources_dropdown: DropDown
 var _destinations_dropdown: DropDown
 var _mapping_properties_ref: MappingProperties
 var _mapping_details: WindowMappingDetails
-
 
 func _ready() -> void:
 	_sources_dropdown = $VBoxContainer/SourceAndDestination/src_box/src_dropdown

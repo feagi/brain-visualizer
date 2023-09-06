@@ -17,6 +17,8 @@ var _Consecutive_Fire_Count: IntInput
 var _Snooze_Period: IntInput
 var _Degeneracy_Constant: IntInput
 var _Threshold_Inc: Vector3fField
+var _PSP_Uniformity: CheckButton
+var _MP_Accumulation: CheckButton
 
 var _hiding_container: HiderFrozenSize
 
@@ -36,7 +38,10 @@ func _ready():
 	_Consecutive_Fire_Count = $Consecutive_Fire_Count/Consecutive_Fire_Count
 	_Snooze_Period = $Snooze_Period/Snooze_Period
 	_Degeneracy_Constant = $Degeneracy_Constant/Degeneracy_Constant
+	_PSP_Uniformity = $PSP_Uniformity/PSP_Uniformity
+	_MP_Accumulation = $MP_Accumulation/MP_Accumulation
 	_hiding_container = $Update_Button_Hider
+	
 
 	_Voxel_Neuron_Density.int_confirmed.connect(user_request_Voxel_Neuron_Density)
 	_Synaptic_Attractivity.int_confirmed.connect(user_request_Synaptic_Attractivity)
@@ -51,6 +56,9 @@ func _ready():
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
 	_Degeneracy_Constant.int_confirmed.connect(user_request_Degeneracy_Constant)
 	_Threshold_Inc.user_updated_vector.connect(user_request_Threshold_Inc)
+	_PSP_Uniformity.toggled.connect(user_request_PSP_Uniforimity)
+	_MP_Accumulation.toggled.connect(user_request_MP_Accumumulation)
+
 
 ## set initial values from FEAGI Cache
 func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
@@ -68,6 +76,9 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_Snooze_Period.current_int = details.neuron_snooze_period
 	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
 	_Threshold_Inc.current_vector = details.neuron_fire_threshold_increment
+	_PSP_Uniformity.button_pressed = details.neuron_psp_uniform_distribution
+	_MP_Accumulation.button_pressed = details.neuron_mp_charge_accumulation
+
 
 ## Properties changed from FEAGI side, reflect here
 func FEAGI_set_properties(cortical_area: CorticalArea) -> void:
@@ -149,4 +160,10 @@ func user_request_Degeneracy_Constant(value: int) -> void:
 	_growing_cortical_update["neuron_degeneracy_coefficient"] = value
 	_hiding_container.toggle_child_visibility(true)
 
+func user_request_PSP_Uniforimity(value: bool) -> void:
+	_growing_cortical_update["neuron_psp_uniform_distribution"] = value
+	_hiding_container.toggle_child_visibility(true)
 
+func user_request_MP_Accumumulation(value: bool) -> void:
+	_growing_cortical_update["neuron_mp_charge_accumulation"] = value
+	_hiding_container.toggle_child_visibility(true)
