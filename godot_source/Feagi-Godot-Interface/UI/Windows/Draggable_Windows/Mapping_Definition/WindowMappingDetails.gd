@@ -3,9 +3,6 @@ class_name WindowMappingDetails
 
 # needs to make use of signals of when cortical areas are added or removed (same with morpholopgies)
 
-## Mappings (should be stored as a copy and not be an in-use reference since actions in here are destructive)
-var cached_mappings_copy_ref: MappingProperties
-
 var _mappings_scroll: BaseScroll
 
 func _ready() -> void:
@@ -13,19 +10,25 @@ func _ready() -> void:
 
 func display_mapping_properties(mappings_copy: MappingProperties) -> void:
 	clear_mapping_properties()
-	cached_mappings_copy_ref = mappings_copy
 	visible = true
-	for mapping in cached_mappings_copy_ref.mappings:
+	for mapping in mappings_copy.mappings:
 		_mappings_scroll.spawn_list_item(
 			{
 				"morphologies": FeagiCache.morphology_cache.available_morphologies.keys(),
 				"mapping": mapping,
-				"mappings": cached_mappings_copy_ref
 			})
 
 func clear_mapping_properties():
 	_mappings_scroll.remove_all_children()
 	visible = false
+
+## Creates a [MappingProperties] object given the items within the scroll section
+func generate_mapping_properties(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+	var mappings: Array[MappingProperty]= []
+	for child in _mappings_scroll.get_children():
+		mappings.append(child.generate_mapping_property())
+	return MappingProperties.new(source_area, destination_area, mappings)
+
 
 # connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:
@@ -34,11 +37,9 @@ func _add_mapping_pressed() -> void:
 		## TODO a user error may go well here
 		return
 	var new_mapping: MappingProperty = MappingProperty.create_default_mapping(FeagiCache.morphology_cache.available_morphologies[FeagiCache.morphology_cache.available_morphologies.keys()[0]])
-	cached_mappings_copy_ref.add_mapping_manually(new_mapping)
 	_mappings_scroll.spawn_list_item(
 		{
 			"morphologies": FeagiCache.morphology_cache.available_morphologies.keys(),
 			"mapping": new_mapping,
-			"mappings": cached_mappings_copy_ref
 		}
 	)

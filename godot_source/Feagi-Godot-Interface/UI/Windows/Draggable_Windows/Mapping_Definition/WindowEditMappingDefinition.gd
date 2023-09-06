@@ -22,7 +22,6 @@ var _source_area: CorticalArea
 var _destination_area: CorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
-var _mapping_properties_ref: MappingProperties
 var _mapping_details: WindowMappingDetails
 
 func _ready() -> void:
@@ -49,10 +48,7 @@ func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalA
 func _mappings_updated(destination: CorticalArea, mappings: MappingProperties) -> void:
 	if destination.cortical_ID != destination_area.cortical_ID:
 		return # we dont care if a different mapping was updated
-	
-	_mapping_properties_ref = mappings.duplicate() # to avoid reference shenanigans
-	print("Window Edit Mappings is loading new mappings...")
-	_mapping_details.display_mapping_properties(_mapping_properties_ref)
+	_mapping_details.display_mapping_properties(mappings)
 
 ## Request FEAGI to give us the latest information on the user picked mapping (only if both the source and destination are valid)
 func _request_mappings_from_feagi() -> void:
@@ -66,7 +62,8 @@ func _request_apply_mappings_to_FEAGI():
 	if !_are_cortical_areas_valid():
 		push_warning("User attempted to request mappings to undefined cortical areas. Skipping!")
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
-	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, _mapping_properties_ref)
+	var current_mappings: MappingProperties = _mapping_details.generate_mapping_properties(_source_area, _destination_area)
+	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, current_mappings)
 
 
 ## Returns true only if the source and destination areas selected are valid
