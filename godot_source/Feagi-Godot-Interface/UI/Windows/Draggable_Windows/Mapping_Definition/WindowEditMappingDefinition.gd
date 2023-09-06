@@ -22,7 +22,7 @@ var _destination_area: CorticalArea
 var _sources_dropdown: DropDown
 var _destinations_dropdown: DropDown
 var _mapping_properties_ref: MappingProperties
-var _mapping_details: MappingDetails
+var _mapping_details: WindowMappingDetails
 
 
 func _ready() -> void:

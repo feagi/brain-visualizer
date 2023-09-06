@@ -1,7 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://cflbcx0p0hjrp"]
+[gd_scene load_steps=4 format=3 uid="uid://brpw4qgt28nhe"]
 
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="1_ctvo5"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/MappingDetails.gd" id="1_w5tqp"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowMappingDetails.gd" id="1_w5tqp"]
 [ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Prefab_Mapping.tscn" id="2_m216w"]
 
 [node name="Mapping_Details" type="VBoxContainer"]
