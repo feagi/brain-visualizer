@@ -27,7 +27,7 @@ func clear_mapping_properties():
 	visible = false
 
 func _add_mapping_pressed() -> void:
-	if len(FeagiCache.morphology_cache.available_morphologies.keys) == 0:
+	if len(FeagiCache.morphology_cache.available_morphologies.keys()) == 0:
 		print("Unable to spawn a connection when no morphologies exist!")
 		## TODO a user error may go well here
 		return
