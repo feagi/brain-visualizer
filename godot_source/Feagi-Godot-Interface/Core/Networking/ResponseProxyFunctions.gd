@@ -80,7 +80,7 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 	source_area.set_efferent_mapping_properties_from_FEAGI(raw_mapping_properties, destination_area)
 
 func GET_GE_morphologyUsage(Usage_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	var morphology_usuage = response_body.get_string_from_utf8()
+	var morphology_usuage = response_body.get_string_from_utf8() #TODO this should be outputting an array, not a string. Leaving for now due to time constraints but this needs to be fixed + morphology manager updated to use an array
 	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_usuage)
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
