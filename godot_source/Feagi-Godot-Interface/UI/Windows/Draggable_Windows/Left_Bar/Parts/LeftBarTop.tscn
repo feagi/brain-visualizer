@@ -25,6 +25,7 @@ size_flags_horizontal = 3
 text = "Cortical Name"
 
 [node name="Cortical_Name" type="LineEdit" parent="Row_Cortical_Name"]
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 script = ExtResource("1_0xr58")
 
@@ -37,6 +38,7 @@ size_flags_horizontal = 3
 text = "Cortical ID"
 
 [node name="Cortical_ID" type="LineEdit" parent="Row_Cortical_ID"]
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("1_0xr58")
@@ -51,6 +53,7 @@ size_flags_horizontal = 3
 text = "Cortical Type"
 
 [node name="Cortical_Type" type="LineEdit" parent="Row_Cortical_Type"]
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("1_0xr58")

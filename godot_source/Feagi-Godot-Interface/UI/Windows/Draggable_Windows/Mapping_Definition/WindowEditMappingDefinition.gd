@@ -54,6 +54,7 @@ func _mappings_updated(destination: CorticalArea, mappings: MappingProperties) -
 func _request_mappings_from_feagi() -> void:
 	if !_are_cortical_areas_valid():
 		_mapping_details.clear_mapping_properties()
+		return
 	print("Window Edit Mappings is now requesting FEAGI for the mapping information of %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
 	FeagiRequests.get_mapping_properties_between_two_areas(source_area, destination_area)
 

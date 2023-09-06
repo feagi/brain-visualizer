@@ -47,7 +47,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="Post_Synaptic_Potential"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Post-Synaptic Potential"
+text = "Post-Synaptic Potential (PSP)"
 
 [node name="Post_Synaptic_Potential" type="LineEdit" parent="Post_Synaptic_Potential"]
 layout_mode = 2
@@ -83,7 +83,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="Threshold_Limit"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Threshold Limit"
+text = "Fire Threshold Limit"
 
 [node name="Threshold_Limit" type="LineEdit" parent="Threshold_Limit"]
 layout_mode = 2
@@ -160,6 +160,28 @@ text = "Degeneracy Constant"
 [node name="Degeneracy_Constant" type="LineEdit" parent="Degeneracy_Constant"]
 layout_mode = 2
 script = ExtResource("1_vwrd4")
+
+[node name="PSP_Uniformity" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PSP_Uniformity"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PSP Uniformity"
+
+[node name="PSP_Uniformity" type="CheckButton" parent="PSP_Uniformity"]
+layout_mode = 2
+
+[node name="MP_Accumulation" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MP_Accumulation"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MP Accumulation"
+
+[node name="MP_Accumulation" type="CheckButton" parent="MP_Accumulation"]
+layout_mode = 2
 
 [node name="Fire_Threshold_Label" type="Label" parent="."]
 layout_mode = 2

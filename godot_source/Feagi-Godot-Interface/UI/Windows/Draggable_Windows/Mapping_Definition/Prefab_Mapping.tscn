@@ -26,6 +26,9 @@ layout_mode = 2
 
 [node name="Scalar" parent="." instance=ExtResource("1_1uw6c")]
 layout_mode = 2
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
 
 [node name="Gap2" type="Control" parent="."]
 custom_minimum_size = Vector2(40, 0)
