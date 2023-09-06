@@ -57,6 +57,9 @@ func refresh_morphology_properties(morphology_name: StringName) -> void:
 	print("Use requested refresh of properties of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
+func get_morphology_usuage(morphology_name: StringName) -> void:
+	_feagi_interface.calls.GET_GE_morphologyUsage(morphology_name)
+
 func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i], mapper_morphology: Morphology) -> void:
 	print("Use requested creation of composite morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
