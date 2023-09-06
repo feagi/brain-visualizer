@@ -79,6 +79,9 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 	var destination_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]
 	source_area.set_efferent_mapping_properties_from_FEAGI(raw_mapping_properties, destination_area)
 
+func GET_GE_morphologyUsage(Usage_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	var morphology_usuage = response_body.get_string_from_utf8() #TODO this should be outputting an array, not a string. Leaving for now due to time constraints but this needs to be fixed + morphology manager updated to use an array
+	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_usuage)
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
@@ -164,7 +167,8 @@ func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, 
 
 
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
-	return JSON.parse_string(response_body.get_string_from_utf8())
+	var data = response_body.get_string_from_utf8()
+	return JSON.parse_string(data)
 
 func _body_to_string_array(response_body: PackedByteArray) -> PackedStringArray:
 	return JSON.parse_string(response_body.get_string_from_utf8())

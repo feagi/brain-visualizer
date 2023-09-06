@@ -73,11 +73,11 @@ func GET_GE_corticalMappings_efferents_corticalArea(corticalID: StringName):
 
 ## given name of morphology, returns dict of morphlogy details
 func GET_GE_morphology(morphologyName: String):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_morphologyNameEQUALS+morphologyName, _response_functions_ref.GET_GE_morphology)
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_morphologyName+morphologyName, _response_functions_ref.GET_GE_morphology)
 
 ## given morphology name, returns an array of arrays of source to destination cortical IDs where said morphology is used
 func GET_GE_morphologyUsage(morphologyName: String):
-	_interface_ref.FEAGI_GET(_address_list.GET_genome_morphologyUsage_MORPHOLOGYNAMEEQUALS+morphologyName, _response_functions_ref.GET_GE_morphologyUsage)
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_morphologyUsage+morphologyName, _response_functions_ref.GET_GE_morphologyUsage)
 
 ## returns an array of dicts of morphology details of morphologies used between 2 cortical areas
 func GET_GE_mappingProperties(sourceCorticalID: StringName, destinationCorticalID: StringName):

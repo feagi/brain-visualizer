@@ -13,3 +13,4 @@ signal retrieved_circuit_size(circuit_name: StringName, size_whd: Vector3i)
 
 ## Emits when we retrieved the latest list of morphologies from feagi
 signal retrieved_latest_morphology_listing(morphologies: Array[String])
+signal retrieved_latest_usuage_of_morphology(morphologies: Array[String])
