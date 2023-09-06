@@ -38,9 +38,13 @@ func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalA
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
 		source_area = cortical_source
+	else:
+		_sources_dropdown.select(-1)
 	if cortical_destination != null:
 		_destinations_dropdown.set_selected_cortical_area(cortical_destination)
 		destination_area = cortical_destination
+	else:
+		_destinations_dropdown.select(-1)
 	_sources_dropdown.user_selected_cortical_area.connect(_source_changed)
 	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
 

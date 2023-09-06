@@ -16,7 +16,7 @@ layout_mode = 2
 [node name="Label_Afferent" type="Label" parent="L_A"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Afferent Connections"
+text = "Afferent (inputs)"
 
 [node name="Add" type="TextureButton" parent="L_A"]
 layout_mode = 2
@@ -37,7 +37,7 @@ layout_mode = 2
 [node name="Label_Efferent" type="Label" parent="L_E"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Efferent Connections"
+text = "Efferent (outputs)"
 
 [node name="Add" type="TextureButton" parent="L_E"]
 layout_mode = 2
@@ -56,3 +56,6 @@ prefab_to_spawn = ExtResource("2_hxmjn")
 layout_mode = 2
 text = "DELETE CORTICAL AREA"
 script = ExtResource("5_pvvlf")
+
+[connection signal="pressed" from="L_A/Add" to="." method="_user_pressed_add_afferent_button"]
+[connection signal="pressed" from="L_E/Add" to="." method="_user_pressed_add_efferent_button"]
