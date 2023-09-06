@@ -90,4 +90,6 @@ title = "Edit Mappings"
 [node name="Title_Text" parent="TitleBar" index="1"]
 offset_right = 1256.0
 
+[connection signal="pressed" from="VBoxContainer/BottomButtons/update" to="." method="_request_apply_mappings_to_FEAGI"]
+
 [editable path="TitleBar"]
