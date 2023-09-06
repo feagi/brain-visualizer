@@ -25,8 +25,10 @@ func clear_mapping_properties():
 ## Creates a [MappingProperties] object given the items within the scroll section
 func generate_mapping_properties(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
 	var mappings: Array[MappingProperty]= []
-	for child in _mappings_scroll.get_children():
-		mappings.append(child.generate_mapping_property())
+	var scroll_box_box: VBoxContainer = _mappings_scroll.get_node("VBoxContainer")
+	var children_of_scroll_box: Array = scroll_box_box.get_children()
+	for mapping_prefab in children_of_scroll_box:
+		mappings.append(mapping_prefab.generate_mapping_property())
 	return MappingProperties.new(source_area, destination_area, mappings)
 
 
