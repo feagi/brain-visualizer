@@ -12,6 +12,7 @@ func _ready() -> void:
 	_mappings_scroll = $Mappings
 
 func display_mapping_properties(mappings_copy: MappingProperties) -> void:
+	clear_mapping_properties()
 	cached_mappings_copy_ref = mappings_copy
 	visible = true
 	for mapping in cached_mappings_copy_ref.mappings:
@@ -26,6 +27,7 @@ func clear_mapping_properties():
 	_mappings_scroll.remove_all_children()
 	visible = false
 
+# connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:
 	if len(FeagiCache.morphology_cache.available_morphologies.keys()) == 0:
 		print("Unable to spawn a connection when no morphologies exist!")

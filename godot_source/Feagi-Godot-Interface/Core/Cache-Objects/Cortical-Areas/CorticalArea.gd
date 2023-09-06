@@ -181,11 +181,17 @@ func remove_all_connections() -> void:
 		remove_efferent_connection(FeagiCache.cortical_areas_cache[efferent])
 
 ## replaced cortical mapping properties to a efferent cortical location from here
-func set_efferent_mapping_properties_from_FEAGI(raw_array_from_FEAGI: Array, target_cortical_area: CorticalArea) -> void:
-	# use an untyped Array due to casting shenanigans from above
-	var properties: MappingProperties = MappingProperties.from_MappingPropertys(raw_array_from_FEAGI, self, target_cortical_area)
+func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, target_cortical_area: CorticalArea) -> void:
 	_efferent_mappings[target_cortical_area.cortical_ID] = properties
+	if properties.number_of_mappings == 0 and target_cortical_area.cortical_ID in _efferent_connections_with_count.keys():
+		# A mapping with zero elements means theres no connection. Delete any connection if it exists!
+		remove_efferent_connection(target_cortical_area)
+	if properties.number_of_mappings != 0 and target_cortical_area.cortical_ID not in _efferent_connections_with_count.keys():
+		# A mapping with a number of mappings is a connection. Create a connection if one doesnt exist!
+		set_efferent_connection(target_cortical_area, properties.number_of_mappings)
+
 	efferent_mapping_updated.emit(target_cortical_area, properties)
+	
 
 ## Proxy for when the cortical area details changes
 func _specific_detail_updated(changed_property: Dictionary) -> void:
