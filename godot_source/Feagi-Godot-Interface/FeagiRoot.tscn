@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://2twab34c5p0y" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://br5qcrepoc4r7" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
@@ -214,6 +214,7 @@ offset_bottom = 359.952
 metadata/_edit_use_anchors_ = true
 
 [node name="Morphology_Manager" parent="UI/Windows" instance=ExtResource("20_bolqa")]
+visible = false
 anchors_preset = -1
 anchor_left = 0.294
 anchor_top = 0.173
@@ -259,6 +260,7 @@ visible = false
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows/Create_Cortical" method="_on_ca_add_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMAdd_Button" to="UI/Windows" method="spawn_create_morphology"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMSettings_Button" to="UI/Windows" method="spawn_manager_morphology"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMSettings_Button" to="UI/Windows/Morphology_Manager" method="_on_nm_settings_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/Mode_Button" to="UI/Windows/TopBar" method="_on_mode_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
