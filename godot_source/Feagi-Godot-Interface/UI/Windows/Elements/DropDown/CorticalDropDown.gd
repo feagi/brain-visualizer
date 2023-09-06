@@ -14,6 +14,7 @@ var _listed_areas: Array[CorticalArea] = []
 func _ready():
 	if sync_removed_cortical_areas:
 		FeagiCacheEvents.cortical_area_removed.connect(_cortical_area_was_deleted_from_cache)
+	item_selected.connect(_user_selected_option)
 
 ## Clears all listed cortical areas
 func clear_all_cortical_areas() -> void:
@@ -25,6 +26,7 @@ func overwrite_cortical_areas(new_areas: Array[CorticalArea]) -> void:
 	clear_all_cortical_areas()
 	for area in new_areas:
 		add_cortical_area(area)
+	_remove_radio_buttons()
 
 ## Add a singular cortical area to the end of the drop down
 func add_cortical_area(new_area: CorticalArea) -> void:
@@ -62,3 +64,9 @@ func _cortical_area_was_deleted_from_cache(deleted_cortical: CorticalArea) -> vo
 	if deleted_cortical not in _listed_areas:
 		return
 	remove_cortical_area(deleted_cortical)
+
+func _remove_radio_buttons() -> void:
+	var pm: PopupMenu = get_popup()
+	for i in pm.get_item_count():
+		if pm.is_item_radio_checkable(i):
+			pm.set_item_as_radio_checkable(i, false)

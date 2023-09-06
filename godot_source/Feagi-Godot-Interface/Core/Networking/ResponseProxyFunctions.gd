@@ -74,6 +74,10 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
 		push_error("Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
 		return
+	if _response_code == 404:
+		push_error("FEAGI unable to find mapping! Skipping!")
+		return
+	
 	var raw_mapping_properties: Array = _body_to_untyped_array(response_body)
 	var source_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[0]]
 	var destination_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]

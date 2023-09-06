@@ -20,8 +20,8 @@ var destination_area: CorticalArea:
 
 var _source_area: CorticalArea
 var _destination_area: CorticalArea
-var _sources_dropdown: DropDown
-var _destinations_dropdown: DropDown
+var _sources_dropdown: CorticalDropDown
+var _destinations_dropdown: CorticalDropDown
 var _mapping_properties_ref: MappingProperties
 var _mapping_details: WindowMappingDetails
 
@@ -32,14 +32,18 @@ func _ready() -> void:
 
 
 func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalArea = null):
-	_sources_dropdown.options = FeagiCache.cortical_areas_cache.cortical_areas.keys()
-	_destinations_dropdown.options = FeagiCache.cortical_areas_cache.cortical_areas.keys()
+	var all_cortical_areas: Array[CorticalArea] = []
+	all_cortical_areas.assign(FeagiCache.cortical_areas_cache.cortical_areas.values())
+	_sources_dropdown.overwrite_cortical_areas(all_cortical_areas)
+	_destinations_dropdown.overwrite_cortical_areas(all_cortical_areas)
 	if cortical_source != null:
-		_sources_dropdown.set_option(cortical_source.cortical_ID)
+		_sources_dropdown.set_selected_cortical_area(cortical_source)
 		source_area = cortical_source
 	if cortical_destination != null:
-		_destinations_dropdown.set_option(cortical_destination.cortical_ID)
+		_destinations_dropdown.set_selected_cortical_area(cortical_destination)
 		destination_area = cortical_destination
+	_sources_dropdown.user_selected_cortical_area.connect(_source_changed)
+	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
 func _mappings_updated(destination: CorticalArea, mappings: MappingProperties) -> void:
@@ -70,6 +74,12 @@ func _are_cortical_areas_valid() -> bool:
 		return false
 	return true
 
+
+func _source_changed(new_source: CorticalArea) -> void:
+	source_area = new_source
+
+func _destination_changed(new_destination: CorticalArea) -> void:
+	destination_area = new_destination
 
 #TODO add these signals
 
