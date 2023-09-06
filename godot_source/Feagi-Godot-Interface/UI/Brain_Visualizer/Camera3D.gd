@@ -41,7 +41,7 @@ const CAMERA_TURN_SPEED = 200
 func _input(event):
 	if not disable_mouse_control: # This will be updated from UI/Brain_Visualizer/Camera3D's script
 		if event is InputEventMouseMotion:
-			if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.is_action_pressed("control")) or (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.is_action_pressed("command")):
+			if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.is_action_pressed("control")):
 					rotation.y += event.relative.x / 1000 * sensitivity # TODO: Need to look how blender rotates based on origin
 					rotation.x += event.relative.y / 1000 * sensitivity
 			elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not Input.is_action_pressed("shift"): # boost
