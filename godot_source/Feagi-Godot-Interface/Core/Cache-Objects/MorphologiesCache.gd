@@ -26,7 +26,7 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 	var morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[morphology_properties["type"].to_upper()]
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			_available_morphologies[morphology_name].patterns = MorphologyFactory.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_properties["parameters"]["patterns"])
+			_available_morphologies[morphology_name].patterns = PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_properties["parameters"]["patterns"])
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			_available_morphologies[morphology_name].vectors = FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_properties["parameters"]["vectors"])
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
