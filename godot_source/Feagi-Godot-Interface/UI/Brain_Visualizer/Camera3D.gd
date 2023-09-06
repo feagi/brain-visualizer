@@ -32,15 +32,27 @@ var velocity = Vector3(0, 0, 0)
 var flagged = false ## This allows space and del to be able to send data without being overwritten by spam "{}"
 var is_not_typing = true
 var cortical_pointer = ""
+var disable_mouse_control = false
 
 const CAMERA_TURN_SPEED = 200
 
 @export_range(0, 10, 0.01) var sensitivity : float = 3
 
 func _input(event):
-	if Input.get_mouse_mode() == Input.MOUSE_MODE_HIDDEN:
+	if not disable_mouse_control: # This will be updated from UI/Brain_Visualizer/Camera3D's script
+		if event is InputEventPanGesture:
+			var direction = Vector3(
+				0,
+				0,
+				event.delta.y
+			).normalized()
+			translate(direction)
 		if event is InputEventMouseMotion:
-			if Input.is_physical_key_pressed(KEY_SHIFT): # boost
+			if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.is_action_pressed("control")):
+					rotation.y += event.relative.x / 1000 * sensitivity # TODO: Need to look how blender rotates based on origin
+					rotation.x += event.relative.y / 1000 * sensitivity
+			elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not Input.is_action_pressed("shift"): # boost
+				x
 	#	        rotate_y(-event.relative.x * mouse_sensitivity)
 				var horizational_view = 0
 				var vertical_view = 0
@@ -61,34 +73,32 @@ func _input(event):
 				var direction_Y = Vector3(0, vertical_view, 0)
 				var direction = direction_X+direction_Y
 				translate(direction)
-			elif Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
-				rotation.y -= event.relative.x / 1000 * sensitivity # TODO: Need to look how blender rotates based on origin
-				rotation.x -= event.relative.y / 1000 * sensitivity
 
-	if event is InputEventMouseButton:
-		match event.button_index:
-			MOUSE_BUTTON_MIDDLE:
-				Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
-			MOUSE_BUTTON_WHEEL_UP: # zoom in
-					var direction = Vector3(
-						0,
-						0, 
-						-5
-					).normalized()
-					translate(direction)
-			MOUSE_BUTTON_WHEEL_DOWN: # zoom out
-					var direction = Vector3(
-						0,
-						0,
-						5
-					).normalized()
-					translate(direction)
-	if event is InputEventKey:
-		if Input.is_action_just_pressed("spacebar"): 
-			# Needs figure out how to not send while typing
-			$"../../../FEAGIInterface".net.websocket_send(str(Godot_list.godot_list))
-			print(Godot_list.godot_list)
-		if Input.is_action_just_pressed("del"): 
-			for key in Godot_list.godot_list["data"]["direct_stimulation"]:
-				Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+		if event is InputEventMouseButton:
+			match event.button_index:
+				MOUSE_BUTTON_MIDDLE:
+					Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
+				MOUSE_BUTTON_WHEEL_UP: # zoom in
+						var direction = Vector3(
+							0,
+							0, 
+							-5
+						).normalized()
+						translate(direction)
+				MOUSE_BUTTON_WHEEL_DOWN: # zoom out
+						var direction = Vector3(
+							0,
+							0,
+							5
+						).normalized()
+						translate(direction)
+		if event is InputEventKey:
+			if Input.is_action_just_pressed("spacebar"): 
+				# Needs figure out how to not send while typing
+				$"../../../FEAGIInterface".net.websocket_send(str(Godot_list.godot_list))
 				print(Godot_list.godot_list)
+			if Input.is_action_just_pressed("del"): 
+				for key in Godot_list.godot_list["data"]["direct_stimulation"]:
+					Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+					print(Godot_list.godot_list)
+	
