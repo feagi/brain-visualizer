@@ -27,8 +27,8 @@ func to_array() -> Array[Dictionary]:
 		output.append(mapping)
 	return output
 
-func add_mapping_manually(morphology: Morphology, positive_scalar: Vector3i, current_multilpier: float, plasticity: bool) -> void:
-	_mappings.append(MappingProperty.new(morphology, positive_scalar, current_multilpier, plasticity))
+func add_mapping_manually(new_mapping: MappingProperty) -> void:
+	_mappings.append(new_mapping)
 
 func remove_mapping(index: int) -> void:
 	if index >= len(_mappings) or index < 0:
@@ -36,3 +36,20 @@ func remove_mapping(index: int) -> void:
 		return
 	_mappings.remove_at(index)
 
+func duplicate() -> MappingProperties:
+	return MappingProperties.new(_src_cortical, _dst_cortical, _mappings)
+
+## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
+static func from_MappingPropertys(mapping_properties_from_FEAGI: Array, source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+	var new_mappings: Array[MappingProperty] = []
+	for raw_mappings in mapping_properties_from_FEAGI:
+		if raw_mappings["morphology_id"] not in FeagiCache.morphology_cache.available_morphologies.keys():
+			push_error("Unable to add specific mapping due to missing morphology %s in the internal cache! Skipping!" % [raw_mappings["morphology_id"]])
+			continue
+		new_mappings.append(MappingProperty.from_dict(raw_mappings))
+	return MappingProperties.new(source_area, destination_area, new_mappings)
+
+## Creates an empty mapping between a source and destination cortical area
+static func create_empty_mapping(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+	var empty_typed_array: Array[MappingProperty] = [] # Because the array type casting in godot is still stupid. Too Bad!
+	return MappingProperties.new(source_area, destination_area, empty_typed_array)

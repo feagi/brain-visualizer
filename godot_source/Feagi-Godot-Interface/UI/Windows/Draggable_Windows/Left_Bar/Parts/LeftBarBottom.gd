@@ -73,3 +73,5 @@ func _remove_afferent_connection(afferent_area: CorticalArea):
 func _user_pressed_delete_button():
 	print("Left Bar requesting cortical area deletion")
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
+
+

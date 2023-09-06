@@ -183,7 +183,7 @@ func remove_all_connections() -> void:
 ## replaced cortical mapping properties to a efferent cortical location from here
 func set_efferent_mapping_properties_from_FEAGI(raw_array_from_FEAGI: Array, target_cortical_area: CorticalArea) -> void:
 	# use an untyped Array due to casting shenanigans from above
-	var properties: MappingProperties = MappingsFactory.MappingProperties_from_mapping_properties(raw_array_from_FEAGI, self, target_cortical_area)
+	var properties: MappingProperties = MappingProperties.from_MappingPropertys(raw_array_from_FEAGI, self, target_cortical_area)
 	_efferent_mappings[target_cortical_area.cortical_ID] = properties
 	efferent_mapping_updated.emit(target_cortical_area, properties)
 

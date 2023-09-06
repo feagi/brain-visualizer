@@ -4,6 +4,7 @@ class_name WindowManager
 
 var _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.tscn")
 var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMophology.tscn")
+var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefnition.tscn")
 
 var loaded_windows: Dictionary
 
@@ -28,6 +29,17 @@ func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _prefab_create_morphology.instantiate()
 	add_child(create_morphology)
 	loaded_windows["create_morphology"] = create_morphology
+
+func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
+	if "edit_mappings" in loaded_windows.keys():
+		loaded_windows["edit_mappings"].queue_free()
+	
+	print("user requests edit mappings window")
+	var edit_mappings: WindowEditMappingDefinition = _prefab_edit_mappings.instantiate()
+	add_child(edit_mappings)
+	edit_mappings.setup(source, destination)
+	loaded_windows["edit_mappings"] = edit_mappings
+
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

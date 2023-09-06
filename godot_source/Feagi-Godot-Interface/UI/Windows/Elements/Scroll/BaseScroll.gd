@@ -17,16 +17,24 @@ func spawn_list_item(data: Dictionary = {}) -> Node:
 	new_item.setup(data, main_window)  # new item should have a setup function
 	return new_item
 
+## Delete child by positional index
 func remove_child_by_index(index: int) -> void:
 	if _item_holder.get_child_count() <= index:
 		push_warning("Attempted to delete nonexistant child index from scrollbar. skipping...")
 		return
 	_item_holder.get_child(index).queue_free()
 
+## Delete child by node name
 func remove_child_by_name(child_name: StringName) -> void:
 	var children: Array = _item_holder.get_children()
 	for child in children:
 		if child.name == child_name:
 			child.queue_free()
 			push_warning("Attempted to delete nonexistant child %s from scrollbar. skipping..." % child.name)
+
+## Deletes all children (list items)
+func remove_all_children() -> void:
+	var children: Array = _item_holder.get_children()
+	for child in children:
+		child.queue_free()
 
