@@ -135,19 +135,14 @@ func quick_connect_between_two_corticals(src: String, morphology_name: String, d
 		dst_data["cortical_destinations"][src].append(dst)
 		_feagi_interface.calls.PUT_GE_mappingProperties_DEFUNCT(dst_data["cortical_destinations"][src],combine_url)
 
-## Requese from FEAGI to fully remove the connection between 2 cortical areas
-func request_delete_connection_between_corticals(source_area: CorticalArea, destination_area: CorticalArea) -> void:
+## Requese from FEAGI to fully remove the mapping between 2 cortical areas (set the mapping arrays to empty)
+func request_delete_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea) -> void:
 	print("User Requested Deletion of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
-
-	if destination_area.cortical_ID not in source_area.efferent_connections_with_count.keys():
-		push_error("Attempted to delete non-cached connection from %s to %s" % [source_area.cortical_ID, destination_area.cortical_ID])
-		return
-	
 	# This essentially works by sending an empty array for the mappings
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, [])
 
 
-func request_set_connection_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
+func request_set_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, mapping_data.to_array())
 
