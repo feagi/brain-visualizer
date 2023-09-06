@@ -74,5 +74,5 @@ func _on_delete_pressed() -> void:
 	_mappings_ref.remove_mapping(get_index())
 
 func _on_info_pressed() -> void:
-	# TODO not sure what goes on here
-	pass
+	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[_morphologies.selected_item]
+	VisConfig.window_manager.spawn_manager_morphology(morphology_used)
