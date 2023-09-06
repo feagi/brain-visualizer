@@ -41,6 +41,7 @@ func set_option(option: StringName):
 		return
 	selected = _DropDownItems.find(option)
 
+# cannot type array due to casting issues
 func _set_dropdown_via_array(input_array: Array) -> void:
 	var keep_text: StringName = ""
 	if attempt_to_preserve_choice_on_update and (selected  != -1):

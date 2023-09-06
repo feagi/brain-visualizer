@@ -26,13 +26,19 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 	var morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[morphology_properties["type"].to_upper()]
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			_available_morphologies[morphology_name].patterns = MorphologyFactory.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_properties["parameters"]["patterns"])
+			var raw_pattern_array: Array[Array]
+			raw_pattern_array.assign(morphology_properties["parameters"]["patterns"])  # manual array casting
+			_available_morphologies[morphology_name].patterns = PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(raw_pattern_array)
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
-			_available_morphologies[morphology_name].vectors = FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_properties["parameters"]["vectors"])
+			var raw_vector3_array: Array[Array]
+			raw_vector3_array.assign(morphology_properties["parameters"]["vectors"]) # manual array casting
+			_available_morphologies[morphology_name].vectors = FEAGIUtils.array_of_arrays_to_vector3i_array(raw_vector3_array)
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
 			_available_morphologies[morphology_name].parameters = morphology_properties["parameters"]
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			_available_morphologies[morphology_name].source_seed = FEAGIUtils.array_to_vector3i(morphology_properties["parameters"]["src_seed"])
+			var raw_source_pattern_array: Array[Array]
+			raw_source_pattern_array.assign(morphology_properties["parameters"]["src_pattern"]) # manual array casting
 			_available_morphologies[morphology_name].source_pattern = FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_properties["parameters"]["src_pattern"])
 		_:
 			push_error("Unknown Morphology Type! Skipping update!")

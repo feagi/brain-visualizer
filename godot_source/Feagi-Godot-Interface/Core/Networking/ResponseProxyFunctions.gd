@@ -84,6 +84,9 @@ func GET_GE_morphologyUsage(Usage_response_code: int, response_body: PackedByteA
 	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_usuage)
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if _response_code == 404:
+		push_error("FEAGI was unable to find the requested morphology details. Skipping!")
+		return
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
 

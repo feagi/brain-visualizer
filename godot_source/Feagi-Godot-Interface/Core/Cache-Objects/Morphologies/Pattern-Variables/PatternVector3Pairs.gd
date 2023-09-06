@@ -23,3 +23,19 @@ func to_array_of_arrays() -> Array[Array]:
 
 func duplicate() -> PatternVector3Pairs:
 	return PatternVector3Pairs.new(_incoming, _outgoing)
+
+## Converts an array of arrays from the pattern morphologies into an array of PatternVector3Pairs
+static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Array[Array]) -> Array[PatternVector3Pairs]:
+	# Preinit up here to reduce GC
+
+	var pair: Array = [null, null]
+	var output: Array[PatternVector3Pairs] = []
+	for pair_in in raw_array:
+		for pair_in_index in [0,1]:
+			var vector_raw: Array = pair_in[pair_in_index]
+			var X = PatternVal.new(vector_raw[0])
+			var Y = PatternVal.new(vector_raw[1])
+			var Z = PatternVal.new(vector_raw[2])
+			pair[pair_in_index] = PatternVector3.new(X, Y, Z)
+		output.append(PatternVector3Pairs.new(pair[0], pair[1]))
+	return output
