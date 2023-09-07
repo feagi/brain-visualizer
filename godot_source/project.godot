@@ -24,6 +24,7 @@ VisConfig="*res://Feagi-Godot-Interface/Core/VisConfig.gd"
 FeagiEvents="*res://Feagi-Godot-Interface/Core/FEAGIEvents.gd"
 Godot_list="*res://Feagi-Godot-Interface/UI/Resources/Shared_components/godot_list.gd"
 global_material="*res://Feagi-Godot-Interface/UI/Resources/Shared_components/godot_material.gd"
+SignalDebugHelper="*res://Feagi-Godot-Interface/Core/SignalDebugHelper.gd"
 
 [debug]
 
