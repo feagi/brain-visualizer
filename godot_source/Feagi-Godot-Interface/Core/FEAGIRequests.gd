@@ -63,20 +63,16 @@ func get_morphology_usuage(morphology_name: StringName) -> void:
 func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i], mapper_morphology: Morphology) -> void:
 	print("Use requested creation of composite morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
-		"parameters": {
-			"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
-			"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
-			"mapper_morphology": mapper_morphology.name
-		}
+		"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
+		"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
+		"mapper_morphology": mapper_morphology.name
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
 
 func request_creating_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]) -> void:
 	print("Use requested creation of vector morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
-		"parameters": {
-			"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
-		}
+		"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.VECTORS, requesting_morphology)
 
@@ -89,9 +85,7 @@ func request_creating_function_morphology(morphology_name: StringName, parameter
 func request_creating_pattern_morphology(morphology_name: StringName, patterns: Array[PatternVector3Pairs]) -> void:
 	print("Use requested creation of pattern morphology " + morphology_name)
 	var requesting_morphology: Dictionary = {
-		"parameters": {
-			"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
-		}
+		"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
 
@@ -135,19 +129,14 @@ func quick_connect_between_two_corticals(src: String, morphology_name: String, d
 		dst_data["cortical_destinations"][src].append(dst)
 		_feagi_interface.calls.PUT_GE_mappingProperties_DEFUNCT(dst_data["cortical_destinations"][src],combine_url)
 
-## Requese from FEAGI to fully remove the connection between 2 cortical areas
-func request_delete_connection_between_corticals(source_area: CorticalArea, destination_area: CorticalArea) -> void:
+## Requese from FEAGI to fully remove the mapping between 2 cortical areas (set the mapping arrays to empty)
+func request_delete_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea) -> void:
 	print("User Requested Deletion of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
-
-	if destination_area.cortical_ID not in source_area.efferent_connections_with_count.keys():
-		push_error("Attempted to delete non-cached connection from %s to %s" % [source_area.cortical_ID, destination_area.cortical_ID])
-		return
-	
 	# This essentially works by sending an empty array for the mappings
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, [])
 
 
-func request_set_connection_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
+func request_set_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, mapping_data.to_array())
 

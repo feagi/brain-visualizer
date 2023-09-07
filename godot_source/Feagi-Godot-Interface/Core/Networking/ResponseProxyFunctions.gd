@@ -74,10 +74,17 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
 		push_error("Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
 		return
-	var raw_mapping_properties: Array = _body_to_untyped_array(response_body)
 	var source_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[0]]
 	var destination_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]
-	source_area.set_efferent_mapping_properties_from_FEAGI(raw_mapping_properties, destination_area)
+	var properties: MappingProperties
+	if _response_code == 404:
+		# Feagi does this when it cannot find a mapping
+		properties = MappingProperties.create_empty_mapping(source_area, destination_area)
+	else:
+		# feagi returned a filled mappings
+		var raw_mapping_properties: Array = _body_to_untyped_array(response_body)
+		properties = MappingProperties.from_MappingPropertys(raw_mapping_properties, source_area, destination_area)
+	source_area.set_efferent_mapping_properties_from_FEAGI(properties, destination_area)
 
 func GET_GE_morphologyUsage(Usage_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_usuage = response_body.get_string_from_utf8() #TODO this should be outputting an array, not a string. Leaving for now due to time constraints but this needs to be fixed + morphology manager updated to use an array

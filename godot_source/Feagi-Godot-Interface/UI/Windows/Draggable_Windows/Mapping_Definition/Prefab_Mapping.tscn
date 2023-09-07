@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://2mmvclyd2pve"]
 
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="1_1uw6c"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown.gd" id="1_palvn"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/DropDown.gd" id="1_palvn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Prefab_Mapping.gd" id="1_tf7sq"]
 [ext_resource type="Texture2D" uid="uid://bkrhcxq2ljrx0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="2_37lmt"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_2p8f4"]
@@ -26,6 +26,9 @@ layout_mode = 2
 
 [node name="Scalar" parent="." instance=ExtResource("1_1uw6c")]
 layout_mode = 2
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
 
 [node name="Gap2" type="Control" parent="."]
 custom_minimum_size = Vector2(40, 0)

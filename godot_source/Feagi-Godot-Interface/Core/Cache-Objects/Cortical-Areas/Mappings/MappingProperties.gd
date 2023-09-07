@@ -24,7 +24,7 @@ func _init(source_area: CorticalArea, destination_area: CorticalArea, mappings_b
 func to_array() -> Array[Dictionary]:
 	var output: Array[Dictionary] = []
 	for mapping in _mappings:
-		output.append(mapping)
+		output.append(mapping.to_dictionary())
 	return output
 
 func add_mapping_manually(new_mapping: MappingProperty) -> void:

@@ -19,21 +19,20 @@ func setup(data: Dictionary, _main_window: Node) -> void:
 	_destination_area = data["destination"]
 	if data["aff2this"]:
 		# afferent
-		_ID_Button.text = _source_area.cortical_ID
+		_ID_Button.text = _source_area.name
 		name = _source_area.cortical_ID
 	else:
 		# efferent
-		_ID_Button.text = _destination_area.cortical_ID
+		_ID_Button.text = _destination_area.name
 		name = _destination_area.cortical_ID
 
 func _user_pressed_delete_button():
 	print("Left Bar is requesting Cortical Connection Deletion")
-	FeagiRequests.request_delete_connection_between_corticals(_source_area, _destination_area)
-	queue_free() # TODO THIS IS BAD! WE SHOULD WAIT ON FEAGI
+	FeagiRequests.request_delete_mapping_between_corticals(_source_area, _destination_area)
 	
-	
-
 func _user_pressed_edit_button():
 	print("Left Bar is requesting Cortical Connection Editing")
 	VisConfig.window_manager.spawn_edit_mappings(_source_area, _destination_area)
 
+#func _FEAGI_deleted_mapping(source: CorticalArea, destination: CorticalArea):
+	

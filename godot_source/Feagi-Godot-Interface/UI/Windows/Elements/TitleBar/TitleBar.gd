@@ -2,7 +2,7 @@ extends Panel
 class_name TitleBar
 
 signal close_pressed()
-signal drag_started(mouse_position: Vector2)
+signal drag_started(current_position: Vector2)
 signal dragged(current_position: Vector2, mouse_delta_offset: Vector2) # TODO
 signal drag_finished(current_position: Vector2)
 
@@ -30,12 +30,14 @@ var is_dragging: bool:
 	set(v):
 		if v == _is_dragging: 
 			return # ignore setting to the same value
+			
 		_is_dragging = v
 		if v:
-			# we started dragging
-			pass
+			drag_started.emit(position)
+			VisConfig.is_user_dragging_a_window = true
 		else:
 			drag_finished.emit(position)
+			VisConfig.is_user_dragging_a_window = false
 
 
 var _is_mousing_over: bool = false
@@ -112,7 +114,6 @@ func _mouse_click(click: InputEventMouseButton) -> void:
 		if !_is_mousing_over:
 			return
 		is_dragging = true
-		drag_started.emit(click.position)
 	else:
 		is_dragging = false
 

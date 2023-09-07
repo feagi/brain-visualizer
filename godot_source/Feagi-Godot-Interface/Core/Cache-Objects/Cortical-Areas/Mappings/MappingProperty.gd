@@ -12,7 +12,7 @@ var scalar: Vector3i:
 var is_plastic: bool:
 	get: return _plasticity_flag
 var post_synaptic_current_multiplier: float:
-	get: return post_synaptic_current_multiplier
+	get: return _post_synaptic_current_multiplier
 var plasticity_multiplier: float:
 	get: return _plasticity_multiplier
 var LTP_multiplier: float:
@@ -71,7 +71,7 @@ static func from_dict(mapping_property: Dictionary) -> MappingProperty:
 	if !plasticity:
 		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
 	else:
-		var plasticity_multiplier_used: float = mapping_property["plasticity_multiplier"]
+		var plasticity_multiplier_used: float = mapping_property["plasticity_constant"]
 		var LTP_multiplier_used: float = mapping_property["ltp_multiplier"]
 		var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]
 		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_multiplier_used, LTP_multiplier_used, LTD_multiplier_used)

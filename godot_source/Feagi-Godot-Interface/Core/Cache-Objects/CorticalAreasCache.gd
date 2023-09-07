@@ -91,7 +91,14 @@ func search_for_cortical_areas_by_type(searching_cortical_type: CorticalArea.COR
 			output.append(cortical_area)
 	return output
 
-## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed
+## Returns an array of all the names of the cortical areas
+func get_all_cortical_area_names() -> Array[StringName]:
+	var output: Array[StringName] = []
+	for cortical_area in _cortical_areas.values():
+		output.append(cortical_area.cortical_ID)
+	return output
+
+## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed. Should only be called from FEAGI
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
 
 	# TODO: Possible optimizations used packedStringArrays and less duplications

@@ -8,11 +8,11 @@ static func create(name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
 			return FunctionMorphology.new(name, false, morphology_details["parameters"])
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
-			return VectorMorphology.new(name, false, FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_details["parameters"]["vectors"]))
+			return VectorMorphology.new(name, false, FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_details["vectors"]))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			return PatternMorphology.new(name, false, PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_details["parameters"]["patterns"]))
+			return PatternMorphology.new(name, false, PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_details["patterns"]))
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
-			return CompositeMorphology.new(name, false, FEAGIUtils.array_to_vector3i(morphology_details["parameters"]["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_details["parameters"]["src_pattern"]), morphology_details["parameters"]["mapper_morphology"])
+			return CompositeMorphology.new(name, false, FEAGIUtils.array_to_vector3i(morphology_details["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_details["src_pattern"]), morphology_details["mapper_morphology"])
 		_:
 			# Something else? Error out
 			@warning_ignore("assert_always_false")

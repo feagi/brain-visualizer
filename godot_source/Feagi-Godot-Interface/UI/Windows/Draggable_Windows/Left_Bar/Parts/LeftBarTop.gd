@@ -11,7 +11,7 @@ var _line_cortical_ID: TextInput
 var _line_cortical_type: TextInput
 var _vector_position: Vector3iField
 var _vector_dimensions: Vector3iField
-var _hiding_container: HiderFrozenSize
+var _update_button: TextButton_Element
 var _growing_cortical_update: Dictionary
 
 func _ready():
@@ -20,13 +20,12 @@ func _ready():
 	_line_cortical_type = $Row_Cortical_Type/Cortical_Type
 	_vector_position = $Cortical_Position
 	_vector_dimensions = $Cortical_Size
-	_hiding_container = $Update_Button_Hider
+	_update_button = $Update_Button
 
 	_line_cortical_name.text_confirmed.connect(_user_edit_name)
 	_vector_position.user_updated_vector.connect(_user_edit_3D_position)
 	_vector_dimensions.user_updated_vector.connect(_user_edit_dimension)
-	var update_button: TextButton_Element = _hiding_container.get_node("Update_Button")
-	update_button.pressed.connect(_user_requests_update)
+	_update_button.pressed.connect(_user_requests_update)
 
 ## set initial values from FEAGI Cache
 func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
@@ -54,7 +53,7 @@ func FEAGI_set_cortical_dimension(new_dimension: Vector3i, _duplicate_ref: Corti
 ## FEAGI confirmed changes, show this in the UI and clear the backend dict
 func _FEAGI_confirmed_update() -> void:
 	_growing_cortical_update = {} # reset queued changes
-	_hiding_container.toggle_child_visibility(false)
+	_update_button.disabled = true
 	# TODO change edited color of fields
 
 ## User pressed update button
@@ -65,14 +64,14 @@ func _user_requests_update() -> void:
 func _user_edit_name(new_name: String) -> void:
 	print("User queued name change")
 	_growing_cortical_update["cortical_name"] = new_name
-	_hiding_container.toggle_child_visibility(true)
+	_update_button.disabled = false
 
 func _user_edit_3D_position(new_position: Vector3i) -> void:
 	print("User queued position change")
 	_growing_cortical_update["cortical_coordinates"] = FEAGIUtils.vector3i_to_array(new_position)
-	_hiding_container.toggle_child_visibility(true)
+	_update_button.disabled = false
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
 	print("User queued dimension change")
 	_growing_cortical_update["cortical_dimensions"] = FEAGIUtils.vector3i_to_array(new_dimension)
-	_hiding_container.toggle_child_visibility(true)
+	_update_button.disabled = false
