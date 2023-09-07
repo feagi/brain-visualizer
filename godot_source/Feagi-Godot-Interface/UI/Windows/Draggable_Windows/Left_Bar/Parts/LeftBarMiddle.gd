@@ -105,7 +105,7 @@ func FEAGI_set_properties(cortical_area: CorticalArea) -> void:
 
 ## User pressed update button
 func _user_requests_update() -> void:
-	print("User requests %d changes to cortical details" % [_growing_cortical_update.size])
+	print("User requests %d changes to cortical details" % [len(_growing_cortical_update.keys())])
 	user_requested_update.emit(_growing_cortical_update)
 
 func user_request_Voxel_Neuron_Density(value: int) -> void:

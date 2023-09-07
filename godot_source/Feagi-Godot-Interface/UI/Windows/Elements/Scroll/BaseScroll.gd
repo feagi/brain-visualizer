@@ -30,7 +30,8 @@ func remove_child_by_name(child_name: StringName) -> void:
 	for child in children:
 		if child.name == child_name:
 			child.queue_free()
-			push_warning("Attempted to delete nonexistant child %s from scrollbar. skipping..." % child.name)
+			return
+	push_warning("Attempted to delete nonexistant child %s from scrollbar. skipping..." % child_name)
 
 ## Deletes all children (list items)
 func remove_all_children() -> void:
