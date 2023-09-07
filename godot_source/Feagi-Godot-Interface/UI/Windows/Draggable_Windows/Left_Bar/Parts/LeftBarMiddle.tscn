@@ -26,6 +26,7 @@ text = "Voxel Neuron Density"
 
 [node name="Voxel_Neuron_Density" type="LineEdit" parent="Voxel_Neuron_Density"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Synaptic_Attractivity" type="HBoxContainer" parent="."]
@@ -38,6 +39,7 @@ text = "Synaptic Attractivity"
 
 [node name="Synaptic_Attractivity" type="LineEdit" parent="Synaptic_Attractivity"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Post_Synaptic_Potential" type="HBoxContainer" parent="."]
@@ -50,6 +52,7 @@ text = "Post-Synaptic Potential (PSP)"
 
 [node name="Post_Synaptic_Potential" type="LineEdit" parent="Post_Synaptic_Potential"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="PSP_Max" type="HBoxContainer" parent="."]
@@ -62,6 +65,7 @@ text = "PSP Max"
 
 [node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Fire_Threshold" type="HBoxContainer" parent="."]
@@ -74,6 +78,7 @@ text = "Fire Threshold"
 
 [node name="Fire_Threshold" type="LineEdit" parent="Fire_Threshold"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Threshold_Limit" type="HBoxContainer" parent="."]
@@ -86,6 +91,7 @@ text = "Fire Threshold Limit"
 
 [node name="Threshold_Limit" type="LineEdit" parent="Threshold_Limit"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Refactory_Period" type="HBoxContainer" parent="."]
@@ -98,6 +104,7 @@ text = "Refactory Period"
 
 [node name="Refactory_Period" type="LineEdit" parent="Refactory_Period"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Leak_Constant" type="HBoxContainer" parent="."]
@@ -110,6 +117,7 @@ text = "Leak Constant"
 
 [node name="Leak_Constant" type="LineEdit" parent="Leak_Constant"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Leak_Varibility" type="HBoxContainer" parent="."]
@@ -122,6 +130,7 @@ text = "Leak Varibility"
 
 [node name="Leak_Varibility" type="LineEdit" parent="Leak_Varibility"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Consecutive_Fire_Count" type="HBoxContainer" parent="."]
@@ -134,6 +143,7 @@ text = "Consecutive Fire Count"
 
 [node name="Consecutive_Fire_Count" type="LineEdit" parent="Consecutive_Fire_Count"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Snooze_Period" type="HBoxContainer" parent="."]
@@ -146,6 +156,7 @@ text = "Snooze Period"
 
 [node name="Snooze_Period" type="LineEdit" parent="Snooze_Period"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="Degeneracy_Constant" type="HBoxContainer" parent="."]
@@ -158,6 +169,7 @@ text = "Degeneracy Constant"
 
 [node name="Degeneracy_Constant" type="LineEdit" parent="Degeneracy_Constant"]
 layout_mode = 2
+alignment = 2
 script = ExtResource("1_vwrd4")
 
 [node name="PSP_Uniformity" type="HBoxContainer" parent="."]
