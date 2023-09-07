@@ -165,11 +165,11 @@ func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
 func remove_all_connections() -> void:
 	# remove incoming
 	for afferent in _afferent_connections:
-		remove_afferent_connection(FeagiCache.cortical_areas_cache[afferent])
+		remove_afferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[afferent])
 	
 	# remove outgoing
 	for efferent in _efferent_connections_with_count.keys():
-		remove_efferent_connection(FeagiCache.cortical_areas_cache[efferent])
+		remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[efferent])
 
 ## replaced cortical mapping properties to a efferent cortical location from here
 func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, target_cortical_area: CorticalArea) -> void:
