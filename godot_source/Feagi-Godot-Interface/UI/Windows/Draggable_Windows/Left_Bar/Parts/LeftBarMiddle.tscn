@@ -207,3 +207,5 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Apply Update"
 script = ExtResource("4_0ph5r")
+
+[connection signal="pressed" from="Update_Button_Hider/TextButton_Element" to="." method="_user_requests_update"]
