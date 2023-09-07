@@ -38,7 +38,7 @@ func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	_cortical_area_ref.dimensions_updated.connect(_top_section.FEAGI_set_cortical_dimension)
 	_cortical_area_ref.coordinates_3D_updated.connect(_top_section.FEAGI_set_cortical_position)
 	_cortical_area_ref.name_updated.connect(_top_section.FEAGI_set_cortical_name)
-	_cortical_area_ref.many_details_set.connect(_middle_section.FEAGI_set_properties)
+	_cortical_area_ref.details_updated.connect(_middle_section.FEAGI_set_properties)
 	_top_section.initial_values_from_FEAGI(cortical_area_reference)
 	_middle_section.initial_values_from_FEAGI(cortical_area_reference)
 	_bottom_section.initial_values_from_FEAGI(cortical_area_reference)
