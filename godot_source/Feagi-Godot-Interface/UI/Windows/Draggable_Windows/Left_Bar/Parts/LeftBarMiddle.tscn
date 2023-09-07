@@ -1,8 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://x0wkgtc5o5vw"]
+[gd_scene load_steps=6 format=3 uid="uid://x0wkgtc5o5vw"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="1_vwrd4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.gd" id="1_ydyx4"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/HiderFrozenSize.gd" id="3_ms63u"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_0ph5r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="4_ofdu8"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_d8t0a"]
@@ -197,15 +196,11 @@ label_x_text = &"X"
 label_y_text = &"Y"
 label_z_text = &"Z"
 
-[node name="Update_Button_Hider" type="BoxContainer" parent="."]
-layout_mode = 2
-script = ExtResource("3_ms63u")
-children_visible_at_start = false
-
-[node name="TextButton_Element" type="Button" parent="Update_Button_Hider"]
+[node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+disabled = true
 text = "Apply Update"
 script = ExtResource("4_0ph5r")
 
-[connection signal="pressed" from="Update_Button_Hider/TextButton_Element" to="." method="_user_requests_update"]
+[connection signal="pressed" from="Update_Button" to="." method="_user_requests_update"]
