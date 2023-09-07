@@ -10,7 +10,7 @@ script = ExtResource("1_1eg3c")
 
 [node name="Cortical_ID" type="Button" parent="."]
 layout_mode = 2
-text = "ID GO HERE"
+text = "NAME GO HERE"
 script = ExtResource("2_dtqim")
 
 [node name="Delete_Button" type="TextureButton" parent="."]

@@ -58,7 +58,7 @@ func _add_efferent_connection(efferent_area: CorticalArea):
 func _add_afferent_connection(afferent_area: CorticalArea):
 	_scroll_afferent.spawn_list_item(
 		{
-			"source": CorticalArea,
+			"source": afferent_area,
 			"destination": _cortical_area_ref,
 			"aff2this": true
 		}
