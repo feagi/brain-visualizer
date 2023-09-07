@@ -39,6 +39,15 @@ const CAMERA_TURN_SPEED = 200
 @export_range(0, 10, 0.01) var sensitivity : float = 3
 
 func _input(event):
+	if event is InputEventKey:
+		if Input.is_action_just_pressed("spacebar"): 
+			# Needs figure out how to not send while typing
+			$"../../../FEAGIInterface".net.websocket_send(str(Godot_list.godot_list))
+			print(Godot_list.godot_list)
+		if Input.is_action_just_pressed("del"): 
+			for key in Godot_list.godot_list["data"]["direct_stimulation"]:
+				Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+				print(Godot_list.godot_list)
 	if not disable_mouse_control: # This will be updated from UI/Brain_Visualizer/Camera3D's script
 		if event is InputEventPanGesture:
 			var direction = Vector3(
@@ -92,13 +101,5 @@ func _input(event):
 							5
 						).normalized()
 						translate(direction)
-		if event is InputEventKey:
-			if Input.is_action_just_pressed("spacebar"): 
-				# Needs figure out how to not send while typing
-				$"../../../FEAGIInterface".net.websocket_send(str(Godot_list.godot_list))
-				print(Godot_list.godot_list)
-			if Input.is_action_just_pressed("del"): 
-				for key in Godot_list.godot_list["data"]["direct_stimulation"]:
-					Godot_list.godot_list["data"]["direct_stimulation"][key] = []
-					print(Godot_list.godot_list)
+
 	
