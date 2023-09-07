@@ -36,6 +36,7 @@ layout_mode = 2
 
 [node name="PSP" type="LineEdit" parent="."]
 layout_mode = 2
+alignment = 1
 script = ExtResource("3_2p8f4")
 
 [node name="Gap3" type="Control" parent="."]
@@ -51,6 +52,7 @@ layout_mode = 2
 
 [node name="Plasticity_Constant" type="LineEdit" parent="."]
 layout_mode = 2
+alignment = 1
 script = ExtResource("3_2p8f4")
 
 [node name="Gap5" type="Control" parent="."]
@@ -59,6 +61,7 @@ layout_mode = 2
 
 [node name="LTP_Multiplier" type="LineEdit" parent="."]
 layout_mode = 2
+alignment = 1
 script = ExtResource("3_2p8f4")
 
 [node name="Gap6" type="Control" parent="."]
@@ -67,6 +70,7 @@ layout_mode = 2
 
 [node name="LTD_Multiplier" type="LineEdit" parent="."]
 layout_mode = 2
+alignment = 1
 script = ExtResource("3_2p8f4")
 
 [node name="Gap7" type="Control" parent="."]
