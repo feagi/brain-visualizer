@@ -39,7 +39,8 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 			_available_morphologies[morphology_name].source_seed = FEAGIUtils.array_to_vector3i(morphology_properties["parameters"]["src_seed"])
 			var raw_source_pattern_array: Array[Array]
 			raw_source_pattern_array.assign(morphology_properties["parameters"]["src_pattern"]) # manual array casting
-			_available_morphologies[morphology_name].source_pattern = FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_properties["parameters"]["src_pattern"])
+			_available_morphologies[morphology_name].source_pattern = FEAGIUtils.array_of_arrays_to_vector2i_array(raw_source_pattern_array)
+			_available_morphologies[morphology_name].mapper_morphology_name = morphology_properties["parameters"]["mapper_morphology"]
 		_:
 			push_error("Unknown Morphology Type! Skipping update!")
 			return

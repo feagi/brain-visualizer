@@ -9,6 +9,7 @@ enum MORPHOLOGY_TYPE {
 	VECTORS,
 	FUNCTIONS,
 	COMPOSITE,
+	NULL,
 }
 
 var name: StringName

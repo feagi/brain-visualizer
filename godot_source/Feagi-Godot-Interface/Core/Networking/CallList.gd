@@ -175,7 +175,14 @@ func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
 	data_to_set["cortical_id"] = str(cortical_ID)
 	# Passthrough the corticalID so we know what cortical area was updated
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_corticalArea, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
-	pass
+	
+
+func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, parameters: Dictionary) -> void:
+	var to_buffer: Dictionary = parameters.duplicate()
+	to_buffer["type"] = morphology_type
+	to_buffer["morphology_name"] = morphology_name
+	# passthrough morphology name so we know what was updated
+	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), _response_functions_ref.PUT_GE_morphology, to_buffer, morphology_name)
 
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
 func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):

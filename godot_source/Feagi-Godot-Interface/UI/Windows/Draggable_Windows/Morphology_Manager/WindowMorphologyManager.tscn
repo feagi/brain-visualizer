@@ -1,0 +1,79 @@
+[gd_scene load_steps=8 format=3 uid="uid://bhpry6eyb2hl1"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
+[ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="3_dmt4w"]
+[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="4_fkit5"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="5_w2re6"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_latnd"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
+
+[node name="MorphologyManager" type="Panel"]
+offset_top = 40.0
+offset_right = 568.0
+offset_bottom = 510.0
+script = ExtResource("1_11gqg")
+
+[node name="Container" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 1.0
+offset_right = 558.0
+offset_bottom = 401.0
+
+[node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
+custom_minimum_size = Vector2(250, 400)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Morphology_Details" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ElementMorphologyPatternView" parent="Container/Morphology_Details" instance=ExtResource("3_dmt4w")]
+visible = false
+custom_minimum_size = Vector2(700, 0)
+layout_mode = 2
+
+[node name="ElementMorphologyCompositeView" parent="Container/Morphology_Details" instance=ExtResource("4_fkit5")]
+visible = false
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="ElementMorphologyVectorsView" parent="Container/Morphology_Details" instance=ExtResource("5_w2re6")]
+visible = false
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="Description" type="VBoxContainer" parent="Container/Morphology_Details"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+
+[node name="Apply_changes" type="Button" parent="Container/Morphology_Details/Description"]
+layout_mode = 2
+text = "Apply Changes"
+script = ExtResource("6_latnd")
+
+[node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
+layout_mode = 2
+offset_top = -41.0
+offset_right = 532.0
+offset_bottom = -1.0
+grow_horizontal = 2
+title = "Morphology Manager"
+
+[node name="Title_Text" parent="TitleBar" index="1"]
+anchors_preset = -1
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 495.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 1
+label_text = "Create Morphology"
+metadata/_edit_use_anchors_ = true
+
+[connection signal="pressed" from="Container/Morphology_Details/Description/Apply_changes" to="." method="send_updated_values_to_feagi"]
+
+[editable path="TitleBar"]

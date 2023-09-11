@@ -42,6 +42,7 @@ var POST_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
 var PUT_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties"
+var PUT_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area_name="
@@ -82,4 +83,5 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_genome_morphology = FEAGIFullAddress + POST_genome_morphology
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea
 	PUT_genome_mappingProperties = FEAGIFullAddress + PUT_genome_mappingProperties
+	PUT_genome_morphology = FEAGIFullAddress + PUT_genome_morphology
 	DELETE_GE_corticalArea = FEAGIFullAddress + DELETE_GE_corticalArea

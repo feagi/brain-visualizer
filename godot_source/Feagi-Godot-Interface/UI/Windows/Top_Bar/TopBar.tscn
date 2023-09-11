@@ -1,15 +1,14 @@
-[gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=10 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_r6g23"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://4yfqjnb75dea" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="4_8o5ld"]
+[ext_resource type="Texture2D" uid="uid://b8qrpcpsbex3x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="4_8o5ld"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_14sro"]
-[ext_resource type="Texture2D" uid="uid://dftigpwj5cdsy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/eye.png" id="6_1gvid"]
-[ext_resource type="Texture2D" uid="uid://tnu57fi0erop" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
-[ext_resource type="Texture2D" uid="uid://dnshxbcximr07" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
-[ext_resource type="Texture2D" uid="uid://dmn7sjme8p2t6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
-[ext_resource type="Texture2D" uid="uid://c7dbx1trnnp8a" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
+[ext_resource type="Texture2D" uid="uid://b0wjhkmeoxjgx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/eye.png" id="6_1gvid"]
+[ext_resource type="Texture2D" uid="uid://dumxnv0fvc2y0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
+[ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
+[ext_resource type="Texture2D" uid="uid://dii187rhiyl8n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
+[ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
 
 [node name="TopBar" type="Panel"]
 offset_right = 1094.0
@@ -29,8 +28,6 @@ offset_bottom = 40.0
 layout_mode = 2
 text = "Refresh Rate"
 vertical_alignment = 1
-script = ExtResource("2_r6g23")
-label_text = "Refresh Rate"
 
 [node name="RR_Float" type="LineEdit" parent="HBoxContainer"]
 layout_mode = 2
@@ -46,8 +43,6 @@ layout_mode = 2
 layout_mode = 2
 text = "Neuronal Circuits"
 vertical_alignment = 1
-script = ExtResource("2_r6g23")
-label_text = "Neuronal Circuits"
 
 [node name="NC_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -65,8 +60,6 @@ layout_mode = 2
 layout_mode = 2
 text = "Cortical Areas"
 vertical_alignment = 1
-script = ExtResource("2_r6g23")
-label_text = "Cortical Areas"
 
 [node name="CAView_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -100,8 +93,6 @@ layout_mode = 2
 layout_mode = 2
 text = "Neuron morphologies"
 vertical_alignment = 1
-script = ExtResource("2_r6g23")
-label_text = "Neuron morphologies"
 
 [node name="NMAdd_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -127,8 +118,6 @@ layout_mode = 2
 layout_mode = 2
 text = "Circuit Builder"
 vertical_alignment = 1
-script = ExtResource("2_r6g23")
-label_text = "Circuit Builder"
 
 [node name="Mode_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -146,8 +135,6 @@ layout_mode = 2
 layout_mode = 2
 text = "Tutorials"
 vertical_alignment = 1
-script = ExtResource("2_r6g23")
-label_text = "Tutorials"
 
 [node name="TU_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)

@@ -1,8 +1,8 @@
 [gd_scene load_steps=2 format=3 uid="uid://dy3nu6ah5d0hv"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/spawn_prefabs/Button_Prefab/ScrollButtonPrefab.gd" id="1_25kxw"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Button_Prefab/ScrollButtonPrefab.gd" id="1_25kxw"]
 
 [node name="ScrollButtonPrefab" type="Button"]
-size_flags_horizontal = 4
+size_flags_horizontal = 2
 text = "Example Text"
 script = ExtResource("1_25kxw")
