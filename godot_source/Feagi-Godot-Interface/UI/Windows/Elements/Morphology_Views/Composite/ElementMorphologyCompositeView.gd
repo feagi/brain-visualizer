@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name ElementMorphologyComposeView
+class_name ElementMorphologyCompositeView
 
 var composite_seed: Vector3i:
 	get: return _seed.current_vector

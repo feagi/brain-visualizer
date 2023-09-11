@@ -94,6 +94,9 @@ func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irr
 	if _response_code == 404:
 		push_error("FEAGI was unable to find the requested morphology details. Skipping!")
 		return
+	if _response_code == 400:
+		push_error("FEAGI had an unknown error retrieving morpholgy details. Skipping!")
+		return
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
 

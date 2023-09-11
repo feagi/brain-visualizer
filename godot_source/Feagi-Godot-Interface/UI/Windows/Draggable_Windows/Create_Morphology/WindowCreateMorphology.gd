@@ -7,7 +7,7 @@ var _morphology_name: TextInput
 var _radio_selector: ButtonGroup
 var _button_create_morphology: TextButton_Element
 
-var _composite: ElementMorphologyComposeView
+var _composite: ElementMorphologyCompositeView
 var _vectors: ElementMorphologyVectorsView
 var _patterns: ElementMorphologyPatternView
 

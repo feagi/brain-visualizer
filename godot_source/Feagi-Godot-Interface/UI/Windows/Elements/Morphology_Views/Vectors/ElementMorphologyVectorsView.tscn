@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/Prefab_VectorWithDelete.tscn" id="4_285qi"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_cn61t"]
 
-[node name="Vectors" type="VBoxContainer"]
+[node name="ElementMorphologyVectorsView" type="VBoxContainer"]
 script = ExtResource("1_oiyvj")
 
 [node name="Label" type="Label" parent="."]

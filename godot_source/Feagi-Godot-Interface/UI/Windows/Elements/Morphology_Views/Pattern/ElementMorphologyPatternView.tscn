@@ -7,7 +7,6 @@
 [ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="4_qyy3m"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
-visible = false
 script = ExtResource("1_rijq4")
 
 [node name="Label" type="Label" parent="."]
