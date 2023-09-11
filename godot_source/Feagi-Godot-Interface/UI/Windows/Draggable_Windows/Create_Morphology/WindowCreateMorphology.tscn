@@ -6,9 +6,9 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="4_onsts"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://dtoic0bf8v2f2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.tscn" id="8_jkcnc"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="9_k08xa"]
-[ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/Prefab_VectorWithDelete.tscn" id="10_jl6dq"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_tmy0u"]
 [ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/Prefab_PatternVectorPairWithDelete.tscn" id="12_p686e"]
 
@@ -69,31 +69,9 @@ label_text = "Morphology Definition:"
 visible = false
 layout_mode = 2
 
-[node name="Vectors" type="VBoxContainer" parent="Container"]
+[node name="ElementMorphologyVectorsView" parent="Container" instance=ExtResource("6_c1klg")]
 visible = false
 layout_mode = 2
-
-[node name="Label" type="Label" parent="Container/Vectors"]
-layout_mode = 2
-text = "Vectors"
-horizontal_alignment = 1
-
-[node name="Vector3Labels" parent="Container/Vectors" instance=ExtResource("8_jkcnc")]
-layout_mode = 2
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
-
-[node name="Vectors" parent="Container/Vectors" node_paths=PackedStringArray("main_window") instance=ExtResource("9_k08xa")]
-custom_minimum_size = Vector2(0, 180)
-layout_mode = 2
-prefab_to_spawn = ExtResource("10_jl6dq")
-main_window = NodePath("../../..")
-
-[node name="Add_Vector" type="Button" parent="Container/Vectors"]
-layout_mode = 2
-text = "Add Vector"
-script = ExtResource("11_tmy0u")
 
 [node name="Patterns" type="VBoxContainer" parent="Container"]
 visible = false
@@ -159,7 +137,6 @@ label_text = "Create Morphology"
 metadata/_edit_use_anchors_ = true
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
-[connection signal="pressed" from="Container/Vectors/Add_Vector" to="Container/Vectors/Vectors" method="spawn_list_item"]
 [connection signal="pressed" from="Container/Patterns/Add_Vector_Pair" to="Container/Patterns/Patterns" method="spawn_list_item"]
 [connection signal="pressed" from="Container/CreateMorphologyButton" to="." method="_on_create_morphology_pressed"]
 

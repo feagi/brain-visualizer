@@ -5,13 +5,11 @@ class_name WindowCreateMorphology
 
 var _morphology_name: TextInput
 var _radio_selector: ButtonGroup
-var _section_vectors: VBoxContainer
 var _section_patterns: VBoxContainer
 var _button_create_morphology: TextButton_Element
 
 var _composite: ElementMorphologyComposeView
-
-var _vectors_vector_list: VBoxContainer
+var _vectors: ElementMorphologyVectorsView
 
 var _patterns_vector_list: VBoxContainer
 
@@ -20,18 +18,17 @@ func _ready():
 	super._ready()
 	_morphology_name = $Container/Name/Name
 	_radio_selector = $Container/Type.button_group
-	_section_vectors = $Container/Vectors
 	_section_patterns = $Container/Patterns
 	_button_create_morphology = $Container/CreateMorphologyButton
 	
 	_composite = $Container/ElementMorphologyCompositeView
-
-	_vectors_vector_list = $Container/Vectors/Vectors/VBoxContainer
+	_vectors = $Container/ElementMorphologyVectorsView
+	
 
 	_patterns_vector_list = $Container/Patterns/Patterns/VBoxContainer
 
 	_composite.visible = false
-	_section_vectors.visible = false
+	_vectors.visible = false
 	_section_patterns.visible = false
 
 	print("initialized create morphology window")
@@ -46,19 +43,19 @@ func _on_type_button_pressed(_button_index: int, morphology_type: StringName) ->
 	match morphology_type:
 		&"Composite":
 			_composite.visible = true
-			_section_vectors.visible = false
+			_vectors.visible = false
 			_section_patterns.visible = false
 			return
 		&"Vectors":
 			# Vectors
 			_composite.visible = false
-			_section_vectors.visible = true
+			_vectors.visible = true
 			_section_patterns.visible = false
 			return
 		&"Patterns":
 			# Patterns
 			_composite.visible = false
-			_section_vectors.visible = false
+			_vectors.visible = false
 			_section_patterns.visible = true
 			return
 
@@ -91,10 +88,7 @@ func _on_create_morphology_pressed():
 			FeagiRequests.request_creating_composite_morphology(_composite.get_as_composite_morphology(_morphology_name.text))
 			return
 		&"Vectors":
-			var vectors: Array[Vector3i] = []
-			for child in _vectors_vector_list.get_children():
-				vectors.append(child.current_vector)
-			FeagiRequests.request_creating_vector_morphology(_morphology_name.text, vectors)
+			FeagiRequests.request_creating_vector_morphology(_vectors.get_as_vector_morphology(_morphology_name.text))
 			return
 		&"Patterns":
 			var pattern_pairs: Array[PatternVector3Pairs] = []

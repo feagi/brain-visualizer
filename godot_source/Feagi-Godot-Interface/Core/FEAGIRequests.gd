@@ -71,12 +71,14 @@ func request_creating_composite_morphology(morphology_to_create: CompositeMorpho
 	}
 	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
 
-func request_creating_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]) -> void:
-	print("Use requested creation of vector morphology " + morphology_name)
+func request_creating_vector_morphology(morphology_to_create: VectorMorphology) -> void:
+	if morphology_to_create.name in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_warning("Attempting to create morphology of name %s when one of the same name already exists. Skipping!" % [morphology_to_create.name])
+	print("Use requested creation of vector morphology " + morphology_to_create.name)
 	var requesting_morphology: Dictionary = {
-		"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
+		"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(morphology_to_create.vectors)
 	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.VECTORS, requesting_morphology)
+	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.VECTORS, requesting_morphology)
 
 
 func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
