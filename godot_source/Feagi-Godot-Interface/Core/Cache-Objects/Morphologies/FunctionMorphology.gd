@@ -8,4 +8,3 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, custom_
 	super(morphology_name, is_using_placeholder_data)
 	type = MORPHOLOGY_TYPE.FUNCTIONS
 	parameters = custom_parameters
-

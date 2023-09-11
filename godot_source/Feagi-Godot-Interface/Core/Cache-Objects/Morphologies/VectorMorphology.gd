@@ -10,3 +10,8 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, morphol
 	super(morphology_name, is_using_placeholder_data)
 	type = MORPHOLOGY_TYPE.VECTORS
 	vectors = morphology_vectors
+
+func to_dictionary() -> Dictionary:
+	return {
+		"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
+	}

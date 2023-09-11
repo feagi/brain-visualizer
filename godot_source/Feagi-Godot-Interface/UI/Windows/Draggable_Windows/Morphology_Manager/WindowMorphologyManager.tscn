@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3 uid="uid://bhpry6eyb2hl1"]
+[gd_scene load_steps=8 format=3 uid="uid://bhpry6eyb2hl1"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="3_dmt4w"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="4_fkit5"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="5_w2re6"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_latnd"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
 [node name="MorphologyManager" type="Panel"]
@@ -15,11 +16,12 @@ script = ExtResource("1_11gqg")
 
 [node name="Container" type="HBoxContainer" parent="."]
 layout_mode = 0
+offset_top = 1.0
 offset_right = 558.0
-offset_bottom = 400.0
+offset_bottom = 401.0
 
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
-custom_minimum_size = Vector2(200, 400)
+custom_minimum_size = Vector2(250, 400)
 layout_mode = 2
 size_flags_horizontal = 0
 
@@ -46,6 +48,11 @@ layout_mode = 2
 custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
 
+[node name="Apply_changes" type="Button" parent="Container/Morphology_Details/Description"]
+layout_mode = 2
+text = "Apply Changes"
+script = ExtResource("6_latnd")
+
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 2
 offset_top = -41.0
@@ -66,5 +73,7 @@ grow_horizontal = 2
 grow_vertical = 1
 label_text = "Create Morphology"
 metadata/_edit_use_anchors_ = true
+
+[connection signal="pressed" from="Container/Morphology_Details/Description/Apply_changes" to="." method="send_updated_values_to_feagi"]
 
 [editable path="TitleBar"]

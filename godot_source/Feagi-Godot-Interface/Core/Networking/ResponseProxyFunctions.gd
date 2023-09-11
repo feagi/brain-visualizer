@@ -162,12 +162,18 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 
 func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
 	if _response_code == 422:
-		push_error("Unable to process new properties for %s, skipping!" % [changed_cortical_ID])
+		push_error("Unable to process new properties for cortical area %s, skipping!" % [changed_cortical_ID])
 		return
 	
 	# Property change accepted, pull latest details
 	FeagiRequests.refresh_cortical_area(changed_cortical_ID)
 	pass
+
+func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:
+	if _response_code == 422:
+		push_error("Unable to process new properties for morphology %s, skipping!" % [changed_morphology_name])
+		return
+	FeagiRequests.refresh_morphology_properties(changed_morphology_name)
 
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:

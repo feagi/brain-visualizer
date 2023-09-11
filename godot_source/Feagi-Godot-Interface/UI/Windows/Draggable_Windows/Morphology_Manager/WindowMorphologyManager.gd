@@ -42,6 +42,23 @@ func _toggle_between_morphology_type_views(morphology_type: Morphology.MORPHOLOG
 			_view_composite.visible = true
 			_view_vectors.visible = false
 
+# Connected via Apply Changes Button Signal
+func send_updated_values_to_feagi() -> void:
+	var morphology_to_send: Morphology
+	match(_selected_morphology.type):
+		Morphology.MORPHOLOGY_TYPE.PATTERNS:
+			morphology_to_send = _view_patterns.get_as_pattern_morphology(_selected_morphology.name)
+		Morphology.MORPHOLOGY_TYPE.VECTORS:
+			morphology_to_send = _view_vectors.get_as_vector_morphology(_selected_morphology.name)
+		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
+			morphology_to_send = _view_composite.get_as_composite_morphology(_selected_morphology.name)
+		_:
+			push_error("Unknown morphology type to request! Skipping!")
+			return
+
+	FeagiRequests.request_updating_morphology(morphology_to_send)
+
+
 func _retrieved_morphology_properties_from_feagi(morphology: Morphology) -> void:
 	if morphology.name != _selected_morphology.name:
 		# we dont care if a non-selected morphology was updated
@@ -56,4 +73,3 @@ func _retrieved_morphology_properties_from_feagi(morphology: Morphology) -> void
 			_view_vectors.set_from_vector_morphology(morphology)
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			_view_composite.set_from_composite_morphology(morphology)
-

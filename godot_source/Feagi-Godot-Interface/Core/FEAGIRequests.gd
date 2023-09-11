@@ -60,38 +60,25 @@ func refresh_morphology_properties(morphology_name: StringName) -> void:
 func get_morphology_usuage(morphology_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_morphologyUsage(morphology_name)
 
-func request_creating_composite_morphology(morphology_to_create: CompositeMorphology) -> void:
+func request_updating_morphology(morphology_updating: Morphology) -> void:
+	if morphology_updating.name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("Unable to update morphology not found in cache with name of " + morphology_updating.name + ". Skipping!")
+		return
+	print("Requesting FEAGI to update morphology " + morphology_updating.name)
+	_feagi_interface.calls.PUT_GE_morphology(morphology_updating.name, morphology_updating.type, morphology_updating.to_dictionary())
+	
+## Requests FEAGI to create a morphology given a morphology object of a supported type
+func request_create_morphology(morphology_to_create: Morphology) -> void:
+	if morphology_to_create.type == Morphology.MORPHOLOGY_TYPE.NULL:
+		push_warning("Unable to create Null type morphology. Skipping!")
+		return
 	if morphology_to_create.name in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_warning("Attempting to create morphology of name %s when one of the same name already exists. Skipping!" % [morphology_to_create.name])
-	print("Use requested creation of composite morphology " + morphology_to_create.name)
-	var requesting_morphology: Dictionary = {
-		"src_seed": FEAGIUtils.vector3i_to_array(morphology_to_create.source_seed),
-		"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(morphology_to_create.source_pattern),
-		"mapper_morphology": morphology_to_create.name
-	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
+		return
 
-func request_creating_vector_morphology(morphology_to_create: VectorMorphology) -> void:
-	if morphology_to_create.name in FeagiCache.morphology_cache.available_morphologies.keys():
-		push_warning("Attempting to create morphology of name %s when one of the same name already exists. Skipping!" % [morphology_to_create.name])
-	print("Use requested creation of vector morphology " + morphology_to_create.name)
-	var requesting_morphology: Dictionary = {
-		"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(morphology_to_create.vectors)
-	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.VECTORS, requesting_morphology)
+	print("Requesting FEAGI to create morphology " + morphology_to_create.name)
+	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, morphology_to_create.type, morphology_to_create.to_dictionary())
 
-
-func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
-	print("Use requested creation of function morphology " + morphology_name)
-	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.FUNCTIONS, parameters)
-
-
-func request_creating_pattern_morphology(morphology_to_create: PatternMorphology) -> void:
-	print("Use requested creation of pattern morphology " + morphology_to_create.name)
-	var requesting_morphology: Dictionary = {
-		"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(morphology_to_create.patterns)
-	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
 
 func request_delete_morphology(morphology_name: StringName) -> void:
 	print("Use requested deletion of morphology " + morphology_name)
@@ -100,6 +87,12 @@ func request_delete_morphology(morphology_name: StringName) -> void:
 		return
 	_feagi_interface.calls.DELETE_GE_morphology(morphology_name)
 
+
+
+#TODO this should be updated
+func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
+	print("Use requested creation of function morphology " + morphology_name)
+	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.FUNCTIONS, parameters)
 
 ################################## Connections ##################################
 

@@ -14,3 +14,10 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, src_see
 	source_seed = src_seed
 	source_pattern = src_pattern
 	mapper_morphology_name = mapper_morphology
+
+func to_dictionary() -> Dictionary:
+	return {
+		"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
+		"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
+		"mapper_morphology": name
+	}
