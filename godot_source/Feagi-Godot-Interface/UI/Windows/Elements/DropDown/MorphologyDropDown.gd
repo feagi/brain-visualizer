@@ -37,6 +37,19 @@ func add_morphology(new_morphology: Morphology) -> void:
 	#	add_item(new_area.cortical_ID)
 	add_item(new_morphology.name) # using name only since as of writing, morphologies do not have IDs
 
+## Retrieves selected morphology. If none is selected, returns a Null Morphology
+func get_selected_morphology() -> Morphology:
+	if selected == -1: 
+		return NullMorphology.new()
+	return _listed_morphologies[selected]
+
+## retrieves the morphology name of the selected morphology
+## Returns "" if none is selected!
+func get_selected_morphology_name() -> StringName:
+	if selected == -1: 
+		return &""
+	return _listed_morphologies[selected].name
+
 ## Set the drop down selection to a specific (contained) morphology
 func set_selected_morphology(set_morphology: Morphology) -> void:
 	var index: int = _listed_morphologies.find(set_morphology)
@@ -44,6 +57,12 @@ func set_selected_morphology(set_morphology: Morphology) -> void:
 		push_warning("Attemped to set morphology drop down to an item that the drop down does not contain! Skipping!")
 		return
 	select(index)
+
+func set_selected_morphology_by_name(morphology_name: StringName) -> void:
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("Attempted to set morphology dropdown to morphology not found in cache by anme of " + morphology_name + ". Skipping!")
+		return
+	set_selected_morphology(FeagiCache.morphology_cache.available_morphologies[morphology_name])
 
 ## Set the dropdown to select nothing
 func deselect_all() -> void:
