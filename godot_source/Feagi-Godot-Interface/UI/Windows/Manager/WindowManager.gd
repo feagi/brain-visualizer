@@ -5,7 +5,7 @@ class_name WindowManager
 var _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.tscn")
 var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
 var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
-#var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.tscn")
+var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 
 var _temp_morphology_manager_ref: Node
 
@@ -35,13 +35,13 @@ func spawn_create_morphology() -> void:
 
 ## This system is temporary and will be changed
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
-	#if "morphology_manager" in loaded_windows.keys():
-	#	loaded_windows["morphology_manager"].queue_free()
-	#
-	#var morphology_manager: WindowCreateMorphology = _prefab_morphology_manager.instantiate()
-	#add_child(morphology_manager)
-	#loaded_windows["morphology_manager"] = morphology_manager
-	_temp_morphology_manager_ref._on_nm_settings_button_pressed()
+	if "morphology_manager" in loaded_windows.keys():
+		loaded_windows["morphology_manager"].queue_free()
+	
+	var morphology_manager: WindowMorphologyManager = _prefab_morphology_manager.instantiate()
+	add_child(morphology_manager)
+	loaded_windows["morphology_manager"] = morphology_manager
+
 		
 
 func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
