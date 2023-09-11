@@ -81,9 +81,8 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 
 
 ## Properties changed from FEAGI side, reflect here
-func FEAGI_set_properties(cortical_area: CorticalArea) -> void:
+func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cortical_area: CorticalArea) -> void:
 	print("Left panel recieved new cortical details")
-	var cortical_area_details: CorticalAreaDetails = cortical_area.details
 
 	_Voxel_Neuron_Density.external_update_int(cortical_area_details.cortical_neuron_per_vox_count)
 	_Synaptic_Attractivity.external_update_int(cortical_area_details.cortical_synaptic_attractivity)

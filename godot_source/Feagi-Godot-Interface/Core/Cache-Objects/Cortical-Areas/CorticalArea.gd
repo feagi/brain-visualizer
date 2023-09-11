@@ -18,19 +18,13 @@ signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: CorticalArea)
 signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: CorticalArea)
 signal cortical_visibility_updated(visibility: bool, this_cortical_area: CorticalArea)
-signal specific_detail_updated(data: Dictionary, this_cortical_area: CorticalArea)
-signal many_details_set(this_cortical_area: CorticalArea)
+signal details_updated(details: CorticalAreaDetails, this_cortical_area: CorticalArea)
 
 signal efferent_area_added(efferent_area: CorticalArea)
-
 signal efferent_area_removed(efferent_area: CorticalArea)
-
 signal efferent_area_count_updated(efferent_area: CorticalArea, mapping_count: int)
-
 signal efferent_mapping_updated(efferent_area: CorticalArea, mapping_properties: MappingProperties)
-
 signal afferent_area_added(afferent_area: CorticalArea)
-
 signal afferent_area_removed(afferent_area: CorticalArea)
 
 
@@ -59,6 +53,7 @@ var cortical_visibility: bool:
 	set(v):
 		if v == _cortical_visiblity: return
 		_cortical_visiblity = v
+		cortical_visibility_updated.emit(v)
 
 var dimensions: Vector3i:
 	get:
@@ -71,22 +66,18 @@ var coordinates_2D: Vector2i:
 	get:
 		return _coordinates_2D
 	set(v):
-		_coordinates_2D = v
-		_coordinates_2D_available = true
 		_coordinates_2D_available = true
 		if v == _coordinates_2D: return
-		coordinates_2D_updated.emit(v, self)
 		_coordinates_2D = v
+		coordinates_2D_updated.emit(v, self)
 var coordinates_3D: Vector3i:
 	get:
 		return _coordinates_3D
 	set(v):
-		_coordinates_3D = v
-		_coordinates_3D_available = true
 		_coordinates_3D_available = true
 		if v == _coordinates_3D: return
-		coordinates_3D_updated.emit(v, self)
 		_coordinates_3D = v
+		coordinates_3D_updated.emit(v, self)
 var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
 var is_coordinates_3D_available: bool:
@@ -121,11 +112,11 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 	_name = cortical_name
 	_group = group_type
 	details = CorticalAreaDetails.new()
+	details.many_properties_set.connect(_details_updated)
 	details.apply_dictionary(cortical_details_raw)
-	details.property_changed.connect(_specific_detail_updated)
-	details.many_properties_set.connect(_many_details_set)
 	_dimensions = cortical_dimensions
 	_cortical_visiblity = visibility
+
 
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:
@@ -174,11 +165,11 @@ func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
 func remove_all_connections() -> void:
 	# remove incoming
 	for afferent in _afferent_connections:
-		remove_afferent_connection(FeagiCache.cortical_areas_cache[afferent])
+		remove_afferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[afferent])
 	
 	# remove outgoing
 	for efferent in _efferent_connections_with_count.keys():
-		remove_efferent_connection(FeagiCache.cortical_areas_cache[efferent])
+		remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[efferent])
 
 ## replaced cortical mapping properties to a efferent cortical location from here
 func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, target_cortical_area: CorticalArea) -> void:
@@ -192,11 +183,5 @@ func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, t
 
 	efferent_mapping_updated.emit(target_cortical_area, properties)
 	
-
-## Proxy for when the cortical area details changes
-func _specific_detail_updated(changed_property: Dictionary) -> void:
-	specific_detail_updated.emit(changed_property, self)
-
-## proxy for when many cortical area details change (usually from FEAGI)
-func _many_details_set() -> void:
-	many_details_set.emit(self)
+func _details_updated() -> void:
+	details_updated.emit(details, self)
