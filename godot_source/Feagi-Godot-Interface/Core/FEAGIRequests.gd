@@ -60,14 +60,16 @@ func refresh_morphology_properties(morphology_name: StringName) -> void:
 func get_morphology_usuage(morphology_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_morphologyUsage(morphology_name)
 
-func request_creating_composite_morphology(morphology_name: StringName, source_seed: Vector3i, source_pattern: Array[Vector2i], mapper_morphology: Morphology) -> void:
-	print("Use requested creation of composite morphology " + morphology_name)
+func request_creating_composite_morphology(morphology_to_create: CompositeMorphology) -> void:
+	if morphology_to_create.name in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_warning("Attempting to create morphology of name %s when one of the same name already exists. Skipping!" % [morphology_to_create.name])
+	print("Use requested creation of composite morphology " + morphology_to_create.name)
 	var requesting_morphology: Dictionary = {
-		"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
-		"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
-		"mapper_morphology": mapper_morphology.name
+		"src_seed": FEAGIUtils.vector3i_to_array(morphology_to_create.source_seed),
+		"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(morphology_to_create.source_pattern),
+		"mapper_morphology": morphology_to_create.name
 	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
+	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.COMPOSITE, requesting_morphology)
 
 func request_creating_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]) -> void:
 	print("Use requested creation of vector morphology " + morphology_name)

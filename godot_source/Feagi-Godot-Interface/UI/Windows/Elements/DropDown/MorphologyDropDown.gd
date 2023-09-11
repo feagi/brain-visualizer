@@ -9,21 +9,31 @@ signal user_selected_morphology(morphology_reference: Morphology)
 # If true, will automatically remove morphologies from the drop down that were removed from cache
 @export var sync_removed_morphologies: bool = true
 
+@export var load_available_morphologies_on_start = true
+
 var _listed_morphologies: Array[Morphology] = []
 
 func _ready():
+	if load_available_morphologies_on_start:
+		releod_available_morphologies()
 	if sync_removed_morphologies:
 		FeagiCacheEvents.morphology_removed.connect(_morphology_was_deleted_from_cache)
 	item_selected.connect(_user_selected_option)
+	
+
+func releod_available_morphologies() -> void:
+	var morphologies: Array[Morphology]
+	morphologies.assign(FeagiCache.morphology_cache.available_morphologies.values())
+	overwrite_morphologies(morphologies)
 
 ## Clears all listed morphologies
-func clear_all_morphologys() -> void:
+func clear_all_morphologies() -> void:
 	_listed_morphologies = []
 	clear()
 
 ## Replace morphology listing with a new one
-func overwrite_morphologys(new_morphology: Array[Morphology]) -> void:
-	clear_all_morphologys()
+func overwrite_morphologies(new_morphology: Array[Morphology]) -> void:
+	clear_all_morphologies()
 	for morphology in new_morphology:
 		add_morphology(morphology)
 	_remove_radio_buttons()
