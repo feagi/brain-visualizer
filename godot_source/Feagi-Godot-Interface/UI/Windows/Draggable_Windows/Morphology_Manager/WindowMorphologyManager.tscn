@@ -1,0 +1,267 @@
+[gd_scene load_steps=15 format=3 uid="uid://bhpry6eyb2hl1"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
+[ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_omt2c"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_evhvk"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="4_s48o3"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="5_ayru7"]
+[ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iField.tscn" id="6_3h0mh"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/DropDown.gd" id="7_g30bw"]
+[ext_resource type="PackedScene" uid="uid://dtoic0bf8v2f2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.tscn" id="8_dpp11"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="9_78t11"]
+[ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/Prefab_VectorWithDelete.tscn" id="10_xvajp"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_o2jwj"]
+[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/Prefab_PatternVectorPairWithDelete.tscn" id="12_vaj1l"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
+
+[node name="MorphologyManager" type="Panel"]
+offset_top = 78.0
+offset_bottom = 78.0
+script = ExtResource("1_11gqg")
+
+[node name="Container" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_top = -38.0
+offset_right = 645.0
+offset_bottom = 255.0
+
+[node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
+custom_minimum_size = Vector2(200, 400)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Container_old" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 0
+offset_right = 532.0
+offset_bottom = 668.0
+
+[node name="Name" type="HBoxContainer" parent="Container_old"]
+layout_mode = 2
+
+[node name="Label_Element" type="Label" parent="Container_old/Name"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name of New Morphology"
+script = ExtResource("2_omt2c")
+max_length = 40
+label_text = "Name of New Morphology"
+
+[node name="Name" type="LineEdit" parent="Container_old/Name"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+script = ExtResource("3_evhvk")
+
+[node name="Type" type="BoxContainer" parent="Container_old"]
+layout_mode = 2
+script = ExtResource("4_s48o3")
+
+[node name="Composite" type="CheckBox" parent="Container_old/Type"]
+layout_mode = 2
+text = "Composite"
+
+[node name="Vectors" type="CheckBox" parent="Container_old/Type"]
+layout_mode = 2
+text = "Vectors"
+
+[node name="Patterns" type="CheckBox" parent="Container_old/Type"]
+layout_mode = 2
+text = "Patterns"
+
+[node name="spacer2" type="Control" parent="Container_old"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="Label_Element" type="Label" parent="Container_old"]
+layout_mode = 2
+text = "Morphology Definition:"
+script = ExtResource("2_omt2c")
+max_length = 30
+label_text = "Morphology Definition:"
+
+[node name="Composite" type="VBoxContainer" parent="Container_old"]
+visible = false
+layout_mode = 2
+
+[node name="Seed" type="HBoxContainer" parent="Container_old/Composite"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Composite/Seed"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Seed:"
+
+[node name="Seed_Vector" parent="Container_old/Composite/Seed" instance=ExtResource("5_ayru7")]
+layout_mode = 2
+
+[node name="spacer" type="Control" parent="Container_old/Composite"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="Label_Element" type="Label" parent="Container_old/Composite"]
+layout_mode = 2
+text = "Patterns:"
+script = ExtResource("2_omt2c")
+max_length = 20
+label_text = "Patterns:"
+
+[node name="Patterns" type="VBoxContainer" parent="Container_old/Composite"]
+layout_mode = 2
+
+[node name="X" type="HBoxContainer" parent="Container_old/Composite/Patterns"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Composite/Patterns/X"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pattern X:"
+
+[node name="X" parent="Container_old/Composite/Patterns/X" instance=ExtResource("6_3h0mh")]
+layout_mode = 2
+label_x_text = &"C"
+label_y_text = &"S"
+int_x_min = 1
+int_y_min = 0
+initial_vector = Vector2i(1, 0)
+
+[node name="Y" type="HBoxContainer" parent="Container_old/Composite/Patterns"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Composite/Patterns/Y"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pattern Y:"
+
+[node name="Y" parent="Container_old/Composite/Patterns/Y" instance=ExtResource("6_3h0mh")]
+layout_mode = 2
+label_x_text = &"C"
+label_y_text = &"S"
+int_x_min = 1
+int_y_min = 0
+initial_vector = Vector2i(1, 0)
+
+[node name="Z" type="HBoxContainer" parent="Container_old/Composite/Patterns"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Composite/Patterns/Z"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pattern Z:"
+
+[node name="Z" parent="Container_old/Composite/Patterns/Z" instance=ExtResource("6_3h0mh")]
+layout_mode = 2
+label_x_text = &"C"
+label_y_text = &"S"
+int_x_min = 1
+int_y_min = 0
+initial_vector = Vector2i(1, 0)
+
+[node name="mapper" type="HBoxContainer" parent="Container_old/Composite"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Composite/mapper"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Mapped Morphology:"
+
+[node name="Available_Morphologies" type="OptionButton" parent="Container_old/Composite/mapper"]
+layout_mode = 2
+script = ExtResource("7_g30bw")
+attempt_to_preserve_choice_on_update = true
+
+[node name="Vectors" type="VBoxContainer" parent="Container_old"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Vectors"]
+layout_mode = 2
+text = "Vectors"
+horizontal_alignment = 1
+
+[node name="Vector3Labels" parent="Container_old/Vectors" instance=ExtResource("8_dpp11")]
+layout_mode = 2
+label_x_text = &"X"
+label_y_text = &"Y"
+label_z_text = &"Z"
+
+[node name="Vectors" parent="Container_old/Vectors" node_paths=PackedStringArray("main_window") instance=ExtResource("9_78t11")]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+prefab_to_spawn = ExtResource("10_xvajp")
+main_window = NodePath("../../..")
+
+[node name="Add_Vector" type="Button" parent="Container_old/Vectors"]
+layout_mode = 2
+text = "Add Vector"
+script = ExtResource("11_o2jwj")
+
+[node name="Patterns" type="VBoxContainer" parent="Container_old"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container_old/Patterns"]
+layout_mode = 2
+text = "Patterns"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container_old/Patterns"]
+layout_mode = 2
+
+[node name="Vector3Labels" parent="Container_old/Patterns/HBoxContainer" instance=ExtResource("8_dpp11")]
+layout_mode = 2
+size_flags_horizontal = 3
+label_x_text = &"X"
+label_y_text = &"Y"
+label_z_text = &"Z"
+
+[node name="Vector3Labels2" parent="Container_old/Patterns/HBoxContainer" instance=ExtResource("8_dpp11")]
+layout_mode = 2
+size_flags_horizontal = 3
+label_x_text = &"X"
+label_y_text = &"Y"
+label_z_text = &"Z"
+
+[node name="Patterns" parent="Container_old/Patterns" node_paths=PackedStringArray("main_window") instance=ExtResource("9_78t11")]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+prefab_to_spawn = ExtResource("12_vaj1l")
+main_window = NodePath("../../..")
+
+[node name="Add_Vector_Pair" type="Button" parent="Container_old/Patterns"]
+layout_mode = 2
+text = "Add Vector Pair"
+script = ExtResource("11_o2jwj")
+
+[node name="CreateMorphologyButton" type="Button" parent="Container_old"]
+layout_mode = 2
+text = "Create Morphology"
+script = ExtResource("11_o2jwj")
+
+[node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
+layout_mode = 2
+offset_top = -78.0
+offset_right = 532.0
+offset_bottom = -38.0
+grow_horizontal = 2
+title = "Create Morphology"
+
+[node name="Title_Text" parent="TitleBar" index="1"]
+anchors_preset = -1
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 495.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 1
+label_text = "Create Morphology"
+metadata/_edit_use_anchors_ = true
+
+[connection signal="button_pressed" from="Container_old/Type" to="." method="_on_type_button_pressed"]
+[connection signal="pressed" from="Container_old/Vectors/Add_Vector" to="Container_old/Vectors/Vectors" method="spawn_list_item"]
+[connection signal="pressed" from="Container_old/Patterns/Add_Vector_Pair" to="Container_old/Patterns/Patterns" method="spawn_list_item"]
+[connection signal="pressed" from="Container_old/CreateMorphologyButton" to="." method="_on_create_morphology_pressed"]
+
+[editable path="TitleBar"]
