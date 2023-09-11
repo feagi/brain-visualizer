@@ -182,7 +182,7 @@ func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
 	# passthrough morphology name so we know what was updated
-	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), _response_functions_ref.PUT_GE_morphology, morphology_name)
+	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), _response_functions_ref.PUT_GE_morphology, to_buffer, morphology_name)
 
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
 func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):

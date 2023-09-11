@@ -85,11 +85,11 @@ func _on_create_morphology_pressed():
 
 	match selected_morphology_type:
 		&"Composite":
-			FeagiRequests.request_creating_composite_morphology(_composite.get_as_composite_morphology(_morphology_name.text))
+			FeagiRequests.request_create_morphology(_composite.get_as_composite_morphology(_morphology_name.text))
 			return
 		&"Vectors":
-			FeagiRequests.request_creating_vector_morphology(_vectors.get_as_vector_morphology(_morphology_name.text))
+			FeagiRequests.request_create_morphology(_vectors.get_as_vector_morphology(_morphology_name.text))
 			return
 		&"Patterns":
-			FeagiRequests.request_creating_pattern_morphology(_patterns.get_as_pattern_morphology(_morphology_name.text))
+			FeagiRequests.request_create_morphology(_patterns.get_as_pattern_morphology(_morphology_name.text))
 			return

@@ -9,7 +9,7 @@ var _cortical_area_connect_button: TextureButton_Element
 var _neuron_morphology_add_button: TextureButton_Element
 var _neuron_morphology_settings_button: TextureButton_Element
 var _view_toggle_button: TextureButton_Element
-var _view_toggle_label: Label_Element
+var _view_toggle_label: Label
 var _tutorial_button: TextureButton_Element
 
 var localize_refresh_rate: StringName
