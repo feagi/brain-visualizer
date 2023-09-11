@@ -22,14 +22,18 @@ script = ExtResource("1_11gqg")
 
 [node name="Container" type="HBoxContainer" parent="."]
 layout_mode = 0
-offset_top = -38.0
+offset_top = -78.0
 offset_right = 645.0
-offset_bottom = 255.0
+offset_bottom = 322.0
 
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
 custom_minimum_size = Vector2(200, 400)
 layout_mode = 2
 size_flags_horizontal = 0
+
+[node name="Morphology_Details" type="VBoxContainer" parent="Container"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Container_old" type="VBoxContainer" parent="."]
 visible = false
@@ -240,9 +244,9 @@ script = ExtResource("11_o2jwj")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 2
-offset_top = -78.0
+offset_top = -118.0
 offset_right = 532.0
-offset_bottom = -38.0
+offset_bottom = -78.0
 grow_horizontal = 2
 title = "Create Morphology"
 
