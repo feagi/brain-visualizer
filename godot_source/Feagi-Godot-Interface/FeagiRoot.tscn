@@ -18,8 +18,8 @@
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
-[ext_resource type="PackedScene" uid="uid://detjfi0ycmhmx" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.tscn" id="20_bolqa"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/morphology_manager/morphology_manager.gd" id="22_naj0a"]
+[ext_resource type="PackedScene" uid="uid://detjfi0ycmhmx" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/morphology_manager_OLD.tscn" id="20_bolqa"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/morphology_manager_OLD.gd" id="22_naj0a"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1

@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://detjfi0ycmhmx"]
+[gd_scene load_steps=6 format=3 uid="uid://crm4x27fr3nsl"]
 
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_psmtv"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_riebx"]
