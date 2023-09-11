@@ -8,15 +8,15 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
 [node name="MorphologyManager" type="Panel"]
-offset_top = 118.0
-offset_bottom = 118.0
+offset_top = 40.0
+offset_right = 568.0
+offset_bottom = 510.0
 script = ExtResource("1_11gqg")
 
 [node name="Container" type="HBoxContainer" parent="."]
 layout_mode = 0
-offset_top = -78.0
-offset_right = 645.0
-offset_bottom = 322.0
+offset_right = 558.0
+offset_bottom = 400.0
 
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
 custom_minimum_size = Vector2(200, 400)
@@ -29,7 +29,7 @@ size_flags_horizontal = 3
 
 [node name="ElementMorphologyPatternView" parent="Container/Morphology_Details" instance=ExtResource("3_dmt4w")]
 visible = false
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(700, 0)
 layout_mode = 2
 
 [node name="ElementMorphologyCompositeView" parent="Container/Morphology_Details" instance=ExtResource("4_fkit5")]
@@ -48,9 +48,9 @@ layout_mode = 2
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 2
-offset_top = -118.0
+offset_top = -41.0
 offset_right = 532.0
-offset_bottom = -78.0
+offset_bottom = -1.0
 grow_horizontal = 2
 title = "Morphology Manager"
 
