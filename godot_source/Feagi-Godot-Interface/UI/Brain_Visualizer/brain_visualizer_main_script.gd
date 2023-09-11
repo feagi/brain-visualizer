@@ -8,7 +8,7 @@ func _ready():
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiEvents.retrieved_visualization_data.connect(test)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
-#	FeagiCacheEvents.cortical_area_updated.connect(reload_cortical) # disabled due to being triggered every click
+	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)
 
@@ -105,6 +105,7 @@ func delete_single_cortical(cortical_area_data : CorticalArea):
 	for i in global_name_list:
 		if cortical_area_data.cortical_ID in i or cortical_text in i:
 			for x in len(global_name_list[i]):
+				remove_child(global_name_list[i][x][0])
 				global_name_list[i][x][0].queue_free()
 			name_list.append(i)
 	for i in name_list:
@@ -133,9 +134,35 @@ func delete_example():
 	for i in name_list:
 		global_name_list.erase(i)
 
-func reload_cortical(cortical_area_data : CorticalArea):
-	delete_single_cortical(cortical_area_data)
-	on_cortical_area_added(cortical_area_data)
+func check_cortical(cortical_area_data : CorticalArea):
+	var flag = false
+	for i in global_name_list:
+		if cortical_area_data.cortical_ID in i:
+			for x in range(1, 6):
+				if x == 1:
+					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[0]:
+						flag = true
+				elif x == 2:
+					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[1]:
+						flag = true
+				elif x == 3:
+					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[2]:
+						flag = true
+				elif x == 4:
+					if not global_name_list[i][0][x] == cortical_area_data.dimensions[0]:
+						flag = true
+				elif x == 5:
+					if not global_name_list[i][0][x] == cortical_area_data.dimensions[2]:
+						flag = true
+				elif x == 6:
+					if not global_name_list[i][0][x] == cortical_area_data.dimensions[1]:
+						flag = true
+	if flag:
+		delete_single_cortical(cortical_area_data)
+		for i in global_name_list:
+			if cortical_area_data.cortical_ID in i:
+				print(global_name_list[i])
+		generate_cortical_area(cortical_area_data)
 
 func generate_single_cortical(x,y,z,width, depth, height, name_input):
 	"""Function for create cortical, import circuit"""
