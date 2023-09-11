@@ -6,10 +6,10 @@ var _vectors_vector_list: VBoxContainer
 
 var vectors: Array[Vector3i]:
 	get:
-		var vectors: Array[Vector3i] = []
+		var _vectors: Array[Vector3i] = []
 		for child in _vectors_vector_list.get_children():
-			vectors.append(child.current_vector)
-		return vectors
+			_vectors.append(child.current_vector)
+		return _vectors
 	set(v):
 		_set_vector_array(v)
 		

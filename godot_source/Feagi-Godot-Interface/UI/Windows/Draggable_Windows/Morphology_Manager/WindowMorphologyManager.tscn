@@ -4,13 +4,13 @@
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_omt2c"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="5_ayru7"]
+[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="5_v8pcd"]
 [ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iField.tscn" id="6_3h0mh"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/DropDown.gd" id="7_g30bw"]
 [ext_resource type="PackedScene" uid="uid://dtoic0bf8v2f2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.tscn" id="8_dpp11"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="9_78t11"]
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/Prefab_VectorWithDelete.tscn" id="11_irc88"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_o2jwj"]
-[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/Prefab_PatternVectorPairWithDelete.tscn" id="12_vaj1l"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
 [node name="MorphologyManager" type="Panel"]
@@ -63,7 +63,7 @@ label_z_text = &"Z"
 [node name="Patterns" parent="Container/Morphology_Details/Patterns" node_paths=PackedStringArray("main_window") instance=ExtResource("9_78t11")]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
-prefab_to_spawn = ExtResource("12_vaj1l")
+prefab_to_spawn = ExtResource("5_v8pcd")
 main_window = NodePath("../../../..")
 
 [node name="Add_Vector_Pair" type="Button" parent="Container/Morphology_Details/Patterns"]

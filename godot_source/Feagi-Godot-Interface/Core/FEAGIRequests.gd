@@ -86,12 +86,12 @@ func request_creating_function_morphology(morphology_name: StringName, parameter
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.FUNCTIONS, parameters)
 
 
-func request_creating_pattern_morphology(morphology_name: StringName, patterns: Array[PatternVector3Pairs]) -> void:
-	print("Use requested creation of pattern morphology " + morphology_name)
+func request_creating_pattern_morphology(morphology_to_create: PatternMorphology) -> void:
+	print("Use requested creation of pattern morphology " + morphology_to_create.name)
 	var requesting_morphology: Dictionary = {
-		"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
+		"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(morphology_to_create.patterns)
 	}
-	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
+	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, Morphology.MORPHOLOGY_TYPE.PATTERNS, requesting_morphology)
 
 func request_delete_morphology(morphology_name: StringName) -> void:
 	print("Use requested deletion of morphology " + morphology_name)

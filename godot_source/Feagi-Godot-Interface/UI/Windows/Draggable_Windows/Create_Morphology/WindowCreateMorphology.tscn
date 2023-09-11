@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=10 format=3 uid="uid://bvdaq4i6y2aer"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nus1v"]
@@ -7,10 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
-[ext_resource type="PackedScene" uid="uid://dtoic0bf8v2f2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.tscn" id="8_jkcnc"]
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="9_k08xa"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_tmy0u"]
-[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/Prefab_PatternVectorPairWithDelete.tscn" id="12_p686e"]
 
 [node name="WindowCreateMorphology" type="Panel"]
 offset_top = 38.0
@@ -73,42 +71,8 @@ layout_mode = 2
 visible = false
 layout_mode = 2
 
-[node name="Patterns" type="VBoxContainer" parent="Container"]
-visible = false
+[node name="ElementMorphologyPatternView" parent="Container" instance=ExtResource("7_w3816")]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="Container/Patterns"]
-layout_mode = 2
-text = "Patterns"
-horizontal_alignment = 1
-
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/Patterns"]
-layout_mode = 2
-
-[node name="Vector3Labels" parent="Container/Patterns/HBoxContainer" instance=ExtResource("8_jkcnc")]
-layout_mode = 2
-size_flags_horizontal = 3
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
-
-[node name="Vector3Labels2" parent="Container/Patterns/HBoxContainer" instance=ExtResource("8_jkcnc")]
-layout_mode = 2
-size_flags_horizontal = 3
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
-
-[node name="Patterns" parent="Container/Patterns" node_paths=PackedStringArray("main_window") instance=ExtResource("9_k08xa")]
-custom_minimum_size = Vector2(0, 180)
-layout_mode = 2
-prefab_to_spawn = ExtResource("12_p686e")
-main_window = NodePath("../../..")
-
-[node name="Add_Vector_Pair" type="Button" parent="Container/Patterns"]
-layout_mode = 2
-text = "Add Vector Pair"
-script = ExtResource("11_tmy0u")
 
 [node name="CreateMorphologyButton" type="Button" parent="Container"]
 layout_mode = 2
@@ -137,7 +101,6 @@ label_text = "Create Morphology"
 metadata/_edit_use_anchors_ = true
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
-[connection signal="pressed" from="Container/Patterns/Add_Vector_Pair" to="Container/Patterns/Patterns" method="spawn_list_item"]
 [connection signal="pressed" from="Container/CreateMorphologyButton" to="." method="_on_create_morphology_pressed"]
 
 [editable path="TitleBar"]
