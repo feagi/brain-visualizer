@@ -25,6 +25,7 @@ signal drag_finished(current_position: Vector2)
 ## if True, will attempt to set the correct width of the parent window, and maintain it
 @export var automatic_maintain_width: bool = true
 
+
 var is_dragging: bool:
 	get: return _is_dragging
 	set(v):
@@ -43,7 +44,7 @@ var is_dragging: bool:
 var _is_mousing_over: bool = false
 var _is_dragging: bool = false
 var _parent: Control
-
+var _initial_position: Vector2i
 
 func _ready():
 	$Close_Button.pressed.connect(_proxy_close_button)
@@ -66,6 +67,7 @@ func _ready():
 	if automatic_maintain_width:
 		_parent.resized.connect(_auto_maintain_width)
 	
+	_initial_position = position
 
 
 func _input(event):

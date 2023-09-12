@@ -18,4 +18,5 @@ func _match_size() -> void:
 	var addition: Vector2 = Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
 	size = _child.size + addition
 	_child.position = addition / 2.0
+	
 

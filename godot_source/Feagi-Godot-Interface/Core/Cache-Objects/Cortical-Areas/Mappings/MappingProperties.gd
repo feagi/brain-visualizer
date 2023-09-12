@@ -53,3 +53,8 @@ static func from_MappingPropertys(mapping_properties_from_FEAGI: Array, source_a
 static func create_empty_mapping(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
 	var empty_typed_array: Array[MappingProperty] = [] # Because the array type casting in godot is still stupid. Too Bad!
 	return MappingProperties.new(source_area, destination_area, empty_typed_array)
+
+## Creates a default mapping object given a source, destination, and morphology to use. Default settings will be used
+static func create_default_mapping(source_area: CorticalArea, destination_area: CorticalArea, morphology_to_use: Morphology) -> MappingProperties:
+	var default_mapping: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology_to_use)]
+	return MappingProperties.new(source_area, destination_area, default_mapping)

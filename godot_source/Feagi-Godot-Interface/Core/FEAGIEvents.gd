@@ -13,5 +13,5 @@ signal retrieved_circuit_size(circuit_name: StringName, size_whd: Vector3i)
 
 ## Emits when we retrieved the latest list of morphologies from feagi
 signal retrieved_latest_morphology_listing(morphologies: Array[String])
-## Emits when we retrieved an array of morphologies with an array or what cortical areas use it
-signal retrieved_latest_usuage_of_morphology(morphologies: Array[String])
+## Emits when we retrieved arrays of source -> destination mappings (each are 2 element array themselves), and the accompying relevant morphology it relates to
+signal retrieved_latest_usuage_of_morphology(relevant_morphology: Morphology, usage: Array[Array])

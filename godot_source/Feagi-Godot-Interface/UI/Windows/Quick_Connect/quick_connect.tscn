@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_t1guh"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/morphology_menulist.gd" id="4_g5jb3"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="4_xt0qq"]
-[ext_resource type="Texture2D" uid="uid://chq0itxpcf2tb" path="res://Feagi-Godot-Interface/UI/Resources/morphology_icons/lateral_+x.png" id="5_esdrl"]
+[ext_resource type="Texture2D" uid="uid://btpwiprxlobb1" path="res://Feagi-Godot-Interface/UI/Resources/morphology_icons/lateral_+x.png" id="5_esdrl"]
 
 [node name="Quick_Connect" type="Panel"]
 anchors_preset = -1

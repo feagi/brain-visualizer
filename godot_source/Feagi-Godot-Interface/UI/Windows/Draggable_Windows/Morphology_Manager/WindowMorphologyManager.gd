@@ -1,30 +1,38 @@
 extends GrowingPanel
 class_name WindowMorphologyManager
 
+var _main_container: HBoxContainer
 var _morphology_scroll: MorphologyScroll
 var _view_patterns: ElementMorphologyPatternView
 var _view_composite: ElementMorphologyCompositeView
 var _view_vectors: ElementMorphologyVectorsView
-var _morphology_description: VBoxContainer
+var _morphology_description: MorphologyManagerDescription
 
 var _selected_morphology: Morphology
 
 func _ready() -> void:
+	super()
+	_main_container = $Container
 	_morphology_scroll = $Container/MorphologyScroll
 	_view_patterns = $Container/Morphology_Details/ElementMorphologyPatternView
 	_view_composite = $Container/Morphology_Details/ElementMorphologyCompositeView
 	_view_vectors = $Container/Morphology_Details/ElementMorphologyVectorsView
 	_morphology_description = $Container/Morphology_Details/Description
 
+
 	_morphology_scroll.morphology_selected.connect(selected_morphology)
 	FeagiCacheEvents.morphology_updated.connect(_retrieved_morphology_properties_from_feagi)
+	FeagiEvents.retrieved_latest_usuage_of_morphology.connect(_retrieved_morphology_mappings_from_feagi)
 
 
 func selected_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_toggle_between_morphology_type_views(morphology.type)
 	FeagiRequests.refresh_morphology_properties(morphology.name)
-	pass
+	_morphology_description.update_image_with_morphology(morphology.name)
+	_morphology_description.clear_usage()
+	FeagiRequests.get_morphology_usuage(morphology.name)
+	_main_container.size = Vector2(0,0) # stupid sizing fix - by trying to force a zero size, the window will scale to its appropriate min size instead
 
 # TODO function morphologies?
 func _toggle_between_morphology_type_views(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
@@ -73,3 +81,11 @@ func _retrieved_morphology_properties_from_feagi(morphology: Morphology) -> void
 			_view_vectors.set_from_vector_morphology(morphology)
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			_view_composite.set_from_composite_morphology(morphology)
+
+func _retrieved_morphology_mappings_from_feagi(relevant_morphology: Morphology, usage: Array[Array]):
+	if relevant_morphology.name != _selected_morphology.name:
+		# we dont care if a non-selected morphology was updated
+		# NOTE: we are comparing names instead of direct addresses to avoid reference shenaigans
+		return
+	_morphology_description.display_morphology_usage(usage)
+

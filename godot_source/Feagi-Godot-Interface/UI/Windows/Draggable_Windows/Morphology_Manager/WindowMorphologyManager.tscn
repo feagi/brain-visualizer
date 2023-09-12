@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://bhpry6eyb2hl1"]
+[gd_scene load_steps=9 format=3 uid="uid://bhpry6eyb2hl1"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="4_fkit5"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="5_w2re6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_latnd"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/MorphologyManagerDescription.gd" id="6_vxh1u"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
 [node name="MorphologyManager" type="Panel"]
@@ -16,9 +17,8 @@ script = ExtResource("1_11gqg")
 
 [node name="Container" type="HBoxContainer" parent="."]
 layout_mode = 0
-offset_top = 1.0
 offset_right = 558.0
-offset_bottom = 401.0
+offset_bottom = 468.0
 
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
 custom_minimum_size = Vector2(250, 400)
@@ -47,6 +47,23 @@ layout_mode = 2
 [node name="Description" type="VBoxContainer" parent="Container/Morphology_Details"]
 custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
+alignment = 2
+script = ExtResource("6_vxh1u")
+
+[node name="Label" type="Label" parent="Container/Morphology_Details/Description"]
+layout_mode = 2
+text = "Usage in Cortical Areas"
+horizontal_alignment = 1
+
+[node name="Show_Mappings" type="TextEdit" parent="Container/Morphology_Details/Description"]
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+
+[node name="Morphology_Texture" type="TextureRect" parent="Container/Morphology_Details/Description"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+expand_mode = 1
 
 [node name="Apply_changes" type="Button" parent="Container/Morphology_Details/Description"]
 layout_mode = 2
@@ -54,16 +71,16 @@ text = "Apply Changes"
 script = ExtResource("6_latnd")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
-layout_mode = 2
-offset_top = -41.0
-offset_right = 532.0
-offset_bottom = -1.0
-grow_horizontal = 2
+layout_mode = 0
+offset_top = -39.0
+offset_right = 568.0
+offset_bottom = 1.0
 title = "Morphology Manager"
 
 [node name="Title_Text" parent="TitleBar" index="1"]
 anchors_preset = -1
 anchor_top = 0.0
+anchor_right = 0.128521
 anchor_bottom = 0.0
 offset_left = 0.0
 offset_top = 0.0

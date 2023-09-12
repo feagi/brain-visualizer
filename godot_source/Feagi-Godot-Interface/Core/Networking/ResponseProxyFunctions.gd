@@ -86,9 +86,23 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 		properties = MappingProperties.from_MappingPropertys(raw_mapping_properties, source_area, destination_area)
 	source_area.set_efferent_mapping_properties_from_FEAGI(properties, destination_area)
 
-func GET_GE_morphologyUsage(Usage_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	var morphology_usuage = response_body.get_string_from_utf8() #TODO this should be outputting an array, not a string. Leaving for now due to time constraints but this needs to be fixed + morphology manager updated to use an array
-	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_usuage)
+func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, morphology_name: StringName) -> void:
+	if response_code == 400:
+		push_error("Unable to access in FEAGI morphology of name %s" % morphology_name)
+		return
+	if response_code == 404:
+		push_error("Unable to locate in FEAGI morphology of name %s" % morphology_name)
+		return
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("RACE CONDITION! Morphology %s was removed before we returned usage information! Skipping!" % morphology_name)
+		return
+	var usage_array: Array[Array]
+	usage_array.assign(_body_to_untyped_array(response_body))
+	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[morphology_name]
+	# Emit for both the specific morpholoy and broadly to support various use cases
+	morphology_used.retrieved_latest_usuage_of_morphology.emit(usage_array)
+	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_used, usage_array)
+	
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if _response_code == 404:

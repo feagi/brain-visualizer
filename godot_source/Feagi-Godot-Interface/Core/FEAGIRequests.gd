@@ -58,6 +58,10 @@ func refresh_morphology_properties(morphology_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
 func get_morphology_usuage(morphology_name: StringName) -> void:
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("Unable to retrieve usage of morphology not found in cache with name of " + morphology_name + ". Skipping!")
+		return
+	print("Requesting FEAGI for usage of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphologyUsage(morphology_name)
 
 func request_updating_morphology(morphology_updating: Morphology) -> void:
@@ -106,38 +110,20 @@ func refresh_connection_list() -> void:
 func get_mapping_properties_between_two_areas(source_area: CorticalArea, destination_area: CorticalArea) -> void:
 	_feagi_interface.calls.GET_GE_mappingProperties(source_area.cortical_ID, destination_area.cortical_ID)
 
-#TODO this name should be for general core use, do not use naming conventions for a single UI element
-func quick_connect_between_two_corticals(src: String, morphology_name: String, dest: String):
-	# docs string section begin
-	# src = source, dest = destination, morphology_name = morphology that is selected within quick connect
-	# docsstring sectin ends
-	if (src != "Click any cortical" and src != "Source") and (dest != "Click any cortical" and dest != "Destination") and morphology_name != "ARROW_PLACEHOLDER" and morphology_name != "ARROW PLACEHOLDER":
-		var dst_data = {}
-		var combine_url = '?src_cortical_area=#&dst_cortical_area=$'
-		combine_url = combine_url.replace("#", src)
-		combine_url = combine_url.replace("$", dest)
-		dst_data["cortical_destinations"] = {}
-		dst_data["cortical_destinations"][src] = []
-		var dst = {}
-		dst["morphology_id"] = morphology_name
-		dst["morphology_scalar"] = [1,1,1]
-		dst["postSynapticCurrent_multiplier"] = float(1.0)
-		dst["plasticity_flag"] = false
-		dst_data["cortical_destinations"][src].append(dst)
-		_feagi_interface.calls.PUT_GE_mappingProperties_DEFUNCT(dst_data["cortical_destinations"][src],combine_url)
-
 ## Requese from FEAGI to fully remove the mapping between 2 cortical areas (set the mapping arrays to empty)
 func request_delete_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea) -> void:
 	print("User Requested Deletion of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
 	# This essentially works by sending an empty array for the mappings
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, [])
 
-
+## Request FEAGI to set a specific mapping between 2 cortical areas
 func request_set_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, mapping_data.to_array())
 
-
+## Request FEAGI to set a default mapping (given a morphology) between 2 cortical areas
+func request_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
+	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(source_area, destination_area, morphology))
 
 ################################# FEAGI General #################################
 
