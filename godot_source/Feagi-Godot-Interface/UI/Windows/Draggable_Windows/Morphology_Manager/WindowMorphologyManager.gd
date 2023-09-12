@@ -22,6 +22,7 @@ func _ready() -> void:
 
 	_morphology_scroll.morphology_selected.connect(selected_morphology)
 	FeagiCacheEvents.morphology_updated.connect(_retrieved_morphology_properties_from_feagi)
+	FeagiEvents.retrieved_latest_usuage_of_morphology.connect(_retrieved_morphology_mappings_from_feagi)
 
 
 func selected_morphology(morphology: Morphology) -> void:
@@ -29,6 +30,8 @@ func selected_morphology(morphology: Morphology) -> void:
 	_toggle_between_morphology_type_views(morphology.type)
 	FeagiRequests.refresh_morphology_properties(morphology.name)
 	_morphology_description.update_image_with_morphology(morphology.name)
+	_morphology_description.clear_usage()
+	FeagiRequests.get_morphology_usuage(morphology.name)
 	_main_container.size = Vector2(0,0) # stupid sizing fix - by trying to force a zero size, the window will scale to its appropriate min size instead
 
 # TODO function morphologies?
@@ -78,3 +81,10 @@ func _retrieved_morphology_properties_from_feagi(morphology: Morphology) -> void
 			_view_vectors.set_from_vector_morphology(morphology)
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			_view_composite.set_from_composite_morphology(morphology)
+
+func _retrieved_morphology_mappings_from_feagi(relevant_morphology: Morphology, usage: Array[Array]):
+	if relevant_morphology.name != _selected_morphology.name:
+		# we dont care if a non-selected morphology was updated
+		# NOTE: we are comparing names instead of direct addresses to avoid reference shenaigans
+		return
+	_morphology_description.display_morphology_usage(usage)
