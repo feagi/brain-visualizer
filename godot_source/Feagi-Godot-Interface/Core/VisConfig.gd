@@ -2,6 +2,11 @@ extends Node
 ## AUTOLOADED
 ## Contains any general info about the state of the visualizer
 
+enum STATES {
+	LOADING_INITIAL,
+	READY,
+}
+
 signal screen_size_changed(new_screen_size: Vector2)
 signal UI_settings_changed()
 signal user_changed_typing_status(is_typing: bool) ## Emits whenever a user starts / stops interaction with a text box
@@ -22,6 +27,12 @@ var window_manager: WindowManager # set from the window manager itself when it i
 var is_premium: bool = true
 var left_bar_allow_premium_monitoring: bool = true # todo: should probably tie in with above
 
+var visualizer_state: STATES:
+	get: return _visualizer_state
+	set(v):
+		print("STATE: SWITCH TO " + STATES.find_key(v))
+		_visualizer_state = v
+
 ## Is the user currently typing in a textbox somewhere
 var is_user_typing: bool:
 	get: return _is_user_typing
@@ -40,6 +51,8 @@ var _screen_size: Vector2
 var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4
 var _is_user_typing: bool = false
 var _is_user_dragging_a_window: bool = false
+
+var _visualizer_state: STATES = STATES.LOADING_INITIAL
 
 func _ready():
 	_screen_size = get_viewport().get_visible_rect().size
