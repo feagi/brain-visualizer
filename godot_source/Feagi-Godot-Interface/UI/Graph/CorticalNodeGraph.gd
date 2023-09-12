@@ -1,19 +1,22 @@
 extends NodeGraph
 class_name CorticalNodeGraph
 
+const NODE_SIZE: Vector2i = Vector2i(175, 86)
+
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
 @export var algorithm_cortical_area_spacing: Vector2i =  Vector2i(10,6)
 
 var _cortical_node_algorithm_positions: Dictionary = {}
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
+var _spawn_sorter: CorticalNodeSpawnSorter
 
 func _ready():
-	super._ready()
+	super()
 	FeagiCacheEvents.cortical_area_added.connect(spawn_single_cortical_node)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical_node)
 	FeagiCacheEvents.cortical_areas_connected.connect(spawn_established_connection)
-
+	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 	for cortical_type_str in CorticalArea.CORTICAL_AREA_TYPE.keys():
 		_cortical_node_algorithm_positions[cortical_type_str] = []
 
@@ -24,10 +27,13 @@ func spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()
 	cortical_node.user_started_connection_from.connect(_user_starting_drag_from)
 	var offset: Vector2
-	if cortical_area.is_coordinates_2D_available:
+	if !cortical_area.is_coordinates_2D_available: #TODO REMOVE THE !
 		offset = cortical_area.coordinates_2D
 	else:
-		offset = Vector2(0.0,0.0)
+		if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
+			offset = _spawn_sorter.add_cortical_area_to_memory_and_return_position(cortical_area.group)
+		else:
+			offset = Vector2(0.0,0.0)
 	_background_center.add_child(cortical_node)
 	cortical_node.setup(cortical_area, offset)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
