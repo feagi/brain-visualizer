@@ -72,14 +72,15 @@ script = ExtResource("6_latnd")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 0
-offset_top = -40.0
+offset_top = -39.0
 offset_right = 568.0
-offset_bottom = 0.0
+offset_bottom = 1.0
 title = "Morphology Manager"
 
 [node name="Title_Text" parent="TitleBar" index="1"]
 anchors_preset = -1
 anchor_top = 0.0
+anchor_right = 0.128521
 anchor_bottom = 0.0
 offset_left = 0.0
 offset_top = 0.0
