@@ -58,6 +58,10 @@ func refresh_morphology_properties(morphology_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
 func get_morphology_usuage(morphology_name: StringName) -> void:
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		push_error("Unable to retrieve usage of morphology not found in cache with name of " + morphology_name + ". Skipping!")
+		return
+	print("Requesting FEAGI for usage of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphologyUsage(morphology_name)
 
 func request_updating_morphology(morphology_updating: Morphology) -> void:
