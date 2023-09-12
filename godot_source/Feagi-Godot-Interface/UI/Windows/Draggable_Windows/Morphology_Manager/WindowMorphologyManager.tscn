@@ -71,11 +71,10 @@ text = "Apply Changes"
 script = ExtResource("6_latnd")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
-layout_mode = 2
-offset_top = -41.0
+layout_mode = 0
+offset_top = -40.0
 offset_right = 568.0
-offset_bottom = -1.0
-grow_horizontal = 2
+offset_bottom = 0.0
 title = "Morphology Manager"
 
 [node name="Title_Text" parent="TitleBar" index="1"]
