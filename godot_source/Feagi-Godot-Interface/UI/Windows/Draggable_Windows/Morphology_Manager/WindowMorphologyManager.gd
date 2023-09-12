@@ -1,6 +1,7 @@
 extends GrowingPanel
 class_name WindowMorphologyManager
 
+var _main_container: HBoxContainer
 var _morphology_scroll: MorphologyScroll
 var _view_patterns: ElementMorphologyPatternView
 var _view_composite: ElementMorphologyCompositeView
@@ -10,6 +11,8 @@ var _morphology_description: VBoxContainer
 var _selected_morphology: Morphology
 
 func _ready() -> void:
+	super()
+	_main_container = $Container
 	_morphology_scroll = $Container/MorphologyScroll
 	_view_patterns = $Container/Morphology_Details/ElementMorphologyPatternView
 	_view_composite = $Container/Morphology_Details/ElementMorphologyCompositeView
@@ -24,7 +27,7 @@ func selected_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_toggle_between_morphology_type_views(morphology.type)
 	FeagiRequests.refresh_morphology_properties(morphology.name)
-	pass
+	_main_container.size = Vector2(0,0) # stupid sizing fix - by trying to force a zero size, the window will scale to its appropriate min size instead
 
 # TODO function morphologies?
 func _toggle_between_morphology_type_views(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
