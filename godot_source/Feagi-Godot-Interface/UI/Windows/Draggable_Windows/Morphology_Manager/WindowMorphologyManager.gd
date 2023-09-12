@@ -6,7 +6,7 @@ var _morphology_scroll: MorphologyScroll
 var _view_patterns: ElementMorphologyPatternView
 var _view_composite: ElementMorphologyCompositeView
 var _view_vectors: ElementMorphologyVectorsView
-var _morphology_description: VBoxContainer
+var _morphology_description: MorphologyManagerDescription
 
 var _selected_morphology: Morphology
 
@@ -19,6 +19,7 @@ func _ready() -> void:
 	_view_vectors = $Container/Morphology_Details/ElementMorphologyVectorsView
 	_morphology_description = $Container/Morphology_Details/Description
 
+
 	_morphology_scroll.morphology_selected.connect(selected_morphology)
 	FeagiCacheEvents.morphology_updated.connect(_retrieved_morphology_properties_from_feagi)
 
@@ -27,6 +28,7 @@ func selected_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_toggle_between_morphology_type_views(morphology.type)
 	FeagiRequests.refresh_morphology_properties(morphology.name)
+	_morphology_description.update_image_with_morphology(morphology.name)
 	_main_container.size = Vector2(0,0) # stupid sizing fix - by trying to force a zero size, the window will scale to its appropriate min size instead
 
 # TODO function morphologies?
