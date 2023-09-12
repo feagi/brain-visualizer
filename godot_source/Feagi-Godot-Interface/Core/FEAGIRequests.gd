@@ -123,7 +123,7 @@ func request_set_mapping_between_corticals(source_area: CorticalArea, destinatio
 
 ## Request FEAGI to set a default mapping (given a morphology) between 2 cortical areas
 func request_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
-	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(morphology))
+	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(source_area, destination_area, morphology))
 
 ################################# FEAGI General #################################
 

@@ -39,12 +39,26 @@ func _on_visibility_changed():
 		$destination.text = "Destination"
 		$arrow/Label.text = "Select a morphology"
 
+
 func _on_connect_pressed():
 	var source_id = src
 	var destination_id = destination
 	var morphology_name = $arrow/Label.text
+	# Pretty simple check to try to prevent invalid connections
+	# TODO WARNING: This is not a safe way of handling this, this script should be redone
+	if source_id not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		return
+	if destination_id not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		return
+	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
+		return
+
+	var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_id]
+	var destination_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[destination_id]
+	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[morphology_name]
 	visible = false
-	FeagiRequests.quick_connect_between_two_corticals(source_id, morphology_name, destination_id)
+	FeagiRequests.request_default_mapping_between_corticals(source_area, destination_area, morphology_used)
+	
 	$"../../Brain_Visualizer".update_all_node_from_cortical(source_id, global_material.deselected)
 	$"../../Brain_Visualizer".update_all_node_from_cortical(destination, global_material.deselected)
 
