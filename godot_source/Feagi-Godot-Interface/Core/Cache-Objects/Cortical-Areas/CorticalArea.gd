@@ -144,6 +144,7 @@ func remove_afferent_connection(incoming_cortical_area: CorticalArea) -> void:
 
 ## add / update target cortex as connection
 func set_efferent_connection(target_cortical_area: CorticalArea, mapping_count: int) -> void:
+	print("CACHE: Setting connection from %s to %s with %d mappings" % [cortical_ID, target_cortical_area.cortical_ID, mapping_count])
 	if target_cortical_area.cortical_ID not in _efferent_connections_with_count.keys():
 		efferent_area_added.emit(target_cortical_area)
 	_efferent_connections_with_count[target_cortical_area.cortical_ID] = mapping_count
@@ -155,6 +156,7 @@ func set_efferent_connection(target_cortical_area: CorticalArea, mapping_count: 
 
 ## remove target cortex as connection
 func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
+	print("CACHE: Removing connection from %s to %s" % [cortical_ID, target_cortical_area.cortical_ID])
 	if target_cortical_area.cortical_ID not in _efferent_connections_with_count.keys():
 		push_warning("attempted to remove cortical area %s to efferent to %s when it is already not there. Skipping!"% [target_cortical_area.cortical_ID, _cortical_ID])
 		return
@@ -162,18 +164,18 @@ func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
 	efferent_area_removed.emit(target_cortical_area)
 	# handle afferent call on the other cortical area
 	target_cortical_area.remove_afferent_connection(self)
-	#set off gloabal signal
+	#set off global signal
 	FeagiCacheEvents.cortical_areas_disconnected.emit(self, target_cortical_area)
 
 ## removes all efferent and afferent connections, typically called right before deletion
 func remove_all_connections() -> void:
 	# remove incoming
-	for afferent in _afferent_connections:
-		remove_afferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[afferent])
+	while len(_afferent_connections) != 0:
+		FeagiCache.cortical_areas_cache.cortical_areas[_afferent_connections[0]].remove_efferent_connection(self)
 	
 	# remove outgoing
-	for efferent in _efferent_connections_with_count.keys():
-		remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[efferent])
+	while len(_efferent_connections_with_count.keys()) != 0:
+		remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[_efferent_connections_with_count.keys()[0]])
 
 ## replaced cortical mapping properties to a efferent cortical location from here
 func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, target_cortical_area: CorticalArea) -> void:
