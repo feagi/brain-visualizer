@@ -16,6 +16,7 @@ func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(spawn_single_cortical_node)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical_node)
 	FeagiCacheEvents.cortical_areas_connection_modified.connect(spawn_established_connection)
+	FeagiCacheEvents.cortical_areas_disconnected.connect(delete_established_connection)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 
 
@@ -63,13 +64,15 @@ func spawn_established_connection(source: CorticalArea, destination: CorticalAre
 
 ## Should only be called from feagi when connection deletion is confirmed
 func delete_established_connection(source: CorticalArea, destination: CorticalArea) -> void:
+	if source.cortical_ID not in cortical_nodes.keys():
+		push_error("Unable to delete a connection from source cortical area %s since it was not found in the cache! Skipping!" % source.cortical_ID)
+		return
+	if destination.cortical_ID not in cortical_nodes[source.cortical_ID].cortical_connection_destinations.keys():
+		push_error("Unable to delete a connection toward %s since no connection was found to begin with! Skipping!" % destination.cortical_ID)
+		return
 	
+	cortical_nodes[source.cortical_ID].cortical_connection_destinations[destination.cortical_ID].queue_free()
+	cortical_nodes[source.cortical_ID].cortical_connection_destinations.erase(destination.cortical_ID)
 
 
-#	var connection: EstablishConnection = EstablishConnection.new(source, destination, mapping_count)
-#	_background_center.add_child(connection)
 
-
-## Used to determine spawn location of cortical nodes with no established location
-#func _algorithm_cortical_area_spawn_location(cortical_node: CorticalNode) -> Vector2:
-#	var cortical_type: StringName =   str(cortical_node.cortical_area_ref.group)
