@@ -36,11 +36,12 @@ func spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
 	_background_center.add_child(cortical_node)
 	cortical_node.setup(cortical_area, offset)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
+	cortical_node.user_started_connection_from.connect(user_start_drag_new_connection)
 	return cortical_node
 
 func delete_single_cortical_node(cortical_area: CorticalArea) -> void:
 	if cortical_area.cortical_ID not in cortical_nodes.keys():
-		push_error("Attempted to remove non-existant cortex node " + cortical_area.cortical_ID + "! Skipping...")
+		push_error("GRAPH: Attempted to remove non-existant cortex node " + cortical_area.cortical_ID + "! Skipping...")
 	var node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
 	node.FEAGI_delete_cortical_area()
 	cortical_nodes.erase(cortical_area.cortical_ID)
@@ -48,10 +49,10 @@ func delete_single_cortical_node(cortical_area: CorticalArea) -> void:
 ## Should only be called from feagi when conneciton creation is confirmed
 func spawn_established_connection(source: CorticalArea, destination: CorticalArea, mapping_count: int) -> void:
 	if source.cortical_ID not in cortical_nodes.keys():
-		push_error("Unable to create a connection due to missing cortical area %s! Skipping!" % source.cortical_ID)
+		push_error("GRAPH: Unable to create a connection due to missing cortical area %s! Skipping!" % source.cortical_ID)
 		return
 	if destination.cortical_ID not in cortical_nodes.keys():
-		push_error("Unable to create a connection due to missing cortical area %s! Skipping!" % destination.cortical_ID)
+		push_error("GRAPH: Unable to create a connection due to missing cortical area %s! Skipping!" % destination.cortical_ID)
 		return
 	
 	if destination.cortical_ID in cortical_nodes[source.cortical_ID].cortical_connection_destinations.keys():
@@ -65,14 +66,17 @@ func spawn_established_connection(source: CorticalArea, destination: CorticalAre
 ## Should only be called from feagi when connection deletion is confirmed
 func delete_established_connection(source: CorticalArea, destination: CorticalArea) -> void:
 	if source.cortical_ID not in cortical_nodes.keys():
-		push_error("Unable to delete a connection from source cortical area %s since it was not found in the cache! Skipping!" % source.cortical_ID)
+		push_error("GRAPH: Unable to delete a connection from source cortical area %s since it was not found in the cache! Skipping!" % source.cortical_ID)
 		return
 	if destination.cortical_ID not in cortical_nodes[source.cortical_ID].cortical_connection_destinations.keys():
-		push_error("Unable to delete a connection toward %s since no connection was found to begin with! Skipping!" % destination.cortical_ID)
+		push_error("GRAPH: Unable to delete a connection toward %s since no connection was found to begin with! Skipping!" % destination.cortical_ID)
 		return
 	
 	cortical_nodes[source.cortical_ID].cortical_connection_destinations[destination.cortical_ID].queue_free()
 	cortical_nodes[source.cortical_ID].cortical_connection_destinations.erase(destination.cortical_ID)
 
+func user_start_drag_new_connection(source: CorticalNode) -> void:
+	print("GRAPH: User Start Connection drag from " + source.cortical_area_ID)
+	Connection2DDragging.new(source, _background_center)
 
 

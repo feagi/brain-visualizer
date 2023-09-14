@@ -169,6 +169,7 @@ func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
 
 ## removes all efferent and afferent connections, typically called right before deletion
 func remove_all_connections() -> void:
+	# This code is Stupid. Too Bad!
 	# remove incoming
 	while len(_afferent_connections) != 0:
 		FeagiCache.cortical_areas_cache.cortical_areas[_afferent_connections[0]].remove_efferent_connection(self)
