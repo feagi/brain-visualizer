@@ -26,6 +26,9 @@ var connection_state: CONNECTION_STATE:
 	set(v):
 		_connection_state = v
 
+var cortical_node_parent: CorticalNode:
+	get: return _cortical_node_parent
+
 ## Since local position is local to the root of the [CorticalNode], we need this to find the position in the graph
 var graph_position: Vector2:
 	get: return position + _cortical_node_parent.position + (size / 2.0)
@@ -35,11 +38,20 @@ var _connection_state: CONNECTION_STATE = CONNECTION_STATE.EMPTY
 
 func _ready():
 	_cortical_node_parent = get_parent()
-	pressed.connect(_pressed)
-	if button_side == CorticalIO.OUTPUT:
-		action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+	pressed.connect(_button_pressed)
+	match(button_side):
+		CorticalIO.OUTPUT:
+			action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+			add_to_group("CB_Output")
+		CorticalIO.INPUT:
+			add_to_group("CB_Input")
 
-func _pressed():
+
+
+func _button_pressed():
+	if !button_pressed:
+		return
+
 	match button_side:
 		CorticalIO.OUTPUT:
 			_cortical_node_parent.user_started_connection_from.emit(_cortical_node_parent)

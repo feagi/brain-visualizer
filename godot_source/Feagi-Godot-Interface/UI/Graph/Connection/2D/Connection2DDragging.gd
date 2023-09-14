@@ -2,12 +2,14 @@ extends Connection2DBase
 class_name Connection2DDragging
 ## Used for user to see dragging line when connecting 
 
+var source_node: CorticalNode
 var _mouse_button_to_release: MouseButton
 var _background_center: CanvasItem
 
 func _init(line_source_node: CorticalNode,  parent_object: CanvasItem, button_to_let_go: MouseButton = MouseButton.MOUSE_BUTTON_LEFT) -> void:
     parent_object.add_child(self)
     _background_center = parent_object
+    source_node = line_source_node
     super()
     set_line_source_node(line_source_node)
     _mouse_button_to_release = button_to_let_go
@@ -33,7 +35,14 @@ func _mouse_button(event: InputEventMouseButton):
     
     if event.pressed:
         return
+    # mouse released, lets check if we are in an area
+    var all_inputs: Array = get_tree().get_nodes_in_group("CB_Input")
+    for input in all_inputs:
+        var rectangle: Rect2 = input.get_rect()
+        if rectangle.has_point(get_local_mouse_position()):
+            print("GRAPH: User Dragged to " + input.cortical_node_parent.cortical_area_ID)
+            VisConfig.window_manager.spawn_edit_mappings(source_node.cortical_area_ref, input.cortical_node_parent.cortical_area_ref)
+            return
     
-    #TODO check for if on area
-
+    print("GRAPH: Drag Connection Dropped")
     queue_free()
