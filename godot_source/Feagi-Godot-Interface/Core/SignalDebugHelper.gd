@@ -13,7 +13,6 @@ func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(cache_cortical_added)
 	FeagiCacheEvents.cortical_area_removed.connect(cache_cortical_removed)
 	FeagiCacheEvents.cortical_area_updated.connect(cache_cortical_updated)
-	FeagiCacheEvents.cortical_areas_connected.connect(cache_connection_connected)
 	FeagiCacheEvents.cortical_areas_disconnected.connect(cache_connection_disconnected)
 	FeagiCacheEvents.cortical_areas_connection_modified.connect(cache_connection_updated)
 	FeagiCacheEvents.delay_between_bursts_updated.connect(cache_updated_burst_rate)
@@ -38,14 +37,11 @@ func cache_cortical_removed(cortical_area: CorticalArea) -> void:
 func cache_cortical_updated(cortical_area: CorticalArea) -> void:
 	print("CACHE: Updated Cortical Area " + cortical_area.cortical_ID)
 
-func cache_connection_connected(source_cortical_area: StringName, destination_cortical_area: StringName, number_of_mappings: int) -> void:
-	print("CACHE: Made connection from %s to %s with %d mappings" % [source_cortical_area, destination_cortical_area, number_of_mappings])
+func cache_connection_disconnected(source_cortical_area: CorticalArea, destination_cortical_area: CorticalArea) -> void:
+	print("CACHE: Removed connection from %s to %s" % [source_cortical_area.cortical_ID, destination_cortical_area.cortical_ID])
 
-func cache_connection_disconnected(source_cortical_area: StringName, destination_cortical_area: StringName) -> void:
-	print("CACHE: Removed connection from %s to %s" % [source_cortical_area, destination_cortical_area])
-
-func cache_connection_updated(source_cortical_area: StringName, destination_cortical_area: StringName, number_of_mappings: int) -> void:
-	print("CACHE: Updated connection from %s to %s with %d mappings" % [source_cortical_area, destination_cortical_area, number_of_mappings])
+func cache_connection_updated(source_cortical_area: CorticalArea, destination_cortical_area: CorticalArea, number_of_mappings: int) -> void:
+	print("CACHE: Updated connection from %s to %s with %d mappings" % [source_cortical_area.cortical_ID, destination_cortical_area.cortical_ID, number_of_mappings])
 
 func cache_updated_burst_rate(seconds_delay_between_bursts: float) -> void:
 	print("CACHE: Set seconds delay between bursts to " + str(seconds_delay_between_bursts))

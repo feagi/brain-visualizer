@@ -21,18 +21,20 @@ var cortical_area_ID: StringName:
 		if(_cortical_area_ref):
 			return _cortical_area_ref.cortical_ID
 		return "ERROR NOT SETUP"
-var connection_input: ConnectionButton_Point:
+var connection_input: ConnectionButtonPoint:
 	get: return _connection_input
-var connection_output: ConnectionButton_Point:
+var connection_output: ConnectionButtonPoint:
 	get: return _connection_output
 var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
 
+var cortical_connection_destinations: Dictionary = {}
+
 var _cortical_area_ref: CorticalArea
 var _title_bar: TitleBar
 var _cortical_name_text: Label_Element
-var _connection_input: ConnectionButton_Point
-var _connection_output: ConnectionButton_Point
+var _connection_input: ConnectionButtonPoint
+var _connection_output: ConnectionButtonPoint
 
 
 
@@ -42,7 +44,6 @@ func _ready():
 	_cortical_name_text = $Cortical_Name
 	_connection_input = $Connection_In
 	_connection_output = $Connection_Out
-
 
 	_title_bar.close_pressed.connect(_user_request_delete_cortical_area)
 	_title_bar.dragged.connect(_on_title_bar_drag)
@@ -57,6 +58,7 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	position = node_position
 	_title_bar.title = _cortical_area_ref.name
 	_cortical_name_text.text = _cortical_area_ref.cortical_ID
+
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
@@ -73,8 +75,8 @@ func _on_title_bar_change_size() -> void:
 	pass
 
 func _on_title_bar_drag(_current_position: Vector2, _delta_offset: Vector2) -> void:
-	_connection_input.moved.emit()
-	_connection_output.moved.emit()
+	_connection_input.moved.emit(_connection_input.graph_position)
+	_connection_output.moved.emit(_connection_output.graph_position)
 
 func _on_interact(event):
 	if !(event is InputEventMouseButton): return

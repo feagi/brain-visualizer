@@ -150,6 +150,8 @@ func set_efferent_connection(target_cortical_area: CorticalArea, mapping_count: 
 	efferent_area_count_updated.emit(target_cortical_area)
 	# handle afferent call on the other cortical area
 	target_cortical_area.set_afferent_connection(self)
+	# set off global signal
+	FeagiCacheEvents.cortical_areas_connection_modified.emit(self, target_cortical_area, mapping_count)
 
 ## remove target cortex as connection
 func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
@@ -160,6 +162,8 @@ func remove_efferent_connection(target_cortical_area: CorticalArea) -> void:
 	efferent_area_removed.emit(target_cortical_area)
 	# handle afferent call on the other cortical area
 	target_cortical_area.remove_afferent_connection(self)
+	#set off gloabal signal
+	FeagiCacheEvents.cortical_areas_disconnected.emit(self, target_cortical_area)
 
 ## removes all efferent and afferent connections, typically called right before deletion
 func remove_all_connections() -> void:
@@ -182,6 +186,6 @@ func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, t
 		set_efferent_connection(target_cortical_area, properties.number_of_mappings)
 
 	efferent_mapping_updated.emit(target_cortical_area, properties)
-	
+
 func _details_updated() -> void:
 	details_updated.emit(details, self)

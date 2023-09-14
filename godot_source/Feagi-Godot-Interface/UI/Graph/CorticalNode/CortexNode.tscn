@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_cd1fb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_21t7y"]
 [ext_resource type="Texture2D" uid="uid://bkrhcxq2ljrx0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="3_241b3"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/ConnectionButton_Point.gd" id="4_hpgy5"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/ConnectionButtonPoint.gd" id="5_i7lng"]
 
 [node name="CorticalNode" type="Panel"]
 offset_top = 40.0
@@ -50,7 +50,7 @@ grow_vertical = 2
 texture_normal = ExtResource("3_241b3")
 ignore_texture_size = true
 stretch_mode = 4
-script = ExtResource("4_hpgy5")
+script = ExtResource("5_i7lng")
 
 [node name="Connection_Out" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(20, 20)
@@ -60,14 +60,13 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -19.0
-offset_top = -9.0
-offset_right = 1.0
-offset_bottom = 11.0
+offset_left = -20.0
+offset_top = -10.0
+offset_bottom = 10.0
 grow_horizontal = 0
 grow_vertical = 2
 texture_normal = ExtResource("3_241b3")
 ignore_texture_size = true
 stretch_mode = 4
-script = ExtResource("4_hpgy5")
+script = ExtResource("5_i7lng")
 button_side = 1
