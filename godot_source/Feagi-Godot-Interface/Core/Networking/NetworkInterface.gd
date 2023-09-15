@@ -99,7 +99,10 @@ func init_network(worker_parent_root: Node) -> void:
 		get_port();
 		""")
 	if secure_SSL != null:
-		feagi_SSL = secure_SSL
+		if secure_SSL.to_lower() == "true":
+			feagi_SSL = "https://"
+		else:
+			feagi_SSL= DEF_FEAGI_SSL
 	else:
 		feagi_SSL= DEF_FEAGI_SSL
 	if ip_result != null:
@@ -113,7 +116,10 @@ func init_network(worker_parent_root: Node) -> void:
 	else:
 		feagi_socket_port = DEF_SOCKET_PORT
 	if secure_ws != null:
-		feagi_socket_SSL = secure_ws
+		if secure_ws.to_lower() == "true":
+			feagi_socket_SSL = "wss://"
+		else:
+			feagi_socket_SSL = DEF_SOCKET_SSL
 	else:
 		feagi_socket_SSL = DEF_SOCKET_SSL
 	feagi_outgoing_headers = DEF_HEADERSTOUSE
