@@ -68,49 +68,68 @@ func init_network(worker_parent_root: Node) -> void:
 		}
 		get_port();
 		""")
-	var full_url = JavaScriptBridge.eval(""" 
+	var ws_port = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
 			const searchParams = new URLSearchParams(url.search);
-			const ipAddress = searchParams.get("full_url");
+			const ipAddress = searchParams.get("ws_port");
 			return ipAddress;
 		}
 		get_port();
 		""")
-	var http_type = JavaScriptBridge.eval(""" 
+	var secure_SSL = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
 			const searchParams = new URLSearchParams(url.search);
-			const ipAddress = searchParams.get("http_type");
+			const ipAddress = searchParams.get("secure_SSL");
 			return ipAddress;
 		}
 		get_port();
 		""")
-	if http_type != null:
-		feagi_SSL = http_type
+	var secure_ws = JavaScriptBridge.eval(""" 
+		function get_port() {
+			var url_string = window.location.href;
+			var url = new URL(url_string);
+			const searchParams = new URLSearchParams(url.search);
+			const ipAddress = searchParams.get("secure_ws");
+			return ipAddress;
+		}
+		get_port();
+		""")
+	if secure_SSL != null:
+		feagi_SSL = secure_SSL
 	else:
 		feagi_SSL= DEF_FEAGI_SSL
 	if ip_result != null:
 		feagi_TLD = ip_result
 	else:
 		feagi_TLD = DEF_FEAGI_TLD
+
 	feagi_web_port = DEF_WEB_PORT
-	feagi_socket_port = DEF_SOCKET_PORT
-	feagi_socket_SSL = DEF_SOCKET_SSL
+	if ws_port != null:
+		feagi_socket_port = int(ws_port)
+	else:
+		feagi_socket_port = DEF_SOCKET_PORT
+	if secure_ws != null:
+		feagi_socket_SSL = secure_ws
+	else:
+		feagi_socket_SSL = DEF_SOCKET_SSL
 	feagi_outgoing_headers = DEF_HEADERSTOUSE
 	num_workers_to_keep_available = DEF_MINWORKERSAVAILABLE
-
 
 	# With collected data, init API
 	_request_worker_parent = worker_parent_root
 	if port_disabled != null:
 		if port_disabled.to_lower() == "true":
 			feagi_root_web_address = feagi_SSL + feagi_TLD
+			feagi_socket_address = feagi_socket_SSL + feagi_TLD
 		else:
+			feagi_socket_address = feagi_socket_SSL + feagi_TLD + ":" + str(feagi_socket_port)
 			feagi_root_web_address = feagi_SSL + feagi_TLD + ":" + str(feagi_web_port)
 	else:
+		feagi_socket_address = feagi_socket_SSL + feagi_TLD + ":" + str(feagi_socket_port)
 		feagi_root_web_address = feagi_SSL + feagi_TLD + ":" + str(feagi_web_port)
 
 	endpoints = AddressList.new(feagi_root_web_address)
@@ -118,10 +137,6 @@ func init_network(worker_parent_root: Node) -> void:
 	_log_connection_address()
 
 	# init WebSocket
-	if full_url != null:
-		feagi_socket_address = full_url
-	else:
-		feagi_socket_address = feagi_socket_SSL + feagi_TLD + ":" + str(feagi_socket_port)
 	_log_socket_address()
 	_socket = WebSocketPeer.new()
 	_socket.connect_to_url(feagi_socket_address)
