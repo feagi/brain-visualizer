@@ -46,6 +46,11 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 
 		for check_ID in efferents_to_update:
 			source_area.set_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[check_ID], cortical_map[source_cortical_ID][check_ID])
+	
+	if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
+		# we were loading the game, but now we can assume we are loaded
+		VisConfig.visualizer_state = VisConfig.STATES.READY
+	
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
@@ -61,6 +66,7 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 	var cortical_area_summary: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
 	FeagiRequests.refresh_connection_list()
+
 
 func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.available_circuits = _body_to_string_array(response_body)

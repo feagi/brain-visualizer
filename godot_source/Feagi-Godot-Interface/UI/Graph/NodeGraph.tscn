@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/InputInterpreter.gd" id="3_64ero"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraphCenter.gd" id="4_g3mc4"]
-[ext_resource type="Texture2D" uid="uid://c4u0qqdjn7oy7" path="res://icon.svg" id="4_j21se"]
+[ext_resource type="Texture2D" uid="uid://ckuqx7k365r6e" path="res://icon.svg" id="4_j21se"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_su1b5"]
 shader = ExtResource("3_svpbn")
