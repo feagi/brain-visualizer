@@ -1,6 +1,8 @@
-[gd_scene load_steps=25 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=27 format=3 uid="uid://ctm7g8pe4n1dn"]
 
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/UIManager.gd" id="2_clmy8"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/brain_visualizer_main_script.gd" id="3_1xkbx"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
@@ -39,6 +41,9 @@ mesh = SubResource("BoxMesh_edosx")
 
 [node name="FeagiRoot" type="Node3D"]
 
+[node name="BootStrap_References" type="Node" parent="."]
+script = ExtResource("1_6xx8r")
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_jonnd")
 
@@ -46,6 +51,7 @@ environment = SubResource("Environment_jonnd")
 script = ExtResource("1_43i4l")
 
 [node name="UI" type="Node" parent="."]
+script = ExtResource("2_clmy8")
 
 [node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
 visible = false

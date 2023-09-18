@@ -20,7 +20,7 @@ func _ready():
 	middle_collapsible.setup()
 	premium_collapsible.setup()
 	bottom_collapsible.setup()
-	if !(VisConfig.left_bar_allow_premium_monitoring):
+	if !(VisConfig.is_premium):
 		premium_collapsible.section_title = "(PREMIUM) Cortical Area Monitoring"
 	
 	_top_section = top_collapsible.collapsing_node

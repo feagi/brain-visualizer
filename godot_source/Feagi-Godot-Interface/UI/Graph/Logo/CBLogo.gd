@@ -8,4 +8,4 @@ func _ready():
 	_background_offset = position
 
 func set_background_position(panning: Vector2) -> void:
-	position = -panning * VisConfig.screen_size + _background_offset
+	position = -panning * VisConfig.UI_manager.screen_size + _background_offset

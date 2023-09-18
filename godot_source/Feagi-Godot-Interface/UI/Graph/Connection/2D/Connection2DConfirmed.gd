@@ -35,4 +35,4 @@ func update_mapping(num_mappings: int) -> void:
 	_connection_button.update_mapping_counter(num_mappings)
 
 func _button_pressed():
-	VisConfig.window_manager.spawn_edit_mappings(_source_cortical_area, _destination_cortical_area)
+	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_cortical_area, _destination_cortical_area)

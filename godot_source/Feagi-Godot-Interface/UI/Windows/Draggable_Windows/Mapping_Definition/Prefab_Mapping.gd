@@ -57,4 +57,4 @@ func _on_delete_pressed() -> void:
 
 func _on_info_pressed() -> void:
 	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[_morphologies.selected_item]
-	VisConfig.window_manager.spawn_manager_morphology(morphology_used)
+	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)

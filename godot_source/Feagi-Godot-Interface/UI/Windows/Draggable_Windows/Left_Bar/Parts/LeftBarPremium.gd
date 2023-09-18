@@ -7,7 +7,7 @@ var post_synaptic_toggle: CheckButton
 func _ready() -> void:
 	membrane_toggle = $Membrane
 	post_synaptic_toggle = $PostSynaptic
-	if !VisConfig.left_bar_allow_premium_monitoring:
+	if !VisConfig.is_premium:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true
 

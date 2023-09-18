@@ -25,15 +25,15 @@ var _zoom: float = 1.0
 var _graph_window_size: Vector2
 
 func _ready():
-	_graph_window_size = VisConfig.screen_size
+	_graph_window_size = VisConfig.UI_manager.screen_size
 	_background = $Background
 	_background_center = $Background/Center
-	_background_center.setup(VisConfig.screen_size)
+	_background_center.setup(VisConfig.UI_manager.screen_size)
 	_background_shader = _background.material
 	_input = $InputInterpreter
 	_input.pan_changed.connect(_apply_pan)
 	_input.zoom_changed.connect(_apply_zoom)
-	VisConfig.screen_size_changed.connect(_apply_resize)
+	VisConfig.UI_manager.screen_size_changed.connect(_apply_resize)
 
 func _apply_pan(_change_in_pan_normal: Vector2, change_in_pan_pixel: Vector2) -> void:
 	_update_pan_from_delta(change_in_pan_pixel)

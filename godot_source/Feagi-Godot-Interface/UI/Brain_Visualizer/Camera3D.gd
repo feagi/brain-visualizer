@@ -42,12 +42,12 @@ const CAMERA_TURN_SPEED = 200
 func _input(event: InputEvent):
 
 	# No movement if the user is typing
-	if VisConfig.is_user_typing:
-		return
+	#if VisConfig.is_user_typing:
+	#	return
 	
 	# No movement if the user is dragging a window
-	if VisConfig.is_user_dragging_a_window:
-		return
+	#if VisConfig.is_user_dragging_a_window:
+	#	return
 	
 	# If user starts / stops keyboard press
 	if event is InputEventKey:
