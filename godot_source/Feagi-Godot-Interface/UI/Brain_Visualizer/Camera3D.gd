@@ -17,7 +17,7 @@ extends Camera3D
 
 const CAMERA_TURN_SPEED = 200
 
-@export var camera_button: MouseButton = MOUSE_BUTTON_LEFT
+@export var camera_button: MouseButton = MOUSE_BUTTON_RIGHT
 @export var camera_movement_speed: float =  2.0
 @export var camera_rotation_speed: float = 0.001
 # Are these exports used?
@@ -72,7 +72,10 @@ func _toggle_camera_usage(event: InputEventMouseButton):
 	if event.button_index != camera_button:
 		return
 	_is_user_currently_using_camera = event.is_pressed()
-	
+	if _is_user_currently_using_camera:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 # The camera itself should probably not be the thing sending the websocket requests. TODO move to seperate once we have the free time
@@ -108,7 +111,7 @@ func _keyboard_camera_movement(keyboard_event: InputEventKey) -> void:
 	if Input.is_key_pressed(KEY_RIGHT):
 		dir += Vector3(1,0,0)
 	
-	dir = dir.normalized()
+	dir = dir.normalized() * camera_movement_speed
 	translate(dir)
 
 
@@ -130,3 +133,8 @@ func _mouse_button(event: InputEventMouseButton) -> void:
 	match event.button_index:
 		MOUSE_BUTTON_MIDDLE:
 			Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
+		MOUSE_BUTTON_WHEEL_DOWN:
+			translate(Vector3(0,0,camera_movement_speed))
+		MOUSE_BUTTON_WHEEL_UP:
+			translate(Vector3(0,0,-camera_movement_speed))
+
