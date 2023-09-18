@@ -19,6 +19,7 @@ const CAMERA_TURN_SPEED = 200
 
 @export var camera_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var camera_movement_speed: float =  2.0
+@export var camera_rotation_speed: float = 0.001
 # Are these exports used?
 @export var forward_action = "ui_up"
 @export var backward_action = "ui_down"
@@ -26,8 +27,6 @@ const CAMERA_TURN_SPEED = 200
 @export var right_action = "ui_right"
 @export var spacebar = "ui_select"
 @export var reset = "reset"
-
-var rotation_speed = PI
 
 var x = transform.origin.x
 var y = transform.origin.y
@@ -73,6 +72,7 @@ func _toggle_camera_usage(event: InputEventMouseButton):
 	if event.button_index != camera_button:
 		return
 	_is_user_currently_using_camera = event.is_pressed()
+	
 
 
 # The camera itself should probably not be the thing sending the websocket requests. TODO move to seperate once we have the free time
@@ -87,27 +87,26 @@ func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 			print(Godot_list.godot_list)
 		return
 
+# TO fix the awkward initial delay, we need to move this to a fixed process thread
 func _keyboard_camera_movement(keyboard_event: InputEventKey) -> void:
-	
-
 	var dir: Vector3 = Vector3(0,0,0)
 
 	if Input.is_key_pressed(KEY_W):
-		dir = dir + Vector3(0,0,-1)
+		dir += Vector3(0,0,-1)
 	if Input.is_key_pressed(KEY_S):
-		dir = dir + Vector3(0,0,1)
+		dir += Vector3(0,0,1)
 	if Input.is_key_pressed(KEY_A):
-		dir = dir + Vector3(-1,0,0)
+		dir += Vector3(-1,0,0)
 	if Input.is_key_pressed(KEY_D):
-		dir = dir + Vector3(1,0,0)
+		dir += Vector3(1,0,0)
 	if Input.is_key_pressed(KEY_UP):
-		dir = dir + Vector3(0,0,-1)
+		dir += Vector3(0,0,-1)
 	if Input.is_key_pressed(KEY_DOWN):
-		dir = dir + Vector3(0,0,1)
+		dir += Vector3(0,0,1)
 	if Input.is_key_pressed(KEY_LEFT):
-		dir = dir + Vector3(-1,0,0)
+		dir += Vector3(-1,0,0)
 	if Input.is_key_pressed(KEY_RIGHT):
-		dir = dir + Vector3(1,0,0)
+		dir += Vector3(1,0,0)
 	
 	dir = dir.normalized()
 	translate(dir)
@@ -121,39 +120,13 @@ func _touch_pan_gesture(event: InputEventPanGesture) -> void:
 
 ## Mouse moving controls
 func _mouse_motion(event: InputEventMouseMotion) -> void:
-	if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.is_action_pressed("control")):
-		rotation.y += event.relative.x / 1000 * sensitivity # TODO: Need to look how blender rotates based on origin
-		rotation.x += event.relative.y / 1000 * sensitivity
-	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not Input.is_action_pressed("shift"): # boost
-		#rotate_y(-event.relative.x * mouse_sensitivity)
-		var horizational_view = 0
-		var vertical_view = 0
-		var speed = 2
 
-		if abs(event.relative.x) > abs(event.relative.y): # whichever moves first
-			if event.relative.x > 0:
-				horizational_view = -speed
-			elif event.relative.x < 0:
-				horizational_view = speed
-		else:
-			if event.relative.y > 0:
-				vertical_view = speed
-			elif event.relative.y < 0:
-				vertical_view = -speed
+	rotation.x += event.relative.y * -camera_rotation_speed
+	rotation.y += event.relative.x * -camera_rotation_speed
 
-		var direction_X = Vector3(horizational_view, 0, 0)
-		var direction_Y = Vector3(0, vertical_view, 0)
-		var direction = direction_X+direction_Y
-		translate(direction)
 
 # User is pressing a mouse button (or scrolling)
 func _mouse_button(event: InputEventMouseButton) -> void:
 	match event.button_index:
 		MOUSE_BUTTON_MIDDLE:
 			Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
-		MOUSE_BUTTON_WHEEL_UP: # zoom in
-				var direction = Vector3(0,0, -1)
-				translate(direction)
-		MOUSE_BUTTON_WHEEL_DOWN: # zoom out
-				var direction = Vector3(0,0,5)
-				translate(direction)
