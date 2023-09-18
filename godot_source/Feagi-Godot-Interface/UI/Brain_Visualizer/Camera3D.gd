@@ -18,6 +18,7 @@ extends Camera3D
 const CAMERA_TURN_SPEED = 200
 
 @export var camera_button: MouseButton = MOUSE_BUTTON_LEFT
+@export var camera_movement_speed: float =  2.0
 # Are these exports used?
 @export var forward_action = "ui_up"
 @export var backward_action = "ui_down"
@@ -53,6 +54,7 @@ func _input(event: InputEvent):
 	# If user starts / stops keyboard press
 	if event is InputEventKey:
 		_FEAGI_data_interaction(event)
+		_keyboard_camera_movement(event)
 
 	# If user is panning with the touchscreen
 	if event is InputEventPanGesture:
@@ -84,6 +86,29 @@ func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 			Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 			print(Godot_list.godot_list)
 		return
+
+func _keyboard_camera_movement(keyboard_event: InputEventKey) -> void:
+	var dir: Vector3 = Vector3(0,0,0)
+	if keyboard_event.keycode == KEY_W:
+		dir = dir + Vector3(0,0,-1)
+	if keyboard_event.keycode == KEY_S:
+		dir = dir + Vector3(0,0,1)
+	if keyboard_event.keycode == KEY_A:
+		dir = dir + Vector3(-1,0,0)
+	if keyboard_event.keycode == KEY_D:
+		dir = dir + Vector3(1,0,0)
+	if keyboard_event.keycode == KEY_UP:
+		dir = dir + Vector3(0,0,-1)
+	if keyboard_event.keycode == KEY_DOWN:
+		dir = dir + Vector3(0,0,1)
+	if keyboard_event.keycode == KEY_LEFT:
+		dir = dir + Vector3(-1,0,0)
+	if keyboard_event.keycode == KEY_RIGHT:
+		dir = dir + Vector3(1,0,0)
+	
+	dir = dir.normalized()
+	translate(dir)
+
 
 # TODO couldnt panning happen in 2 dimensions? not just y? This should be discussed so we are all in agreeement
 ## Touch screen panning
