@@ -88,22 +88,25 @@ func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 		return
 
 func _keyboard_camera_movement(keyboard_event: InputEventKey) -> void:
+	
+
 	var dir: Vector3 = Vector3(0,0,0)
-	if keyboard_event.keycode == KEY_W:
+
+	if Input.is_key_pressed(KEY_W):
 		dir = dir + Vector3(0,0,-1)
-	if keyboard_event.keycode == KEY_S:
+	if Input.is_key_pressed(KEY_S):
 		dir = dir + Vector3(0,0,1)
-	if keyboard_event.keycode == KEY_A:
+	if Input.is_key_pressed(KEY_A):
 		dir = dir + Vector3(-1,0,0)
-	if keyboard_event.keycode == KEY_D:
+	if Input.is_key_pressed(KEY_D):
 		dir = dir + Vector3(1,0,0)
-	if keyboard_event.keycode == KEY_UP:
+	if Input.is_key_pressed(KEY_UP):
 		dir = dir + Vector3(0,0,-1)
-	if keyboard_event.keycode == KEY_DOWN:
+	if Input.is_key_pressed(KEY_DOWN):
 		dir = dir + Vector3(0,0,1)
-	if keyboard_event.keycode == KEY_LEFT:
+	if Input.is_key_pressed(KEY_LEFT):
 		dir = dir + Vector3(-1,0,0)
-	if keyboard_event.keycode == KEY_RIGHT:
+	if Input.is_key_pressed(KEY_RIGHT):
 		dir = dir + Vector3(1,0,0)
 	
 	dir = dir.normalized()
