@@ -15,6 +15,9 @@
 
 extends Camera3D
 
+const CAMERA_TURN_SPEED = 200
+
+@export var camera_button: MouseButton = MOUSE_BUTTON_LEFT
 # Are these exports used?
 @export var forward_action = "ui_up"
 @export var backward_action = "ui_down"
@@ -32,22 +35,20 @@ var x_rotation = Vector3(13.3, 0.0, 0.0)
 var velocity = Vector3(0, 0, 0)
 var flagged = false ## This allows space and del to be able to send data without being overwritten by spam "{}"| TODO this seems unused?
 var cortical_pointer = "" # TODO this seems unused?
-var disable_mouse_control = false
 
-const CAMERA_TURN_SPEED = 200
+var _is_user_currently_using_camera: bool = false
 
 @export_range(0, 10, 0.01) var sensitivity : float = 3
+
+func _ready() -> void:
+	var bv_background: FullScreenControl = get_node("../BV_Background")
+	bv_background.click_event.connect(_toggle_camera_usage)
 
 # Guard Clauses!
 func _input(event: InputEvent):
 
-	# No movement if the user is typing
-	#if VisConfig.is_user_typing:
-	#	return
-	
-	# No movement if the user is dragging a window
-	#if VisConfig.is_user_dragging_a_window:
-	#	return
+	if !_is_user_currently_using_camera:
+		return
 	
 	# If user starts / stops keyboard press
 	if event is InputEventKey:
@@ -64,6 +65,12 @@ func _input(event: InputEvent):
 	# If user is pressing a mouse button (or scrolling)
 	if event is InputEventMouseButton:
 		_mouse_button(event)
+
+
+func _toggle_camera_usage(event: InputEventMouseButton):
+	if event.button_index != camera_button:
+		return
+	_is_user_currently_using_camera = event.is_pressed()
 
 
 # The camera itself should probably not be the thing sending the websocket requests. TODO move to seperate once we have the free time
