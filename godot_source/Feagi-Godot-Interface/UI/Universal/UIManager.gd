@@ -52,8 +52,11 @@ func _ready():
 	get_viewport().size_changed.connect(_update_screen_size)
 	_window_manager_ref = $Windows
 	VisConfig.UI_manager = self
+	_update_screen_size()
 
 ## Updates the screensize 
 func _update_screen_size():
 	_screen_size = get_viewport().get_visible_rect().size
 	screen_size_changed.emit(screen_size)
+	if OS.is_debug_build():
+		print("UI: Window Size Change Detected!")

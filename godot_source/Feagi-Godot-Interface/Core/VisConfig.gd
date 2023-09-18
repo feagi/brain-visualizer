@@ -7,7 +7,7 @@ enum STATES {
 	READY,
 }
 
-var UI_manager: Node
+var UI_manager: UIManager
 var is_premium: bool = true
 
 var visualizer_state: STATES:
