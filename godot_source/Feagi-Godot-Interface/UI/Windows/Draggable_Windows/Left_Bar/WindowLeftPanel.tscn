@@ -29,6 +29,7 @@ section_text = &"Summary"
 
 [node name="Middle_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
+start_open = false
 prefab_to_spawn = ExtResource("4_3w01f")
 section_text = &"Details"
 
@@ -40,6 +41,7 @@ section_text = &"Cortical Area Monitoring"
 
 [node name="Bottom_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
+start_open = false
 prefab_to_spawn = ExtResource("6_n2r01")
 section_text = &"Connections"
 
