@@ -52,6 +52,11 @@ func close_window():
 func _user_requested_update(changed_values: Dictionary) -> void:
 	FeagiRequests.set_cortical_area_properties(_cortical_area_ref.cortical_ID, changed_values)
 
+## Called via delete button press (signal connected via tscn)
+func _user_pressed_delete_button() -> void:
+	print("Left Bar requesting cortical area deletion")
+	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
+
 func _FEAGI_deleted_cortical_area(removed_cortical_area: CorticalArea):
 	# confirm this is the cortical area removed
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:

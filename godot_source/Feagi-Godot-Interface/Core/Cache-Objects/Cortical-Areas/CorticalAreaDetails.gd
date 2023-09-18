@@ -17,13 +17,13 @@ var cortical_synaptic_attractivity: int:
 	set(v):
 		_cortical_synaptic_attractivity = v
 		property_changed.emit({"cortical_synaptic_attractivity": v})
-var neuron_post_synaptic_potential: int:
+var neuron_post_synaptic_potential: float:
 	get: return _neuron_post_synaptic_potential
 	set(v):
 		_neuron_post_synaptic_potential = v
 		property_changed.emit({"neuron_post_synaptic_potential": v})
 
-var neuron_post_synaptic_potential_max: int:
+var neuron_post_synaptic_potential_max: float:
 	get: return _neuron_post_synaptic_potential_max
 	set(v):
 		_neuron_post_synaptic_potential_max = v
@@ -97,8 +97,8 @@ var neuron_mp_charge_accumulation: bool:
 
 var _cortical_neuron_per_vox_count: int = 0
 var _cortical_synaptic_attractivity: int = 0
-var _neuron_post_synaptic_potential: int = 0
-var _neuron_post_synaptic_potential_max: int = 0
+var _neuron_post_synaptic_potential: float = 0.0
+var _neuron_post_synaptic_potential_max: float = 0.0
 var _neuron_fire_threshold: int = 0
 var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
 var _neuron_firing_threshold_limit: int = 0
