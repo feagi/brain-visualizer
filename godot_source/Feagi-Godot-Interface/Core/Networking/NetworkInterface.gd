@@ -131,7 +131,8 @@ func init_network(worker_parent_root: Node) -> void:
 	_socket.inbound_buffer_size = 1000000
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 	
-
+func test():
+	return _get_socket_state()
 
 ## Makes a GET API call to FEAGI which then runs the given function call (with optional pass through data)
 func FEAGI_GET(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, data_to_pass_through: Variant = null) -> void:
