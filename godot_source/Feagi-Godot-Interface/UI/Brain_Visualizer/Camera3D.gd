@@ -42,7 +42,7 @@ var _is_user_currently_focusing_camera: bool = false
 
 func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
-	bv_background.click_event.connect(_toggle_camera_usage)
+	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
 
 # Guard Clauses!
 func _input(event: InputEvent):
@@ -66,12 +66,17 @@ func _input(event: InputEvent):
 	if event is  InputEventMouseMotion:
 		_mouse_motion(event)
 	
-	# If user is pressing a mouse button (or scrolling)
-	if event is InputEventMouseButton:
-		_mouse_button(event)
 
 
-func _toggle_camera_usage(event: InputEventMouseButton):
+func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
+
+	# This section is here to allow for scroll movement without having to focus the camera
+	match event.button_index:
+		MOUSE_BUTTON_WHEEL_DOWN:
+			translate(Vector3(0,0,camera_movement_speed))
+		MOUSE_BUTTON_WHEEL_UP:
+			translate(Vector3(0,0,-camera_movement_speed))
+
 	if event.button_index != camera_button:
 		return
 	_is_user_currently_focusing_camera = event.is_pressed()
@@ -130,14 +135,4 @@ func _mouse_motion(event: InputEventMouseMotion) -> void:
 	rotation.x += event.relative.y * -camera_rotation_speed
 	rotation.y += event.relative.x * -camera_rotation_speed
 
-
-# User is pressing a mouse button (or scrolling)
-func _mouse_button(event: InputEventMouseButton) -> void:
-	match event.button_index:
-		MOUSE_BUTTON_MIDDLE:
-			Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN if event.pressed else Input.MOUSE_MODE_VISIBLE)
-		MOUSE_BUTTON_WHEEL_DOWN:
-			translate(Vector3(0,0,camera_movement_speed))
-		MOUSE_BUTTON_WHEEL_UP:
-			translate(Vector3(0,0,-camera_movement_speed))
 
