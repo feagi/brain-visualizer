@@ -59,9 +59,10 @@ func remove_morphology(morphology_Name: StringName) -> void:
 ## Removes all morphologies from cache. Should only be called during a reset
 func hard_wipe_cached_morphologies():
 	print("CACHE: Wiping morphologies...")
-	var all_morphology_names: Array[String] = _available_morphologies.keys()
+	var all_morphology_names: Array = _available_morphologies.keys()
 	for morphology_name in all_morphology_names:
 		remove_morphology(morphology_name)
+	print("CACHE: Wiping morphologies complete!")
 
 ## To update morphology listing given a dict with keys of morphology names and its value being the str type of morphology (NOT FULL OBJECT / DICTIONARY)
 func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -> void:
