@@ -129,6 +129,7 @@ func delete_example():
 	for i in global_name_list:
 		if "example" in i or "example_textbox" in i:
 			for x in len(global_name_list[i]):
+				remove_child(global_name_list[i][x][0])
 				global_name_list[i][x][0].queue_free()
 			name_list.append(i)
 	for i in name_list:
