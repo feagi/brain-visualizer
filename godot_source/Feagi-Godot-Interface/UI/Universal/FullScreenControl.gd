@@ -16,7 +16,7 @@ func _screen_size_changed(new_screen_size: Vector2) -> void:
 func _check_for_click_input(event: InputEvent):
 	if !(event is InputEventMouseButton):
 		return
-	print("UI: Background %s recieved a click event" % name)
+	#print("UI: Background %s recieved a click event" % name) # commented out since this often results in log spam
 	click_event.emit(event)
 
 	
