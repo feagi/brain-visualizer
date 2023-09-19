@@ -56,8 +56,9 @@ func remove_morphology(morphology_Name: StringName) -> void:
 	deleting.about_to_be_deleted.emit() # Tell all dependents this morphology is about to go
 	_available_morphologies.erase(morphology_Name)
 
-## Removes asll morphologies from cache. Should only be called during a reset
+## Removes all morphologies from cache. Should only be called during a reset
 func hard_wipe_cached_morphologies():
+	print("CACHE: Wiping morphologies...")
 	var all_morphology_names: Array[String] = _available_morphologies.keys()
 	for morphology_name in all_morphology_names:
 		remove_morphology(morphology_name)

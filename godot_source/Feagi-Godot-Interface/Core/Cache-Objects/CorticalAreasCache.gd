@@ -153,6 +153,7 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
 func hard_wipe_cortical_areas():
+	print("CACHE: Wiping cortical areas and connections...")
 	var all_cortical_area_IDs: Array[String] = _cortical_areas.keys()
 	for cortical_area_ID in all_cortical_area_IDs:
 		remove_cortical_area(cortical_area_ID)

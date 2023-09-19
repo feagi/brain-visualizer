@@ -155,6 +155,7 @@ func initial_FEAGI_calls() -> void:
 
 ## Call when a genome is hard reset, triggers a cache wipe and reset from frsh feagi data
 func hard_reset_genome_from_FEAGI() -> void:
+	FeagiEvents.genome_is_about_to_reset.emit()
 	VisConfig.visualizer_state = VisConfig.STATES.LOADING_INITIAL
 	FeagiCache.hard_wipe()
 	initial_FEAGI_calls()

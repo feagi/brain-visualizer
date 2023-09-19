@@ -196,7 +196,7 @@ func socket_status_poll() -> void:
 			while _socket.get_available_packet_count():
 				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
-					FeagiEvents.genome_was_reset.emit()  # notify that genome was updated
+					FeagiRequests.hard_reset_genome_from_FEAGI()  # notify that genome was updated
 				else:
 					# assume its visualization data
 					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
