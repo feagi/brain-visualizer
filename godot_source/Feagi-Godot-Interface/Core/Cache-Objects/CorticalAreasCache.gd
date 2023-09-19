@@ -151,5 +151,8 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 		_cortical_areas[add] = adding_cortical_area
 		FeagiCacheEvents.cortical_area_added.emit(adding_cortical_area)
 
-
-
+## Removes all cached cortical areas (and their connections). Should only be called during a reset
+func hard_wipe_cortical_areas():
+	var all_cortical_area_IDs: Array[String] = _cortical_areas.keys()
+	for cortical_area_ID in all_cortical_area_IDs:
+		remove_cortical_area(cortical_area_ID)
