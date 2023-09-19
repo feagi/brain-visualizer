@@ -24,6 +24,9 @@ signal socket_state_changed(state: WebSocketPeer.State)
 var num_workers_available: int:
 	get: return workers_available.size()
 
+var current_websocket_status: WebSocketPeer.State:
+	get: return _get_socket_state()
+
 var feagi_TLD: StringName
 var feagi_SSL: StringName
 var feagi_web_port: int
