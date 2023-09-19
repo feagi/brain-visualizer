@@ -31,6 +31,7 @@ func _on_d_value_changed(value):
 
 func _on_close_button_pressed():
 	$"../../Brain_Visualizer".delete_example()
+	visible = false
 
 
 func _on_button_2_pressed():
@@ -121,6 +122,7 @@ func _on_visibility_changed():
 	$VBoxContainer/XYZ.visible = false
 	$VBoxContainer/WDH.visible = false
 	$VBoxContainer/channel_count.visible = false
+	$"../../Brain_Visualizer".delete_example()
 
 
 
