@@ -1,5 +1,6 @@
-[gd_scene load_steps=9 format=3 uid="uid://bhpry6eyb2hl1"]
+[gd_scene load_steps=10 format=3 uid="uid://bhpry6eyb2hl1"]
 
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_1tu4k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="3_dmt4w"]
@@ -13,6 +14,7 @@
 offset_top = 40.0
 offset_right = 568.0
 offset_bottom = 510.0
+theme = ExtResource("1_1tu4k")
 script = ExtResource("1_11gqg")
 
 [node name="Container" type="HBoxContainer" parent="."]

@@ -1,5 +1,6 @@
-[gd_scene load_steps=10 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=11 format=3 uid="uid://bvdaq4i6y2aer"]
 
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_r8gt6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nus1v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_6i23i"]
@@ -13,6 +14,7 @@
 [node name="WindowCreateMorphology" type="Panel"]
 offset_top = 38.0
 offset_bottom = 38.0
+theme = ExtResource("1_r8gt6")
 script = ExtResource("1_w1bco")
 
 [node name="Container" type="VBoxContainer" parent="."]

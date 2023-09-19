@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://q5xkg5bg8wnk"]
+[gd_scene load_steps=7 format=3 uid="uid://q5xkg5bg8wnk"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.gd" id="1_1yhba"]
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_3gu0l"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CorticalDropDown.gd" id="2_ds7ss"]
 [ext_resource type="Texture2D" uid="uid://dddettdqyrrt2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="3_skqpl"]
@@ -9,6 +10,7 @@
 [node name="mapping_definition" type="Panel"]
 offset_right = 1296.0
 offset_bottom = 360.0
+theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
