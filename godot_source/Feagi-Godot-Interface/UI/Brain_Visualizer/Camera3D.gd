@@ -43,6 +43,7 @@ var _is_user_currently_focusing_camera: bool = false
 func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
 	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
+	bv_background.pan_event.connect(_touch_pan_gesture)
 
 # Guard Clauses!
 func _input(event: InputEvent):
@@ -58,10 +59,6 @@ func _input(event: InputEvent):
 	if event is InputEventKey:
 		_keyboard_camera_movement(event)
 
-	# If user is panning with the touchscreen
-	if event is InputEventPanGesture:
-		_touch_pan_gesture(event)
-	
 	# If user is moving the mouse
 	if event is  InputEventMouseMotion:
 		_mouse_motion(event)
