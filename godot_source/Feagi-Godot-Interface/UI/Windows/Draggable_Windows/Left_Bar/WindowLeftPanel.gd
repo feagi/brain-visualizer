@@ -46,7 +46,7 @@ func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	FeagiRequests.refresh_cortical_area(cortical_area_reference.cortical_ID)
 
 func close_window():
-	VisConfig.window_manager.force_close_window("left_bar")
+	VisConfig.UI_manager.window_manager.force_close_window("left_bar")
 
 ## Called from top or middle, user sent dict of properties to request FEAGI to set
 func _user_requested_update(changed_values: Dictionary) -> void:

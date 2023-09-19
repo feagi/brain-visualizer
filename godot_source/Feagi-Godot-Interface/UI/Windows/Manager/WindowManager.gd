@@ -46,9 +46,12 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	edit_mappings.setup(source, destination)
 	loaded_windows["edit_mappings"] = edit_mappings
 
-
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
 		loaded_windows[window_name].queue_free()
 		loaded_windows.erase(window_name)
 
+func force_close_all_windows() -> void:
+	print("UI: All windows being forced closed")
+	for window in loaded_windows.keys():
+		force_close_window(window)

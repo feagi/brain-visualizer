@@ -26,3 +26,9 @@ var _available_circuits: PackedStringArray = []
 func _init():
 	morphology_cache = MorphologiesCache.new()
 	cortical_areas_cache = CorticalAreasCache.new()
+
+## Wipes all data from cache
+func hard_wipe():
+	cortical_areas_cache.hard_wipe_cortical_areas()
+	morphology_cache.hard_wipe_cached_morphologies()
+	available_circuits = []
