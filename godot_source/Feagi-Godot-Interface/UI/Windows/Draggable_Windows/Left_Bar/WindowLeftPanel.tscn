@@ -1,6 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://5gbqaf1gqn30"]
+[gd_scene load_steps=10 format=3 uid="uid://5gbqaf1gqn30"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.gd" id="1_1jbcd"]
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_dxtt6"]
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
 [ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.tscn" id="3_q86xe"]
 [ext_resource type="PackedScene" uid="uid://x0wkgtc5o5vw" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.tscn" id="4_3w01f"]
@@ -12,6 +13,7 @@
 [node name="LeftBar" type="Panel"]
 offset_top = 50.0
 offset_bottom = 50.0
+theme = ExtResource("1_dxtt6")
 script = ExtResource("1_1jbcd")
 left_pixel_gap = 5
 right_pixel_gap = 5
