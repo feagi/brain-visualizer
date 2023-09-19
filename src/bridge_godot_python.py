@@ -310,6 +310,10 @@ def feagi_to_brain_visualizer():
             sleep(runtime_data["stimulation_period"])
 
 
+def generate_max_second(config_max, second):
+    return config_max / round(second, 3)
+
+
 def main():
     """
     Main script for bridge to communicate with FEAGI and Godot.
@@ -393,7 +397,8 @@ def main():
                 connect_status_counter = 0
             else:
                 connect_status_counter += 1
-                if connect_status_counter >= 600000:
+                second_max = generate_max_second(agent_settings['timeout_max'], burst_second)
+                if float(connect_status_counter) >= second_max:
                     if feagi.is_FEAGI_reachable(
                             os.environ.get('FEAGI_HOST_INTERNAL', "127.0.0.1"),
                             int(os.environ.get('FEAGI_OPU_PORT', "3000"))):

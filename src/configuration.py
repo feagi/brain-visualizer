@@ -35,5 +35,6 @@ agent_settings = {
     'godot_websocket_ip': "0.0.0.0",
     'godot_websocket_port': os.environ.get('WS_BRIDGE_PORT', "9050"),
     'burst_duration_threshold': 0.002,
-    'compression': True
+    'compression': True,
+    'timeout_max': 5
 }
