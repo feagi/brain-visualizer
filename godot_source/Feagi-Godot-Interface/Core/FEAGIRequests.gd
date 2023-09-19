@@ -146,3 +146,16 @@ func get_circuit_size(circuit_name: StringName) -> void:
 		push_warning("Attempted to get the size of non-cached circuit %s! Skipping! You may want to refresh available circuits first!")
 		return
 	_feagi_interface.calls.GET_GE_circuitsize(circuit_name)
+
+## Retrieves initial data needed to get started
+func initial_FEAGI_calls() -> void:
+	refresh_morphology_list()
+	refresh_cortical_areas() # This also causes a refresh of connections afterwards
+	refresh_delay_between_bursts()
+
+## Call when a genome is hard reset, triggers a cache wipe and reset from frsh feagi data
+func hard_reset_genome_from_FEAGI() -> void:
+	VisConfig.visualizer_state = VisConfig.STATES.LOADING_INITIAL
+	FeagiCache.hard_wipe()
+	initial_FEAGI_calls()
+
