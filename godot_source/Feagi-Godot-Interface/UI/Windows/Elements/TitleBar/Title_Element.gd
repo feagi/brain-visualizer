@@ -8,8 +8,8 @@ var gap: int:
 	set(v): position = Vector2i(v, 0)
 
 func _ready():
-	VisConfig.UI_settings_changed.connect(_update_size)
+	VisConfig.UI_manager.UI_settings_changed.connect(_update_size)
 	gap = 10
 
 func _update_size() -> void:
-	custom_minimum_size = VisConfig.minimum_button_size_pixel  # Match minimum size of button so that things look even
+	custom_minimum_size = VisConfig.UI_manager.minimum_button_size_pixel  # Match minimum size of button so that things look even

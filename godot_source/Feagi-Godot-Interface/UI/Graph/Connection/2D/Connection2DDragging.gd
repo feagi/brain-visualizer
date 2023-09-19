@@ -44,7 +44,7 @@ func _mouse_button(event: InputEventMouseButton):
 		var rectangle: Rect2 = input.get_global_rect()
 		if rectangle.has_point(mouse_position):
 			print("GRAPH: User Dragged to " + input.cortical_node_parent.cortical_area_ID)
-			VisConfig.window_manager.spawn_edit_mappings(source_node.cortical_area_ref, input.cortical_node_parent.cortical_area_ref)
+			VisConfig.UI_manager.window_manager.spawn_edit_mappings(source_node.cortical_area_ref, input.cortical_node_parent.cortical_area_ref)
 			queue_free()
 			return
 	

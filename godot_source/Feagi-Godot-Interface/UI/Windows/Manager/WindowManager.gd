@@ -9,9 +9,6 @@ var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interfa
 
 var loaded_windows: Dictionary
 
-func _ready():
-	VisConfig.window_manager = self
-
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
 func spawn_left_panel(cortical_area: CorticalArea) -> void:
@@ -31,7 +28,6 @@ func spawn_create_morphology() -> void:
 	add_child(create_morphology)
 	loaded_windows["create_morphology"] = create_morphology
 
-## This system is temporary and will be changed
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	if "morphology_manager" in loaded_windows.keys():
 		loaded_windows["morphology_manager"].queue_free()
@@ -39,8 +35,6 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _prefab_morphology_manager.instantiate()
 	add_child(morphology_manager)
 	loaded_windows["morphology_manager"] = morphology_manager
-
-		
 
 func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
 	if "edit_mappings" in loaded_windows.keys():

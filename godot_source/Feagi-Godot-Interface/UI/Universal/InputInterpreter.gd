@@ -102,7 +102,7 @@ func _handle_click(event: InputEventMouseButton) -> void:
 func _handle_mouse_move(event: InputEventMouseMotion) -> void:
 	if _is_panning:
 		var pan_delta_pixel: Vector2 = (event.relative * pan_speed)
-		var pan_delta_normalized: Vector2 = pan_delta_pixel * VisConfig.screen_size
+		var pan_delta_normalized: Vector2 = pan_delta_pixel * VisConfig.UI_manager.screen_size
 		pan_changed.emit(pan_delta_normalized, pan_delta_pixel)
 
 	

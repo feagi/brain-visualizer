@@ -35,10 +35,10 @@ var is_dragging: bool:
 		_is_dragging = v
 		if v:
 			drag_started.emit(position)
-			VisConfig.is_user_dragging_a_window = true
+			VisConfig.UI_manager.is_user_dragging_a_window = true
 		else:
 			drag_finished.emit(position)
-			VisConfig.is_user_dragging_a_window = false
+			VisConfig.UI_manager.is_user_dragging_a_window = false
 
 
 var _is_mousing_over: bool = false
