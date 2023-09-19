@@ -3,6 +3,8 @@ extends Node
 ## General actions to request of FEAGI
 ## Try to use the functions here to call feagi actions instead of through FEAGIInterface
 
+var feagi_interface: FEAGIInterface:
+	get: return _feagi_interface
 
 var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below will crash!
 

@@ -1,24 +1,25 @@
 extends Node3D
 
-var flag_once = true
-var a = NetworkInterface.new()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-		$Cube.set_surface_override_material(0, global_material.glow)
-		$Cube001.set_surface_override_material(0, global_material.glow)
-		$Cube002.set_surface_override_material(0, global_material.glow)
-		if a.current_websocket_state == 1:
-			if flag_once:
-				flag_once = false
-				$Cube.set_surface_override_material(0, global_material.red)
-				$Cube001.set_surface_override_material(0, global_material.red)
-				$Cube002.set_surface_override_material(0, global_material.red)
-			else:
-				$Cube.set_surface_override_material(0, global_material.glow)
-				$Cube001.set_surface_override_material(0, global_material.glow)
-				$Cube002.set_surface_override_material(0, global_material.glow)
+	FeagiRequests.feagi_interface.net.socket_state_changed.connect(toggle_between_states)
 
-### Delete this once you verify that the status is changed or updated.
-func _process(delta):
-	print(a.current_websocket_state)
+func toggle_between_states(connection_state: WebSocketPeer.State) -> void:
+	match(connection_state):
+		WebSocketPeer.STATE_OPEN:
+			draw_connected()
+		WebSocketPeer.STATE_CLOSED:
+			draw_disconnected()
+
+func draw_disconnected():
+	$Cube.set_surface_override_material(0, global_material.glow)
+	$Cube001.set_surface_override_material(0, global_material.glow)
+	$Cube002.set_surface_override_material(0, global_material.glow)
+
+func draw_connected():
+	$Cube.set_surface_override_material(0, global_material.red)
+	$Cube001.set_surface_override_material(0, global_material.red)
+	$Cube002.set_surface_override_material(0, global_material.red)
+
+
