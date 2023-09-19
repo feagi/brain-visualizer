@@ -36,7 +36,7 @@ var velocity = Vector3(0, 0, 0)
 var flagged = false ## This allows space and del to be able to send data without being overwritten by spam "{}"| TODO this seems unused?
 var cortical_pointer = "" # TODO this seems unused?
 
-var _is_user_currently_using_camera: bool = false
+var _is_user_currently_focusing_camera: bool = false
 
 @export_range(0, 10, 0.01) var sensitivity : float = 3
 
@@ -47,12 +47,15 @@ func _ready() -> void:
 # Guard Clauses!
 func _input(event: InputEvent):
 
-	if !_is_user_currently_using_camera:
+	# Feagi Interaction doesnt require camera control
+	if event is InputEventKey:
+		_FEAGI_data_interaction(event)
+
+	if !_is_user_currently_focusing_camera:
 		return
 	
 	# If user starts / stops keyboard press
 	if event is InputEventKey:
-		_FEAGI_data_interaction(event)
 		_keyboard_camera_movement(event)
 
 	# If user is panning with the touchscreen
@@ -71,8 +74,8 @@ func _input(event: InputEvent):
 func _toggle_camera_usage(event: InputEventMouseButton):
 	if event.button_index != camera_button:
 		return
-	_is_user_currently_using_camera = event.is_pressed()
-	if _is_user_currently_using_camera:
+	_is_user_currently_focusing_camera = event.is_pressed()
+	if _is_user_currently_focusing_camera:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
