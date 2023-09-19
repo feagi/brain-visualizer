@@ -4,7 +4,7 @@ extends Node
 ## Primarily used in cases of getting most recent info from FEAGI
 
 ## FEAGI reloaded its genome
-signal genome_was_reset()
+signal genome_is_about_to_reset()
 
 ## We got visualization data from Websocket for BV
 signal retrieved_visualization_data(data: Array)

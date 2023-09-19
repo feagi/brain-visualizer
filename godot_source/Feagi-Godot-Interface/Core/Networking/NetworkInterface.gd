@@ -24,6 +24,9 @@ signal socket_state_changed(state: WebSocketPeer.State)
 var num_workers_available: int:
 	get: return workers_available.size()
 
+var current_websocket_status: WebSocketPeer.State:
+	get: return _get_socket_state()
+
 var feagi_TLD: StringName
 var feagi_SSL: StringName
 var feagi_web_port: int
@@ -128,7 +131,8 @@ func init_network(worker_parent_root: Node) -> void:
 	_socket.inbound_buffer_size = 1000000
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 	
-
+func test():
+	return _get_socket_state()
 
 ## Makes a GET API call to FEAGI which then runs the given function call (with optional pass through data)
 func FEAGI_GET(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, data_to_pass_through: Variant = null) -> void:
@@ -196,7 +200,8 @@ func socket_status_poll() -> void:
 			while _socket.get_available_packet_count():
 				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
-					FeagiEvents.genome_was_reset.emit()  # notify that genome was updated
+					print("FEAGI: Genome is being reset!")
+					FeagiRequests.hard_reset_genome_from_FEAGI()  # notify that genome was updated
 				else:
 					# assume its visualization data
 					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
