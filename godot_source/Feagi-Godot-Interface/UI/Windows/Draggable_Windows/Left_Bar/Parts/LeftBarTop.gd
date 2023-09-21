@@ -31,9 +31,11 @@ func _ready():
 func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_line_cortical_name.text = cortical_reference.name
 	_line_cortical_ID.text = cortical_reference.cortical_ID
-	_line_cortical_type.text = str(cortical_reference.group)
+	_line_cortical_type.text = CorticalArea.CORTICAL_AREA_TYPE.keys()[cortical_reference.group]
 	_vector_position.current_vector = cortical_reference.coordinates_3D
 	_vector_dimensions.current_vector = cortical_reference.dimensions
+	if cortical_reference.is_dimension_not_editable:
+		_vector_dimensions.editable = false
 
 func FEAGI_set_cortical_name(new_name: StringName, _duplicate_ref: CorticalArea):
 	print("Left pane recieved new cortical name")
