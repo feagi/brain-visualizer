@@ -31,11 +31,11 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
 
-func request_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
 	print("User requested membrane monitoring state for " + cortical_area.cortical_area_ID)
 	_feagi_interface.calls.GET_MON_neuron_membranePotential(cortical_area.cortical_ID)
 
-func request_synaptic_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+func request_synaptic_monitoring_status(cortical_area: CorticalArea) -> void:
 	print("User requested synaptic monitoring state for " + cortical_area.cortical_area_ID)
 	_feagi_interface.calls.GET_MON_neuron_synapticPotential(cortical_area.cortical_ID)
 
