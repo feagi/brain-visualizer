@@ -1,82 +1,93 @@
-[gd_scene load_steps=7 format=3 uid="uid://q5xkg5bg8wnk"]
+[gd_scene load_steps=8 format=3 uid="uid://q5xkg5bg8wnk"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.gd" id="1_1yhba"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_3gu0l"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CorticalDropDown.gd" id="2_ds7ss"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_12gsw"]
 [ext_resource type="Texture2D" uid="uid://dddettdqyrrt2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="3_skqpl"]
 [ext_resource type="PackedScene" uid="uid://c4hu4bdxc8gu3" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowMappingDetails.tscn" id="4_6ry0b"]
 
 [node name="mapping_definition" type="Panel"]
+offset_top = 40.0
 offset_right = 1296.0
-offset_bottom = 360.0
+offset_bottom = 365.0
 theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
+left_pixel_gap = 5
+right_pixel_gap = 5
+top_pixel_gap = 5
+bottom_pixel_gap = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 2
-offset_top = 38.0
-offset_right = 1262.0
-offset_bottom = 361.0
+offset_right = 1296.0
+offset_bottom = 323.0
+vertical = true
+script = ExtResource("3_12gsw")
 
-[node name="SourceAndDestination" type="HBoxContainer" parent="VBoxContainer"]
+[node name="gap" type="Control" parent="BoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="SourceAndDestination" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="src_box" type="HBoxContainer" parent="VBoxContainer/SourceAndDestination"]
+[node name="src_box" type="HBoxContainer" parent="BoxContainer/SourceAndDestination"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/SourceAndDestination/src_box"]
+[node name="Label" type="Label" parent="BoxContainer/SourceAndDestination/src_box"]
 layout_mode = 2
 text = "Source"
 
-[node name="src_dropdown" type="OptionButton" parent="VBoxContainer/SourceAndDestination/src_box"]
+[node name="src_dropdown" type="OptionButton" parent="BoxContainer/SourceAndDestination/src_box"]
 layout_mode = 2
 script = ExtResource("2_ds7ss")
 
-[node name="G1" type="Control" parent="VBoxContainer/SourceAndDestination"]
+[node name="G1" type="Control" parent="BoxContainer/SourceAndDestination"]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="VBoxContainer/SourceAndDestination"]
+[node name="TextureRect" type="TextureRect" parent="BoxContainer/SourceAndDestination"]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 texture = ExtResource("3_skqpl")
 expand_mode = 1
 
-[node name="G2" type="Control" parent="VBoxContainer/SourceAndDestination"]
+[node name="G2" type="Control" parent="BoxContainer/SourceAndDestination"]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="des_box" type="HBoxContainer" parent="VBoxContainer/SourceAndDestination"]
+[node name="des_box" type="HBoxContainer" parent="BoxContainer/SourceAndDestination"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/SourceAndDestination/des_box"]
+[node name="Label" type="Label" parent="BoxContainer/SourceAndDestination/des_box"]
 layout_mode = 2
 text = "Destination "
 
-[node name="des_dropdown" type="OptionButton" parent="VBoxContainer/SourceAndDestination/des_box"]
+[node name="des_dropdown" type="OptionButton" parent="BoxContainer/SourceAndDestination/des_box"]
 layout_mode = 2
 script = ExtResource("2_ds7ss")
 
-[node name="Mapping_Details" parent="VBoxContainer" instance=ExtResource("4_6ry0b")]
+[node name="Mapping_Details" parent="BoxContainer" instance=ExtResource("4_6ry0b")]
 visible = false
 layout_mode = 2
 
-[node name="BottomButtons" type="HBoxContainer" parent="VBoxContainer"]
+[node name="BottomButtons" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="cancel" type="Button" parent="VBoxContainer/BottomButtons"]
+[node name="cancel" type="Button" parent="BoxContainer/BottomButtons"]
 layout_mode = 2
 text = "Cancel"
 
-[node name="TextureButton5" type="TextureButton" parent="VBoxContainer/BottomButtons"]
+[node name="TextureButton5" type="TextureButton" parent="BoxContainer/BottomButtons"]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="update" type="Button" parent="VBoxContainer/BottomButtons"]
+[node name="update" type="Button" parent="BoxContainer/BottomButtons"]
 layout_mode = 2
 text = "Update"
 
@@ -84,6 +95,7 @@ text = "Update"
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
+offset_top = -40.0
 offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
@@ -92,6 +104,8 @@ title = "Edit Mappings"
 [node name="Title_Text" parent="TitleBar" index="1"]
 offset_right = 1256.0
 
-[connection signal="pressed" from="VBoxContainer/BottomButtons/update" to="." method="_request_apply_mappings_to_FEAGI"]
+[connection signal="resized" from="BoxContainer/Mapping_Details" to="BoxContainer" method="recalculate_size"]
+[connection signal="visibility_changed" from="BoxContainer/Mapping_Details" to="BoxContainer" method="recalculate_size"]
+[connection signal="pressed" from="BoxContainer/BottomButtons/update" to="." method="_request_apply_mappings_to_FEAGI"]
 
 [editable path="TitleBar"]

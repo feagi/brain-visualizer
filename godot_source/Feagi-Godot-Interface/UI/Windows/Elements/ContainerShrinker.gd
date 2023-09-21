@@ -6,4 +6,3 @@ class_name ContainerShrinker
 func recalculate_size() -> void:
 	size = Vector2(0,0) # This is terrible. Too bad!
 	
-	

@@ -25,7 +25,7 @@ func _ready():
 	_patterns = $Container/ElementMorphologyPatternView
 	
 
-	_patterns_vector_list = $Container/Patterns/Patterns/VBoxContainer
+	_patterns_vector_list = $Container/Patterns/Patterns/BoxContainer
 
 	_composite.visible = false
 	_vectors.visible = false

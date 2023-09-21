@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_r8gt6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nus1v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_6i23i"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_u67op"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="4_onsts"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
@@ -16,11 +17,21 @@ offset_top = 38.0
 offset_bottom = 38.0
 theme = ExtResource("1_r8gt6")
 script = ExtResource("1_w1bco")
+left_pixel_gap = 5
+right_pixel_gap = 5
+top_pixel_gap = 5
+bottom_pixel_gap = 5
 
-[node name="Container" type="VBoxContainer" parent="."]
+[node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
 offset_right = 532.0
 offset_bottom = 668.0
+vertical = true
+script = ExtResource("3_u67op")
+
+[node name="gap" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
 
 [node name="Name" type="HBoxContainer" parent="Container"]
 layout_mode = 2
@@ -104,6 +115,12 @@ label_text = "Create Morphology"
 metadata/_edit_use_anchors_ = true
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
+[connection signal="resized" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
+[connection signal="visibility_changed" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
+[connection signal="resized" from="Container/ElementMorphologyVectorsView" to="Container" method="recalculate_size"]
+[connection signal="visibility_changed" from="Container/ElementMorphologyVectorsView" to="Container" method="recalculate_size"]
+[connection signal="resized" from="Container/ElementMorphologyPatternView" to="Container" method="recalculate_size"]
+[connection signal="visibility_changed" from="Container/ElementMorphologyPatternView" to="Container" method="recalculate_size"]
 [connection signal="pressed" from="Container/CreateMorphologyButton" to="." method="_on_create_morphology_pressed"]
 
 [editable path="TitleBar"]
