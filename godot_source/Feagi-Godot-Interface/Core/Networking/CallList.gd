@@ -101,14 +101,13 @@ func GET_GE_CorticalLocations2D():
 func GET_GE_CorticalArea_geometry():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_geometry , _response_functions_ref.GET_GE_CorticalArea_geometry)
 
-
+## returns bool of if a cortical area is monitoring membrane potential
 func GET_MO_neuron_membranePotential(corticalID: StringName):
 	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MO_neuron_membranePotential)
 
-
+## returns bool of if a cortical area is monitoring synaptic potential
 func GET_MO_neuron_synapticPotential(corticalID: StringName):
 	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, _response_functions_ref.GET_MO_neuron_synapticPotential)
-
 
 func GET_GE_corticalTypeOptions(corticalType: String):
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS+corticalType, _response_functions_ref.GET_GE_corticalTypeOptions)
@@ -124,6 +123,14 @@ func GET_CO_corticalAreas_list_detailed():
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(): # USED 1x
 	_interface_ref.FEAGI_GET(_address_list.GET_morphologies_list_types, _response_functions_ref.GET_MO_list_types)
+
+## Returns membrane potential monitoring state of a cortical area
+func GET_MON_neuron_membranePotential(cortical_ID: StringName) -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+cortical_ID, _response_functions_ref.GET_MON_neuron_membranePotential)
+
+## Returns synaptic potential monitoring state of a cortical area
+func GET_MON_neuron_synapticPotential(cortical_ID: StringName) -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+cortical_ID, _response_functions_ref.GET_MON_neuron_membranePotential)
 
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
@@ -167,6 +174,25 @@ func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
+
+## Sets membrane potential monitoring
+func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
+	var boolean: StringName = FEAGIUtils.bool_2_string(state)
+	var passthrough: Dictionary = {
+		"ID": cortical_ID,
+		"state": state
+	}
+	_interface_ref.FEAGI_POST(_address_list.POST_monitoring_neuron_membranePotential+cortical_ID+"&state="+boolean, _response_functions_ref.POST_MON_neuron_membranePotential, {}, passthrough) 
+
+## Sets membrane synaptic monitoring
+func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
+	var boolean: StringName = FEAGIUtils.bool_2_string(state)
+	var passthrough: Dictionary = {
+		"ID": cortical_ID,
+		"state": state
+	}
+	_interface_ref.FEAGI_POST(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
+
 
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
