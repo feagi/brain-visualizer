@@ -21,10 +21,19 @@ var current_vector: PatternVector3:
 		_field_x.current_patternval = v.x
 		_field_y.current_patternval = v.y
 		_field_z.current_patternval = v.z
-	
+
+var editable: bool:
+	get: return _editable
+	set(v):
+		_editable = v
+		_field_x.editable = v
+		_field_y.editable = v
+		_field_z.editable = v
+
 var _field_x: PatternValInput
 var _field_y: PatternValInput
 var _field_z: PatternValInput
+var _editable: bool = true
 
 func _ready():
 	get_node("LabelX").label_text = label_x_text

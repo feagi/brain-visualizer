@@ -26,10 +26,20 @@ var current_vector: Vector3i:
 		_field_x.current_int = v.x
 		_field_y.current_int = v.y
 		_field_z.current_int = v.z
-	
+
+var editable: bool:
+	get: return _editable
+	set(v):
+		_editable = v
+		_field_x.editable = v
+		_field_y.editable = v
+		_field_z.editable = v
+
 var _field_x: IntInput
 var _field_y: IntInput
 var _field_z: IntInput
+var _editable: bool = true
+
 
 func _ready():
 	get_node("LabelX").label_text = label_x_text

@@ -20,9 +20,17 @@ var current_vector: Vector2i:
 	set(v):
 		_field_x.current_int = v.x
 		_field_y.current_int = v.y
-	
+
+var editable: bool:
+	get: return _editable
+	set(v):
+		_editable = v
+		_field_x.editable = v
+		_field_y.editable = v
+
 var _field_x: IntInput
 var _field_y: IntInput
+var _editable: bool = true
 
 func _ready():
 	get_node("LabelX").label_text = label_x_text
