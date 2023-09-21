@@ -4,7 +4,7 @@
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_dxtt6"]
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
 [ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.tscn" id="3_q86xe"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/ContainerShrinker.gd" id="3_sexbo"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_thls4"]
 [ext_resource type="PackedScene" uid="uid://x0wkgtc5o5vw" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.tscn" id="4_3w01f"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 [ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.tscn" id="5_qeai5"]
@@ -26,7 +26,7 @@ layout_mode = 0
 offset_right = 335.0
 offset_bottom = 207.0
 vertical = true
-script = ExtResource("3_sexbo")
+script = ExtResource("3_thls4")
 
 [node name="Top_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 custom_minimum_size = Vector2(300, 0)
