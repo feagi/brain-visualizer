@@ -13,13 +13,13 @@ func toggle_between_states(connection_state: WebSocketPeer.State) -> void:
 			draw_disconnected()
 
 func draw_disconnected():
-	$Cube.set_surface_override_material(0, global_material.glow)
-	$Cube001.set_surface_override_material(0, global_material.glow)
-	$Cube002.set_surface_override_material(0, global_material.glow)
+	$Cube.set_surface_override_material(0, global_material.websocket_status)
+	$Cube001.set_surface_override_material(0, global_material.websocket_status)
+	$Cube002.set_surface_override_material(0, global_material.websocket_status)
 
 func draw_connected():
-	$Cube.set_surface_override_material(0, global_material.red)
-	$Cube001.set_surface_override_material(0, global_material.red)
-	$Cube002.set_surface_override_material(0, global_material.red)
+	$Cube.set_surface_override_material(0, global_material.websocket_status_red)
+	$Cube001.set_surface_override_material(0, global_material.websocket_status_red)
+	$Cube002.set_surface_override_material(0, global_material.websocket_status_red)
 
 

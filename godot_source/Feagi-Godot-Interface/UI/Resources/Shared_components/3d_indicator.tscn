@@ -1,5 +1,7 @@
 [gd_scene load_steps=28 format=3 uid="uid://c8s0gyef77enw"]
 
+[ext_resource type="Material" uid="uid://bbnd068im4lfk" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/websocket_status_red.material" id="1_hotxx"]
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g1rjx"]
 resource_name = "Material"
 cull_mode = 2
@@ -74,13 +76,6 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_bibem")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sc2u5"]
-resource_name = "Material.002"
-cull_mode = 2
-vertex_color_use_as_albedo = true
-albedo_color = Color(0.906332, 0.0717188, 0.106349, 1)
-roughness = 0.4
-
 [sub_resource type="ArrayMesh" id="ArrayMesh_1067e"]
 _surfaces = [{
 "aabb": AABB(-1, -1, -1, 2.00001, 2.00001, 2),
@@ -102,7 +97,7 @@ _surfaces = [{
 "format": 4119,
 "index_count": 36,
 "index_data": PackedByteArray(1, 0, 20, 0, 14, 0, 1, 0, 7, 0, 20, 0, 10, 0, 19, 0, 6, 0, 10, 0, 23, 0, 19, 0, 21, 0, 12, 0, 18, 0, 21, 0, 15, 0, 12, 0, 16, 0, 9, 0, 3, 0, 16, 0, 22, 0, 9, 0, 5, 0, 8, 0, 2, 0, 5, 0, 11, 0, 8, 0, 17, 0, 0, 0, 13, 0, 17, 0, 4, 0, 0, 0),
-"material": SubResource("StandardMaterial3D_sc2u5"),
+"material": ExtResource("1_hotxx"),
 "name": "Material.002",
 "primitive": 3,
 "vertex_count": 24,
@@ -357,22 +352,24 @@ mesh = SubResource("ArrayMesh_vswku")
 skeleton = NodePath("")
 
 [node name="Text" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -1.16, -1.1, -13)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 12, -1.1, -1.72)
 mesh = SubResource("ArrayMesh_6dd5r")
 skeleton = NodePath("")
 
 [node name="Text001" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 12, -1.1, -1.72)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -1.16, -1.1, -17.22)
 mesh = SubResource("ArrayMesh_b5atq")
 skeleton = NodePath("")
 
 [node name="Text002" type="MeshInstance3D" parent="."]
 transform = Transform3D(0, 1, -2.98023e-08, 2.98023e-08, 0, -1, -1, -2.98023e-08, 0, 15, -1.1, 1.04)
+visible = false
 mesh = SubResource("ArrayMesh_jqk0r")
 skeleton = NodePath("")
 
 [node name="Text003" type="MeshInstance3D" parent="."]
 transform = Transform3D(0, 1, -2.98023e-08, 2.98023e-08, 0, -1, -1, -2.98023e-08, 0, 1.14, -1.12, -13.66)
+visible = false
 mesh = SubResource("ArrayMesh_5x8dm")
 skeleton = NodePath("")
 
