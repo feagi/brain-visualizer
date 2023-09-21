@@ -31,12 +31,28 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
 
+func request_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+	print("User requested membrane monitoring state for " + cortical_area.cortical_area_ID)
+	_feagi_interface.calls.GET_MON_neuron_membranePotential(cortical_area.cortical_ID)
+
+func request_synaptic_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+	print("User requested synaptic monitoring state for " + cortical_area.cortical_area_ID)
+	_feagi_interface.calls.GET_MON_neuron_synapticPotential(cortical_area.cortical_ID)
+
 ## Sets the properties of a given cortical area
 ## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!
 ## Convert Vectors to arrays, StringNames to Strings
 ## Success emits cortical_area_updated since this calls "refresh_cortical_area" on success
 func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: Dictionary) -> void:
 	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
+
+func request_change_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+	print("User requested modification of membrane monitoring state for " + cortical_area.cortical_area_ID)
+	_feagi_interface.calls.POST_MON_neuron_membranePotential(cortical_area.cortical_ID, requested_state)
+
+func request_change_synaptic_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+	print("User requested modification of synaptic monitoring state for " + cortical_area.cortical_area_ID)
+	_feagi_interface.calls.POST_MON_neuron_synapticPotential(cortical_area.cortical_ID, requested_state)
 
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
@@ -85,15 +101,13 @@ func request_create_morphology(morphology_to_create: Morphology) -> void:
 	print("Requesting FEAGI to create morphology " + morphology_to_create.name)
 	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, morphology_to_create.type, morphology_to_create.to_dictionary())
 
-
+## Requests feagi to delete a morphology
 func request_delete_morphology(morphology_name: StringName) -> void:
-	print("Use requested deletion of morphology " + morphology_name)
+	print("User requested deletion of morphology " + morphology_name)
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology_name])
 		return
 	_feagi_interface.calls.DELETE_GE_morphology(morphology_name)
-
-
 
 #TODO this should be updated
 func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
