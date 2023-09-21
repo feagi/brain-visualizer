@@ -25,9 +25,9 @@ var _destinations_dropdown: CorticalDropDown
 var _mapping_details: WindowMappingDetails
 
 func _ready() -> void:
-	_sources_dropdown = $VBoxContainer/SourceAndDestination/src_box/src_dropdown
-	_destinations_dropdown = $VBoxContainer/SourceAndDestination/des_box/des_dropdown
-	_mapping_details = $VBoxContainer/Mapping_Details
+	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
+	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
+	_mapping_details = $BoxContainer/Mapping_Details
 
 
 func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalArea = null):

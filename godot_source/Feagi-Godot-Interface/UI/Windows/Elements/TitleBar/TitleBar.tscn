@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://c10sw6pgpfy48"]
+[gd_scene load_steps=6 format=3 uid="uid://c10sw6pgpfy48"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.gd" id="1_dpkpa"]
+[ext_resource type="Theme" uid="uid://p6ywvq4vpomt" path="res://Feagi-Godot-Interface/UI/Resources/theme/TitleBar_theme.tres" id="1_iasjt"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/CloseButton_Element.gd" id="2_dcvn6"]
 [ext_resource type="Texture2D" uid="uid://d1ueokjbphshy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close.png" id="2_r0lhb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/Title_Element.gd" id="3_etp03"]
@@ -9,6 +10,8 @@
 custom_minimum_size = Vector2(0, 40)
 offset_right = 80.0
 offset_bottom = 40.0
+size_flags_horizontal = 0
+theme = ExtResource("1_iasjt")
 script = ExtResource("1_dpkpa")
 
 [node name="Close_Button" type="TextureButton" parent="."]

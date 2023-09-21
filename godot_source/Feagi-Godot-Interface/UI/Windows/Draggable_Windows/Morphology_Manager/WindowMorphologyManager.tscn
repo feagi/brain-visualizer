@@ -1,7 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://bhpry6eyb2hl1"]
+[gd_scene load_steps=11 format=3 uid="uid://cdymw36o30rp1"]
 
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_1tu4k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_chekq"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="3_dmt4w"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="4_fkit5"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="5_w2re6"]
@@ -13,12 +15,18 @@
 offset_top = 40.0
 offset_right = 568.0
 offset_bottom = 510.0
+theme = ExtResource("1_1tu4k")
 script = ExtResource("1_11gqg")
+left_pixel_gap = 5
+right_pixel_gap = 5
+top_pixel_gap = 5
+bottom_pixel_gap = 5
 
-[node name="Container" type="HBoxContainer" parent="."]
+[node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
 offset_right = 558.0
 offset_bottom = 468.0
+script = ExtResource("3_chekq")
 
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
 custom_minimum_size = Vector2(250, 400)
@@ -27,7 +35,7 @@ size_flags_horizontal = 0
 
 [node name="Morphology_Details" type="HBoxContainer" parent="Container"]
 layout_mode = 2
-size_flags_horizontal = 3
+script = ExtResource("3_chekq")
 
 [node name="ElementMorphologyPatternView" parent="Container/Morphology_Details" instance=ExtResource("3_dmt4w")]
 visible = false
@@ -72,25 +80,12 @@ script = ExtResource("6_latnd")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 0
-offset_top = -39.0
-offset_right = 568.0
-offset_bottom = 1.0
+offset_top = -40.0
+offset_bottom = 0.0
 title = "Morphology Manager"
 
-[node name="Title_Text" parent="TitleBar" index="1"]
-anchors_preset = -1
-anchor_top = 0.0
-anchor_right = 0.128521
-anchor_bottom = 0.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 495.0
-offset_bottom = 40.0
-grow_horizontal = 2
-grow_vertical = 1
-label_text = "Create Morphology"
-metadata/_edit_use_anchors_ = true
-
+[connection signal="resized" from="Container/Morphology_Details" to="Container" method="recalculate_size"]
+[connection signal="resized" from="Container/Morphology_Details/ElementMorphologyPatternView" to="Container/Morphology_Details" method="recalculate_size"]
+[connection signal="resized" from="Container/Morphology_Details/ElementMorphologyCompositeView" to="Container/Morphology_Details" method="recalculate_size"]
+[connection signal="resized" from="Container/Morphology_Details/ElementMorphologyVectorsView" to="Container/Morphology_Details" method="recalculate_size"]
 [connection signal="pressed" from="Container/Morphology_Details/Description/Apply_changes" to="." method="send_updated_values_to_feagi"]
-
-[editable path="TitleBar"]

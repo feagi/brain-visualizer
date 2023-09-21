@@ -66,6 +66,7 @@ func _ready():
 	
 	if automatic_maintain_width:
 		_parent.resized.connect(_auto_maintain_width)
+		_auto_maintain_width()
 	
 	_initial_position = position
 
@@ -138,4 +139,7 @@ func _auto_close_parent() -> void:
 #	_parent.queue_free() # Temporary. This is useful for duplicated/JSON. We aren't using it
 
 func _auto_maintain_width() -> void:
+	call_deferred("_defered_size_adjust")
+
+func _defered_size_adjust():
 	custom_minimum_size.x = _parent.size.x
