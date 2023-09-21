@@ -474,6 +474,9 @@ def main():
                                             timeout=10).json()
             json_object = json.dumps(data_from_genome)
             zmq_queue.append("genome: " + json_object)
+        if data_from_godot == "ping":
+            data_from_godot = "{}"
+            zmq_queue.append("ping")
         if data_from_godot == "updated":
             data_from_godot = "{}"
             reload_genome(feagi_host, api_port, dimensions_endpoint)
