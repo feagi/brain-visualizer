@@ -3,7 +3,6 @@ class_name CorticalArea
 ## Holds details pertaining to a specific cortical area
 ## Signals up if properties here are changed
 
-
 enum CORTICAL_AREA_TYPE {
 	IPU,
 	CORE,
@@ -12,6 +11,7 @@ enum CORTICAL_AREA_TYPE {
 	OPU
 }
 
+const CORTICAL_TYPES_WITH_STATIC_DIMENSIONS: Array[CORTICAL_AREA_TYPE] = [CORTICAL_AREA_TYPE.IPU, CORTICAL_AREA_TYPE.OPU]
 
 signal name_updated(cortical_name: StringName, this_cortical_area: CorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
@@ -91,6 +91,10 @@ var efferent_connections_with_count: Dictionary:
 ## All OUTGOING connections (with mapping data per connection)
 var efferent_mappings: Dictionary:
 	get: return _efferent_mappings
+
+## True if the dimensionality of the cortical area should not be edited by the user
+var is_dimension_not_editable: bool:
+	get: return _group in CORTICAL_TYPES_WITH_STATIC_DIMENSIONS
 
 var _cortical_ID: StringName
 var _name: StringName
