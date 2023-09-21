@@ -201,7 +201,7 @@ func socket_status_poll() -> void:
 					print("FEAGI: Genome is being reset!")
 					FeagiRequests.hard_reset_genome_from_FEAGI()  # notify that genome was updated
 				elif _cache_websocket_data.get_string_from_utf8() == SOCKET_GENEOME_UPDATE_LATENCY:
-					FeagiEvents.retrieved_visualization_data.emit("ping")
+					FeagiEvents.retrieved_latest_ping.emit(Time.get_ticks_msec())
 				else:
 					# assume its visualization data
 					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
