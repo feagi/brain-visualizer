@@ -168,17 +168,23 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
 	
-func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_state: bool) -> void:
+func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for membrane potential monitoring!")
 		return
-
+	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to find cortical area %s in cache to update monitoring status of membrane potential" % set_values["ID"])
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = set_values["state"]
 	
-func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_state: bool) -> void:
+func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for synaptic potential monitoring!")
 		return	
-
+	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to find cortical area %s in cache to update monitoring status of synaptic potential" % set_values["ID"])
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
 
 
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
