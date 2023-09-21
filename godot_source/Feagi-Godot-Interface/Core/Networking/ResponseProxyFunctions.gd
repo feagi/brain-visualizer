@@ -120,6 +120,12 @@ func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irr
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
 
+func GET_MON_neuron_membranePotential(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	print(response_body.get_string_from_utf8())
+
+func GET_MON_neuron_synapticPotential(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	print(response_body.get_string_from_utf8())
+
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
 
@@ -162,6 +168,18 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
 	
+func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_state: bool) -> void:
+	if response_code == 404:
+		push_error("FEAGI unable to set setting for membrane potential monitoring!")
+		return
+
+	
+func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_state: bool) -> void:
+	if response_code == 404:
+		push_error("FEAGI unable to set setting for synaptic potential monitoring!")
+		return	
+
+
 
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
 	if _response_code == 422:
@@ -177,7 +195,6 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 		return
 	# assume we add / modify the mapping
 	cortical_src.set_efferent_connection(cortical_dst, mapping_count)
-
 
 
 func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
@@ -217,5 +234,6 @@ func _body_to_dictionary(response_body: PackedByteArray) -> Dictionary:
 
 func _body_to_float(response_body: PackedByteArray) -> float:
 	return (str(response_body.get_string_from_utf8())).to_float()
+
 
 
