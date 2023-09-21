@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=31 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -8,7 +8,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://pq2qv50v863l" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://b03rys0rs8ycm" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
@@ -18,11 +18,12 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Create_cortical/create_cortical.gd" id="11_0eicd"]
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/FullScreenControl.gd" id="11_xxcay"]
-[ext_resource type="PackedScene" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
+[ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.gd" id="13_jugsj"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -133,6 +134,7 @@ script = ExtResource("13_jugsj")
 script = ExtResource("9_jshmh")
 
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
+theme = ExtResource("16_jeyol")
 
 [node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
 visible = false
@@ -142,6 +144,7 @@ anchor_right = 0.349
 anchor_bottom = 0.406
 offset_right = 366.952
 offset_bottom = 252.912
+theme = ExtResource("16_jeyol")
 script = ExtResource("11_0eicd")
 
 [node name="TitleBar" parent="UI/Windows/Create_Cortical" index="0"]
@@ -162,6 +165,7 @@ anchor_bottom = 0.603395
 offset_top = 0.255981
 offset_right = 357.984
 offset_bottom = 152.0
+theme = ExtResource("16_jeyol")
 
 [node name="TextureButton" parent="UI/Windows/Quick_Connect/morphology_menulist/Scroll_Vertical/VBoxContainer" index="0"]
 custom_minimum_size = Vector2(50, 200)
@@ -175,6 +179,7 @@ anchor_bottom = 0.212963
 offset_top = -1.0
 offset_right = 651.0
 offset_bottom = 497.0
+theme = ExtResource("16_jeyol")
 
 [node name="TutorialBar" parent="UI/Windows" instance=ExtResource("11_ugquj")]
 visible = false
@@ -182,6 +187,7 @@ offset_left = 785.0
 offset_top = 176.0
 offset_right = 985.0
 offset_bottom = 376.0
+theme = ExtResource("16_jeyol")
 
 [node name="Circuit_Import" parent="UI/Windows" instance=ExtResource("13_5ycas")]
 visible = false
@@ -193,6 +199,7 @@ offset_right = 329.0
 offset_bottom = 392.0
 grow_horizontal = 1
 grow_vertical = 1
+theme = ExtResource("16_jeyol")
 script = ExtResource("16_2bskm")
 
 [node name="Cortical_List" parent="UI/Windows" instance=ExtResource("14_db7m2")]
@@ -206,6 +213,7 @@ offset_top = 41.0
 offset_right = 108.592
 offset_bottom = 181.88
 grow_vertical = 1
+theme = ExtResource("16_jeyol")
 
 [connection signal="mode_changed" from="UI" to="UI/Windows/TopBar" method="_mode_changed"]
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
