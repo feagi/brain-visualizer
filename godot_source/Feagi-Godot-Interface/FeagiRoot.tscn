@@ -141,9 +141,10 @@ script = ExtResource("9_jshmh")
 theme = ExtResource("16_jeyol")
 
 [node name="Ping_label" parent="UI/Windows/TopBar/HBoxContainer" index="0"]
-text = "Latency"
+text = "Latency	"
 
 [node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="1"]
+editable = false
 script = ExtResource("14_fab5w")
 
 [node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
