@@ -98,6 +98,7 @@ layout_mode = 0
 offset_top = -40.0
 offset_right = 0.0
 offset_bottom = 0.0
+title = "Create Morphology"
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
 [connection signal="resized" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
