@@ -49,11 +49,11 @@ func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: D
 	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
 
 func request_change_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
-	print("User requested modification of membrane monitoring state for " + cortical_area.cortical_area_ID)
+	print("User requested modification of membrane monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.POST_MON_neuron_membranePotential(cortical_area.cortical_ID, requested_state)
 
 func request_change_synaptic_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
-	print("User requested modification of synaptic monitoring state for " + cortical_area.cortical_area_ID)
+	print("User requested modification of synaptic monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.POST_MON_neuron_synapticPotential(cortical_area.cortical_ID, requested_state)
 
 ## Requests FEAGI to delete a cortical area by ID
