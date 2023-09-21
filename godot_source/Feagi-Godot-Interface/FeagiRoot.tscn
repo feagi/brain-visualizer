@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=32 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -43,9 +43,6 @@ material = ExtResource("7_jrrky")
 [sub_resource type="MultiMesh" id="MultiMesh_oeyfo"]
 transform_format = 1
 mesh = SubResource("BoxMesh_edosx")
-
-[sub_resource type="ViewportTexture" id="ViewportTexture_la8g4"]
-viewport_path = NodePath("UI/Brain_Visualizer/3d_indicator/Sprite3D/SubViewport")
 
 [node name="FeagiRoot" type="Node3D"]
 
@@ -137,38 +134,17 @@ script = ExtResource("11_xxcay")
 [node name="3d_indicator" parent="UI/Brain_Visualizer" instance=ExtResource("12_fqaqp")]
 script = ExtResource("13_jugsj")
 
-[node name="Sprite3D" type="Sprite3D" parent="UI/Brain_Visualizer/3d_indicator"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18.2879, -0.229371)
-pixel_size = 0.08
-texture = SubResource("ViewportTexture_la8g4")
-
-[node name="SubViewport" type="SubViewport" parent="UI/Brain_Visualizer/3d_indicator/Sprite3D"]
-transparent_bg = true
-size = Vector2i(300, 20)
-
-[node name="delta_label" type="Label" parent="UI/Brain_Visualizer/3d_indicator/Sprite3D/SubViewport"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -42.0
-offset_top = -12.0
-offset_right = 42.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_fonts/font = ExtResource("7_01edh")
-theme_override_font_sizes/font_size = 30
-text = "calculating ms..."
-horizontal_alignment = 1
-
-[node name="timer" type="Node3D" parent="UI/Brain_Visualizer"]
-script = ExtResource("14_fab5w")
-
 [node name="Windows" type="Node" parent="UI"]
 script = ExtResource("9_jshmh")
 
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 theme = ExtResource("16_jeyol")
+
+[node name="Ping_label" parent="UI/Windows/TopBar/HBoxContainer" index="0"]
+text = "Latency"
+
+[node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="1"]
+script = ExtResource("14_fab5w")
 
 [node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
 visible = false
