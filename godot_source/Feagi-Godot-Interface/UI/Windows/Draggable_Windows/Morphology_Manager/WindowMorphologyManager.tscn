@@ -79,28 +79,11 @@ script = ExtResource("6_latnd")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 0
-offset_top = -39.0
-offset_right = 568.0
-offset_bottom = 1.0
+offset_top = -40.0
+offset_bottom = 0.0
 title = "Morphology Manager"
-
-[node name="Title_Text" parent="TitleBar" index="1"]
-anchors_preset = -1
-anchor_top = 0.0
-anchor_right = 0.128521
-anchor_bottom = 0.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 495.0
-offset_bottom = 40.0
-grow_horizontal = 2
-grow_vertical = 1
-label_text = "Create Morphology"
-metadata/_edit_use_anchors_ = true
 
 [connection signal="resized" from="Container/Morphology_Details/ElementMorphologyPatternView" to="Container" method="recalculate_size"]
 [connection signal="resized" from="Container/Morphology_Details/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
 [connection signal="resized" from="Container/Morphology_Details/ElementMorphologyVectorsView" to="Container" method="recalculate_size"]
 [connection signal="pressed" from="Container/Morphology_Details/Description/Apply_changes" to="." method="send_updated_values_to_feagi"]
-
-[editable path="TitleBar"]

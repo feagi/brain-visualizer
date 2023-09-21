@@ -60,7 +60,7 @@ script = ExtResource("7_xqqon")
 [node name="TitleBar" parent="." instance=ExtResource("4_pwsxt")]
 layout_mode = 0
 offset_top = -40.0
-offset_right = 405.0
+offset_right = 136.0
 offset_bottom = 0.0
 title = "Cortical Area Details"
 

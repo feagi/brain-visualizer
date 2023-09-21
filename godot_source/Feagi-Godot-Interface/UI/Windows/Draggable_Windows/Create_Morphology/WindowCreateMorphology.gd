@@ -23,9 +23,7 @@ func _ready():
 	_composite = $Container/ElementMorphologyCompositeView
 	_vectors = $Container/ElementMorphologyVectorsView
 	_patterns = $Container/ElementMorphologyPatternView
-	
 
-	_patterns_vector_list = $Container/Patterns/Patterns/BoxContainer
 
 	_composite.visible = false
 	_vectors.visible = false
