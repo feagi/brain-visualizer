@@ -464,8 +464,8 @@ def main():
         else:
             data_from_godot = "{}"
         # print("DATA FROM GODOT: ", data_from_godot)
-        if data_from_godot != "{}":
-            print(data_from_godot)
+        # if data_from_godot != "{}":
+        #     print(data_from_godot)
         if data_from_godot == "lagged":
             detect_lag = True
             data_from_godot = "{}"
