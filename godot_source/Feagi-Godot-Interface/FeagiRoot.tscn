@@ -119,6 +119,9 @@ multimesh = SubResource("MultiMesh_oeyfo")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 60, 100)
 script = ExtResource("4_62hvk")
 
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="UI/Brain_Visualizer/Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.622, -33.7407, -100)
+
 [node name="BV_Background" type="Control" parent="UI/Brain_Visualizer"]
 layout_mode = 3
 anchors_preset = 0
