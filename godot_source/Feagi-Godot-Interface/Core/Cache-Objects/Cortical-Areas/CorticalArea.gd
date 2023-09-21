@@ -19,6 +19,8 @@ signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: CorticalArea
 signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: CorticalArea)
 signal cortical_visibility_updated(visibility: bool, this_cortical_area: CorticalArea)
 signal details_updated(details: CorticalAreaDetails, this_cortical_area: CorticalArea)
+signal changed_monitoring_membrane_potential(is_monitoring: bool)
+signal changed_monitoring_synaptic_potential(is_monitoring: bool)
 
 signal efferent_area_added(efferent_area: CorticalArea)
 signal efferent_area_removed(efferent_area: CorticalArea)
@@ -82,6 +84,18 @@ var is_coordinates_2D_available: bool:
 	get: return _coordinates_2D_available
 var is_coordinates_3D_available: bool:
 	get: return _coordinates_3D_available
+var is_monitoring_membrane_potential: bool:
+	get: return _is_monitoring_membrane_potential
+	set(v):
+		_is_monitoring_membrane_potential = v
+		changed_monitoring_membrane_potential.emit(v)
+var is_monitoring_synaptic_potential: bool:
+	get: return _is_monitoring_synaptic_potential
+	set(v):
+		_is_monitoring_synaptic_potential = v
+		changed_monitoring_synaptic_potential.emit(v)
+
+
 ## All INCOMING connections
 var afferent_connections: Array[StringName]:
 	get: return _afferent_connections
@@ -110,6 +124,8 @@ var _afferent_connections: Array[StringName]
 ## Add efferent cortical areas refrenced by cortical ID as keys with values being mapping count
 var _efferent_connections_with_count: Dictionary
 var _efferent_mappings: Dictionary = {}
+var _is_monitoring_membrane_potential: bool
+var _is_monitoring_synaptic_potential: bool
 
 func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}):
 	_cortical_ID = ID
