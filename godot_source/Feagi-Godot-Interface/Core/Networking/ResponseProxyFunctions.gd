@@ -102,7 +102,7 @@ func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, 
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("RACE CONDITION! Morphology %s was removed before we returned usage information! Skipping!" % morphology_name)
 		return
-	var usage_array: Array[Array]
+	var usage_array: Array[Array] = []
 	usage_array.assign(_body_to_untyped_array(response_body))
 	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[morphology_name]
 	# Emit for both the specific morpholoy and broadly to support various use cases
@@ -120,11 +120,23 @@ func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irr
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
 
-func GET_MON_neuron_membranePotential(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	print(response_body.get_string_from_utf8())
+func GET_MON_neuron_membranePotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
+	if response_code == 404:
+		push_error("FEAGI unable to check for membrane potential monitoring status!")
+		return
+	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to locate cortical ID " + corticalID)
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[corticalID].is_monitoring_membrane_potential = FEAGIUtils.string_2_bool(response_body.get_string_from_utf8())
 
-func GET_MON_neuron_synapticPotential(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	print(response_body.get_string_from_utf8())
+func GET_MON_neuron_synapticPotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
+	if response_code == 404:
+		push_error("FEAGI unable to check for synaptic potential monitoring status!")
+		return
+	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to locate cortical ID " + corticalID)
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[corticalID].is_monitoring_synaptic_potential = FEAGIUtils.string_2_bool(response_body.get_string_from_utf8())
 
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
@@ -209,7 +221,7 @@ func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, c
 		return
 	
 	# Property change accepted, pull latest details
-	FeagiRequests.refresh_cortical_area(changed_cortical_ID)
+	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID])
 	pass
 
 func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:

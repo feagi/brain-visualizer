@@ -19,9 +19,11 @@ func refresh_cortical_areas() -> void:
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
 ## Success emits cortical_area_updated
-func refresh_cortical_area(ID: StringName) -> void:
-	print("Pinging FEAGI latest cortical area details for " + ID)
-	_feagi_interface.calls.GET_GE_corticalArea(ID)
+func refresh_cortical_area(cortical_area: CorticalArea) -> void:
+	print("Pinging FEAGI latest cortical area details for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.GET_GE_corticalArea(cortical_area.cortical_ID)
+	request_membrane_monitoring_status(cortical_area)
+	request_synaptic_monitoring_status(cortical_area)
 
 ## Requests from FEAGI to add a cortical area using the custom call
 ## the call returns the FEAGI generated cortical ID
@@ -32,12 +34,12 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
 
 func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
-	print("User requested membrane monitoring state for " + cortical_area.cortical_area_ID)
-	_feagi_interface.calls.GET_MON_neuron_membranePotential(cortical_area.cortical_ID)
+	print("User requested membrane monitoring state for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.GET_MO_neuron_membranePotential(cortical_area.cortical_ID)
 
 func request_synaptic_monitoring_status(cortical_area: CorticalArea) -> void:
-	print("User requested synaptic monitoring state for " + cortical_area.cortical_area_ID)
-	_feagi_interface.calls.GET_MON_neuron_synapticPotential(cortical_area.cortical_ID)
+	print("User requested synaptic monitoring state for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
 
 ## Sets the properties of a given cortical area
 ## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!

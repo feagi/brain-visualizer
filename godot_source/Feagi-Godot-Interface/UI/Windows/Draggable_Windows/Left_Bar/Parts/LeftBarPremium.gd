@@ -12,7 +12,15 @@ func _ready() -> void:
 		post_synaptic_toggle.disabled = true
 
 
-func initial_values_from_FEAGI(is_membrane_monitoring: bool, is_postsynaptic_monitoring: bool) -> void:
-	membrane_toggle.button_pressed = is_membrane_monitoring
-	post_synaptic_toggle.button_pressed = is_postsynaptic_monitoring
+func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 
+	membrane_toggle.button_pressed = cortical_reference.is_monitoring_membrane_potential
+	post_synaptic_toggle.button_pressed = cortical_reference.is_monitoring_synaptic_potential
+	cortical_reference.changed_monitoring_membrane_potential.connect(_FEAGI_set_membrane_toggle)
+	cortical_reference.changed_monitoring_synaptic_potential.connect(_FEAGI_set_synaptic_toggle)
+
+func _FEAGI_set_membrane_toggle(state: bool) -> void:
+	membrane_toggle.button_pressed = state
+
+func _FEAGI_set_synaptic_toggle(state: bool) -> void:
+	post_synaptic_toggle.button_pressed = state

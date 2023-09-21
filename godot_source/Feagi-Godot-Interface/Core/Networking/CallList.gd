@@ -103,11 +103,11 @@ func GET_GE_CorticalArea_geometry():
 
 ## returns bool of if a cortical area is monitoring membrane potential
 func GET_MO_neuron_membranePotential(corticalID: StringName):
-	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MO_neuron_membranePotential)
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MON_neuron_membranePotential, corticalID)
 
 ## returns bool of if a cortical area is monitoring synaptic potential
 func GET_MO_neuron_synapticPotential(corticalID: StringName):
-	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, _response_functions_ref.GET_MO_neuron_synapticPotential)
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, _response_functions_ref.GET_MON_neuron_synapticPotential, corticalID)
 
 func GET_GE_corticalTypeOptions(corticalType: String):
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS+corticalType, _response_functions_ref.GET_GE_corticalTypeOptions)
