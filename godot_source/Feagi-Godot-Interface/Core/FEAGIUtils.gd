@@ -106,3 +106,10 @@ static func untyped_array_to_int_array(input: Array) -> Array[int]:
 	for i in input:
 		output.append(int(i))
 	return output
+
+## bool type to 'true" or 'false'
+static func bool_2_string(input:bool) -> StringName:
+	if input:
+		return &"true"
+	else:
+		return &"false"
