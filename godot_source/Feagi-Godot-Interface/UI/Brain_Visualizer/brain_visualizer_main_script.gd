@@ -67,6 +67,10 @@ func generate_model(name_input, x_input, y_input, z_input, width_input, depth_in
 					counter += 1
 
 func test(stored_value):
+	if typeof(stored_value) == 4:
+		if stored_value == "ping":
+			$timer.latency_calculation(Time.get_ticks_msec())
+			return
 	if stored_value == null: # Checks if it's null. When it is, it clear red voxels
 		$red_voxel.multimesh.instance_count = 0
 		$red_voxel.multimesh.visible_instance_count = 0
