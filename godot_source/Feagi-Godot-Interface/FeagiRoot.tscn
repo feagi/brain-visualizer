@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=33 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -8,7 +8,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://pq2qv50v863l" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://qemth5m3kohu" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.gd" id="13_jugsj"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/timer.gd" id="14_fab5w"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
 
@@ -42,6 +43,9 @@ material = ExtResource("7_jrrky")
 [sub_resource type="MultiMesh" id="MultiMesh_oeyfo"]
 transform_format = 1
 mesh = SubResource("BoxMesh_edosx")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_la8g4"]
+viewport_path = NodePath("UI/Brain_Visualizer/3d_indicator/Sprite3D/SubViewport")
 
 [node name="FeagiRoot" type="Node3D"]
 
@@ -132,6 +136,33 @@ script = ExtResource("11_xxcay")
 
 [node name="3d_indicator" parent="UI/Brain_Visualizer" instance=ExtResource("12_fqaqp")]
 script = ExtResource("13_jugsj")
+
+[node name="Sprite3D" type="Sprite3D" parent="UI/Brain_Visualizer/3d_indicator"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18.2879, -0.229371)
+pixel_size = 0.08
+texture = SubResource("ViewportTexture_la8g4")
+
+[node name="SubViewport" type="SubViewport" parent="UI/Brain_Visualizer/3d_indicator/Sprite3D"]
+transparent_bg = true
+size = Vector2i(300, 20)
+
+[node name="delta_label" type="Label" parent="UI/Brain_Visualizer/3d_indicator/Sprite3D/SubViewport"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -42.0
+offset_top = -12.0
+offset_right = 42.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("7_01edh")
+theme_override_font_sizes/font_size = 30
+text = "calculating ms..."
+horizontal_alignment = 1
+
+[node name="timer" type="Node3D" parent="UI/Brain_Visualizer"]
+script = ExtResource("14_fab5w")
 
 [node name="Windows" type="Node" parent="UI"]
 script = ExtResource("9_jshmh")

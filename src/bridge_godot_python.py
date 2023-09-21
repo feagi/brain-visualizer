@@ -233,7 +233,10 @@ async def bridge_to_BV():
             try:
                 if ws_operation:
                     await ws_operation[0].send(zlib.compress(str(zmq_queue[0]).encode()))
-                    zmq_queue.pop()
+                    if "ping" in zmq_queue:
+                        zmq_queue.popleft()
+                    else:
+                        zmq_queue.pop()
             except Exception as error:
                 sleep(0.001)
         else:
