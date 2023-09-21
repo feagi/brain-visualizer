@@ -84,8 +84,8 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea
 	POST_genome_customCorticalArea = FEAGIFullAddress + POST_genome_customCorticalArea
 	POST_genome_morphology = FEAGIFullAddress + POST_genome_morphology
-	POST_mon_neuron_membranePotential = FEAGIFullAddress + POST_mon_neuron_membranePotential
-	POST_mon_neuron_synapticPotential = FEAGIFullAddress + POST_mon_neuron_synapticPotential
+	POST_monitoring_neuron_membranePotential = FEAGIFullAddress + POST_monitoring_neuron_membranePotential
+	POST_monitoring_neuron_synapticPotential = FEAGIFullAddress + POST_monitoring_neuron_synapticPotential
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea
 	PUT_genome_mappingProperties = FEAGIFullAddress + PUT_genome_mappingProperties
 	PUT_genome_morphology = FEAGIFullAddress + PUT_genome_morphology
