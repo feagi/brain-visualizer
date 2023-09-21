@@ -18,6 +18,7 @@ const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
 const DEF_SOCKET_BUFFER_SIZE: int = 10000000
 
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
+const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 
 signal socket_state_changed(state: WebSocketPeer.State)
 
@@ -199,6 +200,8 @@ func socket_status_poll() -> void:
 				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
 					print("FEAGI: Genome is being reset!")
 					FeagiRequests.hard_reset_genome_from_FEAGI()  # notify that genome was updated
+				elif _cache_websocket_data.get_string_from_utf8() == SOCKET_GENEOME_UPDATE_LATENCY:
+					FeagiEvents.retrieved_visualization_data.emit("ping")
 				else:
 					# assume its visualization data
 					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
