@@ -142,14 +142,13 @@ func POST_GE_corticalArea(corticalProperties: Dictionary):
 
 ## Adds cortical area (with definable dimensions)
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), 
-	cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 
 	var to_send: Dictionary = {
 		"cortical_name": str(name),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_type": str(cortical_type)
+		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[CorticalArea.CORTICAL_AREA_TYPE.CUSTOM]
 	}
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
@@ -160,7 +159,6 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		"cortical_name": name,
 		"coordinates_3d": coordinates_3D,
 		"cortical_dimensions": dimensions,
-		"cortical_type": cortical_type
 	}
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = coordinates_2D

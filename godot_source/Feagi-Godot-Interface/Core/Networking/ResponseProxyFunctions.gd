@@ -167,7 +167,7 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 			other_properties["cortical_dimensions"],
 			is_2D_coordinates_defined,
 			coordinates_2D,
-			other_properties["cortical_type"]
+			CorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 		)
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
