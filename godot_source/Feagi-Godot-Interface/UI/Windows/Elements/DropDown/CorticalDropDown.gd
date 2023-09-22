@@ -6,14 +6,18 @@ signal user_selected_cortical_area(cortical_area_reference: CorticalArea)
 
 ## If true, show names in the dropdown instead of the cortical IDs
 @export var display_names_instead_of_IDs: bool = true
-# If true, will automatically remove cortical areas from the drop down that were removed from cache
+## If true, will automatically remove cortical areas from the drop down that were removed from cache
 @export var sync_removed_cortical_areas: bool = true
+## If True, will load all cached cortical areas on Startup
+@export var sync_all_areas_on_load: bool = true
 
 var _listed_areas: Array[CorticalArea] = []
 
 func _ready():
 	if sync_removed_cortical_areas:
 		FeagiCacheEvents.cortical_area_removed.connect(_cortical_area_was_deleted_from_cache)
+	if sync_all_areas_on_load:
+		list_all_cached_areas()
 	item_selected.connect(_user_selected_option)
 
 ## Clears all listed cortical areas
@@ -28,6 +32,10 @@ func overwrite_cortical_areas(new_areas: Array[CorticalArea]) -> void:
 		add_cortical_area(area)
 	_remove_radio_buttons()
 
+## Display all cortical areas
+func list_all_cached_areas() -> void:
+	overwrite_cortical_areas(FeagiCache.cortical_areas_cache.cortical_areas.values())
+	
 ## Add a singular cortical area to the end of the drop down
 func add_cortical_area(new_area: CorticalArea) -> void:
 	_listed_areas.append(new_area)

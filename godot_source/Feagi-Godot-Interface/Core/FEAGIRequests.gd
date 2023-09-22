@@ -29,9 +29,12 @@ func refresh_cortical_area(cortical_area: CorticalArea) -> void:
 ## the call returns the FEAGI generated cortical ID
 ## Success emits cortical_area_added
 func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool,
-	coordinates_2D: Vector2i = Vector2(0,0), cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
+	coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
 
-	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
+func add_opu_ipu_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, channel_count: int, is_coordinate_2D_defined: bool,coordinates_2D: Vector2i = Vector2(0,0))
+
+
 
 func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
 	print("User requested membrane monitoring state for " + cortical_area.cortical_ID)

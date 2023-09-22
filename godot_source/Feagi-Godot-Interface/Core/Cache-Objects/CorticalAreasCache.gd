@@ -4,9 +4,15 @@ class_name CorticalAreasCache
 
 var cortical_areas: Dictionary:
 	get: return _cortical_areas
+var IPU_multipliers: Dictionary:
+	get: return _IPU_multipliers
+var OPU_multipliers: Dictionary:
+	get: return _OPU_multipliers
+
 
 var _cortical_areas: Dictionary = {}
-
+var _IPU_multipliers: Dictionary = {}
+var _OPU_multipliers: Dictionary = {}
 
 ## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, cortical_type: CorticalArea.CORTICAL_AREA_TYPE, is_visible: bool = true) -> void:
@@ -158,3 +164,8 @@ func hard_wipe_cortical_areas():
 	for cortical_area_ID in all_cortical_area_IDs:
 		remove_cortical_area(cortical_area_ID)
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
+
+## calculates what an IPU or OPU cortical area dimension will be given its source cortical area dimension multiplier and channel count
+func calculate_IOPU_dimension(dimension_multiplier: Vector3i, channel_count: int) -> Vector3i:
+	input_dimension.x = input_dimension.x * channel_count
+	return input_dimension

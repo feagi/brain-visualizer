@@ -136,9 +136,26 @@ func GET_MON_neuron_synapticPotential(cortical_ID: StringName) -> void:
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.FEAGI_POST(_address_list.POST_feagi_burstEngine, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
 
- ## Adds cortical area (Dimensions however are autocalculated)
-func POST_GE_corticalArea(corticalProperties: Dictionary):
-	_interface_ref.FEAGI_POST(_address_list.POST_genome_corticalArea, _response_functions_ref.POST_GE_corticalArea, corticalProperties)
+## Adds a non-custom cortical area with non-definable dimensions
+func POST_GE_corticalArea(name: StringName, type: CorticalArea.CORTICAL_AREA_TYPE, channel_count: int, coordinates_3D: Vector3i, 
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+
+	var to_send: Dictionary = {
+		"cortical_name": str(name),
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+		"channel_count": channel_count
+	}
+	if is_coordinate_2D_defined:
+		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
+	else:
+		to_send["coordinates_2d"] = [null,null]
+
+	var to_buffer: Dictionary = {
+		"cortical_name": name,
+		"coordinates_3d": coordinates_3D,
+	}
+
 
 ## Adds cortical area (with definable dimensions)
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
@@ -160,8 +177,6 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		"coordinates_3d": coordinates_3D,
 		"cortical_dimensions": dimensions,
 	}
-	if is_coordinate_2D_defined:
-		to_send["coordinates_2d"] = coordinates_2D
 	
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
