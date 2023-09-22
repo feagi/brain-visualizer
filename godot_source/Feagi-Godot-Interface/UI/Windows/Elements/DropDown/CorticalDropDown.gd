@@ -57,6 +57,13 @@ func remove_cortical_area(removing: CorticalArea) -> void:
 	_listed_areas.remove_at(index)
 	remove_item(index)
 
+## Populate dropdown with cortical areas of specific types
+func list_cortical_area_types(types_to_show: Array[CorticalArea.CORTICAL_AREA_TYPE]) -> void:
+	var areas_to_show: Array[CorticalArea] = []
+	for array_type in types_to_show:
+		areas_to_show.append_array(FeagiCache.cortical_areas_cache.search_for_cortical_areas_by_type(array_type))
+	overwrite_cortical_areas(areas_to_show)
+
 func _user_selected_option(index: int) -> void:
 	user_selected_cortical_area.emit(_listed_areas[index])
 
