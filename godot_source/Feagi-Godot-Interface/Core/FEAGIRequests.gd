@@ -32,8 +32,12 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
 
-func add_opu_ipu_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, channel_count: int, is_coordinate_2D_defined: bool,coordinates_2D: Vector2i = Vector2(0,0))
-
+func request_add_opu_ipu_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, channel_count: int, cortical_type: CorticalArea.CORTICAL_AREA_TYPE,  is_coordinate_2D_defined: bool,coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	print("User requested adding OPU/IPU cortical area")
+	if !(cortical_type  in [CorticalArea.CORTICAL_AREA_TYPE.IPU, CorticalArea.CORTICAL_AREA_TYPE.OPU]):
+		push_error("Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
+		return
+	
 
 
 func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
@@ -43,6 +47,11 @@ func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
 func request_synaptic_monitoring_status(cortical_area: CorticalArea) -> void:
 	print("User requested synaptic monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
+
+func request_refresh_IPU_OPU_template_IDs() -> void:
+	print("Requesting up to date IPU and OPU template IDs")
+	_feagi_interface.calls.GET_PNS_current_ipu()
+	_feagi_interface.calls.GET_PNS_current_opu()
 
 ## Sets the properties of a given cortical area
 ## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!
@@ -170,6 +179,7 @@ func get_circuit_size(circuit_name: StringName) -> void:
 
 ## Retrieves initial data needed to get started
 func initial_FEAGI_calls() -> void:
+	request_refresh_IPU_OPU_template_IDs()
 	refresh_morphology_list()
 	refresh_cortical_areas() # This also causes a refresh of connections afterwards
 	refresh_delay_between_bursts()

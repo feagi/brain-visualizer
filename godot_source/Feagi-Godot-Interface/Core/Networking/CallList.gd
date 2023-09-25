@@ -132,6 +132,15 @@ func GET_MON_neuron_membranePotential(cortical_ID: StringName) -> void:
 func GET_MON_neuron_synapticPotential(cortical_ID: StringName) -> void:
 	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+cortical_ID, _response_functions_ref.GET_MON_neuron_membranePotential)
 
+## returns a list of IDs (not cortical loaded) of areas for initing IPUs
+func GET_PNS_current_ipu() -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_pns_current_ipu, _response_functions_ref.GET_PNS_current_ipu)
+
+## returns a list of IDs (not cortical loaded) of areas for initing OPUs
+func GET_PNS_current_opu() -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_pns_current_opu, _response_functions_ref.GET_PNS_current_opu)
+
+
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.FEAGI_POST(_address_list.POST_feagi_burstEngine, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
@@ -207,6 +216,11 @@ func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
 	_interface_ref.FEAGI_POST(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
 
 
+
+
+
+
+
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
 ## Only the keys being changed should be input, no need to pull everything
@@ -231,7 +245,13 @@ func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortica
 ## TODO clean up this
 func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + extra_name, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
-	
+
+
+
+
+
+
+
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted

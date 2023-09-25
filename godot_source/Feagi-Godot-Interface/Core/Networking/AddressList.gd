@@ -32,6 +32,8 @@ var GET_healthCheck: StringName = "/v1/feagi/health_check"
 var GET_monitoring_neuron_membranePotential: StringName = '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
 var GET_monitoring_neuron_synapticPotential: StringName = '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
 var GET_morphologies_list_types: StringName = '/v1/feagi/morphologies/list/types'
+var GET_pns_current_ipu: StringName = '/v1/feagi/feagi/pns/current/ipu'
+var GET_pns_current_opu: StringName = '/v1/feagi/feagi/pns/current/opu'
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
@@ -79,6 +81,8 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	GET_monitoring_neuron_membranePotential = FEAGIFullAddress + GET_monitoring_neuron_membranePotential
 	GET_monitoring_neuron_synapticPotential = FEAGIFullAddress + GET_monitoring_neuron_synapticPotential
 	GET_morphologies_list_types = FEAGIFullAddress + GET_morphologies_list_types
+	GET_pns_current_ipu = FEAGIFullAddress + GET_pns_current_ipu
+	GET_pns_current_opu = FEAGIFullAddress + GET_pns_current_opu
 
 	POST_feagi_burstEngine = FEAGIFullAddress + POST_feagi_burstEngine
 	POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea

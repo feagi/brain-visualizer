@@ -3,17 +3,10 @@ class_name ResponseProxyFunctions
 ## All responses from FEAGI calls go through these calls
 
 
-# UNUSED
-### Get list of morphologies
-#func GET_GE_morphologyList(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-#    var morphology_list: PackedStringArray = _body_to_string_array(response_body)
-#    print(morphology_list)
-
-
-
-
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+
+
 	var morphologies_and_types: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphologies_and_types)
 	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
@@ -141,6 +134,21 @@ func GET_MON_neuron_synapticPotential(response_code: int, response_body: PackedB
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
 
+func GET_PNS_current_ipu(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if _response_code != 200:
+		push_error("Unknown error trying to get current PNS IPU templates!")
+		return
+	var arr: Array[String] = _body_to_string_array(response_body)
+	FeagiCache.IPU_template_IDs = PackedStringArray(arr)
+
+func GET_PNS_current_opu(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if _response_code != 200:
+		push_error("Unknown error trying to get current PNS OPU templates!")
+		return
+	var arr: Array[String] = _body_to_string_array(response_body)
+	FeagiCache.OPU_template_IDs = PackedStringArray(arr)
+
+
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
 	if _response_code == 422:
@@ -242,6 +250,9 @@ func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray
 func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, deleted_morphology_name: StringName) -> void:
 	print("FEAGI confirmed deletion of morphology " + deleted_morphology_name)
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
+
+
+
 
 
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
