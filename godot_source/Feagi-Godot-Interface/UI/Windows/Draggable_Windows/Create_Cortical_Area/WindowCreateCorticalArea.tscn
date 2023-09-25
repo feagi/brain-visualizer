@@ -7,8 +7,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="5_bw00h"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="6_0p0de"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="6_cb8ls"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/TemplateDropDown.gd" id="6_gu8i4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_o35ls"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CorticalDropDown.gd" id="8_mnhwd"]
 
 [node name="WindowCreateCorticalArea" type="Panel"]
 anchors_preset = 15
@@ -105,10 +105,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Cortical Area to use"
 
-[node name="CorticalDropDown" type="OptionButton" parent="BoxContainer/cortical_dropdown_holder"]
+[node name="CorticalTemplateDropDown" type="OptionButton" parent="BoxContainer/cortical_dropdown_holder"]
 layout_mode = 2
-script = ExtResource("8_mnhwd")
-sync_all_areas_on_load = false
+script = ExtResource("6_gu8i4")
 
 [node name="channel_holder" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
@@ -121,7 +120,8 @@ text = "Channel Count"
 [node name="Channel_Input" type="LineEdit" parent="BoxContainer/channel_holder"]
 layout_mode = 2
 script = ExtResource("6_0p0de")
-min_value = 0
+initial_int = 1
+min_value = 1
 
 [node name="TextButton_Element" type="Button" parent="BoxContainer"]
 layout_mode = 2

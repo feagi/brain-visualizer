@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=29 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -13,9 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
 [ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
-[ext_resource type="PackedScene" uid="uid://cwhmgj80l7uir" path="res://Feagi-Godot-Interface/UI/Windows/Create_cortical/create_cortical.tscn" id="10_5x3e1"]
 [ext_resource type="PackedScene" uid="uid://cou6ppgui40tg" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.tscn" id="10_v25c0"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Create_cortical/create_cortical.gd" id="11_0eicd"]
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/FullScreenControl.gd" id="11_xxcay"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
@@ -139,26 +137,6 @@ script = ExtResource("9_jshmh")
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 theme = ExtResource("16_jeyol")
 
-[node name="Create_Cortical" parent="UI/Windows" instance=ExtResource("10_5x3e1")]
-visible = false
-anchor_left = 0.348958
-anchor_top = 0.405864
-anchor_right = 0.349
-anchor_bottom = 0.406
-offset_right = 366.952
-offset_bottom = 252.912
-theme = ExtResource("16_jeyol")
-script = ExtResource("11_0eicd")
-
-[node name="TitleBar" parent="UI/Windows/Create_Cortical" index="0"]
-automatic_setup_closing = false
-
-[node name="XYZ" parent="UI/Windows/Create_Cortical/VBoxContainer" index="4"]
-visible = false
-
-[node name="WDH" parent="UI/Windows/Create_Cortical/VBoxContainer" index="5"]
-visible = false
-
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
 visible = false
 anchor_left = 0.532986
@@ -224,35 +202,17 @@ theme = ExtResource("16_jeyol")
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows/Circuit_Import" method="_on_nc_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows/Cortical_List" method="_on_ca_view_button_pressed"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows/Create_Cortical" method="_on_ca_add_button_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows" method="spawn_create_cortical"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMAdd_Button" to="UI/Windows" method="spawn_create_morphology"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMSettings_Button" to="UI/Windows" method="spawn_manager_morphology"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/Mode_Button" to="UI" method="_toggle_between_views"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
-[connection signal="visibility_changed" from="UI/Windows/Create_Cortical" to="UI/Windows/Create_Cortical" method="_on_visibility_changed"]
-[connection signal="pressed" from="UI/Windows/Create_Cortical/TitleBar/Close_Button" to="UI/Windows/Create_Cortical" method="_on_close_button_pressed"]
-[connection signal="pressed" from="UI/Windows/Create_Cortical/Button2" to="UI/Windows/Create_Cortical" method="_on_button_2_pressed"]
-[connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/IPU" to="UI/Windows/Create_Cortical" method="_on_ipu_pressed"]
-[connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/OPU" to="UI/Windows/Create_Cortical" method="_on_opu_pressed"]
-[connection signal="pressed" from="UI/Windows/Create_Cortical/VBoxContainer/BoxContainer/RadioButtons/CUSTOM" to="UI/Windows/Create_Cortical" method="_on_custom_pressed"]
-[connection signal="text_changed" from="UI/Windows/Create_Cortical/VBoxContainer/name_linedit/LineEdit" to="UI/Windows/Create_Cortical" method="_on_line_edit_text_changed"]
-[connection signal="item_selected" from="UI/Windows/Create_Cortical/VBoxContainer/name_dropdown/dropdown_node" to="UI/Windows/Create_Cortical" method="_on_dropdown_node_item_selected"]
-[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntX" to="UI/Windows/Create_Cortical" method="_on_int_x_value_changed"]
-[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntY" to="UI/Windows/Create_Cortical" method="_on_int_y_value_changed"]
-[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/XYZ/IntZ" to="UI/Windows/Create_Cortical" method="_on_int_z_value_changed"]
-[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/WDH/W" to="UI/Windows/Create_Cortical" method="_on_w_value_changed"]
-[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/WDH/H" to="UI/Windows/Create_Cortical" method="_on_h_value_changed"]
-[connection signal="value_changed" from="UI/Windows/Create_Cortical/VBoxContainer/WDH/D" to="UI/Windows/Create_Cortical" method="_on_d_value_changed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
 [connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
 [connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
 
 [editable path="UI/Windows/TopBar"]
-[editable path="UI/Windows/Create_Cortical"]
-[editable path="UI/Windows/Create_Cortical/TitleBar"]
-[editable path="UI/Windows/Create_Cortical/VBoxContainer/XYZ"]
-[editable path="UI/Windows/Create_Cortical/VBoxContainer/WDH"]
 [editable path="UI/Windows/Quick_Connect"]
 [editable path="UI/Windows/Quick_Connect/morphology_menulist/Scroll_Vertical"]
 [editable path="UI/Windows/TutorialBar"]
