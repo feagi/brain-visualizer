@@ -134,19 +134,26 @@ func GET_MON_neuron_synapticPotential(response_code: int, response_body: PackedB
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
 
-func GET_PNS_current_ipu(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	if _response_code != 200:
+func GET_PNS_current_ipu(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200:
 		push_error("Unknown error trying to get current PNS IPU templates!")
 		return
 	var arr: Array[String] = _body_to_string_array(response_body)
-	FeagiCache.IPU_template_IDs = PackedStringArray(arr)
+	# TODO what to do with this?
 
-func GET_PNS_current_opu(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	if _response_code != 200:
+func GET_PNS_current_opu(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200:
 		push_error("Unknown error trying to get current PNS OPU templates!")
 		return
 	var arr: Array[String] = _body_to_string_array(response_body)
-	FeagiCache.OPU_template_IDs = PackedStringArray(arr)
+	# TODO what to do with this?
+
+func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200:
+		push_error("Unknown error trying to get current cortical templates!")
+		return
+	var raw_templates: Dictionary = _body_to_dictionary(response_body)
+	FeagiCache.feagi_set_cortical_templates(raw_templates)
 
 
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:

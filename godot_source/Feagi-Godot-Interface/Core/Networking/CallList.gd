@@ -101,6 +101,10 @@ func GET_GE_CorticalLocations2D():
 func GET_GE_CorticalArea_geometry():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_geometry , _response_functions_ref.GET_GE_CorticalArea_geometry)
 
+## returns dict by cortical type of different cortical templates for non-custom cortical areas
+func GET_GE_corticalTypes():
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalTypes , _response_functions_ref.GET_GE_corticalTypes)
+
 ## returns bool of if a cortical area is monitoring membrane potential
 func GET_MO_neuron_membranePotential(corticalID: StringName):
 	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MON_neuron_membranePotential, corticalID)
@@ -139,6 +143,7 @@ func GET_PNS_current_ipu() -> void:
 ## returns a list of IDs (not cortical loaded) of areas for initing OPUs
 func GET_PNS_current_opu() -> void:
 	_interface_ref.FEAGI_GET(_address_list.GET_pns_current_opu, _response_functions_ref.GET_PNS_current_opu)
+
 
 
 ## sets delay between bursts in seconds

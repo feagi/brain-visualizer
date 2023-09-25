@@ -44,7 +44,6 @@ func _on_button_2_pressed():
 			Vector3($VBoxContainer/WDH/W.value, $VBoxContainer/WDH/H.value, $VBoxContainer/WDH/D.value),
 			false,
 			Vector2i(0,0),
-			CorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 		)
 		$Button2.release_focus()
 	$VBoxContainer/XYZ/IntX.value = 0

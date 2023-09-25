@@ -48,10 +48,16 @@ func request_synaptic_monitoring_status(cortical_area: CorticalArea) -> void:
 	print("User requested synaptic monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
 
+## Refresh ID list of IPU and OPU templates
+## TODO: Currently saves data nowhere!
 func request_refresh_IPU_OPU_template_IDs() -> void:
 	print("Requesting up to date IPU and OPU template IDs")
 	_feagi_interface.calls.GET_PNS_current_ipu()
 	_feagi_interface.calls.GET_PNS_current_opu()
+
+func request_refresh_cortical_templates() -> void:
+	print("Requesting up to date cortical templates")
+	_feagi_interface.calls.GET_GE_corticalTypes()
 
 ## Sets the properties of a given cortical area
 ## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!
@@ -179,10 +185,10 @@ func get_circuit_size(circuit_name: StringName) -> void:
 
 ## Retrieves initial data needed to get started
 func initial_FEAGI_calls() -> void:
-	request_refresh_IPU_OPU_template_IDs()
 	refresh_morphology_list()
 	refresh_cortical_areas() # This also causes a refresh of connections afterwards
 	refresh_delay_between_bursts()
+	request_refresh_cortical_templates()
 
 ## Call when a genome is hard reset, triggers a cache wipe and reset from frsh feagi data
 func hard_reset_genome_from_FEAGI() -> void:

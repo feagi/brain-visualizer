@@ -17,7 +17,6 @@ var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/
 var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
 var GET_genome_circuits: StringName = "/v1/feagi/genome/circuits"
 var GET_genome_circuitsize: StringName = "/v1/feagi/genome/circuit_size?circuit_name="
-var GET_connectome_properties_dimensions: StringName = "/v1/feagi/connectome/properties/dimensions"
 var GET_genome_morphology_types: StringName = "/v1/feagi/genome/morphology_types"
 var GET_genome_morphologyName: StringName = "/v1/feagi/genome/morphology?morphology_name="
 var GET_genome_morphologyUsage: StringName = "/v1/feagi/genome/morphology_usage?morphology_name="
@@ -25,6 +24,8 @@ var GET_genome_corticalTypeOptions: StringName = '/v1/feagi/genome/cortical_type
 var GET_genome_corticalIDNameMapping: StringName = '/v1/feagi/genome/cortical_id_name_mapping'
 var GET_genome_corticalLocations2D: StringName = '/v1/feagi/genome/cortical_locations_2d'
 var GET_genome_corticalArea_geometry: StringName = '/v1/feagi/genome/cortical_area/geometry'
+var GET_genome_corticalTypes: StringName = "/v1/feagi/genome/cortical_types"
+var GET_connectome_properties_dimensions: StringName = "/v1/feagi/connectome/properties/dimensions"
 var GET_connectome_properties_mappings: StringName = "/v1/feagi/connectome/properties/mappings"
 var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/feagi/connectome/cortical_areas/list/detailed"
 var GET_burstEngine_stimulationPeriod: StringName = "/v1/feagi/feagi/burst_engine/stimulation_period"
@@ -75,6 +76,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	GET_genome_corticalIDNameMapping = FEAGIFullAddress + GET_genome_corticalIDNameMapping
 	GET_genome_corticalLocations2D = FEAGIFullAddress + GET_genome_corticalLocations2D
 	GET_genome_corticalArea_geometry = FEAGIFullAddress + GET_genome_corticalArea_geometry
+	GET_genome_corticalTypes = FEAGIFullAddress + GET_genome_corticalTypes
 	GET_connectome_properties_mappings = FEAGIFullAddress + GET_connectome_properties_mappings
 	GET_burstEngine_stimulationPeriod = FEAGIFullAddress + GET_burstEngine_stimulationPeriod
 	GET_healthCheck = FEAGIFullAddress + GET_healthCheck
