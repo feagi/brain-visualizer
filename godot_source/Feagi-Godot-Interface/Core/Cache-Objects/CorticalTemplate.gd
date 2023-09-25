@@ -1,6 +1,7 @@
 extends Object
 class_name CorticalTemplate
 
+
 enum STRUCTURE {
 	ASYMMETRIC,
 	SYMMETRIC
