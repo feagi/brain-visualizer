@@ -29,6 +29,8 @@ func _init():
 
 ## Wipes all data from cache
 func hard_wipe():
+	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
+		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 	cortical_areas_cache.hard_wipe_cortical_areas()
 	morphology_cache.hard_wipe_cached_morphologies()
 	available_circuits = []
