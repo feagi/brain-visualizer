@@ -20,7 +20,7 @@ func _init(cortical_types_dict_from_FEAGI: Dictionary, type_cortical_area_str: S
 	if "supported_devices" not in cortical_types_dict_from_FEAGI[type_cortical_area_str].keys():
 		_templates = {} # no templates available
 		return
-	var buffer_dimensions: Array[int]
+	var buffer_dimensions: Array[int] = []
 	for template_id in cortical_types_dict_from_FEAGI[type_cortical_area_str]["supported_devices"]:
 		var sub_dict = cortical_types_dict_from_FEAGI[type_cortical_area_str]["supported_devices"][template_id]
 		buffer_dimensions.assign(sub_dict["resolution"])
@@ -29,6 +29,8 @@ func _init(cortical_types_dict_from_FEAGI: Dictionary, type_cortical_area_str: S
 static func cortical_templates_factory(cortical_types_dict_from_FEAGI: Dictionary) -> Dictionary:
 	var output: Dictionary = {}
 	for cortical_type_str in CorticalArea.CORTICAL_AREA_TYPE.keys():
+		if cortical_type_str not in cortical_types_dict_from_FEAGI.keys():
+			continue
 		output[cortical_type_str] = CorticalTemplates.new(cortical_types_dict_from_FEAGI, cortical_type_str)
 	return output
 

@@ -32,13 +32,15 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
 
-func request_add_opu_ipu_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, channel_count: int, cortical_type: CorticalArea.CORTICAL_AREA_TYPE,  is_coordinate_2D_defined: bool,coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+func request_add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 	print("User requested adding OPU/IPU cortical area")
-	if !(cortical_type  in [CorticalArea.CORTICAL_AREA_TYPE.IPU, CorticalArea.CORTICAL_AREA_TYPE.OPU]):
+	if !(IOPU_template.cortical_type  in [CorticalArea.CORTICAL_AREA_TYPE.IPU, CorticalArea.CORTICAL_AREA_TYPE.OPU]):
 		push_error("Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return
-	
-
+	if channel_count < 1:
+		push_error("Channel count must be greater than 0 for a IPU/OPU area!, Skipping!")
+		return
+	_feagi_interface.calls.POST_GE_corticalArea(IOPU_template.ID, IOPU_template.cortical_type, coordinates_3D, is_coordinate_2D_defined, channel_count, coordinates_2D)
 
 func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
 	print("User requested membrane monitoring state for " + cortical_area.cortical_ID)

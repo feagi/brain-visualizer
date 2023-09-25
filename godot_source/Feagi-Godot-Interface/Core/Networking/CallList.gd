@@ -151,24 +151,31 @@ func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.FEAGI_POST(_address_list.POST_feagi_burstEngine, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
 
 ## Adds a non-custom cortical area with non-definable dimensions
-func POST_GE_corticalArea(name: StringName, type: CorticalArea.CORTICAL_AREA_TYPE, channel_count: int, coordinates_3D: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 
+	is_coordinate_2D_defined: bool, channel_count: int = 0, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 
 	var to_send: Dictionary = {
-		"cortical_name": str(name),
+		"cortical_id": template_cortical_ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
 		"channel_count": channel_count
 	}
+
+	var to_buffer: Dictionary = {
+		"template_cortical_ID": template_cortical_ID,
+		"coordinates_3d": coordinates_3D,
+		"channel_count": channel_count,
+		"cortical_type_str": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+	}
+
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
+		to_buffer["coordinates_2d"] = coordinates_2D
 	else:
 		to_send["coordinates_2d"] = [null,null]
 
-	var to_buffer: Dictionary = {
-		"cortical_name": name,
-		"coordinates_3d": coordinates_3D,
-	}
+	_interface_ref.FEAGI_POST(_address_list.POST_genome_corticalArea, _response_functions_ref.POST_GE_corticalArea, to_send, to_buffer)
+
 
 
 ## Adds cortical area (with definable dimensions)
@@ -181,16 +188,20 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
 		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[CorticalArea.CORTICAL_AREA_TYPE.CUSTOM]
 	}
-	if is_coordinate_2D_defined:
-		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
-	else:
-		to_send["coordinates_2d"] = [null,null]
-	
+
 	var to_buffer: Dictionary = {
 		"cortical_name": name,
 		"coordinates_3d": coordinates_3D,
 		"cortical_dimensions": dimensions,
 	}
+
+	if is_coordinate_2D_defined:
+		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
+		to_buffer["coordinates_2d"] = coordinates_2D
+	else:
+		to_send["coordinates_2d"] = [null,null]
+	
+
 	
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 

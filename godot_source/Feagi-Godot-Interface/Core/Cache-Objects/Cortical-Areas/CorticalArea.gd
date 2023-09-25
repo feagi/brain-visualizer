@@ -17,7 +17,7 @@ enum SUPPORTS_INTERFACE {
 	OPU
 }
 
-const CORTICAL_TYPES_WITH_STATIC_DIMENSIONS: Array[CORTICAL_AREA_TYPE] = [CORTICAL_AREA_TYPE.IPU, CORTICAL_AREA_TYPE.OPU]
+const CORTICAL_TYPES_WITH_STATIC_DIMENSIONS: Array[CORTICAL_AREA_TYPE] = [CORTICAL_AREA_TYPE.IPU, CORTICAL_AREA_TYPE.OPU, CORTICAL_AREA_TYPE.CORE]
 
 signal name_updated(cortical_name: StringName, this_cortical_area: CorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
@@ -68,6 +68,9 @@ var dimensions: Vector3i:
 		return _dimensions
 	set(v):
 		if v == _dimensions: return
+		if is_dimension_not_editable:
+			push_error("Unable to update cortical area %s dimensions since it is not editable!" % _cortical_ID)
+			return
 		dimensions_updated.emit(v, self)
 		_dimensions = v
 var coordinates_2D: Vector2i:
@@ -100,6 +103,8 @@ var is_monitoring_synaptic_potential: bool:
 	set(v):
 		_is_monitoring_synaptic_potential = v
 		changed_monitoring_synaptic_potential.emit(v)
+var channel_count: int:
+	get: return _channel_count
 
 
 ## All INCOMING connections
@@ -132,8 +137,9 @@ var _efferent_connections_with_count: Dictionary
 var _efferent_mappings: Dictionary = {}
 var _is_monitoring_membrane_potential: bool
 var _is_monitoring_synaptic_potential: bool
+var _channel_count: int
 
-func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}):
+func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}, set_channel_count: int = 0):
 	_cortical_ID = ID
 	_name = cortical_name
 	_group = group_type
@@ -142,6 +148,16 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 	details.apply_dictionary(cortical_details_raw)
 	_dimensions = cortical_dimensions
 	_cortical_visiblity = visibility
+	_channel_count = set_channel_count
+
+## Generate a IPU/OPU cortical area when you are using a template
+static func create_from_IOPU_template(template: CorticalTemplate, this_cortical_area_ID: StringName, new_channel_count: int, visibility: bool, cortical_details_raw: Dictionary = {}) -> CorticalArea:
+	var new_dimensions: Vector3i = template.calculate_IOPU_dimension(new_channel_count)
+	return CorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, new_dimensions, cortical_details_raw, new_channel_count)
+
+## Generate a core cortical area when you are using a template
+static func create_from_core_template(template: CorticalTemplate, this_cortical_area_ID: StringName, visibility: bool, cortical_details_raw: Dictionary = {}) -> CorticalArea:
+	return CorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, template.resolution , cortical_details_raw)
 
 
 ## Applies cortical area properties dict from feagi on other details

@@ -155,6 +155,28 @@ func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _i
 	var raw_templates: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.feagi_set_cortical_templates(raw_templates)
 
+func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
+	if _response_code == 422:
+		push_error("Unable to process new cortical area dict, skipping!")
+		return
+	var cortical_ID_raw: Dictionary = _body_to_dictionary(response_body)
+	if "cortical_id" not in cortical_ID_raw.keys():
+		push_error("FEAGI did not respond with a cortical ID when trying to generate a cortical area, something likely went wrong")
+		return
+	
+	var created_cortical_ID: StringName = cortical_ID_raw["cortical_id"]
+	var template: CorticalTemplate = FeagiCache.cortical_templates[other_properties["cortical_type_str"]].templates[created_cortical_ID]
+	
+	var is_2D_coordinates_defined: bool = false
+	var coordinates_2D: Vector2 = Vector2(0,0)
+	
+	if "coordinates_2d" in other_properties.keys():
+		is_2D_coordinates_defined = true
+		coordinates_2D = other_properties["coordinates_2d"]
+	
+	FeagiCache.cortical_areas_cache.add_new_IOPU_cortical_area(template, created_cortical_ID, other_properties["channel_count"], other_properties["coordinates_3d"], 
+		is_2D_coordinates_defined, coordinates_2D)
+	
 
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
@@ -170,20 +192,20 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
-	if cortical_ID_raw['cortical_id'] != null:
-		if "coordinates_2d" in other_properties.keys():
-			is_2D_coordinates_defined = true
-			coordinates_2D = other_properties["coordinates_2d"]
-		
-		FeagiCache.cortical_areas_cache.add_cortical_area(
-			cortical_ID_raw["cortical_id"],
-			other_properties["cortical_name"],
-			other_properties["coordinates_3d"]	,
-			other_properties["cortical_dimensions"],
-			is_2D_coordinates_defined,
-			coordinates_2D,
-			CorticalArea.CORTICAL_AREA_TYPE.CUSTOM
-		)
+	
+	if "coordinates_2d" in other_properties.keys():
+		is_2D_coordinates_defined = true
+		coordinates_2D = other_properties["coordinates_2d"]
+	
+	FeagiCache.cortical_areas_cache.add_cortical_area(
+		cortical_ID_raw["cortical_id"],
+		other_properties["cortical_name"],
+		other_properties["coordinates_3d"]	,
+		other_properties["cortical_dimensions"],
+		is_2D_coordinates_defined,
+		coordinates_2D,
+		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+	)
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
