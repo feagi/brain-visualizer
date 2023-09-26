@@ -48,13 +48,14 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	loaded_windows["edit_mappings"] = edit_mappings
 
 func spawn_create_cortical() -> void:
+	print("hi")
 	if "create_cortical" in loaded_windows.keys():
 		loaded_windows["create_cortical"].queue_free()
 	
-		print("user requests create cortical window")
-		var create_cortical: WindowCreateCorticalArea = _prefab_create_cortical.instantiate()
-		add_child(create_cortical)
-		loaded_windows["create_cortical"] = create_cortical
+	print("user requests create cortical window")
+	var create_cortical: WindowCreateCorticalArea = _prefab_create_cortical.instantiate()
+	add_child(create_cortical)
+	loaded_windows["create_cortical"] = create_cortical
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
