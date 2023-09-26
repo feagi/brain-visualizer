@@ -27,7 +27,7 @@ func load_cortical_type_options(type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
 		_stored_template_references.append(template)
 		add_item(template.cortical_name)
 
-func get_template_by_index() -> CorticalTemplate:
+func get_selected_template() -> CorticalTemplate:
 	return _stored_template_references[selected]
 
 func _on_user_pick(index: int) -> void:

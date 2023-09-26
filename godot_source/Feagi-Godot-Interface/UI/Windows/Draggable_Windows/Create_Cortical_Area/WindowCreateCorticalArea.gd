@@ -65,7 +65,7 @@ func _template_dropdown_changed(selected_template: CorticalTemplate) -> void:
 func _channel_changed(new_channel_count: int) -> void:
 	if _dropdown_cortical_dropdown.selected == -1:
 		return # nothing to change if no drop down is selected
-	var selected_template: CorticalTemplate = _dropdown_cortical_dropdown.get_template_by_index()
+	var selected_template: CorticalTemplate = _dropdown_cortical_dropdown.get_selected_template()
 	_field_dimensions.current_vector = selected_template.calculate_IOPU_dimension(new_channel_count)
 	_dimensions_updated_proxy(_field_dimensions.current_vector)
 
@@ -92,4 +92,34 @@ func _switch_UI_between_cortical_types(cortical_type: CorticalArea.CORTICAL_AREA
 			_field_dimensions.editable = true
 			_field_cortical_name.editable = true
 			_field_cortical_name.placeholder_text = "Type Name Here"
+
+func _create_pressed():
+	var generating_cortical_type: CorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
+	if generating_cortical_type == CorticalArea.CORTICAL_AREA_TYPE.INVALID:
+		push_warning("Unable to create a cortical area when no type is given!")
+		return
+	
+	match generating_cortical_type:
+		CorticalArea.CORTICAL_AREA_TYPE.IPU:
+			if _dropdown_cortical_dropdown.selected == -1:
+				push_warning("Unable to create a cortical area when no template is given!")
+				return 
+			FeagiRequests.request_add_IOPU_cortical_area(_dropdown_cortical_dropdown.get_selected_template(), _field_channel.current_int,
+				_field_3D_coordinates.current_vector, false)
+
+		CorticalArea.CORTICAL_AREA_TYPE.OPU:
+			if _dropdown_cortical_dropdown.selected == -1:
+				push_warning("Unable to create a cortical area when no template is given!")
+				return 
+			FeagiRequests.request_add_IOPU_cortical_area(_dropdown_cortical_dropdown.get_selected_template(), _field_channel.current_int,
+				_field_3D_coordinates.current_vector, false)
+
+		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			if _field_cortical_name.text == "":
+				# TODO better check here
+				push_warning("Unable to create a custom cortical area with no name!")
+				return
+			FeagiRequests.add_custom_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
+				false)
+
 
