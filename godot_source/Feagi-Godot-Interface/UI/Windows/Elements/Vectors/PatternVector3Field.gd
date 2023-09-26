@@ -14,6 +14,7 @@ signal user_updated_vector(new_vector3: PatternVector3)
 @export var int_z_suffix: StringName
 ## Due to godot limitations, only ints can go here
 @export var initial_vector: Vector3i
+@export var initial_editable: bool = true
 
 var current_vector: PatternVector3:
 	get: return PatternVector3.new(_field_x.current_patternval, _field_y.current_patternval, _field_z.current_patternval)
@@ -59,6 +60,8 @@ func _ready():
 	_field_x.patternval_confirmed.connect(_emit_new_vector)
 	_field_y.patternval_confirmed.connect(_emit_new_vector)
 	_field_z.patternval_confirmed.connect(_emit_new_vector)
+	
+	editable = initial_editable
 
 func _emit_new_vector(_dont_care: PatternVal) -> void:
 	user_updated_vector.emit(current_vector) # already builds a new object, avoiding reference conflict
