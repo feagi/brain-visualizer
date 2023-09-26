@@ -101,14 +101,17 @@ func GET_GE_CorticalLocations2D():
 func GET_GE_CorticalArea_geometry():
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalArea_geometry , _response_functions_ref.GET_GE_CorticalArea_geometry)
 
+## returns dict by cortical type of different cortical templates for non-custom cortical areas
+func GET_GE_corticalTypes():
+	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalTypes , _response_functions_ref.GET_GE_corticalTypes)
 
+## returns bool of if a cortical area is monitoring membrane potential
 func GET_MO_neuron_membranePotential(corticalID: StringName):
-	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MO_neuron_membranePotential)
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+corticalID, _response_functions_ref.GET_MON_neuron_membranePotential, corticalID)
 
-
+## returns bool of if a cortical area is monitoring synaptic potential
 func GET_MO_neuron_synapticPotential(corticalID: StringName):
-	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, _response_functions_ref.GET_MO_neuron_synapticPotential)
-
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, _response_functions_ref.GET_MON_neuron_synapticPotential, corticalID)
 
 func GET_GE_corticalTypeOptions(corticalType: String):
 	_interface_ref.FEAGI_GET(_address_list.GET_genome_corticalTypeOptions_CORTICALTYPEQUALS+corticalType, _response_functions_ref.GET_GE_corticalTypeOptions)
@@ -125,38 +128,80 @@ func GET_CO_corticalAreas_list_detailed():
 func GET_MO_list_types(): # USED 1x
 	_interface_ref.FEAGI_GET(_address_list.GET_morphologies_list_types, _response_functions_ref.GET_MO_list_types)
 
+## Returns membrane potential monitoring state of a cortical area
+func GET_MON_neuron_membranePotential(cortical_ID: StringName) -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_membranePotential+cortical_ID, _response_functions_ref.GET_MON_neuron_membranePotential)
+
+## Returns synaptic potential monitoring state of a cortical area
+func GET_MON_neuron_synapticPotential(cortical_ID: StringName) -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_monitoring_neuron_synapticPotential+cortical_ID, _response_functions_ref.GET_MON_neuron_membranePotential)
+
+## returns a list of IDs (not cortical loaded) of areas for initing IPUs
+func GET_PNS_current_ipu() -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_pns_current_ipu, _response_functions_ref.GET_PNS_current_ipu)
+
+## returns a list of IDs (not cortical loaded) of areas for initing OPUs
+func GET_PNS_current_opu() -> void:
+	_interface_ref.FEAGI_GET(_address_list.GET_pns_current_opu, _response_functions_ref.GET_PNS_current_opu)
+
+
+
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.FEAGI_POST(_address_list.POST_feagi_burstEngine, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
 
- ## Adds cortical area (Dimensions however are autocalculated)
-func POST_GE_corticalArea(corticalProperties: Dictionary):
-	_interface_ref.FEAGI_POST(_address_list.POST_genome_corticalArea, _response_functions_ref.POST_GE_corticalArea, corticalProperties)
+## Adds a non-custom cortical area with non-definable dimensions
+func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 
+	is_coordinate_2D_defined: bool, channel_count: int = 0, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+
+	var to_send: Dictionary = {
+		"cortical_id": template_cortical_ID,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+		"channel_count": channel_count
+	}
+
+	var to_buffer: Dictionary = {
+		"template_cortical_ID": template_cortical_ID,
+		"coordinates_3d": coordinates_3D,
+		"channel_count": channel_count,
+		"cortical_type_str": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+	}
+
+	if is_coordinate_2D_defined:
+		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
+		to_buffer["coordinates_2d"] = coordinates_2D
+	else:
+		to_send["coordinates_2d"] = [null,null]
+
+	_interface_ref.FEAGI_POST(_address_list.POST_genome_corticalArea, _response_functions_ref.POST_GE_corticalArea, to_send, to_buffer)
+
+
 
 ## Adds cortical area (with definable dimensions)
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), 
-	cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 
 	var to_send: Dictionary = {
 		"cortical_name": str(name),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_type": str(cortical_type)
+		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[CorticalArea.CORTICAL_AREA_TYPE.CUSTOM]
 	}
-	if is_coordinate_2D_defined:
-		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
-	else:
-		to_send["coordinates_2d"] = [null,null]
-	
+
 	var to_buffer: Dictionary = {
 		"cortical_name": name,
 		"coordinates_3d": coordinates_3D,
 		"cortical_dimensions": dimensions,
-		"cortical_type": cortical_type
 	}
+
 	if is_coordinate_2D_defined:
-		to_send["coordinates_2d"] = coordinates_2D
+		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
+		to_buffer["coordinates_2d"] = coordinates_2D
+	else:
+		to_send["coordinates_2d"] = [null,null]
+	
+
 	
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_customCorticalArea, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
@@ -167,6 +212,30 @@ func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
 	_interface_ref.FEAGI_POST(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
+
+## Sets membrane potential monitoring
+func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
+	var boolean: StringName = FEAGIUtils.bool_2_string(state)
+	var passthrough: Dictionary = {
+		"ID": cortical_ID,
+		"state": state
+	}
+	_interface_ref.FEAGI_POST(_address_list.POST_monitoring_neuron_membranePotential+cortical_ID+"&state="+boolean, _response_functions_ref.POST_MON_neuron_membranePotential, {}, passthrough) 
+
+## Sets membrane synaptic monitoring
+func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
+	var boolean: StringName = FEAGIUtils.bool_2_string(state)
+	var passthrough: Dictionary = {
+		"ID": cortical_ID,
+		"state": state
+	}
+	_interface_ref.FEAGI_POST(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
+
+
+
+
+
+
 
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
@@ -192,7 +261,13 @@ func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortica
 ## TODO clean up this
 func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
 	_interface_ref.FEAGI_PUT(_address_list.PUT_genome_mappingProperties + extra_name, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
-	
+
+
+
+
+
+
+
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.FEAGI_DELETE(_address_list.DELETE_GE_corticalArea + corticalID, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted

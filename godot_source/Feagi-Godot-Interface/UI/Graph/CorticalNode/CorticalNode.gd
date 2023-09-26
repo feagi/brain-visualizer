@@ -82,4 +82,4 @@ func _on_interact(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event
 	if !mouse_event.double_click: return
-	VisConfig.window_manager.spawn_left_panel(_cortical_area_ref)
+	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)

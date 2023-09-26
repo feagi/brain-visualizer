@@ -41,9 +41,10 @@ func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	_cortical_area_ref.details_updated.connect(_middle_section.FEAGI_set_properties)
 	_top_section.initial_values_from_FEAGI(cortical_area_reference)
 	_middle_section.initial_values_from_FEAGI(cortical_area_reference)
+	_premium_section.initial_values_from_FEAGI(cortical_area_reference)
 	_bottom_section.initial_values_from_FEAGI(cortical_area_reference)
 	# Odds are we don't have the latest data from FEAGI, lets call in a refresh
-	FeagiRequests.refresh_cortical_area(cortical_area_reference.cortical_ID)
+	FeagiRequests.refresh_cortical_area(cortical_area_reference)
 
 func close_window():
 	VisConfig.UI_manager.window_manager.force_close_window("left_bar")

@@ -18,10 +18,14 @@ var available_circuits: PackedStringArray:
 
 var morphology_cache: MorphologiesCache
 var cortical_areas_cache: CorticalAreasCache
+var cortical_templates: Dictionary:
+	get: return _cortical_templates
 
 
 var _delay_between_bursts: float
 var _available_circuits: PackedStringArray = []
+var _cortical_templates: Dictionary = {}
+
 
 func _init():
 	morphology_cache = MorphologiesCache.new()
@@ -34,3 +38,6 @@ func hard_wipe():
 	cortical_areas_cache.hard_wipe_cortical_areas()
 	morphology_cache.hard_wipe_cached_morphologies()
 	available_circuits = []
+
+func feagi_set_cortical_templates(raw_templates: Dictionary) -> void:
+	_cortical_templates = CorticalTemplates.cortical_templates_factory(raw_templates)

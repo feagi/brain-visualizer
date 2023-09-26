@@ -3,17 +3,10 @@ class_name ResponseProxyFunctions
 ## All responses from FEAGI calls go through these calls
 
 
-# UNUSED
-### Get list of morphologies
-#func GET_GE_morphologyList(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-#    var morphology_list: PackedStringArray = _body_to_string_array(response_body)
-#    print(morphology_list)
-
-
-
-
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+
+
 	var morphologies_and_types: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphologies_and_types)
 	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
@@ -102,7 +95,7 @@ func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, 
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("RACE CONDITION! Morphology %s was removed before we returned usage information! Skipping!" % morphology_name)
 		return
-	var usage_array: Array[Array]
+	var usage_array: Array[Array] = []
 	usage_array.assign(_body_to_untyped_array(response_body))
 	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[morphology_name]
 	# Emit for both the specific morpholoy and broadly to support various use cases
@@ -120,8 +113,73 @@ func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irr
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
 
+func GET_MON_neuron_membranePotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
+	if response_code == 404:
+		push_warning("FEAGI unable to check for membrane potential monitoring status!")
+		return
+	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to locate cortical ID " + corticalID)
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[corticalID].is_monitoring_membrane_potential = FEAGIUtils.string_2_bool(response_body.get_string_from_utf8())
+
+func GET_MON_neuron_synapticPotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
+	if response_code == 404:
+		push_warning("FEAGI unable to check for synaptic potential monitoring status!")
+		return
+	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to locate cortical ID " + corticalID)
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[corticalID].is_monitoring_synaptic_potential = FEAGIUtils.string_2_bool(response_body.get_string_from_utf8())
+
 func GET_BU_stimulationPeriod(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiCache.delay_between_bursts = _body_to_float(response_body)
+
+func GET_PNS_current_ipu(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200:
+		push_error("Unknown error trying to get current PNS IPU templates!")
+		return
+	var arr: Array[String] = _body_to_string_array(response_body)
+	# TODO what to do with this?
+
+func GET_PNS_current_opu(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200:
+		push_error("Unknown error trying to get current PNS OPU templates!")
+		return
+	var arr: Array[String] = _body_to_string_array(response_body)
+	# TODO what to do with this?
+
+func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200:
+		push_error("Unknown error trying to get current cortical templates!")
+		return
+	var raw_templates: Dictionary = _body_to_dictionary(response_body)
+	FeagiCache.feagi_set_cortical_templates(raw_templates)
+
+func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
+	if _response_code == 422:
+		push_error("Unable to process new cortical area dict, skipping!")
+		return
+	var cortical_ID_raw: Dictionary = _body_to_dictionary(response_body)
+	if "cortical_id" not in cortical_ID_raw.keys():
+		push_error("FEAGI did not respond with a cortical ID when trying to generate a cortical area, something likely went wrong")
+		return
+	if cortical_ID_raw["cortical_id"] == null:
+		push_error("FEAGI did not respond with a cortical ID when trying to generate a cortical area, something likely went wrong")
+		return
+	
+	var created_cortical_ID: StringName = cortical_ID_raw["cortical_id"]
+	var template: CorticalTemplate = FeagiCache.cortical_templates[other_properties["cortical_type_str"]].templates[created_cortical_ID]
+	
+	var is_2D_coordinates_defined: bool = false
+	var coordinates_2D: Vector2 = Vector2(0,0)
+	
+	if "coordinates_2d" in other_properties.keys():
+		is_2D_coordinates_defined = true
+		coordinates_2D = other_properties["coordinates_2d"]
+	
+	FeagiCache.cortical_areas_cache.add_new_IOPU_cortical_area(template, created_cortical_ID, other_properties["channel_count"], other_properties["coordinates_3d"], 
+		is_2D_coordinates_defined, coordinates_2D)
+	
 
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
@@ -137,20 +195,20 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
-	if cortical_ID_raw['cortical_id'] != null:
-		if "coordinates_2d" in other_properties.keys():
-			is_2D_coordinates_defined = true
-			coordinates_2D = other_properties["coordinates_2d"]
-		
-		FeagiCache.cortical_areas_cache.add_cortical_area(
-			cortical_ID_raw["cortical_id"],
-			other_properties["cortical_name"],
-			other_properties["coordinates_3d"]	,
-			other_properties["cortical_dimensions"],
-			is_2D_coordinates_defined,
-			coordinates_2D,
-			other_properties["cortical_type"]
-		)
+	
+	if "coordinates_2d" in other_properties.keys():
+		is_2D_coordinates_defined = true
+		coordinates_2D = other_properties["coordinates_2d"]
+	
+	FeagiCache.cortical_areas_cache.add_cortical_area(
+		cortical_ID_raw["cortical_id"],
+		other_properties["cortical_name"],
+		other_properties["coordinates_3d"]	,
+		other_properties["cortical_dimensions"],
+		is_2D_coordinates_defined,
+		coordinates_2D,
+		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+	)
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
@@ -162,6 +220,28 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
 	
+func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
+	if response_code == 404:
+		push_error("FEAGI unable to set setting for membrane potential monitoring!")
+		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential
+		return
+	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to find cortical area %s in cache to update monitoring status of membrane potential" % set_values["ID"])
+		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = set_values["state"]
+	
+func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
+	if response_code == 404:
+		push_error("FEAGI unable to set setting for synaptic potential monitoring!")
+		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential
+		return	
+	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+		push_error("Unable to find cortical area %s in cache to update monitoring status of synaptic potential" % set_values["ID"])
+		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential
+		return
+	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
+
 
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
 	if _response_code == 422:
@@ -179,14 +259,13 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	cortical_src.set_efferent_connection(cortical_dst, mapping_count)
 
 
-
 func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
 	if _response_code == 422:
 		push_error("Unable to process new properties for cortical area %s, skipping!" % [changed_cortical_ID])
 		return
 	
 	# Property change accepted, pull latest details
-	FeagiRequests.refresh_cortical_area(changed_cortical_ID)
+	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID])
 	pass
 
 func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:
@@ -205,6 +284,9 @@ func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, 
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
 
 
+
+
+
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
 	var data = response_body.get_string_from_utf8()
 	return JSON.parse_string(data)
@@ -217,5 +299,6 @@ func _body_to_dictionary(response_body: PackedByteArray) -> Dictionary:
 
 func _body_to_float(response_body: PackedByteArray) -> float:
 	return (str(response_body.get_string_from_utf8())).to_float()
+
 
 

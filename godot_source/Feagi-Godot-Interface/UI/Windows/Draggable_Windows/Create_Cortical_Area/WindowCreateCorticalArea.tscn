@@ -1,0 +1,144 @@
+[gd_scene load_steps=10 format=3 uid="uid://cy87lg2phntnx"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_vqh4i"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_6bao6"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_3p5xp"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="4_4mpov"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="5_bw00h"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="6_0p0de"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="6_cb8ls"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/TemplateDropDown.gd" id="6_gu8i4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_o35ls"]
+
+[node name="WindowCreateCorticalArea" type="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 40.0
+offset_right = -701.0
+offset_bottom = -393.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vqh4i")
+left_pixel_gap = 5
+right_pixel_gap = 5
+top_pixel_gap = 5
+bottom_pixel_gap = 5
+
+[node name="BoxContainer" type="BoxContainer" parent="."]
+layout_mode = 0
+offset_right = 450.0
+offset_bottom = 206.0
+vertical = true
+script = ExtResource("2_6bao6")
+
+[node name="gap1" type="Control" parent="BoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="type" type="HBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/type"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical Area Type:"
+
+[node name="options" type="BoxContainer" parent="BoxContainer/type"]
+layout_mode = 2
+script = ExtResource("5_bw00h")
+
+[node name="IPU" type="CheckBox" parent="BoxContainer/type/options"]
+layout_mode = 2
+text = "IPU"
+
+[node name="OPU" type="CheckBox" parent="BoxContainer/type/options"]
+layout_mode = 2
+text = "OPU"
+
+[node name="CUSTOM" type="CheckBox" parent="BoxContainer/type/options"]
+layout_mode = 2
+text = "CUSTOM"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical Name"
+
+[node name="Cortical_Name" type="LineEdit" parent="BoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+placeholder_text = "Friendly Name"
+max_length = 16
+editable = false
+script = ExtResource("3_3p5xp")
+
+[node name="dimensions_holder" type="HBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/dimensions_holder"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Dimensions"
+
+[node name="Dimensions" parent="BoxContainer/dimensions_holder" instance=ExtResource("4_4mpov")]
+layout_mode = 2
+int_x_min = 1
+int_y_min = 1
+int_z_min = 1
+initial_vector = Vector3i(1, 1, 1)
+initial_editable = false
+
+[node name="cortical_dropdown_holder" type="HBoxContainer" parent="BoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/cortical_dropdown_holder"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical Area to use"
+
+[node name="CorticalTemplateDropDown" type="OptionButton" parent="BoxContainer/cortical_dropdown_holder"]
+layout_mode = 2
+script = ExtResource("6_gu8i4")
+
+[node name="channel_holder" type="HBoxContainer" parent="BoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/channel_holder"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Channel Count"
+
+[node name="Channel_Input" type="LineEdit" parent="BoxContainer/channel_holder"]
+layout_mode = 2
+script = ExtResource("6_0p0de")
+initial_int = 1
+min_value = 1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3D Coordinates"
+
+[node name="Coordinates_3D" parent="BoxContainer/HBoxContainer2" instance=ExtResource("4_4mpov")]
+layout_mode = 2
+
+[node name="Create_button" type="Button" parent="BoxContainer"]
+layout_mode = 2
+text = "Create Cortical Area"
+script = ExtResource("7_o35ls")
+
+[node name="TitleBar" parent="." instance=ExtResource("6_cb8ls")]
+layout_mode = 0
+offset_top = -40.0
+offset_right = 451.0
+offset_bottom = 0.0
+title = "Create Cortical Area"

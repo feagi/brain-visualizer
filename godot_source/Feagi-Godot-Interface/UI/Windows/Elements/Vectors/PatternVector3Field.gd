@@ -14,6 +14,7 @@ signal user_updated_vector(new_vector3: PatternVector3)
 @export var int_z_suffix: StringName
 ## Due to godot limitations, only ints can go here
 @export var initial_vector: Vector3i
+@export var initial_editable: bool = true
 
 var current_vector: PatternVector3:
 	get: return PatternVector3.new(_field_x.current_patternval, _field_y.current_patternval, _field_z.current_patternval)
@@ -21,10 +22,19 @@ var current_vector: PatternVector3:
 		_field_x.current_patternval = v.x
 		_field_y.current_patternval = v.y
 		_field_z.current_patternval = v.z
-	
+
+var editable: bool:
+	get: return _editable
+	set(v):
+		_editable = v
+		_field_x.editable = v
+		_field_y.editable = v
+		_field_z.editable = v
+
 var _field_x: PatternValInput
 var _field_y: PatternValInput
 var _field_z: PatternValInput
+var _editable: bool = true
 
 func _ready():
 	get_node("LabelX").label_text = label_x_text
@@ -50,6 +60,8 @@ func _ready():
 	_field_x.patternval_confirmed.connect(_emit_new_vector)
 	_field_y.patternval_confirmed.connect(_emit_new_vector)
 	_field_z.patternval_confirmed.connect(_emit_new_vector)
+	
+	editable = initial_editable
 
 func _emit_new_vector(_dont_care: PatternVal) -> void:
 	user_updated_vector.emit(current_vector) # already builds a new object, avoiding reference conflict

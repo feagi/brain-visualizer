@@ -6,6 +6,7 @@ var _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Wind
 var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
 var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
+var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
 
 var loaded_windows: Dictionary
 
@@ -45,6 +46,15 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	add_child(edit_mappings)
 	edit_mappings.setup(source, destination)
 	loaded_windows["edit_mappings"] = edit_mappings
+
+func spawn_create_cortical() -> void:
+	if "create_cortical" in loaded_windows.keys():
+		loaded_windows["create_cortical"].queue_free()
+	
+	print("user requests create cortical window")
+	var create_cortical: WindowCreateCorticalArea = _prefab_create_cortical.instantiate()
+	add_child(create_cortical)
+	loaded_windows["create_cortical"] = create_cortical
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
