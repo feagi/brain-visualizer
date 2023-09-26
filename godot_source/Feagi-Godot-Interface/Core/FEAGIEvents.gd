@@ -15,3 +15,5 @@ signal retrieved_circuit_size(circuit_name: StringName, size_whd: Vector3i)
 signal retrieved_latest_morphology_listing(morphologies: Array[String])
 ## Emits when we retrieved arrays of source -> destination mappings (each are 2 element array themselves), and the accompying relevant morphology it relates to
 signal retrieved_latest_usuage_of_morphology(relevant_morphology: Morphology, usage: Array[Array])
+
+signal retrieved_latest_ping(ping: StringName)

@@ -233,7 +233,10 @@ async def bridge_to_BV():
             try:
                 if ws_operation:
                     await ws_operation[0].send(zlib.compress(str(zmq_queue[0]).encode()))
-                    zmq_queue.pop()
+                    if "ping" in zmq_queue:
+                        zmq_queue.popleft()
+                    else:
+                        zmq_queue.pop()
             except Exception as error:
                 sleep(0.001)
         else:
@@ -461,8 +464,8 @@ def main():
         else:
             data_from_godot = "{}"
         # print("DATA FROM GODOT: ", data_from_godot)
-        if data_from_godot != "{}":
-            print(data_from_godot)
+        # if data_from_godot != "{}":
+        #     print(data_from_godot)
         if data_from_godot == "lagged":
             detect_lag = True
             data_from_godot = "{}"
@@ -474,6 +477,9 @@ def main():
                                             timeout=10).json()
             json_object = json.dumps(data_from_genome)
             zmq_queue.append("genome: " + json_object)
+        if data_from_godot == "ping":
+            data_from_godot = "{}"
+            zmq_queue.append("ping")
         if data_from_godot == "updated":
             data_from_godot = "{}"
             reload_genome(feagi_host, api_port, dimensions_endpoint)
