@@ -48,7 +48,6 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	loaded_windows["edit_mappings"] = edit_mappings
 
 func spawn_create_cortical() -> void:
-	print("hi")
 	if "create_cortical" in loaded_windows.keys():
 		loaded_windows["create_cortical"].queue_free()
 	

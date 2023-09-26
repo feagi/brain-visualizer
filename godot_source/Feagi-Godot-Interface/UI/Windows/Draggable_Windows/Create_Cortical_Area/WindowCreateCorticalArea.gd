@@ -2,7 +2,7 @@ extends GrowingPanel
 class_name WindowCreateCorticalArea
 
 signal dimensions_updated(dimensions: Vector3i)
-signal location_updated(location: Vector3i)
+signal coordinates_updated(location: Vector3i)
 
 var _field_cortical_name: TextInput
 var _field_3D_coordinates: Vector3iField
@@ -24,11 +24,53 @@ func _ready() -> void:
 	_holder_channel = $BoxContainer/channel_holder
 	
 	_field_type_radio.button_pressed.connect(_radio_button_proxy)
+	_field_3D_coordinates.user_updated_vector.connect(_coordinate_proxy)
+	_field_dimensions.user_updated_vector.connect(_dimensions_updated_proxy)
+	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
+	_field_channel.int_confirmed.connect(_channel_changed)
+	
 
-func _radio_button_proxy(button_index: int, button_label: StringName) -> void:
+func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
+	var selected_str: StringName = _field_type_radio.currently_selected_text
+	if selected_str not in CorticalArea.CORTICAL_AREA_TYPE.keys():
+		return CorticalArea.CORTICAL_AREA_TYPE.INVALID
+	return CorticalArea.CORTICAL_AREA_TYPE[selected_str]
+
+
+func _radio_button_proxy(_button_index: int, button_label: StringName) -> void:
 	_switch_UI_between_cortical_types(CorticalArea.CORTICAL_AREA_TYPE[button_label])
 
+
+func _coordinate_proxy(input: Vector3) -> void:
+	coordinates_updated.emit(input)
+
+
+## Called regardless of if updated by user or from template
+func _dimensions_updated_proxy(input:Vector3) -> void:
+	dimensions_updated.emit(input)
+
+
+func _template_dropdown_changed(selected_template: CorticalTemplate) -> void:
+	var cortical_type: CorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
+	_field_cortical_name.text = selected_template.cortical_name
+	if (cortical_type == CorticalArea.CORTICAL_AREA_TYPE.IPU) || (cortical_type == CorticalArea.CORTICAL_AREA_TYPE.OPU):
+		_field_dimensions.current_vector = selected_template.calculate_IOPU_dimension(_field_channel.current_int)
+		_dimensions_updated_proxy(_field_dimensions.current_vector)
+		return
+	if cortical_type == CorticalArea.CORTICAL_AREA_TYPE.CORE:
+		_field_dimensions.current_vector = selected_template.resolution
+		_dimensions_updated_proxy(_field_dimensions.current_vector)
+		return
+
+func _channel_changed(new_channel_count: int) -> void:
+	if _dropdown_cortical_dropdown.selected == -1:
+		return # nothing to change if no drop down is selected
+	var selected_template: CorticalTemplate = _dropdown_cortical_dropdown.get_template_by_index()
+	_field_dimensions.current_vector = selected_template.calculate_IOPU_dimension(new_channel_count)
+	_dimensions_updated_proxy(_field_dimensions.current_vector)
+
 func _switch_UI_between_cortical_types(cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
+	_field_cortical_name.text = ""
 	match cortical_type:
 		CorticalArea.CORTICAL_AREA_TYPE.IPU:
 			_holder_dropdown.visible = true
@@ -48,10 +90,6 @@ func _switch_UI_between_cortical_types(cortical_type: CorticalArea.CORTICAL_AREA
 			_holder_dropdown.visible = false
 			_holder_channel.visible = false
 			_field_dimensions.editable = true
-			_field_cortical_name.text = ""
 			_field_cortical_name.editable = true
+			_field_cortical_name.placeholder_text = "Type Name Here"
 
-
-func _calculate_IOPU_dimension(input_dimension: Vector3i, channel_count: int) -> Vector3i:
-	input_dimension.x = input_dimension.x * channel_count
-	return input_dimension

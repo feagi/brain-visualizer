@@ -3,29 +3,34 @@ class_name TemplateDropDown
 
 signal template_picked(template: CorticalTemplate)
 
+@export var _template_type: CorticalArea.CORTICAL_AREA_TYPE
+
 var template_type: CorticalArea.CORTICAL_AREA_TYPE:
 	get: return _template_type
 	set(v):
 		_template_type = v
 		load_cortical_type_options(v)
 
-@export var _template_type: CorticalArea.CORTICAL_AREA_TYPE
-var _ordered_ID_name_mapping: Array[CorticalTemplate] = []
+var _stored_template_references: Array[CorticalTemplate] = []
 
 func _ready() -> void:
 	load_cortical_type_options(_template_type)
+	item_selected.connect(_on_user_pick)
 
 func load_cortical_type_options(type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
 	clear()
-	_ordered_ID_name_mapping = []
+	_stored_template_references = []
 	for template in FeagiCache.cortical_templates[CorticalArea.CORTICAL_AREA_TYPE.keys()[type]].templates.values():
 		
 		if !template.is_enabled:
 			continue
-		_ordered_ID_name_mapping.append(template)
+		_stored_template_references.append(template)
 		add_item(template.cortical_name)
 
+func get_template_by_index() -> CorticalTemplate:
+	return _stored_template_references[selected]
+
 func _on_user_pick(index: int) -> void:
-	template_picked.emit(_ordered_ID_name_mapping[index])
+	template_picked.emit(_stored_template_references[index])
 
 
