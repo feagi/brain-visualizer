@@ -36,55 +36,45 @@ script = ExtResource("2_6bao6")
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
+[node name="type" type="HBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/type"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cortical Area Type:"
+
+[node name="options" type="BoxContainer" parent="BoxContainer/type"]
+layout_mode = 2
+script = ExtResource("5_bw00h")
+
+[node name="IPU" type="CheckBox" parent="BoxContainer/type/options"]
+layout_mode = 2
+text = "IPU"
+
+[node name="OPU" type="CheckBox" parent="BoxContainer/type/options"]
+layout_mode = 2
+text = "OPU"
+
+[node name="CUSTOM" type="CheckBox" parent="BoxContainer/type/options"]
+layout_mode = 2
+text = "CUSTOM"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
 
 [node name="Label" type="Label" parent="BoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Custom Cortical Name"
+text = "Cortical Name"
 
 [node name="Cortical_Name" type="LineEdit" parent="BoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "Friendly Name"
 max_length = 16
+editable = false
 script = ExtResource("3_3p5xp")
-
-[node name="HBoxContainer2" type="HBoxContainer" parent="BoxContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="BoxContainer/HBoxContainer2"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "3D Coordinates"
-
-[node name="Coordinates_3D" parent="BoxContainer/HBoxContainer2" instance=ExtResource("4_4mpov")]
-layout_mode = 2
-
-[node name="HBoxContainer3" type="HBoxContainer" parent="BoxContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="BoxContainer/HBoxContainer3"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Cortical Area Type:"
-
-[node name="options" type="BoxContainer" parent="BoxContainer/HBoxContainer3"]
-layout_mode = 2
-script = ExtResource("5_bw00h")
-
-[node name="IPU" type="CheckBox" parent="BoxContainer/HBoxContainer3/options"]
-layout_mode = 2
-text = "IPU"
-
-[node name="OPU" type="CheckBox" parent="BoxContainer/HBoxContainer3/options"]
-layout_mode = 2
-text = "OPU"
-
-[node name="CUSTOM" type="CheckBox" parent="BoxContainer/HBoxContainer3/options"]
-layout_mode = 2
-text = "CUSTOM"
 
 [node name="dimensions_holder" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
@@ -92,12 +82,18 @@ layout_mode = 2
 [node name="Label" type="Label" parent="BoxContainer/dimensions_holder"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Custom Dimensions"
+text = "Dimensions"
 
 [node name="Dimensions" parent="BoxContainer/dimensions_holder" instance=ExtResource("4_4mpov")]
 layout_mode = 2
+int_x_min = 1
+int_y_min = 1
+int_z_min = 1
+initial_vector = Vector3i(1, 1, 1)
+initial_editable = false
 
 [node name="cortical_dropdown_holder" type="HBoxContainer" parent="BoxContainer"]
+visible = false
 layout_mode = 2
 
 [node name="Label" type="Label" parent="BoxContainer/cortical_dropdown_holder"]
@@ -110,6 +106,7 @@ layout_mode = 2
 script = ExtResource("6_gu8i4")
 
 [node name="channel_holder" type="HBoxContainer" parent="BoxContainer"]
+visible = false
 layout_mode = 2
 
 [node name="Label" type="Label" parent="BoxContainer/channel_holder"]
@@ -122,6 +119,17 @@ layout_mode = 2
 script = ExtResource("6_0p0de")
 initial_int = 1
 min_value = 1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="BoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3D Coordinates"
+
+[node name="Coordinates_3D" parent="BoxContainer/HBoxContainer2" instance=ExtResource("4_4mpov")]
+layout_mode = 2
 
 [node name="TextButton_Element" type="Button" parent="BoxContainer"]
 layout_mode = 2
