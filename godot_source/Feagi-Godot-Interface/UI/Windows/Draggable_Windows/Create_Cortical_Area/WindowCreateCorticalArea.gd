@@ -14,6 +14,7 @@ var _holder_dropdown: HBoxContainer
 var _holder_channel: HBoxContainer
 
 func _ready() -> void:
+	var _create_button: TextButton_Element = $BoxContainer/Create_button
 	_field_cortical_name = $BoxContainer/HBoxContainer/Cortical_Name
 	_field_3D_coordinates = $BoxContainer/HBoxContainer2/Coordinates_3D
 	_field_type_radio = $BoxContainer/type/options
@@ -23,11 +24,14 @@ func _ready() -> void:
 	_holder_dropdown = $BoxContainer/cortical_dropdown_holder
 	_holder_channel = $BoxContainer/channel_holder
 	
+	_create_button.pressed.connect(_create_pressed)
 	_field_type_radio.button_pressed.connect(_radio_button_proxy)
 	_field_3D_coordinates.user_updated_vector.connect(_coordinate_proxy)
 	_field_dimensions.user_updated_vector.connect(_dimensions_updated_proxy)
 	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
 	_field_channel.int_confirmed.connect(_channel_changed)
+
+
 	
 
 func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:

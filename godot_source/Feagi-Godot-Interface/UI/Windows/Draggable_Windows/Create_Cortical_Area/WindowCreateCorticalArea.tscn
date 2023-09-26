@@ -131,7 +131,7 @@ text = "3D Coordinates"
 [node name="Coordinates_3D" parent="BoxContainer/HBoxContainer2" instance=ExtResource("4_4mpov")]
 layout_mode = 2
 
-[node name="TextButton_Element" type="Button" parent="BoxContainer"]
+[node name="Create_button" type="Button" parent="BoxContainer"]
 layout_mode = 2
 text = "Create Cortical Area"
 script = ExtResource("7_o35ls")

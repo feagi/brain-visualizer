@@ -163,6 +163,9 @@ func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, o
 	if "cortical_id" not in cortical_ID_raw.keys():
 		push_error("FEAGI did not respond with a cortical ID when trying to generate a cortical area, something likely went wrong")
 		return
+	if cortical_ID_raw["cortical_id"] == null:
+		push_error("FEAGI did not respond with a cortical ID when trying to generate a cortical area, something likely went wrong")
+		return
 	
 	var created_cortical_ID: StringName = cortical_ID_raw["cortical_id"]
 	var template: CorticalTemplate = FeagiCache.cortical_templates[other_properties["cortical_type_str"]].templates[created_cortical_ID]
