@@ -83,6 +83,7 @@ func _switch_UI_between_cortical_types(cortical_type: CorticalArea.CORTICAL_AREA
 			_field_cortical_name.editable = false
 			_dropdown_cortical_dropdown.load_cortical_type_options(cortical_type)
 			_dropdown_cortical_dropdown.selected = -1
+			_field_cortical_name.placeholder_text = "Will load from Template"
 		CorticalArea.CORTICAL_AREA_TYPE.OPU:
 			_holder_dropdown.visible = true
 			_holder_channel.visible = true
@@ -90,6 +91,7 @@ func _switch_UI_between_cortical_types(cortical_type: CorticalArea.CORTICAL_AREA
 			_field_cortical_name.editable = false
 			_dropdown_cortical_dropdown.load_cortical_type_options(cortical_type)
 			_dropdown_cortical_dropdown.selected = -1
+			_field_cortical_name.placeholder_text = "Will load from Template"
 		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			_holder_dropdown.visible = false
 			_holder_channel.visible = false
