@@ -34,7 +34,9 @@ func overwrite_cortical_areas(new_areas: Array[CorticalArea]) -> void:
 
 ## Display all cortical areas
 func list_all_cached_areas() -> void:
-	overwrite_cortical_areas(FeagiCache.cortical_areas_cache.cortical_areas.values())
+	var cortical_areas: Array[CorticalArea] = []
+	cortical_areas.assign(FeagiCache.cortical_areas_cache.cortical_areas.values())
+	overwrite_cortical_areas(cortical_areas)
 	
 ## Add a singular cortical area to the end of the drop down
 func add_cortical_area(new_area: CorticalArea) -> void:
