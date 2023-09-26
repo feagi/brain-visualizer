@@ -14,17 +14,17 @@ var currently_selected_text: StringName:
 
 
 
-var _button_group: ButtonGroup
+var button_group: ButtonGroup
 
 func _ready():
-	_button_group = ButtonGroup.new()
+	button_group = ButtonGroup.new()
 	var children: Array = get_children()
 	for child in children:
 		if child.get_class() == "CheckBox" or child.get_class() == "Button" or child.get_class() == "CheckButton":
 			# Just to filter non-button based out.
-			child.button_group = _button_group
-	_button_group.allow_unpress = allow_deselecting
-	_button_group.pressed.connect(_emit_pressed)
+			child.button_group = button_group
+	button_group.allow_unpress = allow_deselecting
+	button_group.pressed.connect(_emit_pressed)
 
 func _emit_pressed(button: Button) -> void:
 	button_pressed.emit(button.get_index(), button.text)
