@@ -22,8 +22,8 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 
 signal socket_state_changed(state: WebSocketPeer.State)
 
-var num_workers_available: int:
-	get: return workers_available.size()
+var num_request_workers_available: int:
+	get: return request_workers_available.size()
 
 var current_websocket_status: WebSocketPeer.State:
 	get: return _get_socket_state()
@@ -39,7 +39,7 @@ var feagi_socket_address: StringName
 var feagi_outgoing_headers: PackedStringArray
 var endpoints: AddressList
 var num_workers_to_keep_available: int
-var workers_available: Array[RequestWorker]
+var request_workers_available: Array[RequestWorker]
 var current_websocket_state: WebSocketPeer.State
 
 
@@ -164,8 +164,8 @@ func _API_FEAGI(full_request_address: StringName, method: HTTPClient.Method,
 	function_to_respond_to_FEAGI: Callable, additional_data: Variant = null, data_to_pass_through: Variant = null) -> void:
 
 	var worker: RequestWorker
-	if num_workers_available > 0:
-		worker = workers_available.pop_back()
+	if num_request_workers_available > 0:
+		worker = request_workers_available.pop_back()
 	else:
 		worker = _spawn_worker()
 	worker.FEAGI_call(full_request_address, method, function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
@@ -179,7 +179,7 @@ func _spawn_worker() -> RequestWorker:
 ## Spawns initial RequestWorkers
 func _spawn_initial_workers() -> void:
 	for i in num_workers_to_keep_available:
-		workers_available.append(_spawn_worker())
+		request_workers_available.append(_spawn_worker())
 
 
 ## Prints connection information to log

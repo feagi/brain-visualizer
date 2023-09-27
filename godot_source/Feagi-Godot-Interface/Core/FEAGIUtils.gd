@@ -29,6 +29,11 @@ static func vector3i_to_array(input: Vector3i):
 	var output: Array = [input.x, input.y, input.z]
 	return output
 
+## Converts a Vector3 to a 3 long float array
+static func vector3_to_array(input: Vector3):
+	var output: Array = [input.x, input.y, input.z]
+	return output
+
 ## Converts a Vector2i to a 2 long int array
 static func vector2i_to_array(input: Vector2i):
 	var output: Array = [input.x, input.y]

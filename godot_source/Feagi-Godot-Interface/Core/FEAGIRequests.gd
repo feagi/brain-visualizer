@@ -66,6 +66,7 @@ func request_refresh_cortical_templates() -> void:
 ## Convert Vectors to arrays, StringNames to Strings
 ## Success emits cortical_area_updated since this calls "refresh_cortical_area" on success
 func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: Dictionary) -> void:
+	
 	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
 
 func request_change_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:

@@ -143,8 +143,8 @@ func user_request_Leak_Varibility(value: int) -> void:
 	_growing_cortical_update["neuron_leak_variability"] = value
 	_update_button.disabled = false
 
-func user_request_Threshold_Inc(value: int) -> void:
-	_growing_cortical_update["neuron_fire_threshold_increment"] = value
+func user_request_Threshold_Inc(value: Vector3) -> void:
+	_growing_cortical_update["neuron_fire_threshold_increment"] = FEAGIUtils.vector3_to_array(value)
 	_update_button.disabled = false
 
 func user_request_Consecutive_Fire_Count(value: int) -> void:
