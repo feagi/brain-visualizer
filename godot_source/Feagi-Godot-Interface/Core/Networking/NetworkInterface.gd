@@ -132,7 +132,7 @@ func init_network(worker_parent_root: Node) -> void:
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 
 func single_FEAGI_request(full_request_address: StringName, call_method: HTTPClient.Method, function_to_respond_to_FEAGI: Callable, 
-	additional_data: Variant, data_to_pass_through: Variant = null):
+	additional_data: Variant = null, data_to_pass_through: Variant = null):
 
 	var worker: RequestWorker = _grab_worker()
 	worker.single_call(full_request_address, call_method, function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
