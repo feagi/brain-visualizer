@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://brfeqk3g11xng"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/Networking/Workers/SingleCallWorker.gd" id="1_bvljv"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/Networking/Workers/RequestWorker.gd" id="2_008p0"]
+
+[node name="SingleCallWorker" type="Node"]
+script = ExtResource("1_bvljv")
+
+[node name="RequestWorker" type="HTTPRequest" parent="."]
+script = ExtResource("2_008p0")
