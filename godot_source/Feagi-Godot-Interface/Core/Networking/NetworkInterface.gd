@@ -44,10 +44,9 @@ var current_websocket_state: WebSocketPeer.State
 
 
 var _request_worker_parent: Node
-var _multithreading_enabled: bool # cannot be changed after init
 var _socket: WebSocketPeer
 var _cache_websocket_data: PackedByteArray
-
+var _request_worker_prefab: PackedScene = preload("res://Feagi-Godot-Interface/Core/Networking/Workers/SingleCallWorker.tscn")
 
 ## Used to init the network interface
 ## Required before usage
@@ -132,24 +131,19 @@ func init_network(worker_parent_root: Node) -> void:
 	_socket.inbound_buffer_size = 1000000
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 
-## Makes a GET API call to FEAGI which then runs the given function call (with optional pass through data)
-func FEAGI_GET(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, data_to_pass_through: Variant = null) -> void:
-	_API_FEAGI(full_request_address, HTTPClient.METHOD_GET , function_to_respond_to_FEAGI, null, data_to_pass_through)
+func single_FEAGI_request(full_request_address: StringName, call_method: HTTPClient.Method, function_to_respond_to_FEAGI: Callable, 
+	additional_data: Variant, data_to_pass_through: Variant = null):
 
+	var worker: RequestWorker = _grab_worker()
+	worker.single_call(full_request_address, call_method, function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
 
-## Makes a POST API call to FEAGI with given data which then runs the given function call (with optional pass through data)
-func FEAGI_POST(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, additional_data: Variant, data_to_pass_through: Variant = null) -> void:
-	_API_FEAGI(full_request_address, HTTPClient.METHOD_POST , function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
+func polling_FEAGI_request(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
+	polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
+	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5) -> void:
 
+	var worker: RequestWorker = _grab_worker()
+	worker.polling_call(full_request_address, method, follow_up_function, polling_check, additional_data_to_send, data_to_buffer, polling_gap_seconds)
 
-## Makes a PUT API call to FEAGI with given data which then runs the given function call (with optional pass through data)
-func FEAGI_PUT(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, additional_data: Variant, data_to_pass_through: Variant = null) -> void:
-	_API_FEAGI(full_request_address, HTTPClient.METHOD_PUT , function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
-
-
-## Makes a DELETE API call to FEAGI with given data which then runs the given function call (with optional pass through data)
-func FEAGI_DELETE(full_request_address: StringName, function_to_respond_to_FEAGI: Callable, data_to_pass_through: Variant = null) -> void:
-	_API_FEAGI(full_request_address, HTTPClient.METHOD_DELETE , function_to_respond_to_FEAGI, null, data_to_pass_through)
 
 ## attempts to send data over websocket
 func websocket_send(data: Variant) -> void:
@@ -159,21 +153,21 @@ func websocket_send(data: Variant) -> void:
 	_socket.send((data.to_ascii_buffer()).compress(1))
 
 
-## Makes a API call using an available [RequestWorker] (or if none are available, spawns one first)
-func _API_FEAGI(full_request_address: StringName, method: HTTPClient.Method, 
-	function_to_respond_to_FEAGI: Callable, additional_data: Variant = null, data_to_pass_through: Variant = null) -> void:
-
+## Grabs either an available [RequestWorker] (or if none are available, spawns one first)
+func _grab_worker() -> RequestWorker:
 	var worker: RequestWorker
 	if num_request_workers_available > 0:
 		worker = request_workers_available.pop_back()
 	else:
 		worker = _spawn_worker()
-	worker.FEAGI_call(full_request_address, method, function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
+	return worker
 	
 
 ## Spawns a RequestWorker
 func _spawn_worker() -> RequestWorker:
-	return RequestWorker.new(_multithreading_enabled, self, feagi_outgoing_headers, _request_worker_parent)
+	var worker: RequestWorker = _request_worker_prefab.instantiate()
+	worker.initialization(self, DEF_HEADERSTOUSE, _request_worker_parent)
+	return worker
 
 
 ## Spawns initial RequestWorkers
