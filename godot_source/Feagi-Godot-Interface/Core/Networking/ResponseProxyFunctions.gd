@@ -5,8 +5,6 @@ class_name ResponseProxyFunctions
 
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-
-
 	var morphologies_and_types: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphologies_and_types)
 	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
@@ -265,7 +263,7 @@ func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, c
 		return
 	
 	# Property change accepted, pull latest details
-	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID])
+	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID], true)
 	pass
 
 func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:

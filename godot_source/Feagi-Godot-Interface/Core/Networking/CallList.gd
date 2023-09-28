@@ -51,6 +51,13 @@ func GET_GE_corticalNameLocation(corticalName: String):
 func GET_GE_corticalArea(corticalID: StringName):
 	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalArea + corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalArea)
 
+## By corticalID, returns dictionary of all cortical area details, but keeps polling until the cortical area is no longer transforming
+func GET_GE_corticalArea_POLL(corticalID: StringName):
+	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("transforming", false)
+	_interface_ref.polling_FEAGI_request(_address_list.GET_genome_corticalArea + corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalArea,
+		searching_for)
+	
+
 ## returns dict of cortical names, mapped to an array of positions, unknown boolean, size, and ID
 func GET_CO_properties_dimensions():
 	_interface_ref.single_FEAGI_request(_address_list.GET_connectome_properties_dimensions, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_CO_properties_dimensions)

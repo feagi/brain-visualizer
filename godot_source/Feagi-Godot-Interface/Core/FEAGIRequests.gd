@@ -19,9 +19,12 @@ func refresh_cortical_areas() -> void:
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
 ## Success emits cortical_area_updated
-func refresh_cortical_area(cortical_area: CorticalArea) -> void:
+func refresh_cortical_area(cortical_area: CorticalArea, polling: bool = false) -> void:
 	print("Pinging FEAGI latest cortical area details for " + cortical_area.cortical_ID)
-	_feagi_interface.calls.GET_GE_corticalArea(cortical_area.cortical_ID)
+	if polling:
+		_feagi_interface.calls.GET_GE_corticalArea_POLL(cortical_area.cortical_ID)
+	else:
+		_feagi_interface.calls.GET_GE_corticalArea(cortical_area.cortical_ID)
 	request_membrane_monitoring_status(cortical_area)
 	request_synaptic_monitoring_status(cortical_area)
 
