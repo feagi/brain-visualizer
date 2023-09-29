@@ -19,7 +19,7 @@ func _init():
 
 ## Runs after _init
 func _ready():
-	FeagiRequests.get_loaded_genome_name_launch()
+	FeagiRequests.poll_genome_availability_launch()
 	net.socket_state_changed.connect(_socket_changed_state)
 
 ## mainly handles polling websocket

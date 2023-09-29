@@ -204,7 +204,10 @@ func hard_reset_genome_from_FEAGI() -> void:
 	FeagiCache.hard_wipe()
 	initial_FEAGI_calls()
 
-## Calls feagi to retrieve the currently loaded filename. Polls if unavailable. Used to wait for feagi to launch before initializing
-## since this method triggers "initial_FEAGI_calls" if there is no genome name cached at all
-func get_loaded_genome_name_launch() -> void:
-	_feagi_interface.calls.GET_GE_fileName_POLL()
+## Calls feagi to retrieve the currently loaded filename.
+func get_loaded_genome() -> void:
+	_feagi_interface.calls.GET_GE_fileName()
+
+## Calls feagi to retrieve genome health. Polls if genome is unavailable. used for launch since this will launch "initial_FEAGI_calls" once genome is available
+func poll_genome_availability_launch() -> void:
+	_feagi_interface.calls.GET_healthCheck_POLL_GENOME()

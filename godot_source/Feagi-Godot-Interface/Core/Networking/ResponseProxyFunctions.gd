@@ -3,9 +3,6 @@ class_name ResponseProxyFunctions
 ## All responses from FEAGI calls go through these calls
 
 func GET_GE_fileName(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	if FeagiCache.genome_name == &"":
-		# if the genome name is empty, assume the system still needs to load
-		FeagiRequests.initial_FEAGI_calls()
 	FeagiCache.genome_name = response_body.get_string_from_utf8()
 
 
@@ -158,6 +155,12 @@ func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _i
 		return
 	var raw_templates: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.feagi_set_cortical_templates(raw_templates)
+
+func GET_healthCheck_POLL_genome_availability(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	FeagiRequests.initial_FEAGI_calls()
+
+
+
 
 func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	if _response_code == 422:
