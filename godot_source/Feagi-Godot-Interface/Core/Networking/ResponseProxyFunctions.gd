@@ -2,11 +2,12 @@ extends Object
 class_name ResponseProxyFunctions
 ## All responses from FEAGI calls go through these calls
 
+func GET_GE_fileName(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	FeagiCache.genome_name = response_body.get_string_from_utf8()
+
 
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-
-
 	var morphologies_and_types: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphologies_and_types)
 	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
@@ -43,7 +44,7 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 	if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
 		# we were loading the game, but now we can assume we are loaded
 		VisConfig.visualizer_state = VisConfig.STATES.READY
-	
+
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
@@ -155,6 +156,12 @@ func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _i
 	var raw_templates: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.feagi_set_cortical_templates(raw_templates)
 
+func GET_healthCheck_POLL_genome_availability(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	FeagiRequests.initial_FEAGI_calls()
+
+
+
+
 func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	if _response_code == 422:
 		push_error("Unable to process new cortical area dict, skipping!")
@@ -265,7 +272,7 @@ func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, c
 		return
 	
 	# Property change accepted, pull latest details
-	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID])
+	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID], true)
 	pass
 
 func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:

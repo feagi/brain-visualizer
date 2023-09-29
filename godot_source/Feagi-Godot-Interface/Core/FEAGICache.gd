@@ -16,6 +16,12 @@ var available_circuits: PackedStringArray:
 		_available_circuits = v
 		FeagiCacheEvents.available_circuit_listing_updated.emit(v)
 
+var genome_name: StringName:
+	get: return _genome_name
+	set(v):
+		_genome_name = v
+		FeagiCacheEvents.feagi_genome_name_changed.emit(v)
+
 var morphology_cache: MorphologiesCache
 var cortical_areas_cache: CorticalAreasCache
 var cortical_templates: Dictionary:
@@ -25,6 +31,7 @@ var cortical_templates: Dictionary:
 var _delay_between_bursts: float
 var _available_circuits: PackedStringArray = []
 var _cortical_templates: Dictionary = {}
+var _genome_name: StringName = ""
 
 
 func _init():

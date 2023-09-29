@@ -19,9 +19,12 @@ func refresh_cortical_areas() -> void:
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
 ## Success emits cortical_area_updated
-func refresh_cortical_area(cortical_area: CorticalArea) -> void:
+func refresh_cortical_area(cortical_area: CorticalArea, polling: bool = false) -> void:
 	print("Pinging FEAGI latest cortical area details for " + cortical_area.cortical_ID)
-	_feagi_interface.calls.GET_GE_corticalArea(cortical_area.cortical_ID)
+	if polling:
+		_feagi_interface.calls.GET_GE_corticalArea_POLL(cortical_area.cortical_ID)
+	else:
+		_feagi_interface.calls.GET_GE_corticalArea(cortical_area.cortical_ID)
 	request_membrane_monitoring_status(cortical_area)
 	request_synaptic_monitoring_status(cortical_area)
 
@@ -66,6 +69,7 @@ func request_refresh_cortical_templates() -> void:
 ## Convert Vectors to arrays, StringNames to Strings
 ## Success emits cortical_area_updated since this calls "refresh_cortical_area" on success
 func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: Dictionary) -> void:
+	
 	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
 
 func request_change_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
@@ -185,7 +189,7 @@ func get_circuit_size(circuit_name: StringName) -> void:
 		return
 	_feagi_interface.calls.GET_GE_circuitsize(circuit_name)
 
-## Retrieves initial data needed to get started
+## Retrieves initial data needed to get started following genome load
 func initial_FEAGI_calls() -> void:
 	refresh_morphology_list()
 	refresh_cortical_areas() # This also causes a refresh of connections afterwards
@@ -200,3 +204,10 @@ func hard_reset_genome_from_FEAGI() -> void:
 	FeagiCache.hard_wipe()
 	initial_FEAGI_calls()
 
+## Calls feagi to retrieve the currently loaded filename.
+func get_loaded_genome() -> void:
+	_feagi_interface.calls.GET_GE_fileName()
+
+## Calls feagi to retrieve genome health. Polls if genome is unavailable. used for launch since this will launch "initial_FEAGI_calls" once genome is available
+func poll_genome_availability_launch() -> void:
+	_feagi_interface.calls.GET_healthCheck_POLL_GENOME()
