@@ -9,7 +9,7 @@ func _init(searching_key: StringName, searching_value: Variant) -> void:
     _searching_key = searching_key
     _searching_value = searching_value
 
-func confirm_complete(response_body: PackedByteArray) -> bool:
+func confirm_complete(_response_code: int, response_body: PackedByteArray) -> bool:
     var dictionary: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
     if _searching_key not in dictionary.keys(): 
         return false

@@ -2,6 +2,12 @@ extends Object
 class_name ResponseProxyFunctions
 ## All responses from FEAGI calls go through these calls
 
+func GET_GE_fileName(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if FeagiCache.genome_name == &"":
+		# if the genome name is empty, assume the system still needs to load
+		FeagiRequests.initial_FEAGI_calls()
+	FeagiCache.genome_name = response_body.get_string_from_utf8()
+
 
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
@@ -41,7 +47,7 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 	if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
 		# we were loading the game, but now we can assume we are loaded
 		VisConfig.visualizer_state = VisConfig.STATES.READY
-	
+
 
 ## returns a dict of all the properties of a specific cortical area, then triggers a cache update for it
 func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:

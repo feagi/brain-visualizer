@@ -28,8 +28,9 @@ func GET_GE_morphologyList():
 	_interface_ref.single_FEAGI_request(_address_list.GET_genome_morphologyList, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_morphologyList)
 
 ## Get genome filename
-func GET_GE_fileName():
-	_interface_ref.single_FEAGI_request(_address_list.GET_genome_fileName, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_fileName)
+func GET_GE_fileName_POLL():
+	var searching_for: PollingMethodResponseCode = PollingMethodResponseCode.new(200)
+	_interface_ref.polling_FEAGI_request(_address_list.GET_genome_fileName, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_fileName, searching_for)
 
 ## return dict of cortical IDs mapped with dict of connected cortical area and number of mappings
 func GET_GE_corticalMap():

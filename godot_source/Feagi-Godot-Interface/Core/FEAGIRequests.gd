@@ -189,7 +189,7 @@ func get_circuit_size(circuit_name: StringName) -> void:
 		return
 	_feagi_interface.calls.GET_GE_circuitsize(circuit_name)
 
-## Retrieves initial data needed to get started
+## Retrieves initial data needed to get started following genome load
 func initial_FEAGI_calls() -> void:
 	refresh_morphology_list()
 	refresh_cortical_areas() # This also causes a refresh of connections afterwards
@@ -204,3 +204,7 @@ func hard_reset_genome_from_FEAGI() -> void:
 	FeagiCache.hard_wipe()
 	initial_FEAGI_calls()
 
+## Calls feagi to retrieve the currently loaded filename. Polls if unavailable. Used to wait for feagi to launch before initializing
+## since this method triggers "initial_FEAGI_calls" if there is no genome name cached at all
+func get_loaded_genome_name_launch() -> void:
+	_feagi_interface.calls.GET_GE_fileName_POLL()

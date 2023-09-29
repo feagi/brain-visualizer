@@ -100,7 +100,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			_query_for_destruction()
 		CALL_PROCESS_TYPE.POLLING:
 			# we are polling
-			if _polling_check.confirm_complete(body):
+			if _polling_check.confirm_complete(response_code, body):
 				# We are done polling!
 				_follow_up_function.call(response_code, body, _buffer_data)
 				_timer.stop()
@@ -109,7 +109,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			# not done polling, keep going!
 			print("Continuing to poll " + _poll_address)
 			
-			
+
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
 func _query_for_destruction() -> void:
