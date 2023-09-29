@@ -277,8 +277,8 @@ func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should re
 
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
-	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_corticalArea + corticalID, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_corticalArea, corticalID) # pass through cortical ID to know what we deleted
+	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_corticalArea + corticalID, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_corticalArea, null, corticalID) # pass through cortical ID to know what we deleted
 
 ## Deletes a morphology
 func DELETE_GE_morphology(morphology_name: StringName):
-	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_morphology + morphology_name, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_morphology, morphology_name) # pass through morphology name to know what we deleted
+	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_morphology + morphology_name, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_morphology, null, morphology_name) # pass through morphology name to know what we deleted
