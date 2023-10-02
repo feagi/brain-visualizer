@@ -25,6 +25,8 @@ signal drag_finished(current_position: Vector2)
 ## if True, will attempt to set the correct width of the parent window, and maintain it
 @export var automatic_maintain_width: bool = true
 
+## if set to a non blank string, will attempt to automatically set up closing behavior on parent window for the window manager
+@export var automatic_setup_window_closing_for_window_manager_name: StringName
 
 var is_dragging: bool:
 	get: return _is_dragging
@@ -68,6 +70,9 @@ func _ready():
 		_parent.resized.connect(_auto_maintain_width)
 		_auto_maintain_width()
 	
+	if automatic_setup_window_closing_for_window_manager_name != &"":
+		close_pressed.connect(_window_manager_close)
+	
 	_initial_position = position
 
 
@@ -93,9 +98,11 @@ func _proxy_close_button():
 
 func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
-
-	
 	# Because button is a square
+
+func _window_manager_close() -> void:
+	var draggable_window: DraggableWindow = _parent as DraggableWindow
+	draggable_window.close_window(automatic_setup_window_closing_for_window_manager_name)
 
 ## What is the minimum width the title bar needs to be to fit everything?
 func _recalculate_title_bar_min_width() -> void:

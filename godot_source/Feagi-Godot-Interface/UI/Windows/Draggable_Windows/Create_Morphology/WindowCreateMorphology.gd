@@ -1,4 +1,4 @@
-extends GrowingPanel
+extends DraggableWindow
 class_name WindowCreateMorphology
 
 
@@ -10,9 +10,6 @@ var _button_create_morphology: TextButton_Element
 var _composite: ElementMorphologyCompositeView
 var _vectors: ElementMorphologyVectorsView
 var _patterns: ElementMorphologyPatternView
-
-var _patterns_vector_list: VBoxContainer
-
 
 func _ready():
 	super._ready()
@@ -35,7 +32,15 @@ func _ready():
 		# we are not testing this individual scene
 		FeagiRequests.refresh_morphology_list()
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
 
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
 	
 func _on_type_button_pressed(_button_index: int, morphology_type: StringName) -> void:
 	match morphology_type:

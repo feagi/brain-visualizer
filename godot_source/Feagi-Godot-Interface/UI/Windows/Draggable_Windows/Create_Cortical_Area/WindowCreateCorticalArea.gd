@@ -1,4 +1,4 @@
-extends GrowingPanel
+extends DraggableWindow
 class_name WindowCreateCorticalArea
 
 signal dimensions_updated(dimensions: Vector3i)
@@ -31,8 +31,6 @@ func _ready() -> void:
 	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
 	_field_channel.int_confirmed.connect(_channel_changed)
 
-
-	
 
 func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
 	var selected_str: StringName = _field_type_radio.currently_selected_text
@@ -127,5 +125,15 @@ func _create_pressed():
 				return
 			FeagiRequests.add_custom_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
 				false)
+	
+	close_window("create_cortical")
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
 
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
