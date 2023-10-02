@@ -32,7 +32,15 @@ func _ready():
 		# we are not testing this individual scene
 		FeagiRequests.refresh_morphology_list()
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
 
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
 	
 func _on_type_button_pressed(_button_index: int, morphology_type: StringName) -> void:
 	match morphology_type:

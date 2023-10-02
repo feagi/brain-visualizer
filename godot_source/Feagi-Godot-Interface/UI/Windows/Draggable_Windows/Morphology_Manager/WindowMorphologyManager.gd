@@ -66,6 +66,15 @@ func send_updated_values_to_feagi() -> void:
 
 	FeagiRequests.request_updating_morphology(morphology_to_send)
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
+
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
 
 func _retrieved_morphology_properties_from_feagi(morphology: Morphology) -> void:
 	if morphology.name != _selected_morphology.name:

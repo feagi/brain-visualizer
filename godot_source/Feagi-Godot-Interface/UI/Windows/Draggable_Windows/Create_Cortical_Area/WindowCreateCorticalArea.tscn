@@ -143,3 +143,4 @@ offset_right = 451.0
 offset_bottom = 0.0
 title = "Create Cortical Area"
 automatic_setup_closing = false
+automatic_setup_window_closing_for_window_manager_name = &"create_cortical"

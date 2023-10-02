@@ -81,6 +81,16 @@ func _source_changed(new_source: CorticalArea) -> void:
 func _destination_changed(new_destination: CorticalArea) -> void:
 	destination_area = new_destination
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
+
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
+
 #TODO add these signals
 
 func _cortical_area_added(new_cortical_area: CorticalArea) -> void:

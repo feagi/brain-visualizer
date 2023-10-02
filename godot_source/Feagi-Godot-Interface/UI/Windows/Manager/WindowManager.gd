@@ -21,7 +21,7 @@ var _window_memory_states: Dictionary = {
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
 func spawn_left_panel(cortical_area: CorticalArea) -> void:
 	if "left_bar" in loaded_windows.keys():
-		loaded_windows["left_bar"].queue_free()
+		force_close_window("left_bar")
 	
 	var left_panel: WindowLeftPanel = _prefab_left_bar.instantiate()
 	add_child(left_panel)
@@ -32,41 +32,45 @@ func spawn_left_panel(cortical_area: CorticalArea) -> void:
 
 func spawn_create_morphology() -> void:
 	if "create_morphology" in loaded_windows.keys():
-		loaded_windows["create_morphology"].queue_free()
+		force_close_window("create_morphology")
 	
 	var create_morphology: WindowCreateMorphology = _prefab_create_morphology.instantiate()
 	add_child(create_morphology)
-	create_morphology.position = _window_memory_states["create_morphology"]["position"]
+	create_morphology.load_from_memory(_window_memory_states["create_morphology"])
+	create_morphology.closed_window.connect(force_close_window)
 	loaded_windows["create_morphology"] = create_morphology
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	if "morphology_manager" in loaded_windows.keys():
-		loaded_windows["morphology_manager"].queue_free()
+		force_close_window("morphology_manager")
 	
 	var morphology_manager: WindowMorphologyManager = _prefab_morphology_manager.instantiate()
 	add_child(morphology_manager)
-	morphology_manager.position = _window_memory_states["morphology_manager"]["position"]
+	morphology_manager.load_from_memory(_window_memory_states["morphology_manager"])
+	morphology_manager.closed_window.connect(force_close_window)
 	loaded_windows["morphology_manager"] = morphology_manager
 
 func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
 	if "edit_mappings" in loaded_windows.keys():
-		loaded_windows["edit_mappings"].queue_free()
+		force_close_window("edit_mappings")
 	
 	print("user requests edit mappings window")
 	var edit_mappings: WindowEditMappingDefinition = _prefab_edit_mappings.instantiate()
 	add_child(edit_mappings)
-	edit_mappings.position = _window_memory_states["edit_mappings"]["position"]
+	edit_mappings.load_from_memory(_window_memory_states["edit_mappings"])
+	edit_mappings.closed_window.connect(force_close_window)
 	edit_mappings.setup(source, destination)
 	loaded_windows["edit_mappings"] = edit_mappings
 
 func spawn_create_cortical() -> void:
 	if "create_cortical" in loaded_windows.keys():
-		loaded_windows["create_cortical"].queue_free()
+		force_close_window("create_cortical")
 	
 	print("user requests create cortical window")
 	var create_cortical: WindowCreateCorticalArea = _prefab_create_cortical.instantiate()
 	add_child(create_cortical)
-	create_cortical.position = _window_memory_states["create_cortical"]["position"]
+	create_cortical.load_from_memory(_window_memory_states["create_cortical"])
+	create_cortical.closed_window.connect(force_close_window)
 	loaded_windows["create_cortical"] = create_cortical
 
 func force_close_window(window_name: StringName) -> void:

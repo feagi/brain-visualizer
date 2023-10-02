@@ -90,5 +90,3 @@ func _FEAGI_deleted_cortical_area(removed_cortical_area: CorticalArea):
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
 		close_window("left_bar")
 
-func _user_closed_window():
-	close_window("left_bar")

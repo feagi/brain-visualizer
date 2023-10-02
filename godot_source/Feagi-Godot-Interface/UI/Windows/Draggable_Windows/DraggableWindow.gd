@@ -5,8 +5,6 @@ signal closed_window(window_name: StringName)
 
 func _ready() -> void:
 	super._ready()
-	var title_bar: TitleBar = $TitleBar
-	title_bar.close_pressed.connect(_user_closed_window)
 
 func close_window(window_name: StringName) -> void:
 	print("WINDOWS UI: User closed %s window" % window_name)

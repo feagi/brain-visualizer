@@ -128,6 +128,12 @@ func _create_pressed():
 	
 	close_window("create_cortical")
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
 
-func _user_closed_window():
-	close_window("create_cortical")
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
