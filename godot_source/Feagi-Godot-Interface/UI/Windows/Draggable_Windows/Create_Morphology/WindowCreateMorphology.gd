@@ -1,4 +1,4 @@
-extends GrowingPanel
+extends DraggableWindow
 class_name WindowCreateMorphology
 
 
@@ -10,9 +10,6 @@ var _button_create_morphology: TextButton_Element
 var _composite: ElementMorphologyCompositeView
 var _vectors: ElementMorphologyVectorsView
 var _patterns: ElementMorphologyPatternView
-
-var _patterns_vector_list: VBoxContainer
-
 
 func _ready():
 	super._ready()

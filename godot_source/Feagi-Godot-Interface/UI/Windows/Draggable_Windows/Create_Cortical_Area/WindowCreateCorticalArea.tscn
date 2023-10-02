@@ -142,3 +142,4 @@ offset_top = -40.0
 offset_right = 451.0
 offset_bottom = 0.0
 title = "Create Cortical Area"
+automatic_setup_closing = false

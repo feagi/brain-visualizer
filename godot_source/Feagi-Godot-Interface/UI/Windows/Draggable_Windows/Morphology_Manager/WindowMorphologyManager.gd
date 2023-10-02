@@ -1,4 +1,4 @@
-extends GrowingPanel
+extends DraggableWindow
 class_name WindowMorphologyManager
 
 var _main_container: BoxContainer
@@ -32,6 +32,7 @@ func selected_morphology(morphology: Morphology) -> void:
 	_morphology_description.update_image_with_morphology(morphology.name)
 	_morphology_description.clear_usage()
 	FeagiRequests.get_morphology_usuage(morphology.name)
+
 
 # TODO function morphologies?
 func _toggle_between_morphology_type_views(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
