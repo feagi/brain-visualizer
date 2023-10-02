@@ -27,7 +27,7 @@ func spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()
 	#cortical_node.user_started_connection_from.connect(_user_starting_drag_from)
 	var offset: Vector2
-	if !cortical_area.is_coordinates_2D_available: #TODO REMOVE THE !
+	if cortical_area.is_coordinates_2D_available:
 		offset = cortical_area.coordinates_2D
 	else:
 		if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:

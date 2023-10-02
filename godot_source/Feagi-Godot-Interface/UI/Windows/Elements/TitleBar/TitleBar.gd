@@ -36,10 +36,10 @@ var is_dragging: bool:
 			
 		_is_dragging = v
 		if v:
-			drag_started.emit(position)
+			drag_started.emit(_parent.position)
 			VisConfig.UI_manager.is_user_dragging_a_window = true
 		else:
-			drag_finished.emit(position)
+			drag_finished.emit(_parent.position)
 			VisConfig.UI_manager.is_user_dragging_a_window = false
 
 
@@ -131,10 +131,10 @@ func _dragging(drag: InputEventMouseMotion) -> void:
 	if !is_dragging:
 		return # if we arent dragging, don't do anything!
 	
-	dragged.emit(position, drag.relative)
+	dragged.emit(_parent.position, drag.relative)
 
 func _end_drag() -> void:
-	drag_finished.emit(position)
+	drag_finished.emit(_parent.position)
 
 ## IF auto-setup-dragging is enabled, responsible for moving parent around
 func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -> void:
@@ -142,7 +142,7 @@ func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -
 
 ## IF auto-setup-closing is enabled, responsible for moving parent around
 func _auto_close_parent() -> void:
-	_parent.visible = false
+	_parent.visible = false # TODO
 #	_parent.queue_free() # Temporary. This is useful for duplicated/JSON. We aren't using it
 
 func _auto_maintain_width() -> void:
