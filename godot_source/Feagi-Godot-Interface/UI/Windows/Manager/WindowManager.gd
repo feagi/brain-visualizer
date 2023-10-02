@@ -10,6 +10,13 @@ var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/
 
 var loaded_windows: Dictionary
 
+var _window_memory_states: Dictionary = {
+	"left_bar": {"position": Vector2(100,100)},
+	"create_morphology": {"position": Vector2(50,100)},
+	"morphology_manager": {"position": Vector2(50,100)},
+	"edit_mappings": {"position": Vector2(50,100)},
+	"create_cortical": {"position": Vector2(50,100)}
+}
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
 func spawn_left_panel(cortical_area: CorticalArea) -> void:
@@ -19,6 +26,8 @@ func spawn_left_panel(cortical_area: CorticalArea) -> void:
 	var left_panel: WindowLeftPanel = _prefab_left_bar.instantiate()
 	add_child(left_panel)
 	left_panel.setup_from_FEAGI(cortical_area)
+	left_panel.load_from_memory(_window_memory_states["left_bar"])
+	left_panel.closed_window.connect(force_close_window)
 	loaded_windows["left_bar"] = left_panel
 
 func spawn_create_morphology() -> void:
@@ -27,6 +36,7 @@ func spawn_create_morphology() -> void:
 	
 	var create_morphology: WindowCreateMorphology = _prefab_create_morphology.instantiate()
 	add_child(create_morphology)
+	create_morphology.position = _window_memory_states["create_morphology"]["position"]
 	loaded_windows["create_morphology"] = create_morphology
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
@@ -35,6 +45,7 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	
 	var morphology_manager: WindowMorphologyManager = _prefab_morphology_manager.instantiate()
 	add_child(morphology_manager)
+	morphology_manager.position = _window_memory_states["morphology_manager"]["position"]
 	loaded_windows["morphology_manager"] = morphology_manager
 
 func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
@@ -44,6 +55,7 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	print("user requests edit mappings window")
 	var edit_mappings: WindowEditMappingDefinition = _prefab_edit_mappings.instantiate()
 	add_child(edit_mappings)
+	edit_mappings.position = _window_memory_states["edit_mappings"]["position"]
 	edit_mappings.setup(source, destination)
 	loaded_windows["edit_mappings"] = edit_mappings
 
@@ -54,10 +66,12 @@ func spawn_create_cortical() -> void:
 	print("user requests create cortical window")
 	var create_cortical: WindowCreateCorticalArea = _prefab_create_cortical.instantiate()
 	add_child(create_cortical)
+	create_cortical.position = _window_memory_states["create_cortical"]["position"]
 	loaded_windows["create_cortical"] = create_cortical
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
+		_window_memory_states[window_name] = loaded_windows[window_name].save_to_memory()
 		loaded_windows[window_name].queue_free()
 		loaded_windows.erase(window_name)
 
