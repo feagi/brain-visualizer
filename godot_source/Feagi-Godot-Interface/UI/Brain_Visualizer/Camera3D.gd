@@ -76,7 +76,8 @@ func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
 		MOUSE_BUTTON_WHEEL_UP:
 			translate(Vector3(0,0,-camera_movement_speed))
 
-	if (event.button_index != camera_pan_button) and (event.button_index != camera_turn_button):
+	#if (event.button_index != camera_pan_button) and (event.button_index != camera_turn_button):
+	if (event.button_index != camera_turn_button):
 		return
 	_is_user_currently_focusing_camera = event.is_pressed()
 	if _is_user_currently_focusing_camera:
