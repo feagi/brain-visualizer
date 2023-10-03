@@ -12,17 +12,20 @@ var _field_channel: IntInput
 var _dropdown_cortical_dropdown: TemplateDropDown
 var _holder_dropdown: HBoxContainer
 var _holder_channel: HBoxContainer
+var _main_container: ContainerShrinker
 
 func _ready() -> void:
-	var _create_button: TextButton_Element = $BoxContainer/Create_button
-	_field_cortical_name = $BoxContainer/HBoxContainer/Cortical_Name
-	_field_3D_coordinates = $BoxContainer/HBoxContainer2/Coordinates_3D
-	_field_type_radio = $BoxContainer/type/options
-	_field_dimensions = $BoxContainer/dimensions_holder/Dimensions
-	_field_channel = $BoxContainer/channel_holder/Channel_Input
-	_dropdown_cortical_dropdown = $BoxContainer/cortical_dropdown_holder/CorticalTemplateDropDown
-	_holder_dropdown = $BoxContainer/cortical_dropdown_holder
-	_holder_channel = $BoxContainer/channel_holder
+	super._ready()
+	_main_container = $Container
+	var _create_button: TextButton_Element = $Container/Create_button
+	_field_cortical_name = $Container/HBoxContainer/Cortical_Name
+	_field_3D_coordinates = $Container/HBoxContainer2/Coordinates_3D
+	_field_type_radio = $Container/type/options
+	_field_dimensions = $Container/dimensions_holder/Dimensions
+	_field_channel = $Container/channel_holder/Channel_Input
+	_dropdown_cortical_dropdown = $Container/cortical_dropdown_holder/CorticalTemplateDropDown
+	_holder_dropdown = $Container/cortical_dropdown_holder
+	_holder_channel = $Container/channel_holder
 	
 	_create_button.pressed.connect(_create_pressed)
 	_field_type_radio.button_pressed.connect(_radio_button_proxy)
@@ -30,6 +33,7 @@ func _ready() -> void:
 	_field_dimensions.user_updated_vector.connect(_dimensions_updated_proxy)
 	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
 	_field_channel.int_confirmed.connect(_channel_changed)
+	_main_container.recalculate_size()
 
 
 func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
@@ -38,10 +42,19 @@ func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
 		return CorticalArea.CORTICAL_AREA_TYPE.INVALID
 	return CorticalArea.CORTICAL_AREA_TYPE[selected_str]
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
+
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
 
 func _radio_button_proxy(_button_index: int, button_label: StringName) -> void:
 	_switch_UI_between_cortical_types(CorticalArea.CORTICAL_AREA_TYPE[button_label])
-
+	_main_container.recalculate_size()
 
 func _coordinate_proxy(input: Vector3) -> void:
 	coordinates_updated.emit(input)
@@ -128,12 +141,3 @@ func _create_pressed():
 	
 	close_window("create_cortical")
 
-## Called from Window manager, to save previous position
-func save_to_memory() -> Dictionary:
-	return {
-		"position": position,
-	}
-
-## Called from Window manager, to load previous position
-func load_from_memory(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
