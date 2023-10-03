@@ -11,6 +11,8 @@ func _ready():
 	_genome_availibility = $GenomeAvailability
 	_genome_validity = $GenomeValidity
 	_brain_readiness = $BrainReadiness
+	
+	
 
 func set_health_states(burst_engine: bool, genome_availibility: bool, genome_validity: bool, brain_readiness: bool) -> void:
 	_burst_engine.boolean_state = burst_engine

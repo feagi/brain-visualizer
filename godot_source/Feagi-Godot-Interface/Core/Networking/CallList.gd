@@ -132,6 +132,11 @@ func GET_healthCheck_POLL_GENOME():
 	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("genome_availability", true)
 	_interface_ref.polling_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_genome_availability, searching_for)
 
+## returns dict of various feagi health stats as booleans
+func GET_healthCheck_POLL_MONITORING():
+	var dont_stop: PollingMethodNone = PollingMethodNone.new(false)
+	_interface_ref.polling_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_health, dont_stop, null, null, 1.0, _response_functions_ref.GET_healthCheck_POLL_health)
+
 ## returns dict by corticalID, with name, type, and 2d position
 func GET_CO_corticalAreas_list_detailed():
 	_interface_ref.single_FEAGI_request(_address_list.GET_connectome_corticalAreas_list_detailed, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_CO_corticalAreas_list_detailed)

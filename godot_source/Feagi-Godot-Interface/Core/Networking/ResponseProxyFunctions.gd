@@ -158,9 +158,28 @@ func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _i
 
 func GET_healthCheck_POLL_genome_availability(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	FeagiRequests.initial_FEAGI_calls()
+	FeagiRequests.poll_genome_availability_monitoring()
+	if response_code != 200: 
+		return
+	var statuses: Dictionary = _body_to_dictionary(response_body)
+	FeagiEvents.retrieved_latest_FEAGI_health.emit(
+		statuses["burst_engine"],
+		statuses["genome_availability"],
+		statuses["genome_validity"],
+		statuses["brain_readiness"]
+	)
 
-
-
+func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	if response_code != 200: 
+		return
+	print("polled health")
+	var statuses: Dictionary = _body_to_dictionary(response_body)
+	FeagiEvents.retrieved_latest_FEAGI_health.emit(
+		statuses["burst_engine"],
+		statuses["genome_availability"],
+		statuses["genome_validity"],
+		statuses["brain_readiness"]
+	)
 
 func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	if _response_code == 422:
