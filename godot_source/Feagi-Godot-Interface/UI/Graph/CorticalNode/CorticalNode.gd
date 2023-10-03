@@ -47,8 +47,8 @@ func _ready():
 
 	_title_bar.close_pressed.connect(_user_request_delete_cortical_area)
 	_title_bar.dragged.connect(_on_title_bar_drag)
+	_title_bar.drag_finished.connect(_on_finish_drag)
 	gui_input.connect(_on_interact)
-
 	
 
 
@@ -83,3 +83,7 @@ func _on_interact(event):
 	var mouse_event: InputEventMouseButton = event
 	if !mouse_event.double_click: return
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
+
+func _on_finish_drag(last_position: Vector2) -> void:
+	var arr_position: Array = FEAGIUtils.vector2i_to_array(last_position)
+	FeagiRequests.set_cortical_area_properties( _cortical_area_ref.cortical_ID, {"cortical_coordinates_2d": arr_position})
