@@ -30,17 +30,7 @@ const CAMERA_TURN_SPEED = 200
 @export var spacebar = "ui_select"
 @export var reset = "reset"
 
-var x = transform.origin.x
-var y = transform.origin.y
-var z = transform.origin.z
-var x_rotation = Vector3(13.3, 0.0, 0.0)
-var velocity = Vector3(0, 0, 0)
-var flagged = false ## This allows space and del to be able to send data without being overwritten by spam "{}"| TODO this seems unused?
-var cortical_pointer = "" # TODO this seems unused?
-
 var _is_user_currently_focusing_camera: bool = false
-
-@export_range(0, 10, 0.01) var sensitivity : float = 3
 
 func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
@@ -77,13 +67,9 @@ func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
 			translate(Vector3(0,0,-camera_movement_speed))
 
 	if (event.button_index != camera_pan_button) and (event.button_index != camera_turn_button):
-	#if (event.button_index != camera_turn_button):
 		return
 	_is_user_currently_focusing_camera = event.is_pressed()
-	if _is_user_currently_focusing_camera:
-		Input.mouse_mode = Input.MOUSE_MODE_CONFINED
-	else:
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
 
 
 # The camera itself should probably not be the thing sending the websocket requests. TODO move to seperate once we have the free time
