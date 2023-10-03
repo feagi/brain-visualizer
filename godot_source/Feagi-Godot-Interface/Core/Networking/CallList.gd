@@ -54,8 +54,8 @@ func GET_GE_corticalArea(corticalID: StringName):
 ## By corticalID, returns dictionary of all cortical area details, but keeps polling until the cortical area is no longer transforming
 func GET_GE_corticalArea_POLL(corticalID: StringName):
 	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("transforming", false)
-	_interface_ref.polling_FEAGI_request(_address_list.GET_genome_corticalArea + corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalArea,
-		searching_for)
+	_interface_ref.repeating_FEAGI_request(_address_list.GET_genome_corticalArea + corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalArea,
+		Callable() ,searching_for)
 	
 
 ## returns dict of cortical names, mapped to an array of positions, unknown boolean, size, and ID
@@ -130,7 +130,12 @@ func GET_healthCheck():
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck_POLL_GENOME():
 	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("genome_availability", true)
-	_interface_ref.polling_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_genome_availability, searching_for)
+	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_genome_availability, Callable(), searching_for)
+
+## returns dict of various feagi health stats as booleans
+func GET_healthCheck_POLL_MONITORING():
+	var dont_stop: PollingMethodNone = PollingMethodNone.new(false)
+	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_health, _response_functions_ref.GET_healthCheck_POLL_health, dont_stop, null, null, 10.0)
 
 ## returns dict by corticalID, with name, type, and 2d position
 func GET_CO_corticalAreas_list_detailed():

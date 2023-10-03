@@ -4,4 +4,4 @@ class_name NullMorphology
 
 
 func _init():
-    type = MORPHOLOGY_TYPE.NULL
+	type = MORPHOLOGY_TYPE.NULL

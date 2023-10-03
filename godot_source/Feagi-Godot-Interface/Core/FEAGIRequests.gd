@@ -211,3 +211,9 @@ func get_loaded_genome() -> void:
 ## Calls feagi to retrieve genome health. Polls if genome is unavailable. used for launch since this will launch "initial_FEAGI_calls" once genome is available
 func poll_genome_availability_launch() -> void:
 	_feagi_interface.calls.GET_healthCheck_POLL_GENOME()
+
+## Calls feagi to retrieve genome health. Polls constantly to update health stats 
+func poll_genome_availability_monitoring() -> void:
+	_feagi_interface.calls.GET_healthCheck_POLL_MONITORING()
+
+
