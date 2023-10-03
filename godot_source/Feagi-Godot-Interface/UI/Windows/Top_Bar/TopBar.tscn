@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://dumxnv0fvc2y0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
 [ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
 [ext_resource type="Texture2D" uid="uid://dii187rhiyl8n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
-[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
+[ext_resource type="PackedScene" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
 
 [node name="TopBar" type="Panel"]
@@ -151,7 +151,7 @@ layout_mode = 2
 
 [node name="Ping_label" type="Label" parent="HBoxContainer"]
 layout_mode = 2
-text = "Ping"
+text = "Latency"
 vertical_alignment = 1
 
 [node name="ping" type="LineEdit" parent="HBoxContainer"]
@@ -161,6 +161,11 @@ alignment = 1
 [node name="Gap7" type="Control" parent="HBoxContainer"]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
+
+[node name="state_label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "System Health"
+vertical_alignment = 1
 
 [node name="StateIndicator" parent="HBoxContainer" instance=ExtResource("10_3567y")]
 custom_minimum_size = Vector2(100, 0)
