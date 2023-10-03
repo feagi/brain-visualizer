@@ -1,0 +1,44 @@
+[gd_scene load_steps=3 format=3 uid="uid://byvcu1dqoe5uo"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.gd" id="1_0acba"]
+[ext_resource type="PackedScene" uid="uid://ch82fu6g530dm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/BooleanIndicator/BooleanIndicator.tscn" id="2_otodu"]
+
+[node name="StateInidicator" type="HBoxContainer"]
+offset_right = 174.0
+offset_bottom = 61.0
+script = ExtResource("1_0acba")
+
+[node name="BurstEngine" parent="." instance=ExtResource("2_otodu")]
+layout_mode = 2
+size_flags_horizontal = 3
+initial_left_top_right_bottom = Vector4i(6, 1, 3, 1)
+
+[node name="ColorRect" parent="BurstEngine" index="0"]
+tooltip_text = "Burst Engine"
+
+[node name="GenomeAvailability" parent="." instance=ExtResource("2_otodu")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorRect" parent="GenomeAvailability" index="0"]
+tooltip_text = "Genome Availibility"
+
+[node name="GenomeValidity" parent="." instance=ExtResource("2_otodu")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorRect" parent="GenomeValidity" index="0"]
+tooltip_text = "Genome Validity"
+
+[node name="BrainReadiness" parent="." instance=ExtResource("2_otodu")]
+layout_mode = 2
+size_flags_horizontal = 3
+initial_left_top_right_bottom = Vector4i(3, 1, 6, 1)
+
+[node name="ColorRect" parent="BrainReadiness" index="0"]
+tooltip_text = "Brain Readiness"
+
+[editable path="BurstEngine"]
+[editable path="GenomeAvailability"]
+[editable path="GenomeValidity"]
+[editable path="BrainReadiness"]
