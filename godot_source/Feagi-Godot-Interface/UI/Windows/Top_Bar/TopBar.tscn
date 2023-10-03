@@ -162,6 +162,6 @@ alignment = 1
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="StateInidicator" parent="HBoxContainer" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="HBoxContainer" instance=ExtResource("10_3567y")]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2

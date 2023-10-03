@@ -172,7 +172,6 @@ func GET_healthCheck_POLL_genome_availability(response_code: int, response_body:
 func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if response_code != 200: 
 		return
-	print("polled health")
 	var statuses: Dictionary = _body_to_dictionary(response_body)
 	FeagiEvents.retrieved_latest_FEAGI_health.emit(
 		statuses["burst_engine"],

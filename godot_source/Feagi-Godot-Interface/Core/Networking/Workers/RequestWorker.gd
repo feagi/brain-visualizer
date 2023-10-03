@@ -46,9 +46,9 @@ func single_call(full_request_address: StringName, method: HTTPClient.Method, fo
 	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
 
 ## Starts polling calls to FEAGI, routinely gets responses until condition defined by polling_check is met
-func polling_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
-	polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, mid_poll_call: Callable = Callable()) -> void:
+func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
+	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
+	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5) -> void:
 
 	_processing_type = CALL_PROCESS_TYPE.POLLING
 	_buffer_data = data_to_buffer
@@ -104,7 +104,8 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			# we are polling
 			if _polling_check.confirm_complete(response_code, body):
 				# We are done polling!
-				_follow_up_function.call(response_code, body, _buffer_data)
+				if !_follow_up_function.is_null():
+					_follow_up_function.call(response_code, body, _buffer_data)
 				_timer.stop()
 				_query_for_destruction()
 				return
@@ -113,7 +114,8 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 				if !_mid_poll_call.is_null():
 					# we defined a call to make during polling. use it!
 					_mid_poll_call.call(response_code, body, _buffer_data)
-			print("Continuing to poll " + _poll_address)
+				else:
+					print("Continuing to poll " + _poll_address)
 			
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
