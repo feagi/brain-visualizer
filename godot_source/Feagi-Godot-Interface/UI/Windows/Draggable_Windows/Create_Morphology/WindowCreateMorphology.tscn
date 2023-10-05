@@ -83,6 +83,7 @@ layout_mode = 2
 [node name="ElementMorphologyVectorsView" parent="Container" instance=ExtResource("6_c1klg")]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="ElementMorphologyPatternView" parent="Container" instance=ExtResource("7_w3816")]
 visible = false
