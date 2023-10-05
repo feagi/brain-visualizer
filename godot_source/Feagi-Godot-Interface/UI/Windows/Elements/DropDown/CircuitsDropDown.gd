@@ -9,6 +9,17 @@ func _ready() -> void:
 	item_selected.connect(_user_selected_item)
 	_list_circuits(FeagiCache.available_circuits)
 	FeagiEvents.retrieved_circuit_listing.connect(_list_circuits)
+	FeagiRequests.refresh_available_circuits()
+
+func get_current_circuit_friendly_name() -> StringName:
+	if selected == -1: 
+		return ""
+	return _list_of_circuit_friendly_names[selected]
+
+func get_current_circuit_file_name() -> StringName:
+	if selected == -1: 
+		return ""
+	return CircuitDetails.friendly_name_to_file_name(_list_of_circuit_friendly_names[selected])
 
 func _list_circuits(circuits: PackedStringArray) -> void:
 	_list_of_circuit_friendly_names = CircuitDetails.file_name_array_to_friendly_name_array(circuits)
