@@ -16,7 +16,7 @@ var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/feagi/
 var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
 var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
 var GET_genome_circuits: StringName = "/v1/feagi/genome/circuits"
-var GET_genome_circuitDescription: StringName = "/v1/feagi/genome/circuit_description="
+var GET_genome_circuitDescription: StringName = "/v1/feagi/genome/circuit_description?circuit_name="
 var GET_genome_morphology_types: StringName = "/v1/feagi/genome/morphology_types"
 var GET_genome_morphologyName: StringName = "/v1/feagi/genome/morphology?morphology_name="
 var GET_genome_morphologyUsage: StringName = "/v1/feagi/genome/morphology_usage?morphology_name="

@@ -2,6 +2,7 @@ extends OptionButton
 class_name CircuitsDropDown
 
 signal user_selected_circuit(circuit_file_name: StringName)
+signal circuit_example_transform_change(dimensions: Vector3i, location: Vector3i)
 
 var _list_of_circuit_friendly_names: PackedStringArray
 
@@ -26,9 +27,10 @@ func _list_circuits(circuits: PackedStringArray) -> void:
 	for circuit_friendly_name in _list_of_circuit_friendly_names:
 		add_item(circuit_friendly_name)
 	_remove_radio_buttons()
+	selected = -1
 
 func _user_selected_item(index: int) -> void:
-	user_selected_circuit.emit(CircuitDetails.file_name_to_friendly_name(_list_of_circuit_friendly_names[index]))
+	user_selected_circuit.emit(CircuitDetails.friendly_name_to_file_name(_list_of_circuit_friendly_names[index]))
 
 func _remove_radio_buttons() -> void:
 	var pm: PopupMenu = get_popup()
