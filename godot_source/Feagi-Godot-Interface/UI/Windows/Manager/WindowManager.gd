@@ -8,6 +8,7 @@ var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
 var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
+var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
 
 var loaded_windows: Dictionary
 
@@ -85,6 +86,12 @@ func spawn_import_circuit() -> void:
 	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
 	import_circuit.closed_window.connect(force_close_window)
 	loaded_windows["import_circuit"] = import_circuit
+
+func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
+	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()
+	popup.position = Vector2(200,200)
+	popup.set_properties(title_text, message_text, button_text, icon)
+	
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

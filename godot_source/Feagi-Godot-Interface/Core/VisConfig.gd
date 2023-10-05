@@ -18,4 +18,5 @@ var visualizer_state: STATES:
 
 var _visualizer_state: STATES = STATES.LOADING_INITIAL
 
-
+func show_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
+	UI_manager.window_manager.spawn_info_popup(title_text, message_text, button_text, icon)
