@@ -86,6 +86,9 @@ text = "Dimensions"
 
 [node name="Dimensions" parent="Container/dimensions_holder" instance=ExtResource("4_4mpov")]
 layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
 int_x_min = 1
 int_y_min = 1
 int_z_min = 1
