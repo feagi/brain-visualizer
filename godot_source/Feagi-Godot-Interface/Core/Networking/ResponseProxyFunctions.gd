@@ -63,11 +63,15 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 
 
 func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	FeagiCache.available_circuits = _body_to_string_array(response_body)
+	var string_array: PackedStringArray = PackedStringArray(_body_to_string_array(response_body))
+	FeagiEvents.retrieved_circuit_listing.emit(string_array)
 
 func GET_GE_circuitsize(_response_code: int, response_body: PackedByteArray, circuit_name: StringName) -> void:
 	var size_array: Array[int] = FEAGIUtils.untyped_array_to_int_array(_body_to_untyped_array(response_body))
-	FeagiEvents.retrieved_circuit_size.emit(circuit_name, FEAGIUtils.array_to_vector3i(size_array))
+	#TODO for now we only have the size
+	var details: CircuitDetails = CircuitDetails.new(circuit_name, FEAGIUtils.array_to_vector3i(size_array), "") # TODO fill in details
+	FeagiEvents.retrieved_circuit_details.emit(details)
+
 	
 func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArray, source_destination_ID_str: Array) -> void:
 	if source_destination_ID_str[0] not in FeagiCache.cortical_areas_cache.cortical_areas.keys() or source_destination_ID_str[1] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
