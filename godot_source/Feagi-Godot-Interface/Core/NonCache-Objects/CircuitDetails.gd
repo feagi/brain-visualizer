@@ -26,8 +26,7 @@ static func friendly_name_to_file_name(circuit_friendly_name: StringName) -> Str
 	return circuit_friendly_name + ".json"
 
 static func file_name_array_to_friendly_name_array(circuit_file_names: PackedStringArray) -> PackedStringArray:
-	var num_elements: int = circuit_file_names.size()
-	for i in num_elements:
+	for i in circuit_file_names.size():
 		circuit_file_names[i] = String(CircuitDetails.file_name_to_friendly_name(circuit_file_names[i]))
 	return circuit_file_names
 
