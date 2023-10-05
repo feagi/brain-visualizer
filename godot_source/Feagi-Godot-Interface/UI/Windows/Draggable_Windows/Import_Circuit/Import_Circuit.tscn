@@ -1,0 +1,108 @@
+[gd_scene load_steps=7 format=3 uid="uid://b6b6kym07iyt3"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.gd" id="1_h0pp3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CircuitsDropDown.gd" id="2_h2svm"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_jkgck"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="3_21g0v"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_q8pg3"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_mnkif"]
+
+[node name="Import_Circuit" type="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 40.0
+offset_right = -707.0
+offset_bottom = -295.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_h0pp3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 362.0
+offset_bottom = 151.0
+script = ExtResource("2_jkgck")
+
+[node name="padding2" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Choose Circuit:"
+
+[node name="CircuitsDropDown" type="OptionButton" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_h2svm")
+
+[node name="padding3" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Circuit Size" type="Label" parent="VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Circuit Size"
+
+[node name="Vector" parent="VBoxContainer/HBoxContainer2" instance=ExtResource("3_21g0v")]
+layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
+initial_editable = false
+
+[node name="padding4" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="HBoxContainer3" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Circuit Details" type="Label" parent="VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+text = "Circuit Details:"
+
+[node name="TextEdit" type="TextEdit" parent="VBoxContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+editable = false
+
+[node name="padding" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Circuit Location" type="Label" parent="VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+text = "Import to 3D location  "
+
+[node name="Vector3fField" parent="VBoxContainer/HBoxContainer4" instance=ExtResource("3_21g0v")]
+layout_mode = 2
+
+[node name="padding5" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="Button" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Import"
+script = ExtResource("4_q8pg3")
+
+[node name="TitleBar" parent="." instance=ExtResource("5_mnkif")]
+layout_mode = 0
+offset_top = -40.0
+offset_right = 445.0
+offset_bottom = 0.0
+title = "Import Circuit"
+
+[connection signal="pressed" from="VBoxContainer/Button" to="." method="_on_add_press"]

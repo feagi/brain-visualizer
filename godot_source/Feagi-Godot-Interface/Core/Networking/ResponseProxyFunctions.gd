@@ -63,11 +63,17 @@ func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByte
 
 
 func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
-	FeagiCache.available_circuits = _body_to_string_array(response_body)
+	var string_array: PackedStringArray = PackedStringArray(_body_to_string_array(response_body))
+	FeagiEvents.retrieved_circuit_listing.emit(string_array)
 
-func GET_GE_circuitsize(_response_code: int, response_body: PackedByteArray, circuit_name: StringName) -> void:
-	var size_array: Array[int] = FEAGIUtils.untyped_array_to_int_array(_body_to_untyped_array(response_body))
-	FeagiEvents.retrieved_circuit_size.emit(circuit_name, FEAGIUtils.array_to_vector3i(size_array))
+func GET_GE_circuitDescription(response_code: int, response_body: PackedByteArray, circuit_name: StringName) -> void:
+	if response_code != 200:
+		push_error("Unable to retrieve circuit information for %s! Skipping!" % circuit_name)
+		return
+	var circuit_properties: Dictionary = _body_to_dictionary(response_body)
+	var details: CircuitDetails = CircuitDetails.new(circuit_name, FEAGIUtils.array_to_vector3i(circuit_properties["size"]), circuit_properties["description"])
+	FeagiEvents.retrieved_circuit_details.emit(details)
+
 	
 func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArray, source_destination_ID_str: Array) -> void:
 	if source_destination_ID_str[0] not in FeagiCache.cortical_areas_cache.cortical_areas.keys() or source_destination_ID_str[1] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -244,7 +250,10 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		push_error("Unable to process add morphology %s, skipping!" % [requested_properties["morphology_name"]])
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
-	
+
+func POST_GE_append(_response_code: int, _response_body: PackedByteArray, requested_properties: Dictionary) -> void:
+	return #TODO trigger reload?
+
 func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for membrane potential monitoring!")

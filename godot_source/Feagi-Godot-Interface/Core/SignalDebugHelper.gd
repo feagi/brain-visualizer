@@ -16,7 +16,7 @@ func _ready():
 	FeagiCacheEvents.cortical_areas_disconnected.connect(cache_connection_disconnected)
 	FeagiCacheEvents.cortical_areas_connection_modified.connect(cache_connection_updated)
 	FeagiCacheEvents.delay_between_bursts_updated.connect(cache_updated_burst_rate)
-	FeagiCacheEvents.available_circuit_listing_updated.connect(cache_available_circuits)
+	
 	
 
 func cache_morphology_added(morphology: Morphology) -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=28 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -17,11 +17,9 @@
 [ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/FullScreenControl.gd" id="11_xxcay"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
-[ext_resource type="PackedScene" uid="uid://b6wg06kaa21u7" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.tscn" id="13_5ycas"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.gd" id="13_jugsj"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/timer.gd" id="14_fab5w"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Circuit_Import/circuit_import.gd" id="16_2bskm"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
@@ -138,7 +136,7 @@ script = ExtResource("9_jshmh")
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 theme = ExtResource("16_jeyol")
 
-[node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="1"]
+[node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="22"]
 script = ExtResource("14_fab5w")
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
@@ -174,19 +172,6 @@ offset_right = 985.0
 offset_bottom = 376.0
 theme = ExtResource("16_jeyol")
 
-[node name="Circuit_Import" parent="UI/Windows" instance=ExtResource("13_5ycas")]
-visible = false
-anchor_left = 0.313368
-anchor_top = 0.174383
-anchor_right = 0.313368
-anchor_bottom = 0.174383
-offset_right = 329.0
-offset_bottom = 392.0
-grow_horizontal = 1
-grow_vertical = 1
-theme = ExtResource("16_jeyol")
-script = ExtResource("16_2bskm")
-
 [node name="Cortical_List" parent="UI/Windows" instance=ExtResource("14_db7m2")]
 visible = false
 anchors_preset = 5
@@ -204,7 +189,7 @@ theme = ExtResource("16_jeyol")
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows/Circuit_Import" method="_on_nc_button_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows" method="spawn_import_circuit"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows/Cortical_List" method="_on_ca_view_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows" method="spawn_create_cortical"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]

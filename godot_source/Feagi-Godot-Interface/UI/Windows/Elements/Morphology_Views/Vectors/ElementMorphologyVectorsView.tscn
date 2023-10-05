@@ -20,10 +20,12 @@ label_x_text = &"X"
 label_y_text = &"Y"
 label_z_text = &"Z"
 
-[node name="Vectors" parent="." instance=ExtResource("2_yhnco")]
+[node name="Vectors" parent="." node_paths=PackedStringArray("main_window") instance=ExtResource("2_yhnco")]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
+size_flags_vertical = 3
 prefab_to_spawn = ExtResource("4_285qi")
+main_window = NodePath("..")
 
 [node name="Add_Vector" type="Button" parent="."]
 layout_mode = 2

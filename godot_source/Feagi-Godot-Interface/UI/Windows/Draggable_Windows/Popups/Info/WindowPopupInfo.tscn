@@ -1,0 +1,74 @@
+[gd_scene load_steps=7 format=3 uid="uid://b8wlb2wskb8wo"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.gd" id="1_jsgve"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_q1en3"]
+[ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="3_nf33s"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="4_fy4q3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_225ut"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="6_x0cq6"]
+
+[node name="WindowPopupInfo" type="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 38.0
+offset_right = -444.0
+offset_bottom = -459.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jsgve")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 706.0
+offset_bottom = 148.0
+script = ExtResource("2_q1en3")
+
+[node name="gap" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 2
+
+[node name="Control" type="Control" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="Texture_Element" type="TextureRect" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+texture = ExtResource("3_nf33s")
+expand_mode = 1
+script = ExtResource("4_fy4q3")
+
+[node name="gap" type="Control" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="MESSAGE_TEXT" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "MESSAGE_TEXT"
+
+[node name="Control2" type="Control" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TextButton_Element" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "OK"
+script = ExtResource("5_225ut")
+
+[node name="TitleBar" parent="." instance=ExtResource("6_x0cq6")]
+layout_mode = 0
+offset_top = -40.0
+offset_right = 708.0
+offset_bottom = 0.0
+
+[connection signal="pressed" from="VBoxContainer/TextButton_Element" to="." method="_close_popup"]
+
+[editable path="TitleBar"]

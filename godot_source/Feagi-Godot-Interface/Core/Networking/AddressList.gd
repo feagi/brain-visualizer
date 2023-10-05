@@ -16,7 +16,7 @@ var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/feagi/
 var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
 var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
 var GET_genome_circuits: StringName = "/v1/feagi/genome/circuits"
-var GET_genome_circuitsize: StringName = "/v1/feagi/genome/circuit_size?circuit_name="
+var GET_genome_circuitDescription: StringName = "/v1/feagi/genome/circuit_description?circuit_name="
 var GET_genome_morphology_types: StringName = "/v1/feagi/genome/morphology_types"
 var GET_genome_morphologyName: StringName = "/v1/feagi/genome/morphology?morphology_name="
 var GET_genome_morphologyUsage: StringName = "/v1/feagi/genome/morphology_usage?morphology_name="
@@ -41,6 +41,7 @@ var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
 var POST_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
 var POST_genome_customCorticalArea: StringName = "/v1/feagi/genome/custom_cortical_area"
 var POST_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
+var POST_genome_append: StringName = "/v1/feagi/genome/append?circuit_name="
 var POST_monitoring_neuron_membranePotential: StringName = "/v1/feagi/monitoring/neuron/membrane_potential?cortical_area="
 var POST_monitoring_neuron_synapticPotential: StringName = "/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area="
 
@@ -67,7 +68,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	GET_genome_corticalMappings_efferents_corticalArea = FEAGIFullAddress + GET_genome_corticalMappings_efferents_corticalArea
 	GET_genome_mappingProperties = FEAGIFullAddress + GET_genome_mappingProperties
 	GET_genome_circuits = FEAGIFullAddress + GET_genome_circuits
-	GET_genome_circuitsize = FEAGIFullAddress + GET_genome_circuitsize
+	GET_genome_circuitDescription = FEAGIFullAddress + GET_genome_circuitDescription
 	GET_connectome_properties_dimensions = FEAGIFullAddress + GET_connectome_properties_dimensions
 	GET_genome_morphology_types = FEAGIFullAddress + GET_genome_morphology_types
 	GET_genome_morphologyName = FEAGIFullAddress + GET_genome_morphologyName
@@ -90,6 +91,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea
 	POST_genome_customCorticalArea = FEAGIFullAddress + POST_genome_customCorticalArea
 	POST_genome_morphology = FEAGIFullAddress + POST_genome_morphology
+	POST_genome_append = FEAGIFullAddress +  POST_genome_append
 	POST_monitoring_neuron_membranePotential = FEAGIFullAddress + POST_monitoring_neuron_membranePotential
 	POST_monitoring_neuron_synapticPotential = FEAGIFullAddress + POST_monitoring_neuron_synapticPotential
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea
