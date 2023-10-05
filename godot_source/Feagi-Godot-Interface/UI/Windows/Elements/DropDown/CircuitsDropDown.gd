@@ -7,7 +7,6 @@ var _list_of_circuit_friendly_names: PackedStringArray
 
 func _ready() -> void:
 	item_selected.connect(_user_selected_item)
-	_list_circuits(FeagiCache.available_circuits)
 	FeagiEvents.retrieved_circuit_listing.connect(_list_circuits)
 	FeagiRequests.refresh_available_circuits()
 
