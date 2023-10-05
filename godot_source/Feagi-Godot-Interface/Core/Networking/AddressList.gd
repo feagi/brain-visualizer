@@ -41,6 +41,7 @@ var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
 var POST_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
 var POST_genome_customCorticalArea: StringName = "/v1/feagi/genome/custom_cortical_area"
 var POST_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
+var POST_genome_append: StringName = "/v1/feagi/genome/append?circuit_name="
 var POST_monitoring_neuron_membranePotential: StringName = "/v1/feagi/monitoring/neuron/membrane_potential?cortical_area="
 var POST_monitoring_neuron_synapticPotential: StringName = "/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area="
 
@@ -90,6 +91,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea
 	POST_genome_customCorticalArea = FEAGIFullAddress + POST_genome_customCorticalArea
 	POST_genome_morphology = FEAGIFullAddress + POST_genome_morphology
+	POST_genome_append = FEAGIFullAddress +  POST_genome_append
 	POST_monitoring_neuron_membranePotential = FEAGIFullAddress + POST_monitoring_neuron_membranePotential
 	POST_monitoring_neuron_synapticPotential = FEAGIFullAddress + POST_monitoring_neuron_synapticPotential
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea

@@ -36,3 +36,8 @@ func _on_new_circuit_details(details: CircuitDetails) -> void:
 	_circuit_dimensions.current_vector = details.dimensions
 	_circuit_details.text = details.details
 
+
+func _on_add_press() -> void:
+	if _circuit_dropdown.get_current_circuit_friendly_name() == "":
+		return # dont proceed if nothing is picked
+	FeagiRequests.request_add_circuit(_circuit_dropdown.get_current_circuit_friendly_name(), _circuit_location.current_vector)

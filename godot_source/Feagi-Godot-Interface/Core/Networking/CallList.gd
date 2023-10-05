@@ -230,6 +230,11 @@ func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology
 	to_buffer["morphology_name"] = morphology_name
 	_interface_ref.single_FEAGI_request(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
 
+## adds a circuit
+func POST_GE_append(circuit_file_name: StringName, position: Vector3i) -> void:
+	var address: StringName = _address_list.POST_genome_append+circuit_file_name+"circuit_origin_x="+str(position.x)+"&circuit_origin_y="+str(position.y)+"&circuit_origin_z="+str(position.z)
+	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_append, {})
+
 ## Sets membrane potential monitoring
 func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
 	var boolean: StringName = FEAGIUtils.bool_2_string(state)

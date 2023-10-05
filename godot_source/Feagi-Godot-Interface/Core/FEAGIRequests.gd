@@ -167,15 +167,7 @@ func request_set_mapping_between_corticals(source_area: CorticalArea, destinatio
 func request_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
 	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(source_area, destination_area, morphology))
 
-################################# FEAGI General #################################
-
-## Get current burst rate
-func refresh_delay_between_bursts() -> void:
-	_feagi_interface.calls.GET_BU_stimulationPeriod()
-
-## Set a burst rate
-func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
-	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)
+################################ FEAGI Circuits #################################
 
 ## Gets the current available circuits of FEAGI
 func refresh_available_circuits() -> void:
@@ -185,6 +177,20 @@ func refresh_available_circuits() -> void:
 ## On Success, emits signal 'retrieved_circuit_details' in autoload node FEAGIEvents
 func get_circuit_details(circuit_file_name: StringName) -> void:
 	_feagi_interface.calls.GET_GE_circuitDescription(circuit_file_name)
+
+func request_add_circuit(circuit_file_name: StringName, circuit_position: Vector3i) -> void:
+	_feagi_interface.calls.POST_GE_append(circuit_file_name, circuit_position)
+
+
+################################# FEAGI General #################################
+
+## Get current burst rate
+func refresh_delay_between_bursts() -> void:
+	_feagi_interface.calls.GET_BU_stimulationPeriod()
+
+## Set a burst rate
+func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
+	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)
 
 ## Retrieves initial data needed to get started following genome load
 func initial_FEAGI_calls() -> void:

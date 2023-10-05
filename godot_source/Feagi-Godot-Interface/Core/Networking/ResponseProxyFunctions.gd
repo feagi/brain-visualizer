@@ -250,7 +250,10 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		push_error("Unable to process add morphology %s, skipping!" % [requested_properties["morphology_name"]])
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
-	
+
+func POST_GE_append(_response_code: int, _response_body: PackedByteArray, requested_properties: Dictionary) -> void:
+	return #TODO trigger reload?
+
 func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for membrane potential monitoring!")
