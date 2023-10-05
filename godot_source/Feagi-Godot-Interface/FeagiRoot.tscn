@@ -138,7 +138,7 @@ script = ExtResource("9_jshmh")
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 theme = ExtResource("16_jeyol")
 
-[node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="1"]
+[node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="22"]
 script = ExtResource("14_fab5w")
 
 [node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
