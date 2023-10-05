@@ -18,7 +18,7 @@ enum SUPPORTS_INTERFACE {
 	OPU
 }
 
-const CORTICAL_TYPES_WITH_STATIC_DIMENSIONS: Array[CORTICAL_AREA_TYPE] = [CORTICAL_AREA_TYPE.IPU, CORTICAL_AREA_TYPE.OPU, CORTICAL_AREA_TYPE.CORE]
+const CORTICAL_TYPES_WITH_STATIC_DIMENSIONS: Array[CORTICAL_AREA_TYPE] = [CORTICAL_AREA_TYPE.CORE]
 
 signal name_updated(cortical_name: StringName, this_cortical_area: CorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)

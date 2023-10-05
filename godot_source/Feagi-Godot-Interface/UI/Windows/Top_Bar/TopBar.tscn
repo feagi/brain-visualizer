@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://dumxnv0fvc2y0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
 [ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
 [ext_resource type="Texture2D" uid="uid://dii187rhiyl8n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
-[ext_resource type="PackedScene" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
+[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
 
 [node name="TopBar" type="Panel"]
