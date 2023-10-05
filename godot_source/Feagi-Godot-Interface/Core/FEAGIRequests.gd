@@ -184,9 +184,7 @@ func refresh_available_circuits() -> void:
 ## Retrieves the details of a circuit given a circuit name (include the ''.json')
 ## On Success, emits signal 'retrieved_circuit_details' in autoload node FEAGIEvents
 func get_circuit_details(circuit_file_name: StringName) -> void:
-	_feagi_interface.calls.GET_GE_circuitsize(circuit_file_name) # TODO new call
-
-
+	_feagi_interface.calls.GET_GE_circuitDescription(circuit_file_name)
 
 ## Retrieves initial data needed to get started following genome load
 func initial_FEAGI_calls() -> void:

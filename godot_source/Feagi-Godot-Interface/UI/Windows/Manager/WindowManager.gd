@@ -7,6 +7,7 @@ var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interfac
 var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
+var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
 
 var loaded_windows: Dictionary
 
@@ -72,6 +73,17 @@ func spawn_create_cortical() -> void:
 	create_cortical.load_from_memory(_window_memory_states["create_cortical"])
 	create_cortical.closed_window.connect(force_close_window)
 	loaded_windows["create_cortical"] = create_cortical
+
+func spawn_import_circuit() -> void:
+	if "import_circuit" in loaded_windows.keys():
+		force_close_window("import_circuit")
+	
+	print("user requests create import circuit window")
+	var import_circuit: WindowImportCircuit = _prefab_import_circuit.instantiate()
+	add_child(import_circuit)
+	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
+	import_circuit.closed_window.connect(force_close_window)
+	loaded_windows["import_circuit"] = import_circuit
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

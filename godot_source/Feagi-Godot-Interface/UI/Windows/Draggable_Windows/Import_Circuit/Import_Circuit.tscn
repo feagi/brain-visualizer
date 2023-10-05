@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://b6b6kym07iyt3"]
+[gd_scene load_steps=7 format=3 uid="uid://b6b6kym07iyt3"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/DraggableWindow.gd" id="1_0xtun"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.gd" id="1_h0pp3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CircuitsDropDown.gd" id="2_h2svm"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_jkgck"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="3_21g0v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_q8pg3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_mnkif"]
@@ -15,12 +16,13 @@ offset_right = -707.0
 offset_bottom = -295.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_0xtun")
+script = ExtResource("1_h0pp3")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_right = 362.0
 offset_bottom = 151.0
+script = ExtResource("2_jkgck")
 
 [node name="padding2" type="Control" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 5)
