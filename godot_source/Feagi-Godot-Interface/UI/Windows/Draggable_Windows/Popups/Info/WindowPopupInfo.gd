@@ -1,5 +1,6 @@
 extends DraggableWindow
 class_name WindowPopupInfo
+## Creates a pop up window
 
 enum ICON {
 	DEFAULT
@@ -11,6 +12,8 @@ func set_properties(title_text: StringName, message_text: StringName, button_tex
 	_set_message(message_text)
 	_set_button_text(button_text)
 	_set_texture(icon)
+	size = Vector2(0,0)
+	$VBoxContainer.size = Vector2(0,0) # force window to shrink
 
 func _set_title_text(text: StringName) -> void:
 	$TitleBar.title = text
@@ -28,3 +31,6 @@ func _get_texture_from_icon_enum(icon: ICON) -> Texture2D:
 	match icon:
 		_:
 			return load("res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png") as Texture2D
+
+func _close_popup():
+	queue_free()

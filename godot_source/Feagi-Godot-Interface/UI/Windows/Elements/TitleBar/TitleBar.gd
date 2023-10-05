@@ -149,4 +149,5 @@ func _auto_maintain_width() -> void:
 	call_deferred("_defered_size_adjust")
 
 func _defered_size_adjust():
+	size = Vector2(0,0)
 	custom_minimum_size.x = _parent.size.x

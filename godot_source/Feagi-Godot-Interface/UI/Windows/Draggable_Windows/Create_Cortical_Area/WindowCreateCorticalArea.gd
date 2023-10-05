@@ -133,8 +133,7 @@ func _create_pressed():
 
 		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			if _field_cortical_name.text == "":
-				# TODO better check here
-				push_warning("Unable to create a custom cortical area with no name!")
+				VisConfig.show_info_popup("Warning", "Please define a name for your custom cortical area", "ok", )
 				return
 			FeagiRequests.add_custom_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
 				false)

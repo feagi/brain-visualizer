@@ -89,6 +89,7 @@ func spawn_import_circuit() -> void:
 
 func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
 	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()
+	add_child(popup)
 	popup.position = Vector2(200,200)
 	popup.set_properties(title_text, message_text, button_text, icon)
 	
