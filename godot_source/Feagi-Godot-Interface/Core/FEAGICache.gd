@@ -9,13 +9,6 @@ var delay_between_bursts: float:
 		_delay_between_bursts = v
 		FeagiCacheEvents.delay_between_bursts_updated.emit(v)
 
-## The names of all circuits available for FEAGI to load
-var available_circuits: PackedStringArray:
-	get: return _available_circuits
-	set(v):
-		_available_circuits = v
-		FeagiCacheEvents.available_circuit_listing_updated.emit(v)
-
 var genome_name: StringName:
 	get: return _genome_name
 	set(v):
@@ -29,7 +22,6 @@ var cortical_templates: Dictionary:
 
 
 var _delay_between_bursts: float
-var _available_circuits: PackedStringArray = []
 var _cortical_templates: Dictionary = {}
 var _genome_name: StringName = ""
 
@@ -44,7 +36,6 @@ func hard_wipe():
 		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 	cortical_areas_cache.hard_wipe_cortical_areas()
 	morphology_cache.hard_wipe_cached_morphologies()
-	available_circuits = []
 
 func feagi_set_cortical_templates(raw_templates: Dictionary) -> void:
 	_cortical_templates = CorticalTemplates.cortical_templates_factory(raw_templates)
