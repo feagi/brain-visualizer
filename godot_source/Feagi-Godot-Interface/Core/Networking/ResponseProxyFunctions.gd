@@ -66,10 +66,12 @@ func GET_GE_circuits(_response_code: int, response_body: PackedByteArray, _irrel
 	var string_array: PackedStringArray = PackedStringArray(_body_to_string_array(response_body))
 	FeagiEvents.retrieved_circuit_listing.emit(string_array)
 
-func GET_GE_circuitsize(_response_code: int, response_body: PackedByteArray, circuit_name: StringName) -> void:
-	var size_array: Array[int] = FEAGIUtils.untyped_array_to_int_array(_body_to_untyped_array(response_body))
-	#TODO for now we only have the size
-	var details: CircuitDetails = CircuitDetails.new(circuit_name, FEAGIUtils.array_to_vector3i(size_array), "") # TODO fill in details
+func GET_GE_circuitDescription(response_code: int, response_body: PackedByteArray, circuit_name: StringName) -> void:
+	if response_code != 200:
+		push_error("Unable to retrieve circuit information for %s! Skipping!" % circuit_name)
+		return
+	var circuit_properties: Dictionary = _body_to_dictionary(response_body)
+	var details: CircuitDetails = CircuitDetails.new(circuit_name, FEAGIUtils.array_to_vector3i(circuit_properties["size"]), circuit_properties["description"])
 	FeagiEvents.retrieved_circuit_details.emit(details)
 
 	
