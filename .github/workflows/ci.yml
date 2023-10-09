@@ -8,7 +8,7 @@ env:
   EXPORT_NAME: Web
   PROJECT_PATH: /html
  
- jobs:
+jobs:
   export-web:
     name: Web Export
     runs-on: ubuntu-20.04
