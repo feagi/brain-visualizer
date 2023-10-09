@@ -28,8 +28,8 @@ jobs:
           cd $PROJECT_PATH
       - name: Set Compile Time
         run: |
-          chmod +x ./feagi_initalize.sh
-          ./feagi_initalize.sh
+          chmod +x ./set_timestamp.sh
+          ./set_timestamp.sh
       - name: Web Build
         run: |
           godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html
