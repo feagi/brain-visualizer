@@ -33,3 +33,12 @@ jobs:
       - name: Web Build
         run: |
           godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html
+      - name: Push Web Export
+        run: |
+          # Set up Git for the push
+          git config --global user.name "BrainVisualizerPushAction"
+          git checkout -b main-test
+          git add .
+          git commit -m "Updated Web Export"
+          git push origin main-test
+          
