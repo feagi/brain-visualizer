@@ -25,4 +25,4 @@ jobs:
         run: |
           mkdir -v -p build/web
           cd $PROJECT_PATH
-          godot -v --export-release --rendering-driver opengl3 "HTML5" ../build/web/index.html
+          godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html
