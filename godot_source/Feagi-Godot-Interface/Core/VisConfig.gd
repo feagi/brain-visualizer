@@ -9,6 +9,7 @@ enum STATES {
 
 var UI_manager: UIManager
 var is_premium: bool = true
+var version: BVVersion
 
 var visualizer_state: STATES:
 	get: return _visualizer_state
@@ -20,3 +21,6 @@ var _visualizer_state: STATES = STATES.LOADING_INITIAL
 
 func show_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
 	UI_manager.window_manager.spawn_info_popup(title_text, message_text, button_text, icon)
+
+func _ready() -> void:
+	version = BVVersion.new()
