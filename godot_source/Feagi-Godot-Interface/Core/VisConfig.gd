@@ -24,3 +24,5 @@ func show_info_popup(title_text: StringName, message_text: StringName, button_te
 
 func _ready() -> void:
 	version = BVVersion.new()
+	push_warning("Init Brain Visualizer Verion " + str(version.manual_version))
+	push_warning("Compile time: " + Time.get_datetime_string_from_unix_time(version.automatic_version))
