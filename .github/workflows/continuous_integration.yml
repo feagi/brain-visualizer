@@ -50,8 +50,7 @@ jobs:
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git checkout main-test
-          echo "checkout merge"
-          git merge web-export
+          git merge main-test
+          
           
           
