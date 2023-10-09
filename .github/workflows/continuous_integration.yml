@@ -27,7 +27,7 @@ jobs:
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
           echo "set vars"
           git fetch --all
-          git merge main
+          git merge staging
           
         
       - name: Setup for Build
@@ -52,7 +52,6 @@ jobs:
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git merge origin/main-test --allow-unrelated-histories --strategy=ours
-          git push
+          git push origin/main
           
           
