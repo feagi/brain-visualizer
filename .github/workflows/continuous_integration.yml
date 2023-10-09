@@ -27,7 +27,7 @@ jobs:
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
           echo "set vars"
           git fetch --all
-          git merge origin/staging
+          git merge origin/staging --allow-unrelated-histories
           
         
       - name: Setup for Build
