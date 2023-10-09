@@ -50,7 +50,7 @@ jobs:
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git merge origin/main-test --allow-unrelated-histories
+          git merge origin/main-test --allow-unrelated-histories --strategy=ours
           
           
           
