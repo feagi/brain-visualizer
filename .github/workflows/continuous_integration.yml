@@ -18,14 +18,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        
       - name: Setup
         run: |
           mkdir -v -p ~/.local/share/godot/templates
           mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
+      
       - name: Create Build Directory
         run: |
           mkdir -v -p build/web
           cd $PROJECT_PATH
+          
       - name: Set Compile Time
         run: |
           chmod +x ./set_timestamp.sh
@@ -39,8 +42,13 @@ jobs:
           git config --global user.name "BrainVisualizerPushAction"
           git config --global user.email "BrainVisualizerPushAction@neuraville.com"
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
-          git branch main-test
+          echo "set vars"
+          
+          git fetch --all
+          git checkout -b web-export main-test
           git add .
           git commit -m "Updated Web Export"
-          git push origin main-test
+          git checkout main-test
+          git merge web-export
+          
           
