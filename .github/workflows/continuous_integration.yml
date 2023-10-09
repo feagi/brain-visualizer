@@ -51,6 +51,6 @@ jobs:
           git commit -m "Updated Web Export"
           echo "committed"
           git merge origin/main-test --allow-unrelated-histories --strategy=ours
-          
+          git push
           
           
