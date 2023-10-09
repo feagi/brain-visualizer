@@ -57,7 +57,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 		$"../../Windows".spawn_left_panel(cortical_name)
 
 func _on_area_3d_mouse_entered():
-	$"../Camera3D".disable_mouse_control = true
+	#$"../Camera3D".disable_mouse_control = true
 	if get_surface_override_material(0) == global_material.selected:
 		set_surface_override_material(0, global_material.selected)
 	elif get_surface_override_material(0) == global_material.glow:
@@ -68,7 +68,7 @@ func _on_area_3d_mouse_entered():
 		set_surface_override_material(0, global_material.white)
 
 func _on_area_3d_mouse_exited():
-	$"../Camera3D".disable_mouse_control = false
+	#$"../Camera3D".disable_mouse_control = false
 	if get_surface_override_material(0) == global_material.selected:
 		set_surface_override_material(0, global_material.selected)
 	elif get_surface_override_material(0) == global_material.glow:

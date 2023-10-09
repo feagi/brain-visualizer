@@ -15,6 +15,8 @@ func _ready():
 	_match_size()
 
 func _match_size() -> void:
+	if _child.size == Vector2(0,0):
+		return # if a size is set to 0,0, assuming a resize calculation is running
 	var addition: Vector2 = Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
 	size = _child.size + addition
 	_child.position = addition / 2.0

@@ -29,6 +29,11 @@ static func vector3i_to_array(input: Vector3i):
 	var output: Array = [input.x, input.y, input.z]
 	return output
 
+## Converts a Vector3 to a 3 long float array
+static func vector3_to_array(input: Vector3):
+	var output: Array = [input.x, input.y, input.z]
+	return output
+
 ## Converts a Vector2i to a 2 long int array
 static func vector2i_to_array(input: Vector2i):
 	var output: Array = [input.x, input.y]
@@ -102,7 +107,20 @@ static func find_missing_elements(is_missing: Array, is_missing_from: Array) -> 
 
 ## why is this so dumb
 static func untyped_array_to_int_array(input: Array) -> Array[int]:
-	var output: Array[int]
+	var output: Array[int] = []
 	for i in input:
 		output.append(int(i))
 	return output
+
+## bool type to 'true" or 'false'
+static func bool_2_string(input: bool) -> StringName:
+	if input:
+		return &"true"
+	else:
+		return &"false"
+
+## string type to bool
+static func string_2_bool(input: String) -> bool:
+	if input == "true":
+		return true
+	return false

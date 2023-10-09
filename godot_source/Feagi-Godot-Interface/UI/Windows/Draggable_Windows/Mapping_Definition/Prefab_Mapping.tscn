@@ -96,8 +96,5 @@ script = ExtResource("5_c7vkc")
 [connection signal="option_changed" from="Morphology_List" to="." method="_on_user_set_morphology"]
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
-[connection signal="float_confirmed" from="Plasticity_Constant" to="." method="_on_user_plasticity_constant"]
-[connection signal="float_confirmed" from="LTP_Multiplier" to="." method="_on_user_LTP_multiplier"]
-[connection signal="float_confirmed" from="LTD_Multiplier" to="." method="_on_user_LTD_multiplier"]
 [connection signal="pressed" from="info" to="." method="_on_info_pressed"]
 [connection signal="pressed" from="remove" to="." method="_on_delete_pressed"]

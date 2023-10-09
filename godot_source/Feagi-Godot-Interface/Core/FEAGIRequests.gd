@@ -3,6 +3,8 @@ extends Node
 ## General actions to request of FEAGI
 ## Try to use the functions here to call feagi actions instead of through FEAGIInterface
 
+var feagi_interface: FEAGIInterface:
+	get: return _feagi_interface
 
 var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below will crash!
 
@@ -17,24 +19,66 @@ func refresh_cortical_areas() -> void:
 
 ## Requests from FEAGI to send back all details of an EXISTING cortical area
 ## Success emits cortical_area_updated
-func refresh_cortical_area(ID: StringName) -> void:
-	print("Pinging FEAGI latest cortical area details for " + ID)
-	_feagi_interface.calls.GET_GE_corticalArea(ID)
+func refresh_cortical_area(cortical_area: CorticalArea, polling: bool = false) -> void:
+	print("Pinging FEAGI latest cortical area details for " + cortical_area.cortical_ID)
+	if polling:
+		_feagi_interface.calls.GET_GE_corticalArea_POLL(cortical_area.cortical_ID)
+	else:
+		_feagi_interface.calls.GET_GE_corticalArea(cortical_area.cortical_ID)
+	request_membrane_monitoring_status(cortical_area)
+	request_synaptic_monitoring_status(cortical_area)
 
 ## Requests from FEAGI to add a cortical area using the custom call
 ## the call returns the FEAGI generated cortical ID
 ## Success emits cortical_area_added
 func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool,
-	coordinates_2D: Vector2i = Vector2(0,0), cortical_type: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE.CUSTOM) -> void:
+	coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
 
-	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, cortical_type)
+func request_add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	print("User requested adding OPU/IPU cortical area")
+	if !(IOPU_template.cortical_type  in [CorticalArea.CORTICAL_AREA_TYPE.IPU, CorticalArea.CORTICAL_AREA_TYPE.OPU]):
+		push_error("Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
+		return
+	if channel_count < 1:
+		push_error("Channel count must be greater than 0 for a IPU/OPU area!, Skipping!")
+		return
+	_feagi_interface.calls.POST_GE_corticalArea(IOPU_template.ID, IOPU_template.cortical_type, coordinates_3D, is_coordinate_2D_defined, channel_count, coordinates_2D)
+
+func request_membrane_monitoring_status(cortical_area: CorticalArea) -> void:
+	print("User requested membrane monitoring state for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.GET_MO_neuron_membranePotential(cortical_area.cortical_ID)
+
+func request_synaptic_monitoring_status(cortical_area: CorticalArea) -> void:
+	print("User requested synaptic monitoring state for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
+
+## Refresh ID list of IPU and OPU templates
+## TODO: Currently saves data nowhere!
+func request_refresh_IPU_OPU_template_IDs() -> void:
+	print("Requesting up to date IPU and OPU template IDs")
+	_feagi_interface.calls.GET_PNS_current_ipu()
+	_feagi_interface.calls.GET_PNS_current_opu()
+
+func request_refresh_cortical_templates() -> void:
+	print("Requesting up to date cortical templates")
+	_feagi_interface.calls.GET_GE_corticalTypes()
 
 ## Sets the properties of a given cortical area
 ## MAKE SURE THE DICTIONARY IS FORMATTED CORRECTLY!
 ## Convert Vectors to arrays, StringNames to Strings
 ## Success emits cortical_area_updated since this calls "refresh_cortical_area" on success
 func set_cortical_area_properties(ID: StringName, formatted_properties_to_set: Dictionary) -> void:
+	
 	_feagi_interface.calls.PUT_GE_corticalArea(ID, formatted_properties_to_set)
+
+func request_change_membrane_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+	print("User requested modification of membrane monitoring state for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.POST_MON_neuron_membranePotential(cortical_area.cortical_ID, requested_state)
+
+func request_change_synaptic_monitoring_status(cortical_area: CorticalArea, requested_state: bool) -> void:
+	print("User requested modification of synaptic monitoring state for " + cortical_area.cortical_ID)
+	_feagi_interface.calls.POST_MON_neuron_synapticPotential(cortical_area.cortical_ID, requested_state)
 
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
@@ -83,15 +127,13 @@ func request_create_morphology(morphology_to_create: Morphology) -> void:
 	print("Requesting FEAGI to create morphology " + morphology_to_create.name)
 	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, morphology_to_create.type, morphology_to_create.to_dictionary())
 
-
+## Requests feagi to delete a morphology
 func request_delete_morphology(morphology_name: StringName) -> void:
-	print("Use requested deletion of morphology " + morphology_name)
+	print("User requested deletion of morphology " + morphology_name)
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology_name])
 		return
 	_feagi_interface.calls.DELETE_GE_morphology(morphology_name)
-
-
 
 #TODO this should be updated
 func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
@@ -125,6 +167,21 @@ func request_set_mapping_between_corticals(source_area: CorticalArea, destinatio
 func request_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
 	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(source_area, destination_area, morphology))
 
+################################ FEAGI Circuits #################################
+
+## Gets the current available circuits of FEAGI
+func refresh_available_circuits() -> void:
+	_feagi_interface.calls.GET_GE_circuits()
+
+## Retrieves the details of a circuit given a circuit name (include the ''.json')
+## On Success, emits signal 'retrieved_circuit_details' in autoload node FEAGIEvents
+func get_circuit_details(circuit_file_name: StringName) -> void:
+	_feagi_interface.calls.GET_GE_circuitDescription(circuit_file_name)
+
+func request_add_circuit(circuit_file_name: StringName, circuit_position: Vector3i) -> void:
+	_feagi_interface.calls.POST_GE_append(circuit_file_name, circuit_position)
+
+
 ################################# FEAGI General #################################
 
 ## Get current burst rate
@@ -135,14 +192,31 @@ func refresh_delay_between_bursts() -> void:
 func set_delay_between_bursts(delay_between_bursts_in_seconds: float) -> void:
 	_feagi_interface.calls.POST_FE_burstEngine(delay_between_bursts_in_seconds)
 
-## Gets the current available circuits of FEAGI
-func refresh_available_circuits() -> void:
-	_feagi_interface.calls.GET_GE_circuits()
+## Retrieves initial data needed to get started following genome load
+func initial_FEAGI_calls() -> void:
+	refresh_morphology_list()
+	refresh_cortical_areas() # This also causes a refresh of connections afterwards
+	refresh_delay_between_bursts()
+	request_refresh_cortical_templates()
 
-## Retrieves the size of a circuit given a circuit name (include the ''.json')
-## On Success, emits signal 'retrieved_circuit_size' in autoload node FEAGIEvents
-func get_circuit_size(circuit_name: StringName) -> void:
-	if circuit_name not in FeagiCache.available_circuits:
-		push_warning("Attempted to get the size of non-cached circuit %s! Skipping! You may want to refresh available circuits first!")
-		return
-	_feagi_interface.calls.GET_GE_circuitsize(circuit_name)
+## Call when a genome is hard reset, triggers a cache wipe and reset from frsh feagi data
+func hard_reset_genome_from_FEAGI() -> void:
+	FeagiEvents.genome_is_about_to_reset.emit()
+	VisConfig.UI_manager.window_manager.force_close_all_windows()
+	VisConfig.visualizer_state = VisConfig.STATES.LOADING_INITIAL
+	FeagiCache.hard_wipe()
+	initial_FEAGI_calls()
+
+## Calls feagi to retrieve the currently loaded filename.
+func get_loaded_genome() -> void:
+	_feagi_interface.calls.GET_GE_fileName()
+
+## Calls feagi to retrieve genome health. Polls if genome is unavailable. used for launch since this will launch "initial_FEAGI_calls" once genome is available
+func poll_genome_availability_launch() -> void:
+	_feagi_interface.calls.GET_healthCheck_POLL_GENOME()
+
+## Calls feagi to retrieve genome health. Polls constantly to update health stats 
+func poll_genome_availability_monitoring() -> void:
+	_feagi_interface.calls.GET_healthCheck_POLL_MONITORING()
+
+

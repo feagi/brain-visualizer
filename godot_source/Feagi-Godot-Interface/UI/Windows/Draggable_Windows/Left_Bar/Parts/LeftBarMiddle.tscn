@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://x0wkgtc5o5vw"]
+[gd_scene load_steps=7 format=3 uid="uid://x0wkgtc5o5vw"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="1_vwrd4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.gd" id="1_ydyx4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_a6rta"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_0ph5r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="4_ofdu8"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_d8t0a"]
@@ -53,7 +54,7 @@ text = "Post-Synaptic Potential (PSP)"
 [node name="Post_Synaptic_Potential" type="LineEdit" parent="Post_Synaptic_Potential"]
 layout_mode = 2
 alignment = 2
-script = ExtResource("1_vwrd4")
+script = ExtResource("3_a6rta")
 
 [node name="PSP_Max" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -66,7 +67,7 @@ text = "PSP Max"
 [node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
 layout_mode = 2
 alignment = 2
-script = ExtResource("1_vwrd4")
+script = ExtResource("3_a6rta")
 
 [node name="Fire_Threshold" type="HBoxContainer" parent="."]
 layout_mode = 2

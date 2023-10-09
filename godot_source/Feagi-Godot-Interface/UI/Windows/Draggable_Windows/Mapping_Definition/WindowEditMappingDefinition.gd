@@ -1,4 +1,4 @@
-extends GrowingPanel
+extends DraggableWindow
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
@@ -25,9 +25,9 @@ var _destinations_dropdown: CorticalDropDown
 var _mapping_details: WindowMappingDetails
 
 func _ready() -> void:
-	_sources_dropdown = $VBoxContainer/SourceAndDestination/src_box/src_dropdown
-	_destinations_dropdown = $VBoxContainer/SourceAndDestination/des_box/des_dropdown
-	_mapping_details = $VBoxContainer/Mapping_Details
+	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
+	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
+	_mapping_details = $BoxContainer/Mapping_Details
 
 
 func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalArea = null):
@@ -75,13 +75,21 @@ func _are_cortical_areas_valid() -> bool:
 	if _source_area == null or _destination_area == null:
 		return false
 	return true
-
-
 func _source_changed(new_source: CorticalArea) -> void:
 	source_area = new_source
 
 func _destination_changed(new_destination: CorticalArea) -> void:
 	destination_area = new_destination
+
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
+
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
 
 #TODO add these signals
 

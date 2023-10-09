@@ -8,14 +8,14 @@
 
 [node name="CorticalNode" type="Panel"]
 offset_top = 40.0
-offset_right = 175.0
+offset_right = 205.0
 offset_bottom = 126.0
 script = ExtResource("1_4inyi")
 
 [node name="TitleBar" parent="." instance=ExtResource("1_cd1fb")]
 layout_mode = 1
 offset_top = -40.0
-offset_right = 175.0
+offset_right = 205.0
 offset_bottom = 0.0
 title = "ID"
 automatic_setup_closing = false

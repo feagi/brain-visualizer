@@ -4,14 +4,24 @@ extends Node
 ## Primarily used in cases of getting most recent info from FEAGI
 
 ## FEAGI reloaded its genome
-signal genome_was_reset()
+signal genome_is_about_to_reset()
 
 ## We got visualization data from Websocket for BV
 signal retrieved_visualization_data(data: Array)
-signal retrieved_circuit_size(circuit_name: StringName, size_whd: Vector3i)
-#signal retrieved_mapping_information(source_area: CorticalArea, destination_area: CorticalArea, mappings: CorticalMappingProperties)
+
+## When we get a listing of circuits
+signal retrieved_circuit_listing(circuit_file_names: PackedStringArray)
+
+## We got details of a specific circuit
+signal retrieved_circuit_details(circuit_details: CircuitDetails)
 
 ## Emits when we retrieved the latest list of morphologies from feagi
 signal retrieved_latest_morphology_listing(morphologies: Array[String])
 ## Emits when we retrieved arrays of source -> destination mappings (each are 2 element array themselves), and the accompying relevant morphology it relates to
 signal retrieved_latest_usuage_of_morphology(relevant_morphology: Morphology, usage: Array[Array])
+
+signal retrieved_latest_ping(ping: StringName)
+
+## Retrieved latest health info
+signal retrieved_latest_FEAGI_health(burst_engine: bool, genome_availibility: bool, genome_validity: bool, brain_readiness: bool)
+

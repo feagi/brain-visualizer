@@ -233,7 +233,10 @@ async def bridge_to_BV():
             try:
                 if ws_operation:
                     await ws_operation[0].send(zlib.compress(str(zmq_queue[0]).encode()))
-                    zmq_queue.pop()
+                    if "ping" in zmq_queue:
+                        zmq_queue.popleft()
+                    else:
+                        zmq_queue.pop()
             except Exception as error:
                 sleep(0.001)
         else:
@@ -308,6 +311,10 @@ def feagi_to_brain_visualizer():
                 zmq_queue.append(stored_value)
         if "stimulation_period" in runtime_data:
             sleep(runtime_data["stimulation_period"])
+
+
+def generate_max_second(config_max, second):
+    return config_max / round(second, 3)
 
 
 def main():
@@ -393,7 +400,8 @@ def main():
                 connect_status_counter = 0
             else:
                 connect_status_counter += 1
-                if connect_status_counter >= 600000:
+                second_max = generate_max_second(agent_settings['timeout_max'], burst_second)
+                if float(connect_status_counter) >= second_max:
                     if feagi.is_FEAGI_reachable(
                             os.environ.get('FEAGI_HOST_INTERNAL', "127.0.0.1"),
                             int(os.environ.get('FEAGI_OPU_PORT', "3000"))):
@@ -456,8 +464,8 @@ def main():
         else:
             data_from_godot = "{}"
         # print("DATA FROM GODOT: ", data_from_godot)
-        if data_from_godot != "{}":
-            print(data_from_godot)
+        # if data_from_godot != "{}":
+        #     print(data_from_godot)
         if data_from_godot == "lagged":
             detect_lag = True
             data_from_godot = "{}"
@@ -469,6 +477,9 @@ def main():
                                             timeout=10).json()
             json_object = json.dumps(data_from_genome)
             zmq_queue.append("genome: " + json_object)
+        if data_from_godot == "ping":
+            data_from_godot = "{}"
+            zmq_queue.append("ping")
         if data_from_godot == "updated":
             data_from_godot = "{}"
             reload_genome(feagi_host, api_port, dimensions_endpoint)

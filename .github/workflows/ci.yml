@@ -1,0 +1,28 @@
+name: "Brain Visualizer Web Export"
+
+on:
+  workflow_dispatch
+
+env:
+  GODOT_VERSION: 4.1.1
+  EXPORT_NAME: Web
+  PROJECT_PATH: html
+ 
+jobs:
+  export-web:
+    name: Web Export
+    runs-on: ubuntu-20.04
+    container:
+      image: barichello/godot-ci:4.1.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup
+        run: |
+          mkdir -v -p ~/.local/share/godot/templates
+          mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
+      - name: Web Build
+        run: |
+          mkdir -v -p build/web
+          cd $PROJECT_PATH
+          godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html

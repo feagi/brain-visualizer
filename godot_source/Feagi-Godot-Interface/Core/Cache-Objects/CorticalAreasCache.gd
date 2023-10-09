@@ -39,6 +39,15 @@ func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> vo
 	_cortical_areas[new_ID] = new_area
 	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[new_ID])
 
+## Adds a cortical area that was created from a template
+func add_new_IOPU_cortical_area(template: CorticalTemplate, this_cortical_area_ID: StringName, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, cortical_details_raw: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: CorticalArea = CorticalArea.create_from_IOPU_template(template, this_cortical_area_ID, channel_count, is_visible, cortical_details_raw)
+	new_area.coordinates_3D = coordinates_3D
+	if is_coordinate_2D_defined:
+		new_area.coordinates_2D = coordinates_2D
+	_cortical_areas[this_cortical_area_ID] = new_area
+	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[this_cortical_area_ID])
+
 ## Updates a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
@@ -151,5 +160,10 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 		_cortical_areas[add] = adding_cortical_area
 		FeagiCacheEvents.cortical_area_added.emit(adding_cortical_area)
 
-
-
+## Removes all cached cortical areas (and their connections). Should only be called during a reset
+func hard_wipe_cortical_areas():
+	print("CACHE: Wiping cortical areas and connections...")
+	var all_cortical_area_IDs: Array = _cortical_areas.keys()
+	for cortical_area_ID in all_cortical_area_IDs:
+		remove_cortical_area(cortical_area_ID)
+	print("CACHE: Wiping cortical areas and connection wipe complete!")

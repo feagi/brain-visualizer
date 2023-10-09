@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://bfnfbf56w0t5p"]
-
-[ext_resource type="Script" path="res://Network/Library/SimpleNetworkAPI.gd" id="1_hgbai"]
-
-[node name="SimpleNetworkAPI" type="Node"]
-script = ExtResource("1_hgbai")

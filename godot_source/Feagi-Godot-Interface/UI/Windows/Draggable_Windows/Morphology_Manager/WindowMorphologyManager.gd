@@ -1,7 +1,7 @@
-extends GrowingPanel
+extends DraggableWindow
 class_name WindowMorphologyManager
 
-var _main_container: HBoxContainer
+var _main_container: BoxContainer
 var _morphology_scroll: MorphologyScroll
 var _view_patterns: ElementMorphologyPatternView
 var _view_composite: ElementMorphologyCompositeView
@@ -32,7 +32,7 @@ func selected_morphology(morphology: Morphology) -> void:
 	_morphology_description.update_image_with_morphology(morphology.name)
 	_morphology_description.clear_usage()
 	FeagiRequests.get_morphology_usuage(morphology.name)
-	_main_container.size = Vector2(0,0) # stupid sizing fix - by trying to force a zero size, the window will scale to its appropriate min size instead
+
 
 # TODO function morphologies?
 func _toggle_between_morphology_type_views(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
@@ -66,6 +66,15 @@ func send_updated_values_to_feagi() -> void:
 
 	FeagiRequests.request_updating_morphology(morphology_to_send)
 
+## Called from Window manager, to save previous position
+func save_to_memory() -> Dictionary:
+	return {
+		"position": position,
+	}
+
+## Called from Window manager, to load previous position
+func load_from_memory(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
 
 func _retrieved_morphology_properties_from_feagi(morphology: Morphology) -> void:
 	if morphology.name != _selected_morphology.name:

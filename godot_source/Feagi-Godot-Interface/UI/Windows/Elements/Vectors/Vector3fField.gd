@@ -26,10 +26,19 @@ var current_vector: Vector3:
 		_field_x.current_float = v.x
 		_field_y.current_float = v.y
 		_field_z.current_float = v.z
-	
+
+var editable: bool:
+	get: return _editable
+	set(v):
+		_editable = v
+		_field_x.editable = v
+		_field_y.editable = v
+		_field_z.editable = v
+
 var _field_x: FloatInput
 var _field_y: FloatInput
 var _field_z: FloatInput
+var _editable: bool = true
 
 func _ready():
 	get_node("LabelX").label_text = label_x_text

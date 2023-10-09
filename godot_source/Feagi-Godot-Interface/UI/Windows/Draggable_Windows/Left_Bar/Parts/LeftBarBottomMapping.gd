@@ -32,7 +32,7 @@ func _user_pressed_delete_button():
 	
 func _user_pressed_edit_button():
 	print("Left Bar is requesting Cortical Connection Editing")
-	VisConfig.window_manager.spawn_edit_mappings(_source_area, _destination_area)
+	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_area, _destination_area)
 
 #func _FEAGI_deleted_mapping(source: CorticalArea, destination: CorticalArea):
 	

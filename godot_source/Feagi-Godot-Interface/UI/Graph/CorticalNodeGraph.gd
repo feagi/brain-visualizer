@@ -17,6 +17,7 @@ func _ready():
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical_node)
 	FeagiCacheEvents.cortical_areas_connection_modified.connect(spawn_established_connection)
 	FeagiCacheEvents.cortical_areas_disconnected.connect(delete_established_connection)
+	FeagiEvents.genome_is_about_to_reset.connect(_on_genome_reset)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 
 
@@ -26,7 +27,7 @@ func spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()
 	#cortical_node.user_started_connection_from.connect(_user_starting_drag_from)
 	var offset: Vector2
-	if !cortical_area.is_coordinates_2D_available: #TODO REMOVE THE !
+	if cortical_area.is_coordinates_2D_available:
 		offset = cortical_area.coordinates_2D
 	else:
 		if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
@@ -79,4 +80,6 @@ func user_start_drag_new_connection(source: CorticalNode) -> void:
 	print("GRAPH: User Start Connection drag from " + source.cortical_area_ID)
 	Connection2DDragging.new(source, _background_center)
 
+func _on_genome_reset():
+	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 

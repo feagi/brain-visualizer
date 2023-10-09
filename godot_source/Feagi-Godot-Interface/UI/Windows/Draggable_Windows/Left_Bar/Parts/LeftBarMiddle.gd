@@ -6,8 +6,8 @@ signal user_requested_update(changed_values: Dictionary)
 
 var _Voxel_Neuron_Density: IntInput
 var _Synaptic_Attractivity: IntInput
-var _Post_Synaptic_Potential: IntInput
-var _PSP_Max: IntInput
+var _Post_Synaptic_Potential: FloatInput
+var _PSP_Max: FloatInput
 var _Fire_Threshold: IntInput
 var _Threshold_Limit: IntInput
 var _Refactory_Period: IntInput
@@ -45,8 +45,8 @@ func _ready():
 
 	_Voxel_Neuron_Density.int_confirmed.connect(user_request_Voxel_Neuron_Density)
 	_Synaptic_Attractivity.int_confirmed.connect(user_request_Synaptic_Attractivity)
-	_Post_Synaptic_Potential.int_confirmed.connect(user_request_Post_Synaptic_Potential)
-	_PSP_Max.int_confirmed.connect(user_request_PSP_Max)
+	_Post_Synaptic_Potential.float_confirmed.connect(user_request_Post_Synaptic_Potential)
+	_PSP_Max.float_confirmed.connect(user_request_PSP_Max)
 	_Fire_Threshold.int_confirmed.connect(user_request_Fire_Threshold)
 	_Threshold_Limit.int_confirmed.connect(user_request_Threshold_Limit)
 	_Refactory_Period.int_confirmed.connect(user_request_Refactory_Period)
@@ -65,8 +65,8 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	var details: CorticalAreaDetails = cortical_reference.details
 	_Voxel_Neuron_Density.current_int = details.cortical_neuron_per_vox_count
 	_Synaptic_Attractivity.current_int = details.cortical_synaptic_attractivity
-	_Post_Synaptic_Potential.current_int = details.neuron_post_synaptic_potential
-	_PSP_Max.current_int = details.neuron_post_synaptic_potential_max
+	_Post_Synaptic_Potential.current_float = details.neuron_post_synaptic_potential
+	_PSP_Max.current_float = details.neuron_post_synaptic_potential_max
 	_Fire_Threshold.current_int = details.neuron_fire_threshold
 	_Threshold_Limit.current_int = details.neuron_firing_threshold_limit
 	_Refactory_Period.current_int = details.neuron_refractory_period
@@ -86,8 +86,8 @@ func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cort
 
 	_Voxel_Neuron_Density.external_update_int(cortical_area_details.cortical_neuron_per_vox_count)
 	_Synaptic_Attractivity.external_update_int(cortical_area_details.cortical_synaptic_attractivity)
-	_Post_Synaptic_Potential.external_update_int(cortical_area_details.neuron_post_synaptic_potential)
-	_PSP_Max.external_update_int(cortical_area_details.neuron_post_synaptic_potential_max)
+	_Post_Synaptic_Potential.external_update_float(cortical_area_details.neuron_post_synaptic_potential)
+	_PSP_Max.external_update_float(cortical_area_details.neuron_post_synaptic_potential_max)
 	_Fire_Threshold.external_update_int(cortical_area_details.neuron_fire_threshold)
 	_Threshold_Limit.external_update_int(cortical_area_details.neuron_firing_threshold_limit)
 	_Refactory_Period.external_update_int(cortical_area_details.neuron_refractory_period)
@@ -143,8 +143,8 @@ func user_request_Leak_Varibility(value: int) -> void:
 	_growing_cortical_update["neuron_leak_variability"] = value
 	_update_button.disabled = false
 
-func user_request_Threshold_Inc(value: int) -> void:
-	_growing_cortical_update["neuron_fire_threshold_increment"] = value
+func user_request_Threshold_Inc(value: Vector3) -> void:
+	_growing_cortical_update["neuron_fire_threshold_increment"] = FEAGIUtils.vector3_to_array(value)
 	_update_button.disabled = false
 
 func user_request_Consecutive_Fire_Count(value: int) -> void:

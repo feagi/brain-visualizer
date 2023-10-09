@@ -25,6 +25,8 @@ signal drag_finished(current_position: Vector2)
 ## if True, will attempt to set the correct width of the parent window, and maintain it
 @export var automatic_maintain_width: bool = true
 
+## if set to a non blank string, will attempt to automatically set up closing behavior on parent window for the window manager
+@export var automatic_setup_window_closing_for_window_manager_name: StringName
 
 var is_dragging: bool:
 	get: return _is_dragging
@@ -34,11 +36,11 @@ var is_dragging: bool:
 			
 		_is_dragging = v
 		if v:
-			drag_started.emit(position)
-			VisConfig.is_user_dragging_a_window = true
+			drag_started.emit(_parent.position)
+			VisConfig.UI_manager.is_user_dragging_a_window = true
 		else:
-			drag_finished.emit(position)
-			VisConfig.is_user_dragging_a_window = false
+			drag_finished.emit(_parent.position)
+			VisConfig.UI_manager.is_user_dragging_a_window = false
 
 
 var _is_mousing_over: bool = false
@@ -66,6 +68,10 @@ func _ready():
 	
 	if automatic_maintain_width:
 		_parent.resized.connect(_auto_maintain_width)
+		_auto_maintain_width()
+	
+	if automatic_setup_window_closing_for_window_manager_name != &"":
+		close_pressed.connect(_window_manager_close)
 	
 	_initial_position = position
 
@@ -92,9 +98,11 @@ func _proxy_close_button():
 
 func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
-
-	
 	# Because button is a square
+
+func _window_manager_close() -> void:
+	var draggable_window: DraggableWindow = _parent as DraggableWindow
+	draggable_window.close_window(automatic_setup_window_closing_for_window_manager_name)
 
 ## What is the minimum width the title bar needs to be to fit everything?
 func _recalculate_title_bar_min_width() -> void:
@@ -123,10 +131,10 @@ func _dragging(drag: InputEventMouseMotion) -> void:
 	if !is_dragging:
 		return # if we arent dragging, don't do anything!
 	
-	dragged.emit(position, drag.relative)
+	dragged.emit(_parent.position, drag.relative)
 
 func _end_drag() -> void:
-	drag_finished.emit(position)
+	drag_finished.emit(_parent.position)
 
 ## IF auto-setup-dragging is enabled, responsible for moving parent around
 func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -> void:
@@ -134,8 +142,12 @@ func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -
 
 ## IF auto-setup-closing is enabled, responsible for moving parent around
 func _auto_close_parent() -> void:
-	_parent.visible = false
+	_parent.visible = false # TODO
 #	_parent.queue_free() # Temporary. This is useful for duplicated/JSON. We aren't using it
 
 func _auto_maintain_width() -> void:
+	call_deferred("_defered_size_adjust")
+
+func _defered_size_adjust():
+	size = Vector2(0,0)
 	custom_minimum_size.x = _parent.size.x

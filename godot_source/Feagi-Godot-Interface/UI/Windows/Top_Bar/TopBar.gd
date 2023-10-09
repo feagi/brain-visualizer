@@ -11,6 +11,7 @@ var _neuron_morphology_settings_button: TextureButton_Element
 var _view_toggle_button: TextureButton_Element
 var _view_toggle_label: Label
 var _tutorial_button: TextureButton_Element
+var _state_indicator: StateIndicator
 
 var localize_refresh_rate: StringName
 var localize_neuronal_cirtcuits: StringName
@@ -33,9 +34,12 @@ func _ready():
 	_view_toggle_button = _h_container.get_node("Mode_Button")
 	_view_toggle_label = _h_container.get_node("Mode_Label")
 	_tutorial_button = _h_container.get_node("TU_Button")
+	_state_indicator = _h_container.get_node("StateIndicator")
 
 	# from FEAGI
 	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
+	FeagiEvents.retrieved_latest_FEAGI_health.connect(_state_indicator.set_health_states)
+
 
 	# from user
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
@@ -46,17 +50,10 @@ func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> vo
 func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
 
-
-
-func _on_mode_button_pressed():
-	$HBoxContainer/Mode_Button.release_focus()
-	var BV = $"../../Brain_Visualizer"
-	var CB = $"../../NodeGraph"
-	if BV.visible:
-		BV.visible = false
-		CB.visible = true
-		$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/BV.png")
-	elif CB.visible:
-		BV.visible = true
-		CB.visible = false
-		$HBoxContainer/Mode_Button.texture_normal = load("res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png")
+# Attached to UIManager Mode change signal through root TSCN
+func _mode_changed(new_mode: UIManager.MODE) -> void:
+	match(new_mode):
+		UIManager.MODE.CIRCUIT_BUILDER:
+			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/BV.png")
+		UIManager.MODE.VISUALIZER_3D:
+			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png")

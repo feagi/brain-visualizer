@@ -25,7 +25,7 @@ func setup(data: Dictionary, _main_window) -> void:
 	_scalar.current_vector = _mapping_ref.scalar
 	_PSP.current_float = _mapping_ref.post_synaptic_current_multiplier
 	_plasticity.button_pressed = _mapping_ref.is_plastic
-	_plasticity_constant.current_float = _mapping_ref.plasticity_multiplier
+	_plasticity_constant.current_float = _mapping_ref.plasticity_constant
 	_LTP_multiplier.current_float = _mapping_ref.LTP_multiplier
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
 	_morphologies.set_option(_mapping_ref.morphology_used.name)
@@ -57,4 +57,4 @@ func _on_delete_pressed() -> void:
 
 func _on_info_pressed() -> void:
 	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[_morphologies.selected_item]
-	VisConfig.window_manager.spawn_manager_morphology(morphology_used)
+	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)

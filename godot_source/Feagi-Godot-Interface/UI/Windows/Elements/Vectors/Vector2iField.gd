@@ -14,15 +14,24 @@ signal user_updated_vector(new_vector2: Vector2i)
 @export var int_x_min: int = -9999999999
 @export var int_y_min: int = -9999999999
 @export var initial_vector: Vector2i
+@export var initial_editable: bool = true
 
 var current_vector: Vector2i:
 	get: return Vector2i(_field_x.current_int, _field_y.current_int)
 	set(v):
 		_field_x.current_int = v.x
 		_field_y.current_int = v.y
-	
+
+var editable: bool:
+	get: return _editable
+	set(v):
+		_editable = v
+		_field_x.editable = v
+		_field_y.editable = v
+
 var _field_x: IntInput
 var _field_y: IntInput
+var _editable: bool = true
 
 func _ready():
 	get_node("LabelX").label_text = label_x_text
@@ -44,6 +53,8 @@ func _ready():
 
 	_field_x.int_confirmed.connect(_emit_new_vector)
 	_field_y.int_confirmed.connect(_emit_new_vector)
+
+	editable = initial_editable
 
 func _emit_new_vector(_dont_care: int) -> void:
 	user_updated_vector.emit(current_vector)
