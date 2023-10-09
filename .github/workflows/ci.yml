@@ -6,9 +6,15 @@ on:
 env:
   GODOT_VERSION: 4.1.1
   EXPORT_NAME: Web
+<<<<<<< HEAD
   PROJECT_PATH: /html
  
  jobs:
+=======
+  PROJECT_PATH: html
+ 
+jobs:
+>>>>>>> staging
   export-web:
     name: Web Export
     runs-on: ubuntu-20.04
@@ -25,4 +31,4 @@ env:
         run: |
           mkdir -v -p build/web
           cd $PROJECT_PATH
-          godot -v --export "HTML5" ../build/web/index.html
+          godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html
