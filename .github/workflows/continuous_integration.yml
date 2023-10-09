@@ -39,7 +39,7 @@ jobs:
           git config --global user.name "BrainVisualizerPushAction"
           git config --global user.email "BrainVisualizerPushAction@neuraville.com"
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
-          git checkout -b main-test
+          git branch main-test
           git add .
           git commit -m "Updated Web Export"
           git push origin main-test
