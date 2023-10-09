@@ -46,9 +46,12 @@ jobs:
           
           git fetch --all
           git checkout -b web-export main-test
+          echo "checkout"
           git add .
           git commit -m "Updated Web Export"
+          echo "committed"
           git checkout main-test
+          echo "checkout merge"
           git merge web-export
           
           
