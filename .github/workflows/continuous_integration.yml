@@ -45,7 +45,7 @@ jobs:
           echo "set vars"
           
           git fetch --all
-          git checkout -b web-export main-test
+          git checkout -b web-export
           echo "checkout"
           git add .
           git commit -m "Updated Web Export"
