@@ -18,29 +18,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        
       - name: Setup
         run: |
           mkdir -v -p ~/.local/share/godot/templates
           mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
+      
       - name: Create Build Directory
         run: |
           mkdir -v -p build/web
           cd $PROJECT_PATH
+          
       - name: Set Compile Time
         run: |
           chmod +x ./set_timestamp.sh
           ./set_timestamp.sh
       - name: Web Build
         run: |
-          godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html
+          godot -v --rendering-driver opengl3 --headless --export-release "HTML5" /__w/brain-visualizer/brain-visualizer/html/index.html
       - name: Push Web Export
         run: |
           # Set up Git for the push
           git config --global user.name "BrainVisualizerPushAction"
           git config --global user.email "BrainVisualizerPushAction@neuraville.com"
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
-          git checkout -b main-test
+          echo "set vars"
+          
+          git fetch --all
+          git checkout -b web-export
+          echo "checkout"
           git add .
           git commit -m "Updated Web Export"
-          git push origin main-test
+          echo "committed"
+          git merge origin/main-test --allow-unrelated-histories
+          
+          
           
