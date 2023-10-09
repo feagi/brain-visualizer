@@ -37,6 +37,7 @@ jobs:
         run: |
           # Set up Git for the push
           git config --global user.name "BrainVisualizerPushAction"
+          git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
           git checkout -b main-test
           git add .
           git commit -m "Updated Web Export"
