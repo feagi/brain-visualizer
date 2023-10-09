@@ -6,6 +6,7 @@ on:
 env:
   GODOT_VERSION: 4.1.1
   EXPORT_NAME: Web
+  PROJECT_PATH: BrainVisualizer
 
  
 jobs:
@@ -21,8 +22,14 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/templates
           mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
-      - name: Web Build
+      - name: Create Build Directory
         run: |
           mkdir -v -p build/web
           cd $PROJECT_PATH
+      - name: Set Compile Time
+        run: |
+          chmod +x ./feagi_initalize.sh
+          ./feagi_initalize.sh
+      - name: Web Build
+        run: |
           godot -v --rendering-driver opengl3 --headless --export-release "HTML5" ../build/web/index.html
