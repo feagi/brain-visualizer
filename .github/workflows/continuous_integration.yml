@@ -28,7 +28,7 @@ jobs:
           echo "set vars"
           git fetch --all
           git merge origin/staging --allow-unrelated-histories
-          
+
         
       - name: Setup for Build
         run: |
