@@ -6,15 +6,9 @@ on:
 env:
   GODOT_VERSION: 4.1.1
   EXPORT_NAME: Web
-<<<<<<< HEAD
-  PROJECT_PATH: /html
- 
- jobs:
-=======
-  PROJECT_PATH: html
+
  
 jobs:
->>>>>>> staging
   export-web:
     name: Web Export
     runs-on: ubuntu-20.04
