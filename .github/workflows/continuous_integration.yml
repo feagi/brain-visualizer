@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         
-      - names Merge in New Changes
+      - name: Merge in New Changes
         run: |
           # Set up Git
           git config --global user.name "BrainVisualizerPushAction"
