@@ -27,7 +27,7 @@ jobs:
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
           echo "set vars"
           git fetch --all
-          git merge staging
+          git merge origin/staging
           
         
       - name: Setup for Build
