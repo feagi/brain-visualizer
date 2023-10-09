@@ -6,7 +6,7 @@ on:
 env:
   GODOT_VERSION: 4.1.1
   EXPORT_NAME: Web
-  PROJECT_PATH: BrainVisualizer
+
 
  
 jobs:
