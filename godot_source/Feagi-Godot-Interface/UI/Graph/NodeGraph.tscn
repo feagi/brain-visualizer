@@ -1,11 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://1p2hhnitls41"]
+[gd_scene load_steps=7 format=3 uid="uid://1p2hhnitls41"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraph.gd" id="1_06pyj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/InputInterpreter.gd" id="3_64ero"]
 [ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraphCenter.gd" id="4_g3mc4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraphBackground.gd" id="4_g5fvw"]
-[ext_resource type="Texture2D" uid="uid://ckuqx7k365r6e" path="res://icon.svg" id="4_j21se"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_su1b5"]
 shader = ExtResource("3_svpbn")
@@ -40,6 +39,3 @@ script = ExtResource("4_g5fvw")
 [node name="Center" type="Node2D" parent="CB_Background"]
 position = Vector2(200, 200)
 script = ExtResource("4_g3mc4")
-
-[node name="Sprite2D" type="Sprite2D" parent="CB_Background/Center"]
-texture = ExtResource("4_j21se")
