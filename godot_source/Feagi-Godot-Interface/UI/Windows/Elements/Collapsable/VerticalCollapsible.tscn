@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3 uid="uid://cya0u5xbn7bro"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsable.gd" id="1_sojnc"]
+[ext_resource type="Texture2D" uid="uid://wu67h7gvscjn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/triangle_left.png" id="2_fypka"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_mt4v1"]
+
+[node name="VerticalCollapsible" type="VBoxContainer"]
+offset_right = 111.0
+offset_bottom = 40.0
+script = ExtResource("1_sojnc")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="Section_Title" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SECTION"
+
+[node name="Collapsible_Toggle" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+texture_normal = ExtResource("2_fypka")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("3_mt4v1")

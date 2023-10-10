@@ -1,0 +1,54 @@
+[gd_scene load_steps=4 format=3 uid="uid://cmxa7e3wifiy2"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.gd" id="1_00dhb"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_neywh"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/PatternValInput.gd" id="3_3o6p7"]
+
+[node name="PatternVector3Field" type="BoxContainer"]
+script = ExtResource("1_00dhb")
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
+
+[node name="LabelX" type="Label" parent="."]
+layout_mode = 2
+text = "X"
+script = ExtResource("2_neywh")
+max_length = 5
+
+[node name="SpacerX" type="Control" parent="."]
+layout_mode = 2
+
+[node name="PVX" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_3o6p7")
+
+[node name="LabelY" type="Label" parent="."]
+layout_mode = 2
+text = "Y"
+script = ExtResource("2_neywh")
+max_length = 5
+
+[node name="SpacerY" type="Control" parent="."]
+layout_mode = 2
+
+[node name="PVY" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_3o6p7")
+
+[node name="LabelZ" type="Label" parent="."]
+layout_mode = 2
+text = "Z
+"
+script = ExtResource("2_neywh")
+max_length = 5
+
+[node name="SpacerZ" type="Control" parent="."]
+layout_mode = 2
+
+[node name="PVZ" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_3o6p7")

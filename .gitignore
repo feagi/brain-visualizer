@@ -2,7 +2,6 @@
 *~
 *.py[cod]
 *.so
-*.cfg
 !.isort.cfg
 !setup.cfg
 *.orig
@@ -72,3 +71,4 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.import

@@ -1,0 +1,172 @@
+[gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
+[ext_resource type="Texture2D" uid="uid://b8qrpcpsbex3x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="4_8o5ld"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_14sro"]
+[ext_resource type="Texture2D" uid="uid://b0wjhkmeoxjgx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/eye.png" id="6_1gvid"]
+[ext_resource type="Texture2D" uid="uid://dumxnv0fvc2y0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/connect.png" id="7_brbsc"]
+[ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="8_dybgv"]
+[ext_resource type="Texture2D" uid="uid://dii187rhiyl8n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png" id="9_ir30i"]
+[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
+[ext_resource type="Texture2D" uid="uid://dke708beckn6n" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorial.png" id="10_l8p1c"]
+
+[node name="TopBar" type="Panel"]
+offset_right = 1094.0
+offset_bottom = 118.0
+script = ExtResource("1_f5hja")
+left_pixel_gap = 10
+right_pixel_gap = 10
+top_pixel_gap = 10
+bottom_pixel_gap = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 1205.0
+offset_bottom = 40.0
+
+[node name="RR_Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Refresh Rate"
+vertical_alignment = 1
+
+[node name="RR_Float" type="LineEdit" parent="HBoxContainer"]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_v82xb")
+suffix = " Hz"
+
+[node name="Gap1" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="NC_Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Neuronal Circuits"
+vertical_alignment = 1
+
+[node name="NC_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("4_8o5ld")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="Gap2" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="CA_Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Cortical Areas"
+vertical_alignment = 1
+
+[node name="CAView_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("6_1gvid")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="CAAdd_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("4_8o5ld")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="CAConnect_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("7_brbsc")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="Gap3" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="NM_Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Neuron morphologies"
+vertical_alignment = 1
+
+[node name="NMAdd_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("4_8o5ld")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="NMSettings_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("8_dybgv")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="Gap4" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="Mode_Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Circuit Builder"
+vertical_alignment = 1
+
+[node name="Mode_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("9_ir30i")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="Gap5" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TU_Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Tutorials"
+vertical_alignment = 1
+
+[node name="TU_Button" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("10_l8p1c")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_14sro")
+
+[node name="Gap6" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="Ping_label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Latency"
+vertical_alignment = 1
+
+[node name="ping" type="LineEdit" parent="HBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Gap7" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="state_label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "System Health"
+vertical_alignment = 1
+
+[node name="StateIndicator" parent="HBoxContainer" instance=ExtResource("10_3567y")]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2

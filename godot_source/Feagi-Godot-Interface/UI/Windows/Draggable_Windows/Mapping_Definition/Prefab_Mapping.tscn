@@ -1,0 +1,100 @@
+[gd_scene load_steps=8 format=3 uid="uid://2mmvclyd2pve"]
+
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="1_1uw6c"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/DropDown.gd" id="1_palvn"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Prefab_Mapping.gd" id="1_tf7sq"]
+[ext_resource type="Texture2D" uid="uid://bkrhcxq2ljrx0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="2_37lmt"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_2p8f4"]
+[ext_resource type="Texture2D" uid="uid://bpunuth7s7jbd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/remove.png" id="3_8ycho"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_c7vkc"]
+
+[node name="Prefab_Mapping" type="HBoxContainer"]
+offset_right = 1285.0
+offset_bottom = 31.0
+script = ExtResource("1_tf7sq")
+
+[node name="Morphology_List" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+fit_to_longest_item = false
+script = ExtResource("1_palvn")
+attempt_to_preserve_choice_on_update = true
+
+[node name="Gap1" type="Control" parent="."]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Scalar" parent="." instance=ExtResource("1_1uw6c")]
+layout_mode = 2
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
+
+[node name="Gap2" type="Control" parent="."]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+
+[node name="PSP" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_2p8f4")
+
+[node name="Gap3" type="Control" parent="."]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="Plasticity" type="CheckButton" parent="."]
+layout_mode = 2
+
+[node name="Gap4" type="Control" parent="."]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="Plasticity_Constant" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_2p8f4")
+
+[node name="Gap5" type="Control" parent="."]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="LTP_Multiplier" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_2p8f4")
+
+[node name="Gap6" type="Control" parent="."]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="LTD_Multiplier" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_2p8f4")
+
+[node name="Gap7" type="Control" parent="."]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="info" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+texture_normal = ExtResource("2_37lmt")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_c7vkc")
+
+[node name="remove" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+texture_normal = ExtResource("3_8ycho")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_c7vkc")
+
+[connection signal="option_changed" from="Morphology_List" to="." method="_on_user_set_morphology"]
+[connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
+[connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
+[connection signal="pressed" from="info" to="." method="_on_info_pressed"]
+[connection signal="pressed" from="remove" to="." method="_on_delete_pressed"]
