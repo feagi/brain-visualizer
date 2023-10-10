@@ -35,7 +35,7 @@ func _ready():
 ## Since we cannot use _init for scenes, use this instead to initialize data
 func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
-	position = node_position
+	position_offset = node_position
 	title = _cortical_area_ref.name
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
 	
