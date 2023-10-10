@@ -72,6 +72,9 @@ func _poll_call_from_timer() -> void:
 ## This function is called externally by [SingleCallWorker]
 func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, data: Variant = null) -> void:
 
+	if _is_worker_busy(requestAddress):
+		return
+
 	match(method):
 		HTTPClient.METHOD_GET:
 			request(requestAddress, _outgoing_headers, method)
@@ -122,6 +125,21 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 					_timer.stop()
 					_query_for_destruction()
 					return
+
+## Used to check if the web worker is currently doing anything
+func _is_worker_busy(call_address: String) -> bool:
+	match get_http_client_status():
+		HTTPClient.Status.STATUS_RESOLVING:
+			push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
+			return true
+		HTTPClient.Status.STATUS_REQUESTING:
+			push_warning("NETWORK: Still trying to finish previous request! Skipping call to " + call_address)
+			return true
+		_:
+			return false
+		
+
+
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
