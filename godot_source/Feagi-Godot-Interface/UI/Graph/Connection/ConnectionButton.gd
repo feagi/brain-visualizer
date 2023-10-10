@@ -1,0 +1,32 @@
+extends GraphNode
+class_name ConnectionButton
+## Shows number of mappings
+
+var _source_node: CorticalNode
+var _destination_node: CorticalNode
+var _label: TextButton_Element
+
+func setup(source_node: CorticalNode, destination_node: CorticalNode, number_mappings: int):
+	_source_node = source_node
+	_destination_node = destination_node
+	_source_node.position_offset_changed.connect(update_position)
+	_destination_node.position_offset_changed.connect(update_position)
+	_label = get_child(0)
+	update_position()
+	update_mapping_counter(number_mappings)
+
+
+func update_mapping_counter(number_of_mappings: int):
+	_label.text = str(number_of_mappings)
+
+# TODO replace with something better
+func update_position() -> void:
+	var left: Vector2 = _source_node.position_offset
+	var right: Vector2 = _destination_node.position_offset
+	position_offset = (left + right + size) / 2.0
+
+func destroy_self() -> void:
+	queue_free()
+
+func _button_pressed() -> void:
+	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)

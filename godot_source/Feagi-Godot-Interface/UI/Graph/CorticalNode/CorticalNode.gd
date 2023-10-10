@@ -22,8 +22,6 @@ var cortical_area_ID: StringName:
 var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
 
-var cortical_connection_destinations: Dictionary = {}
-
 var _cortical_area_ref: CorticalArea
 
 
@@ -37,9 +35,9 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
 	position_offset = node_position
 	title = _cortical_area_ref.name
+	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
 	
-
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
@@ -47,7 +45,7 @@ func FEAGI_delete_cortical_area() -> void:
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:
-	print("CIRCUIT BUILDER: User requesting deletion of cortical area " +  cortical_area_ID)
+	print("GRAPH: User requesting deletion of cortical area " +  cortical_area_ID)
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 func _gui_input(event):
