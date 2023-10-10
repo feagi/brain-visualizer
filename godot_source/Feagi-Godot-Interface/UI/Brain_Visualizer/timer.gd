@@ -9,7 +9,8 @@ func _ready():
 	while true:
 		while len(array_delta) < 6:
 			start_timer = Time.get_ticks_msec()
-			$"../../../../../FEAGIInterface".net.websocket_send("ping")
+			if $"../../../../../FEAGIInterface".net.current_websocket_status == WebSocketPeer.STATE_OPEN:
+				$"../../../../../FEAGIInterface".net.websocket_send("ping")
 			await get_tree().create_timer(1.0).timeout
 		var final_delta = 0
 		for i in array_delta:

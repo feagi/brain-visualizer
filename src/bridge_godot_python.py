@@ -25,6 +25,7 @@ import logging
 import pickle
 import lz4.frame
 import zlib
+from version import __version__
 from time import sleep
 from datetime import datetime
 from collections import deque
@@ -357,6 +358,7 @@ def main():
     print(
         "================================ @@@@@@@@@@@@@@@ "
         "==========================================")
+    print("version: ", __version__)
 
 
     # FEAGI section start
