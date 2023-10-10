@@ -3,6 +3,32 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CorticalNode.gd" id="1_4inyi"]
 
 [node name="CorticalNode" type="GraphNode"]
-offset_right = 205.0
-offset_bottom = 126.0
+offset_right = 162.0
+offset_bottom = 80.0
+show_close = true
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
 script = ExtResource("1_4inyi")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Input"
+
+[node name="Control" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Output"
+horizontal_alignment = 2

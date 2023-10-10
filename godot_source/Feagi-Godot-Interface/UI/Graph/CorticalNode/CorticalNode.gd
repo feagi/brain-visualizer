@@ -36,6 +36,9 @@ func _ready():
 func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
 	position = node_position
+	title = _cortical_area_ref.name
+	_cortical_area_ref.name_updated.connect(_update_cortical_name)
+	
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
@@ -56,3 +59,6 @@ func _gui_input(event):
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 	var arr_position: Array = FEAGIUtils.vector2i_to_array(to_position)
 	FeagiRequests.set_cortical_area_properties( _cortical_area_ref.cortical_ID, {"cortical_coordinates_2d": arr_position})
+
+func _update_cortical_name(new_name: StringName, _this_cortical_area: CorticalArea) -> void:
+	title = new_name
