@@ -91,8 +91,6 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			# var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
-	@warning_ignore("assert_always_false")
-	assert(false, "Invalid HTTP request type")
 
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
 	match(_processing_type):
@@ -102,21 +100,28 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			_query_for_destruction()
 		CALL_PROCESS_TYPE.POLLING:
 			# we are polling
-			if _polling_check.confirm_complete(response_code, body):
+			var polling_response: PollingMethodInterface.POLLING_CONFIRMATION = _polling_check.confirm_complete(response_code, body)
+			match polling_response:
+				PollingMethodInterface.POLLING_CONFIRMATION.COMPLETE:
 				# We are done polling!
-				if !_follow_up_function.is_null():
-					_follow_up_function.call(response_code, body, _buffer_data)
-				_timer.stop()
-				_query_for_destruction()
-				return
-			# not done polling, keep going!
-			else:
-				if !_mid_poll_call.is_null():
-					# we defined a call to make during polling. use it!
-					_mid_poll_call.call(response_code, body, _buffer_data)
-				else:
-					print("Continuing to poll " + _poll_address)
-			
+					if !_follow_up_function.is_null():
+						_follow_up_function.call(response_code, body, _buffer_data)
+					_timer.stop()
+					_query_for_destruction()
+					return
+				PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE:
+					# not done polling, keep going!
+					if !_mid_poll_call.is_null():
+						# we defined a call to make during polling. use it!
+						_mid_poll_call.call(response_code, body, _buffer_data)
+					else:
+						print("Continuing to poll " + _poll_address)
+				PollingMethodInterface.POLLING_CONFIRMATION.ERROR:
+					# Something went wrong, stop polling and report
+					push_error("NETWORK: Polling endpoint %s has failed! Halting!" % _poll_address)
+					_timer.stop()
+					_query_for_destruction()
+					return
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
