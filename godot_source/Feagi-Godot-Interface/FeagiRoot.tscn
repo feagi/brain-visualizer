@@ -198,6 +198,7 @@ grow_horizontal = 0
 grow_vertical = 0
 size_flags_horizontal = 8
 size_flags_vertical = 8
+theme_override_colors/font_color = Color(0.882353, 0.882353, 0.882353, 0.372549)
 script = ExtResource("22_3kpmq")
 
 [connection signal="mode_changed" from="UI" to="UI/Windows/TopBar" method="_mode_changed"]
