@@ -21,6 +21,7 @@ func _ready():
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 
 	connection_request.connect(_user_request_connection)
+	disconnection_request.connect(_user_request_connection_deletion)
 
 
 ## Spawns a cortical Node, should only be called via FEAGI
@@ -100,6 +101,9 @@ func feagi_delete_established_connection(source: CorticalArea, destination: Cort
 ## User requested a connection. Note that this function is going to be redone in the graph edit refactor
 func _user_request_connection(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID])
+
+func _user_request_connection_deletion(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
+	FeagiRequests.request_delete_mapping_between_corticals(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID])
 
 func _on_genome_reset():
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)

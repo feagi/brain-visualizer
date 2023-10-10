@@ -10,5 +10,6 @@ offset_right = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
+right_disconnects = true
 scroll_offset = Vector2(-392, -50)
 script = ExtResource("1_06pyj")
