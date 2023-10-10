@@ -27,7 +27,7 @@ jobs:
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
           echo "set vars"
           git fetch origin
-          git checkout -b temp origin/staing
+          git checkout -b temp
         
       - name: Setup for Build
         run: |
