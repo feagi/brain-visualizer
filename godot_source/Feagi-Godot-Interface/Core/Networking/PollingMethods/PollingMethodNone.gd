@@ -2,14 +2,16 @@ extends PollingMethodInterface
 class_name PollingMethodNone
 ## Use to skip polling or keep polling forever
 
-var _output_bool: bool
+var _output_result: POLLING_CONFIRMATION
 
-func _init(output_bool: bool) -> void:
-	_output_bool = output_bool
+func _init(output_result: POLLING_CONFIRMATION) -> void:
+	_output_result = output_result
 
 ## Can't get easier than this
-func confirm_complete(_response_code: int, _response_body: PackedByteArray) -> bool:
-	return _output_bool
+func confirm_complete(_response_code: int, _response_body: PackedByteArray) -> POLLING_CONFIRMATION:
+	return _output_result
 
 func external_toggle_polling() -> void:
-	_output_bool = !_output_bool
+	if _output_result == POLLING_CONFIRMATION.COMPLETE:
+		_output_result = POLLING_CONFIRMATION.INCOMPLETE
+	_output_result = POLLING_CONFIRMATION.COMPLETE
