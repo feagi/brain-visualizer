@@ -52,6 +52,6 @@ jobs:
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git push origin/main
+          git push main
           
           
