@@ -27,6 +27,8 @@ script = ExtResource("1_06pyj")
 
 [node name="InputInterpreter" type="Node" parent="."]
 script = ExtResource("3_64ero")
+mouse_normal_click_button = 9
+mouse_pan_button = 1
 
 [node name="CB_Background" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_su1b5")
