@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=29 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/timer.gd" id="14_fab5w"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/VersionLabel.gd" id="22_3kpmq"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -184,6 +185,20 @@ offset_right = 108.592
 offset_bottom = 181.88
 grow_vertical = 1
 theme = ExtResource("16_jeyol")
+
+[node name="VersionLabel" type="Label" parent="UI/Windows"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0
+size_flags_horizontal = 8
+size_flags_vertical = 8
+script = ExtResource("22_3kpmq")
 
 [connection signal="mode_changed" from="UI" to="UI/Windows/TopBar" method="_mode_changed"]
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
