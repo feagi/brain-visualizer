@@ -33,6 +33,7 @@ import requests
 from configuration import agent_settings, feagi_settings
 from feagi_agent import feagi_interface as feagi
 
+
 runtime_data = {
     "cortical_data": {},
     "current_burst_id": None,
@@ -44,6 +45,7 @@ runtime_data = {
     "genome_number": 0,
     "old_cortical_data": {}
 }
+
 
 
 def simulation_testing():
@@ -62,6 +64,7 @@ def godot_data(data_input):
     Simply clean the list and remove all unnecessary special characters and deliver with name, xyz
     only
     """
+
     data = ast.literal_eval(data_input)
     dict_with_updated_name = {"data": {}}
     dict_with_updated_name["data"]["direct_stimulation"] = dict({})
@@ -102,6 +105,7 @@ def feagi_breakdown(data, feagi_host_input, api_port_input, dimensions_endpoint_
         if new_genome_num > runtime_data["genome_number"]:
             runtime_data["old_cortical_data"] = runtime_data["cortical_data"]
             runtime_data["cortical_data"] = \
+
                 requests.get('http://' + feagi_host_input + ':' + api_port_input +
                              dimensions_endpoint_input, timeout=10).json()
             if 'genome_reset' not in data and data == "{}":
@@ -112,10 +116,12 @@ def feagi_breakdown(data, feagi_host_input, api_port_input, dimensions_endpoint_
             if data != "{}":
                 if runtime_data["old_cortical_data"] != runtime_data["cortical_data"]:
                     pass
+
             runtime_data["genome_number"] = new_genome_num
         for i in data['godot']:
             new_list.append([i[1], i[2], i[3]])
         return new_list
+
     except requests.exceptions.RequestException as error:
         logging.exception(error)
         print("Exception during feagi_breakdown", error)
@@ -127,6 +133,7 @@ def convert_absolute_to_relative_coordinate(stimulation_from_godot, cortical_dat
     Convert absolute coordinate from godot to relative coordinate for FEAGI. Dna_information is
     from the genome["blueprint"].
     """
+
     relative_coordinate = {"data": {"direct_stimulation": {}}}
 
     if stimulation_from_godot:
@@ -208,6 +215,7 @@ def reload_genome(feagi_host_input, api_port_host, endpoint):
         if len(ws_queue[0]) > 2:
             ws_queue.clear()
         runtime_data["cortical_data"] = cortical_area_name
+
         return cortical_genome_dictionary.copy()
 
 
@@ -282,6 +290,7 @@ async def websocket_main():
     async with websockets.serve(echo, agent_settings["godot_websocket_ip"],
                                 agent_settings['godot_websocket_port'], max_size=None,
                                 max_queue=None, write_limit=None):
+
         await asyncio.Future()
 
 
@@ -323,6 +332,7 @@ def main():
     """
     previous_genome_timestamp = 0
     dimensions_endpoint = '/v1/feagi/connectome/properties/dimensions'
+
     print(
         "================================ @@@@@@@@@@@@@@@ "
         "==========================================")
@@ -347,6 +357,7 @@ def main():
     print(
         "================================ @@@@@@@@@@@@@@@ "
         "==========================================")
+
 
     # FEAGI section start
     print("Connecting to FEAGI resources...")
@@ -460,17 +471,21 @@ def main():
             sleep(burst_second)
         if ws_queue:
             data_from_godot = ws_queue[0].decode('UTF-8')  # ADDED this line to decode into string
+
             ws_queue.pop()
         else:
             data_from_godot = "{}"
         # print("DATA FROM GODOT: ", data_from_godot)
+
         # if data_from_godot != "{}":
         #     print(data_from_godot)
+
         if data_from_godot == "lagged":
             detect_lag = True
             data_from_godot = "{}"
         if data_from_godot == "empty":
             print("EMPTY!")
+
             data_from_godot = "{}"
             data_from_genome = requests.get('http://' + feagi_host + ':' + api_port +
                                             '/v1/feagi/connectome/properties/dimensions',
@@ -494,6 +509,7 @@ def main():
 
         invalid_values = {"None", "{}", "refresh", "[]"}
         if data_from_godot not in invalid_values and data_from_godot != godot_list:
+
             godot_list = godot_data(data_from_godot)
             converted_data = convert_absolute_to_relative_coordinate(
                 stimulation_from_godot=godot_list,
@@ -501,17 +517,20 @@ def main():
                     "cortical_data"])
             print("raw data from godot:", godot_list)
             print(">>> > > > >> > converted data:", converted_data)
+
             if agent_settings['compression']:
                 serialized_data = pickle.dumps(converted_data)
                 feagi_ipu_channel.send(message=lz4.frame.compress(serialized_data))
             else:
                 feagi_ipu_channel.send(converted_data)
+
             godot_list = {}
             converted_data = {}
 
         if data_from_godot == "refresh":
             godot_list = {}
             converted_data = {}
+
             feagi_ipu_channel.send(godot_list)
         else:
             pass
@@ -534,3 +553,4 @@ if __name__ == "__main__":
                 int(os.environ.get('FEAGI_OPU_PORT', "3000")))
             sleep(2)
         main()
+
