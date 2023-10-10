@@ -1,73 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://d0jn7l0vs7yor"]
+[gd_scene load_steps=2 format=3 uid="uid://d0jn7l0vs7yor"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CorticalNode.gd" id="1_4inyi"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_cd1fb"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_21t7y"]
-[ext_resource type="Texture2D" uid="uid://bkrhcxq2ljrx0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info.png" id="3_241b3"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/ConnectionButtonPoint.gd" id="4_hpgy5"]
 
-[node name="CorticalNode" type="Panel"]
-offset_top = 40.0
+[node name="CorticalNode" type="GraphNode"]
 offset_right = 205.0
 offset_bottom = 126.0
 script = ExtResource("1_4inyi")
-
-[node name="TitleBar" parent="." instance=ExtResource("1_cd1fb")]
-layout_mode = 1
-offset_top = -40.0
-offset_right = 205.0
-offset_bottom = 0.0
-title = "ID"
-automatic_setup_closing = false
-
-[node name="Cortical_Name" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.5
-offset_top = -13.0
-offset_right = 20.5
-offset_bottom = 13.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "TITLE"
-horizontal_alignment = 1
-script = ExtResource("2_21t7y")
-
-[node name="Connection_In" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(20, 20)
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_top = -9.0
-offset_right = 20.0
-offset_bottom = 11.0
-grow_vertical = 2
-texture_normal = ExtResource("3_241b3")
-ignore_texture_size = true
-stretch_mode = 4
-script = ExtResource("4_hpgy5")
-
-[node name="Connection_Out" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(20, 20)
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -19.0
-offset_top = -9.0
-offset_right = 1.0
-offset_bottom = 11.0
-grow_horizontal = 0
-grow_vertical = 2
-texture_normal = ExtResource("3_241b3")
-ignore_texture_size = true
-stretch_mode = 4
-script = ExtResource("4_hpgy5")
-button_side = 1
