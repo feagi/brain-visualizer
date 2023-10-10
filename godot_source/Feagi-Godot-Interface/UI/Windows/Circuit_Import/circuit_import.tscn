@@ -1,0 +1,111 @@
+[gd_scene load_steps=4 format=3 uid="uid://b6wg06kaa21u7"]
+
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_bx0qy"]
+[ext_resource type="PackedScene" uid="uid://cn63wh2rl81w2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Spinboxxyz.tscn" id="2_48wdk"]
+[ext_resource type="PackedScene" uid="uid://b63y4prhuagv7" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Spinboxwdh.tscn" id="3_qypw1"]
+
+[node name="Circuit_Import" type="Panel"]
+anchors_preset = -1
+anchor_right = 0.283854
+anchor_bottom = 0.625
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleBar" parent="." instance=ExtResource("1_bx0qy")]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+offset_top = 48.0
+offset_right = 272.0
+offset_bottom = 74.0
+
+[node name="choose_label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Choose a circuit:"
+
+[node name="OptionButton" type="OptionButton" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="VBoxContainer" parent="."]
+layout_mode = 2
+offset_top = 88.0
+offset_right = 272.0
+offset_bottom = 149.0
+
+[node name="Label" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+text = "Circuit Local
+"
+
+[node name="Vector3Spinbox" parent="HBoxContainer2" instance=ExtResource("2_48wdk")]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.514
+anchor_top = 0.436
+anchor_right = 0.514
+anchor_bottom = 0.436
+offset_left = -68.078
+offset_top = -30.58
+offset_right = 67.922
+offset_bottom = 30.42
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="import" type="Button" parent="VBoxContainer"]
+layout_direction = 1
+layout_mode = 2
+text = "Import"
+
+[node name="circuit_init" type="Label" parent="."]
+layout_mode = 2
+offset_left = -1.0
+offset_top = 205.0
+offset_right = 326.0
+offset_bottom = 231.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Circuit Details"
+horizontal_alignment = 1
+
+[node name="HBoxContainer3" type="VBoxContainer" parent="."]
+layout_mode = 2
+offset_top = 232.0
+offset_right = 272.0
+offset_bottom = 323.0
+
+[node name="Label" type="Label" parent="HBoxContainer3"]
+layout_mode = 2
+text = "Circuit Size
+"
+
+[node name="Vector3Spinbox" parent="HBoxContainer3" instance=ExtResource("3_qypw1")]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="HBoxContainer3"]
+layout_mode = 2
+text = "Description"
+
+[node name="TextEdit" type="TextEdit" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.076
+anchor_top = 0.965
+anchor_right = 0.927
+anchor_bottom = 0.965
+offset_left = 0.147999
+offset_top = -57.825
+offset_right = -0.129028
+offset_bottom = -1.82501
+grow_horizontal = 2
+grow_vertical = 0

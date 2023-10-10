@@ -1,0 +1,45 @@
+[gd_scene load_steps=8 format=3 uid="uid://1p2hhnitls41"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraph.gd" id="1_06pyj"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/InputInterpreter.gd" id="3_64ero"]
+[ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/Background/NodeGraph.gdshader" id="3_svpbn"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraphCenter.gd" id="4_g3mc4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraphBackground.gd" id="4_g5fvw"]
+[ext_resource type="Texture2D" uid="uid://ckuqx7k365r6e" path="res://icon.svg" id="4_j21se"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_su1b5"]
+shader = ExtResource("3_svpbn")
+shader_parameter/offset = Vector2(0, 0)
+shader_parameter/zoom = 4.0
+shader_parameter/lineThickness = 0.0
+shader_parameter/colorBackground = Vector4(0.35, 0.3, 0.35, 1)
+shader_parameter/colorLine = Vector4(0.9, 0.9, 0.9, 1)
+
+[node name="NodeGraph" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_06pyj")
+
+[node name="InputInterpreter" type="Node" parent="."]
+script = ExtResource("3_64ero")
+
+[node name="CB_Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_su1b5")
+clip_contents = true
+layout_mode = 0
+offset_right = 1153.0
+offset_bottom = 645.0
+focus_mode = 2
+script = ExtResource("4_g5fvw")
+
+[node name="Center" type="Node2D" parent="CB_Background"]
+position = Vector2(200, 200)
+script = ExtResource("4_g3mc4")
+
+[node name="Sprite2D" type="Sprite2D" parent="CB_Background/Center"]
+texture = ExtResource("4_j21se")
