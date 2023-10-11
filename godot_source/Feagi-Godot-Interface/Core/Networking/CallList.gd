@@ -134,7 +134,7 @@ func GET_healthCheck_POLL_GENOME():
 
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck_POLL_MONITORING():
-	var dont_stop: PollingMethodNone = PollingMethodNone.new(false)
+	var dont_stop: PollingMethodNone = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE)
 	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_health, _response_functions_ref.GET_healthCheck_POLL_health, dont_stop, null, null, 10.0)
 
 ## returns dict by corticalID, with name, type, and 2d position
