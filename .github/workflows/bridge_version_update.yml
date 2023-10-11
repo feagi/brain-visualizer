@@ -37,6 +37,6 @@ jobs:
           git add .
           git commit -m "Updated Bridge Version"
           echo "committed"
-          git push origin temp:bridge_version_update --force
+          git push origin temp:web_export --force
           
           
