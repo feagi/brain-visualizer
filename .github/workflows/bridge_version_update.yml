@@ -1,0 +1,42 @@
+name: "Bridge Update Version"
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+
+ 
+jobs:
+  bridge_version:
+    name: Bridge Update Version
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  
+        
+      - name: Merge in New Changes
+        run: |
+          # Set up Git
+          git config --global user.name "BrainVisualizerPushAction"
+          git config --global user.email "BrainVisualizerPushAction@neuraville.com"
+          git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
+          echo "set vars"
+          git fetch origin
+          git checkout -b temp
+          
+      - name: Set Compile Time
+        run: |
+          cd src
+          ./version_generate.sh
+      - name: Push Web Export
+        run: |
+          git add .
+          git commit -m "Updated Bridge Version"
+          echo "committed"
+          git push origin temp:web_export --force
+          
+          
