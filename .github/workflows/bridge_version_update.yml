@@ -5,7 +5,8 @@ on:
     branches:
       - staging
     paths:
-      - 'src/**'
+      - 'src/bridge_godot_python.py'
+      - 'src/configuration.py'
   workflow_dispatch:
 
 
