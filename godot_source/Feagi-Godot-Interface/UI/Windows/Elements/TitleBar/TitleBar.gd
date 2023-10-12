@@ -1,7 +1,8 @@
 extends Panel
 class_name TitleBar
 
-signal close_pressed()
+const MINIMUM_TITLEBAR_HEIGHT: int = 40
+
 signal drag_started(current_position: Vector2)
 signal dragged(current_position: Vector2, mouse_delta_offset: Vector2) # TODO
 signal drag_finished(current_position: Vector2)
@@ -19,13 +20,13 @@ signal drag_finished(current_position: Vector2)
 ## if True, will attempt to automatically set up dragging behavior on parent window
 @export var automatic_setup_dragging: bool = true
 
-## if True, will attempt to automatically set up closing behavior on parent window
-@export var automatic_setup_closing: bool = true
+## if True, will attempt to automatically set up closing behavior (by hiding the window)
+@export var automatic_setup_hiding_closing: bool = true
 
 ## if True, will attempt to set the correct width of the parent window, and maintain it
 @export var automatic_maintain_width: bool = true
 
-## if set to a non blank string, will attempt to automatically set up closing behavior on parent window for the window manager
+## if set to a non blank string, will attempt to automatically set up closing behavior on parent window for the window manager. CANNOT be mixed with hiding closing
 @export var automatic_setup_window_closing_for_window_manager_name: StringName
 
 var is_dragging: bool:
@@ -46,32 +47,38 @@ var is_dragging: bool:
 var _is_mousing_over: bool = false
 var _is_dragging: bool = false
 var _parent: Control
+var _sibling: Control
 var _initial_position: Vector2i
 
 func _ready():
-	$Close_Button.pressed.connect(_proxy_close_button)
 	$Close_Button.resized.connect(_height_resized)
 	$Title_Text.resized.connect(_recalculate_title_bar_min_width)
 	mouse_entered.connect(_mouse_enter)
 	mouse_exited .connect(_mouse_leave)
+	
+	custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
+	
+	if automatic_setup_hiding_closing and automatic_setup_window_closing_for_window_manager_name != &"":
+		push_warning("TitleBar cannot have multiple close methods defined at once. Please check this windows titleBar settings")
+		automatic_setup_window_closing_for_window_manager_name = "" # To Prevent weird issues, disable this method
 
 	_recalculate_title_bar_min_width()
 	
-	if automatic_setup_dragging or automatic_setup_closing or automatic_maintain_width:
+	if automatic_setup_dragging or automatic_setup_hiding_closing or automatic_maintain_width:
 		_parent = get_parent()
-
+		_sibling = _parent.get_child(0)
 	if automatic_setup_dragging:
 		dragged.connect(_auto_drag_move_parent)
 	
-	if automatic_setup_closing:
-		close_pressed.connect(_auto_close_parent)
+	if automatic_setup_hiding_closing:
+		$Close_Button.pressed.connect(_auto_hide_parent)
 	
 	if automatic_maintain_width:
-		_parent.resized.connect(_auto_maintain_width)
+		_sibling.resized.connect(_auto_maintain_width)
 		_auto_maintain_width()
 	
 	if automatic_setup_window_closing_for_window_manager_name != &"":
-		close_pressed.connect(_window_manager_close)
+		$Close_Button.pressed.connect(_window_manager_close)
 	
 	_initial_position = position
 
@@ -91,18 +98,15 @@ func _input(event):
 		_dragging(event)
 
 
-		
-
-func _proxy_close_button():
-	close_pressed.emit()
 
 func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
 	# Because button is a square
 
+## USe the draggable windows close function to call for a close
 func _window_manager_close() -> void:
-	var draggable_window: DraggableWindow = _parent as DraggableWindow
-	draggable_window.close_window(automatic_setup_window_closing_for_window_manager_name)
+	var draggable_parent: DraggableWindow = _parent as DraggableWindow
+	draggable_parent.close_window(automatic_setup_window_closing_for_window_manager_name)
 
 ## What is the minimum width the title bar needs to be to fit everything?
 func _recalculate_title_bar_min_width() -> void:
@@ -140,14 +144,12 @@ func _end_drag() -> void:
 func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -> void:
 	_parent.position = _parent.position + delta_offset
 
-## IF auto-setup-closing is enabled, responsible for moving parent around
-func _auto_close_parent() -> void:
-	_parent.visible = false # TODO
-#	_parent.queue_free() # Temporary. This is useful for duplicated/JSON. We aren't using it
+## IF automatic_setup_hiding_closing is enabled, responsible for hiding parent
+func _auto_hide_parent() -> void:
+	_parent.visible = false
 
 func _auto_maintain_width() -> void:
-	call_deferred("_defered_size_adjust")
+	set_deferred("size", Vector2(0,0))
+	# TODO x dim should also count parent padding. We can only use this once everyone is on the same page
+	custom_minimum_size = Vector2(_sibling.size.x, MINIMUM_TITLEBAR_HEIGHT)
 
-func _defered_size_adjust():
-	size = Vector2(0,0)
-	custom_minimum_size.x = _parent.size.x

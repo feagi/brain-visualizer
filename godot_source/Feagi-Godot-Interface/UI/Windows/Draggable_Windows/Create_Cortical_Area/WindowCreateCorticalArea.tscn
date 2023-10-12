@@ -11,14 +11,9 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_o35ls"]
 
 [node name="WindowCreateCorticalArea" type="Panel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
 offset_top = 40.0
-offset_right = -761.0
-offset_bottom = -393.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_bottom = 40.0
+size_flags_horizontal = 0
 script = ExtResource("1_vqh4i")
 left_pixel_gap = 5
 right_pixel_gap = 5
@@ -145,5 +140,5 @@ offset_top = -40.0
 offset_right = 391.0
 offset_bottom = 0.0
 title = "Create Cortical Area"
-automatic_setup_closing = false
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"create_cortical"
