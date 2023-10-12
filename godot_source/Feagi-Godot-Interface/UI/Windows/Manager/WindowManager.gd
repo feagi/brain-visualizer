@@ -44,6 +44,7 @@ func spawn_create_morphology() -> void:
 	loaded_windows["create_morphology"] = create_morphology
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
+	#TODO add morphology preloading support
 	if "morphology_manager" in loaded_windows.keys():
 		force_close_window("morphology_manager")
 	
