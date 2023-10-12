@@ -24,19 +24,19 @@ layout_mode = 2
 [node name="Label" type="Label" parent="labels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "x"
+text = "X"
 horizontal_alignment = 1
 
 [node name="Label2" type="Label" parent="labels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "y"
+text = "Y"
 horizontal_alignment = 1
 
 [node name="Label3" type="Label" parent="labels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "z"
+text = "Z"
 horizontal_alignment = 1
 
 [node name="Control" type="Control" parent="labels"]
