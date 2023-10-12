@@ -43,6 +43,7 @@ var is_user_dragging_a_window: bool:
 		user_changed_window_drag_status.emit(v)
 
 var _window_manager_ref: WindowManager
+var _notification_system_ref: NotificationSystem
 var _screen_size: Vector2
 var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4
 var _is_user_typing: bool = false
@@ -53,8 +54,12 @@ func _ready():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
 	_window_manager_ref = $Windows
+	_notification_system_ref = $NotificationSystem
 	VisConfig.UI_manager = self
 	_update_screen_size()
+	#TEST
+	make_notification("Testing")
+	make_notification("Testing3")
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode
@@ -83,6 +88,8 @@ func switch_to_brain_visualizer_3D():
 	brain_visualizer.visible = true
 	brain_visualizer_back.visible = true # hacky thing to do until this is corrected
 
+func make_notification(text: StringName, time: float = 5) -> void:
+	_notification_system_ref.add_notification(text, time)
 
 ## Updates the screensize 
 func _update_screen_size():
