@@ -1,12 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://ddn8pt45rca4n"]
+[gd_scene load_steps=5 format=3 uid="uid://ddn8pt45rca4n"]
 
-[ext_resource type="PackedScene" uid="uid://dtoic0bf8v2f2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.tscn" id="1_6138m"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.gd" id="1_rijq4"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_yagmf"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_0nh8g"]
 [ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="4_qyy3m"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
+custom_minimum_size = Vector2(570, 0)
+size_flags_horizontal = 3
 script = ExtResource("1_rijq4")
 
 [node name="Label" type="Label" parent="."]
@@ -17,22 +18,56 @@ horizontal_alignment = 1
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Vector3Labels" parent="HBoxContainer" instance=ExtResource("1_6138m")]
+[node name="Control3" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(9, 0)
 layout_mode = 2
-size_flags_horizontal = 3
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
 
-[node name="Vector3Labels2" parent="HBoxContainer" instance=ExtResource("1_6138m")]
+[node name="Label" type="Label" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
+text = "X"
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Y"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Z"
+horizontal_alignment = 1
+
+[node name="Control" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 20)
+layout_mode = 2
+
+[node name="Label4" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "X"
+horizontal_alignment = 1
+
+[node name="Label5" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Y"
+horizontal_alignment = 1
+
+[node name="Label6" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Z"
+horizontal_alignment = 1
+
+[node name="Control2" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(30, 20)
+layout_mode = 2
 
 [node name="Patterns" parent="." instance=ExtResource("2_yagmf")]
-custom_minimum_size = Vector2(0, 180)
+custom_minimum_size = Vector2(550, 180)
 layout_mode = 2
 prefab_to_spawn = ExtResource("4_qyy3m")
 

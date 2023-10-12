@@ -39,7 +39,7 @@ script = ExtResource("3_chekq")
 
 [node name="ElementMorphologyPatternView" parent="Container/Morphology_Details" instance=ExtResource("3_dmt4w")]
 visible = false
-custom_minimum_size = Vector2(700, 0)
+custom_minimum_size = Vector2(570, 0)
 layout_mode = 2
 
 [node name="ElementMorphologyCompositeView" parent="Container/Morphology_Details" instance=ExtResource("4_fkit5")]
