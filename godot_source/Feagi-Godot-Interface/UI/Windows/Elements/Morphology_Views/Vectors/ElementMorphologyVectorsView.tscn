@@ -1,6 +1,5 @@
-[gd_scene load_steps=6 format=3 uid="uid://d1tg3odgc36tb"]
+[gd_scene load_steps=5 format=3 uid="uid://d1tg3odgc36tb"]
 
-[ext_resource type="PackedScene" uid="uid://dtoic0bf8v2f2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.tscn" id="1_342wq"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.gd" id="1_oiyvj"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_yhnco"]
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/Prefab_VectorWithDelete.tscn" id="4_285qi"]
@@ -15,11 +14,34 @@ layout_mode = 2
 text = "Vectors"
 horizontal_alignment = 1
 
-[node name="Vector3Labels" parent="." instance=ExtResource("1_342wq")]
+[node name="labels" type="HBoxContainer" parent="."]
 layout_mode = 2
-label_x_text = &"X"
-label_y_text = &"Y"
-label_z_text = &"Z"
+
+[node name="Control2" type="Control" parent="labels"]
+custom_minimum_size = Vector2(2, 2)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "x"
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "y"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "z"
+horizontal_alignment = 1
+
+[node name="Control" type="Control" parent="labels"]
+custom_minimum_size = Vector2(25, 25)
+layout_mode = 2
 
 [node name="Vectors" parent="." node_paths=PackedStringArray("main_window") instance=ExtResource("2_yhnco")]
 custom_minimum_size = Vector2(0, 180)
