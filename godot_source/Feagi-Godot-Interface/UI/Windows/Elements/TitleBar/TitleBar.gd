@@ -1,6 +1,8 @@
 extends Panel
 class_name TitleBar
 
+const MINIMUM_TITLEBAR_HEIGHT: int = 40
+
 signal close_window(window_name: StringName)
 signal drag_started(current_position: Vector2)
 signal dragged(current_position: Vector2, mouse_delta_offset: Vector2) # TODO
@@ -54,7 +56,9 @@ func _ready():
 	$Title_Text.resized.connect(_recalculate_title_bar_min_width)
 	mouse_entered.connect(_mouse_enter)
 	mouse_exited .connect(_mouse_leave)
-
+	
+	custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
+	
 	if automatic_setup_hiding_closing and automatic_setup_window_closing_for_window_manager_name != &"":
 		push_warning("TitleBar cannot have multiple close methods defined at once. Please check this windows titleBar settings")
 		automatic_setup_window_closing_for_window_manager_name = "" # To Prevent weird issues, disable this method
@@ -143,10 +147,7 @@ func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -
 func _auto_hide_parent() -> void:
 	_parent.visible = false
 
-
 func _auto_maintain_width() -> void:
-	call_deferred("_defered_size_adjust")
-
-func _defered_size_adjust():
 	size = Vector2(0,0)
-	custom_minimum_size.x = _sibling.size.x
+	custom_minimum_size = Vector2(_sibling.size.x, MINIMUM_TITLEBAR_HEIGHT)
+
