@@ -3,7 +3,6 @@ class_name TitleBar
 
 const MINIMUM_TITLEBAR_HEIGHT: int = 40
 
-signal close_window(window_name: StringName)
 signal drag_started(current_position: Vector2)
 signal dragged(current_position: Vector2, mouse_delta_offset: Vector2) # TODO
 signal drag_finished(current_position: Vector2)
@@ -104,8 +103,10 @@ func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
 	# Because button is a square
 
+## USe the draggable windows close function to call for a close
 func _window_manager_close() -> void:
-	close_window.emit(automatic_setup_window_closing_for_window_manager_name)
+	var draggable_parent: DraggableWindow = _parent as DraggableWindow
+	draggable_parent.close_window(automatic_setup_window_closing_for_window_manager_name)
 
 ## What is the minimum width the title bar needs to be to fit everything?
 func _recalculate_title_bar_min_width() -> void:
@@ -148,6 +149,7 @@ func _auto_hide_parent() -> void:
 	_parent.visible = false
 
 func _auto_maintain_width() -> void:
-	size = Vector2(0,0)
+	set_deferred("size", Vector2(0,0))
+	# TODO x dim should also count parent padding. We can only use this once everyone is on the same page
 	custom_minimum_size = Vector2(_sibling.size.x, MINIMUM_TITLEBAR_HEIGHT)
 

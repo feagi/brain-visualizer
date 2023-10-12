@@ -83,7 +83,6 @@ layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
 title = "Morphology Manager"
-automatic_setup_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"morphology_manager"
 
 [connection signal="resized" from="Container/Morphology_Details" to="Container" method="recalculate_size"]
