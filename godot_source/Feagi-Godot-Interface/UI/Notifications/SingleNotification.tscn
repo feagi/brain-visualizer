@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://deakdqregtx4w"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Notifications/SingleNotification.gd" id="1_ib5cw"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="2_ybmk1"]
+
+[node name="PanelContainer" type="PanelContainer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -204.0
+offset_bottom = 50.0
+grow_horizontal = 0
+script = ExtResource("1_ib5cw")
+
+[node name="Notification" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Texture_Element" type="TextureRect" parent="Notification"]
+layout_mode = 2
+script = ExtResource("2_ybmk1")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Notification"]
+clip_contents = false
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+scroll_active = false
+shortcut_keys_enabled = false
+deselect_on_focus_loss_enabled = false
+
+[node name="notification_timer" type="Timer" parent="Notification"]
+wait_time = 5.0
+
+[node name="move_timer" type="Timer" parent="Notification"]
+wait_time = 5.0

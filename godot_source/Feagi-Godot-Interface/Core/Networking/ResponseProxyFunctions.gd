@@ -223,7 +223,9 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 	if "cortical_id" not in cortical_ID_raw.keys():
 		push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
 		return
-
+	
+	VisConfig.UI_manager.make_notification("Cortical Area Created!")
+	
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
 	
@@ -311,6 +313,7 @@ func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, cha
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
 	print("FEAGI confirmed deletion of cortical area " + deleted_cortical_ID)
+	VisConfig.UI_manager.make_notification("Cortical Area %s Deleted!" %FeagiCache.cortical_areas_cache.cortical_areas[deleted_cortical_ID].name)
 	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
 
 func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, deleted_morphology_name: StringName) -> void:
