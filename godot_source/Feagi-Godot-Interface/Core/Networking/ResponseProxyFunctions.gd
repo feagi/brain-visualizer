@@ -145,14 +145,14 @@ func GET_PNS_current_ipu(response_code: int, response_body: PackedByteArray, _ir
 	if response_code != 200:
 		push_error("Unknown error trying to get current PNS IPU templates!")
 		return
-	var arr: Array[String] = _body_to_string_array(response_body)
+	var _arr: Array[String] = _body_to_string_array(response_body)
 	# TODO what to do with this?
 
 func GET_PNS_current_opu(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if response_code != 200:
 		push_error("Unknown error trying to get current PNS OPU templates!")
 		return
-	var arr: Array[String] = _body_to_string_array(response_body)
+	var _arr: Array[String] = _body_to_string_array(response_body)
 	# TODO what to do with this?
 
 func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
@@ -251,7 +251,7 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
 
-func POST_GE_append(_response_code: int, _response_body: PackedByteArray, requested_properties: Dictionary) -> void:
+func POST_GE_append(_response_code: int, _response_body: PackedByteArray, _requested_properties: Dictionary) -> void:
 	return #TODO trigger reload?
 
 func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
