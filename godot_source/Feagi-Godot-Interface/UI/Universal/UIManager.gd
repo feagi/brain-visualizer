@@ -58,8 +58,8 @@ func _ready():
 	VisConfig.UI_manager = self
 	_update_screen_size()
 	#TEST
-	make_notification("Testing")
-	make_notification("Testing3")
+	make_notification("Testing", 100)
+	make_notification("Testing3", 100)
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode

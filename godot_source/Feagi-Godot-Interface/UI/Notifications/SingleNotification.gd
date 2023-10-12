@@ -14,11 +14,10 @@ func _ready():
 	_timer.one_shot = true
 	_timer.timeout.connect(_closing)
 
-func set_notification(message: StringName, Y_offset: int, time_seconds: float = 5.0) -> void:
+func set_notification(message: StringName, time_seconds) -> void:
 	_fancyText.text = message
 	_timer.wait_time = time_seconds
 	_timer.start()
-	position = Vector2(position.x, Y_offset)
 
 func move_up_by(value: int):
 	position = Vector2(position.x, value)
