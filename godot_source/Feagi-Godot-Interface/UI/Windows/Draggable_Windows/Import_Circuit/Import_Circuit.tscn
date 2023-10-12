@@ -103,5 +103,7 @@ offset_top = -40.0
 offset_right = 445.0
 offset_bottom = 0.0
 title = "Import Circuit"
+automatic_setup_hiding_closing = false
+automatic_setup_window_closing_for_window_manager_name = &"import_circuit"
 
 [connection signal="pressed" from="VBoxContainer/Button" to="." method="_on_add_press"]
