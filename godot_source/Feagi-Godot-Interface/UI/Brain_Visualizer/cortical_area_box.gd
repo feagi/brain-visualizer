@@ -17,16 +17,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	var name_fetch = get_name().rsplit("*")
 	if $"../../Windows/Quick_Connect".visible:
 		if event is InputEventMouseButton and event.pressed:
-			if $"../../Windows/Quick_Connect/source".text == "Select a cortical":
-				var cortical_name = FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]]
-				$"../../Windows/Quick_Connect/source".text = cortical_name.name
-				$"..".update_all_node_from_cortical(name_fetch[0], global_material.glow)
-				$"../../Windows/Quick_Connect".src = str(name_fetch[0])
-			if $"../../Windows/Quick_Connect/destination".text == "Select a cortical":
-				var cortical_name = FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]]
-				$"../../Windows/Quick_Connect/destination".text = cortical_name.name
-				$"..".update_all_node_from_cortical(name_fetch[0], global_material.destination)
-				$"../../Windows/Quick_Connect".destination = str(name_fetch[0])
+			FeagiEvents.user_selected_cortical_area.emit(FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]])
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
 			if get_surface_override_material(0) == global_material.selected:
