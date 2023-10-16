@@ -7,6 +7,7 @@ var _circuit_details: TextEdit
 var _circuit_location: Vector3iField
 
 func _ready() -> void:
+	super()
 	_circuit_dropdown = $VBoxContainer/HBoxContainer/CircuitsDropDown
 	_circuit_dimensions = $VBoxContainer/HBoxContainer2/Vector
 	_circuit_details = $VBoxContainer/HBoxContainer3/TextEdit

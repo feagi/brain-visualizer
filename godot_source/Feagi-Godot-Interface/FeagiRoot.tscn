@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=30 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -22,6 +22,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/timer.gd" id="14_fab5w"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/VersionLabel.gd" id="22_3kpmq"]
+[ext_resource type="PackedScene" uid="uid://4jumuijtufu5" path="res://Feagi-Godot-Interface/UI/Notifications/NotificationSystem.tscn" id="23_c734s"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -200,6 +201,11 @@ size_flags_horizontal = 8
 size_flags_vertical = 8
 theme_override_colors/font_color = Color(0.882353, 0.882353, 0.882353, 0.372549)
 script = ExtResource("22_3kpmq")
+
+[node name="NotificationSystem" parent="UI" instance=ExtResource("23_c734s")]
+Y_gap = null
+Y_offset = null
+X_offset = null
 
 [connection signal="mode_changed" from="UI" to="UI/Windows/TopBar" method="_mode_changed"]
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]

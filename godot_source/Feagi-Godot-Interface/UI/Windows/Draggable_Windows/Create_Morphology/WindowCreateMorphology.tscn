@@ -83,7 +83,6 @@ layout_mode = 2
 [node name="ElementMorphologyVectorsView" parent="Container" instance=ExtResource("6_c1klg")]
 visible = false
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="ElementMorphologyPatternView" parent="Container" instance=ExtResource("7_w3816")]
 visible = false
@@ -100,7 +99,7 @@ offset_top = -40.0
 offset_right = 0.0
 offset_bottom = 0.0
 title = "Create Morphology"
-automatic_setup_closing = false
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"create_morphology"
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]

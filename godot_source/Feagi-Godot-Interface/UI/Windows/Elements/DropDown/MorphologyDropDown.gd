@@ -22,7 +22,7 @@ func _ready():
 	
 
 func releod_available_morphologies() -> void:
-	var morphologies: Array[Morphology]
+	var morphologies: Array[Morphology] = []
 	morphologies.assign(FeagiCache.morphology_cache.available_morphologies.values())
 	overwrite_morphologies(morphologies)
 

@@ -40,8 +40,6 @@ func clear_usage() -> void:
 func _print_since_usage_mapping(mapping: Array) -> String:
 	# each element is an ID
 	var output: String = ""
-	var source: CorticalArea
-	var destination: CorticalArea
 
 	if mapping[0] in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		output = FeagiCache.cortical_areas_cache.cortical_areas[mapping[0]].name + " -> "
