@@ -13,7 +13,7 @@ func add_notification(message: StringName, notification_type: SingleNotification
 	var previous_children: Array = get_children()
 	add_child(new_message)
 	new_message.position = spawn_position
-	new_message.set_notification(message, time_seconds, notification_type)
+	new_message.set_notification(message, Y_gap, time_seconds, notification_type)
 	for prev_child in previous_children:
 		prev_child.notification_closed.connect(new_message.move_up_by)
 	

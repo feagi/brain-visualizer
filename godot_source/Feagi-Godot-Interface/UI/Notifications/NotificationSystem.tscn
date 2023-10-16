@@ -9,3 +9,6 @@ anchor_left = 1.0
 anchor_right = 1.0
 grow_horizontal = 0
 script = ExtResource("1_73oy4")
+Y_gap = null
+Y_offset = null
+X_offset = null

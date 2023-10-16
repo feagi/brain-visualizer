@@ -20,6 +20,7 @@ signal notification_closed(height: int)
 var _fancyText: RichTextLabel
 var _timer: Timer
 var _move_timer: Timer
+var _gap: int
 
 func _ready():
 	_fancyText = $Notification/RichTextLabel
@@ -30,16 +31,17 @@ func _ready():
 	mouse_entered.connect(_pause_timer_on_mouse_over)
 	mouse_exited.connect(_unpause_timer_on_mouse_off)
 
-func set_notification(message: StringName, time_seconds, notification_type: NOTIFICATION_TYPE = NOTIFICATION_TYPE.INFO) -> void:
+func set_notification(message: StringName, y_gap: int, time_seconds, notification_type: NOTIFICATION_TYPE) -> void:
 	_fancyText.text = message
 	_timer.wait_time = time_seconds
 	_timer.start()
 	var stylebox: StyleBoxFlat = StyleBoxFlat.new()
 	stylebox.bg_color = type_colors[notification_type]
 	self.add_theme_stylebox_override("panel", stylebox)
+	_gap = y_gap
 	
 func move_up_by(value: int):
-	position = Vector2(position.x, value)
+	position.y -= value + _gap
 
 func _closing():
 	notification_closed.emit(size.y)

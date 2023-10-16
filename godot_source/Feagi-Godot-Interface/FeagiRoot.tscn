@@ -203,6 +203,9 @@ theme_override_colors/font_color = Color(0.882353, 0.882353, 0.882353, 0.372549)
 script = ExtResource("22_3kpmq")
 
 [node name="NotificationSystem" parent="UI" instance=ExtResource("23_c734s")]
+Y_gap = null
+Y_offset = null
+X_offset = null
 
 [connection signal="mode_changed" from="UI" to="UI/Windows/TopBar" method="_mode_changed"]
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
