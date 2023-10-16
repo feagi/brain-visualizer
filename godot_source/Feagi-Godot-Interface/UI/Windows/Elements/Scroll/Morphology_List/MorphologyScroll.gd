@@ -8,6 +8,7 @@ signal morphology_selected(morphology: Morphology)
 
 
 func _ready():
+	super()
 	item_selected.connect(_morphology_button_pressed)
 	FeagiCacheEvents.morphology_removed.connect(_respond_to_deleted_morphology)
 	FeagiCacheEvents.morphology_added.connect(_respond_to_added_morphology)

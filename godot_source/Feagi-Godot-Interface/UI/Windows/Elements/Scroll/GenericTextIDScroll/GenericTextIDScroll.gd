@@ -37,26 +37,26 @@ func append_from_arrays(IDs: Array, names: PackedStringArray) -> void:
 func remove_by_ID(ID_to_remove: Variant) -> void:
 	var index_to_select: int = _find_child_index_with_ID(ID_to_remove)
 	if index_to_select != -1:
-		get_child(index_to_select).queue_free()
+		_scroll_holder.get_child(index_to_select).queue_free()
 
 ## Selects a child item by ID
 func set_selected(ID_to_select: Variant) -> void:
 	deselect_all()
 	var index_to_select: int = _find_child_index_with_ID(ID_to_select)
 	if index_to_select != -1:
-		get_child(index_to_select).user_selected()
+		_scroll_holder.get_child(index_to_select).user_selected()
 
 
 func deselect_all() -> void:
-	for child in get_children():
+	for child in _scroll_holder.get_children():
 		child.user_deselected()
 
 func delete_all() -> void:
-	for child in get_children():
+	for child in _scroll_holder.get_children():
 		child.queue_free()
 
 func _find_child_index_with_ID(searching_ID: Variant) -> int:
-	for child in get_children():
+	for child in _scroll_holder.get_children():
 		if child.ID == searching_ID:
 			return child.get_index()
 	push_error("UI: Unable to find child index with given ID!")
