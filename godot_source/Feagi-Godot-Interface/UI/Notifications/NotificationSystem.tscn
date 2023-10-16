@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://4jumuijtufu5"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Notifications/NotificationSystem.gd" id="1_73oy4"]
+
+[node name="NotificationSystem" type="Control"]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+grow_horizontal = 0
+script = ExtResource("1_73oy4")
+Y_gap = null
+Y_offset = null
+X_offset = null
