@@ -191,7 +191,7 @@ func set_efferent_connection(target_cortical_area: CorticalArea, mapping_count: 
 	if target_cortical_area.cortical_ID not in _efferent_connections_with_count.keys():
 		efferent_area_added.emit(target_cortical_area)
 	_efferent_connections_with_count[target_cortical_area.cortical_ID] = mapping_count
-	efferent_area_count_updated.emit(target_cortical_area)
+	efferent_area_count_updated.emit(target_cortical_area, mapping_count)
 	# handle afferent call on the other cortical area
 	target_cortical_area.set_afferent_connection(self)
 	# set off global signal

@@ -53,6 +53,6 @@ jobs:
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git push origin temp:main --force
+          git push origin temp:web_export --force
           
           

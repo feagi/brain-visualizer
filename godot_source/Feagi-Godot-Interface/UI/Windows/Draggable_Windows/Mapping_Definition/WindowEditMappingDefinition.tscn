@@ -100,7 +100,7 @@ offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
 title = "Edit Mappings"
-automatic_setup_closing = false
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"edit_mappings"
 
 [node name="Title_Text" parent="TitleBar" index="1"]

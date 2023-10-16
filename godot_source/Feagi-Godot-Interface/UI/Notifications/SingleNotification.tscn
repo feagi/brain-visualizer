@@ -1,0 +1,61 @@
+[gd_scene load_steps=6 format=3 uid="uid://deakdqregtx4w"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Notifications/SingleNotification.gd" id="1_ib5cw"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="2_ybmk1"]
+[ext_resource type="Texture2D" uid="uid://d1ueokjbphshy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close.png" id="3_mtv1d"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="4_t35d1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hjnie"]
+bg_color = Color(0.321569, 0.321569, 0.321569, 0.65098)
+
+[node name="PanelContainer" type="PanelContainer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -204.0
+offset_bottom = 50.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_hjnie")
+script = ExtResource("1_ib5cw")
+
+[node name="Notification" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Texture_Element" type="TextureRect" parent="Notification"]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_ybmk1")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Notification"]
+clip_contents = false
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+fit_content = true
+scroll_active = false
+shortcut_keys_enabled = false
+deselect_on_focus_loss_enabled = false
+
+[node name="CloseButton" type="TextureButton" parent="Notification"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+mouse_filter = 1
+texture_normal = ExtResource("3_mtv1d")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_t35d1")
+scale_multiplier = 0.5
+
+[node name="gap" type="Control" parent="Notification"]
+custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
+
+[node name="notification_timer" type="Timer" parent="Notification"]
+wait_time = 5.0
+
+[node name="move_timer" type="Timer" parent="Notification"]
+wait_time = 5.0
+
+[connection signal="pressed" from="Notification/CloseButton" to="." method="_closing"]
