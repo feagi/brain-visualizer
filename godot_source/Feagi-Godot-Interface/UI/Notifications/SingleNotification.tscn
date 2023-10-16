@@ -34,7 +34,7 @@ scroll_active = false
 shortcut_keys_enabled = false
 deselect_on_focus_loss_enabled = false
 
-[node name="TextureButton_Element" type="TextureButton" parent="Notification"]
+[node name="CloseButton" type="TextureButton" parent="Notification"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
@@ -54,4 +54,4 @@ wait_time = 5.0
 [node name="move_timer" type="Timer" parent="Notification"]
 wait_time = 5.0
 
-[connection signal="pressed" from="Notification/TextureButton_Element" to="." method="_closing"]
+[connection signal="pressed" from="Notification/CloseButton" to="." method="_closing"]
