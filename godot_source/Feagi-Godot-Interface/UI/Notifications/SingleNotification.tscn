@@ -30,6 +30,7 @@ clip_contents = false
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 size_flags_horizontal = 3
+fit_content = true
 scroll_active = false
 shortcut_keys_enabled = false
 deselect_on_focus_loss_enabled = false
