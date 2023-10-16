@@ -123,6 +123,7 @@ func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irr
 func GET_MON_neuron_membranePotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
 	if response_code == 404:
 		push_warning("FEAGI unable to check for membrane potential monitoring status!")
+		VisConfig.UI_manager.make_notification("Unable to get Membrane Potential Monitoring State. Are you running the insights DB?", SingleNotification.NOTIFICATION_TYPE.WARNING)
 		return
 	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		push_error("Unable to locate cortical ID " + corticalID)
@@ -132,6 +133,7 @@ func GET_MON_neuron_membranePotential(response_code: int, response_body: PackedB
 func GET_MON_neuron_synapticPotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
 	if response_code == 404:
 		push_warning("FEAGI unable to check for synaptic potential monitoring status!")
+		VisConfig.UI_manager.make_notification("Unable to get Synaptic Potential Monitoring State. Are you running the insights DB?", SingleNotification.NOTIFICATION_TYPE.WARNING)
 		return
 	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		push_error("Unable to locate cortical ID " + corticalID)

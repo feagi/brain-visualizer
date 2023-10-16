@@ -3,9 +3,11 @@ class_name SingleNotification
 
 const type_colors: Dictionary = {
 	NOTIFICATION_TYPE.INFO : Color(0.32, 0.32, 0.32, 0.65),
-	NOTIFICATION_TYPE.WARNING: Color(0.87, 0.84, 0.28, 0.65),
+	NOTIFICATION_TYPE.WARNING: Color(0.98, 0.85, 0.39, 0.65),
 	NOTIFICATION_TYPE.ERROR: Color(0.84, 0.0, 0.0, 0.65)
 }
+
+const DEFAULT_TIME: float = 5.0
 
 enum NOTIFICATION_TYPE {
 	INFO,

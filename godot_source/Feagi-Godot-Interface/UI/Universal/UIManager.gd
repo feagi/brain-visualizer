@@ -87,8 +87,8 @@ func switch_to_brain_visualizer_3D():
 	brain_visualizer.visible = true
 	brain_visualizer_back.visible = true # hacky thing to do until this is corrected
 
-func make_notification(text: StringName, time: float = 5) -> void:
-	_notification_system_ref.add_notification(text, time)
+func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
+	_notification_system_ref.add_notification(text, notification_type, time)
 
 ## Updates the screensize 
 func _update_screen_size():
