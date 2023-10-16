@@ -23,6 +23,7 @@ layout_mode = 2
 
 [node name="Texture_Element" type="TextureRect" parent="Notification"]
 layout_mode = 2
+mouse_filter = 2
 script = ExtResource("2_ybmk1")
 
 [node name="RichTextLabel" type="RichTextLabel" parent="Notification"]
@@ -30,6 +31,7 @@ clip_contents = false
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 fit_content = true
 scroll_active = false
 shortcut_keys_enabled = false
@@ -39,6 +41,7 @@ deselect_on_focus_loss_enabled = false
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+mouse_filter = 1
 texture_normal = ExtResource("3_mtv1d")
 ignore_texture_size = true
 stretch_mode = 0
