@@ -29,7 +29,7 @@ offset_bottom = 468.0
 script = ExtResource("3_chekq")
 
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
-custom_minimum_size = Vector2(200, 400)
+custom_minimum_size = Vector2(250, 400)
 layout_mode = 2
 
 [node name="Morphology_Details" type="HBoxContainer" parent="Container"]

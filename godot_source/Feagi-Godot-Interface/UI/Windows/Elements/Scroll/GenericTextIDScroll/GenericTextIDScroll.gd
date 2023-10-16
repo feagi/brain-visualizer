@@ -62,7 +62,13 @@ func _find_child_index_with_ID(searching_ID: Variant) -> int:
 	push_error("UI: Unable to find child index with given ID!")
 	return -1
 
-func _selection_proxy(ID: Variant, _index: int) -> void:
+func _selection_proxy(ID: Variant, index: int) -> void:
+	_deselect_others(index)
 	item_selected.emit(ID)
 
+func _deselect_others(child_index_to_not_deselect: int) -> void:
+	for child_index in _scroll_holder.get_child_count():
+		if child_index == child_index_to_not_deselect:
+			continue
+		_scroll_holder.get_child(child_index).user_deselected()
 

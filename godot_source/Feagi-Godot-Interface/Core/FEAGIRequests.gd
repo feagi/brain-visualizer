@@ -101,7 +101,7 @@ func refresh_morphology_properties(morphology_name: StringName) -> void:
 	print("Use requested refresh of properties of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
-func get_morphology_usuage(morphology_name: StringName) -> void:
+func get_morphology_usage(morphology_name: StringName) -> void:
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("Unable to retrieve usage of morphology not found in cache with name of " + morphology_name + ". Skipping!")
 		return

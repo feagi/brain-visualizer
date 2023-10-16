@@ -14,6 +14,7 @@ enum MORPHOLOGY_TYPE {
 }
 
 var name: StringName
+var description: StringName # TODO retrieve!
 var type: MORPHOLOGY_TYPE
 var is_placeholder_data: bool
 
