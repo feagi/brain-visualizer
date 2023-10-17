@@ -1,10 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://d1tg3odgc36tb"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.gd" id="1_oiyvj"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/ElementMorphologyVectorsView.gd" id="1_oiyvj"]
 [ext_resource type="Texture2D" uid="uid://b8qrpcpsbex3x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="2_p6o76"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_yhnco"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_kla2i"]
-[ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/Prefab_VectorWithDelete.tscn" id="4_285qi"]
+[ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/Prefab_VectorWithDelete.tscn" id="4_285qi"]
 
 [node name="ElementMorphologyVectorsView" type="VBoxContainer"]
 custom_minimum_size = Vector2(150, 200)

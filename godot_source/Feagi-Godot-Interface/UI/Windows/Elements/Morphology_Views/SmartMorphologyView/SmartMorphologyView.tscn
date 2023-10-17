@@ -1,14 +1,12 @@
 [gd_scene load_steps=5 format=3 uid="uid://c8gpa1figwpvw"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/SmartMorphologyView/SmartMorphologyView.gd" id="1_fup3i"]
-[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="2_j7hvp"]
-[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="3_bys31"]
-[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="4_2adf0"]
+[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="2_j7hvp"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="3_bys31"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="4_2adf0"]
 
 [node name="SmartMorphologyView" type="VBoxContainer"]
 script = ExtResource("1_fup3i")
-header_enabled = null
-morphology_editable = null
 
 [node name="Header" type="VBoxContainer" parent="."]
 layout_mode = 2

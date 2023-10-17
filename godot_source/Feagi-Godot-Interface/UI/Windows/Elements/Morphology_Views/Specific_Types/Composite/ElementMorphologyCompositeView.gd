@@ -1,8 +1,6 @@
 extends VBoxContainer
 class_name ElementMorphologyCompositeView
 
-
-
 var composite_seed: Vector3i:
 	get: return _seed.current_vector
 	set(v): _seed.current_vector = v
@@ -23,11 +21,15 @@ var mapped_morphology: Morphology:
 	get: return _mapped_morphology.get_selected_morphology()
 	set(v): _mapped_morphology.set_selected_morphology(v)
 
+var  is_editable: bool:
+	get: return _is_editable
+
 var _seed: Vector3iField
 var _patternX: Vector2iField
 var _patternY: Vector2iField
 var _patternZ: Vector2iField
 var _mapped_morphology: MorphologyDropDown
+var _is_editable: bool
 
 func _ready() -> void:
 	_seed = $Seed/Seed_Vector
@@ -54,10 +56,11 @@ func set_from_composite_morphology(composite: CompositeMorphology) -> void:
 	_mapped_morphology.set_selected_morphology_by_name(composite.mapper_morphology_name)
 
 ## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR
-func set_editable(is_editable: bool) -> void:
-	_seed.editable = is_editable
-	_patternX.editable = is_editable
-	_patternY.editable = is_editable
-	_patternZ.editable = is_editable
-	_mapped_morphology.disabled = !is_editable
+func set_editable(editable: bool) -> void:
+	_is_editable = editable
+	_seed.editable = editable
+	_patternX.editable = editable
+	_patternY.editable = editable
+	_patternZ.editable = editable
+	_mapped_morphology.disabled = !editable
 	

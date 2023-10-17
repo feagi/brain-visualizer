@@ -1,16 +1,19 @@
 extends VBoxContainer
 class_name ElementMorphologyVectorsView
 
-var _vectors_scroll: BaseScroll
-var _vectors_vector_list: VBoxContainer
-var _is_editable: bool = true
-
 var vectors: Array[Vector3i]:
 	get:
 		return _get_vector_array()
 	set(v):
 		_set_vector_array(v)
-		
+
+var is_editable: bool:
+	get: return _is_editable
+
+var _vectors_scroll: BaseScroll
+var _vectors_vector_list: VBoxContainer
+var _is_editable: bool = true
+
 
 func _ready() -> void:
 	_vectors_scroll = $Vectors

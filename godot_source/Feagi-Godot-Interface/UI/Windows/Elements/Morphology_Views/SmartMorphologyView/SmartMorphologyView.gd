@@ -27,12 +27,12 @@ func _ready() -> void:
 	vectors_view = $ElementMorphologyVectorsView
 	patterns_view = $ElementMorphologyPatternView
 
-	composite_view.is_editable(morphology_editable)
-	vectors_view.is_editable(morphology_editable)
-	patterns_view.is_editable(morphology_editable)
+	composite_view.is_editable = morphology_editable
+	vectors_view.is_editable = morphology_editable
+	patterns_view.is_editable = morphology_editable
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
-func load_in_morphology(morphology: Morphology) -> void:
+func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
 	_header_title.text = morphology.name
 	_type_loaded = morphology.type
 	match morphology.type:
@@ -64,6 +64,8 @@ func load_in_morphology(morphology: Morphology) -> void:
 			patterns_view.visible = false
 			push_error("Null or unknown Morphology type loaded into SmartMorphologyView!")
 	print("SmartMorphologyView finished loading in Morphology of name " + morphology.name)
+	if update_FEAGI_cache:
+		FeagiRequests.refresh_morphology_properties(morphology.name)
 
 ## Loads in a blank morphology of given type
 func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:

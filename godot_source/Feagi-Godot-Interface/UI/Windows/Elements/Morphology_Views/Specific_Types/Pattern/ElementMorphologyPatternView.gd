@@ -1,15 +1,18 @@
 extends VBoxContainer
 class_name ElementMorphologyPatternView
 
-var _pattern_pair_scroll: BaseScroll
-var _pattern_pair_list: VBoxContainer
-var _is_editable: bool = true
-
 var pattern_pairs: Array[PatternVector3Pairs]:
 	get:
 		return _get_pattern_pair_array()
 	set(v):
 		_set_pattern_pair_array(v)
+
+var  is_editable: bool:
+	get: return _is_editable
+
+var _pattern_pair_scroll: BaseScroll
+var _pattern_pair_list: VBoxContainer
+var _is_editable: bool = true
 
 func _ready() -> void:
 	_pattern_pair_scroll = $Patterns

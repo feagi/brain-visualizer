@@ -24,12 +24,19 @@ func _ready() -> void:
 	_morphology_details_view.editable = editable
 
 ## Update details window with the details of the given morphology
-func update_details_from_morphology(morphology: Morphology) -> void:
+func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
 	_shown_morphology = morphology
 	_update_image_with_morphology(morphology.name)
 	FeagiRequests.get_morphology_usage(morphology.name)
 	_morphology_details_view.text = morphology.description
-	
+	if update_FEAGI_cache:
+		FeagiRequests.refresh_morphology_properties(morphology.name)
+
+## Wipes everything such that it is blank
+func clear_UI() -> void:
+	_shown_morphology = NullMorphology.new()
+	_update_image_with_morphology("")
+	_morphology_details_view.text = ""
 
 ## Updates the image of the description (if no image, just hides the rect)
 func _update_image_with_morphology(morphology_name: StringName) -> void:

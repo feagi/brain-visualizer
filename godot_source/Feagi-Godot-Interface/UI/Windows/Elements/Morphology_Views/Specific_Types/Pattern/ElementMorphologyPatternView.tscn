@@ -1,14 +1,14 @@
 [gd_scene load_steps=5 format=3 uid="uid://ddn8pt45rca4n"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.gd" id="1_rijq4"]
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_yagmf"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_0nh8g"]
-[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="4_qyy3m"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/ElementMorphologyPatternView.gd" id="1_q5gkp"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_cj4db"]
+[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="3_k6hof"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_3txg3"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
 custom_minimum_size = Vector2(570, 0)
 size_flags_horizontal = 3
-script = ExtResource("1_rijq4")
+script = ExtResource("1_q5gkp")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 2
@@ -66,14 +66,14 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(30, 20)
 layout_mode = 2
 
-[node name="Patterns" parent="." instance=ExtResource("2_yagmf")]
+[node name="Patterns" parent="." instance=ExtResource("2_cj4db")]
 custom_minimum_size = Vector2(550, 180)
 layout_mode = 2
-prefab_to_spawn = ExtResource("4_qyy3m")
+prefab_to_spawn = ExtResource("3_k6hof")
 
 [node name="Add_Vector_Pair" type="Button" parent="."]
 layout_mode = 2
 text = "Add Vector Pair"
-script = ExtResource("4_0nh8g")
+script = ExtResource("4_3txg3")
 
 [connection signal="pressed" from="Add_Vector_Pair" to="Patterns" method="spawn_list_item"]
