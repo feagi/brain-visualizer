@@ -16,15 +16,19 @@ func _ready() -> void:
 	_morphology_generic_details = $Container/MorphologyGenericDetails
 	
 	_morphology_scroll.morphology_selected.connect(load_morphology)
+	FeagiCacheEvents.morphology_updated.connect(morphology_updated_from_FEAGI)
 
-
-
+## Loads in a given morphology to the window panel
 func load_morphology(morphology: Morphology) -> void:
+	_selected_morphology = morphology
 	_smart_morphology_view.load_in_morphology(morphology)
 	_morphology_generic_details.load_in_morphology(morphology)
 	FeagiRequests.refresh_morphology_properties(morphology.name)
 
-
+func morphology_updated_from_FEAGI(updated_morphology: Morphology) -> void:
+	if _selected_morphology.name != updated_morphology.name:
+		return
+	load_morphology(updated_morphology)
 
 
 
