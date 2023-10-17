@@ -42,6 +42,7 @@ size_flags_horizontal = 3
 text = "1. Please Select A Source Area..."
 
 [node name="TextureButton" type="TextureButton" parent="VBoxContainer/step1/step1"]
+visible = false
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -55,6 +56,7 @@ custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
 [node name="step2" type="PanelContainer" parent="VBoxContainer"]
+visible = false
 layout_mode = 2
 
 [node name="step2" type="HBoxContainer" parent="VBoxContainer/step2"]
@@ -66,6 +68,7 @@ size_flags_horizontal = 3
 text = "2. Please Select A Destination Area..."
 
 [node name="TextureButton" type="TextureButton" parent="VBoxContainer/step2/step2"]
+visible = false
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -79,6 +82,7 @@ custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
 [node name="step3" type="PanelContainer" parent="VBoxContainer"]
+visible = false
 layout_mode = 2
 
 [node name="step3" type="VBoxContainer" parent="VBoxContainer/step3"]
@@ -93,6 +97,7 @@ size_flags_horizontal = 3
 text = "3. Please Select A Morphology..."
 
 [node name="TextureButton" type="TextureButton" parent="VBoxContainer/step3/step3/HBoxContainer"]
+visible = false
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -121,6 +126,7 @@ morphology_editable = false
 layout_mode = 2
 
 [node name="Establish" type="Button" parent="VBoxContainer"]
+visible = false
 layout_mode = 2
 text = "Establish the Connection"
 script = ExtResource("2_h1bhl")

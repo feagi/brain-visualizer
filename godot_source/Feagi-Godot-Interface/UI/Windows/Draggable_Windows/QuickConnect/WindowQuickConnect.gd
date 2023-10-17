@@ -16,6 +16,9 @@ enum POSSIBLE_STATES {
 var _step1_panel: PanelContainer
 var _step2_panel: PanelContainer
 var _step3_panel: PanelContainer
+var _step1_button: TextureButton
+var _step2_button: TextureButton
+var _step3_button: TextureButton
 var _step1_label: Label
 var _step2_label: Label
 var _step3_label: Label
@@ -35,6 +38,9 @@ func _ready() -> void:
 	_step1_panel = $VBoxContainer/step1
 	_step2_panel = $VBoxContainer/step2
 	_step3_panel = $VBoxContainer/step3
+	_step1_button = $VBoxContainer/step1/step1/TextureButton
+	_step2_button = $VBoxContainer/step2/step2/TextureButton
+	_step3_button = $VBoxContainer/step3/step3/HBoxContainer/TextureButton
 	_step1_label = $VBoxContainer/step1/step1/Label
 	_step2_label = $VBoxContainer/step2/step2/Label
 	_step3_label = $VBoxContainer/step3/step3/HBoxContainer/Label
@@ -49,7 +55,7 @@ func _ready() -> void:
 	_step1_panel.add_theme_stylebox_override("panel", style_incomplete)
 	_step2_panel.add_theme_stylebox_override("panel", style_incomplete)
 	_step3_panel.add_theme_stylebox_override("panel", style_incomplete)
-	_step4_button.disabled = true
+	_setting_source()
 
 ## Called from Window manager, to save previous position
 func save_to_memory() -> Dictionary:
@@ -101,14 +107,24 @@ func _set_source(cortical_area: CorticalArea) -> void:
 	_step1_label.text = "Selected Source Area: " + cortical_area.name
 	_step1_panel.add_theme_stylebox_override("panel", style_complete)
 	_set_establish_button_availability()
-	_current_state = POSSIBLE_STATES.IDLE
+	_step1_button.visible = true
+	_step2_panel.visible = true
+	if _destination:
+		_current_state = POSSIBLE_STATES.IDLE
+		return
+	_setting_destination()
 
 func _set_destination(cortical_area: CorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = "Selected Destination Area: " + cortical_area.name
 	_step2_panel.add_theme_stylebox_override("panel", style_complete)
 	_set_establish_button_availability()
-	_current_state = POSSIBLE_STATES.IDLE
+	_step2_button.visible = true
+	_step3_panel.visible = true
+	if _selected_morphology:
+		_current_state = POSSIBLE_STATES.IDLE
+		return
+	_setting_morphology()
 
 func _set_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
@@ -116,17 +132,23 @@ func _set_morphology(morphology: Morphology) -> void:
 	_step3_panel.add_theme_stylebox_override("panel", style_complete)
 	_step3_MorphologyView.load_in_morphology(morphology)
 	_step3_MorphologyDetails.load_in_morphology(morphology)
+	_step3_info.visible = false
+	_step3_button.visible = true
+
 	_set_establish_button_availability()
 	_current_state = POSSIBLE_STATES.IDLE
 
 func _set_establish_button_availability():
-	if !_source:
-		_step4_button.disabled = true
-	if !_destination:
-		_step4_button.disabled = true
-	if !_selected_morphology:
-		_step4_button.disabled = true
-	_step4_button.disabled = false
+	if _source == null:
+		_step4_button.visible = false
+		return
+	if _destination == null:
+		_step4_button.visible = false
+		return
+	if _selected_morphology == null:
+		_step4_button.visible = false
+		return
+	_step4_button.visible = true
 
 func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
