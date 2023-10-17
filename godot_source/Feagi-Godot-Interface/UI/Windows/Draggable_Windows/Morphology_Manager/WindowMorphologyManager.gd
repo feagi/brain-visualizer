@@ -13,32 +13,36 @@ func _ready() -> void:
 	_main_container = $Container
 	_morphology_scroll = $Container/MorphologyScroll
 	_smart_morphology_view = $Container/SmartMorphologyView
-	_morphology_generic_details = $Container/MorphologyGenericDetails
+	_morphology_generic_details = $Container/DetailsAndButtons/MorphologyGenericDetails
 	
 	_morphology_scroll.morphology_selected.connect(load_morphology)
 	FeagiCacheEvents.morphology_updated.connect(morphology_updated_from_FEAGI)
 
 ## Loads in a given morphology to the window panel
 func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) -> void:
+	print("UI: WINDOWS: MORPHOLOGY_MANAGER: User loading Morphology " + morphology.name)
 	_selected_morphology = morphology
 	_smart_morphology_view.load_in_morphology(morphology)
 	_morphology_generic_details.load_in_morphology(morphology)
 	if update_FEAGI_cache:
 		FeagiRequests.refresh_morphology_properties(morphology.name)
 
+## FEAGI sent back bew morphlogy values. Update
 func morphology_updated_from_FEAGI(updated_morphology: Morphology) -> void:
 	if _selected_morphology.name != updated_morphology.name:
 		return
 	load_morphology(updated_morphology, false)
 
+## User selected 'Ignore' Button, revert to cached morphology
+func reload_morphology():
+	print("UI: WINDOWS: MORPHOLOGY_MANAGER: User Reloading current morphology")
+	load_morphology(_selected_morphology, false)
 
-
-# Connected via Apply Changes Button Signal
-#func send_updated_values_to_feagi() -> void:
-	
-	#var morphology_to_send: Morphology = _smart_morphology_view.retrieve_morphology()
-
-	#FeagiRequests.request_updating_morphology(morphology_to_send)
+## User is requesting submission of new morphology settings via Update button
+func send_updated_values_to_feagi() -> void:
+	print("UI: WINDOWS: MORPHOLOGY_MANAGER: User sending values for " + _selected_morphology.name)
+	var morphology_to_send: Morphology = _smart_morphology_view.retrieve_morphology(_selected_morphology.name, _morphology_generic_details.details_text)
+	FeagiRequests.request_updating_morphology(morphology_to_send)
 
 ## Called from Window manager, to save previous position
 func save_to_memory() -> Dictionary:

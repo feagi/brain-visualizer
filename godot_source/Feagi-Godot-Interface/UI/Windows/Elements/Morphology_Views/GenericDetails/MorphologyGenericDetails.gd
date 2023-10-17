@@ -9,6 +9,9 @@ const MORPHOLOGY_ICON_PATH: StringName = &"res://Feagi-Godot-Interface/UI/Resour
 
 @export var editable: bool = false
 
+var details_text: StringName:
+	get: return _morphology_details_view.text
+
 var _available_morphology_images: PackedStringArray
 var _morphology_mappings_view: TextEdit
 var _morphology_details_view: TextEdit
