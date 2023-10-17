@@ -32,6 +32,11 @@ func set_editable(is_editable: bool) -> void:
 	_is_editable = is_editable
 	$labels/deletegap.visible = is_editable
 
+func add_vector_row() -> void:
+	_vectors_scroll.spawn_list_item({
+		"editable": _is_editable,
+		"vector": Vector3i(0,0,0)
+	})
 
 func _get_vector_array() -> Array[Vector3i]:
 	var _vectors: Array[Vector3i] = []
