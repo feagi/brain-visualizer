@@ -41,6 +41,7 @@ func _ready() -> void:
 	_step3_info = $VBoxContainer/step3/step3/MorphologyInfo
 	_step3_scroll = $VBoxContainer/step3/step3/MorphologyInfo/MorphologyScroll
 	_step3_MorphologyView = $VBoxContainer/step3/step3/MorphologyInfo/SmartMorphologyView
+	_step3_MorphologyDetails = $VBoxContainer/step3/step3/MorphologyInfo/MorphologyGenericDetails
 	_step4_button = $VBoxContainer/Establish
 	
 	FeagiEvents.user_selected_cortical_area.connect(on_user_select_cortical_area)
@@ -113,6 +114,8 @@ func _set_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_step3_label.text = "Selected Morphology: " + morphology.name
 	_step3_panel.add_theme_stylebox_override("panel", style_complete)
+	_step3_MorphologyView.load_in_morphology(morphology)
+	_step3_MorphologyDetails.load_in_morphology(morphology)
 	_set_establish_button_availability()
 	_current_state = POSSIBLE_STATES.IDLE
 
