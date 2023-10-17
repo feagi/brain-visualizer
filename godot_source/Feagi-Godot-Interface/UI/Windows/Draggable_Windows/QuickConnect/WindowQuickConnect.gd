@@ -92,6 +92,7 @@ func _setting_morphology() -> void:
 	_set_establish_button_availability()
 	_step3_label.text = "Please Select A Morphology..."
 	_step3_panel.add_theme_stylebox_override("panel", style_waiting)
+	_step3_info.visible = true
 	_current_state = POSSIBLE_STATES.MORPHOLOGY
 
 func _set_source(cortical_area: CorticalArea) -> void:
@@ -127,3 +128,4 @@ func _set_establish_button_availability():
 func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
 	FeagiRequests.request_default_mapping_between_corticals(_source, _destination, _selected_morphology)
+	VisConfig.UI_manager.window_manager.force_close_window("quick_connect")
