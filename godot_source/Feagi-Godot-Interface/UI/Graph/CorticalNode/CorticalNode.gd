@@ -51,6 +51,8 @@ func _user_request_delete_cortical_area() -> void:
 func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event
+	if !mouse_event.is_pressed(): return
+	if !mouse_event.button_index != 0: return
 	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
 	if !mouse_event.double_click: return
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
