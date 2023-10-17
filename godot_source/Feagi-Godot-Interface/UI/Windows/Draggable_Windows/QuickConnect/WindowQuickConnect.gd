@@ -37,7 +37,7 @@ func _ready() -> void:
 	_step3_panel = $VBoxContainer/step3
 	_step1_label = $VBoxContainer/step1/step1/Label
 	_step2_label = $VBoxContainer/step2/step2/Label
-	_step3_label = $VBoxContainer/step3/step3/Label
+	_step3_label = $VBoxContainer/step3/step3/HBoxContainer/Label
 	_step3_info = $VBoxContainer/step3/step3/MorphologyInfo
 	_step3_scroll = $VBoxContainer/step3/step3/MorphologyInfo/MorphologyScroll
 	_step3_MorphologyView = $VBoxContainer/step3/step3/MorphologyInfo/SmartMorphologyView
