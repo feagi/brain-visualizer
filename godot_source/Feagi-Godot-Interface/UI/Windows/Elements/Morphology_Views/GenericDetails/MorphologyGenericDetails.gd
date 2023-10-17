@@ -13,11 +13,13 @@ var _available_morphology_images: PackedStringArray
 var _morphology_mappings_view: TextEdit
 var _morphology_details_view: TextEdit
 var _morphology_texture_view: TextureRect
+var _texture_container: VBoxContainer
 var _shown_morphology: Morphology = NullMorphology.new()
 
 func _ready() -> void:
 	_morphology_mappings_view = $UsageAndImage/VBoxContainer/Usage
 	_morphology_details_view = $Description
+	_texture_container = $UsageAndImage/VBoxContainer2
 	_morphology_texture_view = $UsageAndImage/VBoxContainer2/Current_Morphology_image
 	_available_morphology_images = DirAccess.get_files_at(MORPHOLOGY_ICON_PATH)
 	FeagiEvents.retrieved_latest_usuage_of_morphology.connect(_retrieved_morphology_mappings_from_feagi)
@@ -45,9 +47,16 @@ func _update_image_with_morphology(morphology_name: StringName) -> void:
 
 	if index == -1:
 		# no image found
-		_morphology_texture_view.visible = false
+		if _texture_container.visible:
+			# we are changing size by doing this. Shrink as much as possible
+			size = Vector2(0,0)
+		_texture_container.visible = false
 		return
-	_morphology_texture_view.visible = true
+	
+	if !_texture_container.visible:
+		# we are changing size by doing this. Shrink as much as possible
+		size = Vector2(0,0)
+	_texture_container.visible = true
 	_morphology_texture_view.texture = load(MORPHOLOGY_ICON_PATH + morphology_image_name)
 
 func _retrieved_morphology_mappings_from_feagi(retrieved_morphology: Morphology, usage: Array[Array]):

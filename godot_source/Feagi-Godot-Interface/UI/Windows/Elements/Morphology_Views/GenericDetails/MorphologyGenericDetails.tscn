@@ -22,6 +22,7 @@ layout_mode = 2
 editable = false
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="UsageAndImage"]
+visible = false
 layout_mode = 2
 
 [node name="gap" type="Control" parent="UsageAndImage/VBoxContainer2"]

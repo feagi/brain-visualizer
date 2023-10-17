@@ -34,6 +34,9 @@ func _ready() -> void:
 ## Loads in a given morphology, and open the correct view to view that morphology type
 func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
 	_header_title.text = morphology.name
+	if _type_loaded != morphology.type:
+		# We are changing size, shrink as much as possible
+		size = Vector2(0,0)
 	_type_loaded = morphology.type
 	match morphology.type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
