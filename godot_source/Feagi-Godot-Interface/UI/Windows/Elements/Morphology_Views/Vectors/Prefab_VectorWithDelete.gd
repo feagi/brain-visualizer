@@ -3,6 +3,7 @@ extends HBoxContainer
 var current_vector: Vector3i:
 	get: return $Vector.current_vector
 
+
 func setup(setup_data: Dictionary, _irrelevant2):
 	$Vector.editable = setup_data["editable"]
 	$DeleteButton.visible = setup_data["editable"]
