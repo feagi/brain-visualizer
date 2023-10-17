@@ -12,7 +12,6 @@ var composite_view: ElementMorphologyCompositeView
 var vectors_view: ElementMorphologyVectorsView
 var patterns_view: ElementMorphologyPatternView
 
-
 var _header: VBoxContainer
 var _header_title: LineEdit
 var _header_type: LineEdit
@@ -64,9 +63,11 @@ func load_in_morphology(morphology: Morphology) -> void:
 			vectors_view.visible = false
 			patterns_view.visible = false
 			push_error("Null or unknown Morphology type loaded into SmartMorphologyView!")
+	print("SmartMorphologyView finished loading in Morphology of name " + morphology.name)
 
 ## Loads in a blank morphology of given type
 func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
+	print("SmartMorphologyView is loading in a blank morphology")
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			var src_pattern: Array[Vector2i] = []
@@ -79,8 +80,7 @@ func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
 			load_in_morphology(PatternMorphology.new("NO_NAME", true, patterns))
 		_:
 			load_in_morphology(NullMorphology.new())
-
-
+	
 ## Retrieves the current UI view as a morphology of its type
 func retrieve_morphology(morphology_name: StringName, morphology_details: StringName) -> Morphology:
 	## TODO make use of morphology details - Requires FEAGI support first
