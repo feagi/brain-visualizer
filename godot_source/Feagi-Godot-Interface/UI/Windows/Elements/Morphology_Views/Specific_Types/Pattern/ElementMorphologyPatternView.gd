@@ -31,6 +31,12 @@ func set_editable(is_editable: bool) -> void:
 	_is_editable = is_editable
 	$labels/deletegap.visible = is_editable
 
+func add_pattern_pair_row() -> void:
+	var pattern_pair: PatternVector3Pairs = PatternVector3Pairs.create_empty()
+	_pattern_pair_scroll.spawn_list_item({
+		"editable": _is_editable,
+		"vectorPair": pattern_pair
+	})
 
 func _get_pattern_pair_array() -> Array[PatternVector3Pairs]:
 	var pairs: Array[PatternVector3Pairs] = []

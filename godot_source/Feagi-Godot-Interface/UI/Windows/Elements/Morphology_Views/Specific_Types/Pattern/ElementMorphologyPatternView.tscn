@@ -1,22 +1,38 @@
-[gd_scene load_steps=5 format=3 uid="uid://ddn8pt45rca4n"]
+[gd_scene load_steps=6 format=3 uid="uid://ddn8pt45rca4n"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/ElementMorphologyPatternView.gd" id="1_q5gkp"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_cj4db"]
+[ext_resource type="Texture2D" uid="uid://b8qrpcpsbex3x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/plus.png" id="2_fbq0v"]
 [ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="3_k6hof"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_3txg3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_l6qnr"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
-custom_minimum_size = Vector2(570, 0)
+custom_minimum_size = Vector2(620, 0)
+offset_right = 600.0
+offset_bottom = 275.0
 size_flags_horizontal = 3
 script = ExtResource("1_q5gkp")
 
-[node name="Label" type="Label" parent="."]
+[node name="header" type="HBoxContainer" parent="."]
 layout_mode = 2
+
+[node name="Label" type="Label" parent="header"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Patterns"
-horizontal_alignment = 1
+
+[node name="add_vector" type="TextureButton" parent="header"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+texture_normal = ExtResource("2_fbq0v")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("3_l6qnr")
+scale_multiplier = 0.5
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
+alignment = 1
 
 [node name="Control3" type="Control" parent="HBoxContainer"]
 custom_minimum_size = Vector2(9, 0)
@@ -71,9 +87,4 @@ custom_minimum_size = Vector2(550, 180)
 layout_mode = 2
 prefab_to_spawn = ExtResource("3_k6hof")
 
-[node name="Add_Vector_Pair" type="Button" parent="."]
-layout_mode = 2
-text = "Add Vector Pair"
-script = ExtResource("4_3txg3")
-
-[connection signal="pressed" from="Add_Vector_Pair" to="Patterns" method="spawn_list_item"]
+[connection signal="pressed" from="header/add_vector" to="." method="add_pattern_pair_row"]

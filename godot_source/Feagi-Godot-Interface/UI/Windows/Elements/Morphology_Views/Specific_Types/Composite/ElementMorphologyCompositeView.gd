@@ -46,13 +46,13 @@ func get_as_composite_morphology(morphology_name: StringName, is_placeholder: bo
 ## Overwrite the current UI view with a [CompositeMorphology] object
 func set_from_composite_morphology(composite: CompositeMorphology) -> void:
 	composite_seed = composite.source_seed
-	patternX = composite.source_pattern[0]
-	patternY = composite.source_pattern[1]
-	patternZ = composite.source_pattern[2]
 	if composite.is_placeholder_data:
 		# Placeholder data implies that the mapped morphology is invalid. set dropdown to blank
 		_mapped_morphology.deselect_all()
 		return
+	patternX = composite.source_pattern[0]
+	patternY = composite.source_pattern[1]
+	patternZ = composite.source_pattern[2]
 	_mapped_morphology.set_selected_morphology_by_name(composite.mapper_morphology_name)
 
 ## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR
