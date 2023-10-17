@@ -17,7 +17,7 @@ layout_mode = 2
 text = "Current Usage:"
 
 [node name="Usage" type="TextEdit" parent="UsageAndImage/VBoxContainer"]
-custom_minimum_size = Vector2(250, 128)
+custom_minimum_size = Vector2(300, 256)
 layout_mode = 2
 editable = false
 
@@ -29,10 +29,9 @@ custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
 [node name="Current_Morphology_image" type="TextureRect" parent="UsageAndImage/VBoxContainer2"]
-custom_minimum_size = Vector2(100, 100)
+custom_minimum_size = Vector2(256, 256)
 layout_mode = 2
 expand_mode = 4
-stretch_mode = 3
 
 [node name="Description_Label" type="Label" parent="."]
 layout_mode = 2

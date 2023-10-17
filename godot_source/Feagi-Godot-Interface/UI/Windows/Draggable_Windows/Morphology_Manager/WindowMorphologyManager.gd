@@ -13,7 +13,7 @@ func _ready() -> void:
 	_main_container = $Container
 	_morphology_scroll = $Container/MorphologyScroll
 	_smart_morphology_view = $Container/SmartMorphologyView
-	_morphology_generic_details = $Container/Morphology_Details/Description
+	_morphology_generic_details = $Container/MorphologyGenericDetails
 	
 	_morphology_scroll.morphology_selected.connect(load_morphology)
 
@@ -21,7 +21,7 @@ func _ready() -> void:
 
 func load_morphology(morphology: Morphology) -> void:
 	_smart_morphology_view.load_in_morphology(morphology)
-	_morphology_generic_details.update_details_from_morphology(morphology)
+	_morphology_generic_details.load_in_morphology(morphology)
 	FeagiRequests.refresh_morphology_properties(morphology.name)
 
 
