@@ -7,8 +7,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_l6qnr"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
-custom_minimum_size = Vector2(620, 0)
-offset_right = 600.0
+custom_minimum_size = Vector2(630, 0)
+offset_right = 630.0
 offset_bottom = 275.0
 size_flags_horizontal = 3
 script = ExtResource("1_q5gkp")
@@ -85,6 +85,7 @@ layout_mode = 2
 [node name="Patterns" parent="." instance=ExtResource("2_cj4db")]
 custom_minimum_size = Vector2(550, 180)
 layout_mode = 2
+size_flags_vertical = 3
 prefab_to_spawn = ExtResource("3_k6hof")
 
 [connection signal="pressed" from="header/add_vector" to="." method="add_pattern_pair_row"]
