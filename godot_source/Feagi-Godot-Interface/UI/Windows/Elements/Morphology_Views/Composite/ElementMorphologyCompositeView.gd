@@ -1,6 +1,8 @@
 extends VBoxContainer
 class_name ElementMorphologyCompositeView
 
+
+
 var composite_seed: Vector3i:
 	get: return _seed.current_vector
 	set(v): _seed.current_vector = v
@@ -44,3 +46,11 @@ func set_from_composite_morphology(composite: CompositeMorphology) -> void:
 	patternY = composite.source_pattern[1]
 	patternZ = composite.source_pattern[2]
 	mapped_morphology = FeagiCache.morphology_cache.available_morphologies[composite.mapper_morphology_name]
+
+func set_editable(is_editable: bool) -> void:
+	_seed.editable = is_editable
+	_patternX.editable = is_editable
+	_patternY.editable = is_editable
+	_patternZ.editable = is_editable
+	_mapped_morphology.disabled = !is_editable
+	

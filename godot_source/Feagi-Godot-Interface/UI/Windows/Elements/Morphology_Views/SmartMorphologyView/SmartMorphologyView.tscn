@@ -1,0 +1,58 @@
+[gd_scene load_steps=5 format=3 uid="uid://c8gpa1figwpvw"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/SmartMorphologyView/SmartMorphologyView.gd" id="1_fup3i"]
+[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="2_j7hvp"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="3_bys31"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="4_2adf0"]
+
+[node name="SmartMorphologyView" type="VBoxContainer"]
+script = ExtResource("1_fup3i")
+header_enabled = null
+morphology_editable = null
+
+[node name="Header" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Header"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Header/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name: "
+
+[node name="Title_text" type="LineEdit" parent="Header/HBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+placeholder_text = "None Loaded..."
+alignment = 1
+editable = false
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Header"]
+layout_mode = 2
+
+[node name="Pattern" type="Label" parent="Header/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Type: "
+
+[node name="Pattern_Text" type="LineEdit" parent="Header/HBoxContainer2"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+placeholder_text = "None Loaded..."
+alignment = 1
+editable = false
+
+[node name="ElementMorphologyCompositeView" parent="." instance=ExtResource("2_j7hvp")]
+visible = false
+layout_mode = 2
+
+[node name="ElementMorphologyVectorsView" parent="." instance=ExtResource("3_bys31")]
+visible = false
+layout_mode = 2
+
+[node name="ElementMorphologyPatternView" parent="." instance=ExtResource("4_2adf0")]
+visible = false
+layout_mode = 2

@@ -5,6 +5,7 @@ class_name Morphology
 signal retrieved_latest_usuage_of_morphology(usage_mappings: Array[Array])
 signal about_to_be_deleted()
 
+# Probably redudant to have an enum when we have multiple classes, but here somewhat for legacy reasons
 enum MORPHOLOGY_TYPE {
 	PATTERNS,
 	VECTORS,

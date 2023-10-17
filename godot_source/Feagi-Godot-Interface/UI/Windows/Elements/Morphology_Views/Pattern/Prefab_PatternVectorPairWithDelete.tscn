@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_p16ch"]
 
 [node name="Prefab_PatternVectorPairWithDelete" type="HBoxContainer"]
+custom_minimum_size = Vector2(600, 0)
 offset_right = 596.0
 offset_bottom = 31.0
 size_flags_horizontal = 3
@@ -15,20 +16,22 @@ alignment = 1
 script = ExtResource("1_wogfq")
 
 [node name="PV1" parent="." instance=ExtResource("2_8jbt0")]
+custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="."]
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(30, 20)
 layout_mode = 2
 texture = ExtResource("3_uy1y2")
 expand_mode = 1
 script = ExtResource("4_ksn44")
 
 [node name="PV2" parent="." instance=ExtResource("2_8jbt0")]
+custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
 
 [node name="DeleteButton" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(30, 20)
 layout_mode = 2
 texture_normal = ExtResource("5_qfnjt")
 ignore_texture_size = true
