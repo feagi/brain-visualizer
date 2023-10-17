@@ -95,9 +95,11 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, morphology_name: StringName) -> void:
 	if response_code == 400:
 		push_error("Unable to access in FEAGI morphology of name %s" % morphology_name)
+		VisConfig.UI_manager.make_notification("Unable to access in FEAGI morphology of name %s" % morphology_name, SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	if response_code == 404:
 		push_error("Unable to locate in FEAGI morphology of name %s" % morphology_name)
+		VisConfig.UI_manager.make_notification("Unable to locate in FEAGI morphology of name %s" % morphology_name, SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("RACE CONDITION! Morphology %s was removed before we returned usage information! Skipping!" % morphology_name)
@@ -113,9 +115,11 @@ func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if _response_code == 404:
 		push_error("FEAGI was unable to find the requested morphology details. Skipping!")
+		VisConfig.UI_manager.make_notification("FEAGI was unable to find the requested morphology details. Skipping!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	if _response_code == 400:
 		push_error("FEAGI had an unknown error retrieving morpholgy details. Skipping!")
+		VisConfig.UI_manager.make_notification("FEAGI had an unknown error retrieving morpholgy details. Skipping!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)

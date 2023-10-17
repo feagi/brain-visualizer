@@ -38,30 +38,32 @@ func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false
 		# We are changing size, shrink as much as possible
 		size = Vector2(0,0)
 	_type_loaded = morphology.type
+	_header_type.text = Morphology.MORPHOLOGY_TYPE.keys()[morphology.type]
 	match morphology.type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
-			_header_type.text = "Composite"
 			composite_view.visible = true
 			vectors_view.visible = false
 			patterns_view.visible = false
 
 			composite_view.set_from_composite_morphology(morphology as CompositeMorphology)
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
-			_header_type.text = "Vector"
 			composite_view.visible = false
 			vectors_view.visible = true
 			patterns_view.visible = false
 			
 			vectors_view.set_from_vector_morphology(morphology as VectorMorphology)
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			_header_type.text = "Pattern"
 			composite_view.visible = false
 			vectors_view.visible = false
 			patterns_view.visible = true
 
 			patterns_view.set_from_pattern_morphology(morphology as PatternMorphology)
+		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
+			composite_view.visible = false
+			vectors_view.visible = false
+			patterns_view.visible = false
+			VisConfig.UI_manager.make_notification("Function morphology editing is not supported at this time!", SingleNotification.NOTIFICATION_TYPE.WARNING)
 		_:
-			_header_type.text = "NULL"
 			composite_view.visible = false
 			vectors_view.visible = false
 			patterns_view.visible = false
