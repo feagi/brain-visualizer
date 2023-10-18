@@ -25,3 +25,5 @@ signal retrieved_latest_ping(ping: StringName)
 ## Retrieved latest health info
 signal retrieved_latest_FEAGI_health(burst_engine: bool, genome_availibility: bool, genome_validity: bool, brain_readiness: bool)
 
+## User selected a cortical area in BV or CB
+signal user_selected_cortical_area(cortical_area: CorticalArea)

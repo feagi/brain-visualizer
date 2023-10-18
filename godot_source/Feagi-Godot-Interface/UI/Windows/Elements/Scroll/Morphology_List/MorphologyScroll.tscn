@@ -1,17 +1,18 @@
-[gd_scene load_steps=4 format=3 uid="uid://bxqu4fr885cv2"]
+[gd_scene load_steps=2 format=3 uid="uid://bxqu4fr885cv2"]
 
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="1_olvqc"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.gd" id="1_pedaf"]
-[ext_resource type="PackedScene" uid="uid://dy3nu6ah5d0hv" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Button_Prefab/ScrollButtonPrefab.tscn" id="3_i12ed"]
 
-[node name="MorphologyScroll" type="Control"]
-layout_mode = 3
-anchors_preset = 0
+[node name="MorphologyScroll" type="ScrollContainer"]
+custom_minimum_size = Vector2(250, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -802.0
+offset_bottom = -438.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_pedaf")
 
-[node name="Scroll_Vertical" parent="." node_paths=PackedStringArray("main_window") instance=ExtResource("1_olvqc")]
-layout_mode = 0
-offset_right = 130.0
-offset_bottom = 142.0
-prefab_to_spawn = ExtResource("3_i12ed")
-main_window = NodePath("..")
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3

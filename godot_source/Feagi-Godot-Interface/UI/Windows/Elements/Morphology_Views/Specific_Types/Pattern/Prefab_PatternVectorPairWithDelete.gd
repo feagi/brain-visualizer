@@ -7,9 +7,12 @@ var current_vector_pair: PatternVector3Pairs:
 		$PV1.current_vector = v.incoming
 		$PV2.current_vector = v.outgoing
 
-## All spawned items from scrollbar have setup called, but we don't need to do anything here
-func setup(_irrelevant1, _irrelevant2):
-	pass
+
+func setup(setup_data: Dictionary, _irrelevant2):
+	$PV1.editable = setup_data["editable"]
+	$PV2.editable = setup_data["editable"]
+	$DeleteButton.visible = setup_data["editable"]
+	current_vector_pair = setup_data["vectorPair"]
 
 # Connected Via UI to the pressed signal from the delete button
 func _on_delete_button_pressed() -> void:

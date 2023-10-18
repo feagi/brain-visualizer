@@ -8,6 +8,7 @@ var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
 var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
+var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
 
 var loaded_windows: Dictionary
@@ -18,7 +19,8 @@ var _window_memory_states: Dictionary = {
 	"morphology_manager": {"position": Vector2(50,100)},
 	"edit_mappings": {"position": Vector2(50,100)},
 	"create_cortical": {"position": Vector2(50,100)},
-	"import_circuit": {"position": Vector2(50,100)}
+	"import_circuit": {"position": Vector2(50,100)},
+	"quick_connect": {"position": Vector2(50,100)}
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -87,6 +89,17 @@ func spawn_import_circuit() -> void:
 	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
 	import_circuit.closed_window.connect(force_close_window)
 	loaded_windows["import_circuit"] = import_circuit
+
+func spawn_quick_connect() -> void:
+	if "quick_connect" in loaded_windows.keys():
+		force_close_window("quick_connect")
+	
+	print("user requests create quick connect window")
+	var quick_connect: WindowQuickConnect = _prefab_quick_connect.instantiate()
+	add_child(quick_connect)
+	quick_connect.load_from_memory(_window_memory_states["quick_connect"])
+	quick_connect.closed_window.connect(force_close_window)
+	loaded_windows["quick_connect"] = quick_connect
 
 func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
 	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()
