@@ -35,6 +35,7 @@ var _destination: CorticalArea = null
 var _selected_morphology: Morphology = null
 
 func _ready() -> void:
+	super()
 	_step1_panel = $VBoxContainer/step1
 	_step2_panel = $VBoxContainer/step2
 	_step3_panel = $VBoxContainer/step3

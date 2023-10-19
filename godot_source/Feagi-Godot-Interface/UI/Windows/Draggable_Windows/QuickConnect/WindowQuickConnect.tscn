@@ -24,6 +24,9 @@ bg_color = Color(1, 0.333333, 0.341176, 1)
 
 [node name="WindowQuickConnect" type="Panel"]
 custom_minimum_size = Vector2(10, 10)
+offset_top = 40.0
+offset_right = 10.0
+offset_bottom = 50.0
 script = ExtResource("1_pefds")
 style_incomplete = SubResource("StyleBoxFlat_0fl3t")
 style_waiting = SubResource("StyleBoxFlat_hcpwn")
@@ -156,6 +159,8 @@ script = ExtResource("2_h1bhl")
 
 [node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
 layout_mode = 0
+offset_top = -40.0
+offset_bottom = 0.0
 title = "Quick Connect"
 automatic_setup_window_closing_for_window_manager_name = &"quick_connect"
 
