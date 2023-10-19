@@ -80,6 +80,11 @@ func request_change_synaptic_monitoring_status(cortical_area: CorticalArea, requ
 	print("User requested modification of synaptic monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.POST_MON_neuron_synapticPotential(cortical_area.cortical_ID, requested_state)
 
+## To request the changing of 2D positions of a number of cortical areas with little processing delay
+func request_mass_change_2D_positions(cortical_IDs_mapped_to_vector2i_positions: Dictionary) -> void:
+	print("User requests a mass cortical area movement change")
+	_feagi_interface.calls.PUT_GE_coord2D(cortical_IDs_mapped_to_vector2i_positions)
+
 ## Requests FEAGI to delete a cortical area by ID
 ## if sucessful,  causes the cortical area cache to remove said cortical area, and cached connections to remove connections to/from this area
 ## Success emits cortical_area_removed, and possibly various morphology_removed

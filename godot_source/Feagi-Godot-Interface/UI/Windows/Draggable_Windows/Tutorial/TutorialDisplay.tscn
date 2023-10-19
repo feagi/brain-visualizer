@@ -56,4 +56,5 @@ offset_top = -40.0
 offset_right = 650.0
 offset_bottom = 0.0
 title = "Tutorial"
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"tutorial"

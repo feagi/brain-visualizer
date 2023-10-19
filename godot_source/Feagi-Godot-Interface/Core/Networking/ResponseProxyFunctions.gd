@@ -265,6 +265,7 @@ func POST_GE_append(_response_code: int, _response_body: PackedByteArray, _reque
 func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for membrane potential monitoring!")
+		VisConfig.UI_manager.make_notification("FEAGI unable to set setting for membrane potential monitoring!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential
 		return
 	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -276,6 +277,7 @@ func POST_MON_neuron_membranePotential(response_code: int, _response_body: Packe
 func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for synaptic potential monitoring!")
+		VisConfig.UI_manager.make_notification("FEAGI unable to set setting for synaptic potential monitoring!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential
 		return	
 	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -301,8 +303,8 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	cortical_src.set_efferent_connection(cortical_dst, mapping_count)
 
 
-func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
-	if _response_code == 422:
+func PUT_GE_corticalArea(response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
+	if response_code == 422:
 		push_error("Unable to process new properties for cortical area %s, skipping!" % [changed_cortical_ID])
 		return
 	
@@ -310,11 +312,16 @@ func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, c
 	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID], true)
 	pass
 
-func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:
-	if _response_code == 422:
+func PUT_GE_morphology(response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:
+	if response_code == 422:
 		push_error("Unable to process new properties for morphology %s, skipping!" % [changed_morphology_name])
 		return
 	FeagiRequests.refresh_morphology_properties(changed_morphology_name)
+
+func PUT_GE_coord2D(_response_code: int, _response_body: PackedByteArray, changed_IDs_and_locations: Dictionary) -> void:
+	# TODO catch errors - at this time feagi only returns 200
+	print("FEAGI: Confirmed the mass 2D movement of %d cortical areas" % len(changed_IDs_and_locations.keys()))
+	FeagiCache.cortical_areas_cache.FEAGI_mass_update_2D_positions(changed_IDs_and_locations)
 
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
