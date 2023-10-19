@@ -265,6 +265,7 @@ func POST_GE_append(_response_code: int, _response_body: PackedByteArray, _reque
 func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for membrane potential monitoring!")
+		VisConfig.UI_manager.make_notification("FEAGI unable to set setting for membrane potential monitoring!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential
 		return
 	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -276,6 +277,7 @@ func POST_MON_neuron_membranePotential(response_code: int, _response_body: Packe
 func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for synaptic potential monitoring!")
+		VisConfig.UI_manager.make_notification("FEAGI unable to set setting for synaptic potential monitoring!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential
 		return	
 	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
