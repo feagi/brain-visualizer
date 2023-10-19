@@ -57,16 +57,6 @@ func _ready() -> void:
 	_step3_panel.add_theme_stylebox_override("panel", style_incomplete)
 	_setting_source()
 
-## Called from Window manager, to save previous position
-func save_to_memory() -> Dictionary:
-	return {
-		"position": position,
-	}
-
-## Called from Window manager, to load previous position
-func load_from_memory(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
-
 
 func on_user_select_cortical_area(cortial_area: CorticalArea) -> void:
 	match _current_state:
