@@ -44,15 +44,6 @@ func send_updated_values_to_feagi() -> void:
 	var morphology_to_send: Morphology = _smart_morphology_view.retrieve_morphology(_selected_morphology.name, _morphology_generic_details.details_text)
 	FeagiRequests.request_updating_morphology(morphology_to_send)
 
-## Called from Window manager, to save previous position
-func save_to_memory() -> Dictionary:
-	return {
-		"position": position,
-	}
-
-## Called from Window manager, to load previous position
-func load_from_memory(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
 
 
 

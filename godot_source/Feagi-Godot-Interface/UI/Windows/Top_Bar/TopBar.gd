@@ -54,6 +54,12 @@ func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> voi
 func _mode_changed(new_mode: UIManager.MODE) -> void:
 	match(new_mode):
 		UIManager.MODE.CIRCUIT_BUILDER:
-			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/BV.png")
+			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_S.png")
+			$HBoxContainer/Mode_Button.texture_pressed= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_C.png")
+			$HBoxContainer/Mode_Button.texture_hover= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_H.png")
+			$HBoxContainer/Mode_Button.texture_disabled= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_D.png")
 		UIManager.MODE.VISUALIZER_3D:
-			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/CB.png")
+			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_S.png")
+			$HBoxContainer/Mode_Button.texture_pressed= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_C.png")
+			$HBoxContainer/Mode_Button.texture_hover= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_H.png")
+			$HBoxContainer/Mode_Button.texture_disabled= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_D.png")

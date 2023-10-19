@@ -1,4 +1,4 @@
-extends Panel
+extends DraggableWindow
 class_name TutorialDisplay
 
 const MAX_NUMBER_SLIDES: int = 10
@@ -9,9 +9,10 @@ var _TextureBox: TextureRect
 var _current_slide_number: int = 2
 
 func _ready():
-	_TextureBox = get_node("Texture")
-	_previous_button = get_node("previous_button")
-	_next_button = get_node("next_button")
+	super()
+	_TextureBox = $VBoxContainer/Texture
+	_previous_button = $VBoxContainer/HBoxContainer/previous_button
+	_next_button = $VBoxContainer/HBoxContainer/next_button
 	_previous_button.pressed.connect(_decrement_slide)
 	_next_button.pressed.connect(_increment_slide)
 	_previous_button.disabled = true
@@ -42,8 +43,3 @@ func _get_slide(slide_number: int) -> CompressedTexture2D:
 	const PREFIX = "t"
 	var path = BASE_PATH + PREFIX + str(slide_number) + EXTENSION
 	return load(path) # these image files are large and not used consistently, so no preloading
-
-func _on_texture_button_pressed_from_TutorialBar():
-	# This will listen to t1 node
-	$"../TutorialBar".visible = false
-	visible = true

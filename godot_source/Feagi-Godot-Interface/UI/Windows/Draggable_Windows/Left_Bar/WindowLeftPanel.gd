@@ -63,14 +63,14 @@ func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	# Odds are we don't have the latest data from FEAGI, lets call in a refresh
 	FeagiRequests.refresh_cortical_area(cortical_area_reference)
 
-## Called from Window manager, to save previous position and collapsible states
+## OVERRIDDEN from Window manager, to save previous position and collapsible states
 func save_to_memory() -> Dictionary:
 	return {
 		"position": position,
 		"toggles": section_toggles
 	}
 
-## Called from Window manager, to load previous position and collapsible states
+## OVERRIDDEN from Window manager, to load previous position and collapsible states
 func load_from_memory(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 	if "toggles" in previous_data.keys():

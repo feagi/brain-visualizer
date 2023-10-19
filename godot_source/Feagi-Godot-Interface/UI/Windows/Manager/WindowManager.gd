@@ -10,6 +10,7 @@ var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/
 var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
 var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
+var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 
 var loaded_windows: Dictionary
 
@@ -20,7 +21,8 @@ var _window_memory_states: Dictionary = {
 	"edit_mappings": {"position": Vector2(50,100)},
 	"create_cortical": {"position": Vector2(50,100)},
 	"import_circuit": {"position": Vector2(50,100)},
-	"quick_connect": {"position": Vector2(50,100)}
+	"quick_connect": {"position": Vector2(50,100)},
+	"tutorial": {"position": Vector2(50,100)}
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -101,13 +103,26 @@ func spawn_quick_connect() -> void:
 	quick_connect.closed_window.connect(force_close_window)
 	loaded_windows["quick_connect"] = quick_connect
 
+
+func spawn_tutorial() -> void:
+	if "tutorial" in loaded_windows.keys():
+		force_close_window("tutorial")
+	
+	var tutorial: TutorialDisplay = _prefab_tutorial.instantiate()
+	add_child(tutorial)
+	tutorial.load_from_memory(_window_memory_states["tutorial"])
+	tutorial.closed_window.connect(force_close_window)
+	loaded_windows["tutorial"] = tutorial
+
 func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
+
+	
 	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()
 	add_child(popup)
 	popup.position = Vector2(200,200)
 	popup.set_properties(title_text, message_text, button_text, icon)
-	
 
+	
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
 		_window_memory_states[window_name] = loaded_windows[window_name].save_to_memory()

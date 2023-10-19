@@ -1,8 +1,14 @@
 extends VBoxContainer
 class_name VerticalCollapsible
 
-const TRIANGLE_DOWN: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/triangle_down.png")
-const TRIANGLE_LEFT: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/triangle_left.png")
+const TRIANGLE_DOWN_NORMAL: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Down_S.png")
+const TRIANGLE_DOWN_PRESSED: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Down_C.png")
+const TRIANGLE_DOWN_HOVER: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Down_H.png")
+const TRIANGLE_DOWN_DISABLED: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Down_D.png")
+const TRIANGLE_RIGHT_NORMAL: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png")
+const TRIANGLE_RIGHT_PRESSED: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_C.png")
+const TRIANGLE_RIGHT_HOVER: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_H.png")
+const TRIANGLE_RIGHT_DISABLED: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_D.png")
 
 ## State collapsible seciton should be on start. No effect after
 @export var start_open: bool = true
@@ -42,9 +48,15 @@ func setup():
 
 func _toggle_button_texture(is_opened: bool) -> void:
 	if is_opened:
-		_collapsing_button_toggle.texture_normal = TRIANGLE_DOWN
+		_collapsing_button_toggle.texture_normal = TRIANGLE_DOWN_NORMAL
+		_collapsing_button_toggle.texture_pressed = TRIANGLE_DOWN_PRESSED
+		_collapsing_button_toggle.texture_hover = TRIANGLE_DOWN_HOVER
+		_collapsing_button_toggle.texture_disabled = TRIANGLE_DOWN_DISABLED
 	else:
-		_collapsing_button_toggle.texture_normal = TRIANGLE_LEFT
+		_collapsing_button_toggle.texture_normal = TRIANGLE_RIGHT_NORMAL
+		_collapsing_button_toggle.texture_pressed = TRIANGLE_RIGHT_PRESSED
+		_collapsing_button_toggle.texture_hover = TRIANGLE_RIGHT_HOVER
+		_collapsing_button_toggle.texture_disabled = TRIANGLE_RIGHT_DISABLED
 
 func _toggle_collapsible_section(is_opened: bool) -> void:
 	_collapsing_node.visible = is_opened

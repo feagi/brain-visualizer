@@ -150,6 +150,10 @@ func _auto_hide_parent() -> void:
 
 func _auto_maintain_width() -> void:
 	set_deferred("size", Vector2(0,0))
-	# TODO x dim should also count parent padding. We can only use this once everyone is on the same page
-	custom_minimum_size = Vector2(_sibling.size.x, MINIMUM_TITLEBAR_HEIGHT)
+	var width: int = _sibling.size.x
+	if _parent is DraggableWindow:
+		var _drag_parent: DraggableWindow = _parent as DraggableWindow
+		width += _drag_parent.left_pixel_gap + _drag_parent.right_pixel_gap
+	
+	custom_minimum_size = Vector2(width, MINIMUM_TITLEBAR_HEIGHT)
 

@@ -1,8 +1,11 @@
-[gd_scene load_steps=4 format=3 uid="uid://cya0u5xbn7bro"]
+[gd_scene load_steps=7 format=3 uid="uid://cya0u5xbn7bro"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsable.gd" id="1_sojnc"]
-[ext_resource type="Texture2D" uid="uid://wu67h7gvscjn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/triangle_left.png" id="2_fypka"]
+[ext_resource type="Texture2D" uid="uid://b68lvb1tmrcra" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="2_3wwet"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_mt4v1"]
+[ext_resource type="Texture2D" uid="uid://ctyqjlwr4ysok" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_C.png" id="3_vtgcq"]
+[ext_resource type="Texture2D" uid="uid://cbbivg728n08h" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_H.png" id="4_owng8"]
+[ext_resource type="Texture2D" uid="uid://d3lsg3lbul34y" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_D.png" id="5_c7usd"]
 
 [node name="VerticalCollapsible" type="VBoxContainer"]
 offset_right = 111.0
@@ -23,7 +26,10 @@ custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
-texture_normal = ExtResource("2_fypka")
+texture_normal = ExtResource("2_3wwet")
+texture_pressed = ExtResource("3_vtgcq")
+texture_hover = ExtResource("4_owng8")
+texture_disabled = ExtResource("5_c7usd")
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("3_mt4v1")
