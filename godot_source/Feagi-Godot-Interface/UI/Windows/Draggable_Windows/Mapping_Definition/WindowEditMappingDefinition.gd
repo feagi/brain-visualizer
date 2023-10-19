@@ -25,6 +25,7 @@ var _destinations_dropdown: CorticalDropDown
 var _mapping_details: WindowMappingDetails
 
 func _ready() -> void:
+	super()
 	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
 	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
 	_mapping_details = $BoxContainer/Mapping_Details
