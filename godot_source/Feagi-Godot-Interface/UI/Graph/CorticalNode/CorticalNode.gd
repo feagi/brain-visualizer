@@ -2,6 +2,8 @@ extends GraphNode
 class_name CorticalNode
 ## Represents a Cortical Area in a node graph
 
+signal moved(cortical_node: CorticalNode, new_location: Vector2i)
+
 enum ConnectionAvailibility {
 	BOTH,
 	INPUT_ONLY,
@@ -58,8 +60,7 @@ func _gui_input(event):
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
-	var arr_position: Array = FEAGIUtils.vector2i_to_array(to_position)
-	FeagiRequests.set_cortical_area_properties( _cortical_area_ref.cortical_ID, {"cortical_coordinates_2d": arr_position})
+	moved.emit(self, to_position)
 
 func _update_cortical_name(new_name: StringName, _this_cortical_area: CorticalArea) -> void:
 	title = new_name

@@ -6,11 +6,14 @@ const NODE_SIZE: Vector2i = Vector2i(175, 86)
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
 @export var algorithm_cortical_area_spacing: Vector2i =  Vector2i(10,6)
+@export var move_time_delay_before_update_FEAGI: float = 10.0
 
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
 var _connection_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/ConnectionButton.tscn")
 var _spawn_sorter: CorticalNodeSpawnSorter
 var _connection_buttons: Dictionary = {}
+var _move_timer: Timer
+var _moved_cortical_areas_buffer: Dictionary = {}
 
 func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(feagi_spawn_single_cortical_node)
@@ -19,6 +22,11 @@ func _ready():
 	FeagiCacheEvents.cortical_areas_disconnected.connect(feagi_delete_established_connection)
 	FeagiEvents.genome_is_about_to_reset.connect(_on_genome_reset)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
+
+	_move_timer = $Timer
+	_move_timer.wait_time = move_time_delay_before_update_FEAGI
+	_move_timer.one_shot = true
+	_move_timer.timeout.connect(_move_timer_finished)
 
 	connection_request.connect(_user_request_connection)
 	disconnection_request.connect(_user_request_connection_deletion)
@@ -37,9 +45,11 @@ func feagi_spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNo
 			offset = Vector2(0.0,0.0) # TODO use center of view instead
 	add_child(cortical_node)
 	cortical_node.setup(cortical_area, offset)
+	cortical_node.moved.connect(_cortical_node_moved)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
 	
-	#cortical_node.user_started_connection_from.connect(user_start_drag_new_connection)
+	
+
 	return cortical_node
 
 
@@ -97,6 +107,21 @@ func feagi_delete_established_connection(source: CorticalArea, destination: Cort
 				_connection_buttons.erase(source.cortical_ID)
 	
 	disconnect_node(source.cortical_ID, 0, destination.cortical_ID, 0)
+
+## Every time a cortical node moves, store and send it when time is ready
+func _cortical_node_moved(node: CorticalNode, new_position: Vector2i) -> void:
+	print("Buffering change in position of cortical area " + node.cortical_area_ID)
+	if _moved_cortical_areas_buffer == {}:
+		print("Starting 2D move timer for %d seconds" % move_time_delay_before_update_FEAGI)
+		_move_timer.start()
+	_moved_cortical_areas_buffer[node.cortical_area_ID] = new_position
+
+## When the move timer goes off, send all the buffered cortical areas with their new positions to feagi
+func _move_timer_finished():
+	print("Sending change of 2D positions for %d cortical area(s)" % len(_moved_cortical_areas_buffer.keys()))
+	FeagiRequests.request_mass_change_2D_positions(_moved_cortical_areas_buffer)
+	_moved_cortical_areas_buffer = {}
+
 
 ## User requested a connection. Note that this function is going to be redone in the graph edit refactor
 func _user_request_connection(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
