@@ -320,6 +320,7 @@ func PUT_GE_morphology(response_code: int, _response_body: PackedByteArray, chan
 
 func PUT_GE_coord2D(_response_code: int, _response_body: PackedByteArray, changed_IDs_and_locations: Dictionary) -> void:
 	# TODO catch errors - at this time feagi only returns 200
+	print("FEAGI: Confirmed the mass 2D movement of %d cortical areas" % len(changed_IDs_and_locations.keys()))
 	FeagiCache.cortical_areas_cache.FEAGI_mass_update_2D_positions(changed_IDs_and_locations)
 
 ## returns nothing, so we passthrough the deleted cortical ID
