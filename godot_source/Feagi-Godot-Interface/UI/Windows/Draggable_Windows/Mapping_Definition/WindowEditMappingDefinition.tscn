@@ -5,8 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CorticalDropDown.gd" id="2_ds7ss"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_12gsw"]
-[ext_resource type="Texture2D" uid="uid://dddettdqyrrt2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow.png" id="3_skqpl"]
 [ext_resource type="PackedScene" uid="uid://c4hu4bdxc8gu3" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowMappingDetails.tscn" id="4_6ry0b"]
+[ext_resource type="Texture2D" uid="uid://b68lvb1tmrcra" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="5_t4qeq"]
 
 [node name="mapping_definition" type="Panel"]
 offset_top = 40.0
@@ -53,7 +53,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 size_flags_horizontal = 4
-texture = ExtResource("3_skqpl")
+texture = ExtResource("5_t4qeq")
 expand_mode = 1
 
 [node name="G2" type="Control" parent="BoxContainer/SourceAndDestination"]
@@ -100,7 +100,7 @@ offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
 title = "Edit Mappings"
-automatic_setup_closing = false
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"edit_mappings"
 
 [node name="Title_Text" parent="TitleBar" index="1"]

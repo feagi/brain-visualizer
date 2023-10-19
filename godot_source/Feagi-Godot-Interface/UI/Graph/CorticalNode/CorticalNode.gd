@@ -1,14 +1,14 @@
-extends Control
+extends GraphNode
 class_name CorticalNode
 ## Represents a Cortical Area in a node graph
+
+signal moved(cortical_node: CorticalNode, new_location: Vector2i)
 
 enum ConnectionAvailibility {
 	BOTH,
 	INPUT_ONLY,
 	OUTPUT_ONLY,
 }
-
-signal user_started_connection_from(cortical_area: CorticalNode)
 
 var cortical_area_name: StringName:
 	get:
@@ -21,69 +21,46 @@ var cortical_area_ID: StringName:
 		if(_cortical_area_ref):
 			return _cortical_area_ref.cortical_ID
 		return "ERROR NOT SETUP"
-var connection_input: ConnectionButtonPoint:
-	get: return _connection_input
-var connection_output: ConnectionButtonPoint:
-	get: return _connection_output
 var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
 
-var cortical_connection_destinations: Dictionary = {}
-
 var _cortical_area_ref: CorticalArea
-var _title_bar: TitleBar
-var _cortical_name_text: Label_Element
-var _connection_input: ConnectionButtonPoint
-var _connection_output: ConnectionButtonPoint
-
 
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
-	_title_bar = $TitleBar
-	_cortical_name_text = $Cortical_Name
-	_connection_input = $Connection_In
-	_connection_output = $Connection_Out
-
-	_title_bar.close_pressed.connect(_user_request_delete_cortical_area)
-	_title_bar.dragged.connect(_on_title_bar_drag)
-	_title_bar.drag_finished.connect(_on_finish_drag)
-	gui_input.connect(_on_interact)
+	dragged.connect(_on_finish_drag)
+	close_request.connect(_user_request_delete_cortical_area)
 	
-
-
 ## Since we cannot use _init for scenes, use this instead to initialize data
 func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
-	position = node_position
-	_title_bar.title = _cortical_area_ref.name
-	_cortical_name_text.text = _cortical_area_ref.cortical_ID
-
-
+	position_offset = node_position
+	title = _cortical_area_ref.name
+	name = _cortical_area_ref.cortical_ID
+	_cortical_area_ref.name_updated.connect(_update_cortical_name)
+	
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
-
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:
-	print("User requesting cortical area deletion from Circuit Builder")
+	print("GRAPH: User requesting deletion of cortical area " +  cortical_area_ID)
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
-func _on_title_bar_change_size() -> void:
-	pass
-
-func _on_title_bar_drag(_current_position: Vector2, _delta_offset: Vector2) -> void:
-	_connection_input.moved.emit(_connection_input.graph_position)
-	_connection_output.moved.emit(_connection_output.graph_position)
-
-func _on_interact(event):
+func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event
+	if !mouse_event.is_pressed(): return
+	if !mouse_event.button_index != 0: return
+	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
 	if !mouse_event.double_click: return
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
 
-func _on_finish_drag(last_position: Vector2) -> void:
-	var arr_position: Array = FEAGIUtils.vector2i_to_array(last_position)
-	FeagiRequests.set_cortical_area_properties( _cortical_area_ref.cortical_ID, {"cortical_coordinates_2d": arr_position})
+func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
+	moved.emit(self, to_position)
+
+func _update_cortical_name(new_name: StringName, _this_cortical_area: CorticalArea) -> void:
+	title = new_name

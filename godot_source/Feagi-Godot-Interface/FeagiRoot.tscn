@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=27 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
@@ -12,9 +12,6 @@
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
-[ext_resource type="PackedScene" uid="uid://cryi2oimxnjhl" path="res://Feagi-Godot-Interface/UI/Windows/Quick_Connect/quick_connect.tscn" id="9_tojk7"]
-[ext_resource type="PackedScene" uid="uid://cou6ppgui40tg" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_Display/TutorialDisplay.tscn" id="10_v25c0"]
-[ext_resource type="PackedScene" uid="uid://i7yjj2krrgit" path="res://Feagi-Godot-Interface/UI/Windows/Tutorial_box/TutorialBar.tscn" id="11_ugquj"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/FullScreenControl.gd" id="11_xxcay"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.gd" id="13_jugsj"]
@@ -22,6 +19,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/timer.gd" id="14_fab5w"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/VersionLabel.gd" id="22_3kpmq"]
+[ext_resource type="PackedScene" uid="uid://4jumuijtufu5" path="res://Feagi-Godot-Interface/UI/Notifications/NotificationSystem.tscn" id="23_c734s"]
 
 [sub_resource type="Environment" id="Environment_jonnd"]
 background_mode = 1
@@ -140,39 +138,6 @@ theme = ExtResource("16_jeyol")
 [node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="22"]
 script = ExtResource("14_fab5w")
 
-[node name="Quick_Connect" parent="UI/Windows" instance=ExtResource("9_tojk7")]
-visible = false
-anchor_left = 0.532986
-anchor_top = 0.603
-anchor_right = 0.533
-anchor_bottom = 0.603395
-offset_top = 0.255981
-offset_right = 357.984
-offset_bottom = 152.0
-theme = ExtResource("16_jeyol")
-
-[node name="TextureButton" parent="UI/Windows/Quick_Connect/morphology_menulist/Scroll_Vertical/VBoxContainer" index="0"]
-custom_minimum_size = Vector2(50, 200)
-
-[node name="TutorialDisplay" parent="UI/Windows" instance=ExtResource("10_v25c0")]
-visible = false
-anchor_left = 0.400174
-anchor_top = 0.212963
-anchor_right = 0.400174
-anchor_bottom = 0.212963
-offset_top = -1.0
-offset_right = 651.0
-offset_bottom = 497.0
-theme = ExtResource("16_jeyol")
-
-[node name="TutorialBar" parent="UI/Windows" instance=ExtResource("11_ugquj")]
-visible = false
-offset_left = 785.0
-offset_top = 176.0
-offset_right = 985.0
-offset_bottom = 376.0
-theme = ExtResource("16_jeyol")
-
 [node name="Cortical_List" parent="UI/Windows" instance=ExtResource("14_db7m2")]
 visible = false
 anchors_preset = 5
@@ -201,6 +166,8 @@ size_flags_vertical = 8
 theme_override_colors/font_color = Color(0.882353, 0.882353, 0.882353, 0.372549)
 script = ExtResource("22_3kpmq")
 
+[node name="NotificationSystem" parent="UI" instance=ExtResource("23_c734s")]
+
 [connection signal="mode_changed" from="UI" to="UI/Windows/TopBar" method="_mode_changed"]
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
@@ -208,16 +175,10 @@ script = ExtResource("22_3kpmq")
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows" method="spawn_import_circuit"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows/Cortical_List" method="_on_ca_view_button_pressed"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows" method="spawn_create_cortical"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows/Quick_Connect" method="_on_ca_connect_button_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows" method="spawn_quick_connect"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMAdd_Button" to="UI/Windows" method="spawn_create_morphology"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMSettings_Button" to="UI/Windows" method="spawn_manager_morphology"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/Mode_Button" to="UI" method="_toggle_between_views"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows/TutorialBar" method="_on_tu_button_pressed"]
-[connection signal="pressed" from="UI/Windows/Quick_Connect/source" to="UI/Windows/Quick_Connect" method="_on_source_pressed"]
-[connection signal="pressed" from="UI/Windows/Quick_Connect/destination" to="UI/Windows/Quick_Connect" method="_on_destination_pressed"]
-[connection signal="pressed" from="UI/Windows/TutorialBar/t1" to="UI/Windows/TutorialDisplay" method="_on_texture_button_pressed_from_TutorialBar"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows" method="spawn_tutorial"]
 
 [editable path="UI/Windows/TopBar"]
-[editable path="UI/Windows/Quick_Connect"]
-[editable path="UI/Windows/Quick_Connect/morphology_menulist/Scroll_Vertical"]
-[editable path="UI/Windows/TutorialBar"]

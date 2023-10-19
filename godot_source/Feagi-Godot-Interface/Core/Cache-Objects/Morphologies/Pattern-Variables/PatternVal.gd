@@ -32,7 +32,11 @@ static func can_be_PatternVal(input: Variant) -> bool:
 		return true
 	return false
 
-## mainly used when we wish to void crossing references
+## Create an empty PatternVal (default to 0)
+static func create_empty() -> PatternVal:
+	return PatternVal.new(0)
+
+## Mainly used when we wish to void crossing references
 func duplicate() -> PatternVal:
 	return PatternVal.new(_data)
 

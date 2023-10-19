@@ -95,9 +95,11 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, morphology_name: StringName) -> void:
 	if response_code == 400:
 		push_error("Unable to access in FEAGI morphology of name %s" % morphology_name)
+		VisConfig.UI_manager.make_notification("Unable to access in FEAGI morphology of name %s" % morphology_name, SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	if response_code == 404:
 		push_error("Unable to locate in FEAGI morphology of name %s" % morphology_name)
+		VisConfig.UI_manager.make_notification("Unable to locate in FEAGI morphology of name %s" % morphology_name, SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
 		push_error("RACE CONDITION! Morphology %s was removed before we returned usage information! Skipping!" % morphology_name)
@@ -113,9 +115,11 @@ func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if _response_code == 404:
 		push_error("FEAGI was unable to find the requested morphology details. Skipping!")
+		VisConfig.UI_manager.make_notification("FEAGI was unable to find the requested morphology details. Skipping!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	if _response_code == 400:
 		push_error("FEAGI had an unknown error retrieving morpholgy details. Skipping!")
+		VisConfig.UI_manager.make_notification("FEAGI had an unknown error retrieving morpholgy details. Skipping!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	var morphology_dict: Dictionary = _body_to_dictionary(response_body)
 	FeagiCache.morphology_cache.update_morphology_by_dict(morphology_dict)
@@ -123,6 +127,7 @@ func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irr
 func GET_MON_neuron_membranePotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
 	if response_code == 404:
 		push_warning("FEAGI unable to check for membrane potential monitoring status!")
+		VisConfig.UI_manager.make_notification("Unable to get Membrane Potential Monitoring State. Are you running the insights DB?", SingleNotification.NOTIFICATION_TYPE.WARNING)
 		return
 	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		push_error("Unable to locate cortical ID " + corticalID)
@@ -132,6 +137,7 @@ func GET_MON_neuron_membranePotential(response_code: int, response_body: PackedB
 func GET_MON_neuron_synapticPotential(response_code: int, response_body: PackedByteArray, corticalID: String) -> void:
 	if response_code == 404:
 		push_warning("FEAGI unable to check for synaptic potential monitoring status!")
+		VisConfig.UI_manager.make_notification("Unable to get Synaptic Potential Monitoring State. Are you running the insights DB?", SingleNotification.NOTIFICATION_TYPE.WARNING)
 		return
 	if corticalID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		push_error("Unable to locate cortical ID " + corticalID)
@@ -145,14 +151,14 @@ func GET_PNS_current_ipu(response_code: int, response_body: PackedByteArray, _ir
 	if response_code != 200:
 		push_error("Unknown error trying to get current PNS IPU templates!")
 		return
-	var arr: Array[String] = _body_to_string_array(response_body)
+	var _arr: Array[String] = _body_to_string_array(response_body)
 	# TODO what to do with this?
 
 func GET_PNS_current_opu(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if response_code != 200:
 		push_error("Unknown error trying to get current PNS OPU templates!")
 		return
-	var arr: Array[String] = _body_to_string_array(response_body)
+	var _arr: Array[String] = _body_to_string_array(response_body)
 	# TODO what to do with this?
 
 func GET_GE_corticalTypes(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
@@ -223,7 +229,9 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 	if "cortical_id" not in cortical_ID_raw.keys():
 		push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
 		return
-
+	
+	VisConfig.UI_manager.make_notification("Cortical Area Created!")
+	
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
 	
@@ -251,12 +259,13 @@ func POST_GE_morphology(_response_code: int, _response_body: PackedByteArray, re
 		return
 	FeagiCache.morphology_cache.add_morphology_by_dict(requested_properties)
 
-func POST_GE_append(_response_code: int, _response_body: PackedByteArray, requested_properties: Dictionary) -> void:
+func POST_GE_append(_response_code: int, _response_body: PackedByteArray, _requested_properties: Dictionary) -> void:
 	return #TODO trigger reload?
 
 func POST_MON_neuron_membranePotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for membrane potential monitoring!")
+		VisConfig.UI_manager.make_notification("FEAGI unable to set setting for membrane potential monitoring!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential
 		return
 	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -268,6 +277,7 @@ func POST_MON_neuron_membranePotential(response_code: int, _response_body: Packe
 func POST_MON_neuron_synapticPotential(response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
 	if response_code == 404:
 		push_error("FEAGI unable to set setting for synaptic potential monitoring!")
+		VisConfig.UI_manager.make_notification("FEAGI unable to set setting for synaptic potential monitoring!", SingleNotification.NOTIFICATION_TYPE.ERROR)
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential
 		return	
 	if set_values["ID"] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -293,8 +303,8 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	cortical_src.set_efferent_connection(cortical_dst, mapping_count)
 
 
-func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
-	if _response_code == 422:
+func PUT_GE_corticalArea(response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
+	if response_code == 422:
 		push_error("Unable to process new properties for cortical area %s, skipping!" % [changed_cortical_ID])
 		return
 	
@@ -302,15 +312,21 @@ func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, c
 	FeagiRequests.refresh_cortical_area(FeagiCache.cortical_areas_cache.cortical_areas[changed_cortical_ID], true)
 	pass
 
-func PUT_GE_morphology(_response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:
-	if _response_code == 422:
+func PUT_GE_morphology(response_code: int, _response_body: PackedByteArray, changed_morphology_name: StringName) -> void:
+	if response_code == 422:
 		push_error("Unable to process new properties for morphology %s, skipping!" % [changed_morphology_name])
 		return
 	FeagiRequests.refresh_morphology_properties(changed_morphology_name)
 
+func PUT_GE_coord2D(_response_code: int, _response_body: PackedByteArray, changed_IDs_and_locations: Dictionary) -> void:
+	# TODO catch errors - at this time feagi only returns 200
+	print("FEAGI: Confirmed the mass 2D movement of %d cortical areas" % len(changed_IDs_and_locations.keys()))
+	FeagiCache.cortical_areas_cache.FEAGI_mass_update_2D_positions(changed_IDs_and_locations)
+
 ## returns nothing, so we passthrough the deleted cortical ID
 func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, deleted_cortical_ID: StringName) -> void:
 	print("FEAGI confirmed deletion of cortical area " + deleted_cortical_ID)
+	VisConfig.UI_manager.make_notification("Cortical Area %s Deleted!" %FeagiCache.cortical_areas_cache.cortical_areas[deleted_cortical_ID].name)
 	FeagiCache.cortical_areas_cache.remove_cortical_area(deleted_cortical_ID)
 
 func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, deleted_morphology_name: StringName) -> void:

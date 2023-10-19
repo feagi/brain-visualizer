@@ -1,49 +1,40 @@
-extends Control
+extends GenericTextIDScroll
 class_name MorphologyScroll
 ## Keeps up to date with the morphology listing to show a scroll list of all morphologies
 
 signal morphology_selected(morphology: Morphology)
-signal previously_selected_morphology_removed(morphology: Morphology)
 
 @export var load_morphologies_on_load: bool = true
 
-var selected_morphology: Morphology
-
-var _scroll_ref: BaseScroll
 
 func _ready():
-	_scroll_ref = $Scroll_Vertical
+	super()
+	item_selected.connect(_morphology_button_pressed)
 	FeagiCacheEvents.morphology_removed.connect(_respond_to_deleted_morphology)
 	FeagiCacheEvents.morphology_added.connect(_respond_to_added_morphology)
 	if load_morphologies_on_load:
-		populate_from_cache()
-	_scroll_ref.custom_minimum_size = custom_minimum_size
+		repopulate_from_cache()
 
-func populate_from_cache() -> void:
-	clear_list()
+## Clears list, then loads morphology list from FeagiCache
+func repopulate_from_cache() -> void:
+	delete_all()
 	for morphology in FeagiCache.morphology_cache.available_morphologies.values():
-		_spawn_morphology_button(morphology)
+		append_single_item(morphology, morphology.name)
 
-func clear_list() -> void:
-	_scroll_ref.remove_all_children()
-
+## Manually set the selected morphology through code. Causes the button to emit the selected signal
 func select_morphology(morphology: Morphology) -> void:
-	selected_morphology = morphology
-	#TODO there should be some button highlighting in here!
+	# This is essentially a pointless proxy, only existing for convinient naming purposes
+	set_selected(morphology)
 
-func _spawn_morphology_button(morphology: Morphology) -> void:
-	var morphology_button: ScrollButtonPrefab = _scroll_ref.spawn_list_item({
-		"name": morphology.name,
-		"text": morphology.name
-	})
-	morphology_button.prefab_pressed.connect(_morphology_button_pressed)
+## User selected morpholgy from the list
+func _morphology_button_pressed(morphology_selection: Morphology) -> void:
+	# This is essentially a pointless proxy, only existing for convinient naming purposes
+	morphology_selected.emit(morphology_selection)
 
-func _morphology_button_pressed(button: ScrollButtonPrefab) -> void:
-	selected_morphology = FeagiCache.morphology_cache.available_morphologies[button.name]
-	morphology_selected.emit(FeagiCache.morphology_cache.available_morphologies[button.name])
 
 func _respond_to_deleted_morphology(morphology: Morphology) -> void:
-	_scroll_ref.remove_child_by_name(morphology.name)
+	remove_by_ID(morphology)
+
 
 func _respond_to_added_morphology(morphology: Morphology) -> void:
-	_spawn_morphology_button(morphology)
+	append_single_item(morphology, morphology.name)

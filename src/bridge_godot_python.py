@@ -348,7 +348,6 @@ def main():
     print(
         "================================ @@@@@@@@@@@@@@@ "
         "==========================================")
-    print("version: ", __version__)
 
     # FEAGI section start
     print("Connecting to FEAGI resources...")
@@ -361,7 +360,8 @@ def main():
     runtime_data["feagi_state"] = feagi.feagi_registration(feagi_auth_url=feagi_auth_url,
                                                            feagi_settings=feagi_settings,
                                                            agent_settings=agent_settings,
-                                                           capabilities=capabilities)
+                                                           capabilities=capabilities,
+                                                           controller_version=__version__)
     agent_data_port = str(runtime_data["feagi_state"]['agent_state']['agent_data_port'])
     print("** **", runtime_data["feagi_state"])
     feagi_settings['feagi_burst_speed'] = float(runtime_data["feagi_state"]['burst_duration'])
