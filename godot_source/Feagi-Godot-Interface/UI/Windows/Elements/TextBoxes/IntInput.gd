@@ -12,6 +12,7 @@ signal int_confirmed(new_int: int)
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
+@export var emit_when_enter_pressed: bool = true
 ## The integer to start with
 @export var initial_int: int = 0
 ## what to add before the int
@@ -33,6 +34,8 @@ func _ready():
 	_set_visible_text(initial_int)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+	if emit_when_enter_pressed:
+		text_submitted.connect(_enter_proxy)
 
 ## Used to update the float value externally programatically (IE not from the user)
 func external_update_int(new_int: int) -> void:
@@ -62,6 +65,10 @@ func _emit_if_text_changed() -> void:
 	_previous_int = FEAGIUtils.bounds_int(text.to_int(), min_value, max_value)
 	int_confirmed.emit(_previous_int)
 	_set_visible_text(_previous_int)
+	release_focus()
 
 func _set_visible_text(new_int: int) -> void:
 	text = prefix + str(new_int) + suffix
+
+func _enter_proxy(_text: String) -> void:
+	_emit_if_text_changed()
