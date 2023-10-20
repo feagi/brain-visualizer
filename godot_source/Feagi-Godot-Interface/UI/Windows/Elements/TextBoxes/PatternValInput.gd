@@ -14,6 +14,7 @@ signal patternval_confirmed(new_patternval: PatternVal)
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
+@export var emit_when_enter_pressed: bool = true
 ## The float to start with
 ## due to godot limitations, can only use int here
 @export var initial_value: int = 0
@@ -34,6 +35,8 @@ func _ready():
 	_set_visible_text(_previous_patternval.as_StringName)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+	if emit_when_enter_pressed:
+		text_submitted.connect(_enter_proxy)
 
 ## Used to update the float value externally programatically (IE not from the user)
 func external_update_float(new_patternval: PatternVal) -> void:
@@ -61,6 +64,10 @@ func _emit_if_text_changed() -> void:
 		patternval_confirmed.emit(_previous_patternval.duplicate()) 
 		return
 	_set_visible_text(_previous_patternval.as_StringName)
+	release_focus()
 
 func _set_visible_text(new_patternval_str: StringName) -> void:
 	text = prefix + new_patternval_str + suffix
+
+func _enter_proxy(_text: String) -> void:
+	_emit_if_text_changed()
