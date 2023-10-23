@@ -104,65 +104,58 @@ func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cort
 
 ## User pressed update button
 func _user_requests_update() -> void:
+	if _growing_cortical_update == {}:
+		# If user presses update button but no properties are set to change, do nothing
+		_update_button.disabled = true
+		return
 	print("User requests %d changes to cortical details" % [len(_growing_cortical_update.keys())])
 	user_requested_update.emit(_growing_cortical_update)
 
 func user_request_Voxel_Neuron_Density(value: int) -> void:
 	_growing_cortical_update["cortical_neuron_per_vox_count"] = value
-	_update_button.disabled = false
 
 func user_request_Synaptic_Attractivity(value: int) -> void:
 	_growing_cortical_update["cortical_synaptic_attractivity"] = value
-	_update_button.disabled = false
 
 func user_request_Post_Synaptic_Potential(value: int) -> void:
 	_growing_cortical_update["neuron_post_synaptic_potential"] = value
-	_update_button.disabled = false
 
 func user_request_PSP_Max(value: int) -> void:
 	_growing_cortical_update["neuron_post_synaptic_potential_max"] = value
-	_update_button.disabled = false
 
 func user_request_Fire_Threshold(value: int) -> void:
 	_growing_cortical_update["neuron_fire_threshold"] = value
-	_update_button.disabled = false
 
 func user_request_Threshold_Limit(value: int) -> void:
 	_growing_cortical_update["neuron_firing_threshold_limit"] = value
-	_update_button.disabled = false
 
 func user_request_Refactory_Period(value: int) -> void:
 	_growing_cortical_update["neuron_refractory_period"] = value
-	_update_button.disabled = false
 
 func user_request_Leak_Constant(value: int) -> void:
 	_growing_cortical_update["neuron_leak_coefficient"] = value
-	_update_button.disabled = false
 
 func user_request_Leak_Varibility(value: int) -> void:
 	_growing_cortical_update["neuron_leak_variability"] = value
-	_update_button.disabled = false
 
 func user_request_Threshold_Inc(value: Vector3) -> void:
 	_growing_cortical_update["neuron_fire_threshold_increment"] = FEAGIUtils.vector3_to_array(value)
-	_update_button.disabled = false
 
 func user_request_Consecutive_Fire_Count(value: int) -> void:
 	_growing_cortical_update["neuron_consecutive_fire_count"] = value
-	_update_button.disabled = false
 
 func user_request_Snooze_Period(value: int) -> void:
 	_growing_cortical_update["neuron_snooze_period"] = value
-	_update_button.disabled = false
 
 func user_request_Degeneracy_Constant(value: int) -> void:
 	_growing_cortical_update["neuron_degeneracy_coefficient"] = value
-	_update_button.disabled = false
 
 func user_request_PSP_Uniforimity(value: bool) -> void:
 	_growing_cortical_update["neuron_psp_uniform_distribution"] = value
-	_update_button.disabled = false
 
 func user_request_MP_Accumumulation(value: bool) -> void:
 	_growing_cortical_update["neuron_mp_charge_accumulation"] = value
+
+# Connected via TSCN to editable textboxes
+func _enable_update_button():
 	_update_button.disabled = false

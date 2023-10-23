@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://5gbqaf1gqn30"]
+[gd_scene load_steps=14 format=3 uid="uid://5gbqaf1gqn30"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.gd" id="1_1jbcd"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_dxtt6"]
@@ -9,7 +9,10 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 [ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.tscn" id="5_qeai5"]
 [ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.tscn" id="6_n2r01"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_xqqon"]
+[ext_resource type="Texture2D" uid="uid://dp88xvwj1bkx8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="9_cmtl0"]
+[ext_resource type="Texture2D" uid="uid://dxompi5edsmi4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="10_i00at"]
+[ext_resource type="Texture2D" uid="uid://5245cp7ae0tc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="11_7n75t"]
+[ext_resource type="Texture2D" uid="uid://c2thohys4ix5e" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="12_irmib"]
 
 [node name="LeftBar" type="Panel"]
 offset_top = 50.0
@@ -52,10 +55,23 @@ start_open = false
 prefab_to_spawn = ExtResource("6_n2r01")
 section_text = &"Connections"
 
-[node name="Delete_Button" type="Button" parent="Main_Body"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Main_Body"]
 layout_mode = 2
-text = "DELETE CORTICAL AREA"
-script = ExtResource("7_xqqon")
+
+[node name="DeleteText" type="Label" parent="Main_Body/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DELETE Cortical Area"
+
+[node name="DeleteButton" type="TextureButton" parent="Main_Body/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+texture_normal = ExtResource("9_cmtl0")
+texture_pressed = ExtResource("10_i00at")
+texture_hover = ExtResource("11_7n75t")
+texture_disabled = ExtResource("12_irmib")
+ignore_texture_size = true
+stretch_mode = 0
 
 [node name="TitleBar" parent="." instance=ExtResource("4_pwsxt")]
 layout_mode = 0
@@ -70,4 +86,4 @@ automatic_setup_window_closing_for_window_manager_name = &"left_bar"
 [connection signal="resized" from="Main_Body/Middle_Section" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Premium_Section" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Bottom_Section" to="Main_Body" method="recalculate_size"]
-[connection signal="pressed" from="Main_Body/Delete_Button" to="." method="_user_pressed_delete_button"]
+[connection signal="pressed" from="Main_Body/HBoxContainer/DeleteButton" to="." method="_user_pressed_delete_button"]
