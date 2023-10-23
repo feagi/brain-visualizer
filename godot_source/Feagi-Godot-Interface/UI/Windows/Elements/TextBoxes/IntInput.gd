@@ -9,6 +9,7 @@ class_name IntInput
 
 ## Only emits if user changes the text THEN focuses off the textbox
 signal int_confirmed(new_int: int)
+signal user_interacted()
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
@@ -34,6 +35,7 @@ func _ready():
 	_set_visible_text(initial_int)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+	text_changed.connect(_on_interaction)
 	if emit_when_enter_pressed:
 		text_submitted.connect(_enter_proxy)
 
@@ -72,3 +74,6 @@ func _set_visible_text(new_int: int) -> void:
 
 func _enter_proxy(_text: String) -> void:
 	_emit_if_text_changed()
+
+func _on_interaction(_irrelevant_text: String) -> void:
+	user_interacted.emit()
