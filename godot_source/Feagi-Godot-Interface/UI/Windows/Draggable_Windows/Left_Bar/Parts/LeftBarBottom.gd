@@ -6,8 +6,8 @@ var _scroll_efferent: BaseScroll
 var _cortical_area_ref: CorticalArea
 
 func _ready() -> void:
-	_scroll_afferent = $Afferent
-	_scroll_efferent = $Efferent
+	_scroll_afferent = $MarginContainer/Afferent
+	_scroll_efferent = $MarginContainer2/Efferent
 
 ## Get initial connections when the window is created
 func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
