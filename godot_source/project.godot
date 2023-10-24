@@ -28,10 +28,12 @@ SignalDebugHelper="*res://Feagi-Godot-Interface/Core/SignalDebugHelper.gd"
 
 [debug]
 
-gdscript/warnings/unsafe_property_access=1
-gdscript/warnings/unsafe_method_access=1
 gdscript/warnings/unsafe_cast=1
 gdscript/warnings/unsafe_call_argument=1
+
+[gui]
+
+theme/custom="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres"
 
 [input]
 

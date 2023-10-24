@@ -14,7 +14,6 @@ parameter_name = "SkyColor"
 input_name = "eyedir"
 
 [sub_resource type="VisualShaderNodeVectorDecompose" id="VisualShaderNodeVectorDecompose_55ixs"]
-output_port_for_preview = 2
 
 [sub_resource type="VisualShaderNodeClamp" id="VisualShaderNodeClamp_n5fb0"]
 default_input_values = [0, Vector3(0, 0, 0), 1, Vector3(0, 0, 0), 2, Vector3(1, 1, 1)]
@@ -77,7 +76,6 @@ void sky() {
 
 }
 "
-graph_offset = Vector2(-518.794, -86.8904)
 mode = 3
 flags/use_half_res_pass = false
 flags/use_quarter_res_pass = false
@@ -87,15 +85,15 @@ nodes/sky/0/position = Vector2(680, 220)
 nodes/sky/2/node = SubResource("VisualShaderNodeColorParameter_j77p3")
 nodes/sky/2/position = Vector2(-660, 640)
 nodes/sky/3/node = SubResource("VisualShaderNodeInput_eg3gn")
-nodes/sky/3/position = Vector2(-660, 240)
+nodes/sky/3/position = Vector2(-660, 160)
 nodes/sky/4/node = SubResource("VisualShaderNodeVectorDecompose_55ixs")
-nodes/sky/4/position = Vector2(-300, 220)
+nodes/sky/4/position = Vector2(-300, 140)
 nodes/sky/7/node = SubResource("VisualShaderNodeClamp_n5fb0")
 nodes/sky/7/position = Vector2(180, 260)
 nodes/sky/8/node = SubResource("VisualShaderNodeVectorOp_q67xp")
 nodes/sky/8/position = Vector2(-40, 200)
 nodes/sky/9/node = SubResource("VisualShaderNodeVec3Parameter_8jvhm")
-nodes/sky/9/position = Vector2(-660, 400)
+nodes/sky/9/position = Vector2(-640, 440)
 nodes/sky/10/node = SubResource("VisualShaderNodeMix_mnopd")
 nodes/sky/10/position = Vector2(440, 200)
 nodes/sky/11/node = SubResource("VisualShaderNodeColorParameter_hcjl7")
