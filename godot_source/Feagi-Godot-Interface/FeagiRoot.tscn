@@ -24,9 +24,9 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_s4mag"]
 shader = ExtResource("2_1kdqd")
-shader_parameter/HorizonColor = Color(0.317647, 0.321569, 0.756863, 1)
-shader_parameter/SkyColor = Color(0.133333, 0.34902, 1, 1)
-shader_parameter/Clamp = Vector3(0.2, 0.2, 1)
+shader_parameter/HorizonColor = Color(0, 0.0980392, 0.219608, 1)
+shader_parameter/SkyColor = Color(0, 0.223529, 0.447059, 1)
+shader_parameter/Clamp = Vector3(0.2, 0.1, 0.5)
 
 [sub_resource type="Sky" id="Sky_26ee3"]
 sky_material = SubResource("ShaderMaterial_s4mag")

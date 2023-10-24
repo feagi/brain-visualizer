@@ -1,22 +1,28 @@
-[gd_resource type="Theme" load_steps=11 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" load_steps=13 format=3 uid="uid://cjrivk0518jvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rwapg"]
-bg_color = Color(0, 0.188235, 0.384314, 1)
+bg_color = Color(0.152941, 0.192157, 0.254902, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_irgtr"]
 bg_color = Color(0.482353, 0.670588, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4t04p"]
-bg_color = Color(0, 0.27451, 0.541176, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u3iqt"]
 bg_color = Color(0.537255, 0.705882, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bimsq"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x416a"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u1fsi"]
-bg_color = Color(0, 0.105882, 0.235294, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uk23p"]
-bg_color = Color(0, 0.105882, 0.235294, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uh7ct"]
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
@@ -29,7 +35,7 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-bg_color = Color(0, 0.105882, 0.235294, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 anti_aliasing = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_242sy"]
@@ -42,6 +48,8 @@ Button/styles/disabled = SubResource("StyleBoxFlat_rwapg")
 Button/styles/hover = SubResource("StyleBoxFlat_irgtr")
 Button/styles/normal = SubResource("StyleBoxFlat_4t04p")
 Button/styles/pressed = SubResource("StyleBoxFlat_u3iqt")
+CheckButton/styles/hover = SubResource("StyleBoxFlat_bimsq")
+CheckButton/styles/hover_pressed = SubResource("StyleBoxFlat_x416a")
 CheckButton/styles/normal = SubResource("StyleBoxFlat_u1fsi")
 CheckButton/styles/pressed = SubResource("StyleBoxFlat_uk23p")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")

@@ -13,10 +13,10 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_tmy0u"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lphoj"]
-bg_color = Color(0, 0.105882, 0.235294, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ukkev"]
-bg_color = Color(0, 0.105882, 0.235294, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [node name="WindowCreateMorphology" type="Panel"]
 offset_top = 41.0
