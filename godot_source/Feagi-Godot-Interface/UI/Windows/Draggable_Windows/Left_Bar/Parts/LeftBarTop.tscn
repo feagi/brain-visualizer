@@ -9,8 +9,9 @@
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
 offset_right = -862.0
-offset_bottom = -404.0
+offset_bottom = -380.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_f8pnh")
@@ -85,3 +86,7 @@ size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
 script = ExtResource("4_vs7fw")
+
+[connection signal="user_interacted" from="Row_Cortical_Name/Cortical_Name" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Cortical_Size" to="." method="_enable_update_button"]

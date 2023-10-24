@@ -11,6 +11,7 @@ class_name PatternValInput
 
 ## Only emits if user changes the text THEN focuses off the textbox
 signal patternval_confirmed(new_patternval: PatternVal)
+signal user_interacted()
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
@@ -71,3 +72,6 @@ func _set_visible_text(new_patternval_str: StringName) -> void:
 
 func _enter_proxy(_text: String) -> void:
 	_emit_if_text_changed()
+
+func _on_interaction(_irrelevant_text: String) -> void:
+	user_interacted.emit()

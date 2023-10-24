@@ -1,18 +1,22 @@
 extends DraggableWindow
 class_name WindowLeftPanel
 
+const NUM_SECTIONS: int = 5
+
 var section_toggles: Array[bool]:
 	get:
-		var output: Array[bool] = [_top_collapsible.is_open, _middle_collapsible.is_open, _premium_collapsible.is_open, _bottom_collapsible.is_open]
+		var output: Array[bool] = [_top_collapsible.is_open, _middle_collapsible.is_open, _premium_collapsible.is_open, _bottom_collapsible.is_open, _danger_zone_collapsible.is_open]
 		return output
 	set(v):
-		if len(v) != 4:
-			push_warning("Left Bar section_toggles must be 4 long!")
+		
+		if len(v) != NUM_SECTIONS:
+			push_warning("Left Bar section_toggles must be %d long!" % NUM_SECTIONS)
 			return
 		_top_collapsible.is_open = v[0]
 		_middle_collapsible.is_open = v[1]
 		_premium_collapsible.is_open = v[2]
 		_bottom_collapsible.is_open = v[3]
+		_danger_zone_collapsible.is_open = v[4]
 
 var _cortical_area_ref: CorticalArea
 
@@ -20,11 +24,13 @@ var _top_collapsible: VerticalCollapsible
 var _middle_collapsible: VerticalCollapsible
 var _premium_collapsible: VerticalCollapsible
 var _bottom_collapsible: VerticalCollapsible
+var _danger_zone_collapsible: VerticalCollapsible
 
 var _top_section # cannot define type due to godot bug
 var _middle_section
 var _premium_section
 var _bottom_section
+var _danger_zone_section
 
 
 func _ready():
@@ -33,10 +39,12 @@ func _ready():
 	_middle_collapsible = $Main_Body/Middle_Section
 	_premium_collapsible = $Main_Body/Premium_Section
 	_bottom_collapsible = $Main_Body/Bottom_Section
+	_danger_zone_collapsible = $Main_Body/DangerZone_Section
 	_top_collapsible.setup()
 	_middle_collapsible.setup()
 	_premium_collapsible.setup()
 	_bottom_collapsible.setup()
+	_danger_zone_collapsible.setup()
 	if !(VisConfig.is_premium):
 		_premium_collapsible.section_title = "(PREMIUM) Cortical Area Monitoring"
 	
@@ -44,6 +52,7 @@ func _ready():
 	_middle_section = _middle_collapsible.collapsing_node
 	_premium_section = _premium_collapsible.collapsing_node
 	_bottom_section = _bottom_collapsible.collapsing_node
+	_danger_zone_section = _danger_zone_collapsible.collapsing_node
 	_top_section.user_requested_update.connect(_user_requested_update)
 	_middle_section.user_requested_update.connect(_user_requested_update)
 	FeagiCacheEvents.cortical_area_removed.connect(_FEAGI_deleted_cortical_area)
@@ -60,6 +69,7 @@ func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	_middle_section.initial_values_from_FEAGI(cortical_area_reference)
 	_premium_section.initial_values_from_FEAGI(cortical_area_reference)
 	_bottom_section.initial_values_from_FEAGI(cortical_area_reference)
+	_danger_zone_section.initial_values_from_FEAGI(cortical_area_reference)
 	# Odds are we don't have the latest data from FEAGI, lets call in a refresh
 	FeagiRequests.refresh_cortical_area(cortical_area_reference)
 
@@ -79,11 +89,6 @@ func load_from_memory(previous_data: Dictionary) -> void:
 ## Called from top or middle, user sent dict of properties to request FEAGI to set
 func _user_requested_update(changed_values: Dictionary) -> void:
 	FeagiRequests.set_cortical_area_properties(_cortical_area_ref.cortical_ID, changed_values)
-
-## Called via delete button press (signal connected via tscn)
-func _user_pressed_delete_button() -> void:
-	print("Left Bar requesting cortical area deletion")
-	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 func _FEAGI_deleted_cortical_area(removed_cortical_area: CorticalArea):
 	# confirm this is the cortical area removed
