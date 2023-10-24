@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://5gbqaf1gqn30"]
+[gd_scene load_steps=12 format=3 uid="uid://5gbqaf1gqn30"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.gd" id="1_1jbcd"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_dxtt6"]
@@ -10,6 +10,9 @@
 [ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.tscn" id="5_qeai5"]
 [ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.tscn" id="6_n2r01"]
 [ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarDangerZone.tscn" id="9_6fg7f"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8nka"]
+bg_color = Color(0.243137, 0.156863, 0.270588, 1)
 
 [node name="LeftBar" type="Panel"]
 offset_top = 50.0
@@ -31,29 +34,34 @@ script = ExtResource("3_thls4")
 [node name="Top_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 prefab_to_spawn = ExtResource("3_q86xe")
 section_text = &"Summary"
 
 [node name="Middle_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
 prefab_to_spawn = ExtResource("4_3w01f")
 section_text = &"Details"
 
 [node name="Premium_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
 prefab_to_spawn = ExtResource("5_qeai5")
 section_text = &"Cortical Area Monitoring"
 
 [node name="Bottom_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
 prefab_to_spawn = ExtResource("6_n2r01")
 section_text = &"Connections"
 
 [node name="DangerZone_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
 prefab_to_spawn = ExtResource("9_6fg7f")
 section_text = &"Danger Zone"

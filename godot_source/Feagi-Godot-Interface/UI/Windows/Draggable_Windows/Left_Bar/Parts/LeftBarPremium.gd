@@ -6,8 +6,8 @@ var post_synaptic_toggle: CheckButton
 var _cortical_reference: CorticalArea
 
 func _ready() -> void:
-	membrane_toggle = $Membrane
-	post_synaptic_toggle = $PostSynaptic
+	membrane_toggle = $HBoxContainer/Membrane
+	post_synaptic_toggle = $HBoxContainer2/PostSynaptic
 	if !VisConfig.is_premium:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true

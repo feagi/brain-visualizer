@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=13 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" load_steps=14 format=3 uid="uid://cjrivk0518jvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rwapg"]
 bg_color = Color(0.152941, 0.192157, 0.254902, 1)
@@ -13,16 +13,16 @@ bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 bg_color = Color(0.537255, 0.705882, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bimsq"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x416a"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u1fsi"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uk23p"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+bg_color = Color(0.105882, 0.133333, 0.184314, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uh7ct"]
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
@@ -37,6 +37,9 @@ content_margin_right = 0.0
 content_margin_bottom = 0.0
 bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2l4ko"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_242sy"]
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
@@ -55,4 +58,5 @@ CheckButton/styles/pressed = SubResource("StyleBoxFlat_uk23p")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
 LineEdit/styles/read_only = SubResource("StyleBoxFlat_a2rtm")
 Panel/styles/panel = SubResource("StyleBoxFlat_3bdj3")
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_2l4ko")
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
