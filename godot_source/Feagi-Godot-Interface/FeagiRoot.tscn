@@ -1,7 +1,8 @@
-[gd_scene load_steps=27 format=3 uid="uid://ctm7g8pe4n1dn"]
+[gd_scene load_steps=30 format=3 uid="uid://ctm7g8pe4n1dn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/BootStrapReferences.gd" id="1_6xx8r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/FEAGIInterface.gd" id="1_43i4l"]
+[ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/sky.tres" id="2_1kdqd"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://Feagi-Godot-Interface/UI/Graph/NodeGraph.tscn" id="2_yy50b"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/brain_visualizer_main_script.gd" id="3_1xkbx"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/UIManager.gd" id="3_5tyy7"]
@@ -21,9 +22,21 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/VersionLabel.gd" id="22_3kpmq"]
 [ext_resource type="PackedScene" uid="uid://4jumuijtufu5" path="res://Feagi-Godot-Interface/UI/Notifications/NotificationSystem.tscn" id="23_c734s"]
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_s4mag"]
+shader = ExtResource("2_1kdqd")
+shader_parameter/HorizonColor = Color(0.317647, 0.321569, 0.756863, 1)
+shader_parameter/SkyColor = Color(0.133333, 0.34902, 1, 1)
+shader_parameter/Clamp = Vector3(0.2, 0.2, 1)
+
+[sub_resource type="Sky" id="Sky_26ee3"]
+sky_material = SubResource("ShaderMaterial_s4mag")
+
 [sub_resource type="Environment" id="Environment_jonnd"]
-background_mode = 1
+background_mode = 2
+background_color = Color(1, 1, 1, 1)
+sky = SubResource("Sky_26ee3")
 ambient_light_source = 2
+reflected_light_source = 2
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_g2eyt"]
 
