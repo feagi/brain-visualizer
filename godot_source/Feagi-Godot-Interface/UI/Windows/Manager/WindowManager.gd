@@ -36,6 +36,7 @@ func spawn_left_panel(cortical_area: CorticalArea) -> void:
 	left_panel.load_from_memory(_window_memory_states["left_bar"])
 	left_panel.closed_window.connect(force_close_window)
 	loaded_windows["left_bar"] = left_panel
+	bring_window_to_top(left_panel)
 
 func spawn_create_morphology() -> void:
 	if "create_morphology" in loaded_windows.keys():
@@ -46,6 +47,7 @@ func spawn_create_morphology() -> void:
 	create_morphology.load_from_memory(_window_memory_states["create_morphology"])
 	create_morphology.closed_window.connect(force_close_window)
 	loaded_windows["create_morphology"] = create_morphology
+	bring_window_to_top(create_morphology)
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	#TODO add morphology preloading support
@@ -57,6 +59,7 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	morphology_manager.load_from_memory(_window_memory_states["morphology_manager"])
 	morphology_manager.closed_window.connect(force_close_window)
 	loaded_windows["morphology_manager"] = morphology_manager
+	bring_window_to_top(morphology_manager)
 	if morphology_to_preload != null:
 		morphology_manager.set_selected_morphology(morphology_to_preload)
 	
@@ -72,6 +75,7 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	edit_mappings.closed_window.connect(force_close_window)
 	edit_mappings.setup(source, destination)
 	loaded_windows["edit_mappings"] = edit_mappings
+	bring_window_to_top(edit_mappings)
 
 func spawn_create_cortical() -> void:
 	if "create_cortical" in loaded_windows.keys():
@@ -83,6 +87,7 @@ func spawn_create_cortical() -> void:
 	create_cortical.load_from_memory(_window_memory_states["create_cortical"])
 	create_cortical.closed_window.connect(force_close_window)
 	loaded_windows["create_cortical"] = create_cortical
+	bring_window_to_top(create_cortical)
 
 func spawn_import_circuit() -> void:
 	if "import_circuit" in loaded_windows.keys():
@@ -94,6 +99,7 @@ func spawn_import_circuit() -> void:
 	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
 	import_circuit.closed_window.connect(force_close_window)
 	loaded_windows["import_circuit"] = import_circuit
+	bring_window_to_top(import_circuit)
 
 func spawn_quick_connect() -> void:
 	if "quick_connect" in loaded_windows.keys():
@@ -105,6 +111,7 @@ func spawn_quick_connect() -> void:
 	quick_connect.load_from_memory(_window_memory_states["quick_connect"])
 	quick_connect.closed_window.connect(force_close_window)
 	loaded_windows["quick_connect"] = quick_connect
+	bring_window_to_top(quick_connect)
 
 
 func spawn_tutorial() -> void:
@@ -116,6 +123,7 @@ func spawn_tutorial() -> void:
 	tutorial.load_from_memory(_window_memory_states["tutorial"])
 	tutorial.closed_window.connect(force_close_window)
 	loaded_windows["tutorial"] = tutorial
+	bring_window_to_top(tutorial)
 
 func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
 
@@ -131,6 +139,9 @@ func force_close_window(window_name: StringName) -> void:
 		_window_memory_states[window_name] = loaded_windows[window_name].save_to_memory()
 		loaded_windows[window_name].queue_free()
 		loaded_windows.erase(window_name)
+
+func bring_window_to_top(window: Control) -> void:
+		move_child(window, -1)
 
 func force_close_all_windows() -> void:
 	print("UI: All windows being forced closed")
