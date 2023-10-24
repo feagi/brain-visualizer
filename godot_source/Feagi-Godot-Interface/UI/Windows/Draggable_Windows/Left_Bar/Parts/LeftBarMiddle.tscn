@@ -211,12 +211,20 @@ label_x_text = &"X"
 label_y_text = &"Y"
 label_z_text = &"Z"
 
+[node name="GAP" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
 [node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
 script = ExtResource("4_0ph5r")
+
+[node name="GAP2" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
 
 [connection signal="user_interacted" from="Voxel_Neuron_Density/Voxel_Neuron_Density" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Synaptic_Attractivity/Synaptic_Attractivity" to="." method="_enable_update_button"]

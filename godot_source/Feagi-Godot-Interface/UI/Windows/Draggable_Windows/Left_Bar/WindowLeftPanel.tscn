@@ -12,7 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarDangerZone.tscn" id="9_6fg7f"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8nka"]
-bg_color = Color(0.243137, 0.156863, 0.270588, 1)
+bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
 [node name="LeftBar" type="Panel"]
 offset_top = 50.0
