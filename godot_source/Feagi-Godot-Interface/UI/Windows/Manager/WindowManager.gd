@@ -57,6 +57,9 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	morphology_manager.load_from_memory(_window_memory_states["morphology_manager"])
 	morphology_manager.closed_window.connect(force_close_window)
 	loaded_windows["morphology_manager"] = morphology_manager
+	if morphology_to_preload != null:
+		morphology_manager.set_selected_morphology(morphology_to_preload)
+	
 
 func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
 	if "edit_mappings" in loaded_windows.keys():

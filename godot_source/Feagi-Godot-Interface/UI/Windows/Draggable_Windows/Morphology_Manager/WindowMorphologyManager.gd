@@ -27,6 +27,9 @@ func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) ->
 	if update_FEAGI_cache:
 		FeagiRequests.refresh_morphology_properties(morphology.name)
 
+func set_selected_morphology(morphology: Morphology) -> void:
+	_morphology_scroll.select_morphology(morphology) # fires back here
+
 ## FEAGI sent back bew morphlogy values. Update
 func morphology_updated_from_FEAGI(updated_morphology: Morphology) -> void:
 	if _selected_morphology.name != updated_morphology.name:
