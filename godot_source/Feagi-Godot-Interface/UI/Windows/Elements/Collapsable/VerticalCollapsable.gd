@@ -15,6 +15,7 @@ const TRIANGLE_RIGHT_DISABLED: CompressedTexture2D = preload("res://Feagi-Godot-
 ## prefab to spawn
 @export var prefab_to_spawn: PackedScene
 @export var section_text: StringName
+@export var leftward_offset: int = 10
 
 ## The actual node that is being toggled on and off
 var collapsing_node: Control:
@@ -31,18 +32,23 @@ var is_open: bool:
 	set(v):
 		_toggle_button_texture(v)
 		_toggle_collapsible_section(v)
+		size = Vector2(0,0) # force section to rescale properly
 		_is_open = v
 
 var _is_open: bool
 var _collapsing_button_toggle: TextureButton_Element
+var _margin_container: MarginContainer
 var _collapsing_node: Control
 
-func setup():
+
+func setup(left_offset: int = leftward_offset):
 	var hbox: HBoxContainer = get_child(0)
 	hbox.get_node("Section_Title").text = section_text
 	_collapsing_button_toggle = hbox.get_node("Collapsible_Toggle")
+	_margin_container = $MarginContainer
+	_margin_container.add_theme_constant_override("margin_left", left_offset)
 	_collapsing_node = prefab_to_spawn.instantiate()
-	add_child(_collapsing_node)
+	_margin_container.add_child(_collapsing_node)
 	is_open = start_open
 	_collapsing_button_toggle.pressed.connect(_toggle_button_pressed)
 

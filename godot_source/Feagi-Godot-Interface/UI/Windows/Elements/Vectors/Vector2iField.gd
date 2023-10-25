@@ -2,6 +2,7 @@ extends BoxContainer
 class_name Vector2iField
 
 signal user_updated_vector(new_vector2: Vector2i)
+signal user_interacted()
 
 @export var label_x_text: StringName = &"X"
 @export var label_y_text: StringName = &"Y"

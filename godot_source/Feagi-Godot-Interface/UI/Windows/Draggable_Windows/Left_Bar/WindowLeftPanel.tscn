@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 [ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.tscn" id="5_qeai5"]
 [ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.tscn" id="6_n2r01"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_xqqon"]
+[ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarDangerZone.tscn" id="9_6fg7f"]
 
 [node name="LeftBar" type="Panel"]
 offset_top = 50.0
@@ -52,10 +52,11 @@ start_open = false
 prefab_to_spawn = ExtResource("6_n2r01")
 section_text = &"Connections"
 
-[node name="Delete_Button" type="Button" parent="Main_Body"]
+[node name="DangerZone_Section" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
-text = "DELETE CORTICAL AREA"
-script = ExtResource("7_xqqon")
+start_open = false
+prefab_to_spawn = ExtResource("9_6fg7f")
+section_text = &"Danger Zone"
 
 [node name="TitleBar" parent="." instance=ExtResource("4_pwsxt")]
 layout_mode = 0
@@ -70,4 +71,4 @@ automatic_setup_window_closing_for_window_manager_name = &"left_bar"
 [connection signal="resized" from="Main_Body/Middle_Section" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Premium_Section" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Bottom_Section" to="Main_Body" method="recalculate_size"]
-[connection signal="pressed" from="Main_Body/Delete_Button" to="." method="_user_pressed_delete_button"]
+[connection signal="resized" from="Main_Body/DangerZone_Section" to="Main_Body" method="recalculate_size"]

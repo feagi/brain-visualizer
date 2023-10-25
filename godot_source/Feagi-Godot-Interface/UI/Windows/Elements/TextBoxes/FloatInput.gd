@@ -11,9 +11,11 @@ class_name FloatInput
 
 ## Only emits if user changes the text THEN focuses off the textbox
 signal float_confirmed(new_float: float)
+signal user_interacted()
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
+@export var emit_when_enter_pressed: bool = true
 ## The float to start with
 @export var initial_float: float = 0.0
 ## what to add before the float
@@ -35,6 +37,9 @@ func _ready():
 	_set_visible_text(initial_float)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+	if emit_when_enter_pressed:
+		text_submitted.connect(_enter_proxy)
+	
 
 ## Used to update the float value externally programatically (IE not from the user)
 func external_update_float(new_float: float) -> void:
@@ -64,6 +69,13 @@ func _emit_if_text_changed() -> void:
 	_previous_float = FEAGIUtils.bounds(text.to_float(), min_value, max_value)
 	float_confirmed.emit(_previous_float)
 	_set_visible_text(_previous_float)
+	release_focus()
 
 func _set_visible_text(new_float: float) -> void:
 	text = prefix + str(new_float) + suffix
+
+func _enter_proxy(_text: String) -> void:
+	_emit_if_text_changed()
+
+func _on_interaction(_irrelevant_text: String) -> void:
+	user_interacted.emit()

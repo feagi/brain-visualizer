@@ -11,6 +11,7 @@ class_name TextInput
 
 ## Only emits if user changes the text THEN focuses off the textbox
 signal text_confirmed(new_text: String)
+signal user_interacted()
 
 ## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
 @export var enable_signaling_on_ready: bool = true
@@ -32,9 +33,11 @@ func toggle_signaling_up(enable: bool) -> void:
 	focus_exited.disconnect(_emit_if_text_changed)
 	return
 
-
 func _emit_if_text_changed() -> void:
 	if text == _previous_text:
 		return
 	_previous_text = text
 	text_confirmed.emit(text)
+
+func _on_interaction(_irrelevant_text: String) -> void:
+	user_interacted.emit()

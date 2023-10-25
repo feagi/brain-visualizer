@@ -60,20 +60,25 @@ func _FEAGI_confirmed_update() -> void:
 
 ## User pressed update button
 func _user_requests_update() -> void:
+	if _growing_cortical_update == {}:
+		# If user presses update button but no properties are set to change, do nothing
+		_update_button.disabled = true
+		return
 	print("User requesing Summary changes to cortical area")
 	user_requested_update.emit(_growing_cortical_update)
 
 func _user_edit_name(new_name: String) -> void:
 	print("User queued name change")
 	_growing_cortical_update["cortical_name"] = new_name
-	_update_button.disabled = false
 
 func _user_edit_3D_position(new_position: Vector3i) -> void:
 	print("User queued position change")
 	_growing_cortical_update["cortical_coordinates"] = FEAGIUtils.vector3i_to_array(new_position)
-	_update_button.disabled = false
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
 	print("User queued dimension change")
 	_growing_cortical_update["cortical_dimensions"] = FEAGIUtils.vector3i_to_array(new_dimension)
+
+# Connected via TSCN to editable textboxes
+func _enable_update_button():
 	_update_button.disabled = false
