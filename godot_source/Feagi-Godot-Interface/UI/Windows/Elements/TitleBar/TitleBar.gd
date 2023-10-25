@@ -42,6 +42,8 @@ var is_dragging: bool:
 		if v:
 			drag_started.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = true
+			if _parent is DraggableWindow:
+				_parent.move_to_front()
 		else:
 			drag_finished.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = false

@@ -1,4 +1,4 @@
-extends VBoxContainer
+extends PanelContainer
 class_name VerticalCollapsible
 
 const TRIANGLE_DOWN_NORMAL: CompressedTexture2D = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Down_S.png")
@@ -16,6 +16,12 @@ const TRIANGLE_RIGHT_DISABLED: CompressedTexture2D = preload("res://Feagi-Godot-
 @export var prefab_to_spawn: PackedScene
 @export var section_text: StringName
 @export var leftward_offset: int = 10
+@export var upward_offset: int = 10
+@export var rightward_offset: int = 10
+@export var downward_offset: int = 10
+@export var panel_stylebox: StyleBoxFlat = null
+@export var section_top_gap: int = 5
+
 
 ## The actual node that is being toggled on and off
 var collapsing_node: Control:
@@ -42,11 +48,21 @@ var _collapsing_node: Control
 
 
 func setup(left_offset: int = leftward_offset):
-	var hbox: HBoxContainer = get_child(0)
+	var hbox: HBoxContainer = $VerticalCollapsible/HBoxContainer
 	hbox.get_node("Section_Title").text = section_text
 	_collapsing_button_toggle = hbox.get_node("Collapsible_Toggle")
-	_margin_container = $MarginContainer
+	var _top_gap: Control = $VerticalCollapsible/TopGap
+	var _panel_container: PanelContainer = $VerticalCollapsible/PanelContainer
+	_margin_container = $VerticalCollapsible/PanelContainer/MarginContainer
+	
 	_margin_container.add_theme_constant_override("margin_left", left_offset)
+	_margin_container.add_theme_constant_override("margin_up", upward_offset)
+	_margin_container.add_theme_constant_override("margin_down", downward_offset)
+	_margin_container.add_theme_constant_override("margin_right", rightward_offset)
+	if panel_stylebox != null:
+		_panel_container.add_theme_stylebox_override("panel", panel_stylebox)
+	_top_gap.custom_minimum_size.y = section_top_gap
+	
 	_collapsing_node = prefab_to_spawn.instantiate()
 	_margin_container.add_child(_collapsing_node)
 	is_open = start_open
