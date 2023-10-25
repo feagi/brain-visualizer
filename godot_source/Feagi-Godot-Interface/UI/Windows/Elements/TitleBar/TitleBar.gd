@@ -3,11 +3,14 @@ class_name TitleBar
 
 const MINIMUM_TITLEBAR_HEIGHT: int = 40
 
-signal drag_started(current_position: Vector2)
-signal dragged(current_position: Vector2, mouse_delta_offset: Vector2) # TODO
-signal drag_finished(current_position: Vector2)
+signal drag_started(current_window_position: Vector2, current_mouse_position: Vector2)
+signal dragged(window_position: Vector2, mouse_position: Vector2,  mouse_delta_offset: Vector2)
+signal drag_finished(current_window_position: Vector2, current_mouse_position: Vector2)
 
 @export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
+
+## Whether title bar movement calculations should use positional changes over frames rather delta directly
+@export var use_position_instead_of_delta_movement: bool = true
 
 @export var title_gap: int:
 	get: return $Title_Text.gap
@@ -37,10 +40,12 @@ var is_dragging: bool:
 			
 		_is_dragging = v
 		if v:
-			drag_started.emit(_parent.position)
+			drag_started.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = true
+			if _parent is DraggableWindow:
+				_parent.move_to_front()
 		else:
-			drag_finished.emit(_parent.position)
+			drag_finished.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = false
 
 
@@ -49,8 +54,12 @@ var _is_dragging: bool = false
 var _parent: Control
 var _sibling: Control
 var _initial_position: Vector2i
+var _prev_window_minus_mouse_position: Vector2
+var _viewport: Viewport
 
 func _ready():
+	_viewport = get_viewport()
+	
 	$Close_Button.resized.connect(_height_resized)
 	$Title_Text.resized.connect(_recalculate_title_bar_min_width)
 	mouse_entered.connect(_mouse_enter)
@@ -67,8 +76,13 @@ func _ready():
 	if automatic_setup_dragging or automatic_setup_hiding_closing or automatic_maintain_width:
 		_parent = get_parent()
 		_sibling = _parent.get_child(0)
+		
 	if automatic_setup_dragging:
-		dragged.connect(_auto_drag_move_parent)
+		if use_position_instead_of_delta_movement:
+			drag_started.connect(_auto_drag_move_parent_position_start)
+			dragged.connect(_auto_drag_move_parent_position)
+		else:
+			dragged.connect(_auto_drag_move_parent_delta)
 	
 	if automatic_setup_hiding_closing:
 		$Close_Button.pressed.connect(_auto_hide_parent)
@@ -96,8 +110,6 @@ func _input(event):
 		_mouse_click(event)
 	if event is InputEventMouseMotion:
 		_dragging(event)
-
-
 
 func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
@@ -134,15 +146,23 @@ func _mouse_click(click: InputEventMouseButton) -> void:
 func _dragging(drag: InputEventMouseMotion) -> void:
 	if !is_dragging:
 		return # if we arent dragging, don't do anything!
-	
-	dragged.emit(_parent.position, drag.relative)
+	dragged.emit(_parent.position, drag.position, drag.relative)
 
 func _end_drag() -> void:
 	drag_finished.emit(_parent.position)
 
-## IF auto-setup-dragging is enabled, responsible for moving parent around
-func _auto_drag_move_parent(_current_position: Vector2, delta_offset: Vector2) -> void:
+## IF auto-setup-dragging is enabled (with delta), responsible for moving parent around
+func _auto_drag_move_parent_delta(_window_position: Vector2, _mouse_position: Vector2, delta_offset: Vector2) -> void:
 	_parent.position = _parent.position + delta_offset
+
+## IF auto-setup-dragging is enabled (without delta), responsible for starting to moving parent around
+func _auto_drag_move_parent_position_start(current_window_position: Vector2, current_mouse_position: Vector2) -> void:
+	_prev_window_minus_mouse_position = current_window_position - current_mouse_position
+
+## IF auto-setup-dragging is enabled (without delta), responsible for moving parent around
+func _auto_drag_move_parent_position(_window_position: Vector2, mouse_position: Vector2,  _delta_offset: Vector2) -> void:
+	_parent.position = _prev_window_minus_mouse_position + mouse_position
+
 
 ## IF automatic_setup_hiding_closing is enabled, responsible for hiding parent
 func _auto_hide_parent() -> void:
@@ -150,6 +170,10 @@ func _auto_hide_parent() -> void:
 
 func _auto_maintain_width() -> void:
 	set_deferred("size", Vector2(0,0))
-	# TODO x dim should also count parent padding. We can only use this once everyone is on the same page
-	custom_minimum_size = Vector2(_sibling.size.x, MINIMUM_TITLEBAR_HEIGHT)
+	var width: int = _sibling.size.x
+	if _parent is DraggableWindow:
+		var _drag_parent: DraggableWindow = _parent as DraggableWindow
+		width += _drag_parent.left_pixel_gap + _drag_parent.right_pixel_gap
+	
+	custom_minimum_size = Vector2(width, MINIMUM_TITLEBAR_HEIGHT)
 

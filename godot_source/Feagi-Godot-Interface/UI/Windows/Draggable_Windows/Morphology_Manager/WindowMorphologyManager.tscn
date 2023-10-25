@@ -1,14 +1,12 @@
-[gd_scene load_steps=11 format=3 uid="uid://cdymw36o30rp1"]
+[gd_scene load_steps=9 format=3 uid="uid://cdymw36o30rp1"]
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_1tu4k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="2_io164"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_chekq"]
-[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="3_dmt4w"]
-[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="4_fkit5"]
-[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="5_w2re6"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_latnd"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/MorphologyManagerDescription.gd" id="6_vxh1u"]
+[ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/SmartMorphologyView/SmartMorphologyView.tscn" id="5_sst5g"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_xd5m5"]
+[ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="8_4o44a"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
 [node name="MorphologyManager" type="Panel"]
@@ -31,52 +29,35 @@ script = ExtResource("3_chekq")
 [node name="MorphologyScroll" parent="Container" instance=ExtResource("2_io164")]
 custom_minimum_size = Vector2(250, 400)
 layout_mode = 2
-size_flags_horizontal = 0
 
-[node name="Morphology_Details" type="HBoxContainer" parent="Container"]
-layout_mode = 2
-script = ExtResource("3_chekq")
-
-[node name="ElementMorphologyPatternView" parent="Container/Morphology_Details" instance=ExtResource("3_dmt4w")]
-visible = false
-custom_minimum_size = Vector2(570, 0)
+[node name="SmartMorphologyView" parent="Container" instance=ExtResource("5_sst5g")]
 layout_mode = 2
 
-[node name="ElementMorphologyCompositeView" parent="Container/Morphology_Details" instance=ExtResource("4_fkit5")]
-visible = false
-custom_minimum_size = Vector2(300, 0)
+[node name="DetailsAndButtons" type="VBoxContainer" parent="Container"]
 layout_mode = 2
 
-[node name="ElementMorphologyVectorsView" parent="Container/Morphology_Details" instance=ExtResource("5_w2re6")]
-visible = false
-custom_minimum_size = Vector2(300, 0)
+[node name="MorphologyGenericDetails" parent="Container/DetailsAndButtons" instance=ExtResource("8_4o44a")]
 layout_mode = 2
 
-[node name="Description" type="VBoxContainer" parent="Container/Morphology_Details"]
-custom_minimum_size = Vector2(200, 200)
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/DetailsAndButtons"]
 layout_mode = 2
 alignment = 2
-script = ExtResource("6_vxh1u")
 
-[node name="Label" type="Label" parent="Container/Morphology_Details/Description"]
+[node name="Ignore" type="Button" parent="Container/DetailsAndButtons/HBoxContainer"]
 layout_mode = 2
-text = "Usage in Cortical Areas"
-horizontal_alignment = 1
+size_flags_horizontal = 3
+text = "Ignore Changes"
+script = ExtResource("7_xd5m5")
 
-[node name="Show_Mappings" type="TextEdit" parent="Container/Morphology_Details/Description"]
+[node name="Control" type="Control" parent="Container/DetailsAndButtons/HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
-size_flags_vertical = 3
-editable = false
 
-[node name="Morphology_Texture" type="TextureRect" parent="Container/Morphology_Details/Description"]
-custom_minimum_size = Vector2(200, 200)
+[node name="Update" type="Button" parent="Container/DetailsAndButtons/HBoxContainer"]
 layout_mode = 2
-expand_mode = 1
-
-[node name="Apply_changes" type="Button" parent="Container/Morphology_Details/Description"]
-layout_mode = 2
-text = "Apply Changes"
-script = ExtResource("6_latnd")
+size_flags_horizontal = 3
+text = "Update Changes"
+script = ExtResource("7_xd5m5")
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 0
@@ -86,8 +67,7 @@ title = "Morphology Manager"
 automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"morphology_manager"
 
-[connection signal="resized" from="Container/Morphology_Details" to="Container" method="recalculate_size"]
-[connection signal="resized" from="Container/Morphology_Details/ElementMorphologyPatternView" to="Container/Morphology_Details" method="recalculate_size"]
-[connection signal="resized" from="Container/Morphology_Details/ElementMorphologyCompositeView" to="Container/Morphology_Details" method="recalculate_size"]
-[connection signal="resized" from="Container/Morphology_Details/ElementMorphologyVectorsView" to="Container/Morphology_Details" method="recalculate_size"]
-[connection signal="pressed" from="Container/Morphology_Details/Description/Apply_changes" to="." method="send_updated_values_to_feagi"]
+[connection signal="resized" from="Container/SmartMorphologyView" to="Container" method="recalculate_size"]
+[connection signal="resized" from="Container/DetailsAndButtons/MorphologyGenericDetails" to="Container" method="recalculate_size"]
+[connection signal="pressed" from="Container/DetailsAndButtons/HBoxContainer/Ignore" to="." method="reload_morphology"]
+[connection signal="pressed" from="Container/DetailsAndButtons/HBoxContainer/Update" to="." method="send_updated_values_to_feagi"]

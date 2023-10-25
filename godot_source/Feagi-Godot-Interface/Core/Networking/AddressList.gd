@@ -49,6 +49,7 @@ var POST_monitoring_neuron_synapticPotential: StringName = "/v1/feagi/monitoring
 var PUT_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
 var PUT_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties"
 var PUT_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
+var PUT_genome_coord2d: StringName = "/v1/feagi/genome/coord_2d"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area_name="
@@ -94,7 +95,10 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_genome_append = FEAGIFullAddress +  POST_genome_append
 	POST_monitoring_neuron_membranePotential = FEAGIFullAddress + POST_monitoring_neuron_membranePotential
 	POST_monitoring_neuron_synapticPotential = FEAGIFullAddress + POST_monitoring_neuron_synapticPotential
+	
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea
 	PUT_genome_mappingProperties = FEAGIFullAddress + PUT_genome_mappingProperties
 	PUT_genome_morphology = FEAGIFullAddress + PUT_genome_morphology
+	PUT_genome_coord2d = FEAGIFullAddress + PUT_genome_coord2d
+	
 	DELETE_GE_corticalArea = FEAGIFullAddress + DELETE_GE_corticalArea

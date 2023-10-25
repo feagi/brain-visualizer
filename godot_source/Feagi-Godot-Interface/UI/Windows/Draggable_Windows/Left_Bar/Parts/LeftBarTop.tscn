@@ -9,8 +9,9 @@
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
 offset_right = -862.0
-offset_bottom = -404.0
+offset_bottom = -380.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_f8pnh")
@@ -79,9 +80,38 @@ label_y_text = &"H"
 label_z_text = &"D"
 initial_vector = Vector3i(1, 1, 1)
 
+[node name="SpacerX" parent="Cortical_Size" index="0"]
+custom_minimum_size = Vector2(1, 0)
+
+[node name="SpacerX2" parent="Cortical_Size" index="3"]
+custom_minimum_size = Vector2(0, 0)
+
+[node name="SpacerY" parent="Cortical_Size" index="4"]
+custom_minimum_size = Vector2(1, 0)
+
+[node name="SpacerY2" parent="Cortical_Size" index="7"]
+custom_minimum_size = Vector2(1, 0)
+
+[node name="SpacerZ" parent="Cortical_Size" index="8"]
+custom_minimum_size = Vector2(0, 2)
+
+[node name="gap" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
 [node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
 script = ExtResource("4_vs7fw")
+
+[node name="gap2" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[connection signal="user_interacted" from="Row_Cortical_Name/Cortical_Name" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Cortical_Size" to="." method="_enable_update_button"]
+
+[editable path="Cortical_Size"]

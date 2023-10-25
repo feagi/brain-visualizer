@@ -280,6 +280,14 @@ func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortica
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
 	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
 
+## Modifies the 2D location of many cortical areas at once without the need for polling
+func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
+	var to_send: Dictionary = {}
+	for key in cortical_IDs_mapped_to_vector2is.keys():
+		to_send[key] = FEAGIUtils.vector2i_to_array(cortical_IDs_mapped_to_vector2is[key])
+	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_coord2d, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_coord2D, to_send, cortical_IDs_mapped_to_vector2is)
+
+
 ## TODO clean up this
 func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + extra_name, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_mappingProperties, dataIn)

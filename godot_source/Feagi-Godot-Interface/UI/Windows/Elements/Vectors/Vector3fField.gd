@@ -2,6 +2,7 @@ extends BoxContainer
 class_name Vector3fField
 
 signal user_updated_vector(new_vector3: Vector3)
+signal user_interacted()
 
 @export var label_x_text: StringName
 @export var label_y_text: StringName
@@ -68,7 +69,12 @@ func _ready():
 	_field_y.float_confirmed.connect(_emit_new_vector)
 	_field_z.float_confirmed.connect(_emit_new_vector)
 
+	_field_x.user_interacted.connect(_emit_user_interaction)
+	_field_y.user_interacted.connect(_emit_user_interaction)
+	_field_z.user_interacted.connect(_emit_user_interaction)
+
 func _emit_new_vector(_dont_care: float) -> void:
 	user_updated_vector.emit(current_vector)
 	
-
+func _emit_user_interaction():
+	user_interacted.emit()

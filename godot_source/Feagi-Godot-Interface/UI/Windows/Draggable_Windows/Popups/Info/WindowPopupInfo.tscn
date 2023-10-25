@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.gd" id="1_jsgve"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_q1en3"]
-[ext_resource type="Texture2D" uid="uid://bypiqlln37qdg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/setting.png" id="3_nf33s"]
+[ext_resource type="Texture2D" uid="uid://c24tdu3hkrylh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_S.png" id="3_5vdfq"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="4_fy4q3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_225ut"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="6_x0cq6"]
@@ -41,7 +41,7 @@ custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-texture = ExtResource("3_nf33s")
+texture = ExtResource("3_5vdfq")
 expand_mode = 1
 script = ExtResource("4_fy4q3")
 

@@ -160,6 +160,15 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 		_cortical_areas[add] = adding_cortical_area
 		FeagiCacheEvents.cortical_area_added.emit(adding_cortical_area)
 
+## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
+func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
+	for cortical_ID in IDs_to_locations.keys():
+		if !(cortical_ID in _cortical_areas.keys()):
+			push_error("Unable to update position of %s due to this cortical area missing in cache" % cortical_ID)
+			continue
+		_cortical_areas[cortical_ID].coordinates_2D = IDs_to_locations[cortical_ID]
+
+
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
 func hard_wipe_cortical_areas():
 	print("CACHE: Wiping cortical areas and connections...")

@@ -5,21 +5,33 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_uer0m"]
 
 [node name="Vector3fField" type="BoxContainer"]
+offset_right = 256.0
+offset_bottom = 26.0
 script = ExtResource("1_com4y")
+
+[node name="SpacerX" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 text = "X"
+horizontal_alignment = 2
 script = ExtResource("2_up58r")
 max_length = 5
-
-[node name="SpacerX" type="Control" parent="."]
-layout_mode = 2
 
 [node name="FloatX" type="LineEdit" parent="."]
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_uer0m")
+
+[node name="SpacerX2" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="SpacerY" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
@@ -27,25 +39,33 @@ text = "Y"
 script = ExtResource("2_up58r")
 max_length = 5
 
-[node name="SpacerY" type="Control" parent="."]
-layout_mode = 2
-
 [node name="FloatY" type="LineEdit" parent="."]
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_uer0m")
 
+[node name="SpacerY2" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="SpacerZ" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
 text = "Z
 "
+horizontal_alignment = 2
+vertical_alignment = 1
 script = ExtResource("2_up58r")
 max_length = 5
-
-[node name="SpacerZ" type="Control" parent="."]
-layout_mode = 2
 
 [node name="FloatZ" type="LineEdit" parent="."]
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_uer0m")
+
+[node name="SpacerZ2" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2

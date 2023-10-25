@@ -16,15 +16,6 @@ func _ready() -> void:
 	FeagiEvents.retrieved_circuit_details.connect(_on_new_circuit_details)
 	_circuit_dropdown.user_selected_circuit.connect(_on_user_select_circuit)
 
-## Called from Window manager, to save previous position
-func save_to_memory() -> Dictionary:
-	return {
-		"position": position,
-	}
-
-## Called from Window manager, to load previous position
-func load_from_memory(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
 
 func _on_user_select_circuit(user_selected_circuit: StringName):
 	FeagiRequests.get_circuit_details(user_selected_circuit)
