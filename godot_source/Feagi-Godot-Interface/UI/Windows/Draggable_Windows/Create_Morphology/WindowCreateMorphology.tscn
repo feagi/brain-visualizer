@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=14 format=3 uid="uid://bvdaq4i6y2aer"]
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_r8gt6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
@@ -11,6 +11,12 @@
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_tmy0u"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lphoj"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ukkev"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [node name="WindowCreateMorphology" type="Panel"]
 offset_top = 41.0
@@ -55,14 +61,20 @@ script = ExtResource("4_onsts")
 
 [node name="Composite" type="CheckBox" parent="Container/Type"]
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
 text = "Composite"
 
 [node name="Vectors" type="CheckBox" parent="Container/Type"]
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
 text = "Vectors"
 
 [node name="Patterns" type="CheckBox" parent="Container/Type"]
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
 text = "Patterns"
 
 [node name="spacer2" type="Control" parent="Container"]
