@@ -9,9 +9,8 @@
 [ext_resource type="Texture2D" uid="uid://b68lvb1tmrcra" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="5_t4qeq"]
 
 [node name="mapping_definition" type="Panel"]
-offset_top = 40.0
-offset_right = 1296.0
-offset_bottom = 365.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
 theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
 

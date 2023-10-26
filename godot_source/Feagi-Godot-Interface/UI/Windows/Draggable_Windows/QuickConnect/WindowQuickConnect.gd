@@ -13,6 +13,7 @@ enum POSSIBLE_STATES {
 @export var style_complete: StyleBoxFlat
 
 
+
 var _step1_panel: PanelContainer
 var _step2_panel: PanelContainer
 var _step3_panel: PanelContainer
@@ -29,6 +30,7 @@ var _step3_MorphologyDetails: MorphologyGenericDetails
 var _step4_button: TextButton_Element
 
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
+var _finished_selecting: bool = false
 
 var _source: CorticalArea = null
 var _destination: CorticalArea = null
@@ -96,7 +98,7 @@ func _setting_morphology() -> void:
 
 func _set_source(cortical_area: CorticalArea) -> void:
 	_source = cortical_area
-	_step1_label.text = "Selected Source Area: " + cortical_area.name
+	_step1_label.text = "Selected Source Area: [" + cortical_area.name + "]"
 	_step1_panel.add_theme_stylebox_override("panel", style_complete)
 	_set_establish_button_availability()
 	_step1_button.visible = true
@@ -108,7 +110,7 @@ func _set_source(cortical_area: CorticalArea) -> void:
 
 func _set_destination(cortical_area: CorticalArea) -> void:
 	_destination = cortical_area
-	_step2_label.text = "Selected Destination Area: " + cortical_area.name
+	_step2_label.text = "Selected Destination Area: [" + cortical_area.name + "]"
 	_step2_panel.add_theme_stylebox_override("panel", style_complete)
 	_set_establish_button_availability()
 	_step2_button.visible = true
@@ -146,3 +148,8 @@ func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
 	FeagiRequests.request_default_mapping_between_corticals(_source, _destination, _selected_morphology)
 	VisConfig.UI_manager.window_manager.force_close_window("quick_connect")
+
+func _toggle_add_buttons(is_enabled: bool):
+	_step1_button.visible = is_enabled
+	_step2_button.visible = is_enabled
+	_step3_button.visible = is_enabled
