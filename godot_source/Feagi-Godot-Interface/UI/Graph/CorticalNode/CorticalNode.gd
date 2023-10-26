@@ -44,6 +44,9 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
+func get_center_position_offset() -> Vector2:
+	return position_offset + (size / 2.0)
+
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:
