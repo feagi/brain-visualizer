@@ -149,8 +149,8 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
 [node name="Establish" type="Button" parent="VBoxContainer"]
-visible = false
 layout_mode = 2
+disabled = true
 text = "Establish the Connection"
 script = ExtResource("2_h1bhl")
 
@@ -159,10 +159,11 @@ layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
 title = "Quick Connect"
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"quick_connect"
 
-[connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_setting_source"]
-[connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_setting_destination"]
-[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_setting_morphology"]
+[connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
+[connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
+[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_update_current_state" binds= [2]]
 [connection signal="morphology_selected" from="VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
 [connection signal="pressed" from="VBoxContainer/Establish" to="." method="establish_connection_button"]
