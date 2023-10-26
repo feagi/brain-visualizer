@@ -76,8 +76,8 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_Snooze_Period.current_int = details.neuron_snooze_period
 	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
 	_Threshold_Inc.current_vector = details.neuron_fire_threshold_increment
-	_PSP_Uniformity.button_pressed = details.neuron_psp_uniform_distribution
-	_MP_Accumulation.button_pressed = details.neuron_mp_charge_accumulation
+	_PSP_Uniformity.set_pressed_no_signal(details.neuron_psp_uniform_distribution)
+	_MP_Accumulation.set_pressed_no_signal(details.neuron_mp_charge_accumulation)
 
 
 ## Properties changed from FEAGI side, reflect here
@@ -97,6 +97,8 @@ func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cort
 	_Snooze_Period.external_update_int(cortical_area_details.neuron_snooze_period)
 	_Degeneracy_Constant.external_update_int(cortical_area_details.neuron_degeneracy_coefficient)
 	_Threshold_Inc.current_vector = cortical_area_details.neuron_fire_threshold_increment
+	_PSP_Uniformity.set_pressed_no_signal(cortical_area_details.neuron_psp_uniform_distribution)
+	_MP_Accumulation.set_pressed_no_signal(cortical_area_details.neuron_mp_charge_accumulation)
 
 	_update_button.disabled = true
 	_growing_cortical_update = {} # reset queued changes
