@@ -10,6 +10,8 @@ enum ConnectionAvailibility {
 	OUTPUT_ONLY,
 }
 
+#@export var 
+
 var cortical_area_name: StringName:
 	get:
 		if(_cortical_area_ref):
@@ -53,6 +55,31 @@ func _user_request_delete_cortical_area() -> void:
 	print("GRAPH: User requesting deletion of cortical area " +  cortical_area_ID)
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
+## Set the color depnding on cortical type
+func _setup_color(cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
+	match(cortical_type):
+		CorticalArea.CORTICAL_AREA_TYPE.IPU:
+			#TODO
+			pass
+		CorticalArea.CORTICAL_AREA_TYPE.CORE:
+			#TODO
+			pass
+		CorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			#TODO
+			pass
+		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			#TODO
+			pass
+		CorticalArea.CORTICAL_AREA_TYPE.OPU:
+			#TODO
+			pass
+		_:
+			push_error("Cortical Node loaded unknown or invalid cortical area type!")
+			#TODO
+			pass
+		
+
+# Announce if cortical area was selected with one click and open left panel on double click
 func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event
