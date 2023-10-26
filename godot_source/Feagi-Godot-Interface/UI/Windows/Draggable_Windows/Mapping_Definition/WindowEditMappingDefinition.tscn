@@ -14,10 +14,6 @@ offset_right = 1296.0
 offset_bottom = 365.0
 theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
-left_pixel_gap = 5
-right_pixel_gap = 5
-top_pixel_gap = 5
-bottom_pixel_gap = 5
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 2

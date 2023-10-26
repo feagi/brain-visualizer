@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene load_steps=14 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" uid="uid://dsr0vah60elhm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_1gjuv"]
@@ -12,15 +12,13 @@
 [ext_resource type="Texture2D" uid="uid://ch4waflhjqwnn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_wwb0a"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0fl3t"]
-bg_color = Color(0.290196, 0.290196, 0.290196, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hcpwn"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rdpvy"]
-bg_color = Color(0.6, 0.866667, 0.6, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0rw7f"]
-bg_color = Color(1, 0.333333, 0.341176, 1)
+bg_color = Color(0, 0.27451, 0.541176, 1)
 
 [node name="WindowQuickConnect" type="Panel"]
 custom_minimum_size = Vector2(10, 10)
@@ -31,10 +29,6 @@ script = ExtResource("1_pefds")
 style_incomplete = SubResource("StyleBoxFlat_0fl3t")
 style_waiting = SubResource("StyleBoxFlat_hcpwn")
 style_complete = SubResource("StyleBoxFlat_rdpvy")
-left_pixel_gap = 5
-right_pixel_gap = 5
-top_pixel_gap = 5
-bottom_pixel_gap = 5
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 custom_minimum_size = Vector2(600, 0)
@@ -150,10 +144,13 @@ morphology_editable = false
 [node name="MorphologyGenericDetails" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("5_lixjw")]
 layout_mode = 2
 
+[node name="gap" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
 [node name="Establish" type="Button" parent="VBoxContainer"]
 visible = false
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_0rw7f")
 text = "Establish the Connection"
 script = ExtResource("2_h1bhl")
 

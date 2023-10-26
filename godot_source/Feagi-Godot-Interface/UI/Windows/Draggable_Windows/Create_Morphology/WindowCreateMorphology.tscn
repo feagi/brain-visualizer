@@ -23,10 +23,6 @@ offset_top = 41.0
 offset_bottom = 41.0
 theme = ExtResource("1_r8gt6")
 script = ExtResource("1_w1bco")
-left_pixel_gap = 5
-right_pixel_gap = 5
-top_pixel_gap = 5
-bottom_pixel_gap = 5
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
@@ -54,6 +50,10 @@ label_text = "Name of New Morphology"
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 script = ExtResource("3_6i23i")
+
+[node name="gap2" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
 
 [node name="Type" type="BoxContainer" parent="Container"]
 layout_mode = 2
@@ -98,6 +98,10 @@ layout_mode = 2
 
 [node name="ElementMorphologyPatternView" parent="Container" instance=ExtResource("7_w3816")]
 visible = false
+layout_mode = 2
+
+[node name="gap4" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
 [node name="CreateMorphologyButton" type="Button" parent="Container"]

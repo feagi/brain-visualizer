@@ -69,6 +69,7 @@ func on_user_select_cortical_area(cortial_area: CorticalArea) -> void:
 			return
 
 func _setting_source() -> void:
+	
 	print("UI: WINDOW: QUICKCONNECT: User Picking Source Area...")
 	_source = null
 	_set_establish_button_availability()
