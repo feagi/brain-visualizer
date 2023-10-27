@@ -3,7 +3,7 @@ name: "Bridge Update Version and push to HUB"
 on:
   push:
     branches:
-      - main
+      - staging
     paths:
       - 'src/bridge_godot_python.py'
       - 'src/configuration.py'
@@ -15,6 +15,7 @@ jobs:
   bridge_version:
     name: Bridge Update Version
     runs-on: ubuntu-20.04
+    if: github.repository == 'feagi/brain-visualizer'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -38,7 +39,7 @@ jobs:
           git add .
           git commit -m "Updated Version"
           echo "committed"
-          git push origin temp:version --force
+          git push origin temp:pre-release --force
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx

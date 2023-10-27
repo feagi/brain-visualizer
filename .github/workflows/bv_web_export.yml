@@ -1,7 +1,12 @@
 name: "Brain Visualizer Web Export"
 
 on:
-  workflow_dispatch
+  push:
+    branches:
+      - staging
+    paths:
+      - 'godot_source/**'
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: 4.1.1
@@ -13,6 +18,7 @@ jobs:
   export-web:
     name: Web Export
     runs-on: ubuntu-20.04
+    if: github.repository == 'feagi/brain-visualizer'
     container:
       image: barichello/godot-ci:4.1.1
     steps:
@@ -53,6 +59,6 @@ jobs:
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git push origin temp:web_export --force
+          git push origin temp:pre-release --force
           
           
