@@ -8,17 +8,21 @@ var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
 var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
+var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
+var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 
 var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
-	"left_bar": {"position": Vector2(100,100)},
-	"create_morphology": {"position": Vector2(50,100)},
-	"morphology_manager": {"position": Vector2(50,100)},
-	"edit_mappings": {"position": Vector2(50,100)},
-	"create_cortical": {"position": Vector2(50,100)},
-	"import_circuit": {"position": Vector2(50,100)}
+	"left_bar": {"position": Vector2(50,300)},
+	"create_morphology": {"position": Vector2(400,300)},
+	"morphology_manager": {"position": Vector2(900,500)},
+	"edit_mappings": {"position": Vector2(900,150)},
+	"create_cortical": {"position": Vector2(400,550)},
+	"import_circuit": {"position": Vector2(400,850)},
+	"quick_connect": {"position": Vector2(50,100)},
+	"tutorial": {"position": Vector2(900,500)}
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -32,6 +36,7 @@ func spawn_left_panel(cortical_area: CorticalArea) -> void:
 	left_panel.load_from_memory(_window_memory_states["left_bar"])
 	left_panel.closed_window.connect(force_close_window)
 	loaded_windows["left_bar"] = left_panel
+	bring_window_to_top(left_panel)
 
 func spawn_create_morphology() -> void:
 	if "create_morphology" in loaded_windows.keys():
@@ -42,6 +47,7 @@ func spawn_create_morphology() -> void:
 	create_morphology.load_from_memory(_window_memory_states["create_morphology"])
 	create_morphology.closed_window.connect(force_close_window)
 	loaded_windows["create_morphology"] = create_morphology
+	bring_window_to_top(create_morphology)
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	#TODO add morphology preloading support
@@ -53,6 +59,10 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	morphology_manager.load_from_memory(_window_memory_states["morphology_manager"])
 	morphology_manager.closed_window.connect(force_close_window)
 	loaded_windows["morphology_manager"] = morphology_manager
+	bring_window_to_top(morphology_manager)
+	if morphology_to_preload != null:
+		morphology_manager.set_selected_morphology(morphology_to_preload)
+	
 
 func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
 	if "edit_mappings" in loaded_windows.keys():
@@ -65,6 +75,7 @@ func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea 
 	edit_mappings.closed_window.connect(force_close_window)
 	edit_mappings.setup(source, destination)
 	loaded_windows["edit_mappings"] = edit_mappings
+	bring_window_to_top(edit_mappings)
 
 func spawn_create_cortical() -> void:
 	if "create_cortical" in loaded_windows.keys():
@@ -76,6 +87,7 @@ func spawn_create_cortical() -> void:
 	create_cortical.load_from_memory(_window_memory_states["create_cortical"])
 	create_cortical.closed_window.connect(force_close_window)
 	loaded_windows["create_cortical"] = create_cortical
+	bring_window_to_top(create_cortical)
 
 func spawn_import_circuit() -> void:
 	if "import_circuit" in loaded_windows.keys():
@@ -87,19 +99,49 @@ func spawn_import_circuit() -> void:
 	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
 	import_circuit.closed_window.connect(force_close_window)
 	loaded_windows["import_circuit"] = import_circuit
+	bring_window_to_top(import_circuit)
+
+func spawn_quick_connect() -> void:
+	if "quick_connect" in loaded_windows.keys():
+		force_close_window("quick_connect")
+	
+	print("user requests create quick connect window")
+	var quick_connect: WindowQuickConnect = _prefab_quick_connect.instantiate()
+	add_child(quick_connect)
+	quick_connect.load_from_memory(_window_memory_states["quick_connect"])
+	quick_connect.closed_window.connect(force_close_window)
+	loaded_windows["quick_connect"] = quick_connect
+	bring_window_to_top(quick_connect)
+
+
+func spawn_tutorial() -> void:
+	if "tutorial" in loaded_windows.keys():
+		force_close_window("tutorial")
+	
+	var tutorial: TutorialDisplay = _prefab_tutorial.instantiate()
+	add_child(tutorial)
+	tutorial.load_from_memory(_window_memory_states["tutorial"])
+	tutorial.closed_window.connect(force_close_window)
+	loaded_windows["tutorial"] = tutorial
+	bring_window_to_top(tutorial)
 
 func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
+
+	
 	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()
 	add_child(popup)
 	popup.position = Vector2(200,200)
 	popup.set_properties(title_text, message_text, button_text, icon)
-	
 
+	
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
 		_window_memory_states[window_name] = loaded_windows[window_name].save_to_memory()
 		loaded_windows[window_name].queue_free()
 		loaded_windows.erase(window_name)
+
+func bring_window_to_top(window: Control) -> void:
+		move_child(window, -1)
 
 func force_close_all_windows() -> void:
 	print("UI: All windows being forced closed")

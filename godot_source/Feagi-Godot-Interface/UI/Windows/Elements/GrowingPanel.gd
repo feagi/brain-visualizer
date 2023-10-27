@@ -4,10 +4,10 @@ class_name GrowingPanel
 
 var _child: Control
 
-@export var left_pixel_gap: int = 0
-@export var right_pixel_gap: int = 0
-@export var top_pixel_gap: int = 0
-@export var bottom_pixel_gap: int = 0
+@export var left_pixel_gap: int = 10
+@export var right_pixel_gap: int = 10
+@export var top_pixel_gap: int = 10
+@export var bottom_pixel_gap: int = 10
 
 func _ready():
 	_child = get_child(0)

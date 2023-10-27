@@ -18,12 +18,6 @@ func _init(going_in: PatternVector3, going_out: PatternVector3):
 	_incoming = going_in.duplicate()
 	_outgoing = going_out.duplicate()
 
-func to_array_of_arrays() -> Array[Array]:
-	return [_incoming.to_FEAGI_array(), _outgoing.to_FEAGI_array()]
-
-func duplicate() -> PatternVector3Pairs:
-	return PatternVector3Pairs.new(_incoming, _outgoing)
-
 ## Converts an array of arrays from the pattern morphologies into an array of PatternVector3Pairs
 static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Array[Array]) -> Array[PatternVector3Pairs]:
 	# Preinit up here to reduce GC
@@ -39,3 +33,15 @@ static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Arra
 			pair[pair_in_index] = PatternVector3.new(X, Y, Z)
 		output.append(PatternVector3Pairs.new(pair[0], pair[1]))
 	return output
+
+## Create empty [PatternVector3Pairs] (all values default to 0)
+static func create_empty() -> PatternVector3Pairs:
+	return PatternVector3Pairs.new(PatternVector3.create_empty(), PatternVector3.create_empty())
+
+func to_array_of_arrays() -> Array[Array]:
+	return [_incoming.to_FEAGI_array(), _outgoing.to_FEAGI_array()]
+
+func duplicate() -> PatternVector3Pairs:
+	return PatternVector3Pairs.new(_incoming, _outgoing)
+
+

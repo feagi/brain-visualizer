@@ -6,8 +6,8 @@ var post_synaptic_toggle: CheckButton
 var _cortical_reference: CorticalArea
 
 func _ready() -> void:
-	membrane_toggle = $Membrane
-	post_synaptic_toggle = $PostSynaptic
+	membrane_toggle = $HBoxContainer/Membrane
+	post_synaptic_toggle = $HBoxContainer2/PostSynaptic
 	if !VisConfig.is_premium:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true
@@ -25,10 +25,10 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_cortical_reference = cortical_reference
 
 func _FEAGI_set_membrane_toggle(state: bool) -> void:
-	membrane_toggle.button_pressed = state
+	membrane_toggle.set_pressed_no_signal(state)
 
 func _FEAGI_set_synaptic_toggle(state: bool) -> void:
-	post_synaptic_toggle.button_pressed = state
+	post_synaptic_toggle.set_pressed_no_signal(state)
 
 func _user_request_change_membrane_monitoring_status(new_state:bool) -> void:
 	FeagiRequests.request_change_membrane_monitoring_status(_cortical_reference, new_state)

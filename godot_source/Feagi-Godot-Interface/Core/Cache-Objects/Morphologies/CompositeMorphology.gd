@@ -19,5 +19,5 @@ func to_dictionary() -> Dictionary:
 	return {
 		"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
 		"src_pattern": FEAGIUtils.vector2i_array_to_array_of_arrays(source_pattern),
-		"mapper_morphology": name
+		"mapper_morphology": mapper_morphology_name
 	}

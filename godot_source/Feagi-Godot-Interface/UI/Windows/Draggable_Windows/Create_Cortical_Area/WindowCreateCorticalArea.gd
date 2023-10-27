@@ -42,15 +42,6 @@ func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
 		return CorticalArea.CORTICAL_AREA_TYPE.INVALID
 	return CorticalArea.CORTICAL_AREA_TYPE[selected_str]
 
-## Called from Window manager, to save previous position
-func save_to_memory() -> Dictionary:
-	return {
-		"position": position,
-	}
-
-## Called from Window manager, to load previous position
-func load_from_memory(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
 
 func _radio_button_proxy(_button_index: int, button_label: StringName) -> void:
 	_switch_UI_between_cortical_types(CorticalArea.CORTICAL_AREA_TYPE[button_label])
