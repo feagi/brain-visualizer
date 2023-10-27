@@ -1,7 +1,10 @@
 name: "Brain Visualizer Web Export"
 
 on:
-  workflow_dispatch
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: 4.1.1
