@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene load_steps=14 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" uid="uid://dsr0vah60elhm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_1gjuv"]
@@ -12,15 +12,13 @@
 [ext_resource type="Texture2D" uid="uid://ch4waflhjqwnn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_wwb0a"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0fl3t"]
-bg_color = Color(0.290196, 0.290196, 0.290196, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hcpwn"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rdpvy"]
-bg_color = Color(0.6, 0.866667, 0.6, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0rw7f"]
-bg_color = Color(1, 0.333333, 0.341176, 1)
+bg_color = Color(0, 0.27451, 0.541176, 1)
 
 [node name="WindowQuickConnect" type="Panel"]
 custom_minimum_size = Vector2(10, 10)
@@ -31,10 +29,6 @@ script = ExtResource("1_pefds")
 style_incomplete = SubResource("StyleBoxFlat_0fl3t")
 style_waiting = SubResource("StyleBoxFlat_hcpwn")
 style_complete = SubResource("StyleBoxFlat_rdpvy")
-left_pixel_gap = 5
-right_pixel_gap = 5
-top_pixel_gap = 5
-bottom_pixel_gap = 5
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 custom_minimum_size = Vector2(600, 0)
@@ -150,10 +144,13 @@ morphology_editable = false
 [node name="MorphologyGenericDetails" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("5_lixjw")]
 layout_mode = 2
 
-[node name="Establish" type="Button" parent="VBoxContainer"]
-visible = false
+[node name="gap" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_0rw7f")
+
+[node name="Establish" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+disabled = true
 text = "Establish the Connection"
 script = ExtResource("2_h1bhl")
 
@@ -162,10 +159,11 @@ layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
 title = "Quick Connect"
+automatic_setup_hiding_closing = false
 automatic_setup_window_closing_for_window_manager_name = &"quick_connect"
 
-[connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_setting_source"]
-[connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_setting_destination"]
-[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_setting_morphology"]
+[connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
+[connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
+[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_update_current_state" binds= [2]]
 [connection signal="morphology_selected" from="VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
 [connection signal="pressed" from="VBoxContainer/Establish" to="." method="establish_connection_button"]

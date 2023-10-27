@@ -19,10 +19,6 @@ offset_top = 50.0
 offset_bottom = 50.0
 theme = ExtResource("1_dxtt6")
 script = ExtResource("1_1jbcd")
-left_pixel_gap = 5
-right_pixel_gap = 5
-top_pixel_gap = 5
-bottom_pixel_gap = 5
 
 [node name="Main_Body" type="BoxContainer" parent="."]
 layout_mode = 0
