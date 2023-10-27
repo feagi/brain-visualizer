@@ -15,14 +15,14 @@ var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Wind
 var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
-	"left_bar": {"position": Vector2(100,100)},
-	"create_morphology": {"position": Vector2(50,100)},
-	"morphology_manager": {"position": Vector2(50,100)},
-	"edit_mappings": {"position": Vector2(50,100)},
-	"create_cortical": {"position": Vector2(50,100)},
-	"import_circuit": {"position": Vector2(50,100)},
+	"left_bar": {"position": Vector2(50,300)},
+	"create_morphology": {"position": Vector2(400,300)},
+	"morphology_manager": {"position": Vector2(900,500)},
+	"edit_mappings": {"position": Vector2(900,150)},
+	"create_cortical": {"position": Vector2(400,550)},
+	"import_circuit": {"position": Vector2(400,850)},
 	"quick_connect": {"position": Vector2(50,100)},
-	"tutorial": {"position": Vector2(50,100)}
+	"tutorial": {"position": Vector2(900,500)}
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area

@@ -2,6 +2,7 @@ extends Panel
 class_name TitleBar
 
 const MINIMUM_TITLEBAR_HEIGHT: int = 40
+const DEFAULT_RESPAWN_POSITION: Vector2 = Vector2(100,100)
 
 signal drag_started(current_window_position: Vector2, current_mouse_position: Vector2)
 signal dragged(window_position: Vector2, mouse_position: Vector2,  mouse_delta_offset: Vector2)
@@ -11,6 +12,9 @@ signal drag_finished(current_window_position: Vector2, current_mouse_position: V
 
 ## Whether title bar movement calculations should use positional changes over frames rather delta directly
 @export var use_position_instead_of_delta_movement: bool = true
+
+## How far out remaining the titlebar can be before automatic repositioning occurs
+@export var reposition_buffer: int = 45
 
 @export var title_gap: int:
 	get: return $Title_Text.gap
@@ -40,11 +44,18 @@ var is_dragging: bool:
 			
 		_is_dragging = v
 		if v:
+			# Start Drag
 			drag_started.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = true
 			if _parent is DraggableWindow:
 				_parent.move_to_front()
 		else:
+			# end Drag
+			var screen_rect: Rect2 = Rect2(Vector2(0,0), VisConfig.UI_manager.screen_size)
+			var self_rect: Rect2 = get_global_rect().grow(-reposition_buffer).abs()
+			if !screen_rect.intersects(self_rect):
+				_parent.position = DEFAULT_RESPAWN_POSITION
+				print("UI: Windows: Snapping back out of bounds window!")
 			drag_finished.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = false
 
@@ -147,9 +158,6 @@ func _dragging(drag: InputEventMouseMotion) -> void:
 	if !is_dragging:
 		return # if we arent dragging, don't do anything!
 	dragged.emit(_parent.position, drag.position, drag.relative)
-
-func _end_drag() -> void:
-	drag_finished.emit(_parent.position)
 
 ## IF auto-setup-dragging is enabled (with delta), responsible for moving parent around
 func _auto_drag_move_parent_delta(_window_position: Vector2, _mouse_position: Vector2, delta_offset: Vector2) -> void:
