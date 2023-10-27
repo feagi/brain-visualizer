@@ -12,3 +12,6 @@ grow_vertical = 2
 mouse_filter = 1
 right_disconnects = true
 script = ExtResource("1_06pyj")
+
+[node name="Timer" type="Timer" parent="."]
+one_shot = true

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=14 format=3 uid="uid://bvdaq4i6y2aer"]
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_r8gt6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
@@ -7,20 +7,22 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_u67op"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="4_onsts"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
-[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
-[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
-[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
+[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_tmy0u"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lphoj"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ukkev"]
+bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 
 [node name="WindowCreateMorphology" type="Panel"]
 offset_top = 41.0
 offset_bottom = 41.0
 theme = ExtResource("1_r8gt6")
 script = ExtResource("1_w1bco")
-left_pixel_gap = 5
-right_pixel_gap = 5
-top_pixel_gap = 5
-bottom_pixel_gap = 5
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
@@ -49,20 +51,30 @@ custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 script = ExtResource("3_6i23i")
 
+[node name="gap2" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
 [node name="Type" type="BoxContainer" parent="Container"]
 layout_mode = 2
 script = ExtResource("4_onsts")
 
 [node name="Composite" type="CheckBox" parent="Container/Type"]
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
 text = "Composite"
 
 [node name="Vectors" type="CheckBox" parent="Container/Type"]
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
 text = "Vectors"
 
 [node name="Patterns" type="CheckBox" parent="Container/Type"]
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
 text = "Patterns"
 
 [node name="spacer2" type="Control" parent="Container"]
@@ -88,6 +100,10 @@ layout_mode = 2
 visible = false
 layout_mode = 2
 
+[node name="gap4" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
 [node name="CreateMorphologyButton" type="Button" parent="Container"]
 layout_mode = 2
 text = "Create Morphology"
@@ -96,7 +112,7 @@ script = ExtResource("11_tmy0u")
 [node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
 layout_mode = 0
 offset_top = -40.0
-offset_right = 0.0
+offset_right = 184.0
 offset_bottom = 0.0
 title = "Create Morphology"
 automatic_setup_hiding_closing = false

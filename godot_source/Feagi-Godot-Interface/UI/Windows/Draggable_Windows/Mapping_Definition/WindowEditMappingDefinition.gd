@@ -25,6 +25,7 @@ var _destinations_dropdown: CorticalDropDown
 var _mapping_details: WindowMappingDetails
 
 func _ready() -> void:
+	super()
 	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
 	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
 	_mapping_details = $BoxContainer/Mapping_Details
@@ -80,16 +81,6 @@ func _source_changed(new_source: CorticalArea) -> void:
 
 func _destination_changed(new_destination: CorticalArea) -> void:
 	destination_area = new_destination
-
-## Called from Window manager, to save previous position
-func save_to_memory() -> Dictionary:
-	return {
-		"position": position,
-	}
-
-## Called from Window manager, to load previous position
-func load_from_memory(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
 
 #TODO add these signals
 
