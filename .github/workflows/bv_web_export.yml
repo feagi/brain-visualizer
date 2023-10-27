@@ -1,4 +1,4 @@
-name: "Brain Visualizer Web Export"
+name: "Push bridge and update versions"
 
 on:
   push:
@@ -25,8 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}  
-        
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Merge in New Changes
         run: |
           # Set up Git
@@ -36,7 +35,10 @@ jobs:
           echo "set vars"
           git fetch origin
           git checkout -b temp
-        
+       - name: Set Compile Time
+          run: |
+            cd src
+            ./version_generate.sh
       - name: Setup for Build
         run: |
           mkdir -v -p ~/.local/share/godot/templates
@@ -44,9 +46,9 @@ jobs:
       
       - name: Create Build Directory
         run: |
-          mkdir -v -p build/web
-          cd $PROJECT_PATH
-          
+            mkdir -v -p build/web
+            cd $PROJECT_PATH
+
       - name: Set Compile Time
         run: |
           chmod +x ./set_timestamp.sh
@@ -60,5 +62,21 @@ jobs:
           git commit -m "Updated Web Export"
           echo "committed"
           git push origin temp:pre-release --force
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: neuraville/bridge:latest
           
           
