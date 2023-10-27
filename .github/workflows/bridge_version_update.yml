@@ -3,7 +3,7 @@ name: "Bridge Update Version and push to HUB"
 on:
   push:
     branches:
-      - staging
+      - main
     paths:
       - 'src/bridge_godot_python.py'
       - 'src/configuration.py'
