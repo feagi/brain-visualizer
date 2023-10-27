@@ -35,10 +35,10 @@ jobs:
           echo "set vars"
           git fetch origin
           git checkout -b temp
-       - name: Set Compile Time
-          run: |
-            cd src
-            ./version_generate.sh
+      - name: Set Compile Time
+        run: |
+          cd src
+          ./version_generate.sh
       - name: Setup for Build
         run: |
           mkdir -v -p ~/.local/share/godot/templates
