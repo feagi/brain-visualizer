@@ -7,12 +7,6 @@ on:
     paths:
       - 'godot_source/**'
   workflow_dispatch:
-
-env:
-  GODOT_VERSION: 4.1.1
-  EXPORT_NAME: Web
-
-
  
 jobs:
   export-web:
@@ -42,6 +36,7 @@ jobs:
       - name: Setup for Build
         run: |
           mkdir -v -p ~/.local/share/godot/templates
+          export GODOT_VERSION=4.1.1
           mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
       
       - name: Create Build Directory
