@@ -54,10 +54,11 @@ jobs:
           godot -v --rendering-driver opengl3 --headless --export-release "HTML5" /__w/brain-visualizer/brain-visualizer/html/index.html
       - name: Push Web Export
         run: |
+          git pull origin pre-release
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git push origin temp:pre-release --force
+          git push origin temp:pre-release
 
   bridge_version:
     name: Bridge Update Version
