@@ -29,10 +29,7 @@ jobs:
       run: |
         git config --global user.email "dev@neuraville.com"
         git config --global user.name "NeuravilleDeveloper"
-        echo ${GH_TOKEN}
-        echo "mohammad"
-        echo $GH_TOKEN
-        git remote add public https://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@github.com/feagi/brain-visualizer.git
+        git remote add public https://${GH_TOKEN}e@github.com/feagi/brain-visualizer.git
         git diff --exit-code || git commit -m "Sync with pre-pub-staging excluding .env and .github directory changes"
         git push public $BRANCH_NAME --force
       env:
