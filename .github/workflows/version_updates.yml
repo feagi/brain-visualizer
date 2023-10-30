@@ -1,17 +1,18 @@
-name: "Brain Visualizer Web Export"
+name: "Update bridge or/and BV versions"
 
 on:
   push:
     branches:
       - staging
-  workflow_dispatch:
+    paths:
+      - 'godot_source/**'
+      - 'src/bridge_godot_python.py'
+      - 'src/configuration.py'
 
 env:
   GODOT_VERSION: 4.1.1
   EXPORT_NAME: Web
 
-
- 
 jobs:
   export-web:
     name: Web Export
@@ -22,8 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}  
-        
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Merge in New Changes
         run: |
           # Set up Git
@@ -33,17 +34,17 @@ jobs:
           echo "set vars"
           git fetch origin
           git checkout -b temp
-        
+
       - name: Setup for Build
         run: |
           mkdir -v -p ~/.local/share/godot/templates
           mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
-      
+
       - name: Create Build Directory
         run: |
           mkdir -v -p build/web
           cd $PROJECT_PATH
-          
+
       - name: Set Compile Time
         run: |
           chmod +x ./set_timestamp.sh
@@ -53,9 +54,38 @@ jobs:
           godot -v --rendering-driver opengl3 --headless --export-release "HTML5" /__w/brain-visualizer/brain-visualizer/html/index.html
       - name: Push Web Export
         run: |
+          git pull origin pre-release
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
-          git push origin temp:web_export --force
-          
-          
+          git push origin temp:pre-release
+
+  bridge_version:
+    name: Bridge Update Version
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge in New Changes
+        run: |
+          # Set up Git
+          pwd
+          ls
+          git config --global user.name "BrainVisualizerPushAction"
+          git config --global user.email "BrainVisualizerPushAction@neuraville.com"
+          git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
+          echo "set vars"
+          git checkout -b temp
+
+      - name: Set Compile Time
+        run: |
+          cd src
+          ./version_generate.sh
+      - name: Push version changes
+        run: |
+          git add .
+          git commit -m "Updated Version"
+          echo "committed"
+          git push origin temp:pre-release --force
