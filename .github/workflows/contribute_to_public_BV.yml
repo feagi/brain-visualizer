@@ -21,7 +21,7 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
       with:
-        token: ${{ secrets.PUBLIC_PAT_MNT }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Generate branch name
       run: echo "BRANCH_NAME=neuraville-$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
