@@ -39,13 +39,19 @@ jobs:
     - name: Debug branch name
       run: echo Branch name is ${{ env.BRANCH_NAME }}
 
-    - name: Create PR on feagi/brain-visualizer repo
-      uses: repo-sync/pull-request@v2
-      with:
-        destination_repository: "feagi/brain-visualizer"
-        source_branch: $${{ env.BRANCH_NAME }}
-        destination_branch: "staging"
-        pr_title: "Updates from Neuraville Inc"
-        pr_body: "This PR syncs with latest Neuraville Inc. development code."
-        pr_label: "sync"
-        github_token: ${{ secrets.PUBLIC_PAT_MNT }}
+    - name: Create PR using GitHub CLI
+      run: |
+        # Set up GitHub CLI
+        gh auth login --with-token <<< "${{ secrets.PUBLIC_PAT_MNT }}"
+        
+        # Create a pull request
+        gh pr create \
+          --repo feagi/brain-visualizer \
+          --base staging \
+          --head ${{ env.BRANCH_NAME }} \
+          --title "Updates from Neuraville Inc" \
+          --body "This PR syncs with latest Neuraville Inc. development code." \
+          --label "sync"
+      env:
+        GH_CLI_TOKEN: ${{ secrets.PUBLIC_PAT_MNT }}
+
