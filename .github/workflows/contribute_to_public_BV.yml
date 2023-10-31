@@ -50,8 +50,7 @@ jobs:
           --base staging \
           --head ${{ env.BRANCH_NAME }} \
           --title "Updates from Neuraville Inc" \
-          --body "This PR syncs with latest Neuraville Inc. development code." \
-          --label "sync"
+          --body "This PR syncs with latest Neuraville Inc. development code."
       env:
         GH_CLI_TOKEN: ${{ secrets.PUBLIC_PAT_MNT }}
 
