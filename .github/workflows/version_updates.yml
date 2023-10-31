@@ -17,6 +17,7 @@ jobs:
   export-web:
     name: Web Export
     runs-on: ubuntu-20.04
+    if: github.repository == 'feagi/brain-visualizer'
     container:
       image: barichello/godot-ci:4.1.1
     steps:
