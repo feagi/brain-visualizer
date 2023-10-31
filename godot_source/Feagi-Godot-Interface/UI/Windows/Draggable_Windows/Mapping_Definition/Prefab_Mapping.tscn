@@ -5,12 +5,12 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Prefab_Mapping.gd" id="1_tf7sq"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_2p8f4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_c7vkc"]
-[ext_resource type="Texture2D" uid="uid://c5vqm24vuelh1" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info_S.png" id="5_j7l6v"]
-[ext_resource type="Texture2D" uid="uid://d0gu1i34gsa17" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info_C.png" id="6_4qusj"]
-[ext_resource type="Texture2D" uid="uid://p7myukul6au7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info_H.png" id="7_1w606"]
+[ext_resource type="Texture2D" uid="uid://7mxpyui05hrr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_S.png" id="5_dnfxt"]
+[ext_resource type="Texture2D" uid="uid://dx4r1mvlkx2ng" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_C.png" id="6_wetbg"]
 [ext_resource type="Texture2D" uid="uid://dp88xvwj1bkx8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="7_6bygk"]
+[ext_resource type="Texture2D" uid="uid://b0yuev5nbioih" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_H.png" id="7_qk6mv"]
 [ext_resource type="Texture2D" uid="uid://dxompi5edsmi4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="8_bshfw"]
-[ext_resource type="Texture2D" uid="uid://dhqquvgpa4bwr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/info_D.png" id="8_fxlsj"]
+[ext_resource type="Texture2D" uid="uid://doskw4dtiqcli" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_D.png" id="8_qc3sj"]
 [ext_resource type="Texture2D" uid="uid://5245cp7ae0tc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="9_civpw"]
 [ext_resource type="Texture2D" uid="uid://c2thohys4ix5e" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="10_yquya"]
 
@@ -86,10 +86,10 @@ layout_mode = 2
 [node name="info" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-texture_normal = ExtResource("5_j7l6v")
-texture_pressed = ExtResource("6_4qusj")
-texture_hover = ExtResource("7_1w606")
-texture_disabled = ExtResource("8_fxlsj")
+texture_normal = ExtResource("5_dnfxt")
+texture_pressed = ExtResource("6_wetbg")
+texture_hover = ExtResource("7_qk6mv")
+texture_disabled = ExtResource("8_qc3sj")
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("5_c7vkc")
