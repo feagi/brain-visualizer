@@ -36,10 +36,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PUBLIC_PAT_MNT }}
 
-    - name: Create PR on feagi/brain_visualizer repo
+    - name: Create PR on feagi/brain-visualizer repo
       uses: repo-sync/pull-request@v2
       with:
-        destination_repository: "feagi/brain_visualizer"
+        destination_repository: "feagi/brain-visualizer"
         source_branch: $BRANCH_NAME
         destination_branch: "staging"
         pr_title: "Updates from Neuraville Inc"
