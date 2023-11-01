@@ -16,12 +16,9 @@ jobs:
     - name: Check out Neuraville code
       uses: actions/checkout@v4
       with:
-        repository: Neuraville/brain-visualizer
-        ref: pre-nrs
         sparse-checkout: .
         fetch-depth: 0
         path: neuraville-brain-visualizer
-        token: ${{ github.token }}
 
     - name: Generate branch name
       run: echo "BRANCH_NAME=neuraville-$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
@@ -29,10 +26,9 @@ jobs:
     - name: Check out NRS code
       uses: actions/checkout@v4
       with:
-        repository: Neuraville/nrs-brain-visualizer
-        ref: staging
         sparse-checkout: .
         fetch-depth: 0
+        repository: Neuraville/nrs-brain-visualizer
         path: nrs-brain-visualizer
         token: ${{ secrets.NRS_PAT }}
 
