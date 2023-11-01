@@ -31,7 +31,7 @@ jobs:
         repository: Neuraville/nrs-brain-visualizer
         ref: staging
         path: nrs-brain-visualizer
-        token: ${{ secrets.NRS_PAT || github.token }}
+        token: ${{ secrets.NRS_PAT }}
 
     - name: Setup Git Identity for Merge
       run: |
