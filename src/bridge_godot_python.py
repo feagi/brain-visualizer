@@ -51,7 +51,7 @@ def simulation_testing():
     """
     This is to stress the CPU using Godot. You should be able to see the red cube filled with
     small red cubes inside. You can simply uncomment this function in main() to test the
-    stress and increase the iteration numbers to stress more.....
+    stress and increase the iteration numbers to stress more.
     """
     array = [[random.randint(0, 64), random.randint(0, 64), random.randint(0, 64)] for _ in
              range(1000)]
