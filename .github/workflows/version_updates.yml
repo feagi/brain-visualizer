@@ -64,6 +64,7 @@ jobs:
   bridge_version:
     name: Bridge Update Version
     runs-on: ubuntu-20.04
+    if: github.repository == 'feagi/brain-visualizer'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
