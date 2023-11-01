@@ -19,6 +19,7 @@ jobs:
         sparse-checkout: .
         fetch-depth: 0
         path: neuraville-brain-visualizer
+        token: ${{ secrets.NRS_PAT || github.token }}
 
     - name: Generate branch name
       run: echo "BRANCH_NAME=neuraville-$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
