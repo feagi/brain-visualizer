@@ -34,7 +34,6 @@ jobs:
         sparse-checkout: .
         fetch-depth: 0
 
-
     - name: Setup Git Identity for Merge
       run: |
         cd community-brain-visualizer
