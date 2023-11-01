@@ -37,6 +37,7 @@ func _ready():
 	_set_visible_text(initial_float)
 	toggle_signaling_up(enable_signaling_on_ready)
 	focus_entered.connect(_on_focus)
+	text_changed.connect(_on_interaction)
 	if emit_when_enter_pressed:
 		text_submitted.connect(_enter_proxy)
 	

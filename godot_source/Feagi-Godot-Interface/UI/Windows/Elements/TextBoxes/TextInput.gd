@@ -21,6 +21,7 @@ var _previous_text: String
 func _ready():
 	_previous_text = text
 	toggle_signaling_up(enable_signaling_on_ready)
+	text_changed.connect(_on_interaction)
 	
 
 ## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
