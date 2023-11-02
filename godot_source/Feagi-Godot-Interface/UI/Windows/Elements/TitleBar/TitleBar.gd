@@ -178,7 +178,7 @@ func _auto_hide_parent() -> void:
 
 func _auto_maintain_width() -> void:
 	set_deferred("size", Vector2(0,0))
-	var width: int = _sibling.size.x
+	var width: float = _sibling.size.x
 	if _parent is DraggableWindow:
 		var _drag_parent: DraggableWindow = _parent as DraggableWindow
 		width += _drag_parent.left_pixel_gap + _drag_parent.right_pixel_gap

@@ -6,13 +6,12 @@ var _source_node: CorticalNode
 var _destination_node: CorticalNode
 var _label: TextButton_Element
 
-var _internal_offset: Vector2 ## offset from corner to center 
-
 func setup(source_node: CorticalNode, destination_node: CorticalNode, number_mappings: int):
 	_source_node = source_node
 	_destination_node = destination_node
 	_source_node.position_offset_changed.connect(update_position)
-	_destination_node.position_offset_changed.connect(update_position)
+	if _source_node.cortical_area_ID != _destination_node.cortical_area_ID:
+		_destination_node.position_offset_changed.connect(update_position)
 	_source_node.cortical_area_ref.efferent_area_count_updated.connect(_feagi_updated_a_mapping_count)
 	_label = get_child(0)
 	update_position()
