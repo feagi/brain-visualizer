@@ -19,7 +19,7 @@ jobs:
         sparse-checkout: .
         fetch-depth: 0
         path: neuraville-brain-visualizer
-        token: ${{ secrets.NRS_PAT || github.token }}
+        # token: ${{ secrets.NRS_PAT || github.token }}
 
     - name: Generate branch name
       run: echo "BRANCH_NAME=neuraville-$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
@@ -30,7 +30,7 @@ jobs:
         sparse-checkout: .
         fetch-depth: 0
         repository: Neuraville/nrs-brain-visualizer
-        ref: staging
+        # ref: staging
         path: nrs-brain-visualizer
         token: ${{ secrets.NRS_PAT }}
 
@@ -39,18 +39,21 @@ jobs:
         cd nrs-brain-visualizer
         git config user.email "dev@neuraville.com"
         git config user.name "NeuravilleDeveloper"
+        
     - name: Merge Neuraville code into NRS code
       run: |
         cd nrs-brain-visualizer
         git remote add neuraville ../neuraville-brain-visualizer
         git fetch neuraville
         git merge neuraville/pre-nrs --allow-unrelated-histories
+        
     - name: Check for merge conflicts
       run: |
         if git diff --name-only --diff-filter=U | grep -q .; then
           echo "Merge conflicts detected!"
           exit 1
         fi
+        
     - name: Setup Git with PAT and commit changes
       run: |
         cd nrs-brain-visualizer
@@ -61,6 +64,7 @@ jobs:
         git checkout $BRANCH_NAME || git checkout -b $BRANCH_NAME
         git diff --exit-code || git commit -m "Sync with pre-nrs excluding .env and .github directory changes"
         git push nrs ${{ env.BRANCH_NAME }}
+        
     - name: Create PR using GitHub CLI
       run: |
         gh auth login --with-token <<< "${{ secrets.NRS_PAT }}"
@@ -70,5 +74,6 @@ jobs:
           --head ${{ env.BRANCH_NAME }} \
           --title "Updates from Neuraville Inc." \
           --body "This PR syncs with latest Neuraville Inc. development code."
+          
       env:
         GH_CLI_TOKEN: ${{ secrets.NRS_PAT }}
