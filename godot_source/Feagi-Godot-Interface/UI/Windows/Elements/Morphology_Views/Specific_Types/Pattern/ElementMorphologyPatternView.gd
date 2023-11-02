@@ -27,9 +27,9 @@ func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:
 	pattern_pairs = pattern_morphology.patterns
 
 ## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR
-func set_editable(is_editable: bool) -> void:
-	_is_editable = is_editable
-	$labels/deletegap.visible = is_editable
+func set_editable(is_field_editable: bool) -> void:
+	_is_editable = is_field_editable
+	$labels/deletegap.visible = is_field_editable
 
 func add_pattern_pair_row() -> void:
 	var pattern_pair: PatternVector3Pairs = PatternVector3Pairs.create_empty()

@@ -6,8 +6,6 @@ var _source_node: CorticalNode
 var _destination_node: CorticalNode
 var _label: TextButton_Element
 
-var _internal_offset: Vector2 ## offset from corner to center 
-
 func setup(source_node: CorticalNode, destination_node: CorticalNode, number_mappings: int):
 	_source_node = source_node
 	_destination_node = destination_node
