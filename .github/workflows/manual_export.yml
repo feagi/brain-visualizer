@@ -47,9 +47,13 @@ jobs:
       - name: Web Build
         run: |
           godot -v --rendering-driver opengl3 --headless --export-release "HTML5" /__w/brain-visualizer/brain-visualizer/html/index.html
-      - name: Push Web Export
+      - name: list file
+        run: |
+         pwd
+         ls "/__w/brain-visualizer/brain-visualizer/html/"
+      - name: Push version changes
         run: |
           git add .
-          git commit -m "Updated Web Export"
+          git commit -m "Updated Version"
           echo "committed"
-          git push origin/main
+          git push origin temp:pre-release --force
