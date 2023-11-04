@@ -8,6 +8,7 @@ on:
       - 'godot_source/**'
       - 'src/bridge_godot_python.py'
       - 'src/configuration.py'
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: 4.1.1
