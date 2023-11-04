@@ -57,34 +57,3 @@ jobs:
           git commit -m "Updated Web Export"
           echo "committed"
           git push origin temp:pre-release
-
-  bridge_version:
-    name: Bridge Update Version
-    runs-on: ubuntu-20.04
-    if: github.repository == 'feagi/brain-visualizer'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Merge in New Changes
-        run: |
-          # Set up Git
-          pwd
-          ls
-          git config --global user.name "BrainVisualizerPushAction"
-          git config --global user.email "BrainVisualizerPushAction@neuraville.com"
-          git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
-          echo "set vars"
-          git checkout -b temp
-
-      - name: Set Compile Time
-        run: |
-          cd src
-          ./version_generate.sh
-      - name: Push version changes
-        run: |
-          git add .
-          git commit -m "Updated Version"
-          echo "committed"
-          git push origin temp:pre-release
