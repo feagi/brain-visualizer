@@ -32,6 +32,7 @@ jobs:
           # Set up Git
           git config --global user.name "BrainVisualizerPushAction"
           git config --global user.email "BrainVisualizerPushAction@neuraville.com"
+          git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
           echo "set vars"
           git fetch origin
           git checkout -b temp
