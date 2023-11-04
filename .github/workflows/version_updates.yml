@@ -51,8 +51,9 @@ jobs:
           ls && pwd
           cd godot_source
           /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
-          cd ../html
+          cd ..
           echo "CHECKING HTML FILES"
+          pwd
           ls
       - name: Push Web Export
         run: |
