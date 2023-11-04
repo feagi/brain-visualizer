@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'feagi/brain-visualizer'
     container:
-      image: barichello/godot-ci:4.1.1
+      image: neuraville/godot_export_web:v4.1.1
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -36,11 +36,6 @@ jobs:
           git fetch origin
           git checkout -b temp
 
-      - name: Setup for Build
-        run: |
-          mkdir -v -p ~/.local/share/godot/templates
-          mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
-
       - name: Create Build Directory
         run: |
           mkdir -v -p build/web
@@ -52,7 +47,8 @@ jobs:
           ./set_timestamp.sh
       - name: Web Build
         run: |
-          godot -v --rendering-driver opengl3 --headless --export-release "HTML5" /__w/brain-visualizer/brain-visualizer/html/index.html
+          ls && pwd
+          /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
       - name: Push Web Export
         run: |
           git pull origin pre-release
@@ -90,4 +86,4 @@ jobs:
           git add .
           git commit -m "Updated Version"
           echo "committed"
-          git push origin temp:pre-release --force
+          git push origin temp:pre-release
