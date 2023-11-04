@@ -55,8 +55,11 @@ jobs:
           echo "CHECKING HTML FILES"
           pwd
           ls
+          echo "NEXT"
+          ls html/
       - name: Push Web Export
         run: |
+          git status
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
