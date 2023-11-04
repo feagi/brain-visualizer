@@ -53,7 +53,6 @@ jobs:
           /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
       - name: Push Web Export
         run: |
-          git pull origin pre-release
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
