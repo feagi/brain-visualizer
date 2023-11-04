@@ -51,8 +51,15 @@ jobs:
           ls && pwd
           cd godot_source
           /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
+          cd ..
+          echo "CHECKING HTML FILES"
+          pwd
+          ls
+          echo "NEXT"
+          ls html/
       - name: Push Web Export
         run: |
+          git status
           git add .
           git commit -m "Updated Web Export"
           echo "committed"
