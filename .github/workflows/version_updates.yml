@@ -30,7 +30,6 @@ jobs:
       - name: Merge in New Changes
         run: |
           # Set up Git
-          apt install git -y
           git config --global user.name "BrainVisualizerPushAction"
           git config --global user.email "BrainVisualizerPushAction@neuraville.com"
           git config --global --add safe.directory /__w/brain-visualizer/brain-visualizer
