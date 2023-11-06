@@ -47,6 +47,7 @@ jobs:
           ./set_timestamp.sh
       - name: Web Build
         run: |
+          cp -r /root/.local/share/godot/export_templates/4.1.1.stable/* /github/home/.local/share/godot/export_templates/4.1.1.stable/
           ls /root/.local/share/godot/export_templates/4.1.1.stable/
           echo " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
           ls /github/home/.local/share/godot/export_templates/4.1.1.stable/
