@@ -19,6 +19,7 @@ var _outgoing_headers: PackedStringArray # headers to make requests with
 var _processing_type: CALL_PROCESS_TYPE
 var _buffer_data: Variant
 var _follow_up_function: Callable
+var _killing_on_reset: bool
 
 var _polling_check: PollingMethodInterface
 var _poll_address: StringName
@@ -28,6 +29,7 @@ var _poll_data_to_send: Variant
 
 ## Sets up this node with all rpereqs, should only be called once on instantiation
 func initialization(interface: NetworkInterface, call_header: PackedStringArray, node_parent: Node) -> void:
+	FeagiEvents.genome_is_about_to_reset.connect(_brain_visualizer_resetting)
 	request_completed.connect(_call_complete)
 	_network_interface_ref = interface
 	_timer = $Timer
@@ -48,7 +50,7 @@ func single_call(full_request_address: StringName, method: HTTPClient.Method, fo
 ## Starts polling calls to FEAGI, routinely gets responses until condition defined by polling_check is met
 func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
 	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5) -> void:
+	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = true) -> void:
 
 	_processing_type = CALL_PROCESS_TYPE.POLLING
 	_buffer_data = data_to_buffer
@@ -60,12 +62,22 @@ func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Me
 	_poll_data_to_send = additional_data_to_send
 	_polling_check = polling_check
 	_mid_poll_call = mid_poll_call
+	_killing_on_reset = kill_on_reset
 
 	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
 
+## Timer went off - time to poll
 func _poll_call_from_timer() -> void:
 	_make_call_to_FEAGI(_poll_address, _poll_call_method, _poll_data_to_send)
 
+## Recieved signal that BV is resetting
+func _brain_visualizer_resetting() -> void:
+	if !_killing_on_reset:
+		return
+	print("NETWORK: WORKER: BV Reset Detected! Halting Poll Worker!")
+	cancel_request()
+	_timer.stop()
+	_query_for_destruction()
 
 ## Sends request to FEAGI, and returns the output by running destination_function when reply is recieved
 ## data is either a Dictionary or stringable Array, and is sent for POST, PUT, and DELETE requests
