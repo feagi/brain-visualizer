@@ -56,6 +56,10 @@ jobs:
           ls
           echo "NEXT"
           ls html/
+          echo "DEBUGGING"
+          ls /root
+          echo "godot debug"
+          ls /root/.local
       - name: Push Web Export
         run: |
           git status
