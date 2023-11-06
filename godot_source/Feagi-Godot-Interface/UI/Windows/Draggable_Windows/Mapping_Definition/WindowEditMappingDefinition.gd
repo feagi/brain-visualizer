@@ -95,3 +95,4 @@ func _morphology_added(new_morphology: Morphology) -> void:
 
 func _morphology_removed(removed_morphology: Morphology) -> void:
 	pass
+
