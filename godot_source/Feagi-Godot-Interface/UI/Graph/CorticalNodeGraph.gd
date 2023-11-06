@@ -6,7 +6,7 @@ const NODE_SIZE: Vector2i = Vector2i(175, 86)
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
 @export var algorithm_cortical_area_spacing: Vector2i =  Vector2i(10,6)
-@export var move_time_delay_before_update_FEAGI: float = 10.0
+@export var move_time_delay_before_update_FEAGI: float = 5.0
 
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
 var _connection_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/ConnectionButton.tscn")
