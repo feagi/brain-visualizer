@@ -47,6 +47,8 @@ jobs:
           ./set_timestamp.sh
       - name: Web Build
         run: |
+          mkdir -p /github/home/.local/share/godot/export_templates/4.1.1.stable/
+          cp -r /root/.local/share/godot/export_templates/4.1.1.stable/* /github/home/.local/share/godot/export_templates/4.1.1.stable/
           cd godot_source
           /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
       - name: Push Web Export
