@@ -47,7 +47,7 @@ jobs:
           ./set_timestamp.sh
       - name: Web Build
         run: |
-          ls && pwd
+          ls /root/.local/share/godot/export_templates/4.1.1.stable/
           cd godot_source
           /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
           cd ..
