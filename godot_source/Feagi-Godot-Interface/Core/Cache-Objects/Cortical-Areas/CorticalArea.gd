@@ -221,6 +221,14 @@ func remove_all_connections() -> void:
 	while len(_efferent_connections_with_count.keys()) != 0:
 		remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[_efferent_connections_with_count.keys()[0]])
 
+## Retrieves the [MappingProperties] to a cortical area from this one. Returns an empty [MappingProperties] if no connecitons are defined
+func get_mappings_to(destination_cortical_area: CorticalArea) -> MappingProperties:
+	if destination_cortical_area.cortical_ID not in _efferent_mappings.keys():
+		return MappingProperties.create_empty_mapping(self, destination_cortical_area)
+	else:
+		return _efferent_mappings[destination_cortical_area.cortical_ID]
+
+
 ## replaced cortical mapping properties to a efferent cortical location from here
 func set_efferent_mapping_properties_from_FEAGI(properties: MappingProperties, target_cortical_area: CorticalArea) -> void:
 	_efferent_mappings[target_cortical_area.cortical_ID] = properties
