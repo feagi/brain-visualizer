@@ -132,4 +132,7 @@ func _user_request_connection_deletion(from_cortical_ID: StringName, _from_port:
 
 func _on_genome_reset():
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
+	_moved_cortical_areas_buffer = {}
+	_move_timer.stop()
+
 
