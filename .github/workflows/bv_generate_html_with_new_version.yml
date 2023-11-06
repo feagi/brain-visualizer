@@ -48,6 +48,8 @@ jobs:
       - name: Web Build
         run: |
           ls /root/.local/share/godot/export_templates/4.1.1.stable/
+          echo " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+          ls /github/home/.local/share/godot/export_templates/4.1.1.stable/
           cd godot_source
           /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
           cd ..
