@@ -22,9 +22,6 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 
 signal socket_state_changed(state: WebSocketPeer.State)
 
-var num_request_workers_available: int:
-	get: return request_workers_available.size()
-
 var current_websocket_status: WebSocketPeer.State:
 	get: return _get_socket_state()
 
@@ -157,7 +154,7 @@ func websocket_send(data: Variant) -> void:
 ## Grabs either an available [RequestWorker] (or if none are available, spawns one first)
 func _grab_worker() -> RequestWorker:
 	var worker: RequestWorker
-	if num_request_workers_available > 0:
+	if request_workers_available.size() > 0:
 		worker = request_workers_available.pop_back()
 	else:
 		worker = _spawn_worker()
