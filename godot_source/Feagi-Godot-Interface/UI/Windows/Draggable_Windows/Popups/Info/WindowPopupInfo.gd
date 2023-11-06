@@ -12,7 +12,6 @@ func set_properties(title_text: StringName, message_text: StringName, button_tex
 	_set_message(message_text)
 	_set_button_text(button_text)
 	_set_texture(icon)
-	size = Vector2(0,0)
 	$VBoxContainer.size = Vector2(0,0) # force window to shrink
 
 func _set_title_text(text: StringName) -> void:
