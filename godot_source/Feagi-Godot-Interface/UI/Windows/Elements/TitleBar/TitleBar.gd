@@ -7,6 +7,7 @@ const DEFAULT_RESPAWN_POSITION: Vector2 = Vector2(100,100)
 signal drag_started(current_window_position: Vector2, current_mouse_position: Vector2)
 signal dragged(window_position: Vector2, mouse_position: Vector2,  mouse_delta_offset: Vector2)
 signal drag_finished(current_window_position: Vector2, current_mouse_position: Vector2)
+signal close_pressed()
 
 @export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
 
@@ -159,6 +160,9 @@ func _dragging(drag: InputEventMouseMotion) -> void:
 		return # if we arent dragging, don't do anything!
 	dragged.emit(_parent.position, drag.position, drag.relative)
 
+func _close_proxy():
+	close_pressed.emit()
+
 ## IF auto-setup-dragging is enabled (with delta), responsible for moving parent around
 func _auto_drag_move_parent_delta(_window_position: Vector2, _mouse_position: Vector2, delta_offset: Vector2) -> void:
 	_parent.position = _parent.position + delta_offset
@@ -177,8 +181,8 @@ func _auto_hide_parent() -> void:
 	_parent.visible = false
 
 func _auto_maintain_width() -> void:
-	set_deferred("size", Vector2(0,0))
-	var width: int = _sibling.size.x
+	#set_deferred("size", Vector2(0,0))
+	var width: float = _sibling.size.x
 	if _parent is DraggableWindow:
 		var _drag_parent: DraggableWindow = _parent as DraggableWindow
 		width += _drag_parent.left_pixel_gap + _drag_parent.right_pixel_gap

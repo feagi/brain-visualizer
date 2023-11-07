@@ -39,6 +39,16 @@ func remove_mapping(index: int) -> void:
 func duplicate() -> MappingProperties:
 	return MappingProperties.new(_src_cortical, _dst_cortical, _mappings)
 
+## Merges the mappings of another [MappingProperties] (given that the source and destination cortical areas match)
+func merge_in_mapping_properties(to_merge_in: MappingProperties) -> void:
+	if _src_cortical.cortical_ID != to_merge_in.source_cortical_area.cortical_ID:
+		push_error("Unable to merge MappingProperties with different source areas! Skipping merge!")
+		return
+	if _dst_cortical.cortical_ID != to_merge_in.destination_cortical_area.cortical_ID:
+		push_error("Unable to merge MappingProperties with different destination areas! Skipping merge!")
+		return
+	_mappings.append_array(to_merge_in.mappings)
+	
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
 static func from_MappingPropertys(mapping_properties_from_FEAGI: Array, source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
 	var new_mappings: Array[MappingProperty] = []

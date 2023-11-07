@@ -12,7 +12,7 @@ script = ExtResource("1_0acba")
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.254902, 0, 0.00784314, 1)
+color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="BurstEngine" index="0"]
 tooltip_text = "Burst Engine"
@@ -21,7 +21,7 @@ tooltip_text = "Burst Engine"
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.254902, 0, 0.00784314, 1)
+color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="GenomeAvailability" index="0"]
 tooltip_text = "Genome Availibility"
@@ -30,7 +30,7 @@ tooltip_text = "Genome Availibility"
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.254902, 0, 0.00784314, 1)
+color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="GenomeValidity" index="0"]
 tooltip_text = "Genome Validity"
@@ -39,7 +39,7 @@ tooltip_text = "Genome Validity"
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.254902, 0, 0.00784314, 1)
+color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="BrainReadiness" index="0"]
 tooltip_text = "Brain Readiness"

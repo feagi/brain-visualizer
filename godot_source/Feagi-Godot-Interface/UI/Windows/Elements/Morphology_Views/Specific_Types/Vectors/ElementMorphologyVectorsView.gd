@@ -28,9 +28,9 @@ func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:
 	vectors = vector_morphology.vectors
 
 ## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR
-func set_editable(is_editable: bool) -> void:
-	_is_editable = is_editable
-	$labels/deletegap.visible = is_editable
+func set_editable(is_field_editable: bool) -> void:
+	_is_editable = is_field_editable
+	$labels/deletegap.visible = is_field_editable
 
 func add_vector_row() -> void:
 	_vectors_scroll.spawn_list_item({
