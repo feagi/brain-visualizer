@@ -55,3 +55,5 @@ vertical_alignment = 1
 script = ExtResource("3_etp03")
 max_length = 30
 label_text = "TEXT"
+
+[connection signal="pressed" from="Close_Button" to="." method="_close_proxy"]
