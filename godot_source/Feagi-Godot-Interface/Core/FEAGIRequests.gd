@@ -168,6 +168,13 @@ func request_set_mapping_between_corticals(source_area: CorticalArea, destinatio
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, mapping_data.to_array())
 
+## Request FEAGI to append mappings to a current mappings
+## NOTE: This assumes Cache is up to date on the current mapping state
+func append_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
+	var current_mapping: MappingProperties = source_area.get_mappings_to(destination_area).duplicate()
+	current_mapping.merge_in_mapping_properties(mapping_data)
+	request_set_mapping_between_corticals(source_area, destination_area, current_mapping)
+
 ## Request FEAGI to set a default mapping (given a morphology) between 2 cortical areas
 func request_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
 	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(source_area, destination_area, morphology))
