@@ -104,20 +104,27 @@ func _switch_UI_between_cortical_types(cortical_type: CorticalArea.CORTICAL_AREA
 func _create_pressed():
 	var generating_cortical_type: CorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
 	if generating_cortical_type == CorticalArea.CORTICAL_AREA_TYPE.INVALID:
-		push_warning("Unable to create a cortical area when no type is given!")
+		VisConfig.show_info_popup("Unable to create cortical area",
+		"Please define a cortical area type!",
+		"ok")
+		
 		return
 	
 	match generating_cortical_type:
 		CorticalArea.CORTICAL_AREA_TYPE.IPU:
 			if _dropdown_cortical_dropdown.selected == -1:
-				push_warning("Unable to create a cortical area when no template is given!")
+				VisConfig.show_info_popup("Unable to create cortical area",
+				"Please define a template!",
+				"ok")
 				return 
 			FeagiRequests.request_add_IOPU_cortical_area(_dropdown_cortical_dropdown.get_selected_template(), _field_channel.current_int,
 				_field_3D_coordinates.current_vector, false)
 
 		CorticalArea.CORTICAL_AREA_TYPE.OPU:
 			if _dropdown_cortical_dropdown.selected == -1:
-				push_warning("Unable to create a cortical area when no template is given!")
+				VisConfig.show_info_popup("Unable to create cortical area",
+				"Please define a template!",
+				"ok")
 				return 
 			FeagiRequests.request_add_IOPU_cortical_area(_dropdown_cortical_dropdown.get_selected_template(), _field_channel.current_int,
 				_field_3D_coordinates.current_vector, false)
