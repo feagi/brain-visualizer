@@ -36,6 +36,7 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 	_timer.timeout.connect(_poll_call_from_timer)
 	_outgoing_headers = call_header
 	node_parent.add_child(self)
+	name = "New"
 
 
 ## Makes a single call to FEAGI, gets a response, triggers the followup, then queues self for destruction
@@ -45,6 +46,7 @@ func single_call(full_request_address: StringName, method: HTTPClient.Method, fo
 	_processing_type = CALL_PROCESS_TYPE.SINGLE
 	_buffer_data = data_to_buffer
 	_follow_up_function = follow_up_function
+	name = "single"
 	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
 
 ## Starts polling calls to FEAGI, routinely gets responses until condition defined by polling_check is met
@@ -63,7 +65,9 @@ func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Me
 	_polling_check = polling_check
 	_mid_poll_call = mid_poll_call
 	_killing_on_reset = kill_on_reset
-
+	
+	name = "polling"
+	
 	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
 
 ## Timer went off - time to poll
@@ -140,11 +144,15 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 
 ## Used to check if the web worker is currently doing anything
 func _is_worker_busy(call_address: String) -> bool:
+	print(call_address + str(get_http_client_status()))
 	match get_http_client_status():
 		HTTPClient.Status.STATUS_RESOLVING:
 			push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
 			return true
 		HTTPClient.Status.STATUS_REQUESTING:
+			push_warning("NETWORK: Still trying to request previous request! Skipping call to " + call_address)
+			return true
+		HTTPClient.Status.STATUS_CONNECTING:
 			push_warning("NETWORK: Still trying to finish previous request! Skipping call to " + call_address)
 			return true
 		_:
@@ -158,6 +166,7 @@ func _is_worker_busy(call_address: String) -> bool:
 func _query_for_destruction() -> void:
 	if _network_interface_ref.request_workers_available.size() <= _network_interface_ref.num_workers_to_keep_available:
 		_network_interface_ref.request_workers_available.push_back(self)
+		name = "Idle"
 	else:
 		queue_free()
 
