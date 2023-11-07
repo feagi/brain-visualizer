@@ -69,7 +69,7 @@ func _request_apply_mappings_to_FEAGI():
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
 	var current_mappings: MappingProperties = _mapping_details.generate_mapping_properties(_source_area, _destination_area)
 	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, current_mappings)
-
+	close_window("edit_mappings")
 
 ## Returns true only if the source and destination areas selected are valid
 func _are_cortical_areas_valid() -> bool:
@@ -95,3 +95,4 @@ func _morphology_added(new_morphology: Morphology) -> void:
 
 func _morphology_removed(removed_morphology: Morphology) -> void:
 	pass
+

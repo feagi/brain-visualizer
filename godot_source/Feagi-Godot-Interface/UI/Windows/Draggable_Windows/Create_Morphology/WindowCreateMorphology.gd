@@ -55,18 +55,23 @@ func _on_type_button_pressed(_button_index: int, morphology_type: StringName) ->
 func _on_create_morphology_pressed():
 
 	if _morphology_name.text == "":
-
-		#TODO notify that morphology name cannot be empty
+		VisConfig.show_info_popup("Unable to create morphology",
+		"Please define a name for your morphology!",
+		"ok")
 		return
 	
 	
 	if _morphology_name.text in FeagiCache.morphology_cache.available_morphologies.keys():
-		#TODO notify user that they cannot use a morphology name that exists
+		VisConfig.show_info_popup("Unable to create morphology",
+		"That morphology name is already in use!",
+		"ok")
 		return
 	
 	if !_radio_selector.get_pressed_button():
 
-		#TODO notify a type must be selected
+		VisConfig.show_info_popup("Unable to create morphology",
+		"Please define a morphology type!",
+		"ok")
 		return
 
 	var selected_morphology_type: StringName = _radio_selector.get_pressed_button().text # hacky but whatever
@@ -86,3 +91,5 @@ func _on_create_morphology_pressed():
 		&"Patterns":
 			FeagiRequests.request_create_morphology(_patterns.get_as_pattern_morphology(_morphology_name.text))
 			return
+	
+	close_window("create_morphology")
