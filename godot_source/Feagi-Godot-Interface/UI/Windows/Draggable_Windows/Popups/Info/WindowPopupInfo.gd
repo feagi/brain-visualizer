@@ -6,6 +6,9 @@ enum ICON {
 	DEFAULT
 }
 
+func _ready() -> void:
+	super._ready()
+
 ## Set texts of window
 func set_properties(title_text: StringName, message_text: StringName, button_text: StringName, icon: ICON = ICON.DEFAULT) -> void:
 	_set_title_text(title_text)
@@ -13,6 +16,9 @@ func set_properties(title_text: StringName, message_text: StringName, button_tex
 	_set_button_text(button_text)
 	_set_texture(icon)
 	$VBoxContainer.size = Vector2(0,0) # force window to shrink
+	$TitleBar.close_pressed.connect(_close_popup)
+	$TitleBar._auto_maintain_width() #TODO This is dumb, but I dont time to do a cleaner implementation
+
 
 func _set_title_text(text: StringName) -> void:
 	$TitleBar.title = text
