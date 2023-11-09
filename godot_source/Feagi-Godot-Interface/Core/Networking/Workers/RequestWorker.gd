@@ -144,7 +144,6 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 
 ## Used to check if the web worker is currently doing anything
 func _is_worker_busy(call_address: String) -> bool:
-	print(call_address + str(get_http_client_status()))
 	match get_http_client_status():
 		HTTPClient.Status.STATUS_RESOLVING:
 			push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
