@@ -100,8 +100,11 @@ func _ready():
 		$Close_Button.pressed.connect(_auto_hide_parent)
 	
 	if automatic_maintain_width:
-		_sibling.resized.connect(_auto_maintain_width)
-		_auto_maintain_width()
+		if _parent is DraggableWindow:
+			var draggable_parent: DraggableWindow = _parent as DraggableWindow
+			draggable_parent.width_changed.connect(_auto_maintain_width)
+		else:
+			push_warning("Unable to set up 'automatic_maintain_width' on non-DraggableWindow parent object!")
 	
 	if automatic_setup_window_closing_for_window_manager_name != &"":
 		$Close_Button.pressed.connect(_window_manager_close)
@@ -180,12 +183,10 @@ func _auto_drag_move_parent_position(_window_position: Vector2, mouse_position: 
 func _auto_hide_parent() -> void:
 	_parent.visible = false
 
-func _auto_maintain_width() -> void:
-	#set_deferred("size", Vector2(0,0))
-	var width: float = _sibling.size.x
-	if _parent is DraggableWindow:
-		var _drag_parent: DraggableWindow = _parent as DraggableWindow
-		width += _drag_parent.left_pixel_gap + _drag_parent.right_pixel_gap
-	
-	custom_minimum_size = Vector2(width, MINIMUM_TITLEBAR_HEIGHT)
+func _auto_maintain_width(new_width: float) -> void:
+	size.x = new_width
+
+
+
+
 
