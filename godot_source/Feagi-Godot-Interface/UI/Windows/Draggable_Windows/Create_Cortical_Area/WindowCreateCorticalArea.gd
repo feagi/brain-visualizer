@@ -34,6 +34,7 @@ func _ready() -> void:
 	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
 	_field_channel.int_confirmed.connect(_channel_changed)
 	_main_container.recalculate_size()
+	VisConfig.UI_manager.start_new_cortical_area_preview(self)
 
 
 func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
