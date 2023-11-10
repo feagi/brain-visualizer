@@ -21,6 +21,7 @@ script = ExtResource("1_ydyx4")
 
 [node name="Voxel_Neuron_Density" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "Number of neurons within each voxel"
 
 [node name="Label" type="Label" parent="Voxel_Neuron_Density"]
 layout_mode = 2
@@ -34,6 +35,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Synaptic_Attractivity" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The rate of success in accepting incoming synapses"
 
 [node name="Label" type="Label" parent="Synaptic_Attractivity"]
 layout_mode = 2
@@ -47,6 +49,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Post_Synaptic_Potential" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
 
 [node name="Label" type="Label" parent="Post_Synaptic_Potential"]
 layout_mode = 2
@@ -60,6 +63,7 @@ script = ExtResource("3_a6rta")
 
 [node name="PSP_Max" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The max value the Post Synaptic Potential can grow to"
 
 [node name="Label" type="Label" parent="PSP_Max"]
 layout_mode = 2
@@ -73,6 +77,7 @@ script = ExtResource("3_a6rta")
 
 [node name="Fire_Threshold" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The level of membrane potential each neuron has to reach that would lead to neuron firing"
 
 [node name="Label" type="Label" parent="Fire_Threshold"]
 layout_mode = 2
@@ -86,6 +91,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Threshold_Limit" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The max level of membrane potential value that can trigger a neuron firing. Membrane potentials beyond this limit will not lead to neuron firing"
 
 [node name="Label" type="Label" parent="Threshold_Limit"]
 layout_mode = 2
@@ -99,6 +105,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Refactory_Period" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The number of bursts where neuron cannot fire after it has already fired"
 
 [node name="Label" type="Label" parent="Refactory_Period"]
 layout_mode = 2
@@ -112,6 +119,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Leak_Constant" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The amount of membrane potential a neuron will loose with the passing of a single burst duration"
 
 [node name="Label" type="Label" parent="Leak_Constant"]
 layout_mode = 2
@@ -125,6 +133,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Leak_Varibility" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The percentage of inconsistency that each neuron can have in their leak constant value"
 
 [node name="Label" type="Label" parent="Leak_Varibility"]
 layout_mode = 2
@@ -138,6 +147,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Consecutive_Fire_Count" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The max number of consecutive firing a neuron can have at a time"
 
 [node name="Label" type="Label" parent="Consecutive_Fire_Count"]
 layout_mode = 2
@@ -151,6 +161,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Snooze_Period" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The number of burst where the neuron cannot fire after the Consecutive Fire Count has reached"
 
 [node name="Label" type="Label" parent="Snooze_Period"]
 layout_mode = 2
@@ -164,6 +175,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="Degeneracy_Constant" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The number of burst where the neuron cannot fire after the Consecutive Fire Count has reached"
 
 [node name="Label" type="Label" parent="Degeneracy_Constant"]
 layout_mode = 2
@@ -177,6 +189,7 @@ script = ExtResource("1_vwrd4")
 
 [node name="PSP_Uniformity" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "The amount of PSP that a neuron synapse will degrade every time it fires"
 
 [node name="Label" type="Label" parent="PSP_Uniformity"]
 layout_mode = 2
@@ -188,6 +201,7 @@ layout_mode = 2
 
 [node name="MP_Accumulation" type="HBoxContainer" parent="."]
 layout_mode = 2
+tooltip_text = "If True, the neuron will hold on to its level of membrane potential across bursts. If False, the level of membrane potential will reset with the passing of each burst"
 
 [node name="Label" type="Label" parent="MP_Accumulation"]
 layout_mode = 2
@@ -199,6 +213,8 @@ layout_mode = 2
 
 [node name="Fire_Threshold_Label" type="Label" parent="."]
 layout_mode = 2
+tooltip_text = "Defined the level of Fire Threshold Increase in X, Y, Z directions of a cortical area"
+mouse_filter = 1
 text = "Fire Threshold Increment"
 script = ExtResource("4_ofdu8")
 max_length = 50
