@@ -52,7 +52,7 @@ func single_call(full_request_address: StringName, method: HTTPClient.Method, fo
 ## Starts polling calls to FEAGI, routinely gets responses until condition defined by polling_check is met
 func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
 	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = true) -> void:
+	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = false) -> void:
 
 	_processing_type = CALL_PROCESS_TYPE.POLLING
 	_buffer_data = data_to_buffer
