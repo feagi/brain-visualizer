@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3 uid="uid://ny4x0e3ux3w1"]
+
+[ext_resource type="Material" uid="uid://ca3gen5wuo1e4" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/selected.material" id="1_87r78"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="2_wc6s6"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_nfjpt"]
+material = ExtResource("1_87r78")
+
+[node name="CorticalBoxDemo" type="MeshInstance3D"]
+cast_shadow = 0
+gi_mode = 0
+mesh = SubResource("BoxMesh_nfjpt")
+skeleton = NodePath("../../..")
+script = ExtResource("2_wc6s6")
