@@ -90,6 +90,10 @@ func switch_to_brain_visualizer_3D():
 func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	_notification_system_ref.add_notification(text, notification_type, time)
 
+func start_new_cortical_area_preview(create_cortical_window: WindowCreateCorticalArea):
+	$Brain_Visualizer.generate_preview(create_cortical_window)
+
+
 ## Updates the screensize 
 func _update_screen_size():
 	_screen_size = get_viewport().get_visible_rect().size
