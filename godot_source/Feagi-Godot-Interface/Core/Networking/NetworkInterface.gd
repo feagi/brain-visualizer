@@ -137,10 +137,10 @@ func single_FEAGI_request(full_request_address: StringName, call_method: HTTPCli
 
 func repeating_FEAGI_request(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
 	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5) -> void:
+	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = false) -> void:
 
 	var worker: RequestWorker = _grab_worker()
-	worker.repeat_polling_call(full_request_address, method, follow_up_function, mid_poll_call, polling_check, additional_data_to_send, data_to_buffer, polling_gap_seconds)
+	worker.repeat_polling_call(full_request_address, method, follow_up_function, mid_poll_call, polling_check, additional_data_to_send, data_to_buffer, polling_gap_seconds, kill_on_reset)
 
 
 ## attempts to send data over websocket

@@ -97,13 +97,13 @@ func delete_cortical_area(cortical_id: StringName) -> void:
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
-	print("Use requested refresh of the morphology listing")
+	print("User requested refresh of the morphology listing")
 	_feagi_interface.calls.GET_MO_list_types()
 
 ## Requests the latest info on a specific morphology name
 ## Success emits morphology_updated
 func refresh_morphology_properties(morphology_name: StringName) -> void:
-	print("Use requested refresh of properties of morphology " + morphology_name)
+	print("User requested refresh of properties of morphology " + morphology_name)
 	_feagi_interface.calls.GET_GE_morphology(morphology_name)
 
 func get_morphology_usage(morphology_name: StringName) -> void:

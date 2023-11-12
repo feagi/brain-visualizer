@@ -1,7 +1,10 @@
 extends Node3D
 
+
 var shader_material # Wait for shader 
 var global_name_list = {}
+
+var _CorticalAreaPreviewPrefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Brain_Visualizer/CorticalBox/CorticalBoxPreview.tscn")
 
 func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
@@ -9,8 +12,19 @@ func _ready():
 	FeagiEvents.retrieved_visualization_data.connect(test)
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
 	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
+
+func generate_preview(create_cortical_window: WindowCreateCorticalArea):
+	var preview: CorticalBoxPreview = _CorticalAreaPreviewPrefab.instantiate()
+	create_cortical_window.coordinates_updated.connect(preview.update_position)
+	create_cortical_window.dimensions_updated.connect(preview.update_size)
+	create_cortical_window.closed_window.connect(preview.window_closed)
+	add_child(preview)
+
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)
+
+
+
 
 func generate_cortical_area(cortical_area_data : CorticalArea):
 	var textbox = $blank_textbox.duplicate()

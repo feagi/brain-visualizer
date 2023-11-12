@@ -5,13 +5,15 @@ class_name MorphologyScroll
 signal morphology_selected(morphology: Morphology)
 
 @export var load_morphologies_on_load: bool = true
-
+@export var call_for_morphology_reload_on_load: bool = true #TODO turn false
 
 func _ready():
 	super()
 	item_selected.connect(_morphology_button_pressed)
 	FeagiCacheEvents.morphology_removed.connect(_respond_to_deleted_morphology)
 	FeagiCacheEvents.morphology_added.connect(_respond_to_added_morphology)
+	if call_for_morphology_reload_on_load:
+		FeagiRequests.refresh_morphology_list()
 	if load_morphologies_on_load:
 		repopulate_from_cache()
 
