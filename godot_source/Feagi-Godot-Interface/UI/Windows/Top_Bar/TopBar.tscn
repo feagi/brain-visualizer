@@ -3,31 +3,31 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_14sro"]
-[ext_resource type="Texture2D" uid="uid://c33qem16lw6kh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="6_ih1jw"]
-[ext_resource type="Texture2D" uid="uid://c7ee40sgfespo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="7_45nve"]
-[ext_resource type="Texture2D" uid="uid://crqkwg1emj3m0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_S.png" id="8_1eqw8"]
-[ext_resource type="Texture2D" uid="uid://b1g1jw5ha8orj" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_S.png" id="8_lfa2g"]
-[ext_resource type="Texture2D" uid="uid://djr5l1k5kpmo7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="8_x5qfb"]
-[ext_resource type="Texture2D" uid="uid://ukakohnvx6h1" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="9_1uxxe"]
-[ext_resource type="Texture2D" uid="uid://bpv84i5hejmkr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_S.png" id="9_fubes"]
-[ext_resource type="Texture2D" uid="uid://cv2mft2p4bws7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_C.png" id="9_oxjkc"]
-[ext_resource type="Texture2D" uid="uid://2no5wv7xigwa" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_C.png" id="9_qi7k2"]
-[ext_resource type="Texture2D" uid="uid://dflmsbvxirc8o" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_S.png" id="10_4qsyc"]
-[ext_resource type="Texture2D" uid="uid://dtbmrqxu8l1ku" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_C.png" id="10_4usji"]
+[ext_resource type="Texture2D" uid="uid://dsr0vah60elhm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="6_ih1jw"]
+[ext_resource type="Texture2D" uid="uid://dyhv6lbkcn7p7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="7_45nve"]
+[ext_resource type="Texture2D" uid="uid://oxfay7smwqvx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_S.png" id="8_1eqw8"]
+[ext_resource type="Texture2D" uid="uid://bvfdqsx1q1j50" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_S.png" id="8_lfa2g"]
+[ext_resource type="Texture2D" uid="uid://dlfm8wiogystu" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="8_x5qfb"]
+[ext_resource type="Texture2D" uid="uid://ch4waflhjqwnn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="9_1uxxe"]
+[ext_resource type="Texture2D" uid="uid://o4vvms6s82fa" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_S.png" id="9_fubes"]
+[ext_resource type="Texture2D" uid="uid://b3vpe8qp6asrv" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_C.png" id="9_oxjkc"]
+[ext_resource type="Texture2D" uid="uid://dg5jf8jdebnk3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_C.png" id="9_qi7k2"]
+[ext_resource type="Texture2D" uid="uid://c24tdu3hkrylh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_S.png" id="10_4qsyc"]
+[ext_resource type="Texture2D" uid="uid://c31uyob00duin" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_C.png" id="10_4usji"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
-[ext_resource type="Texture2D" uid="uid://dvyuivhvs1ti4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_H.png" id="10_gt74w"]
-[ext_resource type="Texture2D" uid="uid://cqcff3mv4t6mq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_H.png" id="10_kkcrw"]
-[ext_resource type="Texture2D" uid="uid://dlcnajbnt5k52" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_D.png" id="11_4km43"]
-[ext_resource type="Texture2D" uid="uid://prdlfyyhgd5s" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_D.png" id="11_8kax8"]
-[ext_resource type="Texture2D" uid="uid://bygd6oxi1t3ge" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_C.png" id="11_duudg"]
-[ext_resource type="Texture2D" uid="uid://m68dcfu5kfk2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_H.png" id="11_vpuhf"]
-[ext_resource type="Texture2D" uid="uid://bwa2dr8clgb8o" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_D.png" id="12_imt3b"]
-[ext_resource type="Texture2D" uid="uid://cluowfc4sy3wr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_H.png" id="12_lr2vd"]
-[ext_resource type="Texture2D" uid="uid://chwp72vxxdv8c" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="13_nqinm"]
-[ext_resource type="Texture2D" uid="uid://cevyrvt5ryjvq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_S.png" id="24_sk4d2"]
-[ext_resource type="Texture2D" uid="uid://dt186kxq37sys" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_C.png" id="25_qau4w"]
-[ext_resource type="Texture2D" uid="uid://bema0cs0brk72" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_H.png" id="26_poo7p"]
-[ext_resource type="Texture2D" uid="uid://d3miapomey0se" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_D.png" id="27_d7rgh"]
+[ext_resource type="Texture2D" uid="uid://dsiheu8kyaq0j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_H.png" id="10_gt74w"]
+[ext_resource type="Texture2D" uid="uid://bnb721kmttvxc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_H.png" id="10_kkcrw"]
+[ext_resource type="Texture2D" uid="uid://ble4yt676ik20" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_D.png" id="11_4km43"]
+[ext_resource type="Texture2D" uid="uid://d3muoadd88u6f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_D.png" id="11_8kax8"]
+[ext_resource type="Texture2D" uid="uid://cctv5e0kptwm6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_C.png" id="11_duudg"]
+[ext_resource type="Texture2D" uid="uid://dn0taq1n56i0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_H.png" id="11_vpuhf"]
+[ext_resource type="Texture2D" uid="uid://df57fbu6vlk4w" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_D.png" id="12_imt3b"]
+[ext_resource type="Texture2D" uid="uid://cpgnl7iwg1aye" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_H.png" id="12_lr2vd"]
+[ext_resource type="Texture2D" uid="uid://bqlfr4fu35bis" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="13_nqinm"]
+[ext_resource type="Texture2D" uid="uid://c6r1pt1tttgpm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_S.png" id="24_sk4d2"]
+[ext_resource type="Texture2D" uid="uid://ttrtbhwmc2mr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_C.png" id="25_qau4w"]
+[ext_resource type="Texture2D" uid="uid://cy2urgircier1" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_H.png" id="26_poo7p"]
+[ext_resource type="Texture2D" uid="uid://tmfntjxx7lgn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_D.png" id="27_d7rgh"]
 
 [node name="TopBar" type="Panel"]
 offset_right = 1094.0
@@ -62,6 +62,7 @@ vertical_alignment = 1
 [node name="NC_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "Add Circuit"
 texture_normal = ExtResource("6_ih1jw")
 texture_pressed = ExtResource("7_45nve")
 texture_hover = ExtResource("8_x5qfb")
@@ -82,6 +83,7 @@ vertical_alignment = 1
 [node name="CAView_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "View Cortical Area List"
 texture_normal = ExtResource("8_lfa2g")
 texture_pressed = ExtResource("9_oxjkc")
 texture_hover = ExtResource("10_kkcrw")
@@ -93,6 +95,7 @@ script = ExtResource("5_14sro")
 [node name="CAAdd_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "Add Cortical Area"
 texture_normal = ExtResource("6_ih1jw")
 texture_pressed = ExtResource("7_45nve")
 texture_hover = ExtResource("8_x5qfb")
@@ -104,6 +107,7 @@ script = ExtResource("5_14sro")
 [node name="CAConnect_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "Quick Connect Cortical Areas"
 texture_normal = ExtResource("9_fubes")
 texture_pressed = ExtResource("10_4usji")
 texture_hover = ExtResource("11_vpuhf")
@@ -124,6 +128,7 @@ vertical_alignment = 1
 [node name="NMAdd_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "Add Morphology"
 texture_normal = ExtResource("6_ih1jw")
 texture_pressed = ExtResource("7_45nve")
 texture_hover = ExtResource("8_x5qfb")
@@ -135,6 +140,7 @@ script = ExtResource("5_14sro")
 [node name="NMSettings_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "Morphology Manager"
 texture_normal = ExtResource("10_4qsyc")
 texture_pressed = ExtResource("11_duudg")
 texture_hover = ExtResource("12_lr2vd")
