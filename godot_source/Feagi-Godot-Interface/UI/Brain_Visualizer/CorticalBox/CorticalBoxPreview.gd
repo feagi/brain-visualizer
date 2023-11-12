@@ -12,7 +12,7 @@ func update_size(new_size: Vector3) -> void:
 	scale = new_size
 	
 func update_position(new_position: Vector3) -> void:
-	position = new_position
+	position = new_position * Vector3(1,1,-1)
 
 
  
