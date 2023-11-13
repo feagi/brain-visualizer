@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://506fv2gitw7k"]
+[gd_scene load_steps=6 format=3 uid="uid://506fv2gitw7k"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="1_0xr58"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.gd" id="1_f8pnh"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="2_bdwmo"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="3_tpeid"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_vs7fw"]
 
 [node name="LeftBarTop" type="VBoxContainer"]
@@ -63,10 +64,8 @@ enable_signaling_on_ready = false
 layout_mode = 2
 text = "Position"
 
-[node name="Cortical_Position" parent="." instance=ExtResource("2_bdwmo")]
+[node name="Cortical_Position" parent="." instance=ExtResource("3_tpeid")]
 layout_mode = 2
-alignment = 1
-initial_vector = Vector3i(1, 1, 1)
 
 [node name="Label_Dimensions" type="Label" parent="."]
 layout_mode = 2
@@ -82,6 +81,9 @@ initial_vector = Vector3i(1, 1, 1)
 
 [node name="SpacerX" parent="Cortical_Size" index="0"]
 custom_minimum_size = Vector2(1, 0)
+
+[node name="IntX" parent="Cortical_Size/IntX" index="0"]
+layout_mode = 0
 
 [node name="SpacerX2" parent="Cortical_Size" index="3"]
 custom_minimum_size = Vector2(0, 0)

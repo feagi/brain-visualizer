@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://cy87lg2phntnx"]
+[gd_scene load_steps=14 format=3 uid="uid://cy87lg2phntnx"]
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_ivss2"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_vqh4i"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="6_cb8ls"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/TemplateDropDown.gd" id="6_gu8i4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_o35ls"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="9_g54qy"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yf1xi"]
 bg_color = Color(0.105882, 0.133333, 0.184314, 1)
@@ -156,7 +157,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "3D Coordinates"
 
-[node name="Coordinates_3D" parent="Container/HBoxContainer2" instance=ExtResource("4_4mpov")]
+[node name="Coordinates_3D" parent="Container/HBoxContainer2" instance=ExtResource("9_g54qy")]
 layout_mode = 2
 
 [node name="gap" type="Control" parent="Container"]
