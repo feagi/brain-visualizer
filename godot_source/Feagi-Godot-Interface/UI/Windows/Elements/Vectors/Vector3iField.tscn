@@ -22,10 +22,6 @@ layout_mode = 2
 alignment = 1
 script = ExtResource("3_vm86m")
 
-[node name="IntX" type="LineEdit" parent="IntX"]
-alignment = 1
-script = ExtResource("3_vm86m")
-
 [node name="SpacerX2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2

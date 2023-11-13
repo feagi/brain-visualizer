@@ -7,7 +7,7 @@ signal coordinates_updated(location: Vector3i)
 var _field_cortical_name: TextInput
 var _field_3D_coordinates: Vector3iSpinboxField
 var _field_type_radio: RadioButtons
-var _field_dimensions: Vector3iField
+var _field_dimensions: Vector3iSpinboxField
 var _field_channel: IntInput
 var _dropdown_cortical_dropdown: TemplateDropDown
 var _holder_dropdown: HBoxContainer

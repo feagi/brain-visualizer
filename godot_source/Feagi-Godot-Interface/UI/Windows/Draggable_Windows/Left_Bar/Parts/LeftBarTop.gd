@@ -10,7 +10,7 @@ var _line_cortical_name: TextInput
 var _line_cortical_ID: TextInput
 var _line_cortical_type: TextInput
 var _vector_position: Vector3iSpinboxField
-var _vector_dimensions: Vector3iField
+var _vector_dimensions: Vector3iSpinboxField
 var _update_button: TextButton_Element
 var _growing_cortical_update: Dictionary
 
