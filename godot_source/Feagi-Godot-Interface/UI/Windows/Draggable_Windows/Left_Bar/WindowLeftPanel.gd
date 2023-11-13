@@ -3,6 +3,8 @@ class_name WindowLeftPanel
 
 const NUM_SECTIONS: int = 5
 
+
+
 var section_toggles: Array[bool]:
 	get:
 		var output: Array[bool] = [_top_collapsible.is_open, _middle_collapsible.is_open, _premium_collapsible.is_open, _bottom_collapsible.is_open, _danger_zone_collapsible.is_open]
@@ -31,7 +33,6 @@ var _middle_section
 var _premium_section
 var _bottom_section
 var _danger_zone_section
-
 
 func _ready():
 	super._ready()
@@ -66,6 +67,7 @@ func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
 	_cortical_area_ref.name_updated.connect(_top_section.FEAGI_set_cortical_name)
 	_cortical_area_ref.details_updated.connect(_middle_section.FEAGI_set_properties)
 	_top_section.initial_values_from_FEAGI(cortical_area_reference)
+	_top_section.top_panel = self
 	_middle_section.initial_values_from_FEAGI(cortical_area_reference)
 	_premium_section.initial_values_from_FEAGI(cortical_area_reference)
 	_bottom_section.initial_values_from_FEAGI(cortical_area_reference)

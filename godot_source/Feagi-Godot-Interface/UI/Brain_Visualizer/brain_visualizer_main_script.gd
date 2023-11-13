@@ -13,12 +13,11 @@ func _ready():
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
 	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
 
-func generate_preview(create_cortical_window: WindowCreateCorticalArea):
+## Generates and parents a preview and returns the object 
+func generate_prism_preview() -> CorticalBoxPreview:
 	var preview: CorticalBoxPreview = _CorticalAreaPreviewPrefab.instantiate()
-	create_cortical_window.coordinates_updated.connect(preview.update_position)
-	create_cortical_window.dimensions_updated.connect(preview.update_size)
-	create_cortical_window.closed_window.connect(preview.window_closed)
 	add_child(preview)
+	return preview
 
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)

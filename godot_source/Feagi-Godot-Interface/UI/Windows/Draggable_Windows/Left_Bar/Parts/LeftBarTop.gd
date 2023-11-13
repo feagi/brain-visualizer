@@ -6,13 +6,15 @@ class_name LeftBarTop
 ## User pressed update button, the following changes are requested
 signal user_requested_update(changed_values: Dictionary)
 
+var top_panel: WindowLeftPanel
 var _line_cortical_name: TextInput
 var _line_cortical_ID: TextInput
 var _line_cortical_type: TextInput
-var _vector_position: Vector3iField
-var _vector_dimensions: Vector3iField
+var _vector_position: Vector3iSpinboxField
+var _vector_dimensions: Vector3iSpinboxField
 var _update_button: TextButton_Element
 var _growing_cortical_update: Dictionary
+var _is_preview_active: bool = false
 
 func _ready():
 	_line_cortical_name = $Row_Cortical_Name/Cortical_Name
@@ -74,11 +76,22 @@ func _user_edit_name(new_name: String) -> void:
 func _user_edit_3D_position(new_position: Vector3i) -> void:
 	print("User queued position change")
 	_growing_cortical_update["cortical_coordinates"] = FEAGIUtils.vector3i_to_array(new_position)
+	if !_is_preview_active:
+		_enable_3D_preview()
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
 	print("User queued dimension change")
 	_growing_cortical_update["cortical_dimensions"] = FEAGIUtils.vector3i_to_array(new_dimension)
+	if !_is_preview_active:
+		_enable_3D_preview()
 
 # Connected via TSCN to editable textboxes
 func _enable_update_button():
 	_update_button.disabled = false
+
+func _enable_3D_preview():
+		var preview_close_signals: Array[Signal] = [_update_button.pressed, top_panel.closed_window_no_name, top_panel.tree_exiting]
+		var preview: CorticalBoxPreview = VisConfig.UI_manager.start_new_cortical_area_preview(_vector_position.user_updated_vector, _vector_dimensions.user_updated_vector, preview_close_signals)
+		preview.update_size(_vector_dimensions.current_vector)
+		preview.update_position(_vector_position.current_vector)
+		_is_preview_active = true
