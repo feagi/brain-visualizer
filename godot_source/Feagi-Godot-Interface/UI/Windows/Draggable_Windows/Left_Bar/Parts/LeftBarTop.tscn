@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="1_0xr58"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarTop.gd" id="1_f8pnh"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="2_bdwmo"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="3_tpeid"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_vs7fw"]
 
 [node name="LeftBarTop" type="VBoxContainer"]
@@ -63,37 +63,30 @@ enable_signaling_on_ready = false
 layout_mode = 2
 text = "Position"
 
-[node name="Cortical_Position" parent="." instance=ExtResource("2_bdwmo")]
+[node name="Cortical_Position" parent="." instance=ExtResource("3_tpeid")]
 layout_mode = 2
-alignment = 1
-initial_vector = Vector3i(1, 1, 1)
+
+[node name="SpacerX" parent="Cortical_Position" index="0"]
+custom_minimum_size = Vector2(5, 0)
+
+[node name="SpacerX2" parent="Cortical_Position" index="3"]
+custom_minimum_size = Vector2(7, 0)
+
+[node name="SpacerY2" parent="Cortical_Position" index="7"]
+custom_minimum_size = Vector2(7, 0)
 
 [node name="Label_Dimensions" type="Label" parent="."]
 layout_mode = 2
 text = "Dimension"
 
-[node name="Cortical_Size" parent="." instance=ExtResource("2_bdwmo")]
+[node name="Cortical_Size" parent="." instance=ExtResource("3_tpeid")]
 layout_mode = 2
-alignment = 1
 label_x_text = &"W"
 label_y_text = &"H"
 label_z_text = &"D"
-initial_vector = Vector3i(1, 1, 1)
-
-[node name="SpacerX" parent="Cortical_Size" index="0"]
-custom_minimum_size = Vector2(1, 0)
-
-[node name="SpacerX2" parent="Cortical_Size" index="3"]
-custom_minimum_size = Vector2(0, 0)
-
-[node name="SpacerY" parent="Cortical_Size" index="4"]
-custom_minimum_size = Vector2(1, 0)
-
-[node name="SpacerY2" parent="Cortical_Size" index="7"]
-custom_minimum_size = Vector2(1, 0)
-
-[node name="SpacerZ" parent="Cortical_Size" index="8"]
-custom_minimum_size = Vector2(0, 2)
+int_x_min = 1
+int_y_min = 1
+int_z_min = 1
 
 [node name="gap" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
@@ -114,4 +107,4 @@ layout_mode = 2
 [connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Cortical_Size" to="." method="_enable_update_button"]
 
-[editable path="Cortical_Size"]
+[editable path="Cortical_Position"]
