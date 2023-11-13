@@ -23,6 +23,10 @@ offset_bottom = 40.0
 size_flags_horizontal = 0
 theme = ExtResource("1_ivss2")
 script = ExtResource("1_vqh4i")
+left_pixel_gap = null
+right_pixel_gap = null
+top_pixel_gap = null
+bottom_pixel_gap = null
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
