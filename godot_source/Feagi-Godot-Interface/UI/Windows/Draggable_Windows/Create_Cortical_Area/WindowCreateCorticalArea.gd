@@ -5,9 +5,9 @@ signal dimensions_updated(dimensions: Vector3i)
 signal coordinates_updated(location: Vector3i)
 
 var _field_cortical_name: TextInput
-var _field_3D_coordinates: Vector3iField
+var _field_3D_coordinates: Vector3iSpinboxField
 var _field_type_radio: RadioButtons
-var _field_dimensions: Vector3iField
+var _field_dimensions: Vector3iSpinboxField
 var _field_channel: IntInput
 var _dropdown_cortical_dropdown: TemplateDropDown
 var _holder_dropdown: HBoxContainer
@@ -34,7 +34,9 @@ func _ready() -> void:
 	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
 	_field_channel.int_confirmed.connect(_channel_changed)
 	_main_container.recalculate_size()
-	VisConfig.UI_manager.start_new_cortical_area_preview(self)
+	
+	var preview_close_signals: Array[Signal] = [closed_window_no_name]
+	VisConfig.UI_manager.start_new_cortical_area_preview(coordinates_updated, dimensions_updated, preview_close_signals)
 
 
 func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:

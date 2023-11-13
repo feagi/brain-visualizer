@@ -1,0 +1,62 @@
+[gd_scene load_steps=3 format=3 uid="uid://ci8uvawjvxfax"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nonhb"]
+
+[node name="Vector3fField" type="BoxContainer"]
+script = ExtResource("1_2xsvd")
+
+[node name="SpacerX" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="LabelX" type="Label" parent="."]
+layout_mode = 2
+text = "X"
+script = ExtResource("2_nonhb")
+max_length = 5
+
+[node name="IntX" type="SpinBox" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="SpacerX2" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="SpacerY" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="LabelY" type="Label" parent="."]
+layout_mode = 2
+text = "Y"
+script = ExtResource("2_nonhb")
+max_length = 5
+
+[node name="IntY" type="SpinBox" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="SpacerY2" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="SpacerZ" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2
+
+[node name="LabelZ" type="Label" parent="."]
+layout_mode = 2
+text = "Z
+"
+script = ExtResource("2_nonhb")
+max_length = 5
+
+[node name="IntZ" type="SpinBox" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="SpacerZ2" type="Control" parent="."]
+custom_minimum_size = Vector2(3, 0)
+layout_mode = 2

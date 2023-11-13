@@ -1,6 +1,7 @@
 extends GrowingPanel
 class_name DraggableWindow
 
+signal closed_window_no_name() ## Same as below but doews not specify the window closed, 0 args
 signal closed_window(window_name: StringName)
 signal width_changed(width: float)
 
@@ -27,6 +28,7 @@ func load_from_memory(previous_data: Dictionary) -> void:
 func close_window(window_name: StringName) -> void:
 	print("WINDOWS UI: User closed %s window" % window_name)
 	closed_window.emit(window_name)
+	closed_window_no_name.emit()
 
 func bring_window_to_top():
 	print("UI: WINDOW: Changing window order...")
