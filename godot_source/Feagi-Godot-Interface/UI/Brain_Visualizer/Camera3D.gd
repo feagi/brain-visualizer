@@ -31,11 +31,15 @@ const CAMERA_TURN_SPEED = 200
 @export var reset = "reset"
 
 var _is_user_currently_focusing_camera: bool = false
+var _initial_position: Vector3
+var _initial_euler_rotation: Vector3
 
 func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
 	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
 	bv_background.pan_event.connect(_touch_pan_gesture)
+	_initial_position = position
+	_initial_euler_rotation = rotation_degrees
 
 # Guard Clauses!
 func _input(event: InputEvent):
@@ -54,7 +58,15 @@ func _input(event: InputEvent):
 	# If user is moving the mouse
 	if event is  InputEventMouseMotion:
 		_mouse_motion(event)
-	
+
+## Resets Cameras position and rotation to starting state
+func reset_camera() -> void:
+	teleport_to(_initial_position, _initial_euler_rotation)
+
+
+func teleport_to(new_position: Vector3, new_euler_rotation: Vector3) -> void:
+	position = new_position
+	rotation_degrees = new_euler_rotation
 
 
 func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
@@ -71,7 +83,6 @@ func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
 	_is_user_currently_focusing_camera = event.is_pressed()
 
 
-
 # The camera itself should probably not be the thing sending the websocket requests. TODO move to seperate once we have the free time
 func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 	if Input.is_action_just_pressed("spacebar"): 
@@ -84,10 +95,16 @@ func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 			print(Godot_list.godot_list)
 		return
 
-# TO fix the awkward initial delay, we need to move this to a fixed process thread
+
+
+
+# TODO fix the awkward initial delay, we need to move this to a fixed process thread
 func _keyboard_camera_movement(_keyboard_event: InputEventKey) -> void:
 	var dir: Vector3 = Vector3(0,0,0)
 
+	if Input.is_key_pressed(KEY_R):
+		reset_camera()
+		return
 	if Input.is_key_pressed(KEY_W):
 		dir += Vector3(0,0,-1)
 	if Input.is_key_pressed(KEY_S):
