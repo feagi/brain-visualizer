@@ -60,6 +60,13 @@ func delete_all() -> void:
 	for child in _scroll_holder.get_children():
 		child.queue_free()
 
+func filter_by_button_text(whitelist: PackedStringArray) -> void:
+	for child in _scroll_holder.get_children():
+		if FEAGIUtils.is_substring_in_array(whitelist, child.text):
+			child.visible = true
+		else:
+			child.visible = false
+
 func filter_by_IDs(whitelist: Array) -> void:
 	for child in _scroll_holder.get_children():
 		if child.ID in whitelist:
