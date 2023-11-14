@@ -46,6 +46,11 @@ func set_selected(ID_to_select: Variant) -> void:
 	if index_to_select != -1:
 		_scroll_holder.get_child(index_to_select).user_selected()
 
+func get_button_by_ID(ID_to_select: Variant) -> GenericScrollItemText:
+	var index_to_select: int = _find_child_index_with_ID(ID_to_select)
+	if index_to_select != -1:
+		return _scroll_holder.get_child(index_to_select)
+	return null
 
 func deselect_all() -> void:
 	for child in _scroll_holder.get_children():
