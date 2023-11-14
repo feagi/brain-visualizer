@@ -60,6 +60,17 @@ func delete_all() -> void:
 	for child in _scroll_holder.get_children():
 		child.queue_free()
 
+func filter_by_IDs(whitelist: Array) -> void:
+	for child in _scroll_holder.get_children():
+		if child.ID in whitelist:
+			child.visible = true
+		else:
+			child.visible = false
+
+func revoke_filter() -> void:
+	for child in _scroll_holder.get_children():
+		child.visible = true
+
 func _find_child_index_with_ID(searching_ID: Variant) -> int:
 	for child in _scroll_holder.get_children():
 		if child.ID == searching_ID:
