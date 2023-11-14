@@ -76,7 +76,7 @@ func filter_by_button_text(searching_string: StringName) -> void:
 		revoke_filter()
 		return
 	for child in _scroll_holder.get_children():
-		if child.text.contains(searching_string):
+		if child.text.to_lower().contains(searching_string.to_lower()):
 			child.visible = true
 		else:
 			child.visible = false

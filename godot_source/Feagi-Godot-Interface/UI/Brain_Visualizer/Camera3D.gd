@@ -14,6 +14,7 @@
 # ==============================================================================
 
 extends Camera3D
+class_name BVCam
 
 const CAMERA_TURN_SPEED = 200
 

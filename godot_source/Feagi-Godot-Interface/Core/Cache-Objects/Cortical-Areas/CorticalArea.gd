@@ -175,6 +175,16 @@ static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_ARE
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
 
+## BV uses an alternate space for its coordinates currently, this acts as a translation
+static func true_position_to_BV_position(true_position: Vector3, scale: Vector3) -> Vector3:
+	return Vector3(
+		(int(scale.x / 2.0) + true_position.x),
+		(int(scale.y / 2.0) + true_position.y),
+		-(int(scale.z / 2.0) + true_position.z))
+
+## Get 3D coordinates that BV uses currently
+func BV_position() -> Vector3:
+	return true_position_to_BV_position(coordinates_3D, dimensions)
 
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:
