@@ -2,17 +2,16 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/GenericTextIDScroll/GenericTextIDScroll.gd" id="1_niuke"]
 
-[node name="GenericTextIDScroll" type="ScrollContainer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -905.0
-offset_bottom = -438.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="GenericTextIDScroll" type="VBoxContainer"]
+offset_right = 59.0
+offset_bottom = 23.0
 script = ExtResource("1_niuke")
-button_selected_color = Color(0.537255, 0.705882, 1, 1)
-button_unselected_color = Color(0.243137, 0.278431, 0.345098, 1)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="filter" type="LineEdit" parent="."]
+layout_mode = 2
+
+[node name="GenericTextIDScroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GenericTextIDScroll"]
 layout_mode = 2

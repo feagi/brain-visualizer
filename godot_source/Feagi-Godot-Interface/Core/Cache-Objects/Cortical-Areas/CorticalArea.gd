@@ -140,7 +140,7 @@ var _is_monitoring_membrane_potential: bool
 var _is_monitoring_synaptic_potential: bool
 var _channel_count: int
 
-func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}, set_channel_count: int = 0):
+func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_TYPE, visibility: bool, cortical_dimensions: Vector3i, cortical_details_raw: Dictionary = {}, set_channel_count: int = 0, repress_invalid_warning: bool = false):
 	_cortical_ID = ID
 	_name = cortical_name
 	_group = group_type
@@ -150,6 +150,10 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 	_dimensions = cortical_dimensions
 	_cortical_visiblity = visibility
 	_channel_count = set_channel_count
+	if repress_invalid_warning:
+		return
+	if group_type == CORTICAL_AREA_TYPE.INVALID:
+		push_error("Generated Cortical Area of ID " + ID + " in is of type Invalid. This may cause issues!")
 
 ## Generate a IPU/OPU cortical area when you are using a template
 static func create_from_IOPU_template(template: CorticalTemplate, this_cortical_area_ID: StringName, new_channel_count: int, visibility: bool, cortical_details_raw: Dictionary = {}) -> CorticalArea:
@@ -160,6 +164,27 @@ static func create_from_IOPU_template(template: CorticalTemplate, this_cortical_
 static func create_from_core_template(template: CorticalTemplate, this_cortical_area_ID: StringName, visibility: bool, cortical_details_raw: Dictionary = {}) -> CorticalArea:
 	return CorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, template.resolution , cortical_details_raw)
 
+static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_AREA_TYPE:
+	cortical_type_raw = cortical_type_raw.to_upper()
+	if cortical_type_raw in CORTICAL_AREA_TYPE.keys():
+		return CORTICAL_AREA_TYPE[cortical_type_raw]
+	else:
+		push_error("Unknown Cortical Type " + cortical_type_raw +". Marking as INVALID!")
+		return CORTICAL_AREA_TYPE.INVALID
+
+static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
+	return CORTICAL_AREA_TYPE.keys()[cortical_type]
+
+## BV uses an alternate space for its coordinates currently, this acts as a translation
+static func true_position_to_BV_position(true_position: Vector3, scale: Vector3) -> Vector3:
+	return Vector3(
+		(int(scale.x / 2.0) + true_position.x),
+		(int(scale.y / 2.0) + true_position.y),
+		-(int(scale.z / 2.0) + true_position.z))
+
+## Get 3D coordinates that BV uses currently
+func BV_position() -> Vector3:
+	return true_position_to_BV_position(coordinates_3D, dimensions)
 
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:

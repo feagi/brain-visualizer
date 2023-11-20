@@ -1,5 +1,6 @@
 extends Node3D
 
+const camera_snap_offset: Vector3 = Vector3(0.0, 15.0, -25.0)
 
 var shader_material # Wait for shader 
 var global_name_list = {}
@@ -19,10 +20,15 @@ func generate_prism_preview() -> CorticalBoxPreview:
 	add_child(preview)
 	return preview
 
+## Snaps the camera to a cortical area
+func snap_camera_to_cortical_area(cortical_area: CorticalArea) -> void:
+	var camera: BVCam = $Camera3D
+	var bv_location: Vector3 = cortical_area.BV_position()
+	camera.position = cortical_area.BV_position() + camera_snap_offset
+	camera.point_camera_at(cortical_area.BV_position())
+
 func on_cortical_area_added(cortical_area: CorticalArea) -> void:
 	generate_cortical_area(cortical_area)
-
-
 
 
 func generate_cortical_area(cortical_area_data : CorticalArea):
