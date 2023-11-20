@@ -32,7 +32,7 @@ var _cortical_area_ref: CorticalArea
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
 	dragged.connect(_on_finish_drag)
-	close_request.connect(_user_request_delete_cortical_area)
+	delete_request.connect(_user_request_delete_cortical_area)
 	
 ## Since we cannot use _init for scenes, use this instead to initialize data
 func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
