@@ -2,13 +2,33 @@ extends Object
 class_name FEAGIUtils
 ## A set of functions that are useful around the program. Treat this class as static
 
+## Converts untyped array to int array
+static func arr_to_int_arr(arr: Array) -> Array[int]:
+	var out: Array[int] = []
+	out.assign(arr)
+	return out
+
+## Converts untyped array to flloat array
+static func arr_to_float_arr(arr: Array) -> Array[float]:
+	var out: Array[float] = []
+	out.assign(arr)
+	return out
+
 ## Converts a 3 long int array to a Vector3i
-static func array_to_vector3i(input: Array) -> Vector3i: # cannot set array type to int due to gdscript shenanigans
-	return Vector3i(input[0], input[1], input[2])
+static func int_array_to_vector3i(input: Array[int]) -> Vector3i:
+	return Vector3i(int(input[0]), int(input[1]), int(input[2]))
 
 ## Converts a 2 long int array to a Vector2i
+static func int_array_to_vector2i(input: Array[int]) -> Vector2i:
+	return Vector2i(int(input[0]), int(input[1]))
+
+## Converts a 3 long untyped array to a Vector3i
+static func array_to_vector3i(input: Array[Variant]) -> Vector3i:
+	return Vector3i(int(input[0]), int(input[1]), int(input[2]))
+
+## Converts a 2 long untyped array to a Vector2i
 static func array_to_vector2i(input: Array) -> Vector2i:
-	return Vector2i(input[0], input[1])
+	return Vector2i(int(input[0]), int(input[1]))
 
 ## Converts an array of 3 long int arrays to an array of Vector3i
 static func array_of_arrays_to_vector3i_array(input: Array[Array]) -> Array[Vector3i]:
@@ -17,7 +37,7 @@ static func array_of_arrays_to_vector3i_array(input: Array[Array]) -> Array[Vect
 		output.append(array_to_vector3i(sub_array))
 	return output
 
-## Converts an array of 32 long int arrays to an array of Vector3i
+## Converts an array of 2 long int arrays to an array of Vector3i
 static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vector2i]:
 	var output: Array[Vector2i] = []
 	for sub_array in input:
@@ -25,18 +45,18 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	return output
 
 ## Converts a Vector3i to a 3 long int array
-static func vector3i_to_array(input: Vector3i):
-	var output: Array = [input.x, input.y, input.z]
+static func vector3i_to_array(input: Vector3i) -> Array[int]:
+	var output: Array[int] = [input.x, input.y, input.z]
 	return output
 
 ## Converts a Vector3 to a 3 long float array
-static func vector3_to_array(input: Vector3):
-	var output: Array = [input.x, input.y, input.z]
+static func vector3_to_array(input: Vector3) -> Array[float]:
+	var output: Array[float] = [input.x, input.y, input.z]
 	return output
 
 ## Converts a Vector2i to a 2 long int array
-static func vector2i_to_array(input: Vector2i):
-	var output: Array = [input.x, input.y]
+static func vector2i_to_array(input: Vector2i) -> Array[int]:
+	var output: Array[int] = [input.x, input.y]
 	return output
 
 static func vector3i_array_to_array_of_arrays(input: Array[Vector3i]) -> Array[Array]:
@@ -131,3 +151,6 @@ static func is_substring_in_array(arr: PackedStringArray, searching: String) -> 
 		if element.contains(searching):
 			return true
 	return false
+
+
+

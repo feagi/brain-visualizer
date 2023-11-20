@@ -19,7 +19,7 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
-	for source_cortical_ID in cortical_map.keys():
+	for source_cortical_ID: StringName in cortical_map.keys():
 		if cortical_map[source_cortical_ID] == {}:
 			continue # no efferent connections for the current searching source cortical ID
 		if source_cortical_ID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
@@ -62,6 +62,9 @@ func GET_GE_corticalArea(_response_code: int, response_body: PackedByteArray, _i
 
 func GET_GE_CorticalArea_geometry(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_area_summary: Dictionary = _body_to_dictionary(response_body)
+	
+	# Clean up dictionary output
+	
 	FeagiCache.cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
 	FeagiRequests.refresh_connection_list()
 
