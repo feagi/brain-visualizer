@@ -8,14 +8,22 @@ signal user_selected_cortical_area(cortical_area_reference: CorticalArea)
 @export var display_names_instead_of_IDs: bool = true
 ## If true, will automatically remove cortical areas from the drop down that were removed from cache
 @export var sync_removed_cortical_areas: bool = true
+## If true, will automatically sff cortical areas to the drop down that were added to the cache
+@export var sync_added_cortical_areas: bool = true
 ## If True, will load all cached cortical areas on Startup
 @export var sync_all_areas_on_load: bool = true
+## If True, will hide the circle selection icon on the dropdown
+@export var hide_circle_select_icon: bool = true
 
 var _listed_areas: Array[CorticalArea] = []
+var _popup: PopupMenu
 
 func _ready():
+	_popup = get_popup()
 	if sync_removed_cortical_areas:
 		FeagiCacheEvents.cortical_area_removed.connect(_cortical_area_was_deleted_from_cache)
+	if sync_added_cortical_areas:
+		FeagiCacheEvents.cortical_area_added.connect(_cortical_area_was_added_to_cache)
 	if sync_all_areas_on_load:
 		list_all_cached_areas()
 	item_selected.connect(_user_selected_option)
@@ -30,7 +38,6 @@ func overwrite_cortical_areas(new_areas: Array[CorticalArea]) -> void:
 	clear_all_cortical_areas()
 	for area in new_areas:
 		add_cortical_area(area)
-	_remove_radio_buttons()
 
 ## Display all cortical areas
 func list_all_cached_areas() -> void:
@@ -45,6 +52,9 @@ func add_cortical_area(new_area: CorticalArea) -> void:
 		add_item(new_area.name)
 	else:
 		add_item(new_area.cortical_ID)
+	if hide_circle_select_icon:
+		_popup.set_item_as_radio_checkable(_popup.get_item_count() - 1, false) # Remove Circle Selection
+	
 
 ## Set the drop down selection to a specific (contained) cortical area
 func set_selected_cortical_area(set_area: CorticalArea) -> void:
@@ -82,8 +92,6 @@ func _cortical_area_was_deleted_from_cache(deleted_cortical: CorticalArea) -> vo
 		return
 	remove_cortical_area(deleted_cortical)
 
-func _remove_radio_buttons() -> void:
-	var pm: PopupMenu = get_popup()
-	for i in pm.get_item_count():
-		if pm.is_item_radio_checkable(i):
-			pm.set_item_as_radio_checkable(i, false)
+func _cortical_area_was_added_to_cache(added_cortical: CorticalArea) -> void:
+	if added_cortical not in _listed_areas:
+		add_cortical_area(added_cortical)
