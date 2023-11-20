@@ -81,18 +81,3 @@ func _source_changed(new_source: CorticalArea) -> void:
 
 func _destination_changed(new_destination: CorticalArea) -> void:
 	destination_area = new_destination
-
-#TODO add these signals
-
-func _cortical_area_added(new_cortical_area: CorticalArea) -> void:
-	pass
-
-func _cortical_area_removed(removed_cortical_area: CorticalArea) -> void:
-	pass
-
-func _morphology_added(new_morphology: Morphology) -> void:
-	pass
-
-func _morphology_removed(removed_morphology: Morphology) -> void:
-	pass
-
