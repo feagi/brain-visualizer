@@ -19,7 +19,9 @@ var LTP_multiplier: float:
 	get: return _LTP_multiplier
 var LTD_multiplier: float:
 	get: return _LTD_multiplier
-
+## if the mapping is a null placeholder
+var is_null_placeholder: bool:
+	get: return _is_null
 
 var _morphology_used: Morphology
 var _scalar: Vector3i # must all be non-zero positive
@@ -28,9 +30,9 @@ var _plasticity_flag: bool
 var _plasticity_constant: float
 var _LTP_multiplier: float
 var _LTD_multiplier: float
+var _is_null: bool = false
 
-
-func _init(morphology: Morphology, positive_scalar: Vector3i, psp_multilpier: float, plasticity: bool, plasticity_constant_: float = 1.0, ltp_multiplier: float = 1.0, ltd_multiplier: float = 1.0):
+func _init(morphology: Morphology, positive_scalar: Vector3i, psp_multilpier: float, plasticity: bool, plasticity_constant_: float = 1.0, ltp_multiplier: float = 1.0, ltd_multiplier: float = 1.0, is_null: bool = false):
 	_morphology_used = morphology
 	_scalar = Vector3i(FEAGIUtils.bounds_int(positive_scalar.x, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.y, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.z, 1, INT8_MAX))
 	_post_synaptic_current_multiplier = psp_multilpier
@@ -38,6 +40,15 @@ func _init(morphology: Morphology, positive_scalar: Vector3i, psp_multilpier: fl
 	_plasticity_constant = plasticity_constant_ # not sure how to better segregate this name. Too Bad!
 	_LTP_multiplier = ltp_multiplier
 	_LTD_multiplier = ltd_multiplier
+	_is_null = is_null
+
+## Creates a mapping with default settings (given a morphology)
+static func create_default_mapping(morphology: Morphology) -> MappingProperty:
+	return MappingProperty.new(morphology, Vector3i(1,1,1), 1.0, false)
+
+## Creates a null placeholder mapping (used just to populate [MappingProperties] with the correct number of mappings before we know their details)
+static func create_placeholder_mapping() -> MappingProperty:
+	return MappingProperty.new(NullMorphology.new(), Vector3i(1,1,1), 1.0 , false, 1.0, 1.0, 1.0, true)
 
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_dictionary() -> Dictionary:
@@ -76,5 +87,3 @@ static func from_dict(mapping_property: Dictionary) -> MappingProperty:
 		var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]
 		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used)
 
-static func create_default_mapping(morphology: Morphology) -> MappingProperty:
-	return MappingProperty.new(morphology, Vector3i(1,1,1), 1.0, false)

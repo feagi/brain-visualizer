@@ -2,6 +2,8 @@ extends Object
 class_name MappingProperties
 ## Holds all [MappingProperty] objects / data relevant between a single source and a single destination cortical area
 
+signal mappings_changed(self_mappings: MappingProperties, new_count: int)
+
 var source_cortical_area: CorticalArea:
 	get: return _src_cortical
 var destination_cortical_area: CorticalArea:
@@ -10,6 +12,8 @@ var number_of_mappings: int:
 	get: return len(mappings)
 var mappings: Array[MappingProperty]:
 	get: return _mappings
+var number_mappings: int:
+	get: return len(_mappings)
 
 var _src_cortical: CorticalArea
 var _dst_cortical: CorticalArea
@@ -83,3 +87,14 @@ func is_any_PSP_multiplier_positive() -> bool:
 			return true
 	return false
 
+## Returns true if any mappings are null placeholders
+func contains_placeholder_mappings() -> bool:
+	for mapping: MappingProperty in mappings:
+		if mapping.is_null_placeholder:
+			return true
+	return false
+
+## Replace mapping data within this object
+func update_mappings(updated_mappings: Array[MappingProperty]) -> void:
+	_mappings = updated_mappings
+	mappings_changed.emit(self, len(_mappings))
