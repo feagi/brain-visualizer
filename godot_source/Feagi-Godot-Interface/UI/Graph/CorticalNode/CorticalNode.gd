@@ -2,6 +2,15 @@ extends GraphNode
 class_name CorticalNode
 ## Represents a Cortical Area in a node graph
 
+const LINE_COLOR_UNKNOWN_MAPPING: Color = Color.GHOST_WHITE
+const LINE_COLOR_PSPP_PLASTIC: Color = Color.LIME_GREEN
+const LINE_COLOR_PSPP_INPLASTIC: Color = Color.DARK_GREEN
+const LINE_COLOR_PSPN_PLASTIC: Color = Color.RED
+const LINE_COLOR_PSPN_INPLASTIC: Color = Color.DARK_RED
+const SENSOR_BOX_COLOR: Color = Color.BLUE
+const ACTUATOR_BOX_COLOR: Color = Color.YELLOW
+const INTERCONNECT_BOX_COLOR: Color = Color.SEA_GREEN
+
 signal moved(cortical_node: CorticalNode, new_location: Vector2i)
 
 enum ConnectionAvailibility {
@@ -33,7 +42,17 @@ var _cortical_area_ref: CorticalArea
 func _ready():
 	dragged.connect(_on_finish_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
-	
+
+# Announce if cortical area was selected with one click and open left panel on double click
+func _gui_input(event):
+	if !(event is InputEventMouseButton): return
+	var mouse_event: InputEventMouseButton = event
+	if !mouse_event.is_pressed(): return
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
+	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
+	if !mouse_event.double_click: return
+	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
+
 ## Since we cannot use _init for scenes, use this instead to initialize data
 func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
@@ -41,7 +60,12 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	title = _cortical_area_ref.name
 	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
-	
+	_setup_node_color(cortical_area.group)
+
+## 
+#func update_afferent(_afferent_area: CorticalArea, mapping_properties: MappingProperties, mapping_count: int) -> void:
+
+
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
@@ -56,41 +80,30 @@ func _user_request_delete_cortical_area() -> void:
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 ## Set the color depnding on cortical type
-func _setup_color(cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
+func _setup_node_color(cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
+	var style_box: StyleBoxFlat = StyleBoxFlat.new()
 	match(cortical_type):
 		CorticalArea.CORTICAL_AREA_TYPE.IPU:
-			#TODO
-			pass
+			style_box.bg_color = SENSOR_BOX_COLOR
 		CorticalArea.CORTICAL_AREA_TYPE.CORE:
-			#TODO
-			pass
+			style_box.bg_color = INTERCONNECT_BOX_COLOR
 		CorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			#TODO
-			pass
+			style_box.bg_color = INTERCONNECT_BOX_COLOR
 		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			#TODO
-			pass
+			style_box.bg_color = INTERCONNECT_BOX_COLOR
 		CorticalArea.CORTICAL_AREA_TYPE.OPU:
-			#TODO
-			pass
+			style_box.bg_color = ACTUATOR_BOX_COLOR
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			#TODO
 			pass
-		
 
-# Announce if cortical area was selected with one click and open left panel on double click
-func _gui_input(event):
-	if !(event is InputEventMouseButton): return
-	var mouse_event: InputEventMouseButton = event
-	if !mouse_event.is_pressed(): return
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
-	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
-	if !mouse_event.double_click: return
-	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
+	add_theme_stylebox_override("titlebar", style_box)
+
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 	moved.emit(self, to_position)
 
 func _update_cortical_name(new_name: StringName, _this_cortical_area: CorticalArea) -> void:
 	title = new_name
+

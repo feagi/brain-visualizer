@@ -18,8 +18,6 @@ var _moved_cortical_areas_buffer: Dictionary = {}
 func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(feagi_spawn_single_cortical_node)
 	FeagiCacheEvents.cortical_area_removed.connect(feagi_deleted_single_cortical_node)
-	FeagiCacheEvents.cortical_areas_connection_modified.connect(feagi_spawn_established_connection)
-	FeagiCacheEvents.cortical_areas_disconnected.connect(feagi_delete_established_connection)
 	FeagiEvents.genome_is_about_to_reset.connect(_on_genome_reset)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 

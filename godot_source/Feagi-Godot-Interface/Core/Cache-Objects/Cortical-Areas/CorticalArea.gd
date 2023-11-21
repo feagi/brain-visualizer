@@ -31,7 +31,7 @@ signal changed_monitoring_synaptic_potential(is_monitoring: bool)
 
 signal efferent_mapping_edited(efferent_area: CorticalArea, mapping_properties: MappingProperties, mapping_count: int)
 signal efferent_area_removed(efferent_area: CorticalArea)
-signal afferent_area_added(afferent_area: CorticalArea)
+signal afferent_mapping_edited(afferent_area: CorticalArea, mapping_properties: MappingProperties, mapping_count: int)
 signal afferent_area_removed(afferent_area: CorticalArea)
 
 
@@ -201,7 +201,7 @@ func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Arr
 		_efferent_mappings[destination_area.cortical_ID] = MappingProperties.create_empty_mapping(self, destination_area)
 	
 	_efferent_mappings[destination_area.cortical_ID].update_mappings(mappings)
-	destination_area.afferent_mapping_added(self)
+	destination_area.afferent_mapping_added(self, _efferent_mappings[destination_area.cortical_ID], len(mappings))
 	print("CORE: CORTICAL_AREA: Set Connection from %s to %s" % [cortical_ID, destination_area.cortical_ID])
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Remove target cortical area as connection
@@ -214,13 +214,13 @@ func remove_mappings_to_efferent_area(destination_area: CorticalArea) -> void:
 	efferent_area_removed.emit(destination_area)
 	print("CORE: CORTICAL_AREA: Removed Connection from %s to %s" % [cortical_ID, destination_area.cortical_ID])
 
-## ONLY TO BE CALLED FROM THE EFFERENT AREA. A source area is connected to this cortical area
-func afferent_mapping_added(afferent_area: CorticalArea) -> void:
+## ONLY TO BE CALLED FROM THE SOURCE AREA. A source area is connected to this cortical area
+func afferent_mapping_added(afferent_area: CorticalArea, mapping_properties: MappingProperties, mapping_count: int) -> void:
 	if afferent_area in _afferent_connections:
 		push_warning("CORE: CORTICAL_AREA: Attempted to add cortical area %s to afferent to %s when it is already defined as such. Skipping!"% [afferent_area.cortical_ID, _cortical_ID])
 		return
 	_afferent_connections.append(afferent_area)
-	afferent_area_added.emit(self)
+	afferent_mapping_edited.emit(afferent_area, mapping_properties, mapping_count)
 
 ## ONLY TO BE CALLED FROM THE EFFERENT AREA. A source area is disconnected to this cortical area
 func afferent_mapping_removed(afferent_area: CorticalArea) -> void:
