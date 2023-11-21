@@ -44,12 +44,19 @@ static func create_default_mapping(source_area: CorticalArea, destination_area: 
 	var default_mapping: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology_to_use)]
 	return MappingProperties.new(source_area, destination_area, default_mapping)
 
+## Returns an array of the [MappingProperty] objects as FEAGI formatted dictionaries
+static func mapping_properties_to_array(input_mappings: Array[MappingProperty]) -> Array[Dictionary]:
+	var output: Array[Dictionary] = []
+	for mapping: MappingProperty in input_mappings:
+		if !mapping.is_null_placeholder:
+			output.append(mapping.to_dictionary())
+		else:
+			push_error("Exporting MappingProperty that is a placeholder mapping. These placeholders will be skipped in the export in an attempt at stability, but this should never happen!")
+	return output
+
 ## Returns an array of the internal [MappingProperty] objects as FEAGI formatted dictionaries
 func to_array() -> Array[Dictionary]:
-	var output: Array[Dictionary] = []
-	for mapping in _mappings:
-		output.append(mapping.to_dictionary())
-	return output
+	return MappingProperties.mapping_properties_to_array(_mappings)
 
 func add_mapping_manually(new_mapping: MappingProperty) -> void:
 	_mappings.append(new_mapping)
@@ -84,13 +91,6 @@ func is_any_mapping_plastic() -> bool:
 func is_any_PSP_multiplier_positive() -> bool:
 	for mapping: MappingProperty in mappings:
 		if mapping.post_synaptic_current_multiplier > 0.0:
-			return true
-	return false
-
-## Returns true if any mappings are null placeholders
-func contains_placeholder_mappings() -> bool:
-	for mapping: MappingProperty in mappings:
-		if mapping.is_null_placeholder:
 			return true
 	return false
 
