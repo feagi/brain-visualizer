@@ -21,15 +21,14 @@ func clear_mapping_properties():
 	_mappings_scroll.remove_all_children()
 	visible = false
 
-## Creates a [MappingProperties] object given the items within the scroll section
-func generate_mapping_properties(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+## Creates an Array of [MappingProperty] given the items within the scroll section
+func generate_mapping_properties(source_area: CorticalArea, destination_area: CorticalArea) -> Array[MappingProperty]:
 	var mappings: Array[MappingProperty]= []
 	var scroll_box_box: VBoxContainer = _mappings_scroll.get_node("VBoxContainer")
 	var children_of_scroll_box: Array = scroll_box_box.get_children()
 	for mapping_prefab in children_of_scroll_box:
 		mappings.append(mapping_prefab.generate_mapping_property())
-	return MappingProperties.new(source_area, destination_area, mappings)
-
+	return mappings
 
 # connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:

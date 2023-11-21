@@ -174,9 +174,16 @@ static func true_position_to_BV_position(true_position: Vector3, scale: Vector3)
 		(int(scale.y / 2.0) + true_position.y),
 		-(int(scale.z / 2.0) + true_position.z))
 
+## Array of Cortical Areas to Array of Cortical IDs
+static func CorticalAreaArray2CorticalIDArray(arr: Array[CorticalArea]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for area: CorticalArea in arr:
+		output.append(area.cortical_ID)
+	return output
+
 ## Get 3D coordinates that BV uses currently
 func BV_position() -> Vector3:
-	return true_position_to_BV_position(coordinates_3D, dimensions)
+	return CorticalArea.true_position_to_BV_position(coordinates_3D, dimensions)
 
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:
@@ -185,7 +192,7 @@ func apply_details_dict(updated_details: Dictionary) -> void:
 # remember, efferent: e for exit
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite) the mappings to a destination area
-func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Array[MappingProperties]) -> void:
+func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Array[MappingProperty]) -> void:
 	if len(mappings) == 0:
 		remove_mappings_to_efferent_area(destination_area)
 		return

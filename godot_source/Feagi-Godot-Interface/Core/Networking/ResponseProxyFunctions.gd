@@ -19,6 +19,9 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
+	
+	
+	
 	for source_cortical_ID: StringName in cortical_map.keys():
 		if cortical_map[source_cortical_ID] == {}:
 			continue # no efferent connections for the current searching source cortical ID
@@ -26,24 +29,21 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 			push_error("Retrieved mapping from nonexistant cortical area %s! Skipping!" % source_cortical_ID)
 			continue
 		
+		
 		# This function is not particuarly efficient. Too Bad!
-		# no typing of these arrays due to type cast shenanigans. Be careful!
 		var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
 		var connections_requested: Array = cortical_map[source_cortical_ID].keys()
-		var efferent_connections_already_set: Array = source_area.efferent_connections_with_count.keys()
+		var efferent_connections_already_set: Array =  CorticalArea.CorticalAreaArray2CorticalIDArray(source_area.efferent_connections)
 		var efferents_to_add: Array = FEAGIUtils.find_missing_elements(connections_requested, efferent_connections_already_set)
 		var efferents_to_remove: Array = FEAGIUtils.find_missing_elements(efferent_connections_already_set, connections_requested)
 		var efferents_to_update: Array = FEAGIUtils.find_union(efferent_connections_already_set, connections_requested)
 		
+		for remove_ID: StringName in efferents_to_remove:
+			source_area.remove_mappings_to_efferent_area(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])
 
-		for add_ID in efferents_to_add:
-			source_area.set_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[add_ID], cortical_map[source_cortical_ID][add_ID])
-		
-		for remove_ID in efferents_to_remove:
-			source_area.remove_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])
-
-		for check_ID in efferents_to_update:
-			source_area.set_efferent_connection(FeagiCache.cortical_areas_cache.cortical_areas[check_ID], cortical_map[source_cortical_ID][check_ID])
+		for update_ID: StringName in efferents_to_update:
+			var number_connections: int = cortical_map[source_cortical_ID][update_ID]
+			source_area.set_mappings_to_efferent_area(FeagiCache.cortical_areas_cache.cortical_areas[update_ID], MappingProperty.create_placeholder_mapping_array(number_connections))
 	
 	if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
 		# we were loading the game, but now we can assume we are loaded

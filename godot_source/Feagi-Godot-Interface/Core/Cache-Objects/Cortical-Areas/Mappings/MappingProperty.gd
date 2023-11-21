@@ -50,6 +50,13 @@ static func create_default_mapping(morphology: Morphology) -> MappingProperty:
 static func create_placeholder_mapping() -> MappingProperty:
 	return MappingProperty.new(NullMorphology.new(), Vector3i(1,1,1), 1.0 , false, 1.0, 1.0, 1.0, true)
 
+## Create an array of null placeholder mappings
+static func create_placeholder_mapping_array(size: int) -> Array[MappingProperty]:
+	var output: Array[MappingProperty] = []
+	for i: int in size:
+		output.append(MappingProperty.create_placeholder_mapping())
+	return output
+
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_dictionary() -> Dictionary:
 	if !_plasticity_flag:

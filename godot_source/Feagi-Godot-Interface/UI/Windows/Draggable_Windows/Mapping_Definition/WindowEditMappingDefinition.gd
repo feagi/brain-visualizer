@@ -9,7 +9,7 @@ var source_area: CorticalArea:
 		if _source_area != null and _source_area.efferent_mapping_updated.is_connected(_mappings_updated):
 			_source_area.efferent_mapping_updated.disconnect(_mappings_updated)
 		_source_area = v
-		_source_area.efferent_mapping_updated.connect(_mappings_updated)
+		_source_area.efferent_mapping_edited.connect(_mappings_updated)
 		_request_mappings_from_feagi()
 
 var destination_area: CorticalArea:
@@ -50,7 +50,7 @@ func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalA
 	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
-func _mappings_updated(destination: CorticalArea, mappings: MappingProperties) -> void:
+func _mappings_updated(destination: CorticalArea, mappings: MappingProperties, _mapping_count: int) -> void:
 	if destination.cortical_ID != destination_area.cortical_ID:
 		return # we dont care if a different mapping was updated
 	_mapping_details.display_mapping_properties(mappings)
@@ -67,8 +67,7 @@ func _request_apply_mappings_to_FEAGI():
 	if !_are_cortical_areas_valid():
 		push_warning("User attempted to request mappings to undefined cortical areas. Skipping!")
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
-	var current_mappings: MappingProperties = _mapping_details.generate_mapping_properties(_source_area, _destination_area)
-	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, current_mappings)
+	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, _mapping_details.generate_mapping_properties(_source_area, _destination_area))
 	close_window("edit_mappings")
 
 ## Returns true only if the source and destination areas selected are valid
