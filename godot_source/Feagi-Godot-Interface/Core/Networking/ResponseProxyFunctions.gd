@@ -19,17 +19,14 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
-	
-	
-	
+
 	for source_cortical_ID: StringName in cortical_map.keys():
 		if cortical_map[source_cortical_ID] == {}:
 			continue # no efferent connections for the current searching source cortical ID
 		if source_cortical_ID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 			push_error("Retrieved mapping from nonexistant cortical area %s! Skipping!" % source_cortical_ID)
 			continue
-		
-		
+
 		# This function is not particuarly efficient. Too Bad!
 		var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
 		var connections_requested: Array = cortical_map[source_cortical_ID].keys()
@@ -37,6 +34,7 @@ func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _ir
 		var efferents_to_add: Array = FEAGIUtils.find_missing_elements(connections_requested, efferent_connections_already_set)
 		var efferents_to_remove: Array = FEAGIUtils.find_missing_elements(efferent_connections_already_set, connections_requested)
 		var efferents_to_update: Array = FEAGIUtils.find_union(efferent_connections_already_set, connections_requested)
+		efferents_to_update = FEAGIUtils.find_total_non_repeating(efferents_to_update, efferents_to_add)
 		
 		for remove_ID: StringName in efferents_to_remove:
 			source_area.remove_mappings_to_efferent_area(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])

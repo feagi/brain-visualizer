@@ -202,6 +202,7 @@ func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Arr
 	
 	_efferent_mappings[destination_area.cortical_ID].update_mappings(mappings)
 	destination_area.afferent_mapping_added(self)
+	print("CORE: CORTICAL_AREA: Set Connection from %s to %s" % [cortical_ID, destination_area.cortical_ID])
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Remove target cortical area as connection
 func remove_mappings_to_efferent_area(destination_area: CorticalArea) -> void:
@@ -211,6 +212,7 @@ func remove_mappings_to_efferent_area(destination_area: CorticalArea) -> void:
 	_efferent_mappings.erase(destination_area.cortical_ID)
 	destination_area.afferent_mapping_removed(self)
 	efferent_area_removed.emit(destination_area)
+	print("CORE: CORTICAL_AREA: Removed Connection from %s to %s" % [cortical_ID, destination_area.cortical_ID])
 
 ## ONLY TO BE CALLED FROM THE EFFERENT AREA. A source area is connected to this cortical area
 func afferent_mapping_added(afferent_area: CorticalArea) -> void:

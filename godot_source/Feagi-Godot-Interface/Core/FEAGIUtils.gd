@@ -125,6 +125,15 @@ static func find_missing_elements(is_missing: Array, is_missing_from: Array) -> 
 			output.append(e)
 	return output
 
+## Combines 2 arrays without repeating elements
+static func find_total_non_repeating(array_1: Array, array_2: Array) -> Array:
+	var output: Array = array_1.duplicate()
+	for e2 in array_2:
+		if !(e2 in output):
+			output.append(e2)
+	return output
+
+
 ## why is this so dumb
 static func untyped_array_to_int_array(input: Array) -> Array[int]:
 	var output: Array[int] = []
