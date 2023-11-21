@@ -110,7 +110,8 @@ var channel_count: int:
 var afferent_connections: Array[CorticalArea]:
 	get: return _afferent_connections
 ## All OUTGOING connections
-# TODO
+var efferent_connections: Array[CorticalArea]:
+	get: return _get_efferents()
 
 ## True if the dimensionality of the cortical area should not be edited by the user
 var is_dimension_not_editable: bool:
@@ -125,11 +126,8 @@ var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
 var _cortical_visiblity: bool = true
-## All afferent cortical areas refrences by cortical ID
 var _afferent_connections: Array[CorticalArea]
-## Add efferent cortical areas refrenced by cortical ID as keys with values being mapping count
-var _efferent_connections_with_count: Dictionary
-var _efferent_mappings: Dictionary = {}
+var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 var _is_monitoring_membrane_potential: bool
 var _is_monitoring_synaptic_potential: bool
 var _channel_count: int
@@ -231,8 +229,8 @@ func remove_all_connections() -> void:
 		_afferent_connections[0].remove_mappings_to_efferent_area(self)
 
 	# remove outgoing / efferent
-	while len(_efferent_connections_with_count.keys()) != 0:
-		var efferent_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[_efferent_connections_with_count.keys()[0]]
+	while len(_efferent_mappings.keys()) != 0:
+		var efferent_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[_efferent_mappings.keys()[0]]
 		remove_mappings_to_efferent_area(efferent_area)
 
 ## Retrieves the [MappingProperties] to a cortical area from this one. Returns an empty [MappingProperties] if no connecitons are defined
@@ -246,6 +244,12 @@ func get_efferent_connections_with_count() -> Dictionary:
 	var output: Dictionary = {}
 	for mapping: MappingProperties in _efferent_mappings.values():
 		output[mapping.destination_cortical_area.cortical_ID] = mapping.number_mappings
+	return output
+
+func _get_efferents() -> Array[CorticalArea]:
+	var output: Array[CorticalArea] = []
+	for efferent_ID: StringName in _efferent_mappings.keys():
+		output.append(FeagiCache.cortical_areas_cache.cortical_areas[efferent_ID])
 	return output
 
 func _details_updated() -> void:
