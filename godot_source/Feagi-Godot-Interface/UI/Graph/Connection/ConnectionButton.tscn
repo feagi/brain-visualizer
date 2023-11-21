@@ -1,28 +1,13 @@
-[gd_scene load_steps=5 format=3 uid="uid://do7otqbmtsyp2"]
+[gd_scene load_steps=3 format=3 uid="uid://do7otqbmtsyp2"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Connection/ConnectionButton.gd" id="1_7om2k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="2_k7min"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_wlbhy"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4jqvj"]
-
-[node name="ConnectionButton" type="GraphNode"]
+[node name="ConnectionButton" type="GraphElement"]
 offset_right = 10.0
 offset_bottom = 23.0
-theme_override_styles/frame = SubResource("StyleBoxEmpty_wlbhy")
-theme_override_styles/position = SubResource("StyleBoxEmpty_4jqvj")
 draggable = false
 selectable = false
-slot/0/left_enabled = false
-slot/0/left_type = 0
-slot/0/left_color = Color(1, 1, 1, 1)
-slot/0/left_icon = null
-slot/0/right_enabled = false
-slot/0/right_type = 0
-slot/0/right_color = Color(1, 1, 1, 1)
-slot/0/right_icon = null
-slot/0/draw_stylebox = true
 script = ExtResource("1_7om2k")
 
 [node name="button" type="Button" parent="."]

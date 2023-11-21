@@ -1,4 +1,4 @@
-extends GraphNode
+extends GraphElement
 class_name ConnectionButton
 ## Shows number of mappings
 
@@ -16,10 +16,11 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, number_map
 	_label = get_child(0)
 	update_position()
 	update_mapping_counter(number_mappings)
+	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
 
 
 func update_mapping_counter(number_of_mappings: int):
-	_label.text = str(number_of_mappings)
+	_label.text = " " + str(number_of_mappings) + " "
 
 # TODO replace with something better
 func update_position() -> void:
