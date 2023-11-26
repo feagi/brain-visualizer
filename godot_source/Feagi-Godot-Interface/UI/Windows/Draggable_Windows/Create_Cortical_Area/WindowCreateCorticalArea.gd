@@ -40,11 +40,7 @@ func _ready() -> void:
 
 
 func get_selected_type() -> CorticalArea.CORTICAL_AREA_TYPE:
-	var selected_str: StringName = _field_type_radio.currently_selected_text
-	if selected_str not in CorticalArea.CORTICAL_AREA_TYPE.keys():
-		return CorticalArea.CORTICAL_AREA_TYPE.INVALID
-	return CorticalArea.CORTICAL_AREA_TYPE[selected_str]
-
+	return CorticalArea.cortical_type_str_to_type(_field_type_radio.currently_selected_text)
 
 func _radio_button_proxy(_button_index: int, button_label: StringName) -> void:
 	_switch_UI_between_cortical_types(CorticalArea.CORTICAL_AREA_TYPE[button_label])

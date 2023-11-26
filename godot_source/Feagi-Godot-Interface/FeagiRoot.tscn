@@ -186,7 +186,7 @@ script = ExtResource("22_3kpmq")
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows" method="spawn_import_circuit"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows/Cortical_List" method="_on_ca_view_button_pressed"]
+[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows" method="spawn_cortical_view"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows" method="spawn_create_cortical"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows" method="spawn_quick_connect"]
 [connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMAdd_Button" to="UI/Windows" method="spawn_create_morphology"]

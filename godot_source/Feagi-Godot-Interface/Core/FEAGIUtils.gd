@@ -124,3 +124,10 @@ static func string_2_bool(input: String) -> bool:
 	if input == "true":
 		return true
 	return false
+
+## check if substring is in any element of a PackedStringArray
+static func is_substring_in_array(arr: PackedStringArray, searching: String) -> bool:
+	for element in arr:
+		if element.contains(searching):
+			return true
+	return false

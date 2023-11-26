@@ -1,8 +1,8 @@
 [gd_scene load_steps=14 format=3 uid="uid://2mmvclyd2pve"]
 
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="1_1uw6c"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/DropDown.gd" id="1_palvn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Prefab_Mapping.gd" id="1_tf7sq"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/MorphologyDropDown.gd" id="2_4r0x5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_2p8f4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_c7vkc"]
 [ext_resource type="Texture2D" uid="uid://7mxpyui05hrr" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_S.png" id="5_dnfxt"]
@@ -23,8 +23,7 @@ script = ExtResource("1_tf7sq")
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 fit_to_longest_item = false
-script = ExtResource("1_palvn")
-attempt_to_preserve_choice_on_update = true
+script = ExtResource("2_4r0x5")
 
 [node name="Gap1" type="Control" parent="."]
 custom_minimum_size = Vector2(20, 0)
@@ -105,7 +104,6 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("5_c7vkc")
 
-[connection signal="option_changed" from="Morphology_List" to="." method="_on_user_set_morphology"]
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
 [connection signal="pressed" from="info" to="." method="_on_info_pressed"]

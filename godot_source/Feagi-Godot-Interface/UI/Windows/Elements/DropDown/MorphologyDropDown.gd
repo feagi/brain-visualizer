@@ -8,16 +8,25 @@ signal user_selected_morphology(morphology_reference: Morphology)
 #@export var display_names_instead_of_IDs: bool = true
 # If true, will automatically remove morphologies from the drop down that were removed from cache
 @export var sync_removed_morphologies: bool = true
+# If true, will automatically add morphologies from the drop down that were added to the cache
+@export var sync_added_morphologies: bool = true
 
 @export var load_available_morphologies_on_start = true
 
+## If True, will hide the circle selection icon on the dropdown
+@export var hide_circle_select_icon: bool = true
+
 var _listed_morphologies: Array[Morphology] = []
+var _popup: PopupMenu
 
 func _ready():
+	_popup = get_popup()
 	if load_available_morphologies_on_start:
 		releod_available_morphologies()
 	if sync_removed_morphologies:
 		FeagiCacheEvents.morphology_removed.connect(_morphology_was_deleted_from_cache)
+	if sync_added_morphologies:
+		FeagiCacheEvents.morphology_removed.connect(_morphology_was_added_to_cache)
 	item_selected.connect(_user_selected_option)
 	
 
@@ -36,7 +45,6 @@ func overwrite_morphologies(new_morphology: Array[Morphology]) -> void:
 	clear_all_morphologies()
 	for morphology in new_morphology:
 		add_morphology(morphology)
-	_remove_radio_buttons()
 
 ## Add a singular morphology to the end of the drop down
 func add_morphology(new_morphology: Morphology) -> void:
@@ -46,6 +54,9 @@ func add_morphology(new_morphology: Morphology) -> void:
 	#else:
 	#	add_item(new_area.cortical_ID)
 	add_item(new_morphology.name) # using name only since as of writing, morphologies do not have IDs
+	if hide_circle_select_icon:
+		_popup.set_item_as_radio_checkable(_popup.get_item_count() - 1, false) # Remove Circle Selection
+	
 
 ## Retrieves selected morphology. If none is selected, returns a Null Morphology
 func get_selected_morphology() -> Morphology:
@@ -95,8 +106,7 @@ func _morphology_was_deleted_from_cache(deleted_morphology: Morphology) -> void:
 		return
 	remove_morphology(deleted_morphology)
 
-func _remove_radio_buttons() -> void:
-	var pm: PopupMenu = get_popup()
-	for i in pm.get_item_count():
-		if pm.is_item_radio_checkable(i):
-			pm.set_item_as_radio_checkable(i, false)
+func _morphology_was_added_to_cache(added_morphology: Morphology) -> void:
+	if added_morphology not in _listed_morphologies:
+		add_morphology(added_morphology)
+
