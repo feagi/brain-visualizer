@@ -11,6 +11,7 @@ var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/U
 var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
 var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
+var _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
 
 var loaded_windows: Dictionary
 
@@ -22,7 +23,8 @@ var _window_memory_states: Dictionary = {
 	"create_cortical": {"position": Vector2(400,550)},
 	"import_circuit": {"position": Vector2(400,850)},
 	"quick_connect": {"position": Vector2(50,100)},
-	"tutorial": {"position": Vector2(900,500)}
+	"tutorial": {"position": Vector2(900,500)},
+	"view_cortical": {"position": Vector2(50,100)}
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -125,9 +127,18 @@ func spawn_tutorial() -> void:
 	loaded_windows["tutorial"] = tutorial
 	bring_window_to_top(tutorial)
 
-func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
-
+func spawn_cortical_view() -> void:
+	if "view_cortical" in loaded_windows.keys():
+		force_close_window("view_cortical")
 	
+	var view_cortical: WindowViewCorticalArea = _prefab_cortical_view.instantiate()
+	add_child(view_cortical)
+	view_cortical.load_from_memory(_window_memory_states["view_cortical"])
+	view_cortical.closed_window.connect(force_close_window)
+	loaded_windows["view_cortical"] = view_cortical
+	bring_window_to_top(view_cortical)
+
+func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
 	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()
 	add_child(popup)
 	popup.position = Vector2(200,200)

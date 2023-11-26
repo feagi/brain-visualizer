@@ -19,6 +19,7 @@ var _Degeneracy_Constant: IntInput
 var _Threshold_Inc: Vector3fField
 var _PSP_Uniformity: CheckButton
 var _MP_Accumulation: CheckButton
+var _MP_Driven_PSP: CheckButton
 
 var _update_button: TextButton_Element
 
@@ -40,7 +41,9 @@ func _ready():
 	_Degeneracy_Constant = $Degeneracy_Constant/Degeneracy_Constant
 	_PSP_Uniformity = $PSP_Uniformity/PSP_Uniformity
 	_MP_Accumulation = $MP_Accumulation/MP_Accumulation
+	_MP_Driven_PSP = $MP_Driven_PSP/MP_Driven_PSP
 	_update_button = $Update_Button
+	
 	
 
 	_Voxel_Neuron_Density.int_confirmed.connect(user_request_Voxel_Neuron_Density)
@@ -58,6 +61,7 @@ func _ready():
 	_Threshold_Inc.user_updated_vector.connect(user_request_Threshold_Inc)
 	_PSP_Uniformity.toggled.connect(user_request_PSP_Uniforimity)
 	_MP_Accumulation.toggled.connect(user_request_MP_Accumumulation)
+	_MP_Driven_PSP.toggled.connect(user_request_MP_Driven_PSP)
 
 
 ## set initial values from FEAGI Cache
@@ -78,6 +82,7 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 	_Threshold_Inc.current_vector = details.neuron_fire_threshold_increment
 	_PSP_Uniformity.set_pressed_no_signal(details.neuron_psp_uniform_distribution)
 	_MP_Accumulation.set_pressed_no_signal(details.neuron_mp_charge_accumulation)
+	_MP_Driven_PSP.set_pressed_no_signal(details.neuron_mp_driven_psp)
 
 
 ## Properties changed from FEAGI side, reflect here
@@ -99,7 +104,8 @@ func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cort
 	_Threshold_Inc.current_vector = cortical_area_details.neuron_fire_threshold_increment
 	_PSP_Uniformity.set_pressed_no_signal(cortical_area_details.neuron_psp_uniform_distribution)
 	_MP_Accumulation.set_pressed_no_signal(cortical_area_details.neuron_mp_charge_accumulation)
-
+	_MP_Driven_PSP.set_pressed_no_signal(cortical_area_details.neuron_mp_driven_psp)
+	
 	_update_button.disabled = true
 	_growing_cortical_update = {} # reset queued changes
 
@@ -157,6 +163,9 @@ func user_request_PSP_Uniforimity(value: bool) -> void:
 
 func user_request_MP_Accumumulation(value: bool) -> void:
 	_growing_cortical_update["neuron_mp_charge_accumulation"] = value
+
+func user_request_MP_Driven_PSP(value: bool) -> void:
+	_growing_cortical_update["neuron_mp_driven_psp"] = value
 
 # Connected via TSCN to editable textboxes
 func _enable_update_button():

@@ -211,6 +211,18 @@ text = "MP Accumulation"
 [node name="MP_Accumulation" type="CheckButton" parent="MP_Accumulation"]
 layout_mode = 2
 
+[node name="MP_Driven_PSP" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "Overwrites the Post Synaptic Potential (PSP) of the cortical area so instead of a single constant to become dynamic and based on the Membrane Potential (MP) of the neuron before firing."
+
+[node name="Label" type="Label" parent="MP_Driven_PSP"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MP Driven PSP"
+
+[node name="MP_Driven_PSP" type="CheckButton" parent="MP_Driven_PSP"]
+layout_mode = 2
+
 [node name="Fire_Threshold_Label" type="Label" parent="."]
 layout_mode = 2
 tooltip_text = "Defined the level of Fire Threshold Increase in X, Y, Z directions of a cortical area"
@@ -256,5 +268,6 @@ layout_mode = 2
 [connection signal="user_interacted" from="Degeneracy_Constant/Degeneracy_Constant" to="." method="_enable_update_button"]
 [connection signal="pressed" from="PSP_Uniformity/PSP_Uniformity" to="." method="_enable_update_button"]
 [connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
+[connection signal="pressed" from="MP_Driven_PSP/MP_Driven_PSP" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Fire_Threshold_Increment" to="." method="_enable_update_button"]
 [connection signal="pressed" from="Update_Button" to="." method="_user_requests_update"]

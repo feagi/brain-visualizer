@@ -1,7 +1,7 @@
 extends HBoxContainer
 class_name Prefab_Mapping
 
-var _morphologies: DropDown
+var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
 var _plasticity: Button
@@ -20,7 +20,6 @@ func _ready() -> void:
 	_LTD_multiplier = $LTD_Multiplier
 
 func setup(data: Dictionary, _main_window) -> void:
-	_morphologies.options = data["morphologies"]
 	var _mapping_ref: MappingProperty = data["mapping"]
 	_scalar.current_vector = _mapping_ref.scalar
 	_PSP.current_float = _mapping_ref.post_synaptic_current_multiplier
@@ -28,12 +27,12 @@ func setup(data: Dictionary, _main_window) -> void:
 	_plasticity_constant.current_float = _mapping_ref.plasticity_constant
 	_LTP_multiplier.current_float = _mapping_ref.LTP_multiplier
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
-	_morphologies.set_option(_mapping_ref.morphology_used.name)
 	_on_user_toggle_plasticity(_plasticity.button_pressed)
+	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:
-	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[_morphologies.selected_item]
+	var morphology_used: Morphology = _morphologies.get_selected_morphology()
 	var scalar: Vector3i = _scalar.current_vector
 	var PSP: float = _PSP.current_float
 	var is_plastic: bool = _plasticity.button_pressed
@@ -56,5 +55,8 @@ func _on_delete_pressed() -> void:
 		return
 
 func _on_info_pressed() -> void:
-	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[_morphologies.selected_item]
+	var morphology_used: Morphology = _morphologies.get_selected_morphology()
+	if morphology_used is NullMorphology:
+		VisConfig.show_info_popup("Missing Morphology", "Please ensure morphologies are defined for all mappings", "OK")
+		return
 	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)
