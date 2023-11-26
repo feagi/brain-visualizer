@@ -20,7 +20,7 @@ func _ready() -> void:
 func load_cortical_type_options(type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
 	clear()
 	_stored_template_references = []
-	for template in FeagiCache.cortical_templates[CorticalArea.CORTICAL_AREA_TYPE.keys()[type]].templates.values():
+	for template in FeagiCache.cortical_templates[CorticalArea.cortical_type_to_str(type)].templates.values():
 		
 		if !template.is_enabled:
 			continue

@@ -1,22 +1,33 @@
-extends ScrollContainer
+extends VBoxContainer
 class_name GenericTextIDScroll
 
 signal item_selected(ID: Variant)
 
+@export var enable_filter_box: bool = true
+@export var setup_filter_by_name: bool = true
 @export var button_selected_color: Color = Color.GRAY
 @export var button_unselected_color: Color = Color.DIM_GRAY
 
 var _text_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/GenericTextIDScroll/GenericScrollItemText.tscn")
+var _filter_text: LineEdit
+var _scroll_container: ScrollContainer
 var _scroll_holder: BoxContainer
 var _default: StyleBoxFlat
 var _selected: StyleBoxFlat
 
 func _ready() -> void:
-	_scroll_holder = get_child(0)
+	_filter_text = $filter
+	_scroll_container = get_child(1)
+	_scroll_holder = _scroll_container.get_child(0)
 	_default = StyleBoxFlat.new()
 	_selected = StyleBoxFlat.new()
 	_default.bg_color = button_unselected_color
 	_selected.bg_color = button_selected_color
+	_filter_text.placeholder_text = "Filter..."
+	if setup_filter_by_name:
+		_filter_text.text_changed.connect(filter_by_button_text)
+	
+	toggle_filter_text_box(enable_filter_box)
 
 ## Adds single item to the list
 func append_single_item(ID: Variant, text: StringName) -> void:
@@ -46,6 +57,11 @@ func set_selected(ID_to_select: Variant) -> void:
 	if index_to_select != -1:
 		_scroll_holder.get_child(index_to_select).user_selected()
 
+func get_button_by_ID(ID_to_select: Variant) -> GenericScrollItemText:
+	var index_to_select: int = _find_child_index_with_ID(ID_to_select)
+	if index_to_select != -1:
+		return _scroll_holder.get_child(index_to_select)
+	return null
 
 func deselect_all() -> void:
 	for child in _scroll_holder.get_children():
@@ -54,6 +70,37 @@ func deselect_all() -> void:
 func delete_all() -> void:
 	for child in _scroll_holder.get_children():
 		child.queue_free()
+
+func filter_by_button_text(searching_string: StringName) -> void:
+	if searching_string == &"":
+		revoke_filter()
+		return
+	for child in _scroll_holder.get_children():
+		if child.text.to_lower().contains(searching_string.to_lower()):
+			child.visible = true
+		else:
+			child.visible = false
+
+func filter_by_button_text_whitelist(whitelist: PackedStringArray) -> void:
+	for child in _scroll_holder.get_children():
+		if FEAGIUtils.is_substring_in_array(whitelist, child.text):
+			child.visible = true
+		else:
+			child.visible = false
+
+func filter_by_IDs(whitelist: Array) -> void:
+	for child in _scroll_holder.get_children():
+		if child.ID in whitelist:
+			child.visible = true
+		else:
+			child.visible = false
+
+func revoke_filter() -> void:
+	for child in _scroll_holder.get_children():
+		child.visible = true
+
+func toggle_filter_text_box(enable_filter_box: bool) -> void:
+	_filter_text.visible = enable_filter_box
 
 func _find_child_index_with_ID(searching_ID: Variant) -> int:
 	for child in _scroll_holder.get_children():
