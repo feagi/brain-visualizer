@@ -174,7 +174,7 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.C
 	var to_send: Dictionary = {
 		"cortical_id": template_cortical_ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
-		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+		"cortical_type": CorticalArea.cortical_type_to_str(type),
 		"channel_count": channel_count
 	}
 
@@ -182,7 +182,7 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.C
 		"template_cortical_ID": template_cortical_ID,
 		"coordinates_3d": coordinates_3D,
 		"channel_count": channel_count,
-		"cortical_type_str": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+		"cortical_type_str": CorticalArea.cortical_type_to_str(type),
 	}
 
 	if is_coordinate_2D_defined:
@@ -203,7 +203,7 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		"cortical_name": str(name),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[CorticalArea.CORTICAL_AREA_TYPE.CUSTOM]
+		"cortical_type": CorticalArea.cortical_type_to_str(CorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
 	}
 
 	var to_buffer: Dictionary = {

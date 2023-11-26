@@ -95,6 +95,12 @@ var neuron_mp_charge_accumulation: bool:
 		_neuron_mp_charge_accumulation = v
 		property_changed.emit({"neuron_mp_charge_accumulation": v})
 
+var neuron_mp_driven_psp: bool:
+	get: return _neuron_mp_driven_psp
+	set(v):
+		_neuron_mp_driven_psp = v
+		property_changed.emit({"neuron_mp_driven_psp": v})
+
 var _cortical_neuron_per_vox_count: int = 0
 var _cortical_synaptic_attractivity: int = 0
 var _neuron_post_synaptic_potential: float = 0.0
@@ -110,6 +116,7 @@ var _neuron_snooze_period: int = 0
 var _neuron_degeneracy_coefficient: int = 0
 var _neuron_psp_uniform_distribution: bool = false
 var _neuron_mp_charge_accumulation: bool = false
+var _neuron_mp_driven_psp: bool = false
 
 ## Updates all variables in here from a dict from FEAGI
 func apply_dictionary(data: Dictionary) -> void:
@@ -147,4 +154,6 @@ func apply_dictionary(data: Dictionary) -> void:
 		_neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
 	if "neuron_mp_charge_accumulation" in data.keys(): 
 		_neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
+	if "neuron_mp_driven_psp" in data.keys():
+		_neuron_mp_driven_psp = data["neuron_mp_driven_psp"]
 	many_properties_set.emit()

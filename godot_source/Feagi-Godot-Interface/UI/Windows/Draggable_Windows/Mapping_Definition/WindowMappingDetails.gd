@@ -14,7 +14,6 @@ func display_mapping_properties(mappings_copy: MappingProperties) -> void:
 	for mapping in mappings_copy.mappings:
 		_mappings_scroll.spawn_list_item(
 			{
-				"morphologies": FeagiCache.morphology_cache.available_morphologies.keys(),
 				"mapping": mapping,
 			})
 
@@ -41,7 +40,6 @@ func _add_mapping_pressed() -> void:
 	var new_mapping: MappingProperty = MappingProperty.create_default_mapping(FeagiCache.morphology_cache.available_morphologies[FeagiCache.morphology_cache.available_morphologies.keys()[0]])
 	_mappings_scroll.spawn_list_item(
 		{
-			"morphologies": FeagiCache.morphology_cache.available_morphologies.keys(),
 			"mapping": new_mapping,
 		}
 	)

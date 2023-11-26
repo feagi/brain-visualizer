@@ -16,7 +16,7 @@ var _gui_name: StringName
 
 func _init(cortical_types_dict_from_FEAGI: Dictionary, type_cortical_area_str: StringName) -> void:
 	_gui_name = cortical_types_dict_from_FEAGI[type_cortical_area_str]["gui_name"]
-	_cortical_type = CorticalArea.CORTICAL_AREA_TYPE[type_cortical_area_str]
+	_cortical_type = CorticalArea.cortical_type_str_to_type(type_cortical_area_str)
 	if "supported_devices" not in cortical_types_dict_from_FEAGI[type_cortical_area_str].keys():
 		_templates = {} # no templates available
 		return

@@ -25,7 +25,7 @@ func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> vo
 
 	var new_ID: StringName = all_cortical_area_properties["cortical_id"]
 	var new_name: StringName = all_cortical_area_properties["cortical_name"]
-	var new_group: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.CORTICAL_AREA_TYPE[all_cortical_area_properties["cortical_group"]]
+	var new_group: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.cortical_type_str_to_type(all_cortical_area_properties["cortical_group"])
 	var new_visibility: bool = all_cortical_area_properties["cortical_visibility"]
 	var new_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
 	var new_area: CorticalArea = CorticalArea.new(new_ID, new_name, new_group,  new_visibility, new_cortical_dimensions, all_cortical_area_properties)
@@ -144,7 +144,7 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 	for add in added:
 		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
 		new_area_summary = _new_listing_with_summaries[add]
-		new_cortical_type = CorticalArea.CORTICAL_AREA_TYPE[new_area_summary["type"].to_upper()]
+		new_cortical_type = CorticalArea.cortical_type_str_to_type(new_area_summary["type"])
 		new_cortical_name = new_area_summary["name"]
 		new_cortical_visibility = new_area_summary["visible"]
 		new_cortical_dimensions = FEAGIUtils.array_to_vector3i(new_area_summary["dimensions"])

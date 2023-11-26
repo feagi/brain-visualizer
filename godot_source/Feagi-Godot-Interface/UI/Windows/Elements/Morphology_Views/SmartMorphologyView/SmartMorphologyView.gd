@@ -89,7 +89,7 @@ func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
 			load_in_morphology(NullMorphology.new())
 	
 ## Retrieves the current UI view as a morphology of its type
-func retrieve_morphology(morphology_name: StringName, morphology_details: StringName) -> Morphology:
+func retrieve_morphology(morphology_name: StringName, _morphology_details: StringName) -> Morphology:
 	## TODO make use of morphology details - Requires FEAGI support first
 	match _type_loaded:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
