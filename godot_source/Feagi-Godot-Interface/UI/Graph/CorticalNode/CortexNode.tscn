@@ -5,7 +5,6 @@
 [node name="CorticalNode" type="GraphNode"]
 offset_right = 162.0
 offset_bottom = 80.0
-show_close = true
 slot/0/left_enabled = true
 slot/0/left_type = 0
 slot/0/left_color = Color(1, 1, 1, 1)
@@ -17,19 +16,19 @@ slot/0/right_icon = null
 slot/0/draw_stylebox = true
 script = ExtResource("1_4inyi")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="Top_Connector" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HBoxContainer"]
+[node name="Label" type="Label" parent="Top_Connector"]
 layout_mode = 2
-text = "Input"
+text = "Add Input"
 
-[node name="Control" type="Control" parent="HBoxContainer"]
+[node name="Control" type="Control" parent="Top_Connector"]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="HBoxContainer"]
+[node name="Label2" type="Label" parent="Top_Connector"]
 layout_mode = 2
-text = "Output"
+text = "Add Output"
 horizontal_alignment = 2

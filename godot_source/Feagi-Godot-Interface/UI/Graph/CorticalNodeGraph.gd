@@ -11,7 +11,7 @@ var cortical_nodes: Dictionary = {}
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
 var _connection_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/ConnectionButton.tscn")
 var _spawn_sorter: CorticalNodeSpawnSorter
-var _connection_buttons: Dictionary = {}
+var _connection_buttons: Dictionary = {} # key'd by Source_ID {Destination_ID[button]}
 var _move_timer: Timer
 var _moved_cortical_areas_buffer: Dictionary = {}
 
@@ -46,11 +46,11 @@ func feagi_spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNo
 	cortical_node.moved.connect(_cortical_node_moved)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
 	
+	cortical_area.efferent_mapping_edited.connect(feagi_create_connection_button_from_efferent)
 	
-
 	return cortical_node
 
-
+## Deletes a cortical Node, should only be called via FEAGI
 func feagi_deleted_single_cortical_node(cortical_area: CorticalArea) -> void:
 	if cortical_area.cortical_ID not in cortical_nodes.keys():
 		push_error("GRAPH: Attempted to remove non-existant cortex node " + cortical_area.cortical_ID + "! Skipping...")
@@ -58,53 +58,29 @@ func feagi_deleted_single_cortical_node(cortical_area: CorticalArea) -> void:
 	node.FEAGI_delete_cortical_area()
 	cortical_nodes.erase(cortical_area.cortical_ID)
 
+## Spawns a conneciton button, which itself coordinates maintaining connection lines 
+func feagi_create_connection_button_from_efferent(mapping_properties: MappingProperties) -> void:
 
-## Should only be called from feagi when connection creation is confirmed
-func feagi_spawn_established_connection(source: CorticalArea, destination: CorticalArea, mapping_count: int) -> void:
-	pass
-	if source.cortical_ID not in cortical_nodes.keys():
-		push_error("GRAPH: Unable to create a connection due to missing cortical area %s! Skipping!" % source.cortical_ID)
+	if mapping_properties.source_cortical_area.cortical_ID not in _connection_buttons.keys():
+		_connection_buttons[mapping_properties.source_cortical_area.cortical_ID] = {}
+	if mapping_properties.destination_cortical_area.cortical_ID in _connection_buttons[mapping_properties.source_cortical_area.cortical_ID].keys():
+		# Button Exists. Do nothing
 		return
-	if destination.cortical_ID not in cortical_nodes.keys():
-		push_error("GRAPH: Unable to create a connection due to missing cortical area %s! Skipping!" % destination.cortical_ID)
+	
+	if mapping_properties.source_cortical_area.cortical_ID not in cortical_nodes.keys():
+		push_error("UI: GRAPH: Unable to create a connection due to missing cortical area %s! Skipping!" % mapping_properties.source_cortical_area.cortical_ID)
+		return
+	if mapping_properties.destination_cortical_area.cortical_ID not in cortical_nodes.keys():
+		push_error("GRAPH: Unable to create a connection due to missing cortical area %s! Skipping!" % mapping_properties.destination_cortical_area.cortical_ID)
 		return
 
-	connect_node(source.cortical_ID, 0, destination.cortical_ID, 0)
+	var source_node: CorticalNode = cortical_nodes[mapping_properties.source_cortical_area.cortical_ID]
+	var destination_node: CorticalNode = cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
 	
-	# Check from outputs
-	if source.cortical_ID not in _connection_buttons.keys():
-		var new_button: ConnectionButton = _connection_button_prefab.instantiate()
-		_connection_buttons[source.cortical_ID] = {destination.cortical_ID: new_button}
-		add_child(new_button)
-		new_button.setup(cortical_nodes[source.cortical_ID], cortical_nodes[destination.cortical_ID], mapping_count)
-		return
-	
-	# check from inputs
-	if destination.cortical_ID not in _connection_buttons[source.cortical_ID].keys():
-		var new_button: ConnectionButton = _connection_button_prefab.instantiate()
-		_connection_buttons[source.cortical_ID][destination.cortical_ID] = new_button
-		add_child(new_button)
-		new_button.setup(cortical_nodes[source.cortical_ID], cortical_nodes[destination.cortical_ID], mapping_count)
-		return
-	
-	# button exists, update
-	_connection_buttons[source.cortical_ID][destination.cortical_ID].update_mapping_counter(mapping_count)
+	# Spawn Button and setup
+	_connection_buttons[mapping_properties.source_cortical_area.cortical_ID][mapping_properties.destination_cortical_area.cortical_ID] = _connection_button_prefab.instantiate()
+	_connection_buttons[mapping_properties.source_cortical_area.cortical_ID][mapping_properties.destination_cortical_area.cortical_ID].setup(source_node, destination_node, mapping_properties, self)
 
-
-## Should only be called from feagi when connection deletion is confirmed
-func feagi_delete_established_connection(source: CorticalArea, destination: CorticalArea) -> void:
-	if source.cortical_ID not in cortical_nodes.keys():
-		push_error("GRAPH: Unable to delete a connection from source cortical area %s since it was not found in the cache! Skipping!" % source.cortical_ID)
-		return
-	
-	if source.cortical_ID in _connection_buttons.keys():
-		if destination.cortical_ID in _connection_buttons[source.cortical_ID].keys():
-			_connection_buttons[source.cortical_ID][destination.cortical_ID].destroy_self()
-			_connection_buttons[source.cortical_ID].erase(destination.cortical_ID)
-			if len(_connection_buttons[source.cortical_ID].keys()) == 0:
-				_connection_buttons.erase(source.cortical_ID)
-	
-	disconnect_node(source.cortical_ID, 0, destination.cortical_ID, 0)
 
 ## Every time a cortical node moves, store and send it when time is ready
 func _cortical_node_moved(node: CorticalNode, new_position: Vector2i) -> void:

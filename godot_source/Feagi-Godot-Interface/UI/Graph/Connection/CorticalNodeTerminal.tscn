@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://bnmchhiw734os"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalNodeTerminal.gd" id="1_nf13s"]
+
+[node name="CorticalNodeTerminal" type="HBoxContainer"]
+script = ExtResource("1_nf13s")
+
+[node name="Label" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
