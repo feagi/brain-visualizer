@@ -8,8 +8,6 @@ var source_cortical_area: CorticalArea:
 	get: return _src_cortical
 var destination_cortical_area: CorticalArea:
 	get: return _dst_cortical
-var number_of_mappings: int:
-	get: return len(mappings)
 var mappings: Array[MappingProperty]:
 	get: return _mappings
 var number_mappings: int:
@@ -94,7 +92,22 @@ func is_any_PSP_multiplier_positive() -> bool:
 			return true
 	return false
 
+## Returns true if the connection maps a cortical area toward itself
+func is_recursive() -> bool:
+	return source_cortical_area.cortical_ID == destination_cortical_area.cortical_ID
+
+## Returns true if there are no mappings (disconnected)
+func is_empty() -> bool:
+	return len(_mappings) == 0
+
 ## Replace mapping data within this object
 func update_mappings(updated_mappings: Array[MappingProperty]) -> void:
 	_mappings = updated_mappings
-	mappings_changed.emit(self, len(_mappings))
+	mappings_changed.emit(self)
+
+## Replace mapping data with an empty array
+## NOTE: This object gets deleted if its empty, beware of null references!
+func update_mappings_to_empty() -> void:
+	var empty: Array[MappingProperty] = []
+	_mappings = empty
+	mappings_changed.emit(self)
