@@ -50,8 +50,8 @@ func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalA
 	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
-func _mappings_updated(destination: CorticalArea, mappings: MappingProperties, _mapping_count: int) -> void:
-	if destination.cortical_ID != destination_area.cortical_ID:
+func _mappings_updated(mappings: MappingProperties) -> void:
+	if mappings.destination_area.cortical_ID != destination_area.cortical_ID:
 		return # we dont care if a different mapping was updated
 	_mapping_details.display_mapping_properties(mappings)
 
