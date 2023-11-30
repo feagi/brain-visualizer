@@ -2,6 +2,12 @@ extends Object
 class_name MappingProperties
 ## Holds all [MappingProperty] objects / data relevant between a single source and a single destination cortical area
 
+enum SIGNAL_TYPE{
+	EXCITATORY,
+	INHIBITORY,
+	MIXED
+}
+
 signal mappings_changed(self_mappings: MappingProperties, new_count: int)
 
 var source_cortical_area: CorticalArea:
@@ -98,6 +104,17 @@ func is_any_PSP_multiplier_negative() -> bool:
 		if mapping.post_synaptic_current_multiplier < 0.0:
 			return true
 	return false
+
+func is_PSP_multiplers_mixed_sign() -> bool:
+	return is_any_PSP_multiplier_negative() and is_any_PSP_multiplier_positive()
+
+func get_PSP_signal_type() -> SIGNAL_TYPE:
+	if is_any_PSP_multiplier_negative():
+		if is_any_PSP_multiplier_positive():
+			return SIGNAL_TYPE.MIXED
+		else:
+			return SIGNAL_TYPE.INHIBITORY
+	return SIGNAL_TYPE.EXCITATORY
 
 ## Returns true if the connection maps a cortical area toward itself
 func is_recursive() -> bool:

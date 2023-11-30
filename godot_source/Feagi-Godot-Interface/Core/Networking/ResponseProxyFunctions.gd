@@ -83,19 +83,21 @@ func GET_GE_circuitDescription(response_code: int, response_body: PackedByteArra
 func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArray, source_destination_ID_str: Array) -> void:
 	if source_destination_ID_str[0] not in FeagiCache.cortical_areas_cache.cortical_areas.keys() or source_destination_ID_str[1] not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
-		push_error("Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
+		push_error("UI: WINDOW: Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
 		return
 	var source_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[0]]
 	var destination_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]
-	var properties: MappingProperties
+	var properties: Array[MappingProperty] = []
 	if _response_code == 404:
 		# Feagi does this when it cannot find a mapping
-		properties = MappingProperties.create_empty_mapping(source_area, destination_area)
+		pass
 	else:
 		# feagi returned a filled mappings
-		var raw_mapping_properties: Array = _body_to_untyped_array(response_body)
-		properties = MappingProperties.from_MappingPropertys(raw_mapping_properties, source_area, destination_area)
-	source_area.set_efferent_mapping_properties_from_FEAGI(properties, destination_area)
+		var raw_dicts: Array[Dictionary] = []
+		raw_dicts.assign(_body_to_untyped_array(response_body))
+		properties = MappingProperty.from_array_of_dict(raw_dicts)
+		
+	source_area.set_mappings_to_efferent_area(destination_area, properties)
 
 func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, morphology_name: StringName) -> void:
 	if response_code == 400:
@@ -305,7 +307,8 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 		cortical_src.remove_efferent_connection(cortical_dst)
 		return
 	# assume we add / modify the mapping
-	cortical_src.set_efferent_connection(cortical_dst, mapping_count)
+	var a: Array[MappingProperty] = []
+	cortical_src.set_mappings_to_efferent_area(cortical_dst, a)
 
 
 func PUT_GE_corticalArea(response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:

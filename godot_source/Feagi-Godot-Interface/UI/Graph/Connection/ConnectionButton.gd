@@ -33,18 +33,18 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	_source_node.position_offset_changed.connect(update_position)
 	if !_mapping_properties.is_recursive():
 		_destination_node.position_offset_changed.connect(update_position)
-	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping_count)
+	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
 	update_position()
 	
 	#Line
 	_node_graph.connect_node(_source_node.name, _source_node_terminal.port_index, _destination_node.name, _destination_node_terminal.port_index)
-	_source_node_terminal.set_port_color(_determine_line_color())
-	_destination_node_terminal.set_port_color(_determine_line_color())
 
 	# Labeling
 	_label = get_child(0)
-	_feagi_updated_mapping_count(_mapping_properties)
 	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
+
+	# update Line Properties
+	_feagi_updated_mapping(_mapping_properties)
 
 
 # TODO replace with something better
@@ -60,8 +60,10 @@ func _button_pressed() -> void:
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
 
 ## Update the mapping count
-func _feagi_updated_mapping_count(_updated_mapping_data: MappingProperties) -> void:
+func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
 	_update_mapping_counter(_mapping_properties.number_mappings)
+	_source_node_terminal.set_port_color(_determine_line_color())
+	_destination_node_terminal.set_port_color(_determine_line_color())
 
 func _update_mapping_counter(number_of_mappings: int):
 	_label.text = " " + str(number_of_mappings) + " "
@@ -69,12 +71,6 @@ func _update_mapping_counter(number_of_mappings: int):
 func _determine_line_color() -> Color:
 	if _mapping_properties.is_any_PSP_multiplier_negative():
 		# negative PSP
-		if _mapping_properties.is_any_mapping_plastic():
-			return LINE_COLOR_PSPN_PLASTIC
-		else:
-			return LINE_COLOR_PSPN_INPLASTIC
-	# positive PSP
-	if _mapping_properties.is_any_mapping_plastic():
-		return LINE_COLOR_PSPP_PLASTIC
+		return LINE_COLOR_PSPN_INPLASTIC
 	else:
 		return LINE_COLOR_PSPP_INPLASTIC

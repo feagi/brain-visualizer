@@ -51,7 +51,7 @@ func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalA
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
 func _mappings_updated(mappings: MappingProperties) -> void:
-	if mappings.destination_area.cortical_ID != destination_area.cortical_ID:
+	if mappings.destination_cortical_area.cortical_ID != destination_area.cortical_ID:
 		return # we dont care if a different mapping was updated
 	_mapping_details.display_mapping_properties(mappings)
 

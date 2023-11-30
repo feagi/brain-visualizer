@@ -57,6 +57,28 @@ static func create_placeholder_mapping_array(size: int) -> Array[MappingProperty
 		output.append(MappingProperty.create_placeholder_mapping())
 	return output
 
+## Given the dictionary from FEAGI directly creates a MappingProperty object
+static func from_dict(mapping_property: Dictionary) -> MappingProperty:
+	var morphology_cached: Morphology = FeagiCache.morphology_cache.available_morphologies[mapping_property["morphology_id"]]
+	var scalar_used: Vector3i = FEAGIUtils.array_to_vector3i(mapping_property["morphology_scalar"])
+	var psp_multiplier: float = mapping_property["postSynapticCurrent_multiplier"]
+	var plasticity: bool = mapping_property["plasticity_flag"]
+	if !plasticity:
+		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
+	else:
+		var plasticity_constant_used: float = mapping_property["plasticity_constant"]
+		var LTP_multiplier_used: float = mapping_property["ltp_multiplier"]
+		var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]
+		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used)
+
+## Given an array of Dictionaries from FEAGI, directly output an array of MappingPropertys
+static func from_array_of_dict(mapping_dicts: Array[Dictionary]) -> Array[MappingProperty]:
+	var output: Array[MappingProperty] = []
+	for mapping_dict: Dictionary in mapping_dicts:
+		output.append(MappingProperty.from_dict(mapping_dict))
+	return output
+
+
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_dictionary() -> Dictionary:
 	if !_plasticity_flag:
@@ -80,17 +102,4 @@ func to_dictionary() -> Dictionary:
 func duplicate() -> MappingProperty:
 	return MappingProperty.new(_morphology_used, _scalar, _post_synaptic_current_multiplier, _plasticity_flag, _plasticity_constant, _LTP_multiplier, _LTD_multiplier)
 
-## Given the dictionary from FEAGI directly creates a MappingProperty object
-static func from_dict(mapping_property: Dictionary) -> MappingProperty:
-	var morphology_cached: Morphology = FeagiCache.morphology_cache.available_morphologies[mapping_property["morphology_id"]]
-	var scalar_used: Vector3i = FEAGIUtils.array_to_vector3i(mapping_property["morphology_scalar"])
-	var psp_multiplier: float = mapping_property["postSynapticCurrent_multiplier"]
-	var plasticity: bool = mapping_property["plasticity_flag"]
-	if !plasticity:
-		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
-	else:
-		var plasticity_constant_used: float = mapping_property["plasticity_constant"]
-		var LTP_multiplier_used: float = mapping_property["ltp_multiplier"]
-		var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]
-		return MappingProperty.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used)
 

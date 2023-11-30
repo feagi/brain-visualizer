@@ -2,9 +2,9 @@ extends GraphNode
 class_name CorticalNode
 ## Represents a Cortical Area in a node graph
 
-const SENSOR_BOX_COLOR: Color = Color.BLUE
-const ACTUATOR_BOX_COLOR: Color = Color.DARK_KHAKI
-const INTERCONNECT_BOX_COLOR: Color = Color.SEA_GREEN
+const SENSOR_BOX_COLOR: Color = Color(0.9882352941176471, 0.7803921568627451, 0.6549019607843137)
+const ACTUATOR_BOX_COLOR: Color = Color(0.6352941176470588, 0.8352941176470589, 0.7411764705882353)
+const INTERCONNECT_BOX_COLOR: Color = Color(0.7529411764705882, 0.7686274509803922, 1)
 const TERMINAL_PREFAB = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalNodeTerminal.tscn")
 
 signal moved(cortical_node: CorticalNode, new_location: Vector2i)
@@ -82,6 +82,7 @@ func spawn_afferent_terminal(afferent: CorticalArea) -> CorticalNodeTerminal:
 	move_child(terminal, index)
 	_input_terminals[afferent.cortical_ID] = terminal
 	set_slot_enabled_left(index, true)
+	set_slot_type_left(index, -1)
 	_update_terminal_indexes()
 	return terminal
 
@@ -93,6 +94,7 @@ func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
 	move_child(terminal, index)
 	_output_terminals[efferent.cortical_ID] = terminal
 	set_slot_enabled_right(index, true)
+	set_slot_type_right(index, -1)
 	_update_terminal_indexes()
 	return terminal
 	
