@@ -2,11 +2,6 @@ extends GraphNode
 class_name CorticalNode
 ## Represents a Cortical Area in a node graph
 
-const LINE_COLOR_UNKNOWN_MAPPING: Color = Color.GHOST_WHITE
-const LINE_COLOR_PSPP_PLASTIC: Color = Color.LIME_GREEN
-const LINE_COLOR_PSPP_INPLASTIC: Color = Color.DARK_GREEN
-const LINE_COLOR_PSPN_PLASTIC: Color = Color.RED
-const LINE_COLOR_PSPN_INPLASTIC: Color = Color.DARK_RED
 const SENSOR_BOX_COLOR: Color = Color.BLUE
 const ACTUATOR_BOX_COLOR: Color = Color.YELLOW
 const INTERCONNECT_BOX_COLOR: Color = Color.SEA_GREEN
@@ -35,6 +30,7 @@ var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
 
 var _cortical_area_ref: CorticalArea
+## The 2 below may be uneeded
 var _input_terminals: Dictionary = {} ## Keyd by connecting area cortical ID
 var _output_terminals: Dictionary = {} ## Keyd by connecting area cortical ID
 
@@ -97,7 +93,7 @@ func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
 	terminal.setup(efferent, self,  CorticalNodeTerminal.TYPE.OUTPUT)
 	var index: int = get_next_efferent_index()
 	move_child(terminal, index)
-	_input_terminals[efferent.cortical_ID] = terminal
+	_output_terminals[efferent.cortical_ID] = terminal
 	set_slot_enabled_right(index, true)
 	_update_terminal_indexes()
 	return terminal

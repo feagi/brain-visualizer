@@ -1,6 +1,12 @@
 extends GraphElement
 class_name ConnectionButton
-## Shows number of mappings
+## Shows number of mappings, and controls the line creationa and destruction
+
+const LINE_COLOR_UNKNOWN_MAPPING: Color = Color.GHOST_WHITE
+const LINE_COLOR_PSPP_PLASTIC: Color = Color.LIME_GREEN
+const LINE_COLOR_PSPP_INPLASTIC: Color = Color.DARK_GREEN
+const LINE_COLOR_PSPN_PLASTIC: Color = Color.RED
+const LINE_COLOR_PSPN_INPLASTIC: Color = Color.DARK_RED
 
 var _node_graph: CorticalNodeGraph
 var _source_node: CorticalNode
@@ -32,6 +38,8 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	
 	#Line
 	_node_graph.connect_node(_source_node.name, _source_node_terminal.port_index, _destination_node.name, _destination_node_terminal.port_index)
+	_source_node_terminal.set_port_color(_determine_line_color())
+	_destination_node_terminal.set_port_color(_determine_line_color())
 
 	# Labeling
 	_label = get_child(0)
@@ -57,3 +65,16 @@ func _feagi_updated_mapping_count(_updated_mapping_data: MappingProperties) -> v
 
 func _update_mapping_counter(number_of_mappings: int):
 	_label.text = " " + str(number_of_mappings) + " "
+
+func _determine_line_color() -> Color:
+	if _mapping_properties.is_any_PSP_multiplier_negative():
+		# negative PSP
+		if _mapping_properties.is_any_mapping_plastic():
+			return LINE_COLOR_PSPN_PLASTIC
+		else:
+			return LINE_COLOR_PSPN_INPLASTIC
+	# positive PSP
+	if _mapping_properties.is_any_mapping_plastic():
+		return LINE_COLOR_PSPP_PLASTIC
+	else:
+		return LINE_COLOR_PSPP_INPLASTIC
