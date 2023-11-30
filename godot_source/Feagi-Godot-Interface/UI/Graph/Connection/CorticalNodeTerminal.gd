@@ -55,6 +55,16 @@ func update_indexes() -> void:
 	_slot_index = _get_slot_index()
 	_port_index = _get_port_index()
 
+## Sets the color of this single port
+func set_port_color(color: Color) -> void:
+	match _terminal_type:
+		TYPE.INPUT:
+			_parent_node.set_slot_color_left(_slot_index, color)
+		TYPE.OUTPUT:
+			_parent_node.set_slot_color_right(_slot_index, color)
+		_:
+			push_error("UI: GRAPH: Unable to set color for unknown terminal type!")
+
 func get_port_position() -> Vector2:
 	match _terminal_type:
 		TYPE.INPUT:
