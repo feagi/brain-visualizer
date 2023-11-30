@@ -83,15 +83,17 @@ func _get_port_index() -> int: # This is cursed
 	var slot: int
 	match _terminal_type:
 		TYPE.INPUT:
-			for port in _parent_node.get_input_port_count():
+			for port in _parent_node.num_input_ports:
 				slot = _parent_node.get_input_port_slot(port)
 				if _slot_index == slot:
 					return port
 		TYPE.OUTPUT:
-			for port in _parent_node.get_output_port_count():
+			for port in _parent_node.num_output_ports:
 				slot = _parent_node.get_output_port_slot(port)
+				print("%d %d %d" % [port, slot, _slot_index])
 				if _slot_index == slot:
 					return port
+	print("A")
 	push_error("UI: GRAPH: Unable to resolve port index for %s!" % _parent_node._cortical_area_ref.cortical_ID)
 	return 0
 		

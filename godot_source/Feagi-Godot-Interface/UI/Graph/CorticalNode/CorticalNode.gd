@@ -29,6 +29,13 @@ var cortical_area_ID: StringName:
 var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
 
+var num_input_ports: int:
+	get: return len(_input_terminals.values()) + 1 # We have to do this due to godot not updating port counts within a single frame properly
+	
+var num_output_ports: int:
+	get: return len(_output_terminals.values()) + 1 # We have to do this due to godot not updating port counts within a single frame properly
+	
+
 var _cortical_area_ref: CorticalArea
 ## The 2 below may be uneeded
 var _input_terminals: Dictionary = {} ## Keyd by connecting area cortical ID
@@ -83,6 +90,7 @@ func spawn_afferent_terminal(afferent: CorticalArea) -> CorticalNodeTerminal:
 	_input_terminals[afferent.cortical_ID] = terminal
 	set_slot_enabled_left(index, true)
 	set_slot_type_left(index, -1)
+	set_slot_enabled_right(index, true) #TEST
 	_update_terminal_indexes()
 	return terminal
 
@@ -91,10 +99,12 @@ func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
 	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
 	terminal.setup(efferent, self,  CorticalNodeTerminal.TYPE.OUTPUT)
 	var index: int = get_next_efferent_index()
-	move_child(terminal, index)
+	#move_child(terminal, index)
 	_output_terminals[efferent.cortical_ID] = terminal
 	set_slot_enabled_right(index, true)
+	set_slot_enabled_left(index, true) #TEST
 	set_slot_type_right(index, -1)
+	print(cortical_area_ID + str(index))
 	_update_terminal_indexes()
 	return terminal
 	
