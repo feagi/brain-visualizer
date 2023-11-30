@@ -92,6 +92,13 @@ func is_any_PSP_multiplier_positive() -> bool:
 			return true
 	return false
 
+## Returns true if any mapping's PSP multiplier is negative
+func is_any_PSP_multiplier_negative() -> bool:
+	for mapping: MappingProperty in mappings:
+		if mapping.post_synaptic_current_multiplier < 0.0:
+			return true
+	return false
+
 ## Returns true if the connection maps a cortical area toward itself
 func is_recursive() -> bool:
 	return source_cortical_area.cortical_ID == destination_cortical_area.cortical_ID
