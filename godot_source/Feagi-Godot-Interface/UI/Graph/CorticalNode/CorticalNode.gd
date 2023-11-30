@@ -3,7 +3,7 @@ class_name CorticalNode
 ## Represents a Cortical Area in a node graph
 
 const SENSOR_BOX_COLOR: Color = Color.BLUE
-const ACTUATOR_BOX_COLOR: Color = Color.YELLOW
+const ACTUATOR_BOX_COLOR: Color = Color.DARK_KHAKI
 const INTERCONNECT_BOX_COLOR: Color = Color.SEA_GREEN
 const TERMINAL_PREFAB = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalNodeTerminal.tscn")
 
@@ -56,6 +56,7 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	title = _cortical_area_ref.name
 	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
+	_setup_node_color(cortical_area.group)
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
@@ -71,9 +72,6 @@ func get_next_afferent_index() -> int:
 ## Get the index position to place the next efferent terminal
 ## Technically uneeded since the answer will always be the last element
 func get_next_efferent_index() -> int:
-	print(cortical_area_name)
-	print(get_next_afferent_index())
-	print(_cortical_area_ref.num_afferent_connections)
 	return get_next_afferent_index() + 1
 
 ## Spawns an afferent terminal for a cortical area (but does not make the connection line itself)
