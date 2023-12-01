@@ -12,8 +12,6 @@ var terminal_type: TYPE:
 	get: return _terminal_type
 var slot_index: int:
 	get: return _slot_index
-var port_index: int:
-	get: return _port_index
 var connected_area: CorticalArea:
 	get: return _connected_area
 var representing_area: CorticalArea:
@@ -21,7 +19,6 @@ var representing_area: CorticalArea:
 
 var _terminal_type: TYPE ## The type of terminal
 var _slot_index: int
-var _port_index: int
 var _connected_area: CorticalArea
 var _parent_node: CorticalNode
 var _cortical_label: Button
@@ -53,50 +50,24 @@ func setup(connecting_area: CorticalArea, parent_node: CorticalNode, type_termin
 ## Update all cached indexes
 func update_indexes() -> void:
 	_slot_index = _get_slot_index()
-	_port_index = _get_port_index()
 
 ## Sets the color of this single port
 func set_port_color(color: Color) -> void:
-	match _terminal_type:
-		TYPE.INPUT:
-			_parent_node.set_slot_color_left(_slot_index, color)
-		TYPE.OUTPUT:
-			_parent_node.set_slot_color_right(_slot_index, color)
-		_:
-			push_error("UI: GRAPH: Unable to set color for unknown terminal type!")
+	_parent_node.set_slot_color_left(_slot_index, color)
+	_parent_node.set_slot_color_right(_slot_index, color)
 
 func get_port_position() -> Vector2:
 	match _terminal_type:
 		TYPE.INPUT:
-			return _parent_node.get_input_port_position(_port_index) + _parent_node.position_offset
+			return _parent_node.get_input_port_position(_slot_index) + _parent_node.position_offset
 		TYPE.OUTPUT:
-			return _parent_node.get_output_port_position(_port_index) + _parent_node.position_offset
+			return _parent_node.get_output_port_position(_slot_index) + _parent_node.position_offset
 	push_error("UI: GRAPH: Unable to get port position on expceptional terminal!")
 	return Vector2(0,0)
 
 ## Get the slot index of this terminal
 func _get_slot_index() -> int:
 	return get_index()
-
-## Get the port index of this terminal
-func _get_port_index() -> int: # This is cursed
-	var slot: int
-	match _terminal_type:
-		TYPE.INPUT:
-			for port in _parent_node.num_input_ports:
-				slot = _parent_node.get_input_port_slot(port)
-				if _slot_index == slot:
-					return port
-		TYPE.OUTPUT:
-			for port in _parent_node.num_output_ports:
-				slot = _parent_node.get_output_port_slot(port)
-				print("%d %d %d" % [port, slot, _slot_index])
-				if _slot_index == slot:
-					return port
-	print("A")
-	push_error("UI: GRAPH: Unable to resolve port index for %s!" % _parent_node._cortical_area_ref.cortical_ID)
-	return 0
-		
 
 func _cortical_name_update(new_name: String, _area: CorticalArea) -> void:
 	_cortical_label.text = new_name

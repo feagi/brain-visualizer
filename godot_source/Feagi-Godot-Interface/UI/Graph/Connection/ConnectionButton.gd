@@ -37,7 +37,7 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	update_position()
 	
 	#Line
-	_node_graph.connect_node(_source_node.name, _source_node_terminal.port_index, _destination_node.name, _destination_node_terminal.port_index)
+	_node_graph.connect_node(_source_node.name, _source_node_terminal.slot_index, _destination_node.name, _destination_node_terminal.slot_index)
 
 	# Labeling
 	_label = get_child(0)

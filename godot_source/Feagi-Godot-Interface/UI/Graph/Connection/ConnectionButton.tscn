@@ -17,4 +17,8 @@ size_flags_vertical = 0
 text = "0"
 script = ExtResource("2_k7min")
 
+[node name="Line2D" type="Line2D" parent="."]
+z_index = 1
+points = PackedVector2Array(0, 0, 87, 52, 74, 183)
+
 [connection signal="pressed" from="button" to="." method="_button_pressed"]

@@ -79,7 +79,7 @@ func get_next_afferent_index() -> int:
 ## Get the index position to place the next efferent terminal
 ## Technically uneeded since the answer will always be the last element
 func get_next_efferent_index() -> int:
-	return get_next_afferent_index() + 1
+	return get_next_afferent_index()
 
 ## Spawns an afferent terminal for a cortical area (but does not make the connection line itself)
 func spawn_afferent_terminal(afferent: CorticalArea) -> CorticalNodeTerminal:
@@ -89,8 +89,9 @@ func spawn_afferent_terminal(afferent: CorticalArea) -> CorticalNodeTerminal:
 	move_child(terminal, index)
 	_input_terminals[afferent.cortical_ID] = terminal
 	set_slot_enabled_left(index, true)
+	set_slot_enabled_right(index, true)
 	set_slot_type_left(index, -1)
-	set_slot_enabled_right(index, true) #TEST
+	set_slot_type_right(index, -1)
 	_update_terminal_indexes()
 	return terminal
 
@@ -99,10 +100,11 @@ func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
 	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
 	terminal.setup(efferent, self,  CorticalNodeTerminal.TYPE.OUTPUT)
 	var index: int = get_next_efferent_index()
-	#move_child(terminal, index)
+	move_child(terminal, index)
 	_output_terminals[efferent.cortical_ID] = terminal
+	set_slot_enabled_left(index, true)
 	set_slot_enabled_right(index, true)
-	set_slot_enabled_left(index, true) #TEST
+	set_slot_type_left(index, -1)
 	set_slot_type_right(index, -1)
 	print(cortical_area_ID + str(index))
 	_update_terminal_indexes()
