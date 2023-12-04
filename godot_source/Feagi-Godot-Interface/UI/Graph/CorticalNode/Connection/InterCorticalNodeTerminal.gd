@@ -1,11 +1,10 @@
 extends HBoxContainer
-class_name CorticalNodeTerminal
+class_name InterCorticalNodeTerminal
 ## Terminal below cortical area that is specific for a specific connection
 
 enum TYPE {
 	INPUT,
-	OUTPUT,
-	RECURSSIVE
+	OUTPUT
 }
 
 
@@ -23,17 +22,14 @@ var _connected_area: CorticalArea
 var _parent_node: CorticalNode
 var _cortical_label: Button
 
-
 func _ready() -> void:
 	_cortical_label = $Label
 	_input_point = $input
 	_output_point = $output
 
-func setup(connecting_area: CorticalArea, parent_node: CorticalNode, type_terminal: TYPE) -> void:
+func setup(connecting_area: CorticalArea, type_terminal: TYPE) -> void:
 	_connected_area = connecting_area
 	_terminal_type = type_terminal
-	_parent_node = parent_node
-	_parent_node.add_child(self)
 	
 	_cortical_label.text = _connected_area.name
 	name = _connected_area.cortical_ID
@@ -47,23 +43,16 @@ func setup(connecting_area: CorticalArea, parent_node: CorticalNode, type_termin
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			_cortical_label.tooltip_text = "Efferent Connection"
 			_output_point.visible = true
-		TYPE.RECURSSIVE:
-			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
-			_cortical_label.tooltip_text = "Connection to Self"
 		_:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
-			push_error("UI: GRAPH: Unknown Terminal Type") 
+			push_error("UI: GRAPH: Unknown Terminal Type")
 
-## Sets the color of this single port
-func set_port_color(color: Color) -> void:
-	print("TODO color")
-	#TODO
 
 func get_input_location() -> Vector2:
-	return _parent_node.position_offset + position + _input_point.position
+	return Vector2(_parent_node.position_offset) + Vector2(position) + Vector2(_input_point.position) + (_input_point.size / 2.0)
 
 func get_output_location() -> Vector2:
-	return _parent_node.position_offset + position + _output_point.position
+	return Vector2(_parent_node.position_offset) + Vector2(position) + Vector2(_output_point.position) + (_output_point.size / 2.0)
 
 func _cortical_name_update(new_name: String, _area: CorticalArea) -> void:
 	_cortical_label.text = new_name

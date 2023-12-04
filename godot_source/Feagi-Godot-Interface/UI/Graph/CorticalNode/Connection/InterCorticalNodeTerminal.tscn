@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bnmchhiw734os"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalNodeTerminal.gd" id="1_nf13s"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.gd" id="1_nf13s"]
 [ext_resource type="Texture2D" uid="uid://bqlfr4fu35bis" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="2_1jsdg"]
 
 [node name="CorticalNodeTerminal" type="HBoxContainer"]
