@@ -9,7 +9,7 @@ var cortical_nodes: Dictionary = {}
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
-var _connection_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/ConnectionButton.tscn")
+var _connection_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalConnection.tscn")
 var _spawn_sorter: CorticalNodeSpawnSorter
 var _connection_buttons: Dictionary = {} # key'd by Source_ID {Destination_ID[button]}
 var _move_timer: Timer

@@ -1,5 +1,5 @@
 extends GraphElement
-class_name ConnectionButton
+class_name CorticalConnection
 ## Shows number of mappings, and controls the line creationa and destruction
 
 const LINE_COLOR_UNKNOWN_MAPPING: Color = Color.GHOST_WHITE
