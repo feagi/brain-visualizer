@@ -2,15 +2,17 @@ extends GraphNode
 class_name CorticalNode
 ## Represents a Cortical Area in a node graph
 
-const SENSOR_BOX_COLOR: Color = Color(0.9882352941176471, 0.7803921568627451, 0.6549019607843137)
-const ACTUATOR_BOX_COLOR: Color = Color(0.6352941176470588, 0.8352941176470589, 0.7411764705882353)
-const INTERCONNECT_BOX_COLOR: Color = Color(0.7529411764705882, 0.7686274509803922, 1)
-const TERMINAL_PREFAB = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalNodeTerminal.tscn")
+const SENSOR_BOX_COLOR: Color = Color(0.7686274509803922, 0.47843137254901963, 0.3254901960784314)
+const ACTUATOR_BOX_COLOR: Color = Color(0.5607843137254902, 0.2784313725490196, 0.19215686274509805)
+const INTERCONNECT_BOX_COLOR: Color = Color(0.4823529411764706, 0.49019607843137253, 0.16470588235294117)
+
+const INTERCORTICAL_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.tscn")
+const RECURSIVE_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/RecursiveNodeTerminal.tscn")
 
 signal moved(cortical_node: CorticalNode, new_location: Vector2i)
+signal connection_positions_changed() ## Locations of connection points have updated
 
 enum ConnectionAvailibility {
-	BOTH,
 	INPUT_ONLY,
 	OUTPUT_ONLY,
 }
@@ -54,31 +56,57 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	title = _cortical_area_ref.name
 	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
+	_cortical_area_ref.efferent_mapping_edited.connect(FEAGI_added_mapping_from_efferent)
 	_setup_node_color(cortical_area.group)
+
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
+func FEAGI_added_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
+	if mapping_properties.is_recursive():
+		# recurssive connection
+		_spawn_recursive_terminal(mapping_properties)
+		return
+	# InterNode Connection
+	_spawn_efferent_terminal(mapping_properties.source_cortical_area)
+	
+
 func get_center_position_offset() -> Vector2:
 	return position_offset + (size / 2.0)
 
-## Spawns an afferent terminal for a cortical area (but does not make the connection line itself)
-func spawn_afferent_terminal(afferent: CorticalArea) -> CorticalNodeTerminal:
-	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
-	terminal.setup(afferent, self, CorticalNodeTerminal.TYPE.INPUT)
-	return terminal
+func _get_starting_afferent_index() -> int:
+	if get_child(0).name == cortical_area_ID:
+		# Since terminal names are always the mapped target ID, we can do this
+		## The first element (after the add connection section) is always the self mapped terminal (if it exists)
+		return 2
+	return 1
+
+func _get_starting_efferent_index() -> int:
+	return cortical_area_ref.num_afferent_connections + _get_starting_afferent_index()
 
 ## Spawns an efferent terminal for a cortical area (but does not make the connection line itself)
-func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
-	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
-	terminal.setup(efferent, self,  CorticalNodeTerminal.TYPE.OUTPUT)
+func _spawn_efferent_terminal(efferent: CorticalArea) -> InterCorticalNodeTerminal:
+	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
+	add_child(terminal)
+	move_child(terminal, _get_starting_afferent_index())
+	terminal.setup(efferent, InterCorticalNodeTerminal.TYPE.OUTPUT)
+	
 	return terminal
 
-func spawn_recurrsive_terminal() -> CorticalNodeTerminal:
-	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
-	terminal.setup(_cortical_area_ref, self,  CorticalNodeTerminal.TYPE.RECURSSIVE)
+## Spawns a recursive terminal for this cortical node
+func _spawn_recursive_terminal(mapping: MappingProperties) -> RecursiveNodeTerminal:
+	var terminal: RecursiveNodeTerminal = RECURSIVE_TERMINAL_PREFAB.instantiate()
+	add_child(terminal)
+	move_child(terminal, 1)
+	terminal.setup(mapping)
+	connection_positions_changed.emit()
 	return terminal
+
+
+
+
 
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area

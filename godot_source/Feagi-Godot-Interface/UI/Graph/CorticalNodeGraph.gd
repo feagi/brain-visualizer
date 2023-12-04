@@ -9,7 +9,7 @@ var cortical_nodes: Dictionary = {}
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
-var _connection_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/Connection/CorticalConnection.tscn")
+var intercortical_connection_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalConnection.tscn")
 var _spawn_sorter: CorticalNodeSpawnSorter
 var _connection_buttons: Dictionary = {} # key'd by Source_ID {Destination_ID[button]}
 var _move_timer: Timer
@@ -46,7 +46,7 @@ func feagi_spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNo
 	cortical_node.moved.connect(_cortical_node_moved)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
 	
-	cortical_area.efferent_mapping_edited.connect(feagi_create_connection_button_from_efferent)
+	#cortical_area.efferent_mapping_edited.connect(feagi_create_connection_button_from_efferent)
 	
 	return cortical_node
 
@@ -60,7 +60,9 @@ func feagi_deleted_single_cortical_node(cortical_area: CorticalArea) -> void:
 
 ## Spawns a conneciton button, which itself coordinates maintaining connection lines 
 func feagi_create_connection_button_from_efferent(mapping_properties: MappingProperties) -> void:
-
+	
+	
+	pass
 	if mapping_properties.source_cortical_area.cortical_ID not in _connection_buttons.keys():
 		_connection_buttons[mapping_properties.source_cortical_area.cortical_ID] = {}
 	if mapping_properties.destination_cortical_area.cortical_ID in _connection_buttons[mapping_properties.source_cortical_area.cortical_ID].keys():
@@ -78,7 +80,7 @@ func feagi_create_connection_button_from_efferent(mapping_properties: MappingPro
 	var destination_node: CorticalNode = cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
 	
 	# Spawn Button and setup
-	_connection_buttons[mapping_properties.source_cortical_area.cortical_ID][mapping_properties.destination_cortical_area.cortical_ID] = _connection_button_prefab.instantiate()
+	_connection_buttons[mapping_properties.source_cortical_area.cortical_ID][mapping_properties.destination_cortical_area.cortical_ID] = intercortical_connection_prefab.instantiate()
 	_connection_buttons[mapping_properties.source_cortical_area.cortical_ID][mapping_properties.destination_cortical_area.cortical_ID].setup(source_node, destination_node, mapping_properties, self)
 
 
