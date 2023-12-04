@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.gd" id="1_nf13s"]
 [ext_resource type="Texture2D" uid="uid://bqlfr4fu35bis" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="2_1jsdg"]
 
-[node name="CorticalNodeTerminal" type="HBoxContainer"]
+[node name="InterCorticalNodeTerminal" type="HBoxContainer"]
 script = ExtResource("1_nf13s")
 
 [node name="input" type="TextureRect" parent="."]

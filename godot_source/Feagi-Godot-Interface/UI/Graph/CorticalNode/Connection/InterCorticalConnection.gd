@@ -11,8 +11,8 @@ const LINE_COLOR_PSPN_INPLASTIC: Color = Color.DARK_RED
 var _node_graph: CorticalNodeGraph
 var _source_node: CorticalNode
 var _destination_node: CorticalNode
-var _source_node_terminal: CorticalNodeTerminal
-var _destination_node_terminal: CorticalNodeTerminal
+var _source_node_terminal: InterCorticalNodeTerminal
+var _destination_node_terminal: InterCorticalNodeTerminal
 var _mapping_properties: MappingProperties
 
 var _label: TextButton_Element
