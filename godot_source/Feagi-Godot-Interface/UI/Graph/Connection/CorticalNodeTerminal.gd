@@ -59,6 +59,11 @@ func set_port_color(color: Color) -> void:
 	print("TODO color")
 	#TODO
 
+func get_input_location() -> Vector2:
+	return _parent_node.position_offset + position + _input_point.position
+
+func get_output_location() -> Vector2:
+	return _parent_node.position_offset + position + _output_point.position
 
 func _cortical_name_update(new_name: String, _area: CorticalArea) -> void:
 	_cortical_label.text = new_name

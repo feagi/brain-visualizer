@@ -16,6 +16,8 @@ var _destination_node_terminal: CorticalNodeTerminal
 var _mapping_properties: MappingProperties
 
 var _label: TextButton_Element
+var _line: Line2D
+
 
 func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_properties: MappingProperties, node_graph: CorticalNodeGraph):
 	# Initial Setup
@@ -26,7 +28,7 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	_node_graph.add_child(self)
 	
 	# Create Terminals
-	if source_node.cortical_area_ID != destination_node.cortical_area_ID:
+	if !_mapping_properties.is_recursive():
 		# non-recursive mapping
 		_source_node_terminal = _source_node.spawn_efferent_terminal(destination_node.cortical_area_ref)
 		_destination_node_terminal = _destination_node.spawn_afferent_terminal(source_node.cortical_area_ref)
@@ -40,9 +42,14 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	if !_mapping_properties.is_recursive():
 		_destination_node.position_offset_changed.connect(update_position)
 	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
-	update_position()
+	
 	
 	#	Line
+	_line = $Line2D
+	if _mapping_properties.is_recursive():
+		_line.visible = false
+	else:
+		update_position()
 	
 	# Labeling
 	_label = get_child(0)
@@ -54,8 +61,10 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 
 # TODO replace with something better
 func update_position() -> void:
-	var left: Vector2 = _source_node_terminal.position
-	var right: Vector2 = _destination_node_terminal.position
+	var left: Vector2 = _source_node_terminal.get_input_location()
+	var right: Vector2 = _destination_node_terminal.get_output_location()
+	_line.points[0] = left - position_offset
+	_line.points[1] = right - position_offset
 	position_offset = (left + right - (size / 2.0)) / 2.0
 
 func destroy_self() -> void:
