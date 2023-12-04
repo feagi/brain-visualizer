@@ -30,14 +30,15 @@ var cortical_area_ID: StringName:
 		return "ERROR NOT SETUP"
 var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
-
-
+	
 var _cortical_area_ref: CorticalArea
+var _graph: CorticalNodeGraph
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
 	dragged.connect(_on_finish_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
+	_graph = get_parent()
 
 # Announce if cortical area was selected with one click and open left panel on double click
 func _gui_input(event):
@@ -59,7 +60,6 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref.efferent_mapping_edited.connect(FEAGI_added_mapping_from_efferent)
 	_setup_node_color(cortical_area.group)
 
-
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
@@ -70,8 +70,20 @@ func FEAGI_added_mapping_from_efferent(mapping_properties: MappingProperties) ->
 		_spawn_recursive_terminal(mapping_properties)
 		return
 	# InterNode Connection
-	_spawn_efferent_terminal(mapping_properties.source_cortical_area)
+	if mapping_properties.destination_cortical_area.cortical_ID not in _graph.cortical_nodes.keys():
+		push_error("UI: GRAPH: Unable to locate destination cortical node %s! Skipping mapping from %s!" % [mapping_properties.destination_cortical_area.cortical_ID, mapping_properties.source_cortical_area.cortical_ID])
+		return
+	var afferent_node: CorticalNode = _graph.cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
+	var afferent_terminal: InterCorticalNodeTerminal = afferent_node.spawn_afferent_terminal(mapping_properties.source_cortical_area)
+	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal(mapping_properties.source_cortical_area) 
 	
+	
+func spawn_afferent_terminal(afferent: CorticalArea) -> InterCorticalNodeTerminal:
+	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
+	add_child(terminal)
+	move_child(terminal, _get_starting_afferent_index())
+	terminal.setup(afferent, InterCorticalNodeTerminal.TYPE.INPUT)
+	return terminal
 
 func get_center_position_offset() -> Vector2:
 	return position_offset + (size / 2.0)
