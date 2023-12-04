@@ -26,8 +26,14 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	_node_graph.add_child(self)
 	
 	# Create Terminals
-	_source_node_terminal = _source_node.spawn_efferent_terminal(destination_node.cortical_area_ref)
-	_destination_node_terminal = _destination_node.spawn_afferent_terminal(source_node.cortical_area_ref)
+	if source_node.cortical_area_ID != destination_node.cortical_area_ID:
+		# non-recursive mapping
+		_source_node_terminal = _source_node.spawn_efferent_terminal(destination_node.cortical_area_ref)
+		_destination_node_terminal = _destination_node.spawn_afferent_terminal(source_node.cortical_area_ref)
+	else:
+		# recursive
+		_source_node_terminal = _source_node.spawn_recurrsive_terminal()
+		_destination_node_terminal = _source_node_terminal
 	
 	# Button Positioning
 	_source_node.position_offset_changed.connect(update_position)

@@ -75,6 +75,11 @@ func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
 	terminal.setup(efferent, self,  CorticalNodeTerminal.TYPE.OUTPUT)
 	return terminal
 
+func spawn_recurrsive_terminal() -> CorticalNodeTerminal:
+	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
+	terminal.setup(_cortical_area_ref, self,  CorticalNodeTerminal.TYPE.RECURSSIVE)
+	return terminal
+
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:

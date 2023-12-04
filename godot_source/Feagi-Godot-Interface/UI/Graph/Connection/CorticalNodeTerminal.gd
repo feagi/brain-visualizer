@@ -17,6 +17,8 @@ var representing_area: CorticalArea:
 	get: return _parent_node.cortical_area_ref
 
 var _terminal_type: TYPE ## The type of terminal
+var _input_point: TextureRect
+var _output_point: TextureRect
 var _connected_area: CorticalArea
 var _parent_node: CorticalNode
 var _cortical_label: Button
@@ -24,6 +26,8 @@ var _cortical_label: Button
 
 func _ready() -> void:
 	_cortical_label = $Label
+	_input_point = $input
+	_output_point = $output
 
 func setup(connecting_area: CorticalArea, parent_node: CorticalNode, type_terminal: TYPE) -> void:
 	_connected_area = connecting_area
@@ -38,9 +42,11 @@ func setup(connecting_area: CorticalArea, parent_node: CorticalNode, type_termin
 		TYPE.INPUT:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			_cortical_label.tooltip_text = "Afferent Connection"
+			_input_point.visible = true
 		TYPE.OUTPUT:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			_cortical_label.tooltip_text = "Efferent Connection"
+			_output_point.visible = true
 		TYPE.RECURSSIVE:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_cortical_label.tooltip_text = "Connection to Self"
