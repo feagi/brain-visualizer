@@ -29,16 +29,15 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 	_source_node_terminal = _source_node.spawn_efferent_terminal(destination_node.cortical_area_ref)
 	_destination_node_terminal = _destination_node.spawn_afferent_terminal(source_node.cortical_area_ref)
 	
-	# Positioning
+	# Button Positioning
 	_source_node.position_offset_changed.connect(update_position)
 	if !_mapping_properties.is_recursive():
 		_destination_node.position_offset_changed.connect(update_position)
 	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
 	update_position()
 	
-	#Line
-	_node_graph.connect_node(_source_node.name, _source_node_terminal.slot_index, _destination_node.name, _destination_node_terminal.slot_index)
-
+	#	Line
+	
 	# Labeling
 	_label = get_child(0)
 	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
@@ -49,8 +48,8 @@ func setup(source_node: CorticalNode, destination_node: CorticalNode, mapping_pr
 
 # TODO replace with something better
 func update_position() -> void:
-	var left: Vector2 = _source_node_terminal.get_port_position()
-	var right: Vector2 = _destination_node_terminal.get_port_position()
+	var left: Vector2 = _source_node_terminal.position
+	var right: Vector2 = _destination_node_terminal.position
 	position_offset = (left + right - (size / 2.0)) / 2.0
 
 func destroy_self() -> void:

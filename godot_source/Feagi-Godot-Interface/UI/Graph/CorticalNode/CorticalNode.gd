@@ -29,17 +29,8 @@ var cortical_area_ID: StringName:
 var cortical_area_ref: CorticalArea:
 	get: return _cortical_area_ref
 
-var num_input_ports: int:
-	get: return len(_input_terminals.values()) + 1 # We have to do this due to godot not updating port counts within a single frame properly
-	
-var num_output_ports: int:
-	get: return len(_output_terminals.values()) + 1 # We have to do this due to godot not updating port counts within a single frame properly
-	
 
 var _cortical_area_ref: CorticalArea
-## The 2 below may be uneeded
-var _input_terminals: Dictionary = {} ## Keyd by connecting area cortical ID
-var _output_terminals: Dictionary = {} ## Keyd by connecting area cortical ID
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
@@ -72,50 +63,17 @@ func FEAGI_delete_cortical_area() -> void:
 func get_center_position_offset() -> Vector2:
 	return position_offset + (size / 2.0)
 
-## Get the index position to place the next afferent terminal
-func get_next_afferent_index() -> int:
-	return _cortical_area_ref.num_afferent_connections
-
-## Get the index position to place the next efferent terminal
-## Technically uneeded since the answer will always be the last element
-func get_next_efferent_index() -> int:
-	return get_next_afferent_index()
-
 ## Spawns an afferent terminal for a cortical area (but does not make the connection line itself)
 func spawn_afferent_terminal(afferent: CorticalArea) -> CorticalNodeTerminal:
 	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
 	terminal.setup(afferent, self, CorticalNodeTerminal.TYPE.INPUT)
-	var index: int = get_next_afferent_index()
-	move_child(terminal, index)
-	_input_terminals[afferent.cortical_ID] = terminal
-	set_slot_enabled_left(index, true)
-	set_slot_enabled_right(index, true)
-	set_slot_type_left(index, -1)
-	set_slot_type_right(index, -1)
-	_update_terminal_indexes()
 	return terminal
 
 ## Spawns an efferent terminal for a cortical area (but does not make the connection line itself)
 func spawn_efferent_terminal(efferent: CorticalArea) -> CorticalNodeTerminal:
 	var terminal: CorticalNodeTerminal = TERMINAL_PREFAB.instantiate()
 	terminal.setup(efferent, self,  CorticalNodeTerminal.TYPE.OUTPUT)
-	var index: int = get_next_efferent_index()
-	move_child(terminal, index)
-	_output_terminals[efferent.cortical_ID] = terminal
-	set_slot_enabled_left(index, true)
-	set_slot_enabled_right(index, true)
-	set_slot_type_left(index, -1)
-	set_slot_type_right(index, -1)
-	print(cortical_area_ID + str(index))
-	_update_terminal_indexes()
 	return terminal
-	
-
-func _update_terminal_indexes() -> void:
-	for child in get_children():
-		if !(child is CorticalNodeTerminal):
-			continue
-		(child as CorticalNodeTerminal).update_indexes()
 
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
