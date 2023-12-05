@@ -59,36 +59,26 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	title = _cortical_area_ref.name
 	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
-	_cortical_area_ref.efferent_mapping_edited.connect(FEAGI_set_mapping_from_efferent)
+	_cortical_area_ref.efferent_mapping_added.connect(FEAGI_create_mapping_from_efferent)
 	_setup_node_color(cortical_area.group)
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
-func FEAGI_set_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
-	if _is_cortical_node_mapped(mapping_properties.destination_cortical_area):
-		# area is already mapped. no need to consider spawning
-		return
-	
-	if mapping_properties.number_mappings == 0:
-		# No need to spawn any UI for a 0 mapping property
-		return
-
-	if mapping_properties.is_recursive():
+func FEAGI_create_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
+		if mapping_properties.is_recursive():
 		# recurssive connection
-		_spawn_recursive_terminal(mapping_properties)
-		return
-	
-	# internode area not mapped, create
-	_spawn_new_internode_mapping(mapping_properties)
+			_spawn_recursive_terminal(mapping_properties)
+			return
+		_spawn_new_internode_mapping(mapping_properties)
 
-	
 func spawn_afferent_terminal(source: CorticalArea) -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
 	terminal.setup(source, InterCorticalNodeTerminal.TYPE.INPUT)
+	connection_positions_changed.emit()
 	return terminal
 
 func get_center_position_offset() -> Vector2:
@@ -132,7 +122,7 @@ func _spawn_efferent_terminal() -> InterCorticalNodeTerminal:
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
 	terminal.setup(cortical_area_ref, InterCorticalNodeTerminal.TYPE.OUTPUT)
-	
+	connection_positions_changed.emit()
 	return terminal
 
 func _delete_connection() -> void:
