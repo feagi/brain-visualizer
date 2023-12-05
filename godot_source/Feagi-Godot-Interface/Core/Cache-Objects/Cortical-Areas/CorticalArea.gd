@@ -233,7 +233,7 @@ func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Arr
 ## ONLY TO BE CALLED FROM THE SOURCE AREA. A source area is connecting towards this area
 func add_afferent_area_from_efferent(mapping_properties: MappingProperties) -> void:
 	_afferent_connections.append(mapping_properties.source_cortical_area)
-	afferent_mapping_edited.emit(mapping_properties)
+	afferent_mapping_added.emit(mapping_properties)
 
 ## ONLY TO BE CALLED FROM THE SOURCE AREA. A source area is disconnected towards this area
 func remove_afferent_area_from_efferent(mapping_properties: MappingProperties) -> void:
