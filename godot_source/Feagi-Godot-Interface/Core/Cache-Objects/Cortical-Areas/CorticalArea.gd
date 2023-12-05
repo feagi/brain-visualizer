@@ -110,11 +110,13 @@ var channel_count: int:
 ## All INCOMING connections
 var afferent_connections: Array[CorticalArea]:
 	get: return _afferent_connections
+var num_afferent_connections: int:
+	get: return len(_afferent_connections)
 ## All OUTGOING connections
 var efferent_connections: Array[CorticalArea]:
 	get: return _get_efferents()
-var num_afferent_connections: int:
-	get: return len(_afferent_connections)
+var efferent_mappings: Dictionary:
+	get: return _efferent_mappings
 var num_efferent_connections: int:
 	get: return len(_get_efferents())
 
