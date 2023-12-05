@@ -30,6 +30,7 @@ func _ready() -> void:
 	_output_point = $output
 
 func setup(connecting_area: CorticalArea, type_terminal: TYPE) -> void:
+	_parent_node = get_parent()
 	_connected_area = connecting_area
 	_terminal_type = type_terminal
 	

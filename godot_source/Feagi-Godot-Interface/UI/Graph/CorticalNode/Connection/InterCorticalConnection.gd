@@ -15,7 +15,7 @@ var _source_node: CorticalNode
 var _destination_node: CorticalNode
 var _mapping_properties: MappingProperties
 
-var _button: TextButton_Element
+var _button: Button
 var _line: Line2D
 
 func _ready():
@@ -40,7 +40,6 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 	_update_position()
 
 	# update Line Properties
-	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
 	_feagi_updated_mapping(_mapping_properties)
 	
 

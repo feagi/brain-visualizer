@@ -6,6 +6,7 @@ const SENSOR_BOX_COLOR: Color = Color(0.7686274509803922, 0.47843137254901963, 0
 const ACTUATOR_BOX_COLOR: Color = Color(0.5607843137254902, 0.2784313725490196, 0.19215686274509805)
 const INTERCONNECT_BOX_COLOR: Color = Color(0.4823529411764706, 0.49019607843137253, 0.16470588235294117)
 
+const INTERCORTICAL_CONNECTION_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalConnection.tscn")
 const INTERCORTICAL_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.tscn")
 const RECURSIVE_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/RecursiveNodeTerminal.tscn")
 
@@ -69,13 +70,21 @@ func FEAGI_added_mapping_from_efferent(mapping_properties: MappingProperties) ->
 		# recurssive connection
 		_spawn_recursive_terminal(mapping_properties)
 		return
+		
 	# InterNode Connection
 	if mapping_properties.destination_cortical_area.cortical_ID not in _graph.cortical_nodes.keys():
 		push_error("UI: GRAPH: Unable to locate destination cortical node %s! Skipping mapping from %s!" % [mapping_properties.destination_cortical_area.cortical_ID, mapping_properties.source_cortical_area.cortical_ID])
 		return
+		
+	# spawn terminals
 	var afferent_node: CorticalNode = _graph.cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
 	var afferent_terminal: InterCorticalNodeTerminal = afferent_node.spawn_afferent_terminal(mapping_properties.source_cortical_area)
 	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal(mapping_properties.source_cortical_area) 
+	
+	# spawn line and mapping button
+	var connection: InterCorticalConnection = INTERCORTICAL_CONNECTION_PREFAB.instantiate()
+	_graph.add_child(connection)
+	connection.setup(efferent_terminal, afferent_terminal, mapping_properties)
 	
 	
 func spawn_afferent_terminal(afferent: CorticalArea) -> InterCorticalNodeTerminal:
