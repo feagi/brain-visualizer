@@ -29,7 +29,7 @@ func _init(source_area: CorticalArea, destination_area: CorticalArea, mappings_b
 	_mappings = mappings_between_them
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
-static func from_MappingPropertys(mapping_properties_from_FEAGI: Array, source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
 	var new_mappings: Array[MappingProperty] = []
 	for raw_mappings in mapping_properties_from_FEAGI:
 		if raw_mappings["morphology_id"] not in FeagiCache.morphology_cache.available_morphologies.keys():
