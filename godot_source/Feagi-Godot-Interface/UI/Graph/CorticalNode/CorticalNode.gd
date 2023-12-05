@@ -38,6 +38,7 @@ var _graph: CorticalNodeGraph
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
 	dragged.connect(_on_finish_drag)
+	position_offset_changed.connect(_on_any_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
 	_graph = get_parent()
 
@@ -125,10 +126,6 @@ func _spawn_recursive_terminal(mapping: MappingProperties) -> RecursiveNodeTermi
 	connection_positions_changed.emit()
 	return terminal
 
-
-
-
-
 ## User hit the X button to attempt to delete the cortical area
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:
@@ -159,6 +156,9 @@ func _setup_node_color(cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 	moved.emit(self, to_position)
+
+func _on_any_drag():
+	connection_positions_changed.emit()
 
 func _update_cortical_name(new_name: StringName, _this_cortical_area: CorticalArea) -> void:
 	title = new_name
