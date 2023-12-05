@@ -59,44 +59,62 @@ func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
 	title = _cortical_area_ref.name
 	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
-	_cortical_area_ref.efferent_mapping_edited.connect(FEAGI_added_mapping_from_efferent)
+	_cortical_area_ref.efferent_mapping_edited.connect(FEAGI_set_mapping_from_efferent)
 	_setup_node_color(cortical_area.group)
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
-func FEAGI_added_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
+func FEAGI_set_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
+	if _is_cortical_node_mapped(mapping_properties.destination_cortical_area):
+		# area is already mapped. no need to consider spawning
+		return
+	
+	if mapping_properties.number_mappings == 0:
+		# No need to spawn any UI for a 0 mapping property
+		return
+
 	if mapping_properties.is_recursive():
 		# recurssive connection
 		_spawn_recursive_terminal(mapping_properties)
 		return
-		
+	
+	# internode area not mapped, create
+	_spawn_new_internode_mapping(mapping_properties)
+
+	
+func spawn_afferent_terminal(source: CorticalArea) -> InterCorticalNodeTerminal:
+	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
+	add_child(terminal)
+	move_child(terminal, _get_starting_afferent_index())
+	terminal.setup(source, InterCorticalNodeTerminal.TYPE.INPUT)
+	return terminal
+
+func get_center_position_offset() -> Vector2:
+	return position_offset + (size / 2.0)
+
+func _is_cortical_node_mapped(cortical_area: CorticalArea) -> bool:
+	for child: Node in get_children():
+		if child.name == cortical_area.cortical_ID:
+			return true
+	return false
+
+func _spawn_new_internode_mapping(mapping_properties: MappingProperties) -> void:
 	# InterNode Connection
 	if mapping_properties.destination_cortical_area.cortical_ID not in _graph.cortical_nodes.keys():
 		push_error("UI: GRAPH: Unable to locate destination cortical node %s! Skipping mapping from %s!" % [mapping_properties.destination_cortical_area.cortical_ID, mapping_properties.source_cortical_area.cortical_ID])
 		return
-		
+
 	# spawn terminals
 	var afferent_node: CorticalNode = _graph.cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
 	var afferent_terminal: InterCorticalNodeTerminal = afferent_node.spawn_afferent_terminal(mapping_properties.source_cortical_area)
-	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal(mapping_properties.source_cortical_area) 
+	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal() 
 	
 	# spawn line and mapping button
 	var connection: InterCorticalConnection = INTERCORTICAL_CONNECTION_PREFAB.instantiate()
 	_graph.add_child(connection)
 	connection.setup(efferent_terminal, afferent_terminal, mapping_properties)
-	
-	
-func spawn_afferent_terminal(afferent: CorticalArea) -> InterCorticalNodeTerminal:
-	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
-	add_child(terminal)
-	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(afferent, InterCorticalNodeTerminal.TYPE.INPUT)
-	return terminal
-
-func get_center_position_offset() -> Vector2:
-	return position_offset + (size / 2.0)
 
 func _get_starting_afferent_index() -> int:
 	if get_child(0).name == cortical_area_ID:
@@ -109,13 +127,16 @@ func _get_starting_efferent_index() -> int:
 	return cortical_area_ref.num_afferent_connections + _get_starting_afferent_index()
 
 ## Spawns an efferent terminal for a cortical area (but does not make the connection line itself)
-func _spawn_efferent_terminal(efferent: CorticalArea) -> InterCorticalNodeTerminal:
+func _spawn_efferent_terminal() -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(efferent, InterCorticalNodeTerminal.TYPE.OUTPUT)
+	terminal.setup(cortical_area_ref, InterCorticalNodeTerminal.TYPE.OUTPUT)
 	
 	return terminal
+
+func _delete_connection() -> void:
+	pass
 
 ## Spawns a recursive terminal for this cortical node
 func _spawn_recursive_terminal(mapping: MappingProperties) -> RecursiveNodeTerminal:

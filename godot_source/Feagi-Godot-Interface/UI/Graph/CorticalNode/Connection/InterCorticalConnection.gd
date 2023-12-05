@@ -62,8 +62,8 @@ func _update_position() -> void:
 
 # TODO replace with curves
 func _update_line_positions(start_point: Vector2, end_point: Vector2) -> void:
-	_line.points[0] = start_point
-	_line.points[1] = end_point
+	_line.points[0] = start_point - position_offset
+	_line.points[1] = end_point - position_offset
 
 ## Update the mapping count
 func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
