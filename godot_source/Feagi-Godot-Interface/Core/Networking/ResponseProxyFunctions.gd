@@ -19,30 +19,26 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
-
+	var source_area: CorticalArea
+	var destination_area: CorticalArea
+	var raw_mappings: Array[Dictionary] = []
+	
 	for source_cortical_ID: StringName in cortical_map.keys():
 		if cortical_map[source_cortical_ID] == {}:
 			continue # no efferent connections for the current searching source cortical ID
 		if source_cortical_ID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
 			push_error("Retrieved mapping from nonexistant cortical area %s! Skipping!" % source_cortical_ID)
 			continue
-
-		# This function is not particuarly efficient. Too Bad!
-		var source_area: CorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
-		var connections_requested: Array = cortical_map[source_cortical_ID].keys()
-		var efferent_connections_already_set: Array =  CorticalArea.CorticalAreaArray2CorticalIDArray(source_area.efferent_connections)
-		var efferents_to_add: Array = FEAGIUtils.find_missing_elements(connections_requested, efferent_connections_already_set)
-		var efferents_to_remove: Array = FEAGIUtils.find_missing_elements(efferent_connections_already_set, connections_requested)
-		var efferents_to_update: Array = FEAGIUtils.find_union(efferent_connections_already_set, connections_requested)
-		efferents_to_update = FEAGIUtils.find_total_non_repeating(efferents_to_update, efferents_to_add)
-		
-		for remove_ID: StringName in efferents_to_remove:
-			source_area.remove_mappings_to_efferent_area(FeagiCache.cortical_areas_cache.cortical_areas[remove_ID])
-
-		for update_ID: StringName in efferents_to_update:
-			var number_connections: int = cortical_map[source_cortical_ID][update_ID]
-			source_area.set_mappings_to_efferent_area(FeagiCache.cortical_areas_cache.cortical_areas[update_ID], MappingProperty.create_placeholder_mapping_array(number_connections))
 	
+		source_area = FeagiCache.cortical_areas_cache.cortical_areas[source_cortical_ID]
+		for destination_area_ID: StringName in cortical_map[source_cortical_ID]:
+			if destination_area_ID not in FeagiCache.cortical_areas_cache.cortical_areas.keys():
+				push_error("Retrieved mapping toward nonexistant cortical area %s! Skipping!" % destination_area_ID)
+				continue
+			destination_area = FeagiCache.cortical_areas_cache.cortical_areas[destination_area_ID]
+			raw_mappings.assign(cortical_map[source_cortical_ID][destination_area_ID])
+			source_area.set_mappings_to_efferent_area(destination_area, MappingProperty.from_array_of_dict(raw_mappings))
+		
 	if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
 		# we were loading the game, but now we can assume we are loaded
 		VisConfig.visualizer_state = VisConfig.STATES.READY
