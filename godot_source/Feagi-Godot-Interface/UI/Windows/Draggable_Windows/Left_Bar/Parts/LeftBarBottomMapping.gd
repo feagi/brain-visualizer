@@ -39,7 +39,7 @@ func _user_pressed_edit_button():
 	print("Left Bar is requesting Cortical Connection Editing")
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_area, _destination_area)
 
-func _cortical_name_changed(new_name: StringName) -> void:
+func _cortical_name_changed(new_name: StringName, _cortical_area: CorticalArea) -> void:
 	_ID_Button.text = new_name
 
 func _mapping_changed(mapping: MappingProperties) -> void:
