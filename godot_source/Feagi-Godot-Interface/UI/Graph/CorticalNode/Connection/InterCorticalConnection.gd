@@ -55,9 +55,10 @@ func _button_pressed() -> void:
 
 ## Update position of the box and line if either [CorticalNode] moves
 func _update_position() -> void:
-	var left: Vector2 = _source_terminal.get_input_location()
-	var right: Vector2 = _destination_terminal.get_output_location()
+	var left: Vector2 = _source_terminal.get_output_location()
+	var right: Vector2 = _destination_terminal.get_input_location()
 	position_offset = (left + right - (size / 2.0)) / 2.0
+	_update_line_positions(left, right)
 
 # TODO replace with curves
 func _update_line_positions(start_point: Vector2, end_point: Vector2) -> void:
@@ -70,12 +71,13 @@ func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
 		destroy_self()
 		return
 	_update_mapping_counter(_mapping_properties.number_mappings)
-
+	_update_line_look(_updated_mapping_data)
 
 func _update_mapping_counter(number_of_mappings: int):
 	_button.text = " " + str(number_of_mappings) + " "
 
-
+func _update_line_look(_updated_mapping_data: MappingProperties) -> void:
+	_line.default_color = _determine_line_color()
 
 func _determine_line_color() -> Color:
 	if _mapping_properties.is_any_PSP_multiplier_negative():
