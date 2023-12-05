@@ -278,7 +278,7 @@ func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
 func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
-	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
+	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "mapping_data_raw": mapping_data})
 
 ## Modifies the 2D location of many cortical areas at once without the need for polling
 func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):

@@ -297,14 +297,9 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	var cortical_src: CorticalArea = src_dst_data["src"]
 	var cortical_dst: CorticalArea = src_dst_data["dst"]
 	print("FEAGI sucessfully updated the mapping between %s and %s" % [cortical_src.cortical_ID, cortical_dst.cortical_ID])
-	var mapping_count: int = src_dst_data["count"]
-	if mapping_count == 0:
-		# we removed the mapping
-		cortical_src.remove_efferent_connection(cortical_dst)
-		return
-	# assume we add / modify the mapping
-	var a: Array[MappingProperty] = []
-	cortical_src.set_mappings_to_efferent_area(cortical_dst, a)
+	var mappings: Array[MappingProperty] = []
+	mappings.assign(MappingProperty.from_array_of_dict(src_dst_data["mapping_data_raw"]))
+	cortical_src.set_mappings_to_efferent_area(cortical_dst, mappings)
 
 
 func PUT_GE_corticalArea(response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:
