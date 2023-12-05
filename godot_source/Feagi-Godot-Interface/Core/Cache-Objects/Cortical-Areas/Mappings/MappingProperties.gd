@@ -8,7 +8,7 @@ enum SIGNAL_TYPE{
 	MIXED
 }
 
-signal mappings_changed(self_mappings: MappingProperties, new_count: int)
+signal mappings_changed(self_mappings: MappingProperties)
 
 var source_cortical_area: CorticalArea:
 	get: return _src_cortical
