@@ -298,7 +298,9 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	var cortical_dst: CorticalArea = src_dst_data["dst"]
 	print("FEAGI sucessfully updated the mapping between %s and %s" % [cortical_src.cortical_ID, cortical_dst.cortical_ID])
 	var mappings: Array[MappingProperty] = []
-	mappings.assign(MappingProperty.from_array_of_dict(src_dst_data["mapping_data_raw"]))
+	var dict_arr: Array[Dictionary]
+	dict_arr.assign(src_dst_data["mapping_data_raw"])
+	mappings.assign(MappingProperty.from_array_of_dict(dict_arr))
 	cortical_src.set_mappings_to_efferent_area(cortical_dst, mappings)
 
 
