@@ -48,7 +48,11 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 
 
 func destroy_self() -> void:
+	_source_terminal.queue_free()
+	_destination_terminal.queue_free()
 	queue_free()
+
+
 
 func _button_pressed() -> void:
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
@@ -85,3 +89,4 @@ func _determine_line_color() -> Color:
 		return LINE_COLOR_PSPN_INPLASTIC
 	else:
 		return LINE_COLOR_PSPP_INPLASTIC
+
