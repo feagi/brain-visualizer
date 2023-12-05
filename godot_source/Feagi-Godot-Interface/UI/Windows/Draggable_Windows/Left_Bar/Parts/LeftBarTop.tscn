@@ -59,6 +59,19 @@ editable = false
 script = ExtResource("1_0xr58")
 enable_signaling_on_ready = false
 
+[node name="Label_Dimensions" type="Label" parent="."]
+layout_mode = 2
+text = "Dimension"
+
+[node name="Cortical_Size" parent="." instance=ExtResource("3_tpeid")]
+layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
+int_x_min = 1
+int_y_min = 1
+int_z_min = 1
+
 [node name="Label_Position" type="Label" parent="."]
 layout_mode = 2
 text = "Position"
@@ -74,19 +87,6 @@ custom_minimum_size = Vector2(7, 0)
 
 [node name="SpacerY2" parent="Cortical_Position" index="7"]
 custom_minimum_size = Vector2(7, 0)
-
-[node name="Label_Dimensions" type="Label" parent="."]
-layout_mode = 2
-text = "Dimension"
-
-[node name="Cortical_Size" parent="." instance=ExtResource("3_tpeid")]
-layout_mode = 2
-label_x_text = &"W"
-label_y_text = &"H"
-label_z_text = &"D"
-int_x_min = 1
-int_y_min = 1
-int_z_min = 1
 
 [node name="gap" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
@@ -104,7 +104,7 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
 [connection signal="user_interacted" from="Row_Cortical_Name/Cortical_Name" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Cortical_Size" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
 
 [editable path="Cortical_Position"]
