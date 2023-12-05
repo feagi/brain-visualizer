@@ -14,6 +14,8 @@ var connected_area: CorticalArea:
 	get: return _connected_area
 var representing_area: CorticalArea:
 	get: return _parent_node.cortical_area_ref
+var cortical_node: CorticalNode:
+	get: return _parent_node
 
 var _terminal_type: TYPE ## The type of terminal
 var _input_point: TextureRect

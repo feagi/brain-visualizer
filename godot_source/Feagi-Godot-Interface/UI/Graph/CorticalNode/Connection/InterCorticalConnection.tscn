@@ -6,6 +6,7 @@
 script = ExtResource("1_esnl0")
 
 [node name="Line2D" type="Line2D" parent="."]
+visible = false
 
 [node name="Button" type="Button" parent="."]
 layout_mode = 2
