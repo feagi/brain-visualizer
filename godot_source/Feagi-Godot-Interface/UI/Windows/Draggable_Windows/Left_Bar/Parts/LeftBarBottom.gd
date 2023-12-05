@@ -35,8 +35,8 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 			}
 			)
 	
-	cortical_reference.efferent_mapping_edited.connect(_add_efferent_connection)
-	cortical_reference.efferent_mapping_edited.connect(_add_afferent_connection)
+	cortical_reference.efferent_mapping_added.connect(_add_efferent_connection)
+	cortical_reference.afferent_mapping_added.connect(_add_afferent_connection)
 	
 
 func _add_efferent_connection(mappings: MappingProperties):
@@ -48,10 +48,10 @@ func _add_efferent_connection(mappings: MappingProperties):
 		}
 	)
 
-func _add_afferent_connection(afferent_area: CorticalArea):
+func _add_afferent_connection(mappings: MappingProperties):
 	_scroll_afferent.spawn_list_item(
 		{
-			"source": afferent_area,
+			"source": mappings.source_cortical_area,
 			"destination": _cortical_area_ref,
 			"aff2this": true
 		}
