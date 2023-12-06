@@ -34,8 +34,6 @@ func _ready() -> void:
 func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalArea = null):
 	var all_cortical_areas: Array[CorticalArea] = []
 	all_cortical_areas.assign(FeagiCache.cortical_areas_cache.cortical_areas.values())
-	_sources_dropdown.overwrite_cortical_areas(all_cortical_areas)
-	_destinations_dropdown.overwrite_cortical_areas(all_cortical_areas)
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
 		source_area = cortical_source
@@ -48,6 +46,10 @@ func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalA
 		_destinations_dropdown.select(-1)
 	_sources_dropdown.user_selected_cortical_area.connect(_source_changed)
 	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
+
+	if !((cortical_source == null) and (cortical_destination == null)):
+		_mapping_details.visible = true
+
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
 func _mappings_updated(mappings: MappingProperties) -> void:

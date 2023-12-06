@@ -100,5 +100,4 @@ automatic_setup_window_closing_for_window_manager_name = &"edit_mappings"
 
 [connection signal="resized" from="BoxContainer/Mapping_Details" to="BoxContainer" method="recalculate_size"]
 [connection signal="visibility_changed" from="BoxContainer/Mapping_Details" to="BoxContainer" method="recalculate_size"]
-[connection signal="pressed" from="BoxContainer/BottomButtons/cancel" to="." method="close_window" binds= ["edit_mappings"]]
 [connection signal="pressed" from="BoxContainer/BottomButtons/update" to="." method="_request_apply_mappings_to_FEAGI"]
