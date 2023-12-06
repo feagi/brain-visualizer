@@ -79,7 +79,7 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 		push_error("Attempted to remove cortical area " + removed_cortical_ID + " when already non existant in cache")
 		return
 	
-	_cortical_areas[removed_cortical_ID].remove_all_connections()
+	_cortical_areas[removed_cortical_ID].feagi_delete_cortical_area()
 	FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
 	_cortical_areas.erase(removed_cortical_ID)
 

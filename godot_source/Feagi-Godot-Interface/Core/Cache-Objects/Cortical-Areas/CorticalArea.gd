@@ -200,7 +200,7 @@ func apply_details_dict(updated_details: Dictionary) -> void:
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Array[MappingProperty]) -> void:
-
+	
 	if !(destination_area.cortical_ID in _efferent_mappings.keys()):
 		# we dont have the mappings in the system
 		if len(mappings) == 0:
@@ -210,6 +210,7 @@ func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Arr
 		_efferent_mappings[destination_area.cortical_ID] = MappingProperties.new(self, destination_area, mappings)
 		destination_area.add_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 		efferent_mapping_added.emit(_efferent_mappings[destination_area.cortical_ID])
+		print("CORE: Adding mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
 		return
 	
 	if len(mappings) == 0:
@@ -218,6 +219,7 @@ func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Arr
 		destination_area.remove_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 		efferent_mapping_removed.emit(_efferent_mappings[destination_area.cortical_ID])
 		_efferent_mappings.erase(destination_area.cortical_ID)
+		print("CORE: Removing mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
 		return
 	
 	# A previously existing mapping now has new data, treat as an edit
@@ -225,10 +227,6 @@ func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Arr
 	destination_area.set_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 	efferent_mapping_edited.emit(_efferent_mappings[destination_area.cortical_ID])
 	print("CORE: CORTICAL_AREA: Set Connection from %s to %s with %d mappings" % [cortical_ID, destination_area.cortical_ID, len(mappings)])
-
-	if _efferent_mappings[destination_area.cortical_ID].is_empty():
-		# Delete empty mappings as to not fill dictionary 
-		_efferent_mappings.erase(destination_area.cortical_ID)
 
 ## ONLY TO BE CALLED FROM THE SOURCE AREA. A source area is connecting towards this area
 func add_afferent_area_from_efferent(mapping_properties: MappingProperties) -> void:
@@ -255,14 +253,20 @@ func set_afferent_area_from_efferent(mapping_properties: MappingProperties) -> v
 		return
 	afferent_mapping_edited.emit(mapping_properties)
 
+## Called from FEAGI when cortical area is being deleted
+func feagi_delete_cortical_area() -> void:
+	remove_all_connections()
+
 ## removes all efferent and afferent connections, typically called right before deletion. SHOULD ONLY BE CALLED BY CACHE
 func remove_all_connections() -> void:
 	var empty_mappings: Array[MappingProperty] = []
-	for efferent_area in _efferent_mappings.values():
-		set_mappings_to_efferent_area(efferent_area, empty_mappings)
 	
-
-
+	while len(efferent_connections) > 0:
+		set_mappings_to_efferent_area(efferent_connections[0], empty_mappings)
+	
+	while len(afferent_connections) > 0:
+		afferent_connections[0].set_mappings_to_efferent_area(self, empty_mappings)
+	
 ## Retrieves the [MappingProperties] to a cortical area from this one. Returns an empty [MappingProperties] if no connecitons are defined
 func get_mappings_to(destination_cortical_area: CorticalArea) -> MappingProperties:
 	if destination_cortical_area.cortical_ID not in _efferent_mappings.keys():
@@ -275,6 +279,8 @@ func get_efferent_connections_with_count() -> Dictionary:
 	for mapping: MappingProperties in _efferent_mappings.values():
 		output[mapping.destination_cortical_area.cortical_ID] = mapping.number_mappings
 	return output
+
+
 
 func _get_efferents() -> Array[CorticalArea]:
 	var output: Array[CorticalArea] = []
