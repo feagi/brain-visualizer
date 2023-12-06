@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CorticalNode.gd" id="1_4inyi"]
 
 [node name="CorticalNode" type="GraphNode"]
+custom_minimum_size = Vector2(250, 0)
 offset_right = 162.0
 offset_bottom = 80.0
 slot/0/left_enabled = true
