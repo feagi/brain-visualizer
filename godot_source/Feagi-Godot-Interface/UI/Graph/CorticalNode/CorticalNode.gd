@@ -99,7 +99,7 @@ func _spawn_new_internode_mapping(mapping_properties: MappingProperties) -> void
 	# spawn terminals
 	var afferent_node: CorticalNode = _graph.cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
 	var afferent_terminal: InterCorticalNodeTerminal = afferent_node.spawn_afferent_terminal(mapping_properties.source_cortical_area)
-	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal() 
+	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal(mapping_properties.destination_cortical_area) 
 	
 	# spawn line and mapping button
 	var connection: InterCorticalConnection = INTERCORTICAL_CONNECTION_PREFAB.instantiate()
@@ -117,11 +117,11 @@ func _get_starting_efferent_index() -> int:
 	return cortical_area_ref.num_afferent_connections + _get_starting_afferent_index()
 
 ## Spawns an efferent terminal for a cortical area (but does not make the connection line itself)
-func _spawn_efferent_terminal() -> InterCorticalNodeTerminal:
+func _spawn_efferent_terminal(destination_cortical_area: CorticalArea) -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(cortical_area_ref, InterCorticalNodeTerminal.TYPE.OUTPUT)
+	terminal.setup(destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT)
 	connection_positions_changed.emit()
 	return terminal
 
