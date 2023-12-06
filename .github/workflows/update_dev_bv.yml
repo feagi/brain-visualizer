@@ -1,4 +1,4 @@
-name: "Generate BV versions HTML with a new version"
+name: "Update dev gcr bv"
 
 on:
   push:
