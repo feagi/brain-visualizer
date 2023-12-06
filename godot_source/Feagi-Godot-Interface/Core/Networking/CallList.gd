@@ -32,8 +32,8 @@ func GET_GE_fileName():
 	_interface_ref.single_FEAGI_request(_address_list.GET_genome_fileName, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_fileName)
 
 ## return dict of cortical IDs mapped with dict of connected cortical area and number of mappings
-func GET_GE_corticalMap():
-	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap)
+func GET_GE_corticalMap_detailed():
+	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap_detailed, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap_detailed)
 
 ## return dict of cortical IDs mapped with list of connected cortical areas
 func GET_CO_properties_mappings():
@@ -278,7 +278,7 @@ func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
 func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
-	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
+	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "mapping_data_raw": mapping_data})
 
 ## Modifies the 2D location of many cortical areas at once without the need for polling
 func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):

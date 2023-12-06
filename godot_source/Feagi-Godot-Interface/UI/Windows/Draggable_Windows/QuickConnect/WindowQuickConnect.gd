@@ -74,10 +74,9 @@ func on_user_select_cortical_area(cortial_area: CorticalArea) -> void:
 
 func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
-	var new_mapping: MappingProperties = MappingProperties.create_default_mapping(_source, _destination, _selected_morphology)
-	
+
 	# Make sure the cache has the current mapping state of the cortical to source area to append to
-	FeagiRequests.append_mapping_between_corticals(_source, _destination, new_mapping)
+	FeagiRequests.request_add_default_mapping_between_corticals(_source, _destination, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
 	
 	VisConfig.UI_manager.window_manager.force_close_window("quick_connect")

@@ -151,7 +151,7 @@ func request_creating_function_morphology(morphology_name: StringName, parameter
 ## Triggers an update in FEAGI cached connections, which cascades to signals for connections added and removed
 ## NOTE FOR STARTUP: This should be called after cortical areas have been loaded into memory, otherwise cortical ID references here will be invalid
 func refresh_connection_list() -> void:
-	_feagi_interface.calls.GET_GE_corticalMap()
+	_feagi_interface.calls.GET_GE_corticalMap_detailed()
 
 ## Requests from FEAGI the mapping properties between 2 cortical areas
 func get_mapping_properties_between_two_areas(source_area: CorticalArea, destination_area: CorticalArea) -> void:
@@ -163,21 +163,23 @@ func request_delete_mapping_between_corticals(source_area: CorticalArea, destina
 	# This essentially works by sending an empty array for the mappings
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, [])
 
-## Request FEAGI to set a specific mapping between 2 cortical areas
-func request_set_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
+## Request FEAGI to set a specific mapping between 2 cortical areas (overridding previous setting)
+func request_set_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mappings: Array[MappingProperty]) -> void:
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
-	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, mapping_data.to_array())
+	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_array(mappings))
 
 ## Request FEAGI to append mappings to a current mappings
 ## NOTE: This assumes Cache is up to date on the current mapping state
-func append_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, mapping_data: MappingProperties) -> void:
+func append_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, additional_mappings: Array[MappingProperty]) -> void:
 	var current_mapping: MappingProperties = source_area.get_mappings_to(destination_area).duplicate()
-	current_mapping.merge_in_mapping_properties(mapping_data)
-	request_set_mapping_between_corticals(source_area, destination_area, current_mapping)
+	var current_mappings: Array[MappingProperty] = current_mapping.mappings
+	current_mappings.append_array(additional_mappings)
+	request_set_mapping_between_corticals(source_area, destination_area, current_mappings)
 
-## Request FEAGI to set a default mapping (given a morphology) between 2 cortical areas
-func request_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
-	request_set_mapping_between_corticals(source_area, destination_area, MappingProperties.create_default_mapping(source_area, destination_area, morphology))
+## Request FEAGI to append a default mapping (given a morphology) between 2 cortical areas
+func request_add_default_mapping_between_corticals(source_area: CorticalArea, destination_area: CorticalArea, morphology: Morphology) -> void:
+	var additional_mappings: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology)]
+	append_mapping_between_corticals(source_area, destination_area, additional_mappings)
 
 ################################ FEAGI Circuits #################################
 
