@@ -17,7 +17,7 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
 
 ## returns a dict of the mapping of cortical areas
-func GET_GE_corticalMap(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+func GET_GE_corticalMap_detailed(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
 	var source_area: CorticalArea
 	var destination_area: CorticalArea

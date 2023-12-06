@@ -32,8 +32,8 @@ func GET_GE_fileName():
 	_interface_ref.single_FEAGI_request(_address_list.GET_genome_fileName, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_fileName)
 
 ## return dict of cortical IDs mapped with dict of connected cortical area and number of mappings
-func GET_GE_corticalMap():
-	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap)
+func GET_GE_corticalMap_detailed():
+	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap_detailed, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap_detailed)
 
 ## return dict of cortical IDs mapped with list of connected cortical areas
 func GET_CO_properties_mappings():

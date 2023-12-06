@@ -11,7 +11,7 @@ var GET_genome_fileName: StringName = "/v1/feagi/genome/file_name"
 var GET_genome_corticalAreaNameList: StringName = "/v1/feagi/genome/cortical_area_name_list"
 var GET_genome_corticalNameLocation: StringName = "/v1/feagi/genome/cortical_name_location?cortical_name="
 var GET_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area="
-var GET_genome_corticalMap: StringName = "/v1/feagi/genome/cortical_map"
+var GET_genome_corticalMap_detailed: StringName = "/v1/feagi/genome/cortical_map_detailed"
 var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/afferents?cortical_area="
 var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
 var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
@@ -64,7 +64,7 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	GET_genome_corticalAreaNameList = FEAGIFullAddress + GET_genome_corticalAreaNameList
 	GET_genome_corticalNameLocation = FEAGIFullAddress + GET_genome_corticalNameLocation
 	GET_genome_corticalArea = FEAGIFullAddress + GET_genome_corticalArea
-	GET_genome_corticalMap = FEAGIFullAddress + GET_genome_corticalMap
+	GET_genome_corticalMap_detailed = FEAGIFullAddress + GET_genome_corticalMap_detailed
 	GET_genome_corticalMappings_afferents_corticalArea = FEAGIFullAddress + GET_genome_corticalMappings_afferents_corticalArea
 	GET_genome_corticalMappings_efferents_corticalArea = FEAGIFullAddress + GET_genome_corticalMappings_efferents_corticalArea
 	GET_genome_mappingProperties = FEAGIFullAddress + GET_genome_mappingProperties

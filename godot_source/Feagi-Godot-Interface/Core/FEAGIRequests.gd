@@ -151,7 +151,7 @@ func request_creating_function_morphology(morphology_name: StringName, parameter
 ## Triggers an update in FEAGI cached connections, which cascades to signals for connections added and removed
 ## NOTE FOR STARTUP: This should be called after cortical areas have been loaded into memory, otherwise cortical ID references here will be invalid
 func refresh_connection_list() -> void:
-	_feagi_interface.calls.GET_GE_corticalMap()
+	_feagi_interface.calls.GET_GE_corticalMap_detailed()
 
 ## Requests from FEAGI the mapping properties between 2 cortical areas
 func get_mapping_properties_between_two_areas(source_area: CorticalArea, destination_area: CorticalArea) -> void:
