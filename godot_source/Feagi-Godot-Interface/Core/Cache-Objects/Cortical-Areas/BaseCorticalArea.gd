@@ -1,5 +1,5 @@
 extends Object
-class_name CorticalArea
+class_name BaseCorticalArea
 ## Holds details pertaining to a specific cortical area
 ## Signals up if properties here are changed
 
@@ -20,12 +20,12 @@ enum SUPPORTS_INTERFACE {
 
 const CORTICAL_TYPES_WITH_STATIC_DIMENSIONS: Array[CORTICAL_AREA_TYPE] = [CORTICAL_AREA_TYPE.CORE]
 
-signal name_updated(cortical_name: StringName, this_cortical_area: CorticalArea)
-signal dimensions_updated(dim: Vector3i, this_cortical_area: CorticalArea)
-signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: CorticalArea)
-signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: CorticalArea)
-signal cortical_visibility_updated(visibility: bool, this_cortical_area: CorticalArea)
-signal details_updated(details: CorticalAreaDetails, this_cortical_area: CorticalArea)
+signal name_updated(cortical_name: StringName, this_cortical_area: BaseCorticalArea)
+signal dimensions_updated(dim: Vector3i, this_cortical_area: BaseCorticalArea)
+signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: BaseCorticalArea)
+signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: BaseCorticalArea)
+signal cortical_visibility_updated(visibility: bool, this_cortical_area: BaseCorticalArea)
+signal details_updated(details: CorticalAreaDetails, this_cortical_area: BaseCorticalArea)
 signal changed_monitoring_membrane_potential(is_monitoring: bool)
 signal changed_monitoring_synaptic_potential(is_monitoring: bool)
 
@@ -108,12 +108,12 @@ var channel_count: int:
 
 
 ## All INCOMING connections
-var afferent_connections: Array[CorticalArea]:
+var afferent_connections: Array[BaseCorticalArea]:
 	get: return _afferent_connections
 var num_afferent_connections: int:
 	get: return len(_afferent_connections)
 ## All OUTGOING connections
-var efferent_connections: Array[CorticalArea]:
+var efferent_connections: Array[BaseCorticalArea]:
 	get: return _get_efferents()
 var efferent_mappings: Dictionary:
 	get: return _efferent_mappings
@@ -133,7 +133,7 @@ var _coordinates_3D: Vector3i = Vector3i(0,0,0)
 var _coordinates_2D_available: bool = false  # if coordinates_2D are avilable from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are avilable from FEAGI
 var _cortical_visiblity: bool = true
-var _afferent_connections: Array[CorticalArea]
+var _afferent_connections: Array[BaseCorticalArea]
 var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 var _is_monitoring_membrane_potential: bool
 var _is_monitoring_synaptic_potential: bool
@@ -155,13 +155,13 @@ func _init(ID: StringName, cortical_name: StringName, group_type: CORTICAL_AREA_
 		push_error("Generated Cortical Area of ID " + ID + " in is of type Invalid. This may cause issues!")
 
 ## Generate a IPU/OPU cortical area when you are using a template
-static func create_from_IOPU_template(template: CorticalTemplate, this_cortical_area_ID: StringName, new_channel_count: int, visibility: bool, cortical_details_raw: Dictionary = {}) -> CorticalArea:
+static func create_from_IOPU_template(template: CorticalTemplate, this_cortical_area_ID: StringName, new_channel_count: int, visibility: bool, cortical_details_raw: Dictionary = {}) -> BaseCorticalArea:
 	var new_dimensions: Vector3i = template.calculate_IOPU_dimension(new_channel_count)
-	return CorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, new_dimensions, cortical_details_raw, new_channel_count)
+	return BaseCorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, new_dimensions, cortical_details_raw, new_channel_count)
 
 ## Generate a core cortical area when you are using a template
-static func create_from_core_template(template: CorticalTemplate, this_cortical_area_ID: StringName, visibility: bool, cortical_details_raw: Dictionary = {}) -> CorticalArea:
-	return CorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, template.resolution , cortical_details_raw)
+static func create_from_core_template(template: CorticalTemplate, this_cortical_area_ID: StringName, visibility: bool, cortical_details_raw: Dictionary = {}) -> BaseCorticalArea:
+	return BaseCorticalArea.new(this_cortical_area_ID, template.cortical_name, template.cortical_type, visibility, template.resolution , cortical_details_raw)
 
 static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_AREA_TYPE:
 	cortical_type_raw = cortical_type_raw.to_upper()
@@ -182,15 +182,15 @@ static func true_position_to_BV_position(true_position: Vector3, scale: Vector3)
 		-(int(scale.z / 2.0) + true_position.z))
 
 ## Array of Cortical Areas to Array of Cortical IDs
-static func CorticalAreaArray2CorticalIDArray(arr: Array[CorticalArea]) -> Array[StringName]:
+static func CorticalAreaArray2CorticalIDArray(arr: Array[BaseCorticalArea]) -> Array[StringName]:
 	var output: Array[StringName] = []
-	for area: CorticalArea in arr:
+	for area: BaseCorticalArea in arr:
 		output.append(area.cortical_ID)
 	return output
 
 ## Get 3D coordinates that BV uses currently
 func BV_position() -> Vector3:
-	return CorticalArea.true_position_to_BV_position(coordinates_3D, dimensions)
+	return BaseCorticalArea.true_position_to_BV_position(coordinates_3D, dimensions)
 
 ## Applies cortical area properties dict from feagi on other details
 func apply_details_dict(updated_details: Dictionary) -> void:
@@ -199,7 +199,7 @@ func apply_details_dict(updated_details: Dictionary) -> void:
 # remember, efferent: e for exit
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
-func set_mappings_to_efferent_area(destination_area: CorticalArea, mappings: Array[MappingProperty]) -> void:
+func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	
 	if !(destination_area.cortical_ID in _efferent_mappings.keys()):
 		# we dont have the mappings in the system
@@ -268,7 +268,7 @@ func remove_all_connections() -> void:
 		afferent_connections[0].set_mappings_to_efferent_area(self, empty_mappings)
 	
 ## Retrieves the [MappingProperties] to a cortical area from this one. Returns an empty [MappingProperties] if no connecitons are defined
-func get_mappings_to(destination_cortical_area: CorticalArea) -> MappingProperties:
+func get_mappings_to(destination_cortical_area: BaseCorticalArea) -> MappingProperties:
 	if destination_cortical_area.cortical_ID not in _efferent_mappings.keys():
 		return MappingProperties.create_empty_mapping(self, destination_cortical_area)
 	else:
@@ -282,8 +282,8 @@ func get_efferent_connections_with_count() -> Dictionary:
 
 
 
-func _get_efferents() -> Array[CorticalArea]:
-	var output: Array[CorticalArea] = []
+func _get_efferents() -> Array[BaseCorticalArea]:
+	var output: Array[BaseCorticalArea] = []
 	for efferent_ID: StringName in _efferent_mappings.keys():
 		output.append(FeagiCache.cortical_areas_cache.cortical_areas[efferent_ID])
 	return output

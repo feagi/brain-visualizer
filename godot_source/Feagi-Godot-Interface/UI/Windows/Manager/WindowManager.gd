@@ -28,7 +28,7 @@ var _window_memory_states: Dictionary = {
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
-func spawn_left_panel(cortical_area: CorticalArea) -> void:
+func spawn_left_panel(cortical_area: BaseCorticalArea) -> void:
 	if "left_bar" in loaded_windows.keys():
 		force_close_window("left_bar")
 	
@@ -66,7 +66,7 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 		morphology_manager.set_selected_morphology(morphology_to_preload)
 	
 
-func spawn_edit_mappings(source: CorticalArea = null, destination: CorticalArea = null):
+func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null):
 	if "edit_mappings" in loaded_windows.keys():
 		force_close_window("edit_mappings")
 	

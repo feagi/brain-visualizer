@@ -3,18 +3,18 @@ class_name LeftBarBottom
 
 var _scroll_afferent: BaseScroll
 var _scroll_efferent: BaseScroll
-var _cortical_area_ref: CorticalArea
+var _cortical_area_ref: BaseCorticalArea
 
 func _ready() -> void:
 	_scroll_afferent = $Afferent
 	_scroll_efferent = $Efferent
 
 ## Get initial connections when the window is created
-func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
+func initial_values_from_FEAGI(cortical_reference: BaseCorticalArea) -> void:
 	_cortical_area_ref = cortical_reference
 	
 	# Afferent
-	for aff: CorticalArea in cortical_reference.afferent_connections:
+	for aff: BaseCorticalArea in cortical_reference.afferent_connections:
 		
 		_scroll_afferent.spawn_list_item(
 			{
@@ -26,7 +26,7 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 
 	# Efferent
 	# yes, more type array casting shenanigans
-	for eff: CorticalArea in cortical_reference.efferent_connections:
+	for eff: BaseCorticalArea in cortical_reference.efferent_connections:
 		_scroll_efferent.spawn_list_item(
 			{
 			"source": cortical_reference,
@@ -57,10 +57,10 @@ func _add_afferent_connection(mappings: MappingProperties):
 		}
 	)
 
-func _remove_efferent_connection(efferent_area: CorticalArea):
+func _remove_efferent_connection(efferent_area: BaseCorticalArea):
 	_scroll_efferent.remove_child_by_name(efferent_area.cortical_ID)
 
-func _remove_afferent_connection(afferent_area: CorticalArea):
+func _remove_afferent_connection(afferent_area: BaseCorticalArea):
 	_scroll_afferent.remove_child_by_name(afferent_area.cortical_ID)
 
 func _user_pressed_add_afferent_button() -> void:

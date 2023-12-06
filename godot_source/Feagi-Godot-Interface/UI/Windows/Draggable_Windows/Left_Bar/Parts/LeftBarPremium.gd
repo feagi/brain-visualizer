@@ -3,7 +3,7 @@ class_name LeftBarPremium
 
 var membrane_toggle: CheckButton
 var post_synaptic_toggle: CheckButton
-var _cortical_reference: CorticalArea
+var _cortical_reference: BaseCorticalArea
 
 func _ready() -> void:
 	membrane_toggle = $HBoxContainer/Membrane
@@ -16,7 +16,7 @@ func _ready() -> void:
 		post_synaptic_toggle.toggled.connect(_user_request_change_synaptic_monitoring_status)
 
 
-func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
+func initial_values_from_FEAGI(cortical_reference: BaseCorticalArea) -> void:
 
 	membrane_toggle.button_pressed = cortical_reference.is_monitoring_membrane_potential
 	post_synaptic_toggle.button_pressed = cortical_reference.is_monitoring_synaptic_potential

@@ -99,7 +99,7 @@ func start_new_cortical_area_preview(coordinates_changed: Signal, dimensions_cha
 		close_signal.connect(preview.delete_preview)
 	return preview
 	
-func snap_camera_to_cortical_area(cortical_area: CorticalArea) -> void:
+func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	$Brain_Visualizer.snap_camera_to_cortical_area(cortical_area)
 

@@ -65,7 +65,7 @@ func _ready():
 
 
 ## set initial values from FEAGI Cache
-func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
+func initial_values_from_FEAGI(cortical_reference: BaseCorticalArea) -> void:
 	var details: CorticalAreaDetails = cortical_reference.details
 	_Voxel_Neuron_Density.current_int = details.cortical_neuron_per_vox_count
 	_Synaptic_Attractivity.current_int = details.cortical_synaptic_attractivity
@@ -86,7 +86,7 @@ func initial_values_from_FEAGI(cortical_reference: CorticalArea) -> void:
 
 
 ## Properties changed from FEAGI side, reflect here
-func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cortical_area: CorticalArea) -> void:
+func FEAGI_set_properties(cortical_area_details: CorticalAreaDetails, _this_cortical_area: BaseCorticalArea) -> void:
 	print("Left panel recieved new cortical details")
 
 	_Voxel_Neuron_Density.external_update_int(cortical_area_details.cortical_neuron_per_vox_count)

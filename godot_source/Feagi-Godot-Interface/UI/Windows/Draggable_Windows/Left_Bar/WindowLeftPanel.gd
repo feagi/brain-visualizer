@@ -20,7 +20,7 @@ var section_toggles: Array[bool]:
 		_bottom_collapsible.is_open = v[3]
 		_danger_zone_collapsible.is_open = v[4]
 
-var _cortical_area_ref: CorticalArea
+var _cortical_area_ref: BaseCorticalArea
 
 var _top_collapsible: VerticalCollapsible
 var _middle_collapsible: VerticalCollapsible
@@ -59,7 +59,7 @@ func _ready():
 	FeagiCacheEvents.cortical_area_removed.connect(_FEAGI_deleted_cortical_area)
 
 ## Load in initial values of the cortical area from Cache
-func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
+func setup_from_FEAGI(cortical_area_reference: BaseCorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
 	print("loading Left Pane Window for cortical area " + cortical_area_reference.cortical_ID)
 	_cortical_area_ref.dimensions_updated.connect(_top_section.FEAGI_set_cortical_dimension)
@@ -92,7 +92,7 @@ func load_from_memory(previous_data: Dictionary) -> void:
 func _user_requested_update(changed_values: Dictionary) -> void:
 	FeagiRequests.set_cortical_area_properties(_cortical_area_ref.cortical_ID, changed_values)
 
-func _FEAGI_deleted_cortical_area(removed_cortical_area: CorticalArea):
+func _FEAGI_deleted_cortical_area(removed_cortical_area: BaseCorticalArea):
 	# confirm this is the cortical area removed
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
 		close_window("left_bar")

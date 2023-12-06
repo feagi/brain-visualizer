@@ -30,10 +30,10 @@ var cortical_area_ID: StringName:
 		if(_cortical_area_ref):
 			return _cortical_area_ref.cortical_ID
 		return "ERROR NOT SETUP"
-var cortical_area_ref: CorticalArea:
+var cortical_area_ref: BaseCorticalArea:
 	get: return _cortical_area_ref
 	
-var _cortical_area_ref: CorticalArea
+var _cortical_area_ref: BaseCorticalArea
 var _graph: CorticalNodeGraph
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
@@ -54,7 +54,7 @@ func _gui_input(event):
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
 
 ## Since we cannot use _init for scenes, use this instead to initialize data
-func setup(cortical_area: CorticalArea, node_position: Vector2) -> void:
+func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
 	position_offset = node_position
 	title = _cortical_area_ref.name
@@ -74,7 +74,7 @@ func FEAGI_create_mapping_from_efferent(mapping_properties: MappingProperties) -
 			return
 		_spawn_new_internode_mapping(mapping_properties)
 
-func spawn_afferent_terminal(source: CorticalArea) -> InterCorticalNodeTerminal:
+func spawn_afferent_terminal(source: BaseCorticalArea) -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
@@ -85,7 +85,7 @@ func spawn_afferent_terminal(source: CorticalArea) -> InterCorticalNodeTerminal:
 func get_center_position_offset() -> Vector2:
 	return position_offset + (size / 2.0)
 
-func _is_cortical_node_mapped(cortical_area: CorticalArea) -> bool:
+func _is_cortical_node_mapped(cortical_area: BaseCorticalArea) -> bool:
 	for child: Node in get_children():
 		if child.name == cortical_area.cortical_ID:
 			return true
@@ -118,7 +118,7 @@ func _get_starting_efferent_index() -> int:
 	return cortical_area_ref.num_afferent_connections + _get_starting_afferent_index()
 
 ## Spawns an efferent terminal for a cortical area (but does not make the connection line itself)
-func _spawn_efferent_terminal(destination_cortical_area: CorticalArea) -> InterCorticalNodeTerminal:
+func _spawn_efferent_terminal(destination_cortical_area: BaseCorticalArea) -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
@@ -145,16 +145,16 @@ func _user_request_delete_cortical_area() -> void:
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 ## Set the color depnding on cortical type
-func _setup_node_color(cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> void:
+func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	var style_box: StyleBoxFlat = StyleBoxFlat.new()
 	match(cortical_type):
-		CorticalArea.CORTICAL_AREA_TYPE.IPU:
+		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			style_box.bg_color = IPU_BOX_COLOR
-		CorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			style_box.bg_color = MEMORY_BOX_COLOR
-		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			style_box.bg_color = CUSTOM_BOX_COLOR
-		CorticalArea.CORTICAL_AREA_TYPE.OPU:
+		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			style_box.bg_color = OPU_BOX_COLOR
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
@@ -170,6 +170,6 @@ func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 func _on_any_drag():
 	connection_positions_changed.emit()
 
-func _update_cortical_name(new_name: StringName, _this_cortical_area: CorticalArea) -> void:
+func _update_cortical_name(new_name: StringName, _this_cortical_area: BaseCorticalArea) -> void:
 	title = new_name
 

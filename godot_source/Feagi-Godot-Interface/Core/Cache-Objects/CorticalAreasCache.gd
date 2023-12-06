@@ -9,8 +9,8 @@ var _cortical_areas: Dictionary = {}
 
 
 ## Adds a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
-func add_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, cortical_type: CorticalArea.CORTICAL_AREA_TYPE, is_visible: bool = true) -> void:
-	var new_area: CorticalArea = CorticalArea.new(cortical_ID, cortical_name, cortical_type, is_visible, dimensions)
+func add_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE, is_visible: bool = true) -> void:
+	var new_area: BaseCorticalArea = BaseCorticalArea.new(cortical_ID, cortical_name, cortical_type, is_visible, dimensions)
 	new_area.coordinates_3D = coordinates_3D
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
@@ -25,10 +25,10 @@ func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> vo
 
 	var new_ID: StringName = all_cortical_area_properties["cortical_id"]
 	var new_name: StringName = all_cortical_area_properties["cortical_name"]
-	var new_group: CorticalArea.CORTICAL_AREA_TYPE = CorticalArea.cortical_type_str_to_type(all_cortical_area_properties["cortical_group"])
+	var new_group: BaseCorticalArea.CORTICAL_AREA_TYPE = BaseCorticalArea.cortical_type_str_to_type(all_cortical_area_properties["cortical_group"])
 	var new_visibility: bool = all_cortical_area_properties["cortical_visibility"]
 	var new_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
-	var new_area: CorticalArea = CorticalArea.new(new_ID, new_name, new_group,  new_visibility, new_cortical_dimensions, all_cortical_area_properties)
+	var new_area: BaseCorticalArea = BaseCorticalArea.new(new_ID, new_name, new_group,  new_visibility, new_cortical_dimensions, all_cortical_area_properties)
 	
 	# coordinates may or may not be specified, check the dictionary properly
 	if all_cortical_area_properties["cortical_coordinates_2d"][0] != null: # assume either all are null or none are
@@ -41,7 +41,7 @@ func add_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> vo
 
 ## Adds a cortical area that was created from a template
 func add_new_IOPU_cortical_area(template: CorticalTemplate, this_cortical_area_ID: StringName, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, cortical_details_raw: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: CorticalArea = CorticalArea.create_from_IOPU_template(template, this_cortical_area_ID, channel_count, is_visible, cortical_details_raw)
+	var new_area: BaseCorticalArea = BaseCorticalArea.create_from_IOPU_template(template, this_cortical_area_ID, channel_count, is_visible, cortical_details_raw)
 	new_area.coordinates_3D = coordinates_3D
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
@@ -85,16 +85,16 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 
 ## Returns an array of cortical areas whose name contains a given substring
 ## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
-func search_for_cortical_areas_by_name(search_term: StringName) -> Array[CorticalArea]:
-	var output: Array[CorticalArea] = []
+func search_for_cortical_areas_by_name(search_term: StringName) -> Array[BaseCorticalArea]:
+	var output: Array[BaseCorticalArea] = []
 	for cortical_area in _cortical_areas.values():
 		if cortical_area.name.to_lower().contains(search_term.to_lower()):
 			output.append(cortical_area)
 	return output
 
 ## Returns an array of cortical areas of given cortical type
-func search_for_cortical_areas_by_type(searching_cortical_type: CorticalArea.CORTICAL_AREA_TYPE) -> Array[CorticalArea]:
-	var output: Array[CorticalArea] = []
+func search_for_cortical_areas_by_type(searching_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> Array[BaseCorticalArea]:
+	var output: Array[BaseCorticalArea] = []
 	for cortical_area in _cortical_areas.values():
 		if cortical_area.group == searching_cortical_type:
 			output.append(cortical_area)
@@ -137,18 +137,18 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 	# note: not preallocating here certain things due to reference shenanigans, attempt later when system is stable
 	# add added cortical areas
 	var new_area_summary: Dictionary
-	var new_cortical_type: CorticalArea.CORTICAL_AREA_TYPE
+	var new_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE
 	var new_cortical_name: StringName
 	var new_cortical_visibility: bool
 	var new_cortical_dimensions: Vector3i
 	for add in added:
 		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
 		new_area_summary = _new_listing_with_summaries[add]
-		new_cortical_type = CorticalArea.cortical_type_str_to_type(new_area_summary["type"])
+		new_cortical_type = BaseCorticalArea.cortical_type_str_to_type(new_area_summary["type"])
 		new_cortical_name = new_area_summary["name"]
 		new_cortical_visibility = new_area_summary["visible"]
 		new_cortical_dimensions = FEAGIUtils.array_to_vector3i(new_area_summary["dimensions"])
-		var adding_cortical_area: CorticalArea = CorticalArea.new(add, new_cortical_name, new_cortical_type, new_cortical_visibility, new_cortical_dimensions)
+		var adding_cortical_area: BaseCorticalArea = BaseCorticalArea.new(add, new_cortical_name, new_cortical_type, new_cortical_visibility, new_cortical_dimensions)
 
 		# check if 3D and 2D positions exist, if so apply them
 		# signals here can emit all they want, they arent connected yet, so theres no chance of feedback loops
