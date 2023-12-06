@@ -6,6 +6,11 @@
 [node name="InterCorticalNodeTerminal" type="HBoxContainer"]
 script = ExtResource("1_nf13s")
 
+[node name="g1" type="Control" parent="."]
+visible = false
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+
 [node name="input" type="TextureRect" parent="."]
 visible = false
 custom_minimum_size = Vector2(20, 20)
@@ -28,3 +33,8 @@ size_flags_horizontal = 5
 size_flags_vertical = 5
 texture = ExtResource("2_1jsdg")
 expand_mode = 1
+
+[node name="g2" type="Control" parent="."]
+visible = false
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
