@@ -195,21 +195,22 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalAr
 
 
 
-## Adds cortical area (with definable dimensions)
+## Adds cortical area (custom or memory) (with definable dimensions)
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false) -> void:
 
 	var to_send: Dictionary = {
 		"cortical_name": str(name),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_type": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
+		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
 	}
 
 	var to_buffer: Dictionary = {
 		"cortical_name": name,
 		"coordinates_3d": coordinates_3D,
 		"cortical_dimensions": dimensions,
+		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
 	}
 
 	if is_coordinate_2D_defined:
@@ -218,8 +219,11 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
+	if memory_type:
+		to_send["is_memory"] = true
+		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+		
 
-	
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.single_FEAGI_request(_address_list.POST_genome_customCorticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
 
