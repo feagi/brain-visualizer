@@ -40,10 +40,10 @@ func _ready() -> void:
 
 
 func get_selected_type() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.cortical_type_str_to_type(_field_type_radio.currently_selected_text)
+	return BaseCorticalArea.cortical_type_human_readable_str_to_type(_field_type_radio.currently_selected_text)
 
 func _radio_button_proxy(_button_index: int, button_label: StringName) -> void:
-	_switch_UI_between_cortical_types(BaseCorticalArea.CORTICAL_AREA_TYPE[button_label])
+	_switch_UI_between_cortical_types(BaseCorticalArea.cortical_type_human_readable_str_to_type(button_label))
 	_main_container.recalculate_size()
 
 func _coordinate_proxy(input: Vector3) -> void:
@@ -99,6 +99,12 @@ func _switch_UI_between_cortical_types(cortical_type: BaseCorticalArea.CORTICAL_
 			_field_dimensions.editable = true
 			_field_cortical_name.editable = true
 			_field_cortical_name.placeholder_text = "Type Name Here"
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			_holder_dropdown.visible = false
+			_holder_channel.visible = false
+			_field_dimensions.editable = true
+			_field_cortical_name.editable = true
+			_field_cortical_name.placeholder_text = "Type Name Here"
 
 func _create_pressed():
 	var generating_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
@@ -130,9 +136,15 @@ func _create_pressed():
 
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			if _field_cortical_name.text == "":
-				VisConfig.show_info_popup("Warning", "Please define a name for your custom cortical area", "ok", )
+				VisConfig.show_info_popup("Warning", "Please define a name for your interconnect cortical area", "ok", )
 				return
 			FeagiRequests.add_custom_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
+				false)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			if _field_cortical_name.text == "":
+				VisConfig.show_info_popup("Warning", "Please define a name for your memory cortical area", "ok", )
+				return
+			FeagiRequests.add_memory_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
 				false)
 	
 	close_window("create_cortical")
