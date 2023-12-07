@@ -25,6 +25,12 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
 	return BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 
+func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
+	return false
+
+func _user_can_edit_cortical_synaptic_attractivity() -> bool:
+	return false
+
 #region Memory Parameters
 var initial_neuron_lifespan: float = 0
 var lifespan_growth_rate: float = 0

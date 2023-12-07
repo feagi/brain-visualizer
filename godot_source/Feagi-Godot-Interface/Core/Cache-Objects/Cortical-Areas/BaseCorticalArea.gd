@@ -96,6 +96,14 @@ var user_can_delete_this_area: bool:
 	get:
 		return _user_can_delete_area()
 
+var user_can_edit_cortical_neuron_per_vox_count: bool:
+	get:
+		return _user_can_edit_cortical_neuron_per_vox_count()
+
+var user_can_edit_cortical_synaptic_attractivity: bool:
+	get:
+		return _user_can_edit_cortical_synaptic_attractivity()
+
 # Private Properties
 var _cortical_ID: StringName
 var _name: StringName
@@ -120,6 +128,19 @@ static func CorticalAreaArray2CorticalIDArray(arr: Array[BaseCorticalArea]) -> A
 	for area: BaseCorticalArea in arr:
 		output.append(area.cortical_ID)
 	return output
+
+## From a string of cortical type, returns the cortical type enum
+static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_AREA_TYPE:
+	cortical_type_raw = cortical_type_raw.to_upper()
+	if cortical_type_raw in CORTICAL_AREA_TYPE.keys():
+		return CORTICAL_AREA_TYPE[cortical_type_raw]
+	else:
+		push_error("Unknown Cortical Type " + cortical_type_raw +". Marking as INVALID!")
+		return CORTICAL_AREA_TYPE.INVALID
+
+## Given a cortical type enum, return the string
+static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
+	return CORTICAL_AREA_TYPE.keys()[cortical_type]
 
 #TODO this shouldn't be here
 ## Get 3D coordinates that BV uses currently
@@ -202,6 +223,12 @@ func _user_can_edit_name() -> bool:
 func _user_can_delete_area() -> bool:
 	return true
 #endregion
+
+func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
+	return true
+
+func _user_can_edit_cortical_synaptic_attractivity() -> bool:
+	return true
 
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
 #region Mapping
