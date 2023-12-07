@@ -91,6 +91,10 @@ var user_can_edit_dimensions: bool:
 	get:
 		return _user_can_edit_dimensions()
 
+## Can a user edit the dimensions of this cortical area?
+var user_can_delete_this_area: bool:
+	get:
+		return _user_can_delete_area()
 
 # Private Properties
 var _cortical_ID: StringName
@@ -193,6 +197,9 @@ func _user_can_edit_dimensions() -> bool:
 	return true
 
 func _user_can_edit_name() -> bool:
+	return true
+
+func _user_can_delete_area() -> bool:
 	return true
 #endregion
 
