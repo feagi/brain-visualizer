@@ -233,24 +233,9 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 		push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
 		return
 	
+	FeagiCache.cortical_areas_cache.add_cortical_area_from_dict(other_properties, cortical_ID_raw["cortical_id"])
+	
 	VisConfig.UI_manager.make_notification("Cortical Area Created!")
-	
-	var is_2D_coordinates_defined: bool = false
-	var coordinates_2D: Vector2 = Vector2(0,0)
-	
-	if "coordinates_2d" in other_properties.keys():
-		is_2D_coordinates_defined = true
-		coordinates_2D = other_properties["coordinates_2d"]
-	
-	FeagiCache.cortical_areas_cache.add_cortical_area(
-		cortical_ID_raw["cortical_id"],
-		other_properties["cortical_name"],
-		other_properties["coordinates_3d"]	,
-		other_properties["cortical_dimensions"],
-		is_2D_coordinates_defined,
-		coordinates_2D,
-		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
-	)
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
