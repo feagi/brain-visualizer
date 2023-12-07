@@ -1,6 +1,6 @@
 extends BaseCorticalArea
 class_name CustomCorticalArea
-## Also know as "Interconnect" Cortical Area
+## Also known as "Interconnect" Cortical Area
 
 
 #region Base Functionality
