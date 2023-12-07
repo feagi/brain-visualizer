@@ -19,7 +19,6 @@ signal dimensions_updated(dim: Vector3i, this_cortical_area: BaseCorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: BaseCorticalArea)
 signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: BaseCorticalArea)
 signal cortical_visibility_updated(visibility: bool, this_cortical_area: BaseCorticalArea)
-signal details_updated(details: CorticalAreaDetails, this_cortical_area: BaseCorticalArea)
 signal changed_monitoring_membrane_potential(is_monitoring: bool)
 signal changed_monitoring_synaptic_potential(is_monitoring: bool)
 
@@ -68,6 +67,10 @@ var coordinates_3D: Vector3i:
 	set(v):
 		_set_3D_coordinates(v)
 
+var cortical_neuron_per_vox_count: int = 1
+var cortical_synaptic_attractivity: int = 100
+var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
+
 ## Has a 2D location been specified in FEAGI yet or is still unknown?
 var is_coordinates_2D_available: bool:
 	get: 
@@ -77,6 +80,11 @@ var is_coordinates_2D_available: bool:
 var is_coordinates_3D_available: bool:
 	get: 
 		return _coordinates_3D_available
+
+## Can a user edit the name of this cortical area?
+var user_can_edit_name: bool:
+	get:
+		return _user_can_edit_name()
 
 ## Can a user edit the dimensions of this cortical area?
 var user_can_edit_dimensions: bool:
@@ -115,8 +123,34 @@ func BV_position() -> Vector3:
 	return BaseCorticalArea.true_position_to_BV_position(coordinates_3D, dimensions)
 
 ## Called from FEAGI when cortical area is being deleted
-func feagi_delete_cortical_area() -> void:
+func FEAGI_delete_cortical_area() -> void:
 	remove_all_connections()
+
+# NOTE: This function applies all details, and may be expanded in other cortical types
+## Updates all cortical details in here from a dict from FEAGI
+func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
+	
+	if data == {}:
+		return
+	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
+	# Cortical Parameters
+	if "cortical_neuron_per_vox_count" in data.keys(): 
+		cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+	if "cortical_synaptic_attractivity" in data.keys(): 
+		cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+	
+	# Post Synaptic Potential Parameters
+	if "neuron_post_synaptic_potential" in data.keys(): 
+		neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
+	if "neuron_post_synaptic_potential_max" in data.keys(): 
+		neuron_post_synaptic_potential_max = data["neuron_post_synaptic_potential_max"]
+	if "neuron_degeneracy_coefficient" in data.keys(): 
+		neuron_degeneracy_coefficient = data["neuron_degeneracy_coefficient"]
+	if "neuron_psp_uniform_distribution" in data.keys(): 
+		neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
+	if "neuron_mp_driven_psp" in data.keys():
+		neuron_mp_driven_psp = data["neuron_mp_driven_psp"]
+	return
 
 func _set_name(new_name: StringName) -> void:
 		if new_name == _name: 
@@ -157,6 +191,9 @@ func _get_group() -> CORTICAL_AREA_TYPE:
 
 func _user_can_edit_dimensions() -> bool:
 	return true
+
+func _user_can_edit_name() -> bool:
+	return true
 #endregion
 
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
@@ -182,8 +219,6 @@ signal afferent_mapping_removed(mapping_properties: MappingProperties)
 
 var _afferent_connections: Array[BaseCorticalArea]
 var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
-var _is_monitoring_membrane_potential: bool
-var _is_monitoring_synaptic_potential: bool
 
 # Mapping Related
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
@@ -281,74 +316,16 @@ func get_allowed_efferent_morphology_names() -> PackedStringArray:
 
 #endregion
 
-# Details of a cortical area
-#region Cortical Details
-var are_details_placeholder_data: bool = true ## We don't have the true values for these yet
-
-# NOTE: Some cortical types have additional properties which may be appended to here
-
-var _cortical_neuron_per_vox_count: int = 0
-var _cortical_synaptic_attractivity: int = 0
-var _neuron_post_synaptic_potential: float = 0.0
-var _neuron_post_synaptic_potential_max: float = 0.0
-var _neuron_fire_threshold: int = 0
-var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
-var _neuron_firing_threshold_limit: int = 0
-var _neuron_refractory_period: int = 0
-var _neuron_leak_coefficient: int = 0
-var _neuron_leak_variability: int = 0
-var _neuron_consecutive_fire_count: int = 0
-var _neuron_snooze_period: int = 0
-var _neuron_degeneracy_coefficient: int = 0
-var _neuron_psp_uniform_distribution: bool = false
-var _neuron_mp_charge_accumulation: bool = false
-var _neuron_mp_driven_psp: bool = false
-
-## Updates all variables in here from a dict from FEAGI
-func apply_detail_dictionary(data: Dictionary) -> void:
-	
-	if data == {}:
-		return
-	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
-	if "cortical_neuron_per_vox_count" in data.keys(): 
-		_cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
-	if "cortical_synaptic_attractivity" in data.keys(): 
-		_cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
-	if "neuron_post_synaptic_potential" in data.keys(): 
-		_neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
-	if "neuron_post_synaptic_potential_max" in data.keys(): 
-		_neuron_post_synaptic_potential_max = data["neuron_post_synaptic_potential_max"]
-	if "neuron_fire_threshold" in data.keys(): 
-		_neuron_fire_threshold = data["neuron_fire_threshold"]
-	if "neuron_fire_threshold_increment" in data.keys(): 
-		_neuron_fire_threshold_increment = FEAGIUtils.array_to_vector3i(data["neuron_fire_threshold_increment"])
-	if "neuron_firing_threshold_limit" in data.keys(): 
-		_neuron_firing_threshold_limit = data["neuron_firing_threshold_limit"]
-	if "neuron_refractory_period" in data.keys(): 
-		_neuron_refractory_period = data["neuron_refractory_period"]
-	if "neuron_leak_coefficient" in data.keys(): 
-		_neuron_leak_coefficient = data["neuron_leak_coefficient"]
-	if "neuron_leak_variability" in data.keys(): 
-		_neuron_leak_variability = data["neuron_leak_variability"]
-	if "neuron_consecutive_fire_count" in data.keys(): 
-		_neuron_consecutive_fire_count = data["neuron_consecutive_fire_count"]
-	if "neuron_snooze_period" in data.keys(): 
-		_neuron_snooze_period = data["neuron_snooze_period"]
-	if "neuron_degeneracy_coefficient" in data.keys(): 
-		_neuron_degeneracy_coefficient = data["neuron_degeneracy_coefficient"]
-	if "neuron_psp_uniform_distribution" in data.keys(): 
-		_neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
-	if "neuron_mp_charge_accumulation" in data.keys(): 
-		_neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
-	if "neuron_mp_driven_psp" in data.keys():
-		_neuron_mp_driven_psp = data["neuron_mp_driven_psp"]
-
-# The following functions are often overridden in child classes
-
-## What properties (as written by FEAGI) are the user not allowed to edit?
-func properties_user_not_allowed_to_edit() -> PackedStringArray:
-	return []
-
+#region Post Synaptic Potential Parameters
+var neuron_psp_uniform_distribution: bool = false
+var neuron_mp_driven_psp: bool = false
+var neuron_post_synaptic_potential: float = 0.0
+var neuron_post_synaptic_potential_max: float = 0.0
+var neuron_degeneracy_coefficient: int = 0
 #endregion
 
-
+# Monitoring settings for this specific cortical area
+#region Monitoring Settings
+var is_monitoring_membrane_potential: bool
+var is_monitoring_synaptic_potential: bool
+#endregion
