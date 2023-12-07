@@ -80,16 +80,25 @@ func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName
 	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area as per the FEAGI dictionary. Skips over any templates for IPU and OPU and directly creates the object
-func add_cortical_area_from_dict(feagi_dictionary: Dictionary) -> void:
-	var type: BaseCorticalArea.CORTICAL_AREA_TYPE = BaseCorticalArea.cortical_type_str_to_type(feagi_dictionary["type"])
+func add_cortical_area_from_dict(feagi_dictionary: Dictionary, override_cortical_ID: StringName = "") -> void:
+	if override_cortical_ID != &"":
+		# Some dictionary responses do not include the ID. This allows adding it if that is the case
+		feagi_dictionary["cortical_id"] = override_cortical_ID
+	var type: BaseCorticalArea.CORTICAL_AREA_TYPE = BaseCorticalArea.cortical_type_str_to_type(feagi_dictionary["cortical_group"])
 	var cortical_ID: StringName = feagi_dictionary["cortical_id"]
-	var name: StringName = feagi_dictionary["name"]
-	var visibility: bool = feagi_dictionary["visible"]
-	var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(feagi_dictionary["dimensions"])
-	var position_3D: Vector3i = FEAGIUtils.array_to_vector3i(feagi_dictionary["position_3d"])
+	var name: StringName = feagi_dictionary["cortical_name"]
+	var visibility: bool = true
+	if "visible" in feagi_dictionary.keys():
+		visibility = feagi_dictionary["visible"]
+	var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(feagi_dictionary["cortical_dimensions"])
+	var position_3D: Vector3i = FEAGIUtils.array_to_vector3i(feagi_dictionary["coordinates_3d"])
 	var position_2D: Vector2i = Vector2i(0,0)
-	var position_2D_defined: bool = feagi_dictionary["position_2d"][0] != null
-	
+	var position_2D_defined: bool = false
+	if "coordinates_2d" in feagi_dictionary.keys():
+		position_2D_defined = feagi_dictionary["coordinates_2d"][0] != null
+		if position_2D_defined:
+			position_2D =  FEAGIUtils.array_to_vector2i(feagi_dictionary["coordinates_2d"])
+
 	match type:
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			add_core_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, feagi_dictionary, visibility)

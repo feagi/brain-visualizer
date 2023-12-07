@@ -208,8 +208,8 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 
 	var to_buffer: Dictionary = {
 		"cortical_name": name,
-		"coordinates_3d": coordinates_3D,
-		"cortical_dimensions": dimensions,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
 		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
 	}
 
