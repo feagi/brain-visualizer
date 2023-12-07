@@ -139,6 +139,24 @@ static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_ARE
 		push_error("Unknown Cortical Type " + cortical_type_raw +". Marking as INVALID!")
 		return CORTICAL_AREA_TYPE.INVALID
 
+## From a human readable string of cortical type, to cortical type enum
+static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) -> CORTICAL_AREA_TYPE:
+	cortical_type_raw = cortical_type_raw.to_lower()
+	match(cortical_type_raw):
+		"input":
+			return CORTICAL_AREA_TYPE.IPU
+		"output":
+			return CORTICAL_AREA_TYPE.OPU
+		"core":
+			return CORTICAL_AREA_TYPE.CORE
+		"interconnect":
+			return CORTICAL_AREA_TYPE.CUSTOM
+		"memory":
+			return CORTICAL_AREA_TYPE.MEMORY
+		_:
+			return CORTICAL_AREA_TYPE.INVALID
+
+
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
