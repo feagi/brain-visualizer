@@ -170,8 +170,10 @@ func get_all_cortical_area_names() -> Array[StringName]:
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
 
 	# TODO: Possible optimizations used packedStringArrays and less duplications
-	var new_listing: Array[StringName] = _new_listing_with_summaries.keys()
-	var removed: Array[StringName] = _cortical_areas.keys().duplicate()
+	var new_listing: Array[StringName] = []
+	new_listing.assign(_new_listing_with_summaries.keys())
+	var removed: Array[StringName] = []
+	removed.assign(_cortical_areas.keys().duplicate())
 	var added: Array[StringName] = []
 	var search: int # init here to reduce GC
 
@@ -198,6 +200,7 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 	for add in added:
 		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
 		new_area_summary = _new_listing_with_summaries[add]
+		new_area_summary["cortical_id"] = add
 		add_cortical_area_from_dict(new_area_summary)
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
