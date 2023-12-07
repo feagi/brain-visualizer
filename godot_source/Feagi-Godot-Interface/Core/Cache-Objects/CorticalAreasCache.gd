@@ -2,11 +2,13 @@ extends Object
 class_name CorticalAreasCache
 ## Stores all cortical areas available in the genome
 
+## All stored cortical areas, key'd by ID
 var cortical_areas: Dictionary:
 	get: return _cortical_areas
 
 var _cortical_areas: Dictionary = {}
 
+#region Add, Remove, and Edit Single Cortical Areas
 ## Adds a cortical area of type core by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_core_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
 	var new_area: CoreCorticalArea = CoreCorticalArea.new(cortical_ID, cortical_name, dimensions, is_visible)
@@ -124,7 +126,7 @@ func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) ->
 	if all_cortical_area_properties["cortical_coordinates"][0] != null: # assume either all are null or none are
 		_cortical_areas[changing_ID].coordinates_3D = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_coordinates"])
 	
-	_cortical_areas[changing_ID].apply_details_dict(all_cortical_area_properties)
+	_cortical_areas[changing_ID].FEAGI_apply_detail_dictionary(all_cortical_area_properties)
 	FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
@@ -135,7 +137,9 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	_cortical_areas[removed_cortical_ID].FEAGI_delete_cortical_area()
 	FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
 	_cortical_areas.erase(removed_cortical_ID)
+#endregion
 
+#region filtering
 ## Returns an array of cortical areas whose name contains a given substring
 ## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
 func search_for_cortical_areas_by_name(search_term: StringName) -> Array[BaseCorticalArea]:
@@ -159,7 +163,9 @@ func get_all_cortical_area_names() -> Array[StringName]:
 	for cortical_area in _cortical_areas.values():
 		output.append(cortical_area.cortical_ID)
 	return output
+#endregion
 
+#region Mass Operations
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed. Should only be called from FEAGI
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
 
@@ -209,3 +215,4 @@ func hard_wipe_cortical_areas():
 	for cortical_area_ID in all_cortical_area_IDs:
 		remove_cortical_area(cortical_area_ID)
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
+#endregion
