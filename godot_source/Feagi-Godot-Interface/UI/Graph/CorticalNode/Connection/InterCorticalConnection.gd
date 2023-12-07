@@ -86,6 +86,9 @@ func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
 func _update_mapping_counter(number_of_mappings: int):
 	_button.text = " " + str(number_of_mappings) + " "
 
+func _spawn_edit_mapping_window() -> void:
+	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
+
 func _update_line_look(_updated_mapping_data: MappingProperties) -> void:
 	_line.default_color = _determine_line_color()
 
