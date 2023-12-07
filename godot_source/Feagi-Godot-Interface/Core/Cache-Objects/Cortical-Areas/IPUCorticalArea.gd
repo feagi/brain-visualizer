@@ -1,13 +1,18 @@
 extends BaseCorticalArea
-class_name CustomCorticalArea
-## Also know as "Interconnect" Cortical Area
-
+class_name IPUCorticalArea
+## Cortical area for processing inputs
 
 #region Base Functionality
-func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, visiblity: bool = true):
+var channel_count: int:
+	get: return _channel_count
+
+var _channel_count: int
+
+func _init(ID: StringName, template: CorticalTemplate, new_channel_count: int, visiblity: bool = true):
 	_cortical_ID = ID
-	_name = cortical_name
-	_dimensions = cortical_dimensions
+	_name = template.cortical_name
+	_dimensions = template.calculate_IOPU_dimension(new_channel_count)
+	_channel_count = new_channel_count
 	_cortical_visiblity = visiblity
 
 ## Updates all cortical details in here from a dict from FEAGI
@@ -37,7 +42,7 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	return
 
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+	return BaseCorticalArea.CORTICAL_AREA_TYPE.IPU
 #end region
 
 #region Neuron Firing Parameters
