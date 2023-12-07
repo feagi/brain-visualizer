@@ -14,6 +14,7 @@ enum CORTICAL_AREA_TYPE {
 	INVALID
 }
 
+signal about_to_be_deleted(this_cortical_area: BaseCorticalArea)
 signal name_updated(cortical_name: StringName, this_cortical_area: BaseCorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: BaseCorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: BaseCorticalArea)
@@ -147,9 +148,12 @@ static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringNam
 func BV_position() -> Vector3:
 	return BaseCorticalArea.true_position_to_BV_position(coordinates_3D, dimensions)
 
-## Called from FEAGI when cortical area is being deleted
+## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	remove_all_connections()
+	about_to_be_deleted.emit(self)
+	# [CorticalAreasCache] then deletes this object
+
 
 # NOTE: This function applies all details, and may be expanded in other cortical types
 ## Updates all cortical details in here from a dict from FEAGI
