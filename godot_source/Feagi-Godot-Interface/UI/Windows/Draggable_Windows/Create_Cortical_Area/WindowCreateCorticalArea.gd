@@ -102,7 +102,8 @@ func _switch_UI_between_cortical_types(cortical_type: BaseCorticalArea.CORTICAL_
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			_holder_dropdown.visible = false
 			_holder_channel.visible = false
-			_field_dimensions.editable = true
+			_field_dimensions.editable = false
+			_field_dimensions.current_vector = Vector3i(1,1,1)
 			_field_cortical_name.editable = true
 			_field_cortical_name.placeholder_text = "Type Name Here"
 

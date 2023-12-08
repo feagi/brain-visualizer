@@ -220,7 +220,7 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		to_send["coordinates_2d"] = [null,null]
 	
 	if memory_type:
-		to_send["is_memory"] = true
+		to_send["sub_group_id"] = "MEMORY"
 		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 		
 

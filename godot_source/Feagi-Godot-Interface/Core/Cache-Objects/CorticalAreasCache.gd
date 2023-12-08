@@ -85,6 +85,9 @@ func add_cortical_area_from_dict(feagi_dictionary: Dictionary, override_cortical
 		# Some dictionary responses do not include the ID. This allows adding it if that is the case
 		feagi_dictionary["cortical_id"] = override_cortical_ID
 	var type: BaseCorticalArea.CORTICAL_AREA_TYPE = BaseCorticalArea.cortical_type_str_to_type(feagi_dictionary["cortical_group"])
+	var subtype: StringName = feagi_dictionary["cortical_sub_group"]
+	if type == BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and subtype == "MEMORY":
+		type = BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	var cortical_ID: StringName = feagi_dictionary["cortical_id"]
 	var name: StringName = feagi_dictionary["cortical_name"]
 	var visibility: bool = true
