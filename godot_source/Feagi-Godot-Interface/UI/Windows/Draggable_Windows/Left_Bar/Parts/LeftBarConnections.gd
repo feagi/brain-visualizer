@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarBottom
+class_name LeftBarConnections
 
 var _scroll_afferent: BaseScroll
 var _scroll_efferent: BaseScroll

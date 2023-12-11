@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ckkgl10utu0i8"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.gd" id="1_6m3vf"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarCorticalAreaMonitoring.gd" id="1_ofec4"]
 
 [node name="LeftBarPremium" type="VBoxContainer"]
 anchors_preset = 15
@@ -8,7 +8,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_6m3vf")
+script = ExtResource("1_ofec4")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2

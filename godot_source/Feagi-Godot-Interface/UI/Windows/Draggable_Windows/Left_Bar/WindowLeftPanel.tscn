@@ -1,15 +1,17 @@
-[gd_scene load_steps=12 format=3 uid="uid://5gbqaf1gqn30"]
+[gd_scene load_steps=14 format=3 uid="uid://5gbqaf1gqn30"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.gd" id="1_1jbcd"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_dxtt6"]
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_thls4"]
-[ext_resource type="PackedScene" uid="uid://x0wkgtc5o5vw" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.tscn" id="4_3w01f"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 [ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarCorticalParameters.tscn" id="5_n60qv"]
-[ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPremium.tscn" id="5_qeai5"]
-[ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottom.tscn" id="6_n2r01"]
+[ext_resource type="PackedScene" uid="uid://rvvhpq3y0on7" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarNeuronFiringParameters.tscn" id="6_psai5"]
+[ext_resource type="PackedScene" uid="uid://de7cguh4dnbxg" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarPostSynapticPotentialParameters.tscn" id="7_bvg8a"]
+[ext_resource type="PackedScene" uid="uid://dm68mg7exp1ca" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMemoryParameters.tscn" id="8_qkshc"]
+[ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarCorticalAreaMonitoring.tscn" id="9_0isg8"]
 [ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarDangerZone.tscn" id="9_6fg7f"]
+[ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarConnections.tscn" id="10_ss7g7"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8nka"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
@@ -38,35 +40,35 @@ section_text = &"Summary"
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
-prefab_to_spawn = ExtResource("4_3w01f")
+prefab_to_spawn = ExtResource("6_psai5")
 section_text = &"Details"
 
 [node name="Post_Synaptic_Potential" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
-prefab_to_spawn = ExtResource("4_3w01f")
+prefab_to_spawn = ExtResource("7_bvg8a")
 section_text = &"Details"
 
 [node name="Memory" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
-prefab_to_spawn = ExtResource("4_3w01f")
+prefab_to_spawn = ExtResource("8_qkshc")
 section_text = &"Details"
 
 [node name="Coritcal_Monitoring" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
-prefab_to_spawn = ExtResource("5_qeai5")
+prefab_to_spawn = ExtResource("9_0isg8")
 section_text = &"Cortical Area Monitoring"
 
 [node name="Connections" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
-prefab_to_spawn = ExtResource("6_n2r01")
+prefab_to_spawn = ExtResource("10_ss7g7")
 section_text = &"Connections"
 
 [node name="DangerZone" parent="Main_Body" instance=ExtResource("2_wrcar")]
