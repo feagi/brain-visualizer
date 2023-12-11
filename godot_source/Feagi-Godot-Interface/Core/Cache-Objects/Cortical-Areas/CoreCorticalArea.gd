@@ -47,15 +47,15 @@ func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
 
 #region Neuron Firing Parameters
 
-signal neuron_mp_charge_accumulation_updated(val: bool, this_cortical_area: CustomCorticalArea)
-signal neuron_leak_coefficient_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_leak_variability_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_refractory_period_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_consecutive_fire_count_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_snooze_period_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_fire_threshold_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_firing_threshold_limit_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal neuron_fire_threshold_increment_updated(val: Vector3, this_cortical_area: CustomCorticalArea)
+signal neuron_mp_charge_accumulation_updated(val: bool, this_cortical_area: CoreCorticalArea)
+signal neuron_leak_coefficient_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_leak_variability_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_refractory_period_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_consecutive_fire_count_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_snooze_period_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_fire_threshold_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_firing_threshold_limit_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_fire_threshold_increment_updated(val: Vector3, this_cortical_area: CoreCorticalArea)
 
 var neuron_mp_charge_accumulation: bool:
 	get:

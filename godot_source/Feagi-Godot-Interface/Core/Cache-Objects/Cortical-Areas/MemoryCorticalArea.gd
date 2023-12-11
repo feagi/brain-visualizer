@@ -34,9 +34,9 @@ func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 	return false
 
 #region Memory Parameters
-signal initial_neuron_lifespan_updated(val: bool, this_cortical_area: CustomCorticalArea)
-signal lifespan_growth_rate_updated(val: int, this_cortical_area: CustomCorticalArea)
-signal longterm_memory_threshold_updated(val: int, this_cortical_area: CustomCorticalArea)
+signal initial_neuron_lifespan_updated(val: bool, this_cortical_area: MemoryCorticalArea)
+signal lifespan_growth_rate_updated(val: int, this_cortical_area: MemoryCorticalArea)
+signal longterm_memory_threshold_updated(val: int, this_cortical_area: MemoryCorticalArea)
 
 var initial_neuron_lifespan: float:
 	get:
