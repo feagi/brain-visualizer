@@ -16,7 +16,7 @@ var _growing_cortical_update: Dictionary
 func _ready():
 	_line_initial_neuron_lifespan = $initial_neuron_lifespan/initial_neuron_lifespan
 	_line_lifespan_growth_rate = $lifespan_growth_rate/lifespan_growth_rate
-	_line_longterm_memory_threshold = $longterm_memory_threshold
+	_line_longterm_memory_threshold = $longterm_memory_threshold/longterm_memory_threshold
 	_update_button = $Update_Button
 	
 	_line_initial_neuron_lifespan.float_confirmed.connect(user_request_initial_neuron_lifespan)
