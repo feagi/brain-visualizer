@@ -43,16 +43,15 @@ func _ready():
 
 ## set initial values from FEAGI Cache
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
-	var details = cortical_reference.details
-	_Fire_Threshold.current_int = details.neuron_fire_threshold
-	_Threshold_Limit.current_int = details.neuron_firing_threshold_limit
-	_Refactory_Period.current_int = details.neuron_refractory_period
-	_Leak_Constant.current_int = details.neuron_leak_coefficient
-	_Leak_Varibility.current_int = details.neuron_leak_variability
-	_Consecutive_Fire_Count.current_int = details.neuron_consecutive_fire_count
-	_Snooze_Period.current_int = details.neuron_snooze_period
-	_Threshold_Inc.current_vector = details.neuron_fire_threshold_increment
-	_MP_Accumulation.set_pressed_no_signal(details.neuron_mp_charge_accumulation)
+	_Fire_Threshold.current_int = cortical_reference.neuron_fire_threshold
+	_Threshold_Limit.current_int = cortical_reference.neuron_firing_threshold_limit
+	_Refactory_Period.current_int = cortical_reference.neuron_refractory_period
+	_Leak_Constant.current_int = cortical_reference.neuron_leak_coefficient
+	_Leak_Varibility.current_int = cortical_reference.neuron_leak_variability
+	_Consecutive_Fire_Count.current_int = cortical_reference.neuron_consecutive_fire_count
+	_Snooze_Period.current_int = cortical_reference.neuron_snooze_period
+	_Threshold_Inc.current_vector = cortical_reference.neuron_fire_threshold_increment
+	_MP_Accumulation.set_pressed_no_signal(cortical_reference.neuron_mp_charge_accumulation)
 
 ## User pressed update button
 func _user_requests_update() -> void:

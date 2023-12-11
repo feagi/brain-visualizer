@@ -31,12 +31,11 @@ func _ready():
 
 ## set initial values from FEAGI Cache
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
-	var details = cortical_reference.details
-	_Post_Synaptic_Potential.current_float = details.neuron_post_synaptic_potential
-	_PSP_Max.current_float = details.neuron_post_synaptic_potential_max
-	_Degeneracy_Constant.current_int = details.neuron_degeneracy_coefficient
-	_PSP_Uniformity.set_pressed_no_signal(details.neuron_psp_uniform_distribution)
-	_MP_Driven_PSP.set_pressed_no_signal(details.neuron_mp_driven_psp)
+	_Post_Synaptic_Potential.current_float = cortical_reference.neuron_post_synaptic_potential
+	_PSP_Max.current_float = cortical_reference.neuron_post_synaptic_potential_max
+	_Degeneracy_Constant.current_int = cortical_reference.neuron_degeneracy_coefficient
+	_PSP_Uniformity.set_pressed_no_signal(cortical_reference.neuron_psp_uniform_distribution)
+	_MP_Driven_PSP.set_pressed_no_signal(cortical_reference.neuron_mp_driven_psp)
 
 
 ## User pressed update button
