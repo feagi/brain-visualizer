@@ -18,8 +18,6 @@ var section_toggles: Array[bool]:
 
 var _cortical_area_ref: BaseCorticalArea
 
-
-
 var collapsible_cortical: VerticalCollapsible
 var collapsible_neuron_firing: VerticalCollapsible
 var collapsible_post_synaptic_potential: VerticalCollapsible

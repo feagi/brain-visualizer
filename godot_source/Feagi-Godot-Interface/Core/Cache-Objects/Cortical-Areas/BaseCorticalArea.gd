@@ -263,7 +263,7 @@ func _set_cortical_neuron_per_vox_count(new_density: int) -> void:
 func _set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 	if new_attractivity == _cortical_synaptic_attractivity:
 		return
-	cortical_synaptic_attractivity = new_attractivity
+	_cortical_synaptic_attractivity = new_attractivity
 	cortical_synaptic_attractivity_updated.emit(new_attractivity, self)
 
 # The following functions are often overridden in child classes

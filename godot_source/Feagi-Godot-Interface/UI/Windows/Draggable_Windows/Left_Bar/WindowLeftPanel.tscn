@@ -43,19 +43,19 @@ start_open = false
 prefab_to_spawn = ExtResource("6_psai5")
 section_text = &"Neuron Firing Parameters"
 
-[node name="Post_Synaptic_Potential" parent="Main_Body" instance=ExtResource("2_wrcar")]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
-start_open = false
-prefab_to_spawn = ExtResource("7_bvg8a")
-section_text = &"Post Synaptic Potential parameters"
-
 [node name="Memory" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
 start_open = false
 prefab_to_spawn = ExtResource("8_qkshc")
 section_text = &"Memory"
+
+[node name="Post_Synaptic_Potential" parent="Main_Body" instance=ExtResource("2_wrcar")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_k8nka")
+start_open = false
+prefab_to_spawn = ExtResource("7_bvg8a")
+section_text = &"Post Synaptic Potential parameters"
 
 [node name="Coritcal_Monitoring" parent="Main_Body" instance=ExtResource("2_wrcar")]
 layout_mode = 2
@@ -89,8 +89,8 @@ automatic_setup_window_closing_for_window_manager_name = &"left_bar"
 
 [connection signal="resized" from="Main_Body/Cortical" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Neuron_Firing" to="Main_Body" method="recalculate_size"]
-[connection signal="resized" from="Main_Body/Post_Synaptic_Potential" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Memory" to="Main_Body" method="recalculate_size"]
+[connection signal="resized" from="Main_Body/Post_Synaptic_Potential" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Coritcal_Monitoring" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/Connections" to="Main_Body" method="recalculate_size"]
 [connection signal="resized" from="Main_Body/DangerZone" to="Main_Body" method="recalculate_size"]
