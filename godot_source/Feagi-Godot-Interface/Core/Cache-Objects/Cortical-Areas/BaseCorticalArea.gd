@@ -118,6 +118,14 @@ var user_can_edit_cortical_synaptic_attractivity: bool:
 	get:
 		return _user_can_edit_cortical_synaptic_attractivity()
 
+var has_neuron_firing_parameters: bool:
+	get: 
+		return _has_neuron_firing_parameters()
+
+var has_memory_parameters: bool:
+	get:
+		return _has_memory_parameters()
+
 # Private Properties
 var _cortical_ID: StringName
 var _name: StringName
@@ -278,6 +286,12 @@ func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
 
 func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 	return true
+
+func _has_neuron_firing_parameters() -> bool:
+	return false
+
+func _has_memory_parameters() -> bool:
+	return false
 
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
 #region Mapping

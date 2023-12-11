@@ -43,6 +43,9 @@ func _user_can_delete_area() -> bool:
 
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
 	return BaseCorticalArea.CORTICAL_AREA_TYPE.CORE
+
+func _has_neuron_firing_parameters() -> bool:
+	return true
 #end region
 
 #region Neuron Firing Parameters

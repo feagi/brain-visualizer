@@ -40,6 +40,9 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
 	return BaseCorticalArea.CORTICAL_AREA_TYPE.IPU
+
+func _has_neuron_firing_parameters() -> bool:
+	return true
 #end region
 
 #region Neuron Firing Parameters

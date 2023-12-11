@@ -33,6 +33,9 @@ func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
 func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 	return false
 
+func _has_memory_parameters() -> bool:
+	return true
+
 #region Memory Parameters
 signal initial_neuron_lifespan_updated(val: bool, this_cortical_area: MemoryCorticalArea)
 signal lifespan_growth_rate_updated(val: int, this_cortical_area: MemoryCorticalArea)
