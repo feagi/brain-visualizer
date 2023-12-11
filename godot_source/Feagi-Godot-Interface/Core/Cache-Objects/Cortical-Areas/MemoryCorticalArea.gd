@@ -14,12 +14,12 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		return
 	super(data)
 
-	if "initial_neuron_lifespan" in data.keys(): 
-		initial_neuron_lifespan = data["initial_neuron_lifespan"]
-	if "lifespan_growth_rate" in data.keys(): 
-		lifespan_growth_rate = data["lifespan_growth_rate"]
-	if "longterm_memory_threshold" in data.keys(): 
-		longterm_memory_threshold = data["longterm_memory_threshold"]
+	if "neuron_init_lifespan" in data.keys(): 
+		initial_neuron_lifespan = data["neuron_init_lifespan"]
+	if "neuron_lifespan_growth_rate" in data.keys(): 
+		lifespan_growth_rate = data["neuron_lifespan_growth_rate"]
+	if "neuron_longterm_mem_threshold" in data.keys(): 
+		longterm_memory_threshold = data["neuron_longterm_mem_threshold"]
 	return
 
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
