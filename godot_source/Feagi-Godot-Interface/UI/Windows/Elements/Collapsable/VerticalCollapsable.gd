@@ -24,7 +24,7 @@ const TRIANGLE_RIGHT_DISABLED: CompressedTexture2D = preload("res://Feagi-Godot-
 
 
 ## The actual node that is being toggled on and off
-var collapsing_node: Control:
+var collapsing_node: Variant:
 	get: return _collapsing_node
 
 var section_title: StringName:
@@ -44,7 +44,7 @@ var is_open: bool:
 var _is_open: bool
 var _collapsing_button_toggle: TextureButton_Element
 var _margin_container: MarginContainer
-var _collapsing_node: Control
+var _collapsing_node: Variant
 
 
 func setup(left_offset: int = leftward_offset):

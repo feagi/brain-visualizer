@@ -1,10 +1,10 @@
 [gd_scene load_steps=4 format=3 uid="uid://dm68mg7exp1ca"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMiddle.gd" id="1_4wd4h"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMemoryParameters.gd" id="1_dvgya"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_xx366"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_ij6sh"]
 
-[node name="LeftBarMiddle" type="VBoxContainer"]
+[node name="LeftBarMemoryParameters" type="VBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -14,7 +14,7 @@ offset_right = -860.5
 offset_bottom = -70.5
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_4wd4h")
+script = ExtResource("1_dvgya")
 
 [node name="initial_neuron_lifespan" type="HBoxContainer" parent="."]
 layout_mode = 2
