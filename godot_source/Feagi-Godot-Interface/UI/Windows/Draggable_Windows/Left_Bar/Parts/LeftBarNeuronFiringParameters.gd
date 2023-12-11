@@ -42,7 +42,7 @@ func _ready():
 
 
 ## set initial values from FEAGI Cache
-func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
+func display_cortical_properties(cortical_reference) -> void: #NOTE: Can't type input since we cannot define multiple potential input classes
 	_Fire_Threshold.current_int = cortical_reference.neuron_fire_threshold
 	_Threshold_Limit.current_int = cortical_reference.neuron_firing_threshold_limit
 	_Refactory_Period.current_int = cortical_reference.neuron_refractory_period
@@ -52,6 +52,16 @@ func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
 	_Snooze_Period.current_int = cortical_reference.neuron_snooze_period
 	_Threshold_Inc.current_vector = cortical_reference.neuron_fire_threshold_increment
 	_MP_Accumulation.set_pressed_no_signal(cortical_reference.neuron_mp_charge_accumulation)
+	
+	cortical_reference.neuron_fire_threshold_updated.connect(_feagi_update_Fire_Threshold)
+	cortical_reference.neuron_firing_threshold_limit_updated.connect(_feagi_update_Threshold_Limit)
+	cortical_reference.neuron_refractory_period_updated.connect(_feagi_update_refactory_period)
+	cortical_reference.neuron_leak_coefficient_updated.connect(_feagi_update_Leak_Constant)
+	cortical_reference.neuron_leak_variability_updated.connect(_feagi_update_Leak_Varibility)
+	cortical_reference.neuron_fire_threshold_increment_updated.connect(_feagi_update_Threshold_Inc)
+	cortical_reference.neuron_snooze_period_updated.connect(_feagi_update_Consecutive_Fire_Count)
+	cortical_reference.neuron_fire_threshold_updated.connect(_feagi_update_Snooze_Period)
+	cortical_reference.neuron_mp_charge_accumulation_updated.connect(_feagi_update_MP_Accumumulation)
 
 ## User pressed update button
 func _user_requests_update() -> void:
@@ -87,6 +97,36 @@ func user_request_Snooze_Period(value: int) -> void:
 
 func user_request_MP_Accumumulation(value: bool) -> void:
 	_growing_cortical_update["neuron_mp_charge_accumulation"] = value
+
+
+
+
+func _feagi_update_Fire_Threshold(value: int, _cortical_ref) -> void:
+	_Fire_Threshold.current_int = value
+
+func _feagi_update_Threshold_Limit(value: int, _cortical_ref) -> void:
+	_Threshold_Limit.current_int = value
+
+func _feagi_update_refactory_period(value: int, _cortical_ref) -> void:
+	_Refactory_Period.current_int  = value
+
+func _feagi_update_Leak_Constant(value: int, _cortical_ref) -> void:
+	_Leak_Constant.current_int = value
+
+func _feagi_update_Leak_Varibility(value: int, _cortical_ref) -> void:
+	_Leak_Varibility.current_int = value
+
+func _feagi_update_Threshold_Inc(value: Vector3, _cortical_ref) -> void:
+	_Consecutive_Fire_Count.current_vector = FEAGIUtils.vector3_to_array(value)
+
+func _feagi_update_Consecutive_Fire_Count(value: int, _cortical_ref) -> void:
+	_Consecutive_Fire_Count.current_int = value
+
+func _feagi_update_Snooze_Period(value: int, _cortical_ref) -> void:
+	_Snooze_Period.current_int = value
+
+func _feagi_update_MP_Accumumulation(value: bool, _cortical_ref) -> void:
+	_MP_Accumulation.button_pressed = value
 
 # Connected via TSCN to editable textboxes
 func _enable_update_button():
