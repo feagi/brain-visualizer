@@ -84,6 +84,7 @@ func setup_single_area_from_FEAGI(cortical_area_reference: BaseCorticalArea) -> 
 	
 	if cortical_area_reference.has_neuron_firing_parameters:
 		section_neuron_firing.display_cortical_properties(cortical_area_reference)
+		
 	else:
 		collapsible_neuron_firing.visible = false
 	
@@ -94,7 +95,7 @@ func setup_single_area_from_FEAGI(cortical_area_reference: BaseCorticalArea) -> 
 	
 
 	# Odds are we don't have the latest data from FEAGI, lets call in a refresh
-	#FeagiRequests.refresh_cortical_area(cortical_area_reference)
+	FeagiRequests.refresh_cortical_area(cortical_area_reference)
 
 ## OVERRIDDEN from Window manager, to save previous position and collapsible states
 func save_to_memory() -> Dictionary:
