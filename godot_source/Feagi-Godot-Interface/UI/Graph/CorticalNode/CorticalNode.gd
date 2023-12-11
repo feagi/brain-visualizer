@@ -156,6 +156,8 @@ func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> vo
 			style_box.bg_color = CUSTOM_BOX_COLOR
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			style_box.bg_color = OPU_BOX_COLOR
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CORE:
+			pass #TODO Define an actual color here at some point!
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			#TODO

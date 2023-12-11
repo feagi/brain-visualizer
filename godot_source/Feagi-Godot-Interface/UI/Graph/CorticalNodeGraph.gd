@@ -1,7 +1,7 @@
 extends GraphEdit
 class_name CorticalNodeGraph
 
-const NODE_SIZE: Vector2i = Vector2i(175, 86)
+const NODE_SIZE: Vector2i = Vector2i(300, 100) ## Controls spacing betweeen nodes on intiial load
 
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
