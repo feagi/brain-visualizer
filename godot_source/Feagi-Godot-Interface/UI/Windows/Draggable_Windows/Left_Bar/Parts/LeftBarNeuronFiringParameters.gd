@@ -126,7 +126,7 @@ func _feagi_update_Snooze_Period(value: int, _cortical_ref) -> void:
 	_Snooze_Period.current_int = value
 
 func _feagi_update_MP_Accumumulation(value: bool, _cortical_ref) -> void:
-	_MP_Accumulation.button_pressed = value
+	_MP_Accumulation.set_pressed_no_signal(value)
 
 # Connected via TSCN to editable textboxes
 func _enable_update_button():
