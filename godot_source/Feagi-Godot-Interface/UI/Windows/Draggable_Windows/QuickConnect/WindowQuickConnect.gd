@@ -35,8 +35,8 @@ var _step4_button: TextButton_Element
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false
 
-var _source: CorticalArea = null
-var _destination: CorticalArea = null
+var _source: BaseCorticalArea = null
+var _destination: BaseCorticalArea = null
 var _selected_morphology: Morphology = null
 
 func _ready() -> void:
@@ -63,7 +63,7 @@ func _ready() -> void:
 	_step3_panel.add_theme_stylebox_override("panel", style_incomplete)
 	current_state = POSSIBLE_STATES.SOURCE
 
-func on_user_select_cortical_area(cortial_area: CorticalArea) -> void:
+func on_user_select_cortical_area(cortial_area: BaseCorticalArea) -> void:
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:
 			_set_source(cortial_area)
@@ -129,7 +129,7 @@ func _setting_morphology() -> void:
 	_step3_panel.add_theme_stylebox_override("panel", style_waiting)
 	
 
-func _set_source(cortical_area: CorticalArea) -> void:
+func _set_source(cortical_area: BaseCorticalArea) -> void:
 	_source = cortical_area
 	_step1_label.text = "Selected Source Area: [" + cortical_area.name + "]"
 	_step1_panel.add_theme_stylebox_override("panel", style_complete)
@@ -140,7 +140,7 @@ func _set_source(cortical_area: CorticalArea) -> void:
 		current_state = POSSIBLE_STATES.IDLE
 
 
-func _set_destination(cortical_area: CorticalArea) -> void:
+func _set_destination(cortical_area: BaseCorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = "Selected Destination Area: [" + cortical_area.name + "]"
 	_step2_panel.add_theme_stylebox_override("panel", style_complete)

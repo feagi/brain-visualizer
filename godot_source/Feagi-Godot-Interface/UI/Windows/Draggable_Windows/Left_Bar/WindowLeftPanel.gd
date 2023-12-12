@@ -7,71 +7,91 @@ const NUM_SECTIONS: int = 5
 
 var section_toggles: Array[bool]:
 	get:
-		var output: Array[bool] = [_top_collapsible.is_open, _middle_collapsible.is_open, _premium_collapsible.is_open, _bottom_collapsible.is_open, _danger_zone_collapsible.is_open]
+		var output: Array[bool] = []
 		return output
 	set(v):
 		
 		if len(v) != NUM_SECTIONS:
 			push_warning("Left Bar section_toggles must be %d long!" % NUM_SECTIONS)
 			return
-		_top_collapsible.is_open = v[0]
-		_middle_collapsible.is_open = v[1]
-		_premium_collapsible.is_open = v[2]
-		_bottom_collapsible.is_open = v[3]
-		_danger_zone_collapsible.is_open = v[4]
 
-var _cortical_area_ref: CorticalArea
 
-var _top_collapsible: VerticalCollapsible
-var _middle_collapsible: VerticalCollapsible
-var _premium_collapsible: VerticalCollapsible
-var _bottom_collapsible: VerticalCollapsible
-var _danger_zone_collapsible: VerticalCollapsible
+var _cortical_area_ref: BaseCorticalArea
 
-var _top_section # cannot define type due to godot bug
-var _middle_section
-var _premium_section
-var _bottom_section
-var _danger_zone_section
+var collapsible_cortical: VerticalCollapsible
+var collapsible_neuron_firing: VerticalCollapsible
+var collapsible_post_synaptic_potential: VerticalCollapsible
+var collapsible_memory: VerticalCollapsible
+var collapsible_cortical_monitoring: VerticalCollapsible
+var collapsible_connections: VerticalCollapsible
+var collapsible_dangerzone: VerticalCollapsible
+
+var section_cortical: LeftBarCorticalParameters
+var section_neuron_firing: LeftBarNeuronFiringParameters
+var section_post_synaptic_potential: LeftBarPostSynapticPotentialParameters
+var section_memory: LeftBarMemoryParameters
+var section_cortical_monitoring: LeftBarCorticalAreaMonitoring
+var section_connections: LeftBarConnections
+var section_dangerzone: LeftBarDangerZone
 
 func _ready():
 	super._ready()
-	_top_collapsible = $Main_Body/Top_Section
-	_middle_collapsible = $Main_Body/Middle_Section
-	_premium_collapsible = $Main_Body/Premium_Section
-	_bottom_collapsible = $Main_Body/Bottom_Section
-	_danger_zone_collapsible = $Main_Body/DangerZone_Section
-	_top_collapsible.setup()
-	_middle_collapsible.setup()
-	_premium_collapsible.setup()
-	_bottom_collapsible.setup()
-	_danger_zone_collapsible.setup()
-	if !(VisConfig.is_premium):
-		_premium_collapsible.section_title = "(PREMIUM) Cortical Area Monitoring"
+	collapsible_cortical = $Main_Body/Cortical
+	collapsible_neuron_firing = $Main_Body/Neuron_Firing
+	collapsible_post_synaptic_potential = $Main_Body/Post_Synaptic_Potential
+	collapsible_memory = $Main_Body/Memory
+	collapsible_cortical_monitoring = $Main_Body/Coritcal_Monitoring
+	collapsible_connections = $Main_Body/Connections
+	collapsible_dangerzone = $Main_Body/DangerZone
 	
-	_top_section = _top_collapsible.collapsing_node
-	_middle_section = _middle_collapsible.collapsing_node
-	_premium_section = _premium_collapsible.collapsing_node
-	_bottom_section = _bottom_collapsible.collapsing_node
-	_danger_zone_section = _danger_zone_collapsible.collapsing_node
-	_top_section.user_requested_update.connect(_user_requested_update)
-	_middle_section.user_requested_update.connect(_user_requested_update)
+	collapsible_cortical.setup()
+	collapsible_neuron_firing.setup()
+	collapsible_post_synaptic_potential.setup()
+	collapsible_memory.setup()
+	collapsible_cortical_monitoring.setup()
+	collapsible_connections.setup()
+	collapsible_dangerzone.setup()
+	
+	section_cortical = collapsible_cortical.collapsing_node
+	section_neuron_firing = collapsible_neuron_firing.collapsing_node
+	section_post_synaptic_potential = collapsible_post_synaptic_potential.collapsing_node
+	section_memory = collapsible_memory.collapsing_node
+	section_cortical_monitoring = collapsible_cortical_monitoring.collapsing_node
+	section_connections = collapsible_connections.collapsing_node
+	section_dangerzone = collapsible_dangerzone.collapsing_node
+	
+	section_cortical.user_requested_update.connect(_user_requested_update)
+	section_neuron_firing.user_requested_update.connect(_user_requested_update)
+	section_post_synaptic_potential.user_requested_update.connect(_user_requested_update)
+	section_memory.user_requested_update.connect(_user_requested_update)
+	
 	FeagiCacheEvents.cortical_area_removed.connect(_FEAGI_deleted_cortical_area)
+	if !(VisConfig.is_premium):
+		collapsible_cortical_monitoring.section_title = "(PREMIUM) Cortical Area Monitoring"
 
 ## Load in initial values of the cortical area from Cache
-func setup_from_FEAGI(cortical_area_reference: CorticalArea) -> void:
+func setup_single_area_from_FEAGI(cortical_area_reference: BaseCorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
 	print("loading Left Pane Window for cortical area " + cortical_area_reference.cortical_ID)
-	_cortical_area_ref.dimensions_updated.connect(_top_section.FEAGI_set_cortical_dimension)
-	_cortical_area_ref.coordinates_3D_updated.connect(_top_section.FEAGI_set_cortical_position)
-	_cortical_area_ref.name_updated.connect(_top_section.FEAGI_set_cortical_name)
-	_cortical_area_ref.details_updated.connect(_middle_section.FEAGI_set_properties)
-	_top_section.initial_values_from_FEAGI(cortical_area_reference)
-	_top_section.top_panel = self
-	_middle_section.initial_values_from_FEAGI(cortical_area_reference)
-	_premium_section.initial_values_from_FEAGI(cortical_area_reference)
-	_bottom_section.initial_values_from_FEAGI(cortical_area_reference)
-	_danger_zone_section.initial_values_from_FEAGI(cortical_area_reference)
+
+	section_cortical.display_cortical_properties(cortical_area_reference)
+	section_post_synaptic_potential.display_cortical_properties(cortical_area_reference)
+	section_cortical_monitoring.display_cortical_properties(cortical_area_reference)
+	section_connections.initial_values_from_FEAGI(cortical_area_reference)
+	section_dangerzone.initial_values_from_FEAGI(cortical_area_reference)
+	
+	if cortical_area_reference.has_neuron_firing_parameters:
+		section_neuron_firing.display_cortical_properties(cortical_area_reference)
+		
+	else:
+		collapsible_neuron_firing.visible = false
+	
+	if cortical_area_reference.has_memory_parameters:
+		section_memory.display_cortical_properties(cortical_area_reference)
+	else:
+		collapsible_memory.visible = false
+	
+
 	# Odds are we don't have the latest data from FEAGI, lets call in a refresh
 	FeagiRequests.refresh_cortical_area(cortical_area_reference)
 
@@ -92,7 +112,7 @@ func load_from_memory(previous_data: Dictionary) -> void:
 func _user_requested_update(changed_values: Dictionary) -> void:
 	FeagiRequests.set_cortical_area_properties(_cortical_area_ref.cortical_ID, changed_values)
 
-func _FEAGI_deleted_cortical_area(removed_cortical_area: CorticalArea):
+func _FEAGI_deleted_cortical_area(removed_cortical_area: BaseCorticalArea):
 	# confirm this is the cortical area removed
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
 		close_window("left_bar")

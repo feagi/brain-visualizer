@@ -41,6 +41,8 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 	# Button Positioning
 	_source_node.connection_positions_changed.connect(_update_position)
 	_destination_node.connection_positions_changed.connect(_update_position)
+	_source_terminal.get_port_reference().draw.connect(_update_position)
+	_destination_terminal.get_port_reference().draw.connect(_update_position)
 	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
 	_update_position()
 
@@ -63,7 +65,7 @@ func _button_pressed() -> void:
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
 
 ## Update position of the box and line if either [CorticalNode] moves
-func _update_position() -> void:
+func _update_position(_irrelevant = null) -> void:
 	var left: Vector2 = _source_terminal.get_output_location()
 	var right: Vector2 = _destination_terminal.get_input_location()
 	position_offset = (left + right - (size / 2.0)) / 2.0
@@ -83,6 +85,9 @@ func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
 
 func _update_mapping_counter(number_of_mappings: int):
 	_button.text = " " + str(number_of_mappings) + " "
+
+func _spawn_edit_mapping_window() -> void:
+	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
 
 func _update_line_look(_updated_mapping_data: MappingProperties) -> void:
 	_line.default_color = _determine_line_color()

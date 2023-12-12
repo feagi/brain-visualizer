@@ -1,7 +1,7 @@
 extends GraphEdit
 class_name CorticalNodeGraph
 
-const NODE_SIZE: Vector2i = Vector2i(175, 86)
+const NODE_SIZE: Vector2i = Vector2i(300, 100) ## Controls spacing betweeen nodes on intiial load
 
 ## All cortical nodes on CB, key'd by their ID
 var cortical_nodes: Dictionary = {}
@@ -30,7 +30,7 @@ func _ready():
 
 
 ## Spawns a cortical Node, should only be called via FEAGI
-func feagi_spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNode:
+func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()
 	var offset: Vector2
 	if cortical_area.is_coordinates_2D_available:
@@ -50,7 +50,7 @@ func feagi_spawn_single_cortical_node(cortical_area: CorticalArea) -> CorticalNo
 	return cortical_node
 
 ## Deletes a cortical Node, should only be called via FEAGI
-func feagi_deleted_single_cortical_node(cortical_area: CorticalArea) -> void:
+func feagi_deleted_single_cortical_node(cortical_area: BaseCorticalArea) -> void:
 	if cortical_area.cortical_ID not in cortical_nodes.keys():
 		push_error("GRAPH: Attempted to remove non-existant cortex node " + cortical_area.cortical_ID + "! Skipping...")
 	var node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]

@@ -3,8 +3,8 @@ class_name LeftBarBottomMappingPrefab
 
 var _ID_Button: TextButton_Element
 var _Delete_Button: TextureButton_Element
-var _source_area: CorticalArea
-var _destination_area: CorticalArea
+var _source_area: BaseCorticalArea
+var _destination_area: BaseCorticalArea
 var _left_window_ref: Node
 
 func _ready():
@@ -39,7 +39,7 @@ func _user_pressed_edit_button():
 	print("Left Bar is requesting Cortical Connection Editing")
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_area, _destination_area)
 
-func _cortical_name_changed(new_name: StringName, _cortical_area: CorticalArea) -> void:
+func _cortical_name_changed(new_name: StringName, _cortical_area: BaseCorticalArea) -> void:
 	_ID_Button.text = new_name
 
 func _mapping_changed(mapping: MappingProperties) -> void:

@@ -10,26 +10,26 @@ enum SIGNAL_TYPE{
 
 signal mappings_changed(self_mappings: MappingProperties)
 
-var source_cortical_area: CorticalArea:
+var source_cortical_area: BaseCorticalArea:
 	get: return _src_cortical
-var destination_cortical_area: CorticalArea:
+var destination_cortical_area: BaseCorticalArea:
 	get: return _dst_cortical
 var mappings: Array[MappingProperty]:
 	get: return _mappings
 var number_mappings: int:
 	get: return len(_mappings)
 
-var _src_cortical: CorticalArea
-var _dst_cortical: CorticalArea
+var _src_cortical: BaseCorticalArea
+var _dst_cortical: BaseCorticalArea
 var _mappings: Array[MappingProperty]
 
-func _init(source_area: CorticalArea, destination_area: CorticalArea, mappings_between_them: Array[MappingProperty]) -> void:
+func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings_between_them: Array[MappingProperty]) -> void:
 	_src_cortical = source_area
 	_dst_cortical = destination_area
 	_mappings = mappings_between_them
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
-static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
 	var new_mappings: Array[MappingProperty] = []
 	for raw_mappings in mapping_properties_from_FEAGI:
 		if raw_mappings["morphology_id"] not in FeagiCache.morphology_cache.available_morphologies.keys():
@@ -39,12 +39,12 @@ static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, 
 	return MappingProperties.new(source_area, destination_area, new_mappings)
 
 ## Creates an empty mapping between a source and destination cortical area
-static func create_empty_mapping(source_area: CorticalArea, destination_area: CorticalArea) -> MappingProperties:
+static func create_empty_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
 	var empty_typed_array: Array[MappingProperty] = [] # Because the array type casting in godot is still stupid. Too Bad!
 	return MappingProperties.new(source_area, destination_area, empty_typed_array)
 
 ## Creates a default mapping object given a source, destination, and morphology to use. Default settings will be used
-static func create_default_mapping(source_area: CorticalArea, destination_area: CorticalArea, morphology_to_use: Morphology) -> MappingProperties:
+static func create_default_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology_to_use: Morphology) -> MappingProperties:
 	var default_mapping: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology_to_use)]
 	return MappingProperties.new(source_area, destination_area, default_mapping)
 

@@ -19,8 +19,8 @@ func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irr
 ## returns a dict of the mapping of cortical areas
 func GET_GE_corticalMap_detailed(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var cortical_map: Dictionary = _body_to_dictionary(response_body)
-	var source_area: CorticalArea
-	var destination_area: CorticalArea
+	var source_area: BaseCorticalArea
+	var destination_area: BaseCorticalArea
 	var raw_mappings: Array[Dictionary] = []
 	
 	for source_cortical_ID: StringName in cortical_map.keys():
@@ -81,8 +81,8 @@ func GET_GE_mappingProperties(_response_code: int, response_body: PackedByteArra
 		# This is INCREDIBLY unlikely, but the cortical area referenced by the mapping was deleted right before we got this response back
 		push_error("UI: WINDOW: Retrieved cortical mapping refers to a cortical area no longer in the cache! Skipping!")
 		return
-	var source_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[0]]
-	var destination_area: CorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]
+	var source_area: BaseCorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[0]]
+	var destination_area: BaseCorticalArea =  FeagiCache.cortical_areas_cache.cortical_areas[source_destination_ID_str[1]]
 	var properties: Array[MappingProperty] = []
 	if _response_code == 404:
 		# Feagi does this when it cannot find a mapping
@@ -233,24 +233,9 @@ func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteAr
 		push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
 		return
 	
+	FeagiCache.cortical_areas_cache.add_cortical_area_from_dict(other_properties, cortical_ID_raw["cortical_id"])
+	
 	VisConfig.UI_manager.make_notification("Cortical Area Created!")
-	
-	var is_2D_coordinates_defined: bool = false
-	var coordinates_2D: Vector2 = Vector2(0,0)
-	
-	if "coordinates_2d" in other_properties.keys():
-		is_2D_coordinates_defined = true
-		coordinates_2D = other_properties["coordinates_2d"]
-	
-	FeagiCache.cortical_areas_cache.add_cortical_area(
-		cortical_ID_raw["cortical_id"],
-		other_properties["cortical_name"],
-		other_properties["coordinates_3d"]	,
-		other_properties["cortical_dimensions"],
-		is_2D_coordinates_defined,
-		coordinates_2D,
-		CorticalArea.CORTICAL_AREA_TYPE.CUSTOM
-	)
 
 func POST_FE_burstEngine(_response_code: int, _response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	# no real error handling from FEAGI right now, so we cannot do anything here
@@ -294,11 +279,11 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	if _response_code == 422:
 		push_error("Unable to process new mappings! Skipping!")
 		return
-	var cortical_src: CorticalArea = src_dst_data["src"]
-	var cortical_dst: CorticalArea = src_dst_data["dst"]
+	var cortical_src: BaseCorticalArea = src_dst_data["src"]
+	var cortical_dst: BaseCorticalArea = src_dst_data["dst"]
 	print("FEAGI sucessfully updated the mapping between %s and %s" % [cortical_src.cortical_ID, cortical_dst.cortical_ID])
 	var mappings: Array[MappingProperty] = []
-	var dict_arr: Array[Dictionary]
+	var dict_arr: Array[Dictionary] = []
 	dict_arr.assign(src_dst_data["mapping_data_raw"])
 	mappings.assign(MappingProperty.from_array_of_dict(dict_arr))
 	cortical_src.set_mappings_to_efferent_area(cortical_dst, mappings)

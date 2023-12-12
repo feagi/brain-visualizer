@@ -14,3 +14,5 @@ antialiased = true
 [node name="Button" type="Button" parent="."]
 layout_mode = 2
 text = "0"
+
+[connection signal="pressed" from="Button" to="." method="_spawn_edit_mapping_window"]

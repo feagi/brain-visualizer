@@ -2,7 +2,7 @@ extends DraggableWindow
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
-var source_area: CorticalArea:
+var source_area: BaseCorticalArea:
 	get: return _source_area
 	set(v):
 		# break any previous connection first
@@ -12,14 +12,14 @@ var source_area: CorticalArea:
 		_source_area.efferent_mapping_edited.connect(_mappings_updated)
 		_request_mappings_from_feagi()
 
-var destination_area: CorticalArea:
+var destination_area: BaseCorticalArea:
 	get: return _destination_area
 	set(v):
 		_destination_area = v
 		_request_mappings_from_feagi()
 
-var _source_area: CorticalArea
-var _destination_area: CorticalArea
+var _source_area: BaseCorticalArea
+var _destination_area: BaseCorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
 var _mapping_details: WindowMappingDetails
@@ -31,8 +31,8 @@ func _ready() -> void:
 	_mapping_details = $BoxContainer/Mapping_Details
 
 
-func setup(cortical_source: CorticalArea = null, cortical_destination: CorticalArea = null):
-	var all_cortical_areas: Array[CorticalArea] = []
+func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null):
+	var all_cortical_areas: Array[BaseCorticalArea] = []
 	all_cortical_areas.assign(FeagiCache.cortical_areas_cache.cortical_areas.values())
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
@@ -77,8 +77,8 @@ func _are_cortical_areas_valid() -> bool:
 	if _source_area == null or _destination_area == null:
 		return false
 	return true
-func _source_changed(new_source: CorticalArea) -> void:
+func _source_changed(new_source: BaseCorticalArea) -> void:
 	source_area = new_source
 
-func _destination_changed(new_destination: CorticalArea) -> void:
+func _destination_changed(new_destination: BaseCorticalArea) -> void:
 	destination_area = new_destination
