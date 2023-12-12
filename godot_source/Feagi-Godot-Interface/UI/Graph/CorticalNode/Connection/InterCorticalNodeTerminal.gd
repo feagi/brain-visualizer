@@ -2,13 +2,15 @@ extends HBoxContainer
 class_name InterCorticalNodeTerminal
 ## Terminal below cortical area that is specific for a specific connection
 
+const TEX_PLASTIC: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port-plastic.png")
+const TEX_INPLASTIC: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port-non-plastic.png")
+
 signal terminal_moved()
 
 enum TYPE {
 	INPUT,
 	OUTPUT
 }
-
 
 var terminal_type: TYPE:
 	get: return _terminal_type
