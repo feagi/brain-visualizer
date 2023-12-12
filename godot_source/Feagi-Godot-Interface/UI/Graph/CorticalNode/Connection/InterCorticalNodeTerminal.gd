@@ -66,6 +66,7 @@ func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE, is_plastic: b
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			push_error("UI: GRAPH: Unknown Terminal Type")
 
+## Set port icon by elastic property. Called from [InterCorticalConnection]
 func set_port_elastic(is_plastic: bool) -> void:
 		match _terminal_type:
 			TYPE.INPUT:
@@ -78,18 +79,19 @@ func set_port_elastic(is_plastic: bool) -> void:
 					_output_point.texture = TEX_PLASTIC
 				else:
 					_output_point.texture = TEX_INPLASTIC
-				
 
-
+## Get reference to child [TerminalPortTexture]
 func get_port_reference() -> TerminalPortTexture:
 	if _terminal_type == TYPE.INPUT:
 		return _input_point
 	else:
 		return _output_point
 
+## Get center point of the input terminal
 func get_input_location() -> Vector2:
 	return Vector2(_parent_node.position_offset) + Vector2(position) + Vector2(_input_point.position) + (_input_point.size / 2.0)
 
+## Get center point of the output terminal
 func get_output_location() -> Vector2:
 	return Vector2(_parent_node.position_offset) + Vector2(position) + Vector2(_output_point.position) + (_output_point.size / 2.0)
 

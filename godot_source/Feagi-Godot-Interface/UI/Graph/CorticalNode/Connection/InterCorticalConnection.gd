@@ -53,7 +53,7 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 	# Labeling
 	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
 
-
+## To delete the connection UI side
 func destroy_self() -> void:
 	_source_terminal.queue_free()
 	_destination_terminal.queue_free()
@@ -71,7 +71,6 @@ func _update_position(_irrelevant = null) -> void:
 	position_offset = (left + right - (size / 2.0)) / 2.0
 	_update_line_positions(left, right)
 
-# TODO replace with curves
 func _update_line_positions(start_point: Vector2, end_point: Vector2) -> void:
 	_line.points = _generate_cubic_bezier_points(start_point - position_offset, end_point - position_offset)
 
