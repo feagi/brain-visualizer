@@ -74,11 +74,11 @@ func FEAGI_create_mapping_from_efferent(mapping_properties: MappingProperties) -
 			return
 		_spawn_new_internode_mapping(mapping_properties)
 
-func spawn_afferent_terminal(source: BaseCorticalArea) -> InterCorticalNodeTerminal:
+func spawn_afferent_terminal(mapping_properties: MappingProperties) -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(source, InterCorticalNodeTerminal.TYPE.INPUT)
+	terminal.setup(mapping_properties.source_cortical_area, InterCorticalNodeTerminal.TYPE.INPUT, mapping_properties.is_any_mapping_plastic())
 	connection_positions_changed.emit()
 	return terminal
 
@@ -99,8 +99,8 @@ func _spawn_new_internode_mapping(mapping_properties: MappingProperties) -> void
 
 	# spawn terminals
 	var afferent_node: CorticalNode = _graph.cortical_nodes[mapping_properties.destination_cortical_area.cortical_ID]
-	var afferent_terminal: InterCorticalNodeTerminal = afferent_node.spawn_afferent_terminal(mapping_properties.source_cortical_area)
-	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal(mapping_properties.destination_cortical_area) 
+	var afferent_terminal: InterCorticalNodeTerminal = afferent_node.spawn_afferent_terminal(mapping_properties)
+	var efferent_terminal: InterCorticalNodeTerminal = _spawn_efferent_terminal(mapping_properties) 
 	
 	# spawn line and mapping button
 	var connection: InterCorticalConnection = INTERCORTICAL_CONNECTION_PREFAB.instantiate()
@@ -118,11 +118,11 @@ func _get_starting_efferent_index() -> int:
 	return cortical_area_ref.num_afferent_connections + _get_starting_afferent_index()
 
 ## Spawns an efferent terminal for a cortical area (but does not make the connection line itself)
-func _spawn_efferent_terminal(destination_cortical_area: BaseCorticalArea) -> InterCorticalNodeTerminal:
+func _spawn_efferent_terminal(mapping_properties: MappingProperties) -> InterCorticalNodeTerminal:
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT)
+	terminal.setup(mapping_properties.destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT, mapping_properties.is_any_mapping_plastic())
 	connection_positions_changed.emit()
 	return terminal
 

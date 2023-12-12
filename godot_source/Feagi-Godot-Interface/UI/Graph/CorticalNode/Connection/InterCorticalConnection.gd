@@ -80,6 +80,8 @@ func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
 	if _updated_mapping_data.number_mappings == 0:
 		destroy_self()
 		return
+	_source_terminal.set_port_elastic(_updated_mapping_data.is_any_mapping_plastic())
+	_destination_terminal.set_port_elastic(_updated_mapping_data.is_any_mapping_plastic())
 	_update_mapping_counter(_mapping_properties.number_mappings)
 	_update_line_look(_updated_mapping_data)
 

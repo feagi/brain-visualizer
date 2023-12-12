@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://bnmchhiw734os"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.gd" id="1_nf13s"]
-[ext_resource type="Texture2D" uid="uid://bqlfr4fu35bis" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="2_1jsdg"]
+[ext_resource type="Texture2D" uid="uid://bfv54vjpa7gco" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port.png" id="2_h1v3v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/TerminalPortTexture.gd" id="3_1xt86"]
 
 [node name="InterCorticalNodeTerminal" type="HBoxContainer"]
@@ -18,8 +18,8 @@ custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_horizontal = 5
 size_flags_vertical = 5
-texture = ExtResource("2_1jsdg")
-expand_mode = 1
+texture = ExtResource("2_h1v3v")
+expand_mode = 3
 script = ExtResource("3_1xt86")
 
 [node name="Label" type="Button" parent="."]
@@ -33,8 +33,8 @@ custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_horizontal = 5
 size_flags_vertical = 5
-texture = ExtResource("2_1jsdg")
-expand_mode = 1
+texture = ExtResource("2_h1v3v")
+expand_mode = 3
 script = ExtResource("3_1xt86")
 
 [node name="g2" type="Control" parent="."]
