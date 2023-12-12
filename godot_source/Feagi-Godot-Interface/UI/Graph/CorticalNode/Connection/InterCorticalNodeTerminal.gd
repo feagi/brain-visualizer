@@ -42,7 +42,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
 		terminal_moved.emit()
 
-func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE) -> void:
+func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE, is_plastic: bool) -> void:
 	_parent_node = get_parent()
 	_connected_area = connecting_area
 	_terminal_type = type_terminal
@@ -50,6 +50,7 @@ func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE) -> void:
 	_cortical_label.text = _connected_area.name
 	name = _connected_area.cortical_ID
 	_connected_area.name_updated.connect(_cortical_name_update)
+	set_port_elastic(is_plastic)
 	match type_terminal:
 		TYPE.INPUT:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -64,6 +65,21 @@ func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE) -> void:
 		_:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			push_error("UI: GRAPH: Unknown Terminal Type")
+
+func set_port_elastic(is_plastic: bool) -> void:
+		match _terminal_type:
+			TYPE.INPUT:
+				if is_plastic:
+					_input_point.texture = TEX_PLASTIC
+				else:
+					_input_point.texture = TEX_INPLASTIC
+			TYPE.OUTPUT:
+				if is_plastic:
+					_output_point.texture = TEX_PLASTIC
+				else:
+					_output_point.texture = TEX_INPLASTIC
+				
+
 
 func get_port_reference() -> TerminalPortTexture:
 	if _terminal_type == TYPE.INPUT:

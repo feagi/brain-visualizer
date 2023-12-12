@@ -78,7 +78,7 @@ func spawn_afferent_terminal(mapping_properties: MappingProperties) -> InterCort
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(mapping_properties.source_cortical_area, InterCorticalNodeTerminal.TYPE.INPUT)
+	terminal.setup(mapping_properties.source_cortical_area, InterCorticalNodeTerminal.TYPE.INPUT, mapping_properties.is_any_mapping_plastic())
 	connection_positions_changed.emit()
 	return terminal
 
@@ -122,7 +122,7 @@ func _spawn_efferent_terminal(mapping_properties: MappingProperties) -> InterCor
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(mapping_properties.destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT)
+	terminal.setup(mapping_properties.destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT, mapping_properties.is_any_mapping_plastic())
 	connection_positions_changed.emit()
 	return terminal
 
