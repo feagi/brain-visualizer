@@ -60,6 +60,8 @@ func _ready():
 	section_connections = collapsible_connections.collapsing_node
 	section_dangerzone = collapsible_dangerzone.collapsing_node
 	
+	section_cortical.top_panel = self
+	
 	section_cortical.user_requested_update.connect(_user_requested_update)
 	section_neuron_firing.user_requested_update.connect(_user_requested_update)
 	section_post_synaptic_potential.user_requested_update.connect(_user_requested_update)
