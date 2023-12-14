@@ -279,7 +279,6 @@ func _user_can_edit_name() -> bool:
 
 func _user_can_delete_area() -> bool:
 	return true
-#endregion
 
 func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
 	return true
@@ -292,9 +291,23 @@ func _has_neuron_firing_parameters() -> bool:
 
 func _has_memory_parameters() -> bool:
 	return false
+#endregion
 
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
 #region Mapping
+
+## What is allowed to be mapped to what with what morphology names (source -> destination). empty array means anything
+## Prioritizes non-INVALID types first, INVALID is used in lieu of "all (others)"
+const MORPHOLOGY_RESTRICTIONS: Dictionary = {
+	CORTICAL_AREA_TYPE.INVALID: {
+		CORTICAL_AREA_TYPE.MEMORY: [&"memory"]
+		},
+	CORTICAL_AREA_TYPE.MEMORY: {
+		CORTICAL_AREA_TYPE.MEMORY:[&"memory"],
+		CORTICAL_AREA_TYPE.INVALID: [&"projector"]
+	}
+}
+
 var afferent_connections: Array[BaseCorticalArea]: ## Incoming cortical area connections
 	get: return _afferent_connections
 var num_afferent_connections: int: ## Number of incoming cortical area connections
@@ -318,6 +331,35 @@ var _afferent_connections: Array[BaseCorticalArea]
 var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 
 # Mapping Related
+
+## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
+## An empty array means there are no restrictions
+func get_allowed_morphologies_to_map_toward(desintation_cortical_area: BaseCorticalArea) -> Array[Morphology]:
+	var source_type: CORTICAL_AREA_TYPE = group
+	var destination_type: CORTICAL_AREA_TYPE = desintation_cortical_area.group
+	var acceptable_morphologies_str: Array[StringName]
+	
+	if source_type in MORPHOLOGY_RESTRICTIONS.keys():
+		# Source type has specific mapping
+		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.INVALID]:
+			# restriction mapping for specific source found for specific destination
+			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][destination_type])
+			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+		else:
+			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][CORTICAL_AREA_TYPE.INVALID])
+			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+	else:
+		# Source type has no specific mapping
+		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.INVALID]:
+			
+			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.INVALID][destination_type])
+			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+		else:
+			# No mapping restriction found at all
+			var acceptable_morphologies: Array[Morphology] = []
+			return acceptable_morphologies
+	
+
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	
