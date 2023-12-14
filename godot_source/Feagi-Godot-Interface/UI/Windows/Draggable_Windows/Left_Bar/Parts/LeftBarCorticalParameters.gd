@@ -29,9 +29,12 @@ func _ready():
 	_update_button = $Update_Button
 
 	_line_cortical_name.text_confirmed.connect(_user_edit_name)
+	_line_voxel_neuron_density.int_confirmed.connect(_user_edit_voxel_density)
+	_line_synaptic_attractivity.int_confirmed.connect(FEAGI_set_synaptic_attractivity)
 	_vector_position.user_updated_vector.connect(_user_edit_3D_position)
 	_vector_dimensions.user_updated_vector.connect(_user_edit_dimension)
 	_update_button.pressed.connect(_user_requests_update)
+	
 
 ## Displays properties of a cortical area, toggles editability depending on corticala rea configuraiton
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
