@@ -29,8 +29,10 @@ func setup(data: Dictionary, _main_window) -> void:
 	_LTP_multiplier.current_float = _mapping_ref.LTP_multiplier
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
 	_on_user_toggle_plasticity(_plasticity.button_pressed)
-	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
 	_on_user_change_morphology(_mapping_ref.morphology_used)
+	if "morphologies_whitelist" in data.keys():
+		_morphologies.overwrite_morphologies(data["morphologies_whitelist"])
+	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:
