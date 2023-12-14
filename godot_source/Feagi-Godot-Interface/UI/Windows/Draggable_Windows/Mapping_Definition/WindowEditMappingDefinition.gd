@@ -23,6 +23,7 @@ var _destination_area: BaseCorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
 var _mapping_details: WindowMappingDetails
+var _memory_warning: Label
 
 func _ready() -> void:
 	super()
@@ -32,8 +33,6 @@ func _ready() -> void:
 
 
 func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null):
-	var all_cortical_areas: Array[BaseCorticalArea] = []
-	all_cortical_areas.assign(FeagiCache.cortical_areas_cache.cortical_areas.values())
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
 		source_area = cortical_source
@@ -56,6 +55,7 @@ func _mappings_updated(mappings: MappingProperties) -> void:
 	if mappings.destination_cortical_area.cortical_ID != destination_area.cortical_ID:
 		return # we dont care if a different mapping was updated
 	_mapping_details.display_mapping_properties(mappings)
+	_memory_warning.visible =  len(_source_area.get_allowed_morphologies_to_map_toward(_destination_area)) != 0
 
 ## Request FEAGI to give us the latest information on the user picked mapping (only if both the source and destination are valid)
 func _request_mappings_from_feagi() -> void:

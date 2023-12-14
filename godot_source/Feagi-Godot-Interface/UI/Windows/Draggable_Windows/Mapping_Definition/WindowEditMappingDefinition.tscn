@@ -70,6 +70,12 @@ script = ExtResource("2_ds7ss")
 visible = false
 layout_mode = 2
 
+[node name="memory_warning" type="Label" parent="BoxContainer"]
+visible = false
+layout_mode = 2
+text = "\"Memory\" Morphologies only allow a single mapping torward a cortical area"
+horizontal_alignment = 1
+
 [node name="BottomButtons" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
 alignment = 1
