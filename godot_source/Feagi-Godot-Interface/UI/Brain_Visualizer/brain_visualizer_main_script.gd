@@ -21,17 +21,17 @@ func generate_prism_preview() -> CorticalBoxPreview:
 	return preview
 
 ## Snaps the camera to a cortical area
-func snap_camera_to_cortical_area(cortical_area: CorticalArea) -> void:
+func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	var camera: BVCam = $Camera3D
 	var bv_location: Vector3 = cortical_area.BV_position()
 	camera.position = cortical_area.BV_position() + camera_snap_offset
 	camera.point_camera_at(cortical_area.BV_position())
 
-func on_cortical_area_added(cortical_area: CorticalArea) -> void:
+func on_cortical_area_added(cortical_area: BaseCorticalArea) -> void:
 	generate_cortical_area(cortical_area)
 
 
-func generate_cortical_area(cortical_area_data : CorticalArea):
+func generate_cortical_area(cortical_area_data : BaseCorticalArea):
 	var textbox = $blank_textbox.duplicate()
 	var viewport = textbox.get_node("SubViewport")
 	textbox.scale = Vector3(1,1,1)
@@ -118,7 +118,7 @@ func update_all_node_from_cortical(name_input, material):
 			for x in len(global_name_list[i]):
 				global_name_list[i][x][0].set_surface_override_material(0, material)
 
-func delete_single_cortical(cortical_area_data : CorticalArea):
+func delete_single_cortical(cortical_area_data : BaseCorticalArea):
 	var name_list : Array = [] # To get cortical name
 	var cortical_text = cortical_area_data.name + "_textbox"
 	for i in global_name_list:
@@ -154,7 +154,7 @@ func delete_example():
 	for i in name_list:
 		global_name_list.erase(i)
 
-func check_cortical(cortical_area_data : CorticalArea):
+func check_cortical(cortical_area_data : BaseCorticalArea):
 	var flag = false
 	for i in global_name_list:
 		if cortical_area_data.cortical_ID in i:
