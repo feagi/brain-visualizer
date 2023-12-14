@@ -138,8 +138,4 @@ script = ExtResource("5_lcq15")
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[connection signal="user_interacted" from="Row_Cortical_Name/Cortical_Name" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Cortical_Size" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
-
 [editable path="Cortical_Position"]
