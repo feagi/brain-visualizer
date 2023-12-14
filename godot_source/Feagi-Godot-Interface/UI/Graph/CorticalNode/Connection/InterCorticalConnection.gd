@@ -26,7 +26,6 @@ func _ready():
 	_line = $Line2D
 	for i in NUM_POINTS_PER_CURVE: # TODO optimize! This should be static in TSCN
 		_line.add_point(Vector2(0,0))
-		
 
 func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: InterCorticalNodeTerminal, mapping_properties: MappingProperties):
 	
@@ -44,24 +43,21 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 	_source_terminal.get_port_reference().draw.connect(_update_position)
 	_destination_terminal.get_port_reference().draw.connect(_update_position)
 	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
-	_update_position()
 
 	# update Line Properties
 	_feagi_updated_mapping(_mapping_properties)
 	
-
 	# Labeling
 	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
-
+	_delayed_update_line_positions()
+	
 ## To delete the connection UI side
-func destroy_self() -> void:
+func destroy_ui_connection() -> void:
 	_source_terminal.queue_free()
 	_destination_terminal.queue_free()
 	queue_free()
 
-
-
-func _button_pressed() -> void:
+func _spawn_edit_mapping_window() -> void:
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
 
 ## Update position of the box and line if either [CorticalNode] moves
@@ -74,31 +70,10 @@ func _update_position(_irrelevant = null) -> void:
 func _update_line_positions(start_point: Vector2, end_point: Vector2) -> void:
 	_line.points = _generate_cubic_bezier_points(start_point - position_offset, end_point - position_offset)
 
-## Update the mapping count
-func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
-	if _updated_mapping_data.number_mappings == 0:
-		destroy_self()
-		return
-	_source_terminal.set_port_elastic(_updated_mapping_data.is_any_mapping_plastic())
-	_destination_terminal.set_port_elastic(_updated_mapping_data.is_any_mapping_plastic())
-	_update_mapping_counter(_mapping_properties.number_mappings)
-	_update_line_look(_updated_mapping_data)
-
-func _update_mapping_counter(number_of_mappings: int):
-	_button.text = " " + str(number_of_mappings) + " "
-
-func _spawn_edit_mapping_window() -> void:
-	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
-
-func _update_line_look(_updated_mapping_data: MappingProperties) -> void:
-	_line.default_color = _determine_line_color()
-
-func _determine_line_color() -> Color:
-	if _mapping_properties.is_any_PSP_multiplier_negative():
-		# negative PSP
-		return LINE_COLOR_PSPN_INPLASTIC
-	else:
-		return LINE_COLOR_PSPP_INPLASTIC
+#FIXME Get rid of this Sh*t
+## Utterly cursed
+func _delayed_update_line_positions() -> void:
+	call_deferred(&"_update_position")
 
 ## Cubic bezier curve approximation, where t is between 0 and 1
 func _cubic_bezier(t: float, p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2) -> Vector2:
@@ -113,3 +88,24 @@ func _generate_cubic_bezier_points(start_point: Vector2, end_point: Vector2) -> 
 	for i:int in NUM_POINTS_PER_CURVE:
 		output[i] = _cubic_bezier((float(i) * x_space), start_point, start_offset, output_offset, end_point)
 	return output
+
+## Update the mapping count
+func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
+	if _updated_mapping_data.number_mappings == 0:
+		destroy_ui_connection()
+		return
+	_source_terminal.set_port_elastic(_updated_mapping_data.is_any_mapping_plastic())
+	_destination_terminal.set_port_elastic(_updated_mapping_data.is_any_mapping_plastic())
+	_update_mapping_counter(_mapping_properties.number_mappings)
+	_update_line_look(_updated_mapping_data)
+
+func _update_mapping_counter(number_of_mappings: int):
+	_button.text = " " + str(number_of_mappings) + " "
+
+func _update_line_look(_updated_mapping_data: MappingProperties) -> void:
+		if _updated_mapping_data.is_any_PSP_multiplier_negative():
+		# negative PSP
+			_line.default_color = LINE_COLOR_PSPN_INPLASTIC
+		else:
+			_line.default_color = LINE_COLOR_PSPP_INPLASTIC
+

@@ -8,7 +8,6 @@
 script = ExtResource("1_nf13s")
 
 [node name="g1" type="Control" parent="."]
-visible = false
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 
@@ -38,6 +37,5 @@ expand_mode = 3
 script = ExtResource("3_1xt86")
 
 [node name="g2" type="Control" parent="."]
-visible = false
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
