@@ -36,7 +36,7 @@ func _add_mapping_pressed() -> void:
 		print("Unable to spawn a connection when no morphologies exist!")
 		## TODO a user error may go well here
 		return
-	var new_mapping: MappingProperty = MappingProperty.create_default_mapping(FeagiCache.morphology_cache.available_morphologies[FeagiCache.morphology_cache.available_morphologies.keys()[0]])
+	var new_mapping: MappingProperty = MappingProperty.create_placeholder_mapping()
 	_mappings_scroll.spawn_list_item(
 		{
 			"mapping": new_mapping,

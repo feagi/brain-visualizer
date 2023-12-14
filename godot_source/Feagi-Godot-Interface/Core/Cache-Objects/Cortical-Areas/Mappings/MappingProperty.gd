@@ -102,4 +102,3 @@ func to_dictionary() -> Dictionary:
 func duplicate() -> MappingProperty:
 	return MappingProperty.new(_morphology_used, _scalar, _post_synaptic_current_multiplier, _plasticity_flag, _plasticity_constant, _LTP_multiplier, _LTD_multiplier)
 
-
