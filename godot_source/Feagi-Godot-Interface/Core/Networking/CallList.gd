@@ -32,8 +32,8 @@ func GET_GE_fileName():
 	_interface_ref.single_FEAGI_request(_address_list.GET_genome_fileName, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_fileName)
 
 ## return dict of cortical IDs mapped with dict of connected cortical area and number of mappings
-func GET_GE_corticalMap():
-	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap)
+func GET_GE_corticalMap_detailed():
+	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap_detailed, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap_detailed)
 
 ## return dict of cortical IDs mapped with list of connected cortical areas
 func GET_CO_properties_mappings():
@@ -168,13 +168,13 @@ func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.single_FEAGI_request(_address_list.POST_feagi_burstEngine, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
 
 ## Adds a non-custom cortical area with non-definable dimensions
-func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 
+func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 
 	is_coordinate_2D_defined: bool, channel_count: int = 0, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 
 	var to_send: Dictionary = {
 		"cortical_id": template_cortical_ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
-		"cortical_type": CorticalArea.cortical_type_to_str(type),
+		"cortical_type": BaseCorticalArea.cortical_type_to_str(type),
 		"channel_count": channel_count
 	}
 
@@ -182,7 +182,7 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.C
 		"template_cortical_ID": template_cortical_ID,
 		"coordinates_3d": coordinates_3D,
 		"channel_count": channel_count,
-		"cortical_type_str": CorticalArea.cortical_type_to_str(type),
+		"cortical_type_str": BaseCorticalArea.cortical_type_to_str(type),
 	}
 
 	if is_coordinate_2D_defined:
@@ -195,21 +195,23 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.C
 
 
 
-## Adds cortical area (with definable dimensions)
+## Adds cortical area (custom or memory) (with definable dimensions)
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false) -> void:
 
 	var to_send: Dictionary = {
 		"cortical_name": str(name),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_type": CorticalArea.cortical_type_to_str(CorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
+		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
 	}
 
 	var to_buffer: Dictionary = {
 		"cortical_name": name,
-		"coordinates_3d": coordinates_3D,
-		"cortical_dimensions": dimensions,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
+		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_sub_group": ""
 	}
 
 	if is_coordinate_2D_defined:
@@ -218,8 +220,11 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
+	if memory_type:
+		to_send["sub_group_id"] = "MEMORY"
+		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+		
 
-	
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.single_FEAGI_request(_address_list.POST_genome_customCorticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
 
@@ -276,9 +281,9 @@ func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_morphology, to_buffer, morphology_name)
 
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
-func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):
+func PUT_GE_mappingProperties(source_cortical: BaseCorticalArea, destination_cortical: BaseCorticalArea, mapping_data: Array):
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
-	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
+	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "mapping_data_raw": mapping_data})
 
 ## Modifies the 2D location of many cortical areas at once without the need for polling
 func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
