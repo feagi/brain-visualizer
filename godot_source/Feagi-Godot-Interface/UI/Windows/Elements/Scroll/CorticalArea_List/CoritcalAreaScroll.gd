@@ -1,7 +1,7 @@
 extends GenericTextIDScroll
 class_name CorticalAreaScroll
 
-signal cortical_area_selected(cortical_area: CorticalArea)
+signal cortical_area_selected(cortical_area: BaseCorticalArea)
 
 @export var load_cortical_areas_on_load: bool = true
 
@@ -22,22 +22,22 @@ func repopulate_from_cache() -> void:
 		append_single_item(cortical_area, cortical_area.name)
 
 ## Manually set the selected cortical area through code. Causes the button to emit the selected signal
-func select_cortical_area(cortical_area: CorticalArea) -> void:
+func select_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	# This is essentially a pointless proxy, only existing for convinient naming purposes
 	set_selected(cortical_area)
 
 ## User selected cortical area from the list
-func _cortical_Area_button_pressed(cortical_area_selection: CorticalArea) -> void:
+func _cortical_Area_button_pressed(cortical_area_selection: BaseCorticalArea) -> void:
 	# This is essentially a pointless proxy, only existing for convinient naming purposes
 	cortical_area_selected.emit(cortical_area_selection)
 
-func _respond_to_deleted_cortical_area(cortical_area: CorticalArea) -> void:
+func _respond_to_deleted_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	remove_by_ID(cortical_area)
 
-func _respond_to_added_cortical_area(cortical_area: CorticalArea) -> void:
+func _respond_to_added_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	append_single_item(cortical_area, cortical_area.name)
 
-func _respond_to_updated_cortical_area(updated_cortical_area: CorticalArea) -> void:
+func _respond_to_updated_cortical_area(updated_cortical_area: BaseCorticalArea) -> void:
 	var button: GenericScrollItemText = get_button_by_ID(updated_cortical_area)
 	if button.text != updated_cortical_area.name:
 		button.text = updated_cortical_area.name

@@ -1,0 +1,55 @@
+name: "Update dev gcr bv"
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'godot_source/**'
+      - '!godot_source/Feagi-Godot-Interface/Core/NonCache-Objects/BVVersion.gd'
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.2
+  EXPORT_NAME: Web
+
+jobs:
+  export-web:
+    name: Web Export
+    runs-on: ubuntu-20.04
+    container:
+      image: neuraville/godot_export_web:v4.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge in New Changes
+        run: |
+          # Set up Git
+          git config --global user.name "BrainVisualizerPushAction"
+          git config --global user.email "BrainVisualizerPushAction@neuraville.com"
+          git config --global --add safe.directory /__w/nrs-brain-visualizer/nrs-brain-visualizer
+          echo "set vars"
+          git fetch origin
+          git checkout -b temp
+      - name: Create Build Directory
+        run: |
+          mkdir -v -p build/web
+          cd $PROJECT_PATH
+
+      - name: Set Compile Time
+        run: |
+          chmod +x ./set_timestamp.sh
+          ./set_timestamp.sh
+      - name: Web Build
+        run: |
+          mkdir -p /github/home/.local/share/godot/export_templates/4.2.stable/
+          cp -r /root/.local/share/godot/export_templates/4.2.stable/* /github/home/.local/share/godot/export_templates/4.2.stable/
+          cd godot_source
+          /root/Godot_v4.2-stable_linux.x86_64 --headless --export-release Web ../html/index.html
+      - name: testing html
+        run: |
+          ls ../html/
+          echo "DONE!"

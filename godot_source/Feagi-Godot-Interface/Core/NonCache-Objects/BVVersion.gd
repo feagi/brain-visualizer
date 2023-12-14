@@ -5,4 +5,4 @@ class_name BVVersion
 var manual_version: float:
 	get: return 0.1
 var automatic_version: int: # set by github actions
-	get: return 1699909396
+	get: return 1702572119

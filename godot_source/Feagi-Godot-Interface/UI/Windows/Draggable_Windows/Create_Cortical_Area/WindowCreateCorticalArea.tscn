@@ -23,10 +23,6 @@ offset_bottom = 40.0
 size_flags_horizontal = 0
 theme = ExtResource("1_ivss2")
 script = ExtResource("1_vqh4i")
-left_pixel_gap = null
-right_pixel_gap = null
-top_pixel_gap = null
-bottom_pixel_gap = null
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
@@ -55,19 +51,25 @@ script = ExtResource("5_bw00h")
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
-text = "IPU"
+text = "Input"
 
 [node name="OPU" type="CheckBox" parent="Container/type/options"]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
-text = "OPU"
+text = "Output"
 
 [node name="CUSTOM" type="CheckBox" parent="Container/type/options"]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
-text = "CUSTOM"
+text = "Interconnect"
+
+[node name="MEMORY" type="CheckBox" parent="Container/type/options"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
+text = "Memory"
 
 [node name="gap6" type="Control" parent="Container"]
 custom_minimum_size = Vector2(0, 3)

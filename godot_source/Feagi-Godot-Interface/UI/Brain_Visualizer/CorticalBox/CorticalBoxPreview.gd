@@ -15,4 +15,4 @@ func update_size(new_size: Vector3) -> void:
 	scale = new_size
 	
 func update_position(new_position: Vector3) -> void:
-	position = CorticalArea.true_position_to_BV_position(new_position, scale)
+	position = BaseCorticalArea.true_position_to_BV_position(new_position, scale)
