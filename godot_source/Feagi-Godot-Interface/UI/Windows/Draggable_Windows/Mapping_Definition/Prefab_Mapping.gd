@@ -18,6 +18,7 @@ func _ready() -> void:
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
+	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
 
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]
@@ -29,6 +30,7 @@ func setup(data: Dictionary, _main_window) -> void:
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
 	_on_user_toggle_plasticity(_plasticity.button_pressed)
 	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
+	_on_user_change_morphology(_mapping_ref.morphology_used)
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:
@@ -41,6 +43,12 @@ func generate_mapping_property() -> MappingProperty:
 	var LTD_multiplier: float = _LTD_multiplier.current_float
 	return MappingProperty.new(morphology_used, scalar, PSP, is_plastic, plasticity_constant, LTP_multiplier, LTD_multiplier)
 
+func _on_user_change_morphology(morphology: Morphology) -> void:
+	_scalar.editable = morphology.is_user_editable
+	_PSP.editable = morphology.is_user_editable
+	_plasticity.disabled = !morphology.is_user_editable
+	_on_user_toggle_plasticity(_plasticity.button_pressed and morphology.is_user_editable) #reuse this function
+
 func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_plasticity_constant.editable = toggle_state
 	_LTP_multiplier.editable = toggle_state
@@ -49,10 +57,6 @@ func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 
 func _on_delete_pressed() -> void:
 	queue_free()
-	if get_parent() is Window:
-		# we are testing this individual scene, do not proceed
-		print("Not Deleting Mapping due to testing individual scene")
-		return
 
 func _on_info_pressed() -> void:
 	var morphology_used: Morphology = _morphologies.get_selected_morphology()
