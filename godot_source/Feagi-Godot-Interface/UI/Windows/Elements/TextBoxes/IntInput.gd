@@ -39,6 +39,7 @@ var _suffix_length: int
 func _ready():
 	_previous_int = initial_int
 	_prefix_length = len(prefix)
+	_suffix_length = len(suffix)
 	_set_value_UI(_previous_int)
 	focus_entered.connect(_focus_entered)
 	focus_exited.connect(_focus_lost)
