@@ -45,7 +45,7 @@ func _ready():
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
-	_refresh_rate_field.external_update_float( 1.0 / new_delay_between_bursts_seconds)
+	_refresh_rate_field.current_float =  1.0 / new_delay_between_bursts_seconds
 
 func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
