@@ -291,6 +291,7 @@ func _has_neuron_firing_parameters() -> bool:
 
 func _has_memory_parameters() -> bool:
 	return false
+
 #endregion
 
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
@@ -305,6 +306,18 @@ const MORPHOLOGY_RESTRICTIONS: Dictionary = {
 	CORTICAL_AREA_TYPE.MEMORY: {
 		CORTICAL_AREA_TYPE.MEMORY:[&"memory"],
 		CORTICAL_AREA_TYPE.UNKNOWN: [&"projector"]
+	}
+}
+
+## How many mappings are allowed per connection toa  location (source -> destination). If no reference is made, assume no limitations. -1 means no limit as well
+## Prioritizes non-UNKNOWN types first, UNKNOWN is used in lieu of "all (others)".
+const MAPPING_COUNT_LIMITS: Dictionary = {
+	CORTICAL_AREA_TYPE.UNKNOWN: {
+		CORTICAL_AREA_TYPE.MEMORY: 1
+		},
+	CORTICAL_AREA_TYPE.MEMORY: {
+		CORTICAL_AREA_TYPE.MEMORY: 1,
+		CORTICAL_AREA_TYPE.UNKNOWN: 1
 	}
 }
 
@@ -337,11 +350,11 @@ var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 func get_allowed_morphologies_to_map_toward(desintation_cortical_area: BaseCorticalArea) -> Array[Morphology]:
 	var source_type: CORTICAL_AREA_TYPE = group
 	var destination_type: CORTICAL_AREA_TYPE = desintation_cortical_area.group
-	var acceptable_morphologies_str: Array[StringName]
+	var acceptable_morphologies_str: Array[StringName] = []
 	
 	if source_type in MORPHOLOGY_RESTRICTIONS.keys():
 		# Source type has specific mapping
-		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN]:
+		if destination_type in MORPHOLOGY_RESTRICTIONS[source_type]:
 			# restriction mapping for specific source found for specific destination
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][destination_type])
 			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
@@ -351,14 +364,35 @@ func get_allowed_morphologies_to_map_toward(desintation_cortical_area: BaseCorti
 	else:
 		# Source type has no specific mapping
 		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN]:
-			
+			# Destination does have a restriction
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
 			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
 			# No mapping restriction found at all
 			var acceptable_morphologies: Array[Morphology] = []
 			return acceptable_morphologies
-	
+
+## Returns the number of mappings allowed to the destination cortical area
+## Returns -1 is there is no limit
+func get_allowed_mapping_count(desintation_cortical_area: BaseCorticalArea) -> int:
+	var source_type: CORTICAL_AREA_TYPE = group
+	var destination_type: CORTICAL_AREA_TYPE = desintation_cortical_area.group
+
+	if source_type in MAPPING_COUNT_LIMITS.keys():
+		# Source type has specific mapping
+		if destination_type in MAPPING_COUNT_LIMITS[source_type]:
+			# restriction mapping for specific source found for specific destination
+			return  MAPPING_COUNT_LIMITS[source_type][destination_type]
+		else:
+			return MAPPING_COUNT_LIMITS[source_type][CORTICAL_AREA_TYPE.UNKNOWN]
+	else:
+		# Source type has no specific mapping
+		if destination_type in MAPPING_COUNT_LIMITS[CORTICAL_AREA_TYPE.UNKNOWN]:
+			# Destination does have a restriction
+			return  MAPPING_COUNT_LIMITS[CORTICAL_AREA_TYPE.UNKNOWN][destination_type]
+		else:
+			# No mapping restriction found at all
+			return -1
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
