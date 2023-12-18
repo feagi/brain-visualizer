@@ -24,8 +24,6 @@ var cortical_node: CorticalNode:
 var _terminal_type: TYPE ## The type of terminal
 var _input_point: TerminalPortTexture
 var _output_point: TerminalPortTexture
-var _input_gap: Control
-var _output_gap: Control
 var _connected_area: BaseCorticalArea
 var _parent_node: CorticalNode
 var _cortical_label: Button
@@ -35,8 +33,6 @@ func _ready() -> void:
 	_cortical_label = $Label
 	_input_point = $input
 	_output_point = $output
-	_input_gap = $g1
-	_output_gap = $g2
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
@@ -56,12 +52,10 @@ func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE, is_plastic: b
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			_cortical_label.tooltip_text = "Afferent Connection"
 			_input_point.visible = true
-			_output_gap.visible = true
 		TYPE.OUTPUT:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			_cortical_label.tooltip_text = "Efferent Connection"
 			_output_point.visible = true
-			_input_gap.visible = true
 		_:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			push_error("UI: GRAPH: Unknown Terminal Type")
