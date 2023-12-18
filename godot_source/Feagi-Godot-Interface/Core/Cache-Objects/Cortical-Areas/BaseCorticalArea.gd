@@ -11,7 +11,7 @@ enum CORTICAL_AREA_TYPE {
 	MEMORY,
 	CUSTOM,
 	OPU,
-	INVALID
+	UNKNOWN
 }
 
 signal about_to_be_deleted(this_cortical_area: BaseCorticalArea)
@@ -160,7 +160,7 @@ static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_ARE
 		return CORTICAL_AREA_TYPE[cortical_type_raw]
 	else:
 		push_error("Unknown Cortical Type " + cortical_type_raw +". Marking as INVALID!")
-		return CORTICAL_AREA_TYPE.INVALID
+		return CORTICAL_AREA_TYPE.UNKNOWN
 
 ## From a human readable string of cortical type, to cortical type enum
 static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) -> CORTICAL_AREA_TYPE:
@@ -177,7 +177,7 @@ static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) 
 		"memory":
 			return CORTICAL_AREA_TYPE.MEMORY
 		_:
-			return CORTICAL_AREA_TYPE.INVALID
+			return CORTICAL_AREA_TYPE.UNKNOWN
 
 
 ## Given a cortical type enum, return the string
@@ -269,7 +269,7 @@ func _set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
 	## OVERRIDE THIS
-	return CORTICAL_AREA_TYPE.INVALID
+	return CORTICAL_AREA_TYPE.UNKNOWN
 
 func _user_can_edit_dimensions() -> bool:
 	return true
@@ -297,14 +297,14 @@ func _has_memory_parameters() -> bool:
 #region Mapping
 
 ## What is allowed to be mapped to what with what morphology names (source -> destination). empty array means anything
-## Prioritizes non-INVALID types first, INVALID is used in lieu of "all (others)"
+## Prioritizes non-UNKNOWN types first, UNKNOWN is used in lieu of "all (others)"
 const MORPHOLOGY_RESTRICTIONS: Dictionary = {
-	CORTICAL_AREA_TYPE.INVALID: {
+	CORTICAL_AREA_TYPE.UNKNOWN: {
 		CORTICAL_AREA_TYPE.MEMORY: [&"memory"]
 		},
 	CORTICAL_AREA_TYPE.MEMORY: {
 		CORTICAL_AREA_TYPE.MEMORY:[&"memory"],
-		CORTICAL_AREA_TYPE.INVALID: [&"projector"]
+		CORTICAL_AREA_TYPE.UNKNOWN: [&"projector"]
 	}
 }
 
@@ -341,18 +341,18 @@ func get_allowed_morphologies_to_map_toward(desintation_cortical_area: BaseCorti
 	
 	if source_type in MORPHOLOGY_RESTRICTIONS.keys():
 		# Source type has specific mapping
-		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.INVALID]:
+		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN]:
 			# restriction mapping for specific source found for specific destination
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][destination_type])
 			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
-			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][CORTICAL_AREA_TYPE.INVALID])
+			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][CORTICAL_AREA_TYPE.UNKNOWN])
 			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 	else:
 		# Source type has no specific mapping
-		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.INVALID]:
+		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN]:
 			
-			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.INVALID][destination_type])
+			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
 			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
 			# No mapping restriction found at all
