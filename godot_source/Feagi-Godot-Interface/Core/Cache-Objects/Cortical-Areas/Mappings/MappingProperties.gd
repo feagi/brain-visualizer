@@ -18,15 +18,27 @@ var mappings: Array[MappingProperty]:
 	get: return _mappings
 var number_mappings: int:
 	get: return len(_mappings)
+var max_axis_indexmapping_count_limit: int:
+	get: return _max_number_mappings_supported
+var morphologies_restricted_to: Array[Morphology]:
+	get: return _morphologies_restricted_to
+var is_limit_on_mapping_count: bool:
+	get: return _max_number_mappings_supported != -1
+var is_restriction_on_morphologies_used: bool:
+	get: return len(_morphologies_restricted_to) != 0
 
 var _src_cortical: BaseCorticalArea
 var _dst_cortical: BaseCorticalArea
 var _mappings: Array[MappingProperty]
+var _max_number_mappings_supported: int = -1
+var _morphologies_restricted_to: Array[Morphology] = []
 
 func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings_between_them: Array[MappingProperty]) -> void:
 	_src_cortical = source_area
 	_dst_cortical = destination_area
 	_mappings = mappings_between_them
+	_max_number_mappings_supported = _src_cortical.get_allowed_mapping_count(_dst_cortical)
+	_morphologies_restricted_to = _src_cortical.get_allowed_morphologies_to_map_toward(_dst_cortical)
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
 static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
@@ -141,3 +153,16 @@ func update_mappings_to_empty() -> void:
 	var empty: Array[MappingProperty] = []
 	_mappings = empty
 	mappings_changed.emit(self)
+
+## Does mapping follow mapping count and morphology restrictions from cortical areas?
+func is_mapping_valid() -> bool:
+	if is_limit_on_mapping_count:
+		if len(_mappings) != _max_number_mappings_supported:
+			return false
+	
+	if is_restriction_on_morphologies_used:
+		for mapping: MappingProperty in _mappings:
+			if mapping.morphology_used not in _morphologies_restricted_to:
+				return false
+	
+	return true

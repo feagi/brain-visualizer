@@ -347,9 +347,9 @@ var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 
 ## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
 ## An empty array means there are no restrictions
-func get_allowed_morphologies_to_map_toward(desintation_cortical_area: BaseCorticalArea) -> Array[Morphology]:
+func get_allowed_morphologies_to_map_toward(destination_cortical_area: BaseCorticalArea) -> Array[Morphology]:
 	var source_type: CORTICAL_AREA_TYPE = group
-	var destination_type: CORTICAL_AREA_TYPE = desintation_cortical_area.group
+	var destination_type: CORTICAL_AREA_TYPE = destination_cortical_area.group
 	var acceptable_morphologies_str: Array[StringName] = []
 	
 	if source_type in MORPHOLOGY_RESTRICTIONS.keys():
@@ -374,9 +374,9 @@ func get_allowed_morphologies_to_map_toward(desintation_cortical_area: BaseCorti
 
 ## Returns the number of mappings allowed to the destination cortical area
 ## Returns -1 is there is no limit
-func get_allowed_mapping_count(desintation_cortical_area: BaseCorticalArea) -> int:
+func get_allowed_mapping_count(destination_cortical_area: BaseCorticalArea) -> int:
 	var source_type: CORTICAL_AREA_TYPE = group
-	var destination_type: CORTICAL_AREA_TYPE = desintation_cortical_area.group
+	var destination_type: CORTICAL_AREA_TYPE = destination_cortical_area.group
 
 	if source_type in MAPPING_COUNT_LIMITS.keys():
 		# Source type has specific mapping
