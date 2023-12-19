@@ -32,11 +32,12 @@ func setup(data: Dictionary, _main_window) -> void:
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
 	_on_user_toggle_plasticity(_plasticity.button_pressed)
 	_on_user_change_morphology(_mapping_ref.morphology_used)
-	if "morphologies_whitelist" in data.keys():
-		_morphologies.overwrite_morphologies(data["morphologies_whitelist"])
-	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
 	_edit.disabled = !_mapping_ref.morphology_used.is_user_editable
-	
+	if "simple" in data.keys():
+		_toggle_show_full_editing(false)
+	if "allowed_morphologies" in data.keys():
+		_morphologies.overwrite_morphologies(data["allowed_morphologies"])
+	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:
@@ -54,6 +55,21 @@ func _on_user_change_morphology(morphology: Morphology) -> void:
 	_PSP.editable = morphology.is_user_editable
 	_plasticity.disabled = !morphology.is_user_editable
 	_on_user_toggle_plasticity(_plasticity.button_pressed and morphology.is_user_editable) #reuse this function
+
+func _toggle_show_full_editing(full_editing: bool) -> void:
+	_scalar.visible = full_editing
+	_PSP.visible = full_editing
+	_plasticity.visible = full_editing
+	_plasticity_constant.visible = full_editing
+	_LTP_multiplier.visible = full_editing
+	_LTD_multiplier.visible = full_editing
+	$Gap1.visible = full_editing
+	$Gap2.visible = full_editing
+	$Gap3.visible = full_editing
+	$Gap4.visible = full_editing
+	$Gap5.visible = full_editing
+	$Gap6.visible = full_editing
+	$Gap7.visible = full_editing
 
 func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_plasticity_constant.editable = toggle_state
