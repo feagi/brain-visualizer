@@ -37,8 +37,8 @@ func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, ma
 	_src_cortical = source_area
 	_dst_cortical = destination_area
 	_mappings = mappings_between_them
-	_max_number_mappings_supported = _src_cortical.get_allowed_mapping_count(_dst_cortical)
-	_morphologies_restricted_to = _src_cortical.get_allowed_morphologies_to_map_toward(_dst_cortical)
+	_max_number_mappings_supported = MappingHints.get_allowed_mapping_count(source_area, destination_area)
+	_morphologies_restricted_to = MappingHints.get_allowed_morphologies_to_map_toward(source_area, destination_area)
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
 static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:

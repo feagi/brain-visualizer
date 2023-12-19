@@ -8,7 +8,7 @@ var _plasticity: Button
 var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
 var _LTD_multiplier: FloatInput
-var _edit: Button
+var _edit: TextureButton
 
 
 func _ready() -> void:

@@ -10,7 +10,7 @@ const SPECIAL_CASES_NEEDING_SIMPLE_MODE: Array[MappingHints.MAPPING_SPECIAL_CASE
 
 var _mappings_scroll: BaseScroll
 var _mapping_hints: MappingHints
-var _add_mapping: Button
+var _add_mapping: TextureButton
 
 func _ready() -> void:
 	_mappings_scroll = $Mappings

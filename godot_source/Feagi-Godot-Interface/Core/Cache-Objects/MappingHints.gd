@@ -125,17 +125,17 @@ static func get_default_morphology_to_map_with(source_cortical_area: BaseCortica
 	if source_type in MORPHOLOGY_DEFAULTS.keys():
 		# Source type has specific mapping
 		if destination_type in MORPHOLOGY_DEFAULTS[source_type]:
-			return FeagiCache.morphology_cache.morphologies[MORPHOLOGY_DEFAULTS[source_type][destination_type]]
+			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[source_type][destination_type]]
 		else:
-			return FeagiCache.morphology_cache.morphologies[MORPHOLOGY_DEFAULTS[source_type][[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]]
+			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[source_type][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]
 	else:
 		# Source type has no specific mapping
 		if destination_type in MORPHOLOGY_RESTRICTIONS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]:
 			# Destination does have a restriction
-			return FeagiCache.morphology_cache.morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][[destination_type]]]
+			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][destination_type]]
 		else:
 			# No mapping restriction found at all
-			return FeagiCache.morphology_cache.morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]]
+			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]
 
 ## Returns the number of mappings allowed to the destination cortical area
 ## Returns -1 is there is no limit
