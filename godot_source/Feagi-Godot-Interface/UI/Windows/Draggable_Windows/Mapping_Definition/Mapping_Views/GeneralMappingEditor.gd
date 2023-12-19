@@ -11,6 +11,7 @@ const SPECIAL_CASES_NEEDING_SIMPLE_MODE: Array[MappingHints.MAPPING_SPECIAL_CASE
 var _mappings_scroll: BaseScroll
 var _mapping_hints: MappingHints
 var _add_mapping: TextureButton
+var _simple_mode: bool
 
 func _ready() -> void:
 	_mappings_scroll = $Mappings
@@ -19,11 +20,11 @@ func _ready() -> void:
 func update_displayed_mapping_properties(mappings_copy: MappingProperties, mapping_hints: MappingHints) -> void:
 	_mapping_hints = mapping_hints
 	_mappings_scroll.remove_all_children()
-	var is_simple_mode: bool = mapping_hints.exist_any_matching_special_cases(SPECIAL_CASES_NEEDING_SIMPLE_MODE)
-	_toggle_show_full_editing(!is_simple_mode)
+	_simple_mode = mapping_hints.exist_any_matching_special_cases(SPECIAL_CASES_NEEDING_SIMPLE_MODE)
+	_toggle_show_full_editing(!_simple_mode)
 	
-	if is_simple_mode:
-		_spawn_simple_mapping(mappings_copy, mapping_hints)
+	if _simple_mode:
+		_spawn_simple_mappings(mappings_copy, mapping_hints)
 	else:
 		_spawn_full_mappings(mappings_copy, mapping_hints)
 	
@@ -41,6 +42,26 @@ func generate_mapping_propertys() -> Array[MappingProperty]:
 		mappings.append(mapping_prefab.generate_mapping_property())
 	return mappings
 
+## Adds a mapping to the mappingProperties if applicable (valid and starting empty)
+func add_default_mapping_if_applicable() -> void:
+	if _mappings_scroll.get_number_of_children() != 0:
+		# No adding a default mapping if there already is a mapping
+		return
+	
+	if _mapping_hints == null:
+		push_error("Unable to spawn default mapping without mapping_hints defined")
+		return
+	
+	if _mapping_hints.default_morphology == null:
+		push_error("Unable to spawn default mapping without default morphology defined")
+		return
+	var mapping: MappingProperty = MappingProperty.create_default_mapping(_mapping_hints.default_morphology)
+	
+	if _simple_mode:
+		_spawn_simple_mapping(mapping, _mapping_hints)
+	else:
+		_spawn_full_mapping(mapping,)
+
 func _toggle_show_full_editing(full_editing: bool) -> void:
 	$labels_box/g1.visible = full_editing
 	$labels_box/Label2.visible = full_editing
@@ -56,26 +77,32 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 	$labels_box/Label7.visible = full_editing
 
 func _spawn_full_mappings(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
-	for mapping in mappings.mappings:
-		var spawn_parameter: Dictionary = {"mapping": mapping}
-		_mappings_scroll.spawn_list_item(spawn_parameter)
+	for mapping: MappingProperty in mappings.mappings:
+		_spawn_full_mapping(mapping)
 	if mapping_hints.is_number_mappings_restricted:
 		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
 	else:
 		_add_mapping.disabled = false
 
-func _spawn_simple_mapping(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
-	for mapping in mappings.mappings:
-		var spawn_parameter: Dictionary = {
-			"mapping": mapping,
-			"simple": true}
-		if mapping_hints.is_morphologies_restricted:
-			spawn_parameter["allowed_morphologies"] = mapping_hints.restricted_morphologies
-		_mappings_scroll.spawn_list_item(spawn_parameter)
+func _spawn_full_mapping(mapping: MappingProperty) -> void:
+	var spawn_parameter: Dictionary = {"mapping": mapping}
+	_mappings_scroll.spawn_list_item(spawn_parameter)
+
+func _spawn_simple_mappings(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
+	for mapping: MappingProperty in mappings.mappings:
+		_spawn_simple_mapping(mapping, mapping_hints)
 	if mapping_hints.is_number_mappings_restricted:
 		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
 	else:
 		_add_mapping.disabled = false
+
+func _spawn_simple_mapping(mapping: MappingProperty, mapping_hints: MappingHints) -> void:
+	var spawn_parameter: Dictionary = {
+		"mapping": mapping,
+		"simple": true}
+	if mapping_hints.is_morphologies_restricted:
+		spawn_parameter["allowed_morphologies"] = mapping_hints.restricted_morphologies
+	_mappings_scroll.spawn_list_item(spawn_parameter)
 
 # connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:
