@@ -161,5 +161,14 @@ static func is_substring_in_array(arr: PackedStringArray, searching: String) -> 
 			return true
 	return false
 
-
+## Turn StringName Array into CSV string
+static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
+	var output: String = ""
+	var length: int = len(arr)
+	if length == 0:
+		return output
+	for i in (length - 1):
+		output = output + arr[i] + ", "
+	output = output + arr[length - 1]
+	return output
 
