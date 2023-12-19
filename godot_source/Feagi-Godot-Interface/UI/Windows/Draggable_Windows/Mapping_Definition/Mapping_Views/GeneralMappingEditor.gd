@@ -27,7 +27,10 @@ func update_displayed_mapping_properties(mappings_copy: MappingProperties, mappi
 	else:
 		_spawn_full_mappings(mappings_copy, mapping_hints)
 	
-	_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
+	if mapping_hints.is_number_mappings_restricted:
+		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
+	else:
+		_add_mapping.disabled = false
 
 ## Creates an Array of [MappingProperty] given the items within the scroll section
 func generate_mapping_propertys() -> Array[MappingProperty]:
@@ -56,7 +59,10 @@ func _spawn_full_mappings(mappings: MappingProperties, mapping_hints: MappingHin
 	for mapping in mappings.mappings:
 		var spawn_parameter: Dictionary = {"mapping": mapping}
 		_mappings_scroll.spawn_list_item(spawn_parameter)
-	_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
+	if mapping_hints.is_number_mappings_restricted:
+		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
+	else:
+		_add_mapping.disabled = false
 
 func _spawn_simple_mapping(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
 	for mapping in mappings.mappings:
@@ -66,7 +72,10 @@ func _spawn_simple_mapping(mappings: MappingProperties, mapping_hints: MappingHi
 		if mapping_hints.is_morphologies_restricted:
 			spawn_parameter["allowed_morphologies"] = mapping_hints.restricted_morphologies
 		_mappings_scroll.spawn_list_item(spawn_parameter)
-	_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
+	if mapping_hints.is_number_mappings_restricted:
+		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
+	else:
+		_add_mapping.disabled = false
 
 # connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:
