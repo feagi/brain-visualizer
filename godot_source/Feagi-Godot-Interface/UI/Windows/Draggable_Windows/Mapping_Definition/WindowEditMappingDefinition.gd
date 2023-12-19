@@ -9,6 +9,7 @@ var source_area: BaseCorticalArea:
 		if _source_area != null and _source_area.efferent_mapping_updated.is_connected(_mappings_updated):
 			_source_area.efferent_mapping_updated.disconnect(_mappings_updated)
 		_source_area = v
+		_selected_cortical_areas_changed(_source_area, _destination_area)
 		_source_area.efferent_mapping_edited.connect(_mappings_updated)
 		_request_mappings_from_feagi()
 
@@ -16,6 +17,7 @@ var destination_area: BaseCorticalArea:
 	get: return _destination_area
 	set(v):
 		_destination_area = v
+		_selected_cortical_areas_changed(_source_area, _destination_area)
 		_request_mappings_from_feagi()
 
 var _source_area: BaseCorticalArea
@@ -23,13 +25,15 @@ var _destination_area: BaseCorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
 var _general_mapping_details: GeneralMappingEditor
+var _single_mapping_details: SingleMappingConnectionToggle
+var _special_conditions: Array[BaseCorticalArea.MAPPING_SPECIAL_CASES]
 
 func _ready() -> void:
 	super()
 	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
 	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
 	_general_mapping_details = $BoxContainer/Mapping_Details
-
+	_single_mapping_details = $BoxContainer/SingleMappingConnectionToggle
 
 func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null):
 	if cortical_source != null:
@@ -46,14 +50,28 @@ func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseC
 	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
 
 	if !((cortical_source == null) and (cortical_destination == null)):
-		_general_mapping_details.visible = true
+		_selected_cortical_areas_changed(cortical_source, cortical_destination)
 
+func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: BaseCorticalArea) -> void:
+	if !_are_cortical_areas_valid():
+		return
+	_general_mapping_details.visible = false
+	_single_mapping_details.visible = false
+	
+	_special_conditions = source.get_special_cases_for_mapping_to_destination(destination)
+	if _special_conditions[0] == BaseCorticalArea.MAPPING_SPECIAL_CASES.NONE:
+		_general_mapping_details.visible = true
+	else:
+		_single_mapping_details.visible = true
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
 func _mappings_updated(mappings: MappingProperties) -> void:
 	if mappings.destination_cortical_area.cortical_ID != destination_area.cortical_ID:
 		return # we dont care if a different mapping was updated
-	_general_mapping_details.display_mapping_properties(mappings)
+	if _special_conditions[0] == BaseCorticalArea.MAPPING_SPECIAL_CASES.NONE:
+		_general_mapping_details.display_mapping_properties(mappings)
+	else:
+		_single_mapping_details.display_mapping_properties(mappings)
 
 ## Request FEAGI to give us the latest information on the user picked mapping (only if both the source and destination are valid)
 func _request_mappings_from_feagi() -> void:
@@ -68,7 +86,13 @@ func _request_apply_mappings_to_FEAGI():
 		push_warning("User attempted to request mappings to undefined cortical areas. Skipping!")
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
 	
-	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, _general_mapping_details.generate_mapping_properties())
+	var mapping_properties: Array[MappingProperty] = []
+	if _special_conditions[0] == BaseCorticalArea.MAPPING_SPECIAL_CASES.NONE:
+		mapping_properties = _general_mapping_details.generate_mapping_properties()
+	else:
+		mapping_properties =  _single_mapping_details.generate_mapping_properties()
+	
+	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, mapping_properties)
 	close_window("edit_mappings")
 
 ## Returns true only if the source and destination areas selected are valid

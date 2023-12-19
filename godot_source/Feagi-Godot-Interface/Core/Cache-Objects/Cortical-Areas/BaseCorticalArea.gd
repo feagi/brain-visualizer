@@ -450,7 +450,7 @@ func get_special_cases_for_mapping_to_destination(destination_cortical_area: Bas
 		if destination_type in MAPPING_CORTICAL_TYPE_SPECIAL_CASES[CORTICAL_AREA_TYPE.UNKNOWN]:
 			# Destination does have a restriction
 			output.assign(MAPPING_CORTICAL_TYPE_SPECIAL_CASES[CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
-			return  MAPPING_CORTICAL_TYPE_SPECIAL_CASES[CORTICAL_AREA_TYPE.UNKNOWN][destination_type]
+			return  output
 		else:
 			# No mapping restriction found at all
 			output.assign([MAPPING_SPECIAL_CASES.NONE])
