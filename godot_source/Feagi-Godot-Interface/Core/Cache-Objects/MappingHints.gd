@@ -204,9 +204,22 @@ func _init(source_cortical_area: BaseCorticalArea, destination_cortical_area: Ba
 	_restricted_morphologies = MappingHints.get_allowed_morphologies_to_map_toward(source_cortical_area, destination_cortical_area)
 	_max_number_mappings = MappingHints.get_allowed_mapping_count(source_cortical_area, destination_cortical_area)
 	_special_cases = MappingHints.get_special_cases_for_mapping_to_destination(source_cortical_area, destination_cortical_area)
-	
-	
 
+## Given a set of special cases to be aware of, do any match? If so return an array of matching cases, else return an empty array
+func match_any_special_cases(searching_special_cases: Array[MAPPING_SPECIAL_CASES]) -> Array[MAPPING_SPECIAL_CASES]:
+	var output: Array[MAPPING_SPECIAL_CASES] = []
+	for searching: MAPPING_SPECIAL_CASES in searching_special_cases:
+		for known: MAPPING_SPECIAL_CASES in _special_cases:
+			if searching == known:
+				output.append(known)
+	return output
 
+## Given a set of special cases to be aware of, do any match?
+func exist_any_matching_special_cases(searching_special_cases: Array[MAPPING_SPECIAL_CASES]) -> bool:
+	for searching: MAPPING_SPECIAL_CASES in searching_special_cases:
+		for known: MAPPING_SPECIAL_CASES in _special_cases:
+			if searching == known:
+				return true
+	return false
 
 
