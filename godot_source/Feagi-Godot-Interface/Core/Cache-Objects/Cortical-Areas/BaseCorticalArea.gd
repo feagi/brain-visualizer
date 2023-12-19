@@ -14,13 +14,6 @@ enum CORTICAL_AREA_TYPE {
 	UNKNOWN
 }
 
-enum MAPPING_SPECIAL_CASES {
-	NONE,
-	ANY_TO_MEMORY,
-	MEMORY_TO_ANY,
-	MEMORY_TO_MEMORY,
-}
-
 signal about_to_be_deleted(this_cortical_area: BaseCorticalArea)
 signal name_updated(cortical_name: StringName, this_cortical_area: BaseCorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: BaseCorticalArea)
@@ -308,41 +301,7 @@ func _has_memory_parameters() -> bool:
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
 #region Mapping
 
-## What is allowed to be mapped to what with what morphology names (source -> destination). empty array means anything
-## Prioritizes non-UNKNOWN types first, UNKNOWN is used in lieu of "all (others)"
-const MORPHOLOGY_RESTRICTIONS: Dictionary = {
-	CORTICAL_AREA_TYPE.UNKNOWN: {
-		CORTICAL_AREA_TYPE.MEMORY: [&"memory"]
-		},
-	CORTICAL_AREA_TYPE.MEMORY: {
-		CORTICAL_AREA_TYPE.MEMORY:[&"memory"],
-		CORTICAL_AREA_TYPE.UNKNOWN: [&"projector"]
-	}
-}
 
-## How many mappings are allowed per connection toa  location (source -> destination). If no reference is made, assume no limitations. -1 means no limit as well
-## Prioritizes non-UNKNOWN types first, UNKNOWN is used in lieu of "all (others)".
-const MAPPING_COUNT_LIMITS: Dictionary = {
-	CORTICAL_AREA_TYPE.UNKNOWN: {
-		CORTICAL_AREA_TYPE.MEMORY: 1
-		},
-	CORTICAL_AREA_TYPE.MEMORY: {
-		CORTICAL_AREA_TYPE.MEMORY: 1,
-		CORTICAL_AREA_TYPE.UNKNOWN: 1
-	}
-}
-
-const MAPPING_CORTICAL_TYPE_SPECIAL_CASES: Dictionary = {
-	CORTICAL_AREA_TYPE.UNKNOWN: {
-		CORTICAL_AREA_TYPE.MEMORY: [MAPPING_SPECIAL_CASES.ANY_TO_MEMORY]
-		},
-	CORTICAL_AREA_TYPE.MEMORY: {
-		CORTICAL_AREA_TYPE.MEMORY: [MAPPING_SPECIAL_CASES.ANY_TO_MEMORY, 
-			MAPPING_SPECIAL_CASES.MEMORY_TO_ANY, 
-			MAPPING_SPECIAL_CASES.MEMORY_TO_MEMORY],
-		CORTICAL_AREA_TYPE.UNKNOWN: [MAPPING_SPECIAL_CASES.MEMORY_TO_ANY]
-	}
-}
 
 var afferent_connections: Array[BaseCorticalArea]: ## Incoming cortical area connections
 	get: return _afferent_connections
@@ -368,93 +327,7 @@ var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 
 # Mapping Related
 
-## Is an array of [MappingProperty] valid given a destination area from this source area?
-func is_mapping_property_array_invalid_for_cortical_areas(mapping_propertys: Array[MappingProperty], destination_area: BaseCorticalArea) -> bool:
-	var limit_on_mapping_count: int = get_allowed_mapping_count(destination_area)
-	if limit_on_mapping_count != -1:
-		if len(mapping_propertys) > limit_on_mapping_count:
-			return true
-	
-	var restriction_of_morphologies: Array[Morphology] = get_allowed_morphologies_to_map_toward(destination_area)
-	if len(restriction_of_morphologies) > 0:
-		for mapping: MappingProperty in mapping_propertys:
-			if mapping.morphology_used not in restriction_of_morphologies:
-				return true
-	return false
 
-## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
-## An empty array means there are no restrictions
-func get_allowed_morphologies_to_map_toward(destination_cortical_area: BaseCorticalArea) -> Array[Morphology]:
-	var source_type: CORTICAL_AREA_TYPE = group
-	var destination_type: CORTICAL_AREA_TYPE = destination_cortical_area.group
-	var acceptable_morphologies_str: Array[StringName] = []
-	
-	if source_type in MORPHOLOGY_RESTRICTIONS.keys():
-		# Source type has specific mapping
-		if destination_type in MORPHOLOGY_RESTRICTIONS[source_type]:
-			# restriction mapping for specific source found for specific destination
-			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][destination_type])
-			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
-		else:
-			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][CORTICAL_AREA_TYPE.UNKNOWN])
-			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
-	else:
-		# Source type has no specific mapping
-		if destination_type in MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN]:
-			# Destination does have a restriction
-			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
-			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
-		else:
-			# No mapping restriction found at all
-			var acceptable_morphologies: Array[Morphology] = []
-			return acceptable_morphologies
-
-## Returns the number of mappings allowed to the destination cortical area
-## Returns -1 is there is no limit
-func get_allowed_mapping_count(destination_cortical_area: BaseCorticalArea) -> int:
-	var source_type: CORTICAL_AREA_TYPE = group
-	var destination_type: CORTICAL_AREA_TYPE = destination_cortical_area.group
-
-	if source_type in MAPPING_COUNT_LIMITS.keys():
-		# Source type has specific mapping
-		if destination_type in MAPPING_COUNT_LIMITS[source_type]:
-			# restriction mapping for specific source found for specific destination
-			return  MAPPING_COUNT_LIMITS[source_type][destination_type]
-		else:
-			return MAPPING_COUNT_LIMITS[source_type][CORTICAL_AREA_TYPE.UNKNOWN]
-	else:
-		# Source type has no specific mapping
-		if destination_type in MAPPING_COUNT_LIMITS[CORTICAL_AREA_TYPE.UNKNOWN]:
-			# Destination does have a restriction
-			return  MAPPING_COUNT_LIMITS[CORTICAL_AREA_TYPE.UNKNOWN][destination_type]
-		else:
-			# No mapping restriction found at all
-			return -1
-
-func get_special_cases_for_mapping_to_destination(destination_cortical_area: BaseCorticalArea) -> Array[MAPPING_SPECIAL_CASES]:
-	var source_type: CORTICAL_AREA_TYPE = group
-	var destination_type: CORTICAL_AREA_TYPE = destination_cortical_area.group
-	var output: Array[MAPPING_SPECIAL_CASES] = []
-
-	if source_type in MAPPING_CORTICAL_TYPE_SPECIAL_CASES.keys():
-		# Source type has specific mapping
-		if destination_type in MAPPING_CORTICAL_TYPE_SPECIAL_CASES[source_type]:
-			# special case for specific source found for specific destination
-			output.assign(MAPPING_CORTICAL_TYPE_SPECIAL_CASES[source_type][destination_type])  
-			return output
-		else:
-			output.assign(MAPPING_CORTICAL_TYPE_SPECIAL_CASES[source_type][CORTICAL_AREA_TYPE.UNKNOWN])
-			return output
-	else:
-		# Source type has no specific mapping
-		if destination_type in MAPPING_CORTICAL_TYPE_SPECIAL_CASES[CORTICAL_AREA_TYPE.UNKNOWN]:
-			# Destination does have a restriction
-			output.assign(MAPPING_CORTICAL_TYPE_SPECIAL_CASES[CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
-			return  output
-		else:
-			# No mapping restriction found at all
-			output.assign([MAPPING_SPECIAL_CASES.NONE])
-			return output
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:

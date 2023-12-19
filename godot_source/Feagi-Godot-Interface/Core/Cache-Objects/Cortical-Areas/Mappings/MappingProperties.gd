@@ -156,4 +156,4 @@ func update_mappings_to_empty() -> void:
 
 ## Does mapping follow mapping count and morphology restrictions from cortical areas?
 func is_mapping_valid() -> bool:
-	return _src_cortical.is_mapping_property_array_invalid_given_destination_area(_mappings, _dst_cortical)
+	return MappingHints.is_mapping_property_array_invalid_for_cortical_areas(_src_cortical, _dst_cortical, _mappings)
