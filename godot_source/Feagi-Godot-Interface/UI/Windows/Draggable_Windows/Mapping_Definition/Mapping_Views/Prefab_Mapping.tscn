@@ -82,7 +82,7 @@ script = ExtResource("3_2p8f4")
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
-[node name="info" type="TextureButton" parent="."]
+[node name="edit" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_dnfxt")
@@ -106,5 +106,5 @@ script = ExtResource("5_c7vkc")
 
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
-[connection signal="pressed" from="info" to="." method="_on_info_pressed"]
+[connection signal="pressed" from="edit" to="." method="_on_info_pressed"]
 [connection signal="pressed" from="remove" to="." method="_on_delete_pressed"]

@@ -8,6 +8,7 @@ var _plasticity: Button
 var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
 var _LTD_multiplier: FloatInput
+var _edit: Button
 
 
 func _ready() -> void:
@@ -18,6 +19,7 @@ func _ready() -> void:
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
+	_edit = $edit
 	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
 
 func setup(data: Dictionary, _main_window) -> void:
@@ -33,6 +35,8 @@ func setup(data: Dictionary, _main_window) -> void:
 	if "morphologies_whitelist" in data.keys():
 		_morphologies.overwrite_morphologies(data["morphologies_whitelist"])
 	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
+	_edit.disabled = !_mapping_ref.morphology_used.is_user_editable
+	
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:
@@ -55,7 +59,6 @@ func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_plasticity_constant.editable = toggle_state
 	_LTP_multiplier.editable = toggle_state
 	_LTD_multiplier.editable = toggle_state
-
 
 func _on_delete_pressed() -> void:
 	queue_free()
