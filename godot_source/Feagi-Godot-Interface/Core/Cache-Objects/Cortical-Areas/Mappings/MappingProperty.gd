@@ -78,6 +78,11 @@ static func from_array_of_dict(mapping_dicts: Array[Dictionary]) -> Array[Mappin
 		output.append(MappingProperty.from_dict(mapping_dict))
 	return output
 
+#TODO move the internal check to a static function in BaseCorticalArea
+## Is an array of mappingproperties valid given a source and destination area?
+static func is_mapping_property_array_invalid_for_cortical_areas(mapping_propertys: Array[MappingProperty], source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> bool:
+	return source_area.is_mapping_property_array_invalid_given_destination_area(mapping_propertys, destination_area)
+
 
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_dictionary() -> Dictionary:

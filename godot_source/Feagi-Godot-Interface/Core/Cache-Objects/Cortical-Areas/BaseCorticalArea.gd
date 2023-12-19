@@ -345,6 +345,20 @@ var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 
 # Mapping Related
 
+## Is an array of [MappingProperty] valid given a destination area from this source area?
+func is_mapping_property_array_invalid_for_cortical_areas(mapping_propertys: Array[MappingProperty], destination_area: BaseCorticalArea) -> bool:
+	var limit_on_mapping_count: int = get_allowed_mapping_count(destination_area)
+	if limit_on_mapping_count != -1:
+		if len(mapping_propertys) > limit_on_mapping_count:
+			return true
+	
+	var restriction_of_morphologies: Array[Morphology] = get_allowed_morphologies_to_map_toward(destination_area)
+	if len(restriction_of_morphologies) > 0:
+		for mapping: MappingProperty in mapping_propertys:
+			if mapping.morphology_used not in restriction_of_morphologies:
+				return true
+	return false
+
 ## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
 ## An empty array means there are no restrictions
 func get_allowed_morphologies_to_map_toward(destination_cortical_area: BaseCorticalArea) -> Array[Morphology]:

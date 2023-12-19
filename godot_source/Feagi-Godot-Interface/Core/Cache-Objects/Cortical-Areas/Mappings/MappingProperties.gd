@@ -156,13 +156,4 @@ func update_mappings_to_empty() -> void:
 
 ## Does mapping follow mapping count and morphology restrictions from cortical areas?
 func is_mapping_valid() -> bool:
-	if is_limit_on_mapping_count:
-		if len(_mappings) != _max_number_mappings_supported:
-			return false
-	
-	if is_restriction_on_morphologies_used:
-		for mapping: MappingProperty in _mappings:
-			if mapping.morphology_used not in _morphologies_restricted_to:
-				return false
-	
-	return true
+	return _src_cortical.is_mapping_property_array_invalid_given_destination_area(_mappings, _dst_cortical)
