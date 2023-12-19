@@ -10,7 +10,6 @@ func _ready() -> void:
 	_connection_toggle = $CheckButton
 
 func display_mapping_properties(mappings_copy: MappingProperties) -> void:
-	visible = true
 	_set_unique_case_text(mappings_copy)
 	_connection_toggle.button_pressed = mappings_copy.number_mappings > 0
 	_allowed_morphologies = mappings_copy.source_cortical_area.get_allowed_morphologies_to_map_toward(mappings_copy.destination_cortical_area)
