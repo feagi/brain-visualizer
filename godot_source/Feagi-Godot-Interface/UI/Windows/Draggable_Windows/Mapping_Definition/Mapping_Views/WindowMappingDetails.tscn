@@ -1,17 +1,17 @@
 [gd_scene load_steps=9 format=3 uid="uid://c4hu4bdxc8gu3"]
 
-[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="1_ctvo5"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowMappingDetails.gd" id="1_w5tqp"]
-[ext_resource type="Texture2D" uid="uid://dsr0vah60elhm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_jjmdh"]
-[ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Prefab_Mapping.tscn" id="2_m216w"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_hpqoi"]
-[ext_resource type="Texture2D" uid="uid://dyhv6lbkcn7p7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_rr5d6"]
-[ext_resource type="Texture2D" uid="uid://dlfm8wiogystu" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_ecgek"]
-[ext_resource type="Texture2D" uid="uid://ch4waflhjqwnn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_gebi8"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/WindowMappingDetails.gd" id="1_7q0g3"]
+[ext_resource type="Texture2D" uid="uid://dsr0vah60elhm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_6o162"]
+[ext_resource type="Texture2D" uid="uid://dyhv6lbkcn7p7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_w6aij"]
+[ext_resource type="Texture2D" uid="uid://dlfm8wiogystu" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_smx40"]
+[ext_resource type="Texture2D" uid="uid://ch4waflhjqwnn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_w5e67"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_hsheg"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="7_tklk0"]
+[ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.tscn" id="8_8wcxb"]
 
 [node name="Mapping_Details" type="VBoxContainer"]
 alignment = 1
-script = ExtResource("1_w5tqp")
+script = ExtResource("1_7q0g3")
 
 [node name="labels_box" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -71,17 +71,17 @@ text = "LTD Multiplier"
 [node name="add_button" type="TextureButton" parent="labels_box"]
 custom_minimum_size = Vector2(25, 0)
 layout_mode = 2
-texture_normal = ExtResource("2_jjmdh")
-texture_pressed = ExtResource("3_rr5d6")
-texture_hover = ExtResource("4_ecgek")
-texture_disabled = ExtResource("5_gebi8")
+texture_normal = ExtResource("2_6o162")
+texture_pressed = ExtResource("3_w6aij")
+texture_hover = ExtResource("4_smx40")
+texture_disabled = ExtResource("5_w5e67")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("3_hpqoi")
+script = ExtResource("6_hsheg")
 
-[node name="Mappings" parent="." instance=ExtResource("1_ctvo5")]
+[node name="Mappings" parent="." instance=ExtResource("7_tklk0")]
 custom_minimum_size = Vector2(1300, 200)
 layout_mode = 2
-prefab_to_spawn = ExtResource("2_m216w")
+prefab_to_spawn = ExtResource("8_8wcxb")
 
 [connection signal="pressed" from="labels_box/add_button" to="." method="_add_mapping_pressed"]
