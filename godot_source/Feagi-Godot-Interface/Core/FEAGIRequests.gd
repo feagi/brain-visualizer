@@ -176,6 +176,9 @@ func request_delete_mapping_between_corticals(source_area: BaseCorticalArea, des
 ## Request FEAGI to set a specific mapping between 2 cortical areas (overridding previous setting)
 func request_set_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
+	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
+		push_error("Requested Mapping appears to be invalid! Skip sending requesting mapping configuration to FEAGI!")
+		return
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_array(mappings))
 
 ## Request FEAGI to append mappings to a current mappings
