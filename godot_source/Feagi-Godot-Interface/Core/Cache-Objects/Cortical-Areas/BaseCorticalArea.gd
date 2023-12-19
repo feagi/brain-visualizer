@@ -50,6 +50,10 @@ var group: CORTICAL_AREA_TYPE:
 	get: 
 		return _get_group()
 
+var type_as_string: StringName:
+	get:
+		return BaseCorticalArea.cortical_type_to_str(_get_group())
+
 ## Is cortical area visible?
 var cortical_visibility: bool:
 	get:

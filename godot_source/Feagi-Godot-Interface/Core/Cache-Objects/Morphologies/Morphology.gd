@@ -25,3 +25,10 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool):
 	name = morphology_name
 	is_placeholder_data = is_using_placeholder_data
 	is_user_editable = !morphology_name in USER_NONEDITABLE_MORPHOLOGIES
+
+static func morphology_array_to_string_array_of_names(morphologies: Array[Morphology]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for morphology: Morphology in morphologies:
+		output.append(morphology.name)
+	return output
+
