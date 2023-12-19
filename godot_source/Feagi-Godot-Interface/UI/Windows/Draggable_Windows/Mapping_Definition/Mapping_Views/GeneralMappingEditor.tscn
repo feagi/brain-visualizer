@@ -28,7 +28,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Overwrite Scalar [X, Y, Z]"
 
-[node name="g" type="Control" parent="labels_box"]
+[node name="g2" type="Control" parent="labels_box"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 
