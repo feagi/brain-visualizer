@@ -22,7 +22,7 @@ var _window_memory_states: Dictionary = {
 	"edit_mappings": {"position": Vector2(900,150)},
 	"create_cortical": {"position": Vector2(400,550)},
 	"import_circuit": {"position": Vector2(400,850)},
-	"quick_connect": {"position": Vector2(50,100)},
+	"quick_connect": {"position": Vector2(500,100)},
 	"tutorial": {"position": Vector2(900,500)},
 	"view_cortical": {"position": Vector2(50,100)}
 }
