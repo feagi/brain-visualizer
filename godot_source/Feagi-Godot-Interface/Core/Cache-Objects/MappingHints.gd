@@ -7,7 +7,7 @@ enum MAPPING_SPECIAL_CASES {
 	MEMORY_TO_ANY,
 	MEMORY_TO_MEMORY,
 }
-
+#TODO move to JSON
 ## What is allowed to be mapped to what with what morphology names (source -> destination). empty array means anything
 ## Prioritizes non-UNKNOWN types first, UNKNOWN is used in lieu of "all (others)"
 const MORPHOLOGY_RESTRICTIONS: Dictionary = {

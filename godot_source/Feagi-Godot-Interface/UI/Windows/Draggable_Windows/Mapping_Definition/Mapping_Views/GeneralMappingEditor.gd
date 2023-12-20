@@ -28,10 +28,7 @@ func update_displayed_mapping_properties(mappings_copy: MappingProperties, mappi
 	else:
 		_spawn_full_mappings(mappings_copy, mapping_hints)
 	
-	if mapping_hints.is_number_mappings_restricted:
-		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
-	else:
-		_add_mapping.disabled = false
+	_toggle_add_mapping_button_automatically()
 
 ## Creates an Array of [MappingProperty] given the items within the scroll section
 func generate_mapping_propertys() -> Array[MappingProperty]:
@@ -61,10 +58,7 @@ func add_default_mapping_if_applicable(override_child_check: bool = false) -> vo
 		_spawn_simple_mapping(mapping, _mapping_hints)
 	else:
 		_spawn_full_mapping(mapping)
-	if _mapping_hints.is_number_mappings_restricted:
-		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= _mapping_hints.max_number_mappings
-	else:
-		_add_mapping.disabled = false
+	_toggle_add_mapping_button_automatically()
 
 func _toggle_show_full_editing(full_editing: bool) -> void:
 	$labels_box/g1.visible = full_editing
@@ -83,22 +77,17 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 func _spawn_full_mappings(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
 	for mapping: MappingProperty in mappings.mappings:
 		_spawn_full_mapping(mapping)
-	if mapping_hints.is_number_mappings_restricted:
-		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
-	else:
-		_add_mapping.disabled = false
+	_toggle_add_mapping_button_automatically()
 
 func _spawn_full_mapping(mapping: MappingProperty) -> void:
 	var spawn_parameter: Dictionary = {"mapping": mapping}
-	_mappings_scroll.spawn_list_item(spawn_parameter)
+	var mapping_ui_prefab: Prefab_Mapping = _mappings_scroll.spawn_list_item(spawn_parameter)
+	mapping_ui_prefab.mapping_to_be_deleted.connect(_toggle_add_mapping_button_automatically)
 
 func _spawn_simple_mappings(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
 	for mapping: MappingProperty in mappings.mappings:
 		_spawn_simple_mapping(mapping, mapping_hints)
-	if mapping_hints.is_number_mappings_restricted:
-		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= mapping_hints.max_number_mappings
-	else:
-		_add_mapping.disabled = false
+	_toggle_add_mapping_button_automatically()
 
 func _spawn_simple_mapping(mapping: MappingProperty, mapping_hints: MappingHints) -> void:
 	var spawn_parameter: Dictionary = {
@@ -106,7 +95,15 @@ func _spawn_simple_mapping(mapping: MappingProperty, mapping_hints: MappingHints
 		"simple": true}
 	if mapping_hints.is_morphologies_restricted:
 		spawn_parameter["allowed_morphologies"] = mapping_hints.restricted_morphologies
-	_mappings_scroll.spawn_list_item(spawn_parameter)
+	var mapping_ui_prefab: Prefab_Mapping = _mappings_scroll.spawn_list_item(spawn_parameter)
+	mapping_ui_prefab.mapping_to_be_deleted.connect(_toggle_add_mapping_button_automatically)
+
+func _toggle_add_mapping_button_automatically() -> void:
+	if _mapping_hints.is_number_mappings_restricted:
+		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= _mapping_hints.max_number_mappings
+	else:
+		_add_mapping.disabled = false
+
 
 # connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:

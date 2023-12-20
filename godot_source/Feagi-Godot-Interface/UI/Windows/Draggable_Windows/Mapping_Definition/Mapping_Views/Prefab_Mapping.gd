@@ -1,6 +1,8 @@
 extends HBoxContainer
 class_name Prefab_Mapping
 
+signal mapping_to_be_deleted()
+
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
@@ -77,6 +79,8 @@ func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_LTD_multiplier.editable = toggle_state
 
 func _on_delete_pressed() -> void:
+	get_parent().remove_child(self) # Cursed
+	mapping_to_be_deleted.emit()
 	queue_free()
 
 func _on_info_pressed() -> void:
