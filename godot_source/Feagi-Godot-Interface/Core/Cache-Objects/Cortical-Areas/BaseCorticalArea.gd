@@ -315,6 +315,7 @@ var efferent_mappings: Dictionary: ## Outgoing cortical area mappings as [Mappin
 var num_efferent_connections: int: ## Number of outgoing cortical area connections
 	get: return len(_get_efferents())
 
+signal efferent_mapping_retrieved_from_feagi(mapping_properties: MappingProperties)
 signal efferent_mapping_added(mapping_properties: MappingProperties)
 signal efferent_mapping_edited(mapping_properties: MappingProperties)
 signal efferent_mapping_removed(mapping_properties: MappingProperties)
@@ -332,13 +333,16 @@ var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	
+	var retrieved_mapping_properties = MappingProperties.new(self, destination_area, mappings)
+	efferent_mapping_retrieved_from_feagi.emit(retrieved_mapping_properties)
+
 	if !(destination_area.cortical_ID in _efferent_mappings.keys()):
 		# we dont have the mappings in the system
 		if len(mappings) == 0:
 			# A nonexistant mapping was just set to be empty. ignore this
 			return
 		## Add the mapping
-		_efferent_mappings[destination_area.cortical_ID] = MappingProperties.new(self, destination_area, mappings)
+		_efferent_mappings[destination_area.cortical_ID] = retrieved_mapping_properties
 		destination_area.add_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 		efferent_mapping_added.emit(_efferent_mappings[destination_area.cortical_ID])
 		print("CORE: Adding mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 

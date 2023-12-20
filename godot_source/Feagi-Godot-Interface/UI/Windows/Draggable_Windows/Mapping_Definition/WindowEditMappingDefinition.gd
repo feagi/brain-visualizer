@@ -19,7 +19,7 @@ func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseC
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
 		_source_area = cortical_source
-		_source_area.efferent_mapping_edited.connect(_updated_mapping_UI)
+		_source_area.efferent_mapping_retrieved_from_feagi.connect(_updated_mapping_UI)
 	else:
 		_sources_dropdown.select(-1)
 		
