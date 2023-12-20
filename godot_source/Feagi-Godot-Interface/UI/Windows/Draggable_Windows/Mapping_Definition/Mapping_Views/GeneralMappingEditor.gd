@@ -43,8 +43,8 @@ func generate_mapping_propertys() -> Array[MappingProperty]:
 	return mappings
 
 ## Adds a mapping to the mappingProperties if applicable (valid and starting empty)
-func add_default_mapping_if_applicable() -> void:
-	if _mappings_scroll.get_number_of_children() != 0:
+func add_default_mapping_if_applicable(override_child_check: bool = false) -> void:
+	if (_mappings_scroll.get_number_of_children() != 0) and (!override_child_check):
 		# No adding a default mapping if there already is a mapping
 		return
 	
@@ -60,7 +60,11 @@ func add_default_mapping_if_applicable() -> void:
 	if _simple_mode:
 		_spawn_simple_mapping(mapping, _mapping_hints)
 	else:
-		_spawn_full_mapping(mapping,)
+		_spawn_full_mapping(mapping)
+	if _mapping_hints.is_number_mappings_restricted:
+		_add_mapping.disabled = _mappings_scroll.get_number_of_children() >= _mapping_hints.max_number_mappings
+	else:
+		_add_mapping.disabled = false
 
 func _toggle_show_full_editing(full_editing: bool) -> void:
 	$labels_box/g1.visible = full_editing
@@ -110,6 +114,5 @@ func _add_mapping_pressed() -> void:
 		print("Unable to spawn a connection when no morphologies exist!")
 		## TODO a user error may go well here
 		return
-	var new_mapping: MappingProperty = MappingProperty.create_placeholder_mapping()
-	var spawn_parameter: Dictionary = {"mapping": new_mapping}
-	_mappings_scroll.spawn_list_item(spawn_parameter)
+	add_default_mapping_if_applicable(true)
+
