@@ -7,7 +7,7 @@ var _destination_area: BaseCorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
 var _general_mapping_details: GeneralMappingEditor
-
+var _spawn_default_mapping_if_applicable_on_spawn
 
 func _ready() -> void:
 	super()
@@ -15,19 +15,22 @@ func _ready() -> void:
 	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
 	_general_mapping_details = $BoxContainer/Mapping_Details
 
-func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null):
+func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable = false):
+	_spawn_default_mapping_if_applicable_on_spawn = spawn_default_mapping_if_applicable
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
 		_source_area = cortical_source
-		_source_area.efferent_mapping_retrieved_from_feagi.connect(_updated_mapping_UI)
+		_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	else:
 		_sources_dropdown.select(-1)
+		_spawn_default_mapping_if_applicable_on_spawn = false
 		
 	if cortical_destination != null:
 		_destinations_dropdown.set_selected_cortical_area(cortical_destination)
 		_destination_area = cortical_destination
 	else:
 		_destinations_dropdown.select(-1)
+		_spawn_default_mapping_if_applicable_on_spawn = false
 	
 	_sources_dropdown.user_selected_cortical_area.connect(_source_changed)
 	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
@@ -43,9 +46,12 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 	
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
-func _updated_mapping_UI(mappings: MappingProperties) -> void:
+func _retrieved_feagi_mapping_data(mappings: MappingProperties) -> void:
 	var mapping_hints: MappingHints = MappingHints.new(_source_area, _destination_area)
 	_general_mapping_details.update_displayed_mapping_properties(mappings.duplicate(), mapping_hints)
+	if _spawn_default_mapping_if_applicable_on_spawn:
+		_general_mapping_details.add_default_mapping_if_applicable()
+		_spawn_default_mapping_if_applicable_on_spawn = false
 
 ## Request FEAGI to give us the latest information on the user picked mapping (only if both the source and destination are valid)
 func _request_mappings_from_feagi() -> void:

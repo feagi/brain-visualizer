@@ -66,7 +66,7 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 		morphology_manager.set_selected_morphology(morphology_to_preload)
 	
 
-func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null):
+func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
 	if "edit_mappings" in loaded_windows.keys():
 		force_close_window("edit_mappings")
 	
@@ -75,7 +75,7 @@ func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorti
 	add_child(edit_mappings)
 	edit_mappings.load_from_memory(_window_memory_states["edit_mappings"])
 	edit_mappings.closed_window.connect(force_close_window)
-	edit_mappings.setup(source, destination)
+	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)
 	loaded_windows["edit_mappings"] = edit_mappings
 	bring_window_to_top(edit_mappings)
 
