@@ -70,4 +70,4 @@ func _user_attempt_confirm_value(input_text: String) -> void:
 	float_confirmed.emit(_previous_float)
 
 func _set_value_UI(new_float: float) -> void:
-	text = prefix + str(clampi(new_float, min_value, max_value)) + suffix
+	text = prefix + str(clamp(new_float, min_value, max_value)) + suffix
