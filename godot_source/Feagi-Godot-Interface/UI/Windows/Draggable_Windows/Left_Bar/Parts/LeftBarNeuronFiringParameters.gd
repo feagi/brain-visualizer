@@ -117,7 +117,7 @@ func _feagi_update_Leak_Varibility(value: int, _cortical_ref) -> void:
 	_Leak_Varibility.current_int = value
 
 func _feagi_update_Threshold_Inc(value: Vector3, _cortical_ref) -> void:
-	_Consecutive_Fire_Count.current_vector = FEAGIUtils.vector3_to_array(value)
+	_Threshold_Inc.current_vector = value
 
 func _feagi_update_Consecutive_Fire_Count(value: int, _cortical_ref) -> void:
 	_Consecutive_Fire_Count.current_int = value
