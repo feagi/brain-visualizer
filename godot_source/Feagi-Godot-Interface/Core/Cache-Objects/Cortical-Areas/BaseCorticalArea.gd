@@ -481,7 +481,7 @@ func _set_neuron_psp_uniform_distribution(new_val: bool) -> void:
 func _set_neuron_mp_driven_psp(new_val: bool) -> void:
 	if new_val == _neuron_mp_driven_psp: 
 		return
-	neuron_mp_driven_psp = new_val
+	_neuron_mp_driven_psp = new_val
 	neuron_neuron_mp_driven_psp_updated.emit(new_val, self)
 
 func _set_neuron_post_synaptic_potential(new_val: float) -> void:
