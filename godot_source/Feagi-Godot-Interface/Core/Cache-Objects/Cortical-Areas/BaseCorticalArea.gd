@@ -11,7 +11,7 @@ enum CORTICAL_AREA_TYPE {
 	MEMORY,
 	CUSTOM,
 	OPU,
-	INVALID
+	UNKNOWN
 }
 
 signal about_to_be_deleted(this_cortical_area: BaseCorticalArea)
@@ -42,6 +42,10 @@ var name: StringName:
 var group: CORTICAL_AREA_TYPE:
 	get: 
 		return _get_group()
+
+var type_as_string: StringName:
+	get:
+		return BaseCorticalArea.cortical_type_to_str(_get_group())
 
 ## Is cortical area visible?
 var cortical_visibility: bool:
@@ -160,7 +164,7 @@ static func cortical_type_str_to_type(cortical_type_raw: String) -> CORTICAL_ARE
 		return CORTICAL_AREA_TYPE[cortical_type_raw]
 	else:
 		push_error("Unknown Cortical Type " + cortical_type_raw +". Marking as INVALID!")
-		return CORTICAL_AREA_TYPE.INVALID
+		return CORTICAL_AREA_TYPE.UNKNOWN
 
 ## From a human readable string of cortical type, to cortical type enum
 static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) -> CORTICAL_AREA_TYPE:
@@ -177,7 +181,7 @@ static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) 
 		"memory":
 			return CORTICAL_AREA_TYPE.MEMORY
 		_:
-			return CORTICAL_AREA_TYPE.INVALID
+			return CORTICAL_AREA_TYPE.UNKNOWN
 
 
 ## Given a cortical type enum, return the string
@@ -269,7 +273,7 @@ func _set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
 	## OVERRIDE THIS
-	return CORTICAL_AREA_TYPE.INVALID
+	return CORTICAL_AREA_TYPE.UNKNOWN
 
 func _user_can_edit_dimensions() -> bool:
 	return true
@@ -279,7 +283,6 @@ func _user_can_edit_name() -> bool:
 
 func _user_can_delete_area() -> bool:
 	return true
-#endregion
 
 func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
 	return true
@@ -293,8 +296,13 @@ func _has_neuron_firing_parameters() -> bool:
 func _has_memory_parameters() -> bool:
 	return false
 
+#endregion
+
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas
 #region Mapping
+
+
+
 var afferent_connections: Array[BaseCorticalArea]: ## Incoming cortical area connections
 	get: return _afferent_connections
 var num_afferent_connections: int: ## Number of incoming cortical area connections
@@ -307,6 +315,7 @@ var efferent_mappings: Dictionary: ## Outgoing cortical area mappings as [Mappin
 var num_efferent_connections: int: ## Number of outgoing cortical area connections
 	get: return len(_get_efferents())
 
+signal efferent_mapping_retrieved_from_feagi(mapping_properties: MappingProperties)
 signal efferent_mapping_added(mapping_properties: MappingProperties)
 signal efferent_mapping_edited(mapping_properties: MappingProperties)
 signal efferent_mapping_removed(mapping_properties: MappingProperties)
@@ -318,16 +327,22 @@ var _afferent_connections: Array[BaseCorticalArea]
 var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 
 # Mapping Related
+
+
+
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	
+	var retrieved_mapping_properties = MappingProperties.new(self, destination_area, mappings)
+	efferent_mapping_retrieved_from_feagi.emit(retrieved_mapping_properties)
+
 	if !(destination_area.cortical_ID in _efferent_mappings.keys()):
 		# we dont have the mappings in the system
 		if len(mappings) == 0:
 			# A nonexistant mapping was just set to be empty. ignore this
 			return
 		## Add the mapping
-		_efferent_mappings[destination_area.cortical_ID] = MappingProperties.new(self, destination_area, mappings)
+		_efferent_mappings[destination_area.cortical_ID] = retrieved_mapping_properties
 		destination_area.add_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 		efferent_mapping_added.emit(_efferent_mappings[destination_area.cortical_ID])
 		print("CORE: Adding mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
