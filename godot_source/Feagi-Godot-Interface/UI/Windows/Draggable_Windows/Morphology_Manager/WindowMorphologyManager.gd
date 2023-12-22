@@ -50,7 +50,7 @@ func send_updated_values_to_feagi() -> void:
 	FeagiRequests.request_updating_morphology(morphology_to_send)
 
 func _automatically_set_delete_button_availability() -> void:
-	_delete_morphology_button.disabled = (!_selected_morphology.is_user_editable) or (!_selected_morphology.is_being_used)
+	_delete_morphology_button.disabled = (!_selected_morphology.is_user_editable) or (_selected_morphology.is_being_used)
 
 func _request_delete_selected_morphology() -> void:
 	FeagiRequests.request_delete_morphology(_selected_morphology)
