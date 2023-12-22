@@ -1,7 +1,7 @@
 extends Object
 class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
-const USER_NONEDITABLE_MORPHOLOGIES: PackedStringArray = ["memory"] # Which morphologies can the user not edit the details of?
+const USER_NONEDITABLE_MORPHOLOGIES: PackedStringArray = ["memory", "projector"] # Which morphologies can the user not edit the details of?
 
 signal retrieved_latest_usuage_of_morphology(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
 signal about_to_be_deleted()
