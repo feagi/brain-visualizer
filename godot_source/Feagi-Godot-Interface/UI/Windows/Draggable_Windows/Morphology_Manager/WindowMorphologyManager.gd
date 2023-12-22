@@ -5,7 +5,7 @@ var _main_container: BoxContainer
 var _morphology_scroll: MorphologyScroll
 var _smart_morphology_view: SmartMorphologyView
 var _morphology_generic_details: MorphologyGenericDetails
-var _delete_morphology_button: TextButton_Element
+var _delete_morphology_button: TextureButton
 
 var _selected_morphology: Morphology
 
@@ -15,7 +15,7 @@ func _ready() -> void:
 	_morphology_scroll = $Container/MorphologyScroll
 	_smart_morphology_view = $Container/SmartMorphologyView
 	_morphology_generic_details = $Container/DetailsAndButtons/MorphologyGenericDetails
-	_delete_morphology_button = $Container/DetailsAndButtons/HBoxContainer/Delete
+	_delete_morphology_button = $Container/DetailsAndButtons/Delete
 	_morphology_scroll.morphology_selected.connect(load_morphology)
 	FeagiCacheEvents.morphology_updated.connect(morphology_updated_from_FEAGI)
 
@@ -53,6 +53,9 @@ func _automatically_set_delete_button_availability() -> void:
 	_delete_morphology_button.disabled = (!_selected_morphology.is_user_editable) or (_selected_morphology.is_being_used)
 
 func _request_delete_selected_morphology() -> void:
+	if _selected_morphology == null:
+		return
 	FeagiRequests.request_delete_morphology(_selected_morphology)
-
+	
+	
 
