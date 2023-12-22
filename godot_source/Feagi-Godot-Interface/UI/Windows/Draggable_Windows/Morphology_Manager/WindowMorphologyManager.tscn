@@ -49,6 +49,16 @@ script = ExtResource("7_xd5m5")
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
+[node name="Delete" type="Button" parent="Container/DetailsAndButtons/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Delete Morphology"
+script = ExtResource("7_xd5m5")
+
+[node name="Control2" type="Control" parent="Container/DetailsAndButtons/HBoxContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
 [node name="Update" type="Button" parent="Container/DetailsAndButtons/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3

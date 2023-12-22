@@ -19,7 +19,7 @@ var name: StringName
 var description: StringName # TODO retrieve!
 var type: MORPHOLOGY_TYPE
 var is_placeholder_data: bool
-var is_user_editable: bool = true
+var is_user_editable: bool = true ## if true, morphology cannot be edited or deleted
 
 func _init(morphology_name: StringName, is_using_placeholder_data: bool):
 	name = morphology_name
