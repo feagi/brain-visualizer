@@ -73,7 +73,7 @@ func _move_timer_finished():
 
 ## User requested a connection. Note that this function is going to be redone in the graph edit refactor
 func _user_request_connection(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
-	VisConfig.UI_manager.window_manager.spawn_edit_mappings(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID])
+	VisConfig.UI_manager.window_manager.spawn_edit_mappings(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID], true)
 
 func _on_genome_reset():
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)

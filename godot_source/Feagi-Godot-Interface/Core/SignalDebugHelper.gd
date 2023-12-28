@@ -14,7 +14,6 @@ func _ready():
 	FeagiCacheEvents.cortical_area_removed.connect(cache_cortical_removed)
 	FeagiCacheEvents.cortical_area_updated.connect(cache_cortical_updated)
 	FeagiCacheEvents.cortical_areas_disconnected.connect(cache_connection_disconnected)
-	FeagiCacheEvents.cortical_areas_connection_modified.connect(cache_connection_updated)
 	FeagiCacheEvents.delay_between_bursts_updated.connect(cache_updated_burst_rate)
 	
 	

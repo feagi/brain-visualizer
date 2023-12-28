@@ -9,11 +9,11 @@ class_name IntInput
 
 ## Only emits if user changes the text THEN focuses off the textbox
 signal int_confirmed(new_int: int)
+signal int_changed(new_int: int)
 signal user_interacted()
 
-## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
-@export var enable_signaling_on_ready: bool = true
-@export var emit_when_enter_pressed: bool = true
+@export var confirm_when_focus_lost: bool = true
+
 ## The integer to start with
 @export var initial_int: int = 0
 ## what to add before the int
@@ -26,54 +26,48 @@ signal user_interacted()
 var current_int: int:
 	get: return _previous_int
 	set(v):
-		external_update_int(v)
+		_previous_int = v
+		if has_focus():
+			text = str(v)
+		else:
+			_set_value_UI(v)
 
 var _previous_int: int
+var _prefix_length: int
+var _suffix_length: int
 
 func _ready():
 	_previous_int = initial_int
-	_set_visible_text(initial_int)
-	toggle_signaling_up(enable_signaling_on_ready)
-	focus_entered.connect(_on_focus)
-	text_changed.connect(_on_interaction)
-	if emit_when_enter_pressed:
-		text_submitted.connect(_enter_proxy)
+	_prefix_length = len(prefix)
+	_suffix_length = len(suffix)
+	_set_value_UI(_previous_int)
+	focus_entered.connect(_focus_entered)
+	focus_exited.connect(_focus_lost)
+	text_changed .connect(_user_attempt_change_value)
+	text_submitted.connect(_user_attempt_confirm_value)
 
-## Used to update the float value externally programatically (IE not from the user)
-func external_update_int(new_int: int) -> void:
-	_previous_int = new_int
-	_set_visible_text(new_int)
-
-## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
-func toggle_signaling_up(enable: bool) -> void:
-	if enable:
-		if is_connected("focus_exited", _emit_if_text_changed): return # do not connect twice!
-		focus_exited.connect(_emit_if_text_changed)
-		return
-	if !is_connected("focus_exited", _emit_if_text_changed): return # do not disconnect twice!
-	focus_exited.disconnect(_emit_if_text_changed)
-	return
-
-## used so user doesnt have to get rid of prefix and suffix when typing
-func _on_focus():
+func _focus_entered() -> void:
 	text = str(_previous_int)
 
-func _emit_if_text_changed() -> void:
-	if !text.is_valid_int():
-		_set_visible_text(_previous_int)
+func _focus_lost() -> void:
+	_set_value_UI(_previous_int)
+	if confirm_when_focus_lost:
+		_user_attempt_confirm_value(text)
+
+func _user_attempt_change_value(input_text: String) -> void:
+	if !input_text.is_valid_int():
+		text = str(_previous_int)
 		return
-	if text.to_float() == _previous_int:
-		return
-	_previous_int = FEAGIUtils.bounds_int(text.to_int(), min_value, max_value)
-	int_confirmed.emit(_previous_int)
-	_set_visible_text(_previous_int)
-	release_focus()
-
-func _set_visible_text(new_int: int) -> void:
-	text = prefix + str(new_int) + suffix
-
-func _enter_proxy(_text: String) -> void:
-	_emit_if_text_changed()
-
-func _on_interaction(_irrelevant_text: String) -> void:
+	_previous_int = input_text.to_int()
+	int_changed.emit(_previous_int)
 	user_interacted.emit()
+
+func _user_attempt_confirm_value(input_text: String) -> void:
+	if !input_text.is_valid_int():
+		text = str(_previous_int)
+		return
+	_previous_int = input_text.to_int()
+	int_confirmed.emit(_previous_int)
+
+func _set_value_UI(new_int: int) -> void:
+	text = prefix + str(clampi(new_int, min_value, max_value)) + suffix
