@@ -144,6 +144,7 @@ script = ExtResource("13_jugsj")
 visible = false
 offset_right = 1152.0
 offset_bottom = 648.0
+mouse_filter = 2
 script = ExtResource("14_mibao")
 
 [node name="empty" type="Control" parent="UI/temp_split"]
