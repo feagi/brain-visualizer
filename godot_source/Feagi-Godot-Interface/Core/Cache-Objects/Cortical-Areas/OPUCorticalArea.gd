@@ -62,43 +62,43 @@ var neuron_mp_charge_accumulation: bool:
 	set(v):
 		_set_neuron_mp_charge_accumulation(v)
 
-var neuron_leak_coefficient: bool:
+var neuron_leak_coefficient: int:
 	get:
 		return _neuron_leak_coefficient
 	set(v):
 		_set_neuron_leak_coefficient(v)
 
-var neuron_leak_variability: bool:
+var neuron_leak_variability: int:
 	get:
 		return _neuron_leak_variability
 	set(v):
 		_set_neuron_leak_variability(v)
 
-var neuron_refractory_period: bool:
+var neuron_refractory_period: int:
 	get:
 		return _neuron_refractory_period
 	set(v):
 		_set_neuron_refractory_period(v)
 
-var neuron_consecutive_fire_count: bool:
+var neuron_consecutive_fire_count: int:
 	get:
 		return _neuron_consecutive_fire_count
 	set(v):
 		_set_neuron_consecutive_fire_count(v)
 
-var neuron_snooze_period: bool:
+var neuron_snooze_period: int:
 	get:
 		return _neuron_snooze_period
 	set(v):
 		_set_neuron_snooze_period(v)
 
-var neuron_fire_threshold: bool:
+var neuron_fire_threshold: int:
 	get:
 		return _neuron_fire_threshold
 	set(v):
 		_set_neuron_fire_threshold(v)
 
-var neuron_firing_threshold_limit: bool:
+var neuron_firing_threshold_limit: int:
 	get:
 		return _neuron_firing_threshold_limit
 	set(v):

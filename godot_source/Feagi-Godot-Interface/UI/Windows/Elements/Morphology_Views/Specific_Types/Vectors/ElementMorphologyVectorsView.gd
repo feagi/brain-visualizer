@@ -7,9 +7,6 @@ var vectors: Array[Vector3i]:
 	set(v):
 		_set_vector_array(v)
 
-var is_editable: bool:
-	get: return _is_editable
-
 var _vectors_scroll: BaseScroll
 var _vectors_vector_list: VBoxContainer
 var _is_editable: bool = true
@@ -25,6 +22,7 @@ func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool 
 	
 ## Overwrite the current UI view with a [VectorMorphology] object
 func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:
+	set_editable(vector_morphology.is_user_editable)
 	vectors = vector_morphology.vectors
 
 ## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR

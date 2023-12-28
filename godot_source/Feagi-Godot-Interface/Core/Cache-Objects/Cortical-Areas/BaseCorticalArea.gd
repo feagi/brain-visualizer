@@ -199,8 +199,39 @@ func FEAGI_delete_cortical_area() -> void:
 	about_to_be_deleted.emit(self)
 	# [CorticalAreasCache] then deletes this object
 
+## Applies every detail from the dictionary from FEAGI
+func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
+	if data == {}:
+		return
+	if "cortical_id" not in data.keys():
+		push_error("Input dictionary to update cortical area %s is invalid! Skipping!" % _cortical_ID)
+		return
+	if data["cortical_id"] != _cortical_ID:
+		push_error("Input dictionary to update cortical area %s has sent to %s! Skipping!" % [data["cortical_id"], _cortical_ID])
+		return
+	
+	if "cortical_name" in data.keys():
+		name = data["cortical_name"]
+	if "cortical_visibility" in data.keys():
+		cortical_visibility = data["cortical_visibility"]
+	if "cortical_dimensions" in data.keys():
+		dimensions = FEAGIUtils.array_to_vector3i(data["cortical_dimensions"])
+	
+	if "cortical_coordinates_2d" in data.keys():
+		if data["cortical_coordinates_2d"][0] == null:
+			_coordinates_2D_available = false
+		else:
+			coordinates_2D = FEAGIUtils.array_to_vector2i(data["cortical_coordinates_2d"])
 
-# NOTE: This function applies all details, and may be expanded in other cortical types
+	if "cortical_coordinates" in data.keys():
+		if data["cortical_coordinates"] == null:
+			_coordinates_3D_available = false
+		else:
+			coordinates_3D = FEAGIUtils.array_to_vector3i(data["cortical_coordinates"])
+
+	FEAGI_apply_detail_dictionary(data)
+
+# NOTE: This function applies all details (but not base information such as name, visibility, dimensions or positions), and may be expanded in other cortical types
 ## Updates all cortical details in here from a dict from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	

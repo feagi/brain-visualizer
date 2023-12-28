@@ -65,7 +65,7 @@ func _request_apply_mappings_to_FEAGI():
 	if !_are_cortical_areas_valid():
 		push_warning("User attempted to request applying mappings to undefined cortical areas. Skipping!")
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
-	var mapping_properties = _general_mapping_details.generate_mapping_properties()
+	var mapping_properties = _general_mapping_details.generate_mapping_propertys()
 	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, mapping_properties)
 	close_window("edit_mappings")
 

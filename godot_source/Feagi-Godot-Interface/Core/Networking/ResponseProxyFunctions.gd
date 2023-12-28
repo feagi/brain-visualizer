@@ -110,8 +110,7 @@ func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, 
 	var usage_array: Array[Array] = []
 	usage_array.assign(_body_to_untyped_array(response_body))
 	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[morphology_name]
-	# Emit for both the specific morpholoy and broadly to support various use cases
-	morphology_used.retrieved_latest_usuage_of_morphology.emit(usage_array)
+	morphology_used.feagi_update_usage(usage_array)
 	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_used, usage_array)
 	
 
