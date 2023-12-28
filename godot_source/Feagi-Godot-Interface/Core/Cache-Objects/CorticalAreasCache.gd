@@ -118,27 +118,17 @@ func add_cortical_area_from_dict(feagi_dictionary: Dictionary, override_cortical
 
 ## Updates a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
-	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
-	if changing_ID not in _cortical_areas.keys():
-		push_error("Cortical area of ID %s does not exist in memory! Unable to Update! Skipping" % [all_cortical_area_properties["cortical_id"]])
+	if "cortical_id" not in all_cortical_area_properties.keys():
+		push_error("No Cortical Area ID Defined to update! Skipping!")
 		return
 	
-	var updated_name: StringName = all_cortical_area_properties["cortical_name"]
-	var updated_visibility: bool = all_cortical_area_properties["cortical_visibility"]
-	var updated_cortical_dimensions: Vector3i = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_dimensions"])
+	if all_cortical_area_properties["cortical_id"] not in _cortical_areas.keys():
+		push_error("No Cortical Area by ID of %s to update! Skipping!" % all_cortical_area_properties["cortical_id"])
+		return
 	
-	# these properties already have redudancy checking
-	_cortical_areas[changing_ID].name = updated_name
-	_cortical_areas[changing_ID].cortical_visibility = updated_visibility
-	_cortical_areas[changing_ID].dimensions = updated_cortical_dimensions
-
-	# coordinates may or may not be specified, check the dictionary properly
-	if all_cortical_area_properties["cortical_coordinates_2d"][0] != null: # assume either all are null or none are
-		_cortical_areas[changing_ID].coordinates_2D = FEAGIUtils.array_to_vector2i(all_cortical_area_properties["cortical_coordinates_2d"])
-	if all_cortical_area_properties["cortical_coordinates"][0] != null: # assume either all are null or none are
-		_cortical_areas[changing_ID].coordinates_3D = FEAGIUtils.array_to_vector3i(all_cortical_area_properties["cortical_coordinates"])
+	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
 	
-	_cortical_areas[changing_ID].FEAGI_apply_detail_dictionary(all_cortical_area_properties)
+	_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
 	FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!

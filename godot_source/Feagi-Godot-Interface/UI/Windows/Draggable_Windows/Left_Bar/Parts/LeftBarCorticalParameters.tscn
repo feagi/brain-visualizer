@@ -75,8 +75,6 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("3_yn385")
-enable_signaling_on_ready = false
-min_value = 0
 
 [node name="Synaptic_Attractivity" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -92,7 +90,6 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("3_yn385")
-enable_signaling_on_ready = false
 
 [node name="Label_Dimensions" type="Label" parent="."]
 layout_mode = 2
@@ -137,9 +134,5 @@ script = ExtResource("5_lcq15")
 [node name="gap2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
-
-[connection signal="user_interacted" from="Row_Cortical_Name/Cortical_Name" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Cortical_Size" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Cortical_Position" to="." method="_enable_update_button"]
 
 [editable path="Cortical_Position"]

@@ -8,7 +8,9 @@ var feagi_interface: FEAGIInterface:
 
 var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below will crash!
 
-################################ Cortical Areas #################################
+
+#region Cortical Areas
+
 
 ## Requests from FEAGI summary of all cortical areas (name, dimensions, 2D/3D location, and visibility)
 ## Triggers an update in FEAGI Cached cortical areas
@@ -99,9 +101,9 @@ func request_mass_change_2D_positions(cortical_IDs_mapped_to_vector2i_positions:
 func delete_cortical_area(cortical_id: StringName) -> void:
 	print("User requesting cortical area deletion of area " + cortical_id)
 	_feagi_interface.calls.DELETE_GE_corticalArea(cortical_id)
+#endregion
 
-################################# Morphologies ##################################
-
+#region Morphologies
 ## Requests from FEAGI a dict of all morphologies in the genome and each type.
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
@@ -141,20 +143,23 @@ func request_create_morphology(morphology_to_create: Morphology) -> void:
 	_feagi_interface.calls.POST_GE_morphology(morphology_to_create.name, morphology_to_create.type, morphology_to_create.to_dictionary())
 
 ## Requests feagi to delete a morphology
-func request_delete_morphology(morphology_name: StringName) -> void:
-	print("User requested deletion of morphology " + morphology_name)
-	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
-		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology_name])
+func request_delete_morphology(morphology: Morphology) -> void:
+	print("User requested deletion of morphology " + morphology.name)
+	if morphology not in FeagiCache.morphology_cache.available_morphologies.values():
+		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology.name])
 		return
-	_feagi_interface.calls.DELETE_GE_morphology(morphology_name)
+	if !morphology.is_user_editable:
+		push_error("Unable to delete morphology that is not user editable! Skipping!" % [morphology.name])
+		return
+	_feagi_interface.calls.DELETE_GE_morphology(morphology.name)
 
 #TODO this should be updated
 func request_creating_function_morphology(morphology_name: StringName, parameters: Dictionary) -> void:
 	print("Use requested creation of function morphology " + morphology_name)
 	_feagi_interface.calls.POST_GE_morphology(morphology_name, Morphology.MORPHOLOGY_TYPE.FUNCTIONS, parameters)
+#endregion
 
-################################## Connections ##################################
-
+#region Connections
 ## Requests from FEAGI a dict of all conneciton mappings between cortical areas, and the number of mappings per each
 ## Triggers an update in FEAGI cached connections, which cascades to signals for connections added and removed
 ## NOTE FOR STARTUP: This should be called after cortical areas have been loaded into memory, otherwise cortical ID references here will be invalid
@@ -174,6 +179,9 @@ func request_delete_mapping_between_corticals(source_area: BaseCorticalArea, des
 ## Request FEAGI to set a specific mapping between 2 cortical areas (overridding previous setting)
 func request_set_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	print("User Requested modification of the connection from cortical area %s toward %s" % [source_area.cortical_ID, destination_area.cortical_ID])
+	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
+		push_error("Requested Mapping appears to be invalid! Skip sending requesting mapping configuration to FEAGI!")
+		return
 	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_array(mappings))
 
 ## Request FEAGI to append mappings to a current mappings
@@ -188,8 +196,9 @@ func append_mapping_between_corticals(source_area: BaseCorticalArea, destination
 func request_add_default_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology: Morphology) -> void:
 	var additional_mappings: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology)]
 	append_mapping_between_corticals(source_area, destination_area, additional_mappings)
+#endregion
 
-################################ FEAGI Circuits #################################
+#region Circuits
 
 ## Gets the current available circuits of FEAGI
 func refresh_available_circuits() -> void:
@@ -202,9 +211,9 @@ func get_circuit_details(circuit_file_name: StringName) -> void:
 
 func request_add_circuit(circuit_file_name: StringName, circuit_position: Vector3i) -> void:
 	_feagi_interface.calls.POST_GE_append(circuit_file_name, circuit_position)
+#endregion
 
-
-################################# FEAGI General #################################
+#region General
 
 ## Get current burst rate
 func refresh_delay_between_bursts() -> void:
@@ -241,4 +250,4 @@ func poll_genome_availability_launch() -> void:
 func poll_genome_availability_monitoring() -> void:
 	_feagi_interface.calls.GET_healthCheck_POLL_MONITORING()
 
-
+#endregion

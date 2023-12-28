@@ -26,10 +26,6 @@ func _ready() -> void:
 	composite_view = $ElementMorphologyCompositeView
 	vectors_view = $ElementMorphologyVectorsView
 	patterns_view = $ElementMorphologyPatternView
-
-	composite_view.is_editable = morphology_editable
-	vectors_view.is_editable = morphology_editable
-	patterns_view.is_editable = morphology_editable
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
 func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:

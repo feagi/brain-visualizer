@@ -1,21 +1,6 @@
 extends DraggableWindow
 class_name WindowLeftPanel
 
-const NUM_SECTIONS: int = 5
-
-
-
-var section_toggles: Array[bool]:
-	get:
-		var output: Array[bool] = []
-		return output
-	set(v):
-		
-		if len(v) != NUM_SECTIONS:
-			push_warning("Left Bar section_toggles must be %d long!" % NUM_SECTIONS)
-			return
-
-
 var _cortical_area_ref: BaseCorticalArea
 
 var collapsible_cortical: VerticalCollapsible
@@ -101,14 +86,14 @@ func setup_single_area_from_FEAGI(cortical_area_reference: BaseCorticalArea) -> 
 func save_to_memory() -> Dictionary:
 	return {
 		"position": position,
-		"toggles": section_toggles
+		"toggles": _get_expanded_sections()
 	}
 
 ## OVERRIDDEN from Window manager, to load previous position and collapsible states
 func load_from_memory(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 	if "toggles" in previous_data.keys():
-		section_toggles = previous_data["toggles"]
+		_set_expanded_sections(previous_data["toggles"])
 
 ## Called from top or middle, user sent dict of properties to request FEAGI to set
 func _user_requested_update(changed_values: Dictionary) -> void:
@@ -119,3 +104,28 @@ func _FEAGI_deleted_cortical_area(removed_cortical_area: BaseCorticalArea):
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
 		close_window("left_bar")
 
+## Flexible method to return all collapsed sections in left bar
+func _get_expanded_sections() -> Array[bool]:
+	var main_body: Control = get_child(0)
+	var output: Array[bool] = []
+	for child in main_body.get_children():
+		if child is VerticalCollapsible:
+			output.append((child as VerticalCollapsible).is_open)
+	return output
+
+## Flexible method to set all collapsed sections in left bar
+func _set_expanded_sections(expanded: Array[bool]) -> void:
+	var collapsibles: Array[VerticalCollapsible] = []
+	var main_body: Control = get_child(0)
+	
+	for child in main_body.get_children():
+		if child is VerticalCollapsible:
+			collapsibles.append((child as VerticalCollapsible))
+	
+	var max: int = len(collapsibles)
+	if len(expanded) < max:
+		max = len(expanded)
+	
+	for i: int in max:
+		collapsibles[i].is_open = expanded[i]
+	

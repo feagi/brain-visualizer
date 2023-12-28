@@ -39,3 +39,6 @@ func remove_all_children() -> void:
 	for child in children:
 		child.queue_free()
 
+## Gets number of list elements
+func get_number_of_children() -> int:
+	return len(_item_holder.get_children())
