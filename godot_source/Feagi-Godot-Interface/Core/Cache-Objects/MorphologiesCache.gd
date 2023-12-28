@@ -100,4 +100,12 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 		_available_morphologies[add] = adding_morphology
 		FeagiCacheEvents.morphology_added.emit(adding_morphology)
 	
-	
+func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringName], surpress_missing_error: bool = false) -> Array[Morphology]:
+	var output: Array[Morphology] = []
+	for req_morph: StringName in requested:
+		if req_morph in _available_morphologies.keys():
+			output.append(_available_morphologies[req_morph])
+		else:
+			if !surpress_missing_error:
+				push_error("Unable to find requested morphology by name of '%s', Skipping!" % req_morph)
+	return output

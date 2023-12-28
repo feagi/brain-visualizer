@@ -182,7 +182,7 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalAr
 		"template_cortical_ID": template_cortical_ID,
 		"coordinates_3d": coordinates_3D,
 		"channel_count": channel_count,
-		"cortical_type_str": BaseCorticalArea.cortical_type_to_str(type),
+		"cortical_type": type,
 	}
 
 	if is_coordinate_2D_defined:

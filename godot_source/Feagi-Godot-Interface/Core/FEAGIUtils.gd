@@ -18,6 +18,9 @@ static func arr_to_float_arr(arr: Array) -> Array[float]:
 static func int_array_to_vector3i(input: Array[int]) -> Vector3i:
 	return Vector3i(int(input[0]), int(input[1]), int(input[2]))
 
+static func untyped_array_to_vector3(input: Array) -> Vector3:
+	return Vector3(input[0], input[1], input[2])
+	
 ## Converts a 2 long int array to a Vector2i
 static func int_array_to_vector2i(input: Array[int]) -> Vector2i:
 	return Vector2i(int(input[0]), int(input[1]))
@@ -161,5 +164,14 @@ static func is_substring_in_array(arr: PackedStringArray, searching: String) -> 
 			return true
 	return false
 
-
+## Turn StringName Array into CSV string
+static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
+	var output: String = ""
+	var length: int = len(arr)
+	if length == 0:
+		return output
+	for i in (length - 1):
+		output = output + arr[i] + ", "
+	output = output + arr[length - 1]
+	return output
 
