@@ -55,7 +55,7 @@ func _focus_lost() -> void:
 		_user_attempt_confirm_value(text)
 
 func _user_attempt_change_value(input_text: String) -> void:
-	if !input_text.is_valid_int():
+	if !input_text.is_valid_float():
 		text = str(_previous_float)
 		return
 	_previous_float = input_text.to_float()
