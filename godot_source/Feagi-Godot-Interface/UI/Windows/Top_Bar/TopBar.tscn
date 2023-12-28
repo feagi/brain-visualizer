@@ -45,6 +45,7 @@ layout_mode = 2
 alignment = 1
 script = ExtResource("3_v82xb")
 suffix = " Hz"
+min_value = 0.1
 
 [node name="Gap1" type="Control" parent="HBoxContainer"]
 custom_minimum_size = Vector2(10, 0)
