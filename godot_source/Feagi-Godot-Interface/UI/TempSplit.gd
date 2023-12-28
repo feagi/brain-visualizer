@@ -2,8 +2,8 @@ extends SplitContainer
 class_name TempSplit
 
 enum STATES {
-	CB_CLOSED,
 	CB_FULL,
+	CB_CLOSED,
 	CB_HORIZONTAL,
 	CB_VERTICAL
 }
@@ -26,11 +26,13 @@ func set_view(state: STATES) -> void:
 		STATES.CB_HORIZONTAL:
 			visible = true
 			dragger_visibility =SplitContainer.DRAGGER_VISIBLE
+			vertical = false
 			split_offset = int(VisConfig.UI_manager.screen_size.y / 2.0)
 			collapsed = false
 		STATES.CB_VERTICAL:
 			visible = true
 			dragger_visibility =SplitContainer.DRAGGER_VISIBLE
+			vertical = true
 			split_offset = int(VisConfig.UI_manager.screen_size.x / 2.0)
 			collapsed = false
 

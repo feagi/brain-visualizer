@@ -103,6 +103,9 @@ func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	$Brain_Visualizer.snap_camera_to_cortical_area(cortical_area)
 
+func temp_get_temp_split() -> TempSplit:
+	return $temp_split
+
 ## Updates the screensize 
 func _update_screen_size():
 	_screen_size = get_viewport().get_visible_rect().size
