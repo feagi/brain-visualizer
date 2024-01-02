@@ -1,0 +1,56 @@
+[gd_scene load_steps=3 format=3 uid="uid://c4nh5ikljookn"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.gd" id="1_8td17"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_iacyx"]
+
+[node name="QuickCorticalMenu" type="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 38.0
+offset_right = -684.0
+offset_bottom = -337.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8td17")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/separation = 16
+
+[node name="g1" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="Details" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "Details"
+
+[node name="QuickConnect" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "QuickConnect"
+
+[node name="Clone" type="Button" parent="HBoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Delete" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "Delete"
+
+[node name="g2" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="TitleBar" parent="." instance=ExtResource("2_iacyx")]
+layout_mode = 0
+offset_top = -40.0
+offset_bottom = 0.0
+title = "CORTICAL_NAME"
+automatic_setup_hiding_closing = false
+show_close_button = false
+
+[connection signal="pressed" from="HBoxContainer/Details" to="." method="_button_details"]
+[connection signal="pressed" from="HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
+[connection signal="pressed" from="HBoxContainer/Clone" to="." method="_button_clone"]
+[connection signal="pressed" from="HBoxContainer/Delete" to="." method="_button_delete"]
