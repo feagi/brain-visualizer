@@ -1,17 +1,14 @@
-[gd_scene load_steps=3 format=3 uid="uid://c4nh5ikljookn"]
+[gd_scene load_steps=4 format=3 uid="uid://c4nh5ikljookn"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.gd" id="1_8td17"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_iacyx"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_k8yc7"]
 
 [node name="QuickCorticalMenu" type="Panel"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 38.0
-offset_right = -684.0
-offset_bottom = -337.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
 script = ExtResource("1_8td17")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
@@ -19,6 +16,7 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 theme_override_constants/separation = 16
+script = ExtResource("2_k8yc7")
 
 [node name="g1" type="Control" parent="HBoxContainer"]
 layout_mode = 2

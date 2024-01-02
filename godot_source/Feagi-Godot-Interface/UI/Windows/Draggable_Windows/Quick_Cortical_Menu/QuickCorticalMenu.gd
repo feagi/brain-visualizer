@@ -4,6 +4,9 @@ class_name QuickCorticalMenu
 var _cortical_area: BaseCorticalArea
 var _title_bar: TitleBar
 
+func _ready():
+	super._ready()
+
 func setup(cortical_area: BaseCorticalArea) -> void:
 	_cortical_area = cortical_area
 	_title_bar = $TitleBar
