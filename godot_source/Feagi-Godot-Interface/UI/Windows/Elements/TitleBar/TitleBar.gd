@@ -1,4 +1,4 @@
-extends Panel
+extends PanelContainer
 class_name TitleBar
 
 const MINIMUM_TITLEBAR_HEIGHT: int = 40
@@ -18,12 +18,12 @@ signal close_pressed()
 @export var reposition_buffer: int = 45
 
 @export var title_gap: int:
-	get: return $Title_Text.gap
-	set(v): $Title_Text.gap = v
+	get: return $HBoxContainer/Title_Text.gap
+	set(v): $HBoxContainer/Title_Text.gap = v
 
 @export var title: String:
-	get: return $Title_Text.text
-	set(v): $Title_Text.text = v
+	get: return $HBoxContainer/Title_Text.text
+	set(v): $HBoxContainer/Title_Text.text = v
 
 ## if True, will attempt to automatically set up dragging behavior on parent window
 @export var automatic_setup_dragging: bool = true
@@ -75,12 +75,13 @@ var _viewport: Viewport
 func _ready():
 	_viewport = get_viewport()
 	
-	$Close_Button.resized.connect(_height_resized)
-	$Title_Text.resized.connect(_recalculate_title_bar_min_width)
+	$HBoxContainer/Close_Button.resized.connect(_height_resized)
+	$HBoxContainer/Title_Text.resized.connect(_recalculate_title_bar_min_width)
 	mouse_entered.connect(_mouse_enter)
 	mouse_exited .connect(_mouse_leave)
 	
 	custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
+	$HBoxContainer.custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
 	
 	if automatic_setup_hiding_closing and automatic_setup_window_closing_for_window_manager_name != &"":
 		push_warning("TitleBar cannot have multiple close methods defined at once. Please check this windows titleBar settings")
@@ -100,7 +101,7 @@ func _ready():
 			dragged.connect(_auto_drag_move_parent_delta)
 	
 	if automatic_setup_hiding_closing:
-		$Close_Button.pressed.connect(_auto_hide_parent)
+		$HBoxContainer/Close_Button.pressed.connect(_auto_hide_parent)
 	
 	if automatic_maintain_width:
 		if _parent is DraggableWindow:
@@ -110,10 +111,10 @@ func _ready():
 			push_warning("Unable to set up 'automatic_maintain_width' on non-DraggableWindow parent object!")
 	
 	if automatic_setup_window_closing_for_window_manager_name != &"":
-		$Close_Button.pressed.connect(_window_manager_close)
+		$HBoxContainer/Close_Button.pressed.connect(_window_manager_close)
 	
 	_initial_position = position
-	$Close_Button.visible = show_close_button
+	$HBoxContainer/Close_Button.visible = show_close_button
 
 func _input(event):
 
@@ -131,6 +132,7 @@ func _input(event):
 
 func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
+	$HBoxContainer.custom_minimum_size.y = custom_minimum_size.y
 	# Because button is a square
 
 ## USe the draggable windows close function to call for a close
@@ -140,7 +142,8 @@ func _window_manager_close() -> void:
 
 ## What is the minimum width the title bar needs to be to fit everything?
 func _recalculate_title_bar_min_width() -> void:
-	custom_minimum_size.x = int($Close_Button.custom_minimum_size.y) + int($Title_Text.size.x) + title_gap # Yes, using the close button Y is intentional to avoid repositioning loops
+	custom_minimum_size.x = int($HBoxContainer/Close_Button.custom_minimum_size.y) + int($HBoxContainer/Title_Text.size.x) + title_gap # Yes, using the close button Y is intentional to avoid repositioning loops
+	$HBoxContainer.custom_minimum_size.x =  int($HBoxContainer/Close_Button.custom_minimum_size.y) + int($HBoxContainer/Title_Text.size.x) + title_gap
 
 func _mouse_enter() -> void:
 	_is_mousing_over = true
