@@ -1,6 +1,8 @@
 extends DraggableWindow
 class_name QuickCorticalMenu
 
+const CENTER_OFFSET: Vector2 = Vector2(0,200)
+
 var _cortical_area: BaseCorticalArea
 var _title_bar: TitleBar
 
@@ -12,8 +14,8 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	_title_bar = $TitleBar
 	_title_bar.title = _cortical_area.name
 	focus_exited.connect(_on_focus_lost)
-	position = VisConfig.UI_manager.screen_center - (size / 2.0)
-	
+	position = Vector2(VisConfig.UI_manager.screen_center.x, 0) - (size / 2.0) + CENTER_OFFSET
+	grab_focus()
 
 func _button_details() -> void:
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area)

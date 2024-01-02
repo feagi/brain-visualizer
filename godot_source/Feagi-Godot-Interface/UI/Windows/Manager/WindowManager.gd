@@ -154,6 +154,8 @@ func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
 	loaded_windows["quick_cortical_menu"] = quick_cortical_menu
 	quick_cortical_menu.setup(cortical_area)
 	bring_window_to_top(quick_cortical_menu)
+	if "left_bar" in loaded_windows.keys():
+		spawn_left_panel(cortical_area)
 
 	
 func force_close_window(window_name: StringName) -> void:

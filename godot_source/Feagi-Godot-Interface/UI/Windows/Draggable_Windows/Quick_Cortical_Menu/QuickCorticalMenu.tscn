@@ -25,6 +25,7 @@ offset_top = 40.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
+focus_mode = 2
 script = ExtResource("1_8td17")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
@@ -40,6 +41,7 @@ layout_mode = 2
 [node name="Details" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+focus_mode = 0
 texture_normal = ExtResource("3_25iwn")
 texture_pressed = ExtResource("4_73bfl")
 texture_hover = ExtResource("5_ir57i")
@@ -50,6 +52,7 @@ stretch_mode = 5
 [node name="QuickConnect" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+focus_mode = 0
 texture_normal = ExtResource("7_aaec5")
 texture_pressed = ExtResource("8_dpqta")
 texture_hover = ExtResource("9_8220t")
@@ -62,6 +65,7 @@ flip_v = true
 visible = false
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+focus_mode = 0
 texture_normal = ExtResource("11_hl6lb")
 texture_pressed = ExtResource("12_daddx")
 texture_hover = ExtResource("13_2u3te")
@@ -72,6 +76,7 @@ stretch_mode = 5
 [node name="Delete" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+focus_mode = 0
 texture_normal = ExtResource("15_e2qrx")
 texture_pressed = ExtResource("16_alv5k")
 texture_hover = ExtResource("17_l48r7")
