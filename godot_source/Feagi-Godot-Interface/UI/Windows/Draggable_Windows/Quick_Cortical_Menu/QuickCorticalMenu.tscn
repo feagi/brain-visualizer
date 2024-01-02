@@ -10,6 +10,10 @@ offset_bottom = 40.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 script = ExtResource("1_8td17")
+left_pixel_gap = null
+right_pixel_gap = null
+top_pixel_gap = null
+bottom_pixel_gap = null
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 0

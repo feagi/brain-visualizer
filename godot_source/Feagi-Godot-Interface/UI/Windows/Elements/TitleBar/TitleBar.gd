@@ -17,12 +17,12 @@ signal close_pressed()
 ## How far out remaining the titlebar can be before automatic repositioning occurs
 @export var reposition_buffer: int = 45
 
-@export var title_gap: int:
-	get: return $HBoxContainer/Title_Text.gap
-	set(v): $HBoxContainer/Title_Text.gap = v
+@export var title_gap: int: #TODO
+	get: return 0
+	set(v): pass
 
 @export var title: String:
-	get: return $HBoxContainer/Title_Text.text
+	get: return $HBoxContainer/Title_Text.text #NOTE: DO not use cached references for exports
 	set(v): $HBoxContainer/Title_Text.text = v
 
 ## if True, will attempt to automatically set up dragging behavior on parent window
@@ -63,35 +63,36 @@ var is_dragging: bool:
 			drag_finished.emit(_parent.position, _viewport.get_mouse_position())
 			VisConfig.UI_manager.is_user_dragging_a_window = false
 
-
 var _is_mousing_over: bool = false
 var _is_dragging: bool = false
 var _parent: Control
 var _sibling: Control
+var _horizontal_box: HBoxContainer
+var _title: Label
+var _close_button: TextureButton
+
 var _initial_position: Vector2i
 var _prev_window_minus_mouse_position: Vector2
 var _viewport: Viewport
 
+
 func _ready():
 	_viewport = get_viewport()
+	_horizontal_box = $HBoxContainer
+	_title = $HBoxContainer/Title_Text
+	_close_button = $HBoxContainer/Close_Button
+	_parent = get_parent()
+	_sibling = _parent.get_child(0)
 	
-	$HBoxContainer/Close_Button.resized.connect(_height_resized)
-	$HBoxContainer/Title_Text.resized.connect(_recalculate_title_bar_min_width)
 	mouse_entered.connect(_mouse_enter)
-	mouse_exited .connect(_mouse_leave)
+	mouse_exited.connect(_mouse_leave)
 	
 	custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
-	$HBoxContainer.custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
 	
 	if automatic_setup_hiding_closing and automatic_setup_window_closing_for_window_manager_name != &"":
 		push_warning("TitleBar cannot have multiple close methods defined at once. Please check this windows titleBar settings")
 		automatic_setup_window_closing_for_window_manager_name = "" # To Prevent weird issues, disable this method
 
-	_recalculate_title_bar_min_width()
-	
-	if automatic_setup_dragging or automatic_setup_hiding_closing or automatic_maintain_width:
-		_parent = get_parent()
-		_sibling = _parent.get_child(0)
 		
 	if automatic_setup_dragging:
 		if use_position_instead_of_delta_movement:
@@ -101,7 +102,7 @@ func _ready():
 			dragged.connect(_auto_drag_move_parent_delta)
 	
 	if automatic_setup_hiding_closing:
-		$HBoxContainer/Close_Button.pressed.connect(_auto_hide_parent)
+		_close_button.pressed.connect(_auto_hide_parent)
 	
 	if automatic_maintain_width:
 		if _parent is DraggableWindow:
@@ -111,10 +112,10 @@ func _ready():
 			push_warning("Unable to set up 'automatic_maintain_width' on non-DraggableWindow parent object!")
 	
 	if automatic_setup_window_closing_for_window_manager_name != &"":
-		$HBoxContainer/Close_Button.pressed.connect(_window_manager_close)
+		_close_button.pressed.connect(_window_manager_close)
 	
 	_initial_position = position
-	$HBoxContainer/Close_Button.visible = show_close_button
+	_close_button.visible = show_close_button
 
 func _input(event):
 
@@ -132,7 +133,7 @@ func _input(event):
 
 func _height_resized() -> void:
 	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
-	$HBoxContainer.custom_minimum_size.y = custom_minimum_size.y
+	_horizontal_box.custom_minimum_size.y = custom_minimum_size.y
 	# Because button is a square
 
 ## USe the draggable windows close function to call for a close
@@ -142,8 +143,8 @@ func _window_manager_close() -> void:
 
 ## What is the minimum width the title bar needs to be to fit everything?
 func _recalculate_title_bar_min_width() -> void:
-	custom_minimum_size.x = int($HBoxContainer/Close_Button.custom_minimum_size.y) + int($HBoxContainer/Title_Text.size.x) + title_gap # Yes, using the close button Y is intentional to avoid repositioning loops
-	$HBoxContainer.custom_minimum_size.x =  int($HBoxContainer/Close_Button.custom_minimum_size.y) + int($HBoxContainer/Title_Text.size.x) + title_gap
+	custom_minimum_size.x = int(_close_button.custom_minimum_size.y) + int(_title.size.x) + title_gap # Yes, using the close button Y is intentional to avoid repositioning loops
+	_horizontal_box.custom_minimum_size.x =  int(_close_button.custom_minimum_size.y) + int(_title.size.x)
 
 func _mouse_enter() -> void:
 	_is_mousing_over = true
