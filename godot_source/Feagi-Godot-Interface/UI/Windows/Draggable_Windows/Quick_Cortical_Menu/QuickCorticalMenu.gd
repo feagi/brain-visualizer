@@ -12,6 +12,7 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	_title_bar = $TitleBar
 	_title_bar.title = _cortical_area.name
 	focus_exited.connect(_on_focus_lost)
+	position = VisConfig.UI_manager.screen_center - (size / 2.0)
 	
 
 func _button_details() -> void:
