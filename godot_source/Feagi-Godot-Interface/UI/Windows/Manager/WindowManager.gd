@@ -13,6 +13,7 @@ var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Wi
 var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 var _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
 var _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
+var _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
 
 var loaded_windows: Dictionary
 
@@ -157,6 +158,16 @@ func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
 	if "left_bar" in loaded_windows.keys():
 		spawn_left_panel(cortical_area)
 
+func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
+	if "delete_confirmation" in loaded_windows.keys():
+		loaded_windows["delete_confirmation"].queue_free()
+	
+	var delete_confirmation: DeleteConfirmation = _prefab_confirm_deletion.instantiate()
+	add_child(delete_confirmation)
+	loaded_windows["delete_confirmation"] = delete_confirmation
+	delete_confirmation.setup(cortical_area)
+	bring_window_to_top(delete_confirmation)
+	
 	
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

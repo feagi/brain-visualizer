@@ -29,7 +29,7 @@ func _button_clone() -> void:
 	_close_window()
 
 func _button_delete() -> void:
-	FeagiRequests.delete_cortical_area(_cortical_area.cortical_ID)
+	VisConfig.UI_manager.window_manager.spawn_delete_confirmation(_cortical_area)
 	_close_window()
 
 func _on_focus_lost() -> void:
