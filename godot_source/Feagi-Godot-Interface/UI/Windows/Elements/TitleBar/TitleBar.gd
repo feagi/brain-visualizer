@@ -37,6 +37,9 @@ signal close_pressed()
 ## if set to a non blank string, will attempt to automatically set up closing behavior on parent window for the window manager. CANNOT be mixed with hiding closing
 @export var automatic_setup_window_closing_for_window_manager_name: StringName
 
+## if disabled, hide the close button entirely:
+@export var show_close_button: bool = true
+
 var is_dragging: bool:
 	get: return _is_dragging
 	set(v):
@@ -110,7 +113,7 @@ func _ready():
 		$Close_Button.pressed.connect(_window_manager_close)
 	
 	_initial_position = position
-
+	$Close_Button.visible = show_close_button
 
 func _input(event):
 

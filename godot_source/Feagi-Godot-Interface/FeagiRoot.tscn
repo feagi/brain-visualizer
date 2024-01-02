@@ -154,7 +154,6 @@ mouse_filter = 2
 
 [node name="NodeGraph" parent="UI/temp_split" instance=ExtResource("2_yy50b")]
 layout_mode = 2
-scroll_offset = Vector2(-9, 0)
 
 [node name="Windows" type="Node" parent="UI"]
 script = ExtResource("9_jshmh")
