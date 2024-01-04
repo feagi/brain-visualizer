@@ -50,6 +50,5 @@ func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> vo
 func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
 
-func _view_selected(index: int) -> void:
-	var new_state: TempSplit.STATES = TempSplit.STATES.values()[index]
+func _view_selected(new_state: TempSplit.STATES) -> void:
 	VisConfig.UI_manager.temp_get_temp_split().set_view(new_state)

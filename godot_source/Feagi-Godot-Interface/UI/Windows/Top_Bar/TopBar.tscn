@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=26 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
@@ -20,19 +20,11 @@
 [ext_resource type="Texture2D" uid="uid://c67bmcomoa2p6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_D.png" id="12_imt3b"]
 [ext_resource type="Texture2D" uid="uid://dib2rw8r4k1ah" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_H.png" id="12_lr2vd"]
 [ext_resource type="Texture2D" uid="uid://b5o210bpg48si" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="13_nqinm"]
-[ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/ToggleImageDropdown/ToggleImageDropDown.tscn" id="20_lp3sn"]
-[ext_resource type="Texture2D" uid="uid://ctkr664w0hq41" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_S.png" id="21_0adc8"]
-[ext_resource type="Texture2D" uid="uid://dd6562yd125ro" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_C.png" id="22_scph8"]
-[ext_resource type="Texture2D" uid="uid://d1exbfboui15v" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_H.png" id="23_j5s7s"]
-[ext_resource type="Texture2D" uid="uid://ckemk8nw5x6a8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_D.png" id="24_rxenh"]
+[ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="Texture2D" uid="uid://ddvrpsnfq8a2j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_S.png" id="24_sk4d2"]
 [ext_resource type="Texture2D" uid="uid://bgf3ado8fakip" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_C.png" id="25_qau4w"]
-[ext_resource type="Texture2D" uid="uid://ddstgvtfkn5u6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_S.png" id="25_x7skk"]
-[ext_resource type="Texture2D" uid="uid://c1hqk8a4fpufy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_C.png" id="26_drfa8"]
 [ext_resource type="Texture2D" uid="uid://mirn4be7lcyc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_H.png" id="26_poo7p"]
-[ext_resource type="Texture2D" uid="uid://deht3llfjv0d2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_H.png" id="27_8hlx2"]
 [ext_resource type="Texture2D" uid="uid://dsr5t7pd220c" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_D.png" id="27_d7rgh"]
-[ext_resource type="Texture2D" uid="uid://cken36prfs65w" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_D.png" id="28_5jhgd"]
 
 [node name="TopBar" type="Panel"]
 offset_right = 1094.0
@@ -159,38 +151,8 @@ script = ExtResource("5_14sro")
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="splitmode" type="OptionButton" parent="HBoxContainer"]
+[node name="SplitViewDropDown" parent="HBoxContainer" instance=ExtResource("20_ugrg0")]
 layout_mode = 2
-item_count = 4
-selected = 1
-popup/item_0/text = "Circuit Builder"
-popup/item_0/id = 1
-popup/item_1/text = "Brain Monitor"
-popup/item_1/id = 0
-popup/item_2/text = "Split Horizontal"
-popup/item_2/id = 2
-popup/item_3/text = "Split Vertical"
-popup/item_3/id = 3
-
-[node name="SplitModeSettings" parent="HBoxContainer" instance=ExtResource("20_lp3sn")]
-layout_mode = 2
-dimensions = Vector2i(40, 40)
-
-[node name="Circuit Builder" type="TextureButton" parent="HBoxContainer/SplitModeSettings/PanelContainer/BoxContainer" index="0"]
-layout_mode = 2
-texture_normal = ExtResource("21_0adc8")
-texture_pressed = ExtResource("22_scph8")
-texture_hover = ExtResource("23_j5s7s")
-texture_disabled = ExtResource("24_rxenh")
-script = ExtResource("5_14sro")
-
-[node name="Brain Monitor" type="TextureButton" parent="HBoxContainer/SplitModeSettings/PanelContainer/BoxContainer" index="1"]
-layout_mode = 2
-texture_normal = ExtResource("25_x7skk")
-texture_pressed = ExtResource("26_drfa8")
-texture_hover = ExtResource("27_8hlx2")
-texture_disabled = ExtResource("28_5jhgd")
-script = ExtResource("5_14sro")
 
 [node name="Gap5" type="Control" parent="HBoxContainer"]
 custom_minimum_size = Vector2(10, 0)
@@ -239,6 +201,4 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
-[connection signal="item_selected" from="HBoxContainer/splitmode" to="." method="_view_selected"]
-
-[editable path="HBoxContainer/SplitModeSettings"]
+[connection signal="requesting_view_change" from="HBoxContainer/SplitViewDropDown" to="." method="_view_selected"]
