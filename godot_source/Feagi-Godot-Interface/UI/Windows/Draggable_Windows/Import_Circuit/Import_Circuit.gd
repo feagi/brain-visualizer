@@ -2,7 +2,7 @@ extends DraggableWindow
 class_name WindowImportCircuit
 
 var _circuit_dropdown: CircuitsDropDown
-var _circuit_dimensions: Vector3iField
+var _circuit_dimensions: Vector3iSpinboxField
 var _circuit_details: TextEdit
 var _circuit_location: Vector3iSpinboxField
 

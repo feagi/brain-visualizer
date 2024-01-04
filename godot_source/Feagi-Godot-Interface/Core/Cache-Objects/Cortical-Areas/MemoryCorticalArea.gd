@@ -37,45 +37,45 @@ func _has_memory_parameters() -> bool:
 	return true
 
 #region Memory Parameters
-signal initial_neuron_lifespan_updated(val: bool, this_cortical_area: MemoryCorticalArea)
+signal initial_neuron_lifespan_updated(val: int, this_cortical_area: MemoryCorticalArea)
 signal lifespan_growth_rate_updated(val: int, this_cortical_area: MemoryCorticalArea)
 signal longterm_memory_threshold_updated(val: int, this_cortical_area: MemoryCorticalArea)
 
-var initial_neuron_lifespan: float:
+var initial_neuron_lifespan: int:
 	get:
 		return _initial_neuron_lifespan
 	set(v):
 		_set_initial_neuron_lifespan(v)
 
-var lifespan_growth_rate: float:
+var lifespan_growth_rate: int:
 	get:
 		return _lifespan_growth_rate
 	set(v):
 		_set_lifespan_growth_rate(v)
 
-var longterm_memory_threshold: float:
+var longterm_memory_threshold: int:
 	get:
 		return _longterm_memory_threshold
 	set(v):
 		_set_longterm_memory_threshold(v)
 
-var _initial_neuron_lifespan: float = 0
-var _lifespan_growth_rate: float = 0
-var _longterm_memory_threshold: float = 0
+var _initial_neuron_lifespan: int = 0
+var _lifespan_growth_rate: int = 0
+var _longterm_memory_threshold: int = 0
 
-func _set_initial_neuron_lifespan(new_val: float) -> void:
+func _set_initial_neuron_lifespan(new_val: int) -> void:
 	if new_val == _initial_neuron_lifespan: 
 		return
 	_initial_neuron_lifespan = new_val
 	initial_neuron_lifespan_updated.emit(new_val, self)
 
-func _set_lifespan_growth_rate(new_val: float) -> void:
+func _set_lifespan_growth_rate(new_val: int) -> void:
 	if new_val == _lifespan_growth_rate: 
 		return
 	_lifespan_growth_rate = new_val
 	lifespan_growth_rate_updated.emit(new_val, self)
 
-func _set_longterm_memory_threshold(new_val: float) -> void:
+func _set_longterm_memory_threshold(new_val: int) -> void:
 	if new_val == _longterm_memory_threshold: 
 		return
 	_longterm_memory_threshold = new_val

@@ -21,15 +21,11 @@ var mapped_morphology: Morphology:
 	get: return _mapped_morphology.get_selected_morphology()
 	set(v): _mapped_morphology.set_selected_morphology(v)
 
-var  is_editable: bool:
-	get: return _is_editable
-
 var _seed: Vector3iField
 var _patternX: Vector2iField
 var _patternY: Vector2iField
 var _patternZ: Vector2iField
 var _mapped_morphology: MorphologyDropDown
-var _is_editable: bool
 
 func _ready() -> void:
 	_seed = $Seed/Seed_Vector
@@ -54,10 +50,10 @@ func set_from_composite_morphology(composite: CompositeMorphology) -> void:
 	patternY = composite.source_pattern[1]
 	patternZ = composite.source_pattern[2]
 	_mapped_morphology.set_selected_morphology_by_name(composite.mapper_morphology_name)
+	set_editable(composite.is_user_editable)
 
-## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR
+## Defines if UI view is editable
 func set_editable(editable: bool) -> void:
-	_is_editable = editable
 	_seed.editable = editable
 	_patternX.editable = editable
 	_patternY.editable = editable

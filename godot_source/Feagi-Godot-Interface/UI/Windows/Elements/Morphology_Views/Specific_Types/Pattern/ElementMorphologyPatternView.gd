@@ -7,9 +7,6 @@ var pattern_pairs: Array[PatternVector3Pairs]:
 	set(v):
 		_set_pattern_pair_array(v)
 
-var  is_editable: bool:
-	get: return _is_editable
-
 var _pattern_pair_scroll: BaseScroll
 var _pattern_pair_list: VBoxContainer
 var _is_editable: bool = true
@@ -24,12 +21,12 @@ func get_as_pattern_morphology(morphology_name: StringName, is_placeholder: bool
 	
 ## Overwrite the current UI view with a [PatternMorphology] object
 func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:
+	set_editable(pattern_morphology.is_user_editable)
 	pattern_pairs = pattern_morphology.patterns
 
 ## Defines if UI view is editable. NOTE: ONLY WORKS ON '_ready' OR AFTER A UI CLEAR
 func set_editable(is_field_editable: bool) -> void:
 	_is_editable = is_field_editable
-	$labels/deletegap.visible = is_field_editable
 
 func add_pattern_pair_row() -> void:
 	var pattern_pair: PatternVector3Pairs = PatternVector3Pairs.create_empty()
