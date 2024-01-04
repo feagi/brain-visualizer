@@ -4,7 +4,6 @@ class_name GeneralMappingEditor
 
 const SPECIAL_CASES_NEEDING_SIMPLE_MODE: Array[MappingHints.MAPPING_SPECIAL_CASES] = [
 	MappingHints.MAPPING_SPECIAL_CASES.ANY_TO_MEMORY,
-	MappingHints.MAPPING_SPECIAL_CASES.MEMORY_TO_ANY,
 	MappingHints.MAPPING_SPECIAL_CASES.MEMORY_TO_MEMORY,
 ]
 
@@ -57,7 +56,7 @@ func add_default_mapping_if_applicable(override_child_check: bool = false) -> vo
 	if _simple_mode:
 		_spawn_simple_mapping(mapping, _mapping_hints)
 	else:
-		_spawn_full_mapping(mapping)
+		_spawn_full_mapping(mapping, _mapping_hints)
 	_toggle_add_mapping_button_automatically()
 
 func _toggle_show_full_editing(full_editing: bool) -> void:
@@ -76,11 +75,13 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 
 func _spawn_full_mappings(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
 	for mapping: MappingProperty in mappings.mappings:
-		_spawn_full_mapping(mapping)
+		_spawn_full_mapping(mapping, mapping_hints)
 	_toggle_add_mapping_button_automatically()
 
-func _spawn_full_mapping(mapping: MappingProperty) -> void:
+func _spawn_full_mapping(mapping: MappingProperty, mapping_hints: MappingHints) -> void:
 	var spawn_parameter: Dictionary = {"mapping": mapping}
+	if mapping_hints.is_morphologies_restricted:
+		spawn_parameter["allowed_morphologies"] = mapping_hints.restricted_morphologies
 	var mapping_ui_prefab: Prefab_Mapping = _mappings_scroll.spawn_list_item(spawn_parameter)
 	mapping_ui_prefab.mapping_to_be_deleted.connect(_toggle_add_mapping_button_automatically)
 
