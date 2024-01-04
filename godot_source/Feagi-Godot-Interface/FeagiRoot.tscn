@@ -12,7 +12,7 @@
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/WindowManager.gd" id="9_jshmh"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/FullScreenControl.gd" id="11_xxcay"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.gd" id="13_jugsj"]
