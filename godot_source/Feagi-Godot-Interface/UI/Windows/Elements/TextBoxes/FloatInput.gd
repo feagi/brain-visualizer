@@ -55,8 +55,10 @@ func _focus_lost() -> void:
 		_user_attempt_confirm_value(text)
 
 func _user_attempt_change_value(input_text: String) -> void:
-	if !input_text.is_valid_int():
-		text = str(_previous_float)
+	if text == "":
+		return
+	if !input_text.is_valid_float():
+		_set_value_UI(_previous_float)
 		return
 	_previous_float = input_text.to_float()
 	float_changed.emit(_previous_float)
@@ -64,10 +66,12 @@ func _user_attempt_change_value(input_text: String) -> void:
 
 func _user_attempt_confirm_value(input_text: String) -> void:
 	if !input_text.is_valid_float():
-		text = str(_previous_float)
+		_set_value_UI(_previous_float)
 		return
 	_previous_float = input_text.to_float()
 	float_confirmed.emit(_previous_float)
+	release_focus()
+	
 
 func _set_value_UI(new_float: float) -> void:
 	text = prefix + str(clamp(new_float, min_value, max_value)) + suffix

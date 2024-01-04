@@ -12,6 +12,8 @@ var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
 var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 var _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
+var _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
+var _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
 
 var loaded_windows: Dictionary
 
@@ -144,6 +146,28 @@ func spawn_info_popup(title_text: StringName, message_text: StringName, button_t
 	popup.position = Vector2(200,200)
 	popup.set_properties(title_text, message_text, button_text, icon)
 
+func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
+	if "quick_cortical_menu" in loaded_windows.keys():
+		loaded_windows["quick_cortical_menu"].queue_free()
+	
+	var quick_cortical_menu: QuickCorticalMenu = _prefab_quick_cortical_menu.instantiate()
+	add_child(quick_cortical_menu)
+	loaded_windows["quick_cortical_menu"] = quick_cortical_menu
+	quick_cortical_menu.setup(cortical_area)
+	bring_window_to_top(quick_cortical_menu)
+	if "left_bar" in loaded_windows.keys():
+		spawn_left_panel(cortical_area)
+
+func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
+	if "delete_confirmation" in loaded_windows.keys():
+		loaded_windows["delete_confirmation"].queue_free()
+	
+	var delete_confirmation: DeleteConfirmation = _prefab_confirm_deletion.instantiate()
+	add_child(delete_confirmation)
+	loaded_windows["delete_confirmation"] = delete_confirmation
+	delete_confirmation.setup(cortical_area)
+	bring_window_to_top(delete_confirmation)
+	
 	
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

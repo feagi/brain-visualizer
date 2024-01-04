@@ -12,6 +12,7 @@ var _view_toggle_button: TextureButton_Element
 var _view_toggle_label: Label
 var _tutorial_button: TextureButton_Element
 var _state_indicator: StateIndicator
+var _state_dropdown: OptionButton
 
 var localize_refresh_rate: StringName
 var localize_neuronal_cirtcuits: StringName
@@ -31,10 +32,9 @@ func _ready():
 	_cortical_area_connect_button = _h_container.get_node("CAConnect_Button")
 	_neuron_morphology_add_button = _h_container.get_node("NMAdd_Button")
 	_neuron_morphology_settings_button = _h_container.get_node("NMSettings_Button")
-	_view_toggle_button = _h_container.get_node("Mode_Button")
-	_view_toggle_label = _h_container.get_node("Mode_Label")
 	_tutorial_button = _h_container.get_node("TU_Button")
 	_state_indicator = _h_container.get_node("StateIndicator")
+	_state_dropdown = _h_container.get_node("splitmode")
 
 	# from FEAGI
 	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
@@ -50,16 +50,6 @@ func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> vo
 func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
 
-# Attached to UIManager Mode change signal through root TSCN
-func _mode_changed(new_mode: UIManager.MODE) -> void:
-	match(new_mode):
-		UIManager.MODE.CIRCUIT_BUILDER:
-			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_S.png")
-			$HBoxContainer/Mode_Button.texture_pressed= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_C.png")
-			$HBoxContainer/Mode_Button.texture_hover= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_H.png")
-			$HBoxContainer/Mode_Button.texture_disabled= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_D.png")
-		UIManager.MODE.VISUALIZER_3D:
-			$HBoxContainer/Mode_Button.texture_normal= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_S.png")
-			$HBoxContainer/Mode_Button.texture_pressed= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_C.png")
-			$HBoxContainer/Mode_Button.texture_hover= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_H.png")
-			$HBoxContainer/Mode_Button.texture_disabled= load("res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_D.png")
+func _view_selected(index: int) -> void:
+	var new_state: TempSplit.STATES = TempSplit.STATES.values()[index]
+	VisConfig.UI_manager.temp_get_temp_split().set_view(new_state)
