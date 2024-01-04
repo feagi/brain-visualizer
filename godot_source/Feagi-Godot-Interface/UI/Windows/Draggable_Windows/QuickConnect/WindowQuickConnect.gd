@@ -63,6 +63,10 @@ func _ready() -> void:
 	_step3_panel.add_theme_stylebox_override("panel", style_incomplete)
 	current_state = POSSIBLE_STATES.SOURCE
 
+func setup(cortical_source_if_picked: BaseCorticalArea) -> void:
+	if cortical_source_if_picked != null:
+		_set_source(cortical_source_if_picked)
+
 func on_user_select_cortical_area(cortial_area: BaseCorticalArea) -> void:
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:

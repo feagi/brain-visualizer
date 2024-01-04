@@ -105,7 +105,7 @@ func spawn_import_circuit() -> void:
 	loaded_windows["import_circuit"] = import_circuit
 	bring_window_to_top(import_circuit)
 
-func spawn_quick_connect() -> void:
+func spawn_quick_connect(initial_source_area: BaseCorticalArea = null) -> void:
 	if "quick_connect" in loaded_windows.keys():
 		force_close_window("quick_connect")
 	
@@ -115,6 +115,7 @@ func spawn_quick_connect() -> void:
 	quick_connect.load_from_memory(_window_memory_states["quick_connect"])
 	quick_connect.closed_window.connect(force_close_window)
 	loaded_windows["quick_connect"] = quick_connect
+	quick_connect.setup(initial_source_area)
 	bring_window_to_top(quick_connect)
 
 
