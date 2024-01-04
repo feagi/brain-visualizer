@@ -15,7 +15,6 @@ signal cortical_area_updated(updated_cortical_area: BaseCorticalArea) # For when
 
 ############################# Cortical Connections ##############################
 signal cortical_areas_disconnected(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea) # When an existing conneciton is removed completely
-signal cortical_areas_connection_modified(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea, number_of_mappings: int) # When an existing connection between 2 cortical areas is created or modified
 
 ################################ Feagi General ##################################
 signal delay_between_bursts_updated(seconds_delay_between_bursts: float) # The delay from one activity burst to the next, in seconds

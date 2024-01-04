@@ -102,3 +102,4 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	PUT_genome_coord2d = FEAGIFullAddress + PUT_genome_coord2d
 	
 	DELETE_GE_corticalArea = FEAGIFullAddress + DELETE_GE_corticalArea
+	DELETE_GE_morphology = FEAGIFullAddress + DELETE_GE_morphology

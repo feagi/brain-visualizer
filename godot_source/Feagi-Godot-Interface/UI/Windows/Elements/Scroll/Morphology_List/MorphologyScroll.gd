@@ -23,6 +23,12 @@ func repopulate_from_cache() -> void:
 	for morphology in FeagiCache.morphology_cache.available_morphologies.values():
 		append_single_item(morphology, morphology.name)
 
+## Sets the morphologies froma  manual list
+func set_morphologies(morphologies: Array[Morphology]) -> void:
+	delete_all()
+	for morphology in morphologies:
+		append_single_item(morphology, morphology.name)
+
 ## Manually set the selected morphology through code. Causes the button to emit the selected signal
 func select_morphology(morphology: Morphology) -> void:
 	# This is essentially a pointless proxy, only existing for convinient naming purposes

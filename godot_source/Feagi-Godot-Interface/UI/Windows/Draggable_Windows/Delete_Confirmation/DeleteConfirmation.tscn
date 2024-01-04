@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=3 uid="uid://h4ep7yjvk1j5"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.gd" id="1_fq0vq"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_xlnbx"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="3_ffdb3"]
+
+[node name="DeleteConfirmation" type="Panel"]
+offset_top = 30.0
+offset_bottom = 30.0
+script = ExtResource("1_fq0vq")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 10.0
+offset_right = 119.0
+offset_bottom = 60.0
+script = ExtResource("2_xlnbx")
+
+[node name="text" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_xlnbx")
+
+[node name="cancel" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Cancel"
+
+[node name="confirm" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Confirm"
+
+[node name="TitleBar" parent="." instance=ExtResource("3_ffdb3")]
+layout_mode = 0
+offset_top = -30.0
+offset_right = 82.0
+offset_bottom = 10.0
+title = "Confirm Deletion"
+automatic_setup_window_closing_for_window_manager_name = &"ConfirmDeletion"
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/cancel" to="." method="_button_cancel"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/confirm" to="." method="_button_confirm"]

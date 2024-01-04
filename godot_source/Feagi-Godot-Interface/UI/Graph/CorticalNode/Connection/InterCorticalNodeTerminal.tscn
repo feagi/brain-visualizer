@@ -5,12 +5,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/TerminalPortTexture.gd" id="3_1xt86"]
 
 [node name="InterCorticalNodeTerminal" type="HBoxContainer"]
+size_flags_horizontal = 3
 script = ExtResource("1_nf13s")
-
-[node name="g1" type="Control" parent="."]
-visible = false
-custom_minimum_size = Vector2(20, 20)
-layout_mode = 2
 
 [node name="input" type="TextureRect" parent="."]
 visible = false
@@ -36,8 +32,3 @@ size_flags_vertical = 5
 texture = ExtResource("2_h1v3v")
 expand_mode = 3
 script = ExtResource("3_1xt86")
-
-[node name="g2" type="Control" parent="."]
-visible = false
-custom_minimum_size = Vector2(20, 20)
-layout_mode = 2

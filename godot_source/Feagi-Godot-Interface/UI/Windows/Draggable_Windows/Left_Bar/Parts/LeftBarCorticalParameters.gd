@@ -29,9 +29,12 @@ func _ready():
 	_update_button = $Update_Button
 
 	_line_cortical_name.text_confirmed.connect(_user_edit_name)
+	_line_voxel_neuron_density.int_confirmed.connect(_user_edit_voxel_density)
+	_line_synaptic_attractivity.int_confirmed.connect(_user_edit_synaptic_attractivity)
 	_vector_position.user_updated_vector.connect(_user_edit_3D_position)
 	_vector_dimensions.user_updated_vector.connect(_user_edit_dimension)
 	_update_button.pressed.connect(_user_requests_update)
+	
 
 ## Displays properties of a cortical area, toggles editability depending on corticala rea configuraiton
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
@@ -85,26 +88,26 @@ func _user_requests_update() -> void:
 	user_requested_update.emit(_growing_cortical_update)
 
 func _user_edit_name(new_name: String) -> void:
-	_growing_cortical_update["cortical_name"] = new_name
+	_append_to_growing_update("cortical_name", new_name)
 
 func _user_edit_voxel_density(new_val: int) -> void:
-	_growing_cortical_update["cortical_neuron_per_vox_count"] = new_val
+	_append_to_growing_update("cortical_neuron_per_vox_count", new_val)
 
 func _user_edit_synaptic_attractivity(new_val: int) -> void:
-	_growing_cortical_update["cortical_synaptic_attractivity"] = new_val
+	_append_to_growing_update("cortical_synaptic_attractivity", new_val)
 
 func _user_edit_3D_position(new_position: Vector3i) -> void:
-	_growing_cortical_update["cortical_coordinates"] = FEAGIUtils.vector3i_to_array(new_position)
+	_append_to_growing_update("cortical_coordinates", FEAGIUtils.vector3i_to_array(new_position))
 	if !_is_preview_active:
 		_enable_3D_preview()
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
-	_growing_cortical_update["cortical_dimensions"] = FEAGIUtils.vector3i_to_array(new_dimension)
+	_append_to_growing_update("cortical_dimensions", FEAGIUtils.vector3i_to_array(new_dimension))
 	if !_is_preview_active:
 		_enable_3D_preview()
 
-# Connected via TSCN to editable textboxes
-func _enable_update_button():
+func _append_to_growing_update(key: StringName, value: Variant) -> void:
+	_growing_cortical_update[key] = value
 	_update_button.disabled = false
 
 func _enable_3D_preview():

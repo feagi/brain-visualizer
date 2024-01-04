@@ -124,9 +124,13 @@ func _setting_destination() -> void:
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Morphology...")
+	var mapping_hint: MappingHints = MappingHints.new(_source, _destination)
 	_selected_morphology = null
 	_step3_label.text = "Please Select A Morphology..."
 	_step3_panel.add_theme_stylebox_override("panel", style_waiting)
+	if mapping_hint.is_morphologies_restricted:
+		_step3_scroll.set_morphologies(mapping_hint.restricted_morphologies)
+	_step3_scroll.select_morphology(mapping_hint.default_morphology)
 	
 
 func _set_source(cortical_area: BaseCorticalArea) -> void:

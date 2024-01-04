@@ -50,8 +50,8 @@ func _gui_input(event):
 	if !mouse_event.is_pressed(): return
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
 	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
-	if !mouse_event.double_click: return
-	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area_ref)
+	#if !mouse_event.double_click: return
+	VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(_cortical_area_ref)
 
 ## Since we cannot use _init for scenes, use this instead to initialize data
 func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
