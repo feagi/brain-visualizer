@@ -18,7 +18,7 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	if !_cortical_area.user_can_delete_this_area:
 		$HBoxContainer/Delete.disabled = true
 		$HBoxContainer/Delete.tooltip_text = "This Cortical Area Cannot Be Deleted"
-
+	grab_focus()
 
 func _button_details() -> void:
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area)
