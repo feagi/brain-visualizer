@@ -15,6 +15,9 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	_title_bar.title = _cortical_area.name
 	focus_exited.connect(_on_focus_lost)
 	position = Vector2(VisConfig.UI_manager.screen_center.x, 0) - (size / 2.0) + CENTER_OFFSET
+	if !_cortical_area.user_can_delete_this_area:
+		$HBoxContainer/Delete.disabled = true
+		$HBoxContainer/Delete.tooltip_text = "This Cortical Area Cannot Be Deleted"
 	grab_focus()
 
 func _button_details() -> void:
@@ -22,7 +25,7 @@ func _button_details() -> void:
 	_close_window()
 
 func _button_quick_connect() -> void:
-	VisConfig.UI_manager.window_manager.spawn_quick_connect()
+	VisConfig.UI_manager.window_manager.spawn_quick_connect(_cortical_area)
 	_close_window()
 
 func _button_clone() -> void:

@@ -196,6 +196,8 @@ func socket_status_poll() -> void:
 					FeagiEvents.retrieved_latest_ping.emit(Time.get_ticks_msec())
 				else:
 					# assume its visualization data
+					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
+					if temp ==  null: return
 					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
 		
 		WebSocketPeer.STATE_CLOSED:
