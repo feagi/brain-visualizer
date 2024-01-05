@@ -112,4 +112,8 @@ vertical_alignment = 1
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/ConnectivityRules" to="." method="_open_neuron_morphologies"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/Tutorials" to="." method="_open_tutorials"]
+
 [editable path="DetailsPanel/MarginContainer/Details"]
