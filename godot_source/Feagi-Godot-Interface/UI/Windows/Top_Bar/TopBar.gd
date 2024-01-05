@@ -2,11 +2,13 @@ extends PanelContainer
 class_name TopBar
 
 var _refresh_rate_field: FloatInput
+var _window_manager: WindowManager
 
 func _ready():
 	_refresh_rate_field = $HBoxContainer/Details/Place_child_nodes_here/RR_Float
 	var state_indicator: StateIndicator = $HBoxContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $HBoxContainer/Details
+	_window_manager = VisConfig.UI_manager.window_manager
 
 	# from FEAGI
 	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
@@ -29,3 +31,12 @@ func _view_selected(new_state: TempSplit.STATES) -> void:
 
 func _details_section_toggle(_irrelevant: bool) -> void:
 	size = Vector2(0,0) #force to smallest possible size
+
+func _open_cortical_areas() -> void:
+	VisConfig.UI_manager.window_manager.spawn_cortical_view()
+
+func _open_neuron_morphologies() -> void:
+	VisConfig.UI_manager.window_manager.spawn_manager_morphology()
+
+func _open_tutorials() -> void:
+	VisConfig.UI_manager.window_manager.spawn_tutorial()

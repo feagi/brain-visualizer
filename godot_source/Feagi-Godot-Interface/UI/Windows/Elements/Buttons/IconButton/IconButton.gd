@@ -14,6 +14,8 @@ var _text: Label
 ## IFf the button is laid out horizontally
 @export var is_vertical: bool
 
+@export var texture: Texture2D
+
 ## The dimensions of the texture
 @export var texture_size: Vector2i
 
@@ -43,10 +45,11 @@ func _ready() -> void:
 	
 	_text.text = button_text
 	
+	_texture_rect.texture = texture
 	_texture_rect.custom_minimum_size = texture_size
 	
 	custom_minimum_size = _margin.custom_minimum_size
-	_margin.minimum_size_changed.connect(_child_min_sze_change)
+	_margin.minimum_size_changed.connect(_child_min_size_change)
 	
-func _child_min_sze_change() -> void:
-	custom_minimum_size = _margin.custom_minimum_size
+func _child_min_size_change() -> void:
+	custom_minimum_size = _margin.size

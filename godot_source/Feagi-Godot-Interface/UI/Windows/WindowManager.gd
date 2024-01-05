@@ -132,8 +132,7 @@ func spawn_tutorial() -> void:
 
 func spawn_cortical_view() -> void:
 	if "view_cortical" in loaded_windows.keys():
-		force_close_window("view_cortical")
-	
+		force_close_window("view_cortical")	
 	var view_cortical: WindowViewCorticalArea = _prefab_cortical_view.instantiate()
 	add_child(view_cortical)
 	view_cortical.load_from_memory(_window_memory_states["view_cortical"])
