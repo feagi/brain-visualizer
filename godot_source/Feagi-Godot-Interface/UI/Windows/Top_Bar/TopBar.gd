@@ -1,15 +1,31 @@
-extends PanelContainer
+extends HBoxContainer
 class_name TopBar
 
+@export var universal_padding: int = 15
+
 var _refresh_rate_field: FloatInput
-var _window_manager: WindowManager
 
 func _ready():
-	_refresh_rate_field = $HBoxContainer/Details/Place_child_nodes_here/RR_Float
-	var state_indicator: StateIndicator = $HBoxContainer/Details/Place_child_nodes_here/StateIndicator
-	var details_section: MultiItemCollapsible = $HBoxContainer/Details
-	_window_manager = VisConfig.UI_manager.window_manager
-
+	# references
+	_refresh_rate_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/RR_Float
+	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
+	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
+	
+	# apply padding
+	$Buttons/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
+	$Buttons/MarginContainer.add_theme_constant_override("margin_left", universal_padding)
+	$Buttons/MarginContainer.add_theme_constant_override("margin_bottom", universal_padding)
+	$Buttons/MarginContainer.add_theme_constant_override("margin_right", universal_padding)
+	$Buttons/MarginContainer/HBoxContainer.add_theme_constant_override("seperation", universal_padding)
+	$DropDownPanel/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
+	$DropDownPanel/MarginContainer.add_theme_constant_override("margin_left", universal_padding)
+	$DropDownPanel/MarginContainer.add_theme_constant_override("margin_bottom", universal_padding)
+	$DropDownPanel/MarginContainer.add_theme_constant_override("margin_right", universal_padding)
+	$DetailsPanel/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
+	$DetailsPanel/MarginContainer.add_theme_constant_override("margin_left", universal_padding)
+	$DetailsPanel/MarginContainer.add_theme_constant_override("margin_bottom", universal_padding)
+	$DetailsPanel/MarginContainer.add_theme_constant_override("margin_right", universal_padding)
+	
 	# from FEAGI
 	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
 	FeagiEvents.retrieved_latest_FEAGI_health.connect(state_indicator.set_health_states)
@@ -18,7 +34,9 @@ func _ready():
 	details_section.toggled.connect(_details_section_toggle)
 	
 	size = Vector2(0,0) #force to smallest possible size
-
+	
+	
+	
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	_refresh_rate_field.current_float =  1.0 / new_delay_between_bursts_seconds
