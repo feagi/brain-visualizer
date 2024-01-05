@@ -21,7 +21,7 @@ func set_health_states(burst_engine: bool, genome_availibility: bool, genome_val
 	_brain_readiness.boolean_state = brain_readiness
 	_summary.boolean_state = burst_engine && genome_availibility && genome_validity && brain_readiness
 
-func set_collapsed_state(is_collapsed: bool) -> void:
+func toggle_collapse(is_collapsed: bool) -> void:
 	_burst_engine.visible = !is_collapsed
 	_genome_availibility.visible = !is_collapsed
 	_genome_validity.visible = !is_collapsed

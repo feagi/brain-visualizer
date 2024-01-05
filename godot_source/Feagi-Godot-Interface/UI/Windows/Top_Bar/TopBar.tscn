@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=23 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
@@ -8,19 +8,16 @@
 [ext_resource type="Texture2D" uid="uid://c5c0dd30u2dto" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_S.png" id="8_lfa2g"]
 [ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="8_x5qfb"]
 [ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="9_1uxxe"]
-[ext_resource type="Texture2D" uid="uid://bd3dhn43c6r8i" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_S.png" id="9_fubes"]
 [ext_resource type="Texture2D" uid="uid://be72b3774qgna" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_C.png" id="9_oxjkc"]
 [ext_resource type="Texture2D" uid="uid://cx30rwevm4pnl" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_S.png" id="10_4qsyc"]
-[ext_resource type="Texture2D" uid="uid://cgsr1q3a36fhi" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_C.png" id="10_4usji"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="Texture2D" uid="uid://cc1s25qft86ex" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_H.png" id="10_kkcrw"]
 [ext_resource type="Texture2D" uid="uid://n3atnvn2581t" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Eye_D.png" id="11_8kax8"]
 [ext_resource type="Texture2D" uid="uid://b6hwgevxjrfp8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_C.png" id="11_duudg"]
-[ext_resource type="Texture2D" uid="uid://ea7idq5gaks" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_H.png" id="11_vpuhf"]
-[ext_resource type="Texture2D" uid="uid://c67bmcomoa2p6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_D.png" id="12_imt3b"]
 [ext_resource type="Texture2D" uid="uid://dib2rw8r4k1ah" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_H.png" id="12_lr2vd"]
 [ext_resource type="Texture2D" uid="uid://b5o210bpg48si" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Gear_D.png" id="13_nqinm"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
+[ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 [ext_resource type="Texture2D" uid="uid://ddvrpsnfq8a2j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_S.png" id="24_sk4d2"]
 [ext_resource type="Texture2D" uid="uid://bgf3ado8fakip" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_C.png" id="25_qau4w"]
 [ext_resource type="Texture2D" uid="uid://mirn4be7lcyc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials_H.png" id="26_poo7p"]
@@ -102,18 +99,6 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("5_14sro")
 
-[node name="CAConnect_Button" type="TextureButton" parent="HBoxContainer"]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 2
-tooltip_text = "Quick Connect Cortical Areas"
-texture_normal = ExtResource("9_fubes")
-texture_pressed = ExtResource("10_4usji")
-texture_hover = ExtResource("11_vpuhf")
-texture_disabled = ExtResource("12_imt3b")
-ignore_texture_size = true
-stretch_mode = 0
-script = ExtResource("5_14sro")
-
 [node name="Gap3" type="Control" parent="HBoxContainer"]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
@@ -154,10 +139,6 @@ layout_mode = 2
 [node name="SplitViewDropDown" parent="HBoxContainer" instance=ExtResource("20_ugrg0")]
 layout_mode = 2
 
-[node name="Gap5" type="Control" parent="HBoxContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
 [node name="TU_Label" type="Label" parent="HBoxContainer"]
 layout_mode = 2
 text = "Tutorials"
@@ -179,26 +160,30 @@ script = ExtResource("5_14sro")
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 
-[node name="Ping_label" type="Label" parent="HBoxContainer"]
+[node name="Details" parent="HBoxContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 1
+child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
+
+[node name="Ping_label" type="Label" parent="HBoxContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
 text = "Latency"
 vertical_alignment = 1
 
-[node name="ping" type="LineEdit" parent="HBoxContainer"]
+[node name="ping" type="LineEdit" parent="HBoxContainer/Details/Place_child_nodes_here" index="1"]
 layout_mode = 2
 alignment = 1
 
-[node name="Gap7" type="Control" parent="HBoxContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
-[node name="state_label" type="Label" parent="HBoxContainer"]
+[node name="state_label" type="Label" parent="HBoxContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
 text = "System Health"
 vertical_alignment = 1
 
-[node name="StateIndicator" parent="HBoxContainer" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="HBoxContainer/Details/Place_child_nodes_here" index="3" instance=ExtResource("10_3567y")]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
 [connection signal="requesting_view_change" from="HBoxContainer/SplitViewDropDown" to="." method="_view_selected"]
+
+[editable path="HBoxContainer/Details"]

@@ -33,7 +33,7 @@ func _ready():
 	_neuron_morphology_add_button = _h_container.get_node("NMAdd_Button")
 	_neuron_morphology_settings_button = _h_container.get_node("NMSettings_Button")
 	_tutorial_button = _h_container.get_node("TU_Button")
-	_state_indicator = _h_container.get_node("StateIndicator")
+	_state_indicator = $HBoxContainer/Details/Place_child_nodes_here/StateIndicator
 	_state_dropdown = _h_container.get_node("splitmode")
 
 	# from FEAGI
