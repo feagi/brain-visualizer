@@ -88,6 +88,7 @@ func _setup_all_buttons() -> void:
 		child_button = (child as TextureButton)
 		child_button.ignore_texture_size = ignore_texture_size
 		child_button.stretch_mode = stretch_mode
+		child_button.custom_minimum_size = dimensions
 		child_button.focus_mode = Control.FOCUS_NONE # prevent menu from closing when we click a button
 		
 		# connect signals

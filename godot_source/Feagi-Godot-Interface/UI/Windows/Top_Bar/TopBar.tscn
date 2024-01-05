@@ -21,7 +21,7 @@ layout_mode = 2
 
 [node name="BrainAreas" parent="HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(5, 5, 5, 5)
+top_right_bottom_left_paddings = Vector4i(15, 15, 15, 15)
 texture = ExtResource("3_f73r0")
 texture_size = Vector2i(40, 40)
 button_text = &"Brain Areas"
@@ -29,7 +29,7 @@ gap_between_text_and_texture = 5
 
 [node name="ConnectivityRules" parent="HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(5, 5, 5, 5)
+top_right_bottom_left_paddings = Vector4i(15, 15, 15, 15)
 texture = ExtResource("2_4yah1")
 texture_size = Vector2i(50, 40)
 button_text = &"Connectivity Rules"
@@ -37,13 +37,14 @@ gap_between_text_and_texture = 5
 
 [node name="Tutorials" parent="HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(5, 5, 5, 5)
+top_right_bottom_left_paddings = Vector4i(15, 15, 15, 15)
 texture = ExtResource("5_qirw1")
 texture_size = Vector2i(40, 40)
 button_text = &"Tutorials"
 gap_between_text_and_texture = 5
 
 [node name="SplitViewDropDown" parent="HBoxContainer" instance=ExtResource("20_ugrg0")]
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 2
 
 [node name="Details" parent="HBoxContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
