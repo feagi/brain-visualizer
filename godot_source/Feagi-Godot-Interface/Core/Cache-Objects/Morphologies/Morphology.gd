@@ -31,7 +31,7 @@ var is_being_used: bool:
 	get:
 		return len(_usage_by_cortical_area) > 0
 
-var _usage_by_cortical_area: Array[PackedStringArray]
+var _usage_by_cortical_area: Array[PackedStringArray] = []
 
 func _init(morphology_name: StringName, is_using_placeholder_data: bool):
 	name = morphology_name

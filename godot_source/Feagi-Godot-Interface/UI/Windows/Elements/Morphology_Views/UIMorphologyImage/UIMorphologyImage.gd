@@ -21,9 +21,6 @@ func clear_morphology() -> void:
 
 # TODO maybe instead render an empty area? as an option?
 
-
-
-
 ## Updates the image of the morphology (if no image, just hides this object)
 func _update_image_with_morphology(morphology_name: StringName) -> void:
 	var morphology_image_name: StringName = morphology_name + &".png"
