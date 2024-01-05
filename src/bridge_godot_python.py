@@ -25,14 +25,18 @@ import logging
 import pickle
 import lz4.frame
 import zlib
+
+from feagi_agent import pns_gateway as pns
 from version import __version__
 from time import sleep
 from datetime import datetime
 from collections import deque
+import zmq.asyncio
 import websockets
 import requests
 from configuration import agent_settings, feagi_settings
 from feagi_agent import feagi_interface as feagi
+
 
 runtime_data = {
     "cortical_data": {},
@@ -380,6 +384,7 @@ def main():
     connect_status_counter = 0
     burst_second = 0.01
     old_data = []
+    # threading.Thread(target=pns.feagi_listener, args=(new_feagi_sub,), daemon=True).start()
     while True:
         if detect_lag:
             opu_channel_address = 'tcp://' + feagi_settings['feagi_host'] + ':' + \
@@ -388,7 +393,7 @@ def main():
             zmq_queue.clear()
             ws_queue.clear()
             detect_lag = False
-        received_data = new_feagi_sub.receive()
+        received_data = pns.message_from_feagi
         if received_data is not None:
             if isinstance(received_data, bytes):
                 decompressed_data = lz4.frame.decompress(received_data)
@@ -411,7 +416,7 @@ def main():
                     else:
                         zmq_queue.append("clear")
                         break
-        if one_frame is not None:
+        if one_frame:
             if flag_zmq:
                 # FEAGI section start
                 print("Connecting to FEAGI resources...")
