@@ -1,13 +1,13 @@
 [gd_scene load_steps=9 format=3 uid="uid://d1tg3odgc36tb"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/ElementMorphologyVectorsView.gd" id="1_5hdhx"]
-[ext_resource type="Texture2D" uid="uid://dsr0vah60elhm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_iw5kc"]
-[ext_resource type="Texture2D" uid="uid://dyhv6lbkcn7p7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_li0mh"]
+[ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_iw5kc"]
+[ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_li0mh"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_plqeh"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="4_8mw72"]
-[ext_resource type="Texture2D" uid="uid://dlfm8wiogystu" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_qk7tm"]
+[ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_qk7tm"]
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/Prefab_VectorWithDelete.tscn" id="5_dnbvl"]
-[ext_resource type="Texture2D" uid="uid://ch4waflhjqwnn" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_excb5"]
+[ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_excb5"]
 
 [node name="ElementMorphologyVectorsView" type="VBoxContainer"]
 custom_minimum_size = Vector2(300, 200)

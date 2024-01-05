@@ -2,13 +2,13 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.gd" id="1_2vxwp"]
 [ext_resource type="PackedScene" uid="uid://cmxa7e3wifiy2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.tscn" id="2_mjcu5"]
-[ext_resource type="Texture2D" uid="uid://b68lvb1tmrcra" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="3_lvf0k"]
+[ext_resource type="Texture2D" uid="uid://bc3ohcvien5j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="3_lvf0k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="4_vxjfh"]
-[ext_resource type="Texture2D" uid="uid://dp88xvwj1bkx8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="5_34f6o"]
+[ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="5_34f6o"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_748og"]
-[ext_resource type="Texture2D" uid="uid://dxompi5edsmi4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="6_dnub2"]
-[ext_resource type="Texture2D" uid="uid://5245cp7ae0tc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="7_dtmaw"]
-[ext_resource type="Texture2D" uid="uid://c2thohys4ix5e" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="8_xd8ej"]
+[ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="6_dnub2"]
+[ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="7_dtmaw"]
+[ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="8_xd8ej"]
 
 [node name="Prefab_PatternVectorPairWithDelete" type="HBoxContainer"]
 custom_minimum_size = Vector2(600, 0)
