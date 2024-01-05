@@ -2,7 +2,8 @@ extends VBoxContainer
 class_name UIMorphologyDefinition
 ## Intellegently shows the correct window segment representing the current morphology type
 
-@export var header_enabled: bool = true
+@export var title_enabled: bool = true
+@export var type_enabled: bool = true
 @export var morphology_editable: bool = true
 
 var morphology_type_loaded: Morphology.MORPHOLOGY_TYPE:
@@ -12,23 +13,23 @@ var composite_view: ElementMorphologyCompositeView
 var vectors_view: ElementMorphologyVectorsView
 var patterns_view: ElementMorphologyPatternView
 
-var _header: VBoxContainer
 var _header_title: LineEdit
 var _header_type: LineEdit
 var _type_loaded: Morphology.MORPHOLOGY_TYPE
 
 func _ready() -> void:
-	_header = $Header
+	$Header/HBoxContainer.enabled = title_enabled
+	$Header/HBoxContainer2.enabled = type_enabled
+	
 	_header_title = $Header/HBoxContainer/Title_text
 	_header_type = $Header/HBoxContainer2/Pattern_Text
-	_header.visible = header_enabled
 
 	composite_view = $ElementMorphologyCompositeView
 	vectors_view = $ElementMorphologyVectorsView
 	patterns_view = $ElementMorphologyPatternView
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
-func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
+func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) -> void:
 	_header_title.text = morphology.name
 	if _type_loaded != morphology.type:
 		# We are changing size, shrink as much as possible
@@ -74,15 +75,15 @@ func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			var src_pattern: Array[Vector2i] = []
-			load_in_morphology(CompositeMorphology.new("NO_NAME", true, Vector3i(0,0,0), src_pattern, ""))
+			load_morphology(CompositeMorphology.new("NO_NAME", true, Vector3i(0,0,0), src_pattern, ""))
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			var vectors: Array[Vector3i] = []
-			load_in_morphology(VectorMorphology.new("NO_NAME", true, vectors))
+			load_morphology(VectorMorphology.new("NO_NAME", true, vectors))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
 			var patterns: Array[PatternVector3Pairs] = []
-			load_in_morphology(PatternMorphology.new("NO_NAME", true, patterns))
+			load_morphology(PatternMorphology.new("NO_NAME", true, patterns))
 		_:
-			load_in_morphology(NullMorphology.new())
+			load_morphology(NullMorphology.new())
 	
 ## Retrieves the current UI view as a morphology of its type
 func retrieve_morphology(morphology_name: StringName, _morphology_details: StringName) -> Morphology:
