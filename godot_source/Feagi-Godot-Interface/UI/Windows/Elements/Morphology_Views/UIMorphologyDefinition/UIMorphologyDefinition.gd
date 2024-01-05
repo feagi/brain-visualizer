@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name SmartMorphologyView
+class_name UIMorphologyDefinition
 ## Intellegently shows the correct window segment representing the current morphology type
 
 @export var header_enabled: bool = true
@@ -63,14 +63,14 @@ func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false
 			composite_view.visible = false
 			vectors_view.visible = false
 			patterns_view.visible = false
-			push_error("Null or unknown Morphology type loaded into SmartMorphologyView!")
-	print("SmartMorphologyView finished loading in Morphology of name " + morphology.name)
+			push_error("Null or unknown Morphology type loaded into UIMorphologyDefinition!")
+	print("UIMorphologyDefinition finished loading in Morphology of name " + morphology.name)
 	if update_FEAGI_cache:
 		FeagiRequests.refresh_morphology_properties(morphology.name)
 
 ## Loads in a blank morphology of given type
 func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
-	print("SmartMorphologyView is loading in a blank morphology")
+	print("UIMorphologyDefinition is loading in a blank morphology")
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			var src_pattern: Array[Vector2i] = []

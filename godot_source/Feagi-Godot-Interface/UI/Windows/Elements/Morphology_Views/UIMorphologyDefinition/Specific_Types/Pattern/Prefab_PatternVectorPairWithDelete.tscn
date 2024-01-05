@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://dsf0flbf8igka"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.gd" id="1_2vxwp"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.gd" id="1_2vxwp"]
 [ext_resource type="PackedScene" uid="uid://cmxa7e3wifiy2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.tscn" id="2_mjcu5"]
 [ext_resource type="Texture2D" uid="uid://bc3ohcvien5j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="3_lvf0k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="4_vxjfh"]
