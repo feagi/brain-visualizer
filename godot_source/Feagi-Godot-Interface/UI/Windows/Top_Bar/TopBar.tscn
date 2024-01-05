@@ -181,7 +181,6 @@ text = "System Health"
 vertical_alignment = 1
 
 [node name="StateIndicator" parent="HBoxContainer/Details/Place_child_nodes_here" index="3" instance=ExtResource("10_3567y")]
-custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
 [connection signal="requesting_view_change" from="HBoxContainer/SplitViewDropDown" to="." method="_view_selected"]

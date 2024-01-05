@@ -27,3 +27,4 @@ func toggle_collapse(is_collapsed: bool) -> void:
 	_genome_validity.visible = !is_collapsed
 	_brain_readiness.visible = !is_collapsed
 	_summary.visible = is_collapsed
+	size = Vector2(0,0) # force smallest possible size
