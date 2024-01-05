@@ -52,7 +52,7 @@ color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="Summary" index="0"]
-tooltip_text = "Brain Readiness"
+tooltip_text = "System State"
 
 [editable path="BurstEngine"]
 [editable path="GenomeAvailability"]
