@@ -46,7 +46,7 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 			push_error("Unknown Morphology Type! Skipping update!")
 			return
 	_available_morphologies[morphology_name].is_placeholder_data = false
-	_available_morphologies[morphology_name].numerical_properties_updated.emit() #TODO NO
+	_available_morphologies[morphology_name].numerical_properties_updated.emit(_available_morphologies[morphology_name]) #TODO NO
 	FeagiCacheEvents.morphology_updated.emit(_available_morphologies[morphology_name])
 
 ## Should only be called by FEAGI - removes a morphology by name

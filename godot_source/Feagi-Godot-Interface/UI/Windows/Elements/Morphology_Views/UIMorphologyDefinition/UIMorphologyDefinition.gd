@@ -7,15 +7,20 @@ class_name UIMorphologyDefinition
 @export var morphology_editable: bool = true
 
 var morphology_type_loaded: Morphology.MORPHOLOGY_TYPE:
-	get: return _type_loaded
+	get:  
+		if _morphology_loaded != null:
+			return _morphology_loaded.type
+		else:
+			return Morphology.MORPHOLOGY_TYPE.NULL
 
 var composite_view: ElementMorphologyCompositeView
 var vectors_view: ElementMorphologyVectorsView
 var patterns_view: ElementMorphologyPatternView
 
+
 var _header_title: LineEdit
 var _header_type: LineEdit
-var _type_loaded: Morphology.MORPHOLOGY_TYPE
+var _morphology_loaded: Morphology
 
 func _ready() -> void:
 	$Header/HBoxContainer.visible = title_enabled
@@ -30,11 +35,15 @@ func _ready() -> void:
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
 func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) -> void:
-	_header_title.text = morphology.name
-	if _type_loaded != morphology.type:
-		# We are changing size, shrink as much as possible
-		size = Vector2(0,0)
-	_type_loaded = morphology.type
+	if _morphology_loaded != null:
+		if _morphology_loaded.numerical_properties_updated.is_connected(_morphology_updated):
+			_morphology_loaded.numerical_properties_updated.disconnect(_morphology_updated)
+
+
+	size = Vector2(0,0) # Shrink
+	_morphology_loaded = morphology
+	_morphology_loaded.numerical_properties_updated.connect(_morphology_updated)
+	_header_title.text = _morphology_loaded.name
 	_header_type.text = Morphology.MORPHOLOGY_TYPE.keys()[morphology.type]
 	match morphology.type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
@@ -88,7 +97,7 @@ func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
 ## Retrieves the current UI view as a morphology of its type
 func retrieve_morphology(morphology_name: StringName, _morphology_details: StringName) -> Morphology:
 	## TODO make use of morphology details - Requires FEAGI support first
-	match _type_loaded:
+	match _morphology_loaded.type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			return composite_view.get_as_composite_morphology(morphology_name)
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
@@ -99,3 +108,5 @@ func retrieve_morphology(morphology_name: StringName, _morphology_details: Strin
 			push_error("Unable to retrieve null or unknown type morphology. Return Null Morphology Instead...")
 			return NullMorphology.new()
 
+func _morphology_updated(_self_morphology: Morphology) -> void:
+	load_morphology(_morphology_loaded, false)
