@@ -11,8 +11,10 @@
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
 [node name="TopBar" type="HBoxContainer"]
-offset_right = 616.0
-offset_bottom = 70.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 700.0
+offset_bottom = 100.0
 theme_override_constants/separation = 5
 script = ExtResource("1_f5hja")
 

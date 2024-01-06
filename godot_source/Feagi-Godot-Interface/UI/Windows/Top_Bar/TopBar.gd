@@ -11,6 +11,7 @@ func _ready():
 	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	
+	
 	# apply padding
 	$Buttons/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
 	$Buttons/MarginContainer.add_theme_constant_override("margin_left", universal_padding)
@@ -34,7 +35,6 @@ func _ready():
 	details_section.toggled.connect(_details_section_toggle)
 	
 	size = Vector2(0,0) #force to smallest possible size
-	
 	
 	
 
