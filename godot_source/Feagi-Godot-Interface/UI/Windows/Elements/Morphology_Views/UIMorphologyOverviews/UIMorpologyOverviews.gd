@@ -21,7 +21,7 @@ var _UI_morphology_definition: UIMorphologyDefinition
 var _UI_morphology_image: UIMorphologyImage
 var _UI_morphology_usage: UIMorphologyUsage
 var _UI_morphology_description: UIMorphologyDescription
-var _delete_morphology_button: Button
+var _delete_morphology_button: TextureButton
 var _close_button: Button
 var _update_morphology_button: Button
 

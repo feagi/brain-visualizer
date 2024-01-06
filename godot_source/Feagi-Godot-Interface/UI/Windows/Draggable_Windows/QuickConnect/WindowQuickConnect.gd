@@ -28,7 +28,7 @@ var _step2_label: Label
 var _step3_label: Label
 var _step3_info: PanelContainer
 var _step3_scroll: MorphologyScroll
-var _step3_MorphologyView: SmartMorphologyView
+var _step3_MorphologyView
 var _step3_MorphologyDetails: MorphologyGenericDetails
 var _step4_button: TextButton_Element
 

@@ -18,8 +18,8 @@ var _header_type: LineEdit
 var _type_loaded: Morphology.MORPHOLOGY_TYPE
 
 func _ready() -> void:
-	$Header/HBoxContainer.enabled = title_enabled
-	$Header/HBoxContainer2.enabled = type_enabled
+	$Header/HBoxContainer.visible = title_enabled
+	$Header/HBoxContainer2.visible = type_enabled
 	
 	_header_title = $Header/HBoxContainer/Title_text
 	_header_type = $Header/HBoxContainer2/Pattern_Text
