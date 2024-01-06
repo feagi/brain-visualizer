@@ -3,6 +3,7 @@ class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
 const USER_NONEDITABLE_MORPHOLOGIES: PackedStringArray = ["memory"] # Which morphologies can the user not edit the details of?
 
+signal numerical_properties_updated()
 signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
 signal retrieved_description(description: StringName, self_reference: Morphology)
 signal about_to_be_deleted()
