@@ -28,7 +28,7 @@ func _ready() -> void:
 	_morphology_details_view.editable = editable
 
 ## Update details window with the details of the given morphology
-func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
+func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
 	if _shown_morphology.retrieved_latest_usuage_of_morphology.is_connected(_retrieved_morphology_mappings_from_feagi):
 		_shown_morphology.retrieved_latest_usuage_of_morphology.disconnect(_retrieved_morphology_mappings_from_feagi)
 	_shown_morphology = morphology
