@@ -11,7 +11,6 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 
 #region Cortical Areas
 
-
 ## Requests from FEAGI summary of all cortical areas (name, dimensions, 2D/3D location, and visibility)
 ## Triggers an update in FEAGI Cached cortical areas
 ## Success emits cortical_area_added, cortical_area_removed, cortical_area_updated depending on situation
@@ -62,6 +61,10 @@ func request_membrane_monitoring_status(cortical_area: BaseCorticalArea) -> void
 func request_synaptic_monitoring_status(cortical_area: BaseCorticalArea) -> void:
 	print("User requested synaptic monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
+
+func request_clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i) -> void:
+	pass
+	#TODO make actual call
 
 ## Refresh ID list of IPU and OPU templates
 ## TODO: Currently saves data nowhere!

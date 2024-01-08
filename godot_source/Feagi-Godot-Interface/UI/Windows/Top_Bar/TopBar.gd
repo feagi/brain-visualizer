@@ -11,7 +11,6 @@ func _ready():
 	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	
-	
 	# apply padding
 	$Buttons/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
 	$Buttons/MarginContainer.add_theme_constant_override("margin_left", universal_padding)
