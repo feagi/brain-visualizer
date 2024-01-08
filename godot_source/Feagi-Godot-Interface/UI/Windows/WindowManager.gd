@@ -67,7 +67,7 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	loaded_windows["morphology_manager"] = morphology_manager
 	bring_window_to_top(morphology_manager)
 	if morphology_to_preload != null:
-		morphology_manager.set_selected_morphology(morphology_to_preload)
+		morphology_manager.load_morphology(morphology_to_preload)
 	
 
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
