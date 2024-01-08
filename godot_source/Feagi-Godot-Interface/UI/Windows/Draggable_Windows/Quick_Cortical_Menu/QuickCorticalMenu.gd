@@ -29,6 +29,7 @@ func _button_quick_connect() -> void:
 	_close_window()
 
 func _button_clone() -> void:
+	VisConfig.UI_manager.window_manager.spawn_clone_cortical(_cortical_area)
 	_close_window()
 
 func _button_delete() -> void:
