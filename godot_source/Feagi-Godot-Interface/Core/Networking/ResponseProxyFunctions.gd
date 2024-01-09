@@ -324,10 +324,6 @@ func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, 
 	print("FEAGI confirmed deletion of morphology " + deleted_morphology_name)
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
 
-
-
-
-
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
 	var data = response_body.get_string_from_utf8()
 	return JSON.parse_string(data)
