@@ -198,12 +198,12 @@ func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteAr
 	# TEMP amalgamation stuff
 	if "amalgamation_pending" in statuses.keys():
 		
-		if VisConfig.TEMP_last_amalgamation_ID == statuses["amalgamation_id"]:
+		if VisConfig.TEMP_last_amalgamation_ID == statuses["amalgamation_pending"]["amalgamation_id"]:
 			return
-		VisConfig.TEMP_last_amalgamation_ID = statuses["amalgamation_id"]
+		VisConfig.TEMP_last_amalgamation_ID = statuses["amalgamation_pending"]["amalgamation_id"]
 		
 		# We have an amalgamation pending
-		VisConfig.UI_manager.window_manager.spawn_amalgamation_window(statuses["amalgamation_id"], statuses["genome_title"])
+		VisConfig.UI_manager.window_manager.spawn_amalgamation_window(statuses["amalgamation_pending"]["amalgamation_id"], statuses["amalgamation_pending"]["genome_title"])
 
 func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	if _response_code == 422:
@@ -290,7 +290,7 @@ func POST_MON_neuron_synapticPotential(response_code: int, _response_body: Packe
 		return
 	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
 
-func POST_GE_amalgamationDestination(response_code: int, _response_body: PackedByteArray) -> void:
+func POST_GE_amalgamationDestination(response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
 	print("Feagi recieved amalgamation destination response!")
 	pass
 
@@ -338,7 +338,7 @@ func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, 
 	print("FEAGI confirmed deletion of morphology " + deleted_morphology_name)
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
 
-func DELETE_GE_amalgamationCancelation(_response_code: int, _response_body: PackedByteArray) -> void:
+func DELETE_GE_amalgamationCancelation(_response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
 	print("FEAGI deleted amalgamation request")
 	
 

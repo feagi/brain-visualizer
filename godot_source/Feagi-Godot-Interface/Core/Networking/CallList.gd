@@ -263,7 +263,7 @@ func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
 	}
 	_interface_ref.single_FEAGI_request(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
 
-func POST_GE_amalgamationDestination(circuit_position: Vector3i, amalgamation_ID: StringName) -> void:
+func POST_GE_amalgamationDestination(circuit_position: Vector3i, amalgamation_ID: StringName, _irrelevant: Variant) -> void:
 	var address: StringName = _address_list.POST_genome_amalgamationDestination + str(circuit_position.x) + &"&circuit_origin_y=" + str(circuit_position.y) + &"&circuit_origin_z=" + str(circuit_position.z) + "&amalgamation_id=" + amalgamation_ID
 	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_amalgamationDestination, {}) 
 	

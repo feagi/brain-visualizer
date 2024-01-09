@@ -2,7 +2,7 @@ extends DraggableWindow
 class_name WindowAmalgamationRequest
 
 var _field_title: TextInput
-var _field_3d_location: Vector3iField
+var _field_3d_location: Vector3iSpinboxField
 
 var _amalgamation_ID: StringName
 
@@ -22,7 +22,7 @@ func _cancel_pressed():
 
 func _import_pressed():
 	FeagiRequests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID)
-	close_window("import_amalgamation")
+	close_window("import_amalgamation", false)
 
 #OVERRIDE
 func close_window(window_name: StringName, request_cancel: bool = true) -> void:
