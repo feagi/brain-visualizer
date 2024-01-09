@@ -4,10 +4,12 @@ class_name TopBar
 @export var universal_padding: int = 15
 
 var _refresh_rate_field: FloatInput
+var _latency_field: IntInput
 
 func _ready():
 	# references
 	_refresh_rate_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/RR_Float
+	_latency_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/ping
 	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	
@@ -29,6 +31,7 @@ func _ready():
 	# from FEAGI
 	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
 	FeagiEvents.retrieved_latest_FEAGI_health.connect(state_indicator.set_health_states)
+	FeagiEvents.retrieved_latest_latency.connect(_FEAGI_retireved_latency)
 	# from user
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
 	details_section.toggled.connect(_details_section_toggle)
@@ -57,3 +60,6 @@ func _open_neuron_morphologies() -> void:
 
 func _open_tutorials() -> void:
 	VisConfig.UI_manager.window_manager.spawn_tutorial()
+
+func _FEAGI_retireved_latency(latency_ms: int) -> void:
+	_latency_field.current_int = latency_ms
