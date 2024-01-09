@@ -86,6 +86,9 @@ size_flags_horizontal = 1
 size_flags_vertical = 1
 child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
 
+[node name="text_button" parent="DetailsPanel/MarginContainer/Details" index="0"]
+custom_minimum_size = Vector2(32, 0)
+
 [node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
 text = "Refresh Rate"
