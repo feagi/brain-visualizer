@@ -279,6 +279,5 @@ func _on_feagi_ping_back() -> void:
 	var delta_time: int = (Time.get_ticks_msec() - _last_ping_time) /  2
 	_last_ping_time = Time.get_ticks_msec()
 	FeagiEvents.retrieved_latest_latency.emit(delta_time)
-	print(delta_time)
 
 #endregion
