@@ -110,8 +110,7 @@ func GET_GE_morphologyUsage(response_code: int, response_body: PackedByteArray, 
 	var usage_array: Array[Array] = []
 	usage_array.assign(_body_to_untyped_array(response_body))
 	var morphology_used: Morphology = FeagiCache.morphology_cache.available_morphologies[morphology_name]
-	# Emit for both the specific morpholoy and broadly to support various use cases
-	morphology_used.retrieved_latest_usuage_of_morphology.emit(usage_array)
+	morphology_used.feagi_update_usage(usage_array)
 	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_used, usage_array)
 	
 
@@ -208,7 +207,8 @@ func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, o
 		return
 	
 	var created_cortical_ID: StringName = cortical_ID_raw["cortical_id"]
-	var template: CorticalTemplate = FeagiCache.cortical_templates[other_properties["cortical_type_str"]].templates[created_cortical_ID]
+	var cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE = other_properties["cortical_type"]
+	var template: CorticalTemplate = FeagiCache.cortical_templates[BaseCorticalArea.cortical_type_to_str(cortical_type)].templates[created_cortical_ID]
 	
 	var is_2D_coordinates_defined: bool = false
 	var coordinates_2D: Vector2 = Vector2(0,0)
@@ -217,9 +217,14 @@ func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, o
 		is_2D_coordinates_defined = true
 		coordinates_2D = other_properties["coordinates_2d"]
 	
-	FeagiCache.cortical_areas_cache.add_new_IOPU_cortical_area(template, created_cortical_ID, other_properties["channel_count"], other_properties["coordinates_3d"], 
-		is_2D_coordinates_defined, coordinates_2D)
-	
+	match(cortical_type):
+		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			FeagiCache.cortical_areas_cache.add_input_cortical_area(created_cortical_ID, template, other_properties["coordinates_3d"], is_2D_coordinates_defined, coordinates_2D)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			FeagiCache.cortical_areas_cache.add_output_cortical_area(created_cortical_ID, template, other_properties["coordinates_3d"], is_2D_coordinates_defined, coordinates_2D)
+		_:
+			push_error("Unknown type of cortical area created! Skipping!")
+
 
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
@@ -318,10 +323,6 @@ func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray
 func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, deleted_morphology_name: StringName) -> void:
 	print("FEAGI confirmed deletion of morphology " + deleted_morphology_name)
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
-
-
-
-
 
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
 	var data = response_body.get_string_from_utf8()

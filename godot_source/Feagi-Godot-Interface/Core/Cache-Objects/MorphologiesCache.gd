@@ -18,6 +18,7 @@ func add_morphology_by_dict(properties: Dictionary) -> void:
 	_available_morphologies[morphology_name] = MorphologyFactory.create(morphology_name, morphology_type, properties)
 	FeagiCacheEvents.morphology_added.emit(_available_morphologies[morphology_name])
 
+#TODO make this more consistant to how cortical areas are done!
 func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 	var morphology_name: StringName = morphology_properties["morphology_name"]
 	if morphology_name not in _available_morphologies.keys():
@@ -45,6 +46,7 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 			push_error("Unknown Morphology Type! Skipping update!")
 			return
 	_available_morphologies[morphology_name].is_placeholder_data = false
+	_available_morphologies[morphology_name].numerical_properties_updated.emit(_available_morphologies[morphology_name]) #TODO NO
 	FeagiCacheEvents.morphology_updated.emit(_available_morphologies[morphology_name])
 
 ## Should only be called by FEAGI - removes a morphology by name
@@ -100,4 +102,12 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 		_available_morphologies[add] = adding_morphology
 		FeagiCacheEvents.morphology_added.emit(adding_morphology)
 	
-	
+func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringName], surpress_missing_error: bool = false) -> Array[Morphology]:
+	var output: Array[Morphology] = []
+	for req_morph: StringName in requested:
+		if req_morph in _available_morphologies.keys():
+			output.append(_available_morphologies[req_morph])
+		else:
+			if !surpress_missing_error:
+				push_error("Unable to find requested morphology by name of '%s', Skipping!" % req_morph)
+	return output

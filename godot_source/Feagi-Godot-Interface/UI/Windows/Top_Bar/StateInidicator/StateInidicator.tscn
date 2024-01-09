@@ -4,8 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://ch82fu6g530dm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/BooleanIndicator/BooleanIndicator.tscn" id="2_otodu"]
 
 [node name="StateInidicator" type="HBoxContainer"]
-offset_right = 174.0
+offset_right = 116.0
 offset_bottom = 61.0
+size_flags_horizontal = 0
 script = ExtResource("1_0acba")
 
 [node name="BurstEngine" parent="." instance=ExtResource("2_otodu")]
@@ -44,7 +45,17 @@ color_false = Color(0.24, 0.24, 0.24, 1)
 [node name="ColorRect" parent="BrainReadiness" index="0"]
 tooltip_text = "Brain Readiness"
 
+[node name="Summary" parent="." instance=ExtResource("2_otodu")]
+layout_mode = 2
+size_flags_horizontal = 3
+color_true = Color(0.360784, 1, 0.623529, 1)
+color_false = Color(0.24, 0.24, 0.24, 1)
+
+[node name="ColorRect" parent="Summary" index="0"]
+tooltip_text = "System State"
+
 [editable path="BurstEngine"]
 [editable path="GenomeAvailability"]
 [editable path="GenomeValidity"]
 [editable path="BrainReadiness"]
+[editable path="Summary"]

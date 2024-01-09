@@ -21,6 +21,7 @@ const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string vi
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 
 signal socket_state_changed(state: WebSocketPeer.State)
+signal feagi_return_ping()
 
 var current_websocket_status: WebSocketPeer.State:
 	get: return _get_socket_state()
@@ -142,6 +143,8 @@ func repeating_FEAGI_request(full_request_address: StringName, method: HTTPClien
 	var worker: RequestWorker = _grab_worker()
 	worker.repeat_polling_call(full_request_address, method, follow_up_function, mid_poll_call, polling_check, additional_data_to_send, data_to_buffer, polling_gap_seconds, kill_on_reset)
 
+func send_websocket_ping() -> void:
+	websocket_send("ping")
 
 ## attempts to send data over websocket
 func websocket_send(data: Variant) -> void:
@@ -149,6 +152,7 @@ func websocket_send(data: Variant) -> void:
 		push_warning("Unable to send data to closed socket!")
 		return
 	_socket.send((data.to_ascii_buffer()).compress(1))
+
 
 
 ## Grabs either an available [RequestWorker] (or if none are available, spawns one first)
@@ -193,9 +197,11 @@ func socket_status_poll() -> void:
 					print("FEAGI: Genome is being reset!")
 					FeagiRequests.hard_reset_genome_from_FEAGI()  # notify that genome was updated
 				elif _cache_websocket_data.get_string_from_utf8() == SOCKET_GENEOME_UPDATE_LATENCY:
-					FeagiEvents.retrieved_latest_ping.emit(Time.get_ticks_msec())
+					feagi_return_ping.emit()
 				else:
 					# assume its visualization data
+					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
+					if temp ==  null: return
 					FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
 		
 		WebSocketPeer.STATE_CLOSED:
