@@ -63,8 +63,12 @@ func request_synaptic_monitoring_status(cortical_area: BaseCorticalArea) -> void
 	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
 
 func request_clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i) -> void:
-	pass
-	#TODO make actual call
+	if !cloning_area.user_can_clone_this_cortical_area:
+		push_error("Unable to clone cortical area %s as it is of type %s! Skipping!" % [cloning_area.cortical_ID, cloning_area.type_as_string])
+		return
+	print("User requested cloning cortical area " + cloning_area.cortical_ID)
+	var is_cloning_source_memory_type: bool = cloning_area.group == BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	_feagi_interface.calls.POST_GE_customCorticalArea(new_name, new_position_3D, cloning_area.dimensions, true, new_position_2D, is_cloning_source_memory_type, cloning_area.cortical_ID)
 
 ## Refresh ID list of IPU and OPU templates
 ## TODO: Currently saves data nowhere!
