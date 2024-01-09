@@ -14,6 +14,7 @@ var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Wind
 var _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
 var _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
 var _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
+var _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
 
 var loaded_windows: Dictionary
 
@@ -26,7 +27,8 @@ var _window_memory_states: Dictionary = {
 	"import_circuit": {"position": Vector2(400,850)},
 	"quick_connect": {"position": Vector2(500,100)},
 	"tutorial": {"position": Vector2(900,500)},
-	"view_cortical": {"position": Vector2(50,100)}
+	"view_cortical": {"position": Vector2(50,100)},
+	"clone_cortical": {"position": Vector2(400,550)},
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -65,7 +67,7 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	loaded_windows["morphology_manager"] = morphology_manager
 	bring_window_to_top(morphology_manager)
 	if morphology_to_preload != null:
-		morphology_manager.set_selected_morphology(morphology_to_preload)
+		morphology_manager.load_morphology(morphology_to_preload)
 	
 
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
@@ -92,6 +94,19 @@ func spawn_create_cortical() -> void:
 	create_cortical.closed_window.connect(force_close_window)
 	loaded_windows["create_cortical"] = create_cortical
 	bring_window_to_top(create_cortical)
+
+func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
+	if "clone_cortical" in loaded_windows.keys():
+		force_close_window("clone_cortical")
+	
+	print("user requests clone cortical window")
+	var clone_cortical: WindowCloneCorticalArea = _prefab_clone_cortical.instantiate()
+	add_child(clone_cortical)
+	clone_cortical.load_from_memory(_window_memory_states["clone_cortical"])
+	clone_cortical.closed_window.connect(force_close_window)
+	clone_cortical.setup(cloning_from)
+	loaded_windows["clone_cortical"] = clone_cortical
+	bring_window_to_top(clone_cortical)
 
 func spawn_import_circuit() -> void:
 	if "import_circuit" in loaded_windows.keys():
@@ -132,8 +147,7 @@ func spawn_tutorial() -> void:
 
 func spawn_cortical_view() -> void:
 	if "view_cortical" in loaded_windows.keys():
-		force_close_window("view_cortical")
-	
+		force_close_window("view_cortical")	
 	var view_cortical: WindowViewCorticalArea = _prefab_cortical_view.instantiate()
 	add_child(view_cortical)
 	view_cortical.load_from_memory(_window_memory_states["view_cortical"])

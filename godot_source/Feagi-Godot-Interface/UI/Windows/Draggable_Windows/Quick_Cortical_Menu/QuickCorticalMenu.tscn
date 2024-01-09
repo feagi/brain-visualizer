@@ -64,9 +64,9 @@ stretch_mode = 5
 flip_v = true
 
 [node name="Clone" type="TextureButton" parent="HBoxContainer"]
-visible = false
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+tooltip_text = "Clone Cortical Area..."
 focus_mode = 0
 texture_normal = ExtResource("11_hl6lb")
 texture_pressed = ExtResource("12_daddx")

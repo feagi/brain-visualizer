@@ -1,12 +1,12 @@
 [gd_scene load_steps=5 format=3 uid="uid://c8gpa1figwpvw"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/SmartMorphologyView/SmartMorphologyView.gd" id="1_fup3i"]
-[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="2_j7hvp"]
-[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="3_bys31"]
-[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="4_2adf0"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.gd" id="1_y81lm"]
+[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="2_k4tyy"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="3_vddmv"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="4_elcaa"]
 
 [node name="SmartMorphologyView" type="VBoxContainer"]
-script = ExtResource("1_fup3i")
+script = ExtResource("1_y81lm")
 
 [node name="Header" type="VBoxContainer" parent="."]
 layout_mode = 2
@@ -43,17 +43,17 @@ placeholder_text = "None Loaded..."
 alignment = 1
 editable = false
 
-[node name="ElementMorphologyCompositeView" parent="." instance=ExtResource("2_j7hvp")]
+[node name="ElementMorphologyCompositeView" parent="." instance=ExtResource("2_k4tyy")]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ElementMorphologyVectorsView" parent="." instance=ExtResource("3_bys31")]
+[node name="ElementMorphologyVectorsView" parent="." instance=ExtResource("3_vddmv")]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ElementMorphologyPatternView" parent="." instance=ExtResource("4_2adf0")]
+[node name="ElementMorphologyPatternView" parent="." instance=ExtResource("4_elcaa")]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3

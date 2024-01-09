@@ -28,7 +28,7 @@ var _step2_label: Label
 var _step3_label: Label
 var _step3_info: PanelContainer
 var _step3_scroll: MorphologyScroll
-var _step3_MorphologyView: SmartMorphologyView
+var _step3_MorphologyView
 var _step3_MorphologyDetails: MorphologyGenericDetails
 var _step4_button: TextButton_Element
 
@@ -165,8 +165,8 @@ func _set_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_step3_label.text = "Selected Morphology: " + morphology.name
 	_step3_panel.add_theme_stylebox_override("panel", style_complete)
-	_step3_MorphologyView.load_in_morphology(morphology)
-	_step3_MorphologyDetails.load_in_morphology(morphology)
+	_step3_MorphologyView.load_morphology(morphology)
+	_step3_MorphologyDetails.load_morphology(morphology)
 	_finished_selecting = true
 	current_state = POSSIBLE_STATES.IDLE
 
