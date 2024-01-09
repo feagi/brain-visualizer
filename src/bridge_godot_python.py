@@ -32,7 +32,7 @@ from collections import deque
 import websockets
 import requests
 from configuration import agent_settings, feagi_settings
-from feagi_agent import feagi_interface as feagi
+import feagi_interface as feagi
 
 runtime_data = {
     "cortical_data": {},

@@ -1,0 +1,104 @@
+[gd_scene load_steps=20 format=3 uid="uid://c4nh5ikljookn"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.gd" id="1_8td17"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_iacyx"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_k8yc7"]
+[ext_resource type="Texture2D" uid="uid://biiul2mkotcbo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cortical_properties_S.png" id="3_25iwn"]
+[ext_resource type="Texture2D" uid="uid://33t2emp4woae" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cortical_properties_C.png" id="4_73bfl"]
+[ext_resource type="Texture2D" uid="uid://bjaweokxacdkd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cortical_properties_H.png" id="5_ir57i"]
+[ext_resource type="Texture2D" uid="uid://bj3h2uw41kl3g" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cortical_properties_D.png" id="6_sfa5v"]
+[ext_resource type="Texture2D" uid="uid://bd3dhn43c6r8i" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_S.png" id="7_aaec5"]
+[ext_resource type="Texture2D" uid="uid://cgsr1q3a36fhi" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_C.png" id="8_dpqta"]
+[ext_resource type="Texture2D" uid="uid://ea7idq5gaks" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_H.png" id="9_8220t"]
+[ext_resource type="Texture2D" uid="uid://c67bmcomoa2p6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Quick_connect_D.png" id="10_op4fb"]
+[ext_resource type="Texture2D" uid="uid://01maovsicy67" path="res://Feagi-Godot-Interface/UI/Resources/Icons/copy_cortical_area_S.png" id="11_hl6lb"]
+[ext_resource type="Texture2D" uid="uid://dynlmqvvtasoe" path="res://Feagi-Godot-Interface/UI/Resources/Icons/copy_cortical_area_C.png" id="12_daddx"]
+[ext_resource type="Texture2D" uid="uid://dhp0fs3vy1gow" path="res://Feagi-Godot-Interface/UI/Resources/Icons/copy_cortical_area_H.png" id="13_2u3te"]
+[ext_resource type="Texture2D" uid="uid://ooaqwhrtfmu2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/copy_cortical_area_D.png" id="14_acjss"]
+[ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="15_e2qrx"]
+[ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="16_alv5k"]
+[ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="17_l48r7"]
+[ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="18_7ekap"]
+
+[node name="QuickCorticalMenu" type="Panel"]
+offset_top = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+focus_mode = 2
+script = ExtResource("1_8td17")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/separation = 8
+script = ExtResource("2_k8yc7")
+
+[node name="g1" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="Details" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "View Cortical Area Details"
+focus_mode = 0
+texture_normal = ExtResource("3_25iwn")
+texture_pressed = ExtResource("4_73bfl")
+texture_hover = ExtResource("5_ir57i")
+texture_disabled = ExtResource("6_sfa5v")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuickConnect" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Connect Cortical Area Towards..."
+focus_mode = 0
+texture_normal = ExtResource("7_aaec5")
+texture_pressed = ExtResource("8_dpqta")
+texture_hover = ExtResource("9_8220t")
+texture_disabled = ExtResource("10_op4fb")
+ignore_texture_size = true
+stretch_mode = 5
+flip_v = true
+
+[node name="Clone" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Clone Cortical Area..."
+focus_mode = 0
+texture_normal = ExtResource("11_hl6lb")
+texture_pressed = ExtResource("12_daddx")
+texture_hover = ExtResource("13_2u3te")
+texture_disabled = ExtResource("14_acjss")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Delete" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Delete this Cortical Area..."
+focus_mode = 0
+texture_normal = ExtResource("15_e2qrx")
+texture_pressed = ExtResource("16_alv5k")
+texture_hover = ExtResource("17_l48r7")
+texture_disabled = ExtResource("18_7ekap")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="g2" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="TitleBar" parent="." instance=ExtResource("2_iacyx")]
+layout_mode = 0
+offset_top = -40.0
+offset_bottom = 0.0
+title = "CORTICAL_NAME"
+automatic_setup_hiding_closing = false
+show_close_button = false
+
+[connection signal="pressed" from="HBoxContainer/Details" to="." method="_button_details"]
+[connection signal="pressed" from="HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
+[connection signal="pressed" from="HBoxContainer/Clone" to="." method="_button_clone"]
+[connection signal="pressed" from="HBoxContainer/Delete" to="." method="_button_delete"]

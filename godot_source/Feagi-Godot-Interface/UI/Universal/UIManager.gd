@@ -16,6 +16,9 @@ signal mode_changed(new_mode: MODE)
 var screen_size: Vector2:  # keep as float for easy division
 	get: return _screen_size
 
+var screen_center: Vector2:
+	get: return _screen_size / 2.0
+
 var minimum_button_size_pixel: Vector2i:
 	get: return _minimum_button_size_pixel
 	set(v):
@@ -102,6 +105,9 @@ func start_new_cortical_area_preview(coordinates_changed: Signal, dimensions_cha
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	$Brain_Visualizer.snap_camera_to_cortical_area(cortical_area)
+
+func temp_get_temp_split() -> TempSplit:
+	return $temp_split
 
 ## Updates the screensize 
 func _update_screen_size():

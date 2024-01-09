@@ -182,7 +182,7 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalAr
 		"template_cortical_ID": template_cortical_ID,
 		"coordinates_3d": coordinates_3D,
 		"channel_count": channel_count,
-		"cortical_type_str": BaseCorticalArea.cortical_type_to_str(type),
+		"cortical_type": type,
 	}
 
 	if is_coordinate_2D_defined:
@@ -196,8 +196,9 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalAr
 
 
 ## Adds cortical area (custom or memory) (with definable dimensions)
+## If copying a cortical ID, dimensions should be the same as the source dimensions
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false) -> void:
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false, cortical_ID_to_copy: StringName = "") -> void:
 
 	var to_send: Dictionary = {
 		"cortical_name": str(name),
@@ -216,14 +217,17 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
-		to_buffer["coordinates_2d"] = coordinates_2D
+		to_buffer["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
 	if memory_type:
 		to_send["sub_group_id"] = "MEMORY"
 		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
-		
+	
+	if cortical_ID_to_copy != "":
+		to_send["copy_of"] = cortical_ID_to_copy
+		#to_send.erase("cortical_dimensions")
 
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.single_FEAGI_request(_address_list.POST_genome_customCorticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 

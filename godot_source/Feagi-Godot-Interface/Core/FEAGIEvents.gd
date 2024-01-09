@@ -20,7 +20,7 @@ signal retrieved_latest_morphology_listing(morphologies: Array[String])
 ## Emits when we retrieved arrays of source -> destination mappings (each are 2 element array themselves), and the accompying relevant morphology it relates to
 signal retrieved_latest_usuage_of_morphology(relevant_morphology: Morphology, usage: Array[Array])
 
-signal retrieved_latest_ping(ping: StringName)
+signal retrieved_latest_latency(latency_in_ms: int)
 
 ## Retrieved latest health info
 signal retrieved_latest_FEAGI_health(burst_engine: bool, genome_availibility: bool, genome_validity: bool, brain_readiness: bool)

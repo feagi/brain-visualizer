@@ -9,15 +9,15 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/Camera3D.gd" id="4_62hvk"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/cortical_area.material" id="5_fjalb"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/cortical_area_box.gd" id="6_oucll"]
-[ext_resource type="FontFile" uid="uid://pq2qv50v863l" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/RobotoCondensed-Bold.ttf" id="7_01edh"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/red.material" id="7_jrrky"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.tscn" id="9_3e5sk"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Manager/WindowManager.gd" id="9_jshmh"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/WindowManager.gd" id="9_jshmh"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Universal/FullScreenControl.gd" id="11_xxcay"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.tscn" id="12_fqaqp"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Resources/Shared_components/3d_indicator.gd" id="13_jugsj"]
 [ext_resource type="PackedScene" uid="uid://btblmb2nxa3pw" path="res://Feagi-Godot-Interface/UI/Windows/Cortical_List/cortical_list.tscn" id="14_db7m2"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/timer.gd" id="14_fab5w"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/TempSplit.gd" id="14_mibao"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="16_jeyol"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/VersionLabel.gd" id="22_3kpmq"]
 [ext_resource type="PackedScene" uid="uid://4jumuijtufu5" path="res://Feagi-Godot-Interface/UI/Notifications/NotificationSystem.tscn" id="23_c734s"]
@@ -65,9 +65,6 @@ script = ExtResource("1_43i4l")
 
 [node name="UI" type="Node" parent="."]
 script = ExtResource("3_5tyy7")
-
-[node name="NodeGraph" parent="UI" instance=ExtResource("2_yy50b")]
-visible = false
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
 script = ExtResource("3_1xkbx")
@@ -136,20 +133,32 @@ layout_mode = 3
 anchors_preset = 0
 offset_right = 1152.0
 offset_bottom = 650.0
+focus_mode = 1
 mouse_filter = 1
 script = ExtResource("11_xxcay")
 
 [node name="3d_indicator" parent="UI/Brain_Visualizer" instance=ExtResource("12_fqaqp")]
 script = ExtResource("13_jugsj")
 
+[node name="temp_split" type="SplitContainer" parent="UI"]
+visible = false
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+script = ExtResource("14_mibao")
+
+[node name="empty" type="Control" parent="UI/temp_split"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="NodeGraph" parent="UI/temp_split" instance=ExtResource("2_yy50b")]
+layout_mode = 2
+
 [node name="Windows" type="Node" parent="UI"]
 script = ExtResource("9_jshmh")
 
 [node name="TopBar" parent="UI/Windows" instance=ExtResource("9_3e5sk")]
 theme = ExtResource("16_jeyol")
-
-[node name="ping" parent="UI/Windows/TopBar/HBoxContainer" index="22"]
-script = ExtResource("14_fab5w")
 
 [node name="Cortical_List" parent="UI/Windows" instance=ExtResource("14_db7m2")]
 visible = false
@@ -185,13 +194,7 @@ script = ExtResource("22_3kpmq")
 [connection signal="input_event" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="UI/Brain_Visualizer/cortical_area_box/Area3D" to="UI/Brain_Visualizer/cortical_area_box" method="_on_area_3d_mouse_exited"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NC_Button" to="UI/Windows" method="spawn_import_circuit"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAView_Button" to="UI/Windows" method="spawn_cortical_view"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAAdd_Button" to="UI/Windows" method="spawn_create_cortical"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/CAConnect_Button" to="UI/Windows" method="spawn_quick_connect"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMAdd_Button" to="UI/Windows" method="spawn_create_morphology"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/NMSettings_Button" to="UI/Windows" method="spawn_manager_morphology"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/Mode_Button" to="UI" method="_toggle_between_views"]
-[connection signal="pressed" from="UI/Windows/TopBar/HBoxContainer/TU_Button" to="UI/Windows" method="spawn_tutorial"]
+[connection signal="requesting_view_change" from="UI/Windows/TopBar/DropDownPanel/MarginContainer/SplitViewDropDown" to="UI/temp_split" method="set_view"]
 
 [editable path="UI/Windows/TopBar"]
+[editable path="UI/Windows/TopBar/DetailsPanel/MarginContainer/Details"]

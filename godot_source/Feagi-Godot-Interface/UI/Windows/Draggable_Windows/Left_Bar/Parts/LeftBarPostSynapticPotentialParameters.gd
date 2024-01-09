@@ -36,7 +36,32 @@ func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
 	_Degeneracy_Constant.current_int = cortical_reference.neuron_degeneracy_coefficient
 	_PSP_Uniformity.set_pressed_no_signal(cortical_reference.neuron_psp_uniform_distribution)
 	_MP_Driven_PSP.set_pressed_no_signal(cortical_reference.neuron_mp_driven_psp)
+	
+	cortical_reference.neuron_degeneracy_coefficient_updated.connect(FEAGI_set_Degeneracy_Constant)
+	cortical_reference.neuron_psp_uniform_distribution_updated.connect(FEAGI_set_PSP_Uniformity)
+	cortical_reference.neuron_neuron_mp_driven_psp_updated.connect(FEAGI_set_MP_Driven_PSP)
+	cortical_reference.neuron_post_synaptic_potential_updated.connect(FEAGI_set_Post_Synaptic_Potential)
+	cortical_reference.neuron_post_synaptic_potential_max_updated.connect(FEAGI_set_PSP_Max)
 
+func FEAGI_set_Degeneracy_Constant(new_val: int, _duplicate_ref: BaseCorticalArea):
+	_Degeneracy_Constant.current_int = new_val
+	_FEAGI_confirmed_update()
+
+func FEAGI_set_PSP_Uniformity(new_val: bool, _duplicate_ref: BaseCorticalArea):
+	_PSP_Uniformity.set_pressed_no_signal(new_val)
+	_FEAGI_confirmed_update()
+
+func FEAGI_set_MP_Driven_PSP(new_val: bool, _duplicate_ref: BaseCorticalArea):
+	_MP_Driven_PSP.set_pressed_no_signal(new_val)
+	_FEAGI_confirmed_update()
+
+func FEAGI_set_Post_Synaptic_Potential(new_val: float, _duplicate_ref: BaseCorticalArea):
+	_Post_Synaptic_Potential.current_float = new_val
+	_FEAGI_confirmed_update()
+
+func FEAGI_set_PSP_Max(new_val: float, _duplicate_ref: BaseCorticalArea):
+	_PSP_Max.current_float = new_val
+	_FEAGI_confirmed_update()
 
 ## User pressed update button
 func _user_requests_update() -> void:
@@ -61,6 +86,12 @@ func user_request_PSP_Uniforimity(value: bool) -> void:
 
 func user_request_MP_Driven_PSP(value: bool) -> void:
 	_growing_cortical_update["neuron_mp_driven_psp"] = value
+
+## FEAGI confirmed changes, show this in the UI and clear the backend dict
+func _FEAGI_confirmed_update() -> void:
+	_growing_cortical_update = {} # reset queued changes
+	_update_button.disabled = true
+	# TODO change edited color of fields
 
 # Connected via TSCN to editable textboxes
 func _enable_update_button():
