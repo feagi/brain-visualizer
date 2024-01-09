@@ -217,7 +217,7 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
-		to_buffer["coordinates_2d"] = coordinates_2D
+		to_buffer["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
@@ -227,7 +227,7 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 	
 	if cortical_ID_to_copy != "":
 		to_send["copy_of"] = cortical_ID_to_copy
-		to_send.erase("cortical_dimensions")
+		#to_send.erase("cortical_dimensions")
 
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.single_FEAGI_request(_address_list.POST_genome_customCorticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
