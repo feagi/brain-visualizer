@@ -279,6 +279,10 @@ func POST_MON_neuron_synapticPotential(response_code: int, _response_body: Packe
 		return
 	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
 
+func POST_GE_amalgamationDestination(response_code: int, _response_body: PackedByteArray) -> void:
+	print("Feagi recieved amalgamation request!")
+	pass
+
 
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
 	if _response_code == 422:
@@ -323,6 +327,11 @@ func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray
 func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, deleted_morphology_name: StringName) -> void:
 	print("FEAGI confirmed deletion of morphology " + deleted_morphology_name)
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
+
+func DELETE_GE_amalgamationCancelation(_response_code: int, _response_body: PackedByteArray) -> void:
+	print("FEAGI deleted amalgamation request")
+	
+
 
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
 	var data = response_body.get_string_from_utf8()

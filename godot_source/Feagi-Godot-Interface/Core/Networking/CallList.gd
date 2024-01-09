@@ -11,6 +11,7 @@ func _init(interface_reference: NetworkInterface, response_functions_reference: 
 	_response_functions_ref = response_functions_reference
 	_address_list = AddressList.new(_interface_ref.feagi_root_web_address)
 
+#region GET requests
 ## Get current IPU list
 func GET_FE_pns_current_ipu():
 	_interface_ref.single_FEAGI_request(_address_list.GET_feagi_pns_current_ipu, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_FE_pns_current_ipu)
@@ -160,9 +161,9 @@ func GET_PNS_current_ipu() -> void:
 ## returns a list of IDs (not cortical loaded) of areas for initing OPUs
 func GET_PNS_current_opu() -> void:
 	_interface_ref.single_FEAGI_request(_address_list.GET_pns_current_opu, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_PNS_current_opu)
+#endregion
 
-
-
+#region POST requests
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.single_FEAGI_request(_address_list.POST_feagi_burstEngine, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
@@ -262,12 +263,13 @@ func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
 	}
 	_interface_ref.single_FEAGI_request(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
 
+func POST_GE_amalgamationDestination(circuit_position: Vector3i, amalgamation_ID: StringName) -> void:
+	var address: StringName = _address_list.POST_genome_amalgamationDestination + str(circuit_position.x) + &"&circuit_origin_y=" + str(circuit_position.y) + &"&circuit_origin_z=" + str(circuit_position.z) + "&amalgamation_id=" + amalgamation_ID
+	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_amalgamationDestination, {}) 
+	
+#endregion
 
-
-
-
-
-
+#region PUT requests
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
 ## Only the keys being changed should be input, no need to pull everything
@@ -295,13 +297,9 @@ func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
 	for key in cortical_IDs_mapped_to_vector2is.keys():
 		to_send[key] = FEAGIUtils.vector2i_to_array(cortical_IDs_mapped_to_vector2is[key])
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_coord2d, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_coord2D, to_send, cortical_IDs_mapped_to_vector2is)
+#endregion
 
-
-## TODO clean up this
-func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
-	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + extra_name, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
-
-
+#region DELETE requests
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_corticalArea + corticalID, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_corticalArea, null, corticalID) # pass through cortical ID to know what we deleted
@@ -309,3 +307,9 @@ func DELETE_GE_corticalArea(corticalID: StringName):
 ## Deletes a morphology
 func DELETE_GE_morphology(morphology_name: StringName):
 	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_morphology + morphology_name, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_morphology, null, morphology_name) # pass through morphology name to know what we deleted
+
+func DELETE_GE_amalgamationCancelation(amalgamation_ID: StringName) -> void:
+	var address: StringName = _address_list.DELETE_GE_amalgamationCancellation + amalgamation_ID
+	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_amalgamationCancelation)
+	
+#endregion
