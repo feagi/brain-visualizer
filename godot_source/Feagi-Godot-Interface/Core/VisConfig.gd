@@ -10,6 +10,8 @@ enum STATES {
 var UI_manager: UIManager
 var is_premium: bool = true
 var version: BVVersion
+var TEMP_last_amalgamation_ID: StringName
+
 
 var visualizer_state: STATES:
 	get: return _visualizer_state

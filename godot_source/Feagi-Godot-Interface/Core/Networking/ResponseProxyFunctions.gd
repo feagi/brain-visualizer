@@ -197,6 +197,11 @@ func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteAr
 	)
 	# TEMP amalgamation stuff
 	if "amalgamation_pending" in statuses.keys():
+		
+		if VisConfig.TEMP_last_amalgamation_ID == statuses["amalgamation_id"]:
+			return
+		VisConfig.TEMP_last_amalgamation_ID = statuses["amalgamation_id"]
+		
 		# We have an amalgamation pending
 		VisConfig.UI_manager.window_manager.spawn_amalgamation_window(statuses["amalgamation_id"], statuses["genome_title"])
 
