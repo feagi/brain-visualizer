@@ -18,6 +18,9 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	if !_cortical_area.user_can_delete_this_area:
 		$HBoxContainer/Delete.disabled = true
 		$HBoxContainer/Delete.tooltip_text = "This Cortical Area Cannot Be Deleted"
+	if !_cortical_area.user_can_clone_this_cortical_area:
+		$HBoxContainer/Clone.disabled = true
+		$HBoxContainer/Clone.tooltip_text = "This Cortical Area Cannot Be Cloned"
 	grab_focus()
 
 func _button_details() -> void:
