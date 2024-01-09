@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButton/IconButton.tscn" id="2_4d0u0"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://5nb0yf2u7q5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_cortical_area.png" id="3_f73r0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
 [ext_resource type="Texture2D" uid="uid://v4f5jjaxrov0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_tutorials.png" id="5_qirw1"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="9_jcvuj"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
@@ -105,6 +106,9 @@ vertical_alignment = 1
 [node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
 alignment = 1
+editable = false
+script = ExtResource("9_jcvuj")
+suffix = "ms"
 
 [node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
 layout_mode = 2
