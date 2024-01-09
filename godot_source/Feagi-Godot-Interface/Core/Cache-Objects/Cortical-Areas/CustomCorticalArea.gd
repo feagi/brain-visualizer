@@ -19,7 +19,7 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "neuron_fire_threshold" in data.keys(): 
 		neuron_fire_threshold = data["neuron_fire_threshold"]
 	if "neuron_fire_threshold_increment" in data.keys(): 
-		neuron_fire_threshold_increment = FEAGIUtils.array_to_vector3i(data["neuron_fire_threshold_increment"])
+		neuron_fire_threshold_increment = FEAGIUtils.untyped_array_to_vector3(data["neuron_fire_threshold_increment"])
 	if "neuron_firing_threshold_limit" in data.keys(): 
 		neuron_firing_threshold_limit = data["neuron_firing_threshold_limit"]
 	if "neuron_refractory_period" in data.keys(): 
@@ -36,10 +36,15 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
 	return
 
+
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
 	return BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 
 func _has_neuron_firing_parameters() -> bool:
+	return true
+
+#OVERRIDDEN
+func _user_can_clone_this_area() -> bool:
 	return true
 #end region
 

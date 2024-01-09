@@ -30,6 +30,10 @@ SignalDebugHelper="*res://Feagi-Godot-Interface/Core/SignalDebugHelper.gd"
 
 gdscript/warnings/unsafe_cast=1
 
+[editor]
+
+export/convert_text_resources_to_binary=false
+
 [gui]
 
 theme/custom="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres"

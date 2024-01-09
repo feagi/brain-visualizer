@@ -109,7 +109,7 @@ func _switch_UI_between_cortical_types(cortical_type: BaseCorticalArea.CORTICAL_
 
 func _create_pressed():
 	var generating_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
-	if generating_cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.INVALID:
+	if generating_cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
 		VisConfig.show_info_popup("Unable to create cortical area",
 		"Please define a cortical area type!",
 		"ok")

@@ -25,13 +25,16 @@ func _ready() -> void:
 	_texture_container = $UsageAndImage/VBoxContainer2
 	_morphology_texture_view = $UsageAndImage/VBoxContainer2/Current_Morphology_image
 	_available_morphology_images = DirAccess.get_files_at(MORPHOLOGY_ICON_PATH)
-	FeagiEvents.retrieved_latest_usuage_of_morphology.connect(_retrieved_morphology_mappings_from_feagi)
 	_morphology_details_view.editable = editable
 
 ## Update details window with the details of the given morphology
-func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
+func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
+	
+	if _shown_morphology.retrieved_usage.is_connected(_retrieved_morphology_mappings_from_feagi):
+		_shown_morphology.retrieved_usage.disconnect(_retrieved_morphology_mappings_from_feagi)
 	_shown_morphology = morphology
 	_update_image_with_morphology(morphology.name)
+	morphology.retrieved_usage.connect(_retrieved_morphology_mappings_from_feagi)
 	FeagiRequests.get_morphology_usage(morphology.name)
 	_morphology_details_view.text = morphology.description
 	if update_FEAGI_cache:
@@ -62,13 +65,11 @@ func _update_image_with_morphology(morphology_name: StringName) -> void:
 	_texture_container.visible = true
 	_morphology_texture_view.texture = load(MORPHOLOGY_ICON_PATH + morphology_image_name)
 
-func _retrieved_morphology_mappings_from_feagi(retrieved_morphology: Morphology, usage: Array[Array]):
-	if retrieved_morphology.name != _shown_morphology.name:
-		return
+func _retrieved_morphology_mappings_from_feagi(usage: Array[PackedStringArray], _is_being_used: bool, _self_reference: Morphology):
 	_morphology_mappings_view.text = _usage_array_to_string(usage)
 	
 ## Given usage array is for relevant morphology, formats out a string to show usage
-func _usage_array_to_string(usage: Array[Array]) -> StringName:
+func _usage_array_to_string(usage: Array[PackedStringArray]) -> StringName:
 	var output: String = ""
 	for single_mapping in usage:
 		output = output + _print_since_usage_mapping(single_mapping) + "\n"
