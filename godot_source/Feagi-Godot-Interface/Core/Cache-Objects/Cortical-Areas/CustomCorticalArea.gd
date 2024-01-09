@@ -36,10 +36,15 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
 	return
 
+
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
 	return BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 
 func _has_neuron_firing_parameters() -> bool:
+	return true
+
+#OVERRIDDEN
+func _user_can_clone_this_area() -> bool:
 	return true
 #end region
 

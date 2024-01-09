@@ -33,6 +33,10 @@ func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
 func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 	return false
 
+#OVERRIDDEN
+func _user_can_clone_this_area() -> bool:
+	return true
+
 func _has_memory_parameters() -> bool:
 	return true
 
