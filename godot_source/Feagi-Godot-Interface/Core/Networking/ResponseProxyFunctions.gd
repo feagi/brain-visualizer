@@ -283,7 +283,6 @@ func POST_GE_amalgamationDestination(response_code: int, _response_body: PackedB
 	print("Feagi recieved amalgamation request!")
 	pass
 
-
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
 	if _response_code == 422:
 		push_error("Unable to process new mappings! Skipping!")
