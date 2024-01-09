@@ -1,39 +1,49 @@
 extends VBoxContainer
-class_name SmartMorphologyView
+class_name UIMorphologyDefinition
 ## Intellegently shows the correct window segment representing the current morphology type
 
-@export var header_enabled: bool = true
+@export var title_enabled: bool = true
+@export var type_enabled: bool = true
 @export var morphology_editable: bool = true
 
 var morphology_type_loaded: Morphology.MORPHOLOGY_TYPE:
-	get: return _type_loaded
+	get:  
+		if _morphology_loaded != null:
+			return _morphology_loaded.type
+		else:
+			return Morphology.MORPHOLOGY_TYPE.NULL
 
 var composite_view: ElementMorphologyCompositeView
 var vectors_view: ElementMorphologyVectorsView
 var patterns_view: ElementMorphologyPatternView
 
-var _header: VBoxContainer
+
 var _header_title: LineEdit
 var _header_type: LineEdit
-var _type_loaded: Morphology.MORPHOLOGY_TYPE
+var _morphology_loaded: Morphology
 
 func _ready() -> void:
-	_header = $Header
+	$Header/HBoxContainer.visible = title_enabled
+	$Header/HBoxContainer2.visible = type_enabled
+	
 	_header_title = $Header/HBoxContainer/Title_text
 	_header_type = $Header/HBoxContainer2/Pattern_Text
-	_header.visible = header_enabled
 
 	composite_view = $ElementMorphologyCompositeView
 	vectors_view = $ElementMorphologyVectorsView
 	patterns_view = $ElementMorphologyPatternView
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
-func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
-	_header_title.text = morphology.name
-	if _type_loaded != morphology.type:
-		# We are changing size, shrink as much as possible
-		size = Vector2(0,0)
-	_type_loaded = morphology.type
+func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) -> void:
+	if _morphology_loaded != null:
+		if _morphology_loaded.numerical_properties_updated.is_connected(_morphology_updated):
+			_morphology_loaded.numerical_properties_updated.disconnect(_morphology_updated)
+
+
+	size = Vector2(0,0) # Shrink
+	_morphology_loaded = morphology
+	_morphology_loaded.numerical_properties_updated.connect(_morphology_updated)
+	_header_title.text = _morphology_loaded.name
 	_header_type.text = Morphology.MORPHOLOGY_TYPE.keys()[morphology.type]
 	match morphology.type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
@@ -63,31 +73,31 @@ func load_in_morphology(morphology: Morphology, update_FEAGI_cache: bool = false
 			composite_view.visible = false
 			vectors_view.visible = false
 			patterns_view.visible = false
-			push_error("Null or unknown Morphology type loaded into SmartMorphologyView!")
-	print("SmartMorphologyView finished loading in Morphology of name " + morphology.name)
+			push_error("Null or unknown Morphology type loaded into UIMorphologyDefinition!")
+	print("UIMorphologyDefinition finished loading in Morphology of name " + morphology.name)
 	if update_FEAGI_cache:
 		FeagiRequests.refresh_morphology_properties(morphology.name)
 
 ## Loads in a blank morphology of given type
 func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
-	print("SmartMorphologyView is loading in a blank morphology")
+	print("UIMorphologyDefinition is loading in a blank morphology")
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			var src_pattern: Array[Vector2i] = []
-			load_in_morphology(CompositeMorphology.new("NO_NAME", true, Vector3i(0,0,0), src_pattern, ""))
+			load_morphology(CompositeMorphology.new("NO_NAME", true, Vector3i(0,0,0), src_pattern, ""))
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			var vectors: Array[Vector3i] = []
-			load_in_morphology(VectorMorphology.new("NO_NAME", true, vectors))
+			load_morphology(VectorMorphology.new("NO_NAME", true, vectors))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
 			var patterns: Array[PatternVector3Pairs] = []
-			load_in_morphology(PatternMorphology.new("NO_NAME", true, patterns))
+			load_morphology(PatternMorphology.new("NO_NAME", true, patterns))
 		_:
-			load_in_morphology(NullMorphology.new())
+			load_morphology(NullMorphology.new())
 	
 ## Retrieves the current UI view as a morphology of its type
 func retrieve_morphology(morphology_name: StringName, _morphology_details: StringName) -> Morphology:
 	## TODO make use of morphology details - Requires FEAGI support first
-	match _type_loaded:
+	match _morphology_loaded.type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			return composite_view.get_as_composite_morphology(morphology_name)
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
@@ -98,3 +108,5 @@ func retrieve_morphology(morphology_name: StringName, _morphology_details: Strin
 			push_error("Unable to retrieve null or unknown type morphology. Return Null Morphology Instead...")
 			return NullMorphology.new()
 
+func _morphology_updated(_self_morphology: Morphology) -> void:
+	load_morphology(_morphology_loaded, false)

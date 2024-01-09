@@ -11,7 +11,6 @@ var _feagi_interface: FEAGIInterface # MUST be set ASAP externally or the below 
 
 #region Cortical Areas
 
-
 ## Requests from FEAGI summary of all cortical areas (name, dimensions, 2D/3D location, and visibility)
 ## Triggers an update in FEAGI Cached cortical areas
 ## Success emits cortical_area_added, cortical_area_removed, cortical_area_updated depending on situation
@@ -62,6 +61,14 @@ func request_membrane_monitoring_status(cortical_area: BaseCorticalArea) -> void
 func request_synaptic_monitoring_status(cortical_area: BaseCorticalArea) -> void:
 	print("User requested synaptic monitoring state for " + cortical_area.cortical_ID)
 	_feagi_interface.calls.GET_MO_neuron_synapticPotential(cortical_area.cortical_ID)
+
+func request_clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i) -> void:
+	if !cloning_area.user_can_clone_this_cortical_area:
+		push_error("Unable to clone cortical area %s as it is of type %s! Skipping!" % [cloning_area.cortical_ID, cloning_area.type_as_string])
+		return
+	print("User requested cloning cortical area " + cloning_area.cortical_ID)
+	var is_cloning_source_memory_type: bool = cloning_area.group == BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	_feagi_interface.calls.POST_GE_customCorticalArea(new_name, new_position_3D, cloning_area.dimensions, true, new_position_2D, is_cloning_source_memory_type, cloning_area.cortical_ID)
 
 ## Refresh ID list of IPU and OPU templates
 ## TODO: Currently saves data nowhere!
@@ -215,6 +222,20 @@ func request_add_circuit(circuit_file_name: StringName, circuit_position: Vector
 
 #region General
 
+const DELAY_BETWEEN_WEBSOCKET_PINGS: float = 0.5
+
+var _ping_timer: Timer
+var _last_ping_time: int
+
+func _ready() -> void:
+	_ping_timer = Timer.new()
+	add_child(_ping_timer)
+	_ping_timer.name = "ping_timer"
+	_ping_timer.timeout.connect(_on_ping_timer_end)
+	_ping_timer.one_shot = false # repeat timer
+	_ping_timer.start(DELAY_BETWEEN_WEBSOCKET_PINGS)
+	_feagi_interface.net.feagi_return_ping.connect(_on_feagi_ping_back)
+
 ## Get current burst rate
 func refresh_delay_between_bursts() -> void:
 	_feagi_interface.calls.GET_BU_stimulationPeriod()
@@ -249,5 +270,14 @@ func poll_genome_availability_launch() -> void:
 ## Calls feagi to retrieve genome health. Polls constantly to update health stats 
 func poll_genome_availability_monitoring() -> void:
 	_feagi_interface.calls.GET_healthCheck_POLL_MONITORING()
+
+## Sends a 'ping' to FEAGI for it to respond and for us to determine latency.
+func _on_ping_timer_end() -> void:
+	_feagi_interface.net.send_websocket_ping()
+
+func _on_feagi_ping_back() -> void:
+	var delta_time: int = (Time.get_ticks_msec() - _last_ping_time) /  2
+	_last_ping_time = Time.get_ticks_msec()
+	FeagiEvents.retrieved_latest_latency.emit(delta_time)
 
 #endregion

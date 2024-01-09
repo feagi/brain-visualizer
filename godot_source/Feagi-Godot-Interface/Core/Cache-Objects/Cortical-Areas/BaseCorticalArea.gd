@@ -5,6 +5,7 @@ class_name BaseCorticalArea
 
 # Main functionality for cortical area, and base details such as ID, name, and positions
 #region Base Functionality
+## The type of cortical area, not 1-1 mapped with feagi
 enum CORTICAL_AREA_TYPE {
 	IPU,
 	CORE,
@@ -12,6 +13,12 @@ enum CORTICAL_AREA_TYPE {
 	CUSTOM,
 	OPU,
 	UNKNOWN
+}
+
+## Any specific flags to be aware of for a cortical area? 
+enum CORTICAL_FLAGS {
+	EACH_AFFERENT_CONNECTION_MAX_ONE_MAPPING,
+	EACH_EFFERENT_CONNECTION_MAX_ONE_MAPPING
 }
 
 signal about_to_be_deleted(this_cortical_area: BaseCorticalArea)
@@ -121,6 +128,10 @@ var user_can_edit_cortical_neuron_per_vox_count: bool:
 var user_can_edit_cortical_synaptic_attractivity: bool:
 	get:
 		return _user_can_edit_cortical_synaptic_attractivity()
+
+var user_can_clone_this_cortical_area: bool:
+	get:
+		return _user_can_clone_this_area()
 
 var has_neuron_firing_parameters: bool:
 	get: 
@@ -321,11 +332,15 @@ func _user_can_edit_cortical_neuron_per_vox_count() -> bool:
 func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 	return true
 
+func _user_can_clone_this_area() -> bool:
+	return false
+
 func _has_neuron_firing_parameters() -> bool:
 	return false
 
 func _has_memory_parameters() -> bool:
 	return false
+
 
 #endregion
 
