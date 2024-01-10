@@ -157,8 +157,6 @@ func delete_example():
 		global_name_list.erase(i)
 
 func check_cortical(cortical_area_data : BaseCorticalArea):
-	var a = global_name_list["iv00_C_textbox"]
-	var b = global_name_list["iv00_C"]
 	var flag = false
 	for i in global_name_list:
 		if "_textbox" in i:
