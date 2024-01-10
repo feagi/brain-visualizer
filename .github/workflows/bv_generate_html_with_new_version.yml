@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  GODOT_VERSION: 4.1.1
+  GODOT_VERSION: 4.2
   EXPORT_NAME: Web
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'feagi/brain-visualizer'
     container:
-      image: neuraville/godot_export_web:v4.1.1
+      image: neuraville/godot_export_web:v4.2
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -47,10 +47,10 @@ jobs:
           ./set_timestamp.sh
       - name: Web Build
         run: |
-          mkdir -p /github/home/.local/share/godot/export_templates/4.1.1.stable/
-          cp -r /root/.local/share/godot/export_templates/4.1.1.stable/* /github/home/.local/share/godot/export_templates/4.1.1.stable/
+          mkdir -p /github/home/.local/share/godot/export_templates/4.2.stable/
+          cp -r /root/.local/share/godot/export_templates/4.2.stable/* /github/home/.local/share/godot/export_templates/4.2.stable/
           cd godot_source
-          /root/Godot_v4.1.1-stable_linux.x86_64 --headless --export-release Web ../html/index.html
+          /root/Godot_v4.2-stable_linux.x86_64 --headless --export-release Web ../html/index.html
       - name: Push Web Export
         run: |
           if git ls-remote --heads origin pre-release | grep -q 'pre-release'; then
