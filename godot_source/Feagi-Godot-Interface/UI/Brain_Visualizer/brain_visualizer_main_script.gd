@@ -5,7 +5,7 @@ const camera_snap_offset: Vector3 = Vector3(0.0, 15.0, -25.0)
 var shader_material # Wait for shader 
 var global_name_list = {}
 
-var _CorticalAreaPreviewPrefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Brain_Visualizer/CorticalBox/CorticalBoxPreview.tscn")
+var _prefab_single_preview: PackedScene = preload("res://Feagi-Godot-Interface/UI/Brain_Visualizer/Previews/BrainMonitorSinglePreview.tscn")
 
 func _ready():
 	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
@@ -14,10 +14,12 @@ func _ready():
 	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
 	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
 
+#TODO TEMP
 ## Generates and parents a preview and returns the object 
-func generate_prism_preview() -> CorticalBoxPreview:
-	var preview: CorticalBoxPreview = _CorticalAreaPreviewPrefab.instantiate()
+func generate_single_preview(initial_dimensions: Vector3, initial_position: Vector3, initial_color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> BrainMonitorSinglePreview:
+	var preview: BrainMonitorSinglePreview = _prefab_single_preview.instantiate()
 	add_child(preview)
+	preview.setup(initial_dimensions, initial_position, initial_color, is_rendering)
 	return preview
 
 ## Snaps the camera to a cortical area
