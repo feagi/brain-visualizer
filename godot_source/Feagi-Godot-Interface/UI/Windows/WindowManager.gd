@@ -183,16 +183,18 @@ func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
 	add_child(delete_confirmation)
 	loaded_windows["delete_confirmation"] = delete_confirmation
 	delete_confirmation.setup(cortical_area)
+	delete_confirmation.closed_window.connect(force_close_window)
 	bring_window_to_top(delete_confirmation)
 	
-func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName) -> void:
+func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	if "import_amalgamation" in loaded_windows.keys():
 		loaded_windows["import_amalgamation"].queue_free()
 	
 	var import_amalgamation: WindowAmalgamationRequest = _prefab_import_amalgamation.instantiate()
 	add_child(import_amalgamation)
 	loaded_windows["import_amalgamation"] = import_amalgamation
-	import_amalgamation.setup(amalgamation_ID, genome_title)
+	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size)
+	import_amalgamation.closed_window.connect(force_close_window)
 	bring_window_to_top(import_amalgamation)
 	
 func force_close_window(window_name: StringName) -> void:
