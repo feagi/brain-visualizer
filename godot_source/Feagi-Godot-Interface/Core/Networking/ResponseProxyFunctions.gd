@@ -203,7 +203,7 @@ func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteAr
 		VisConfig.TEMP_last_amalgamation_ID = statuses["amalgamation_pending"]["amalgamation_id"]
 		
 		# We have an amalgamation pending
-		VisConfig.UI_manager.window_manager.spawn_amalgamation_window(statuses["amalgamation_pending"]["amalgamation_id"], statuses["amalgamation_pending"]["genome_title"])
+		VisConfig.UI_manager.window_manager.spawn_amalgamation_window(statuses["amalgamation_pending"]["amalgamation_id"], statuses["amalgamation_pending"]["genome_title"], FEAGIUtils.array_to_vector3i(statuses["amalgamation_pending"]["circuit_size"]))
 
 func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	if _response_code == 422:
