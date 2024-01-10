@@ -40,7 +40,7 @@ func generate_cortical_area(cortical_area_data : BaseCorticalArea):
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions.y, -1 * cortical_area_data.dimensions.z - cortical_area_data.coordinates_3D.z)
 	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.name))
 	textbox.set_texture(viewport.get_texture())
-	textbox.set_name(cortical_area_data.name + str("_textbox"))
+	textbox.set_name(cortical_area_data.cortical_ID + str("_textbox"))
 	if not textbox.get_name() in global_name_list:
 		global_name_list[textbox.get_name()] = []
 	global_name_list[textbox.get_name()].append([textbox])
@@ -122,7 +122,7 @@ func update_all_node_from_cortical(name_input, material):
 
 func delete_single_cortical(cortical_area_data : BaseCorticalArea):
 	var name_list : Array = [] # To get cortical name
-	var cortical_text = cortical_area_data.name + "_textbox"
+	var cortical_text = cortical_area_data.cortical_ID + "_textbox"
 	for i in global_name_list:
 		if cortical_area_data.cortical_ID in i or cortical_text in i:
 			for x in len(global_name_list[i]):
@@ -157,8 +157,12 @@ func delete_example():
 		global_name_list.erase(i)
 
 func check_cortical(cortical_area_data : BaseCorticalArea):
+	var a = global_name_list["iv00_C_textbox"]
+	var b = global_name_list["iv00_C"]
 	var flag = false
 	for i in global_name_list:
+		if "_textbox" in i:
+			continue
 		if cortical_area_data.cortical_ID in i:
 			for x in range(1, 6):
 				if x == 1:
@@ -185,20 +189,3 @@ func check_cortical(cortical_area_data : BaseCorticalArea):
 			if cortical_area_data.cortical_ID in i:
 				print(global_name_list[i])
 		generate_cortical_area(cortical_area_data)
-
-func generate_single_cortical(x,y,z,width, depth, height, name_input):
-	"""Function for create cortical, import circuit"""
-	delete_example()
-	var textbox = $blank_textbox.duplicate()
-	var viewport = textbox.get_node("SubViewport")
-	textbox.scale = Vector3(1,1,1)
-	textbox.transform.origin = Vector3(x + (width/1.5), y +1 + height, -1 * depth - z)
-	textbox.set_name("example_textbox")
-	textbox.get_node("SubViewport/Label").set_text(str(name_input))
-	textbox.set_texture(viewport.get_texture())
-	if not "example_textbox" in global_name_list:
-		global_name_list["example_textbox"] =[]
-	global_name_list["example_textbox"].append([textbox, x, y, z, width, depth, height])
-	generate_one_model(name_input, x,y,z,width, depth, height)
-	add_child(textbox)
-	demo_new_cortical()
