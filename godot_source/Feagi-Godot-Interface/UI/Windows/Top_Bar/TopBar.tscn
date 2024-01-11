@@ -14,8 +14,8 @@
 [node name="TopBar" type="HBoxContainer"]
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 700.0
-offset_bottom = 100.0
+offset_right = 670.0
+offset_bottom = 66.0
 theme_override_constants/separation = 5
 script = ExtResource("1_f5hja")
 
@@ -24,10 +24,10 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Buttons"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
 layout_mode = 2
@@ -35,25 +35,25 @@ theme_override_constants/separation = 10
 
 [node name="BrainAreas" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(15, 15, 15, 15)
+top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("3_f73r0")
-texture_size = Vector2i(40, 40)
+texture_size = Vector2i(48, 48)
 button_text = &"Brain Areas"
 gap_between_text_and_texture = 5
 
 [node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(15, 15, 15, 15)
+top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("2_4yah1")
-texture_size = Vector2i(50, 40)
+texture_size = Vector2i(50, 48)
 button_text = &"Connectivity Rules"
 gap_between_text_and_texture = 5
 
 [node name="Tutorials" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(15, 15, 15, 15)
+top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("5_qirw1")
-texture_size = Vector2i(40, 40)
+texture_size = Vector2i(48, 48)
 button_text = &"Tutorials"
 gap_between_text_and_texture = 5
 
@@ -62,12 +62,13 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="DropDownPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 
 [node name="DetailsPanel" type="PanelContainer" parent="."]
@@ -85,9 +86,6 @@ layout_mode = 2
 size_flags_horizontal = 1
 size_flags_vertical = 1
 child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
-
-[node name="text_button" parent="DetailsPanel/MarginContainer/Details" index="0"]
-custom_minimum_size = Vector2(32, 0)
 
 [node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
