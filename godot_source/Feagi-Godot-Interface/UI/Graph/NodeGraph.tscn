@@ -9,7 +9,7 @@ anchor_bottom = 1.0
 offset_right = -3.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 1
+snapping_enabled = false
 right_disconnects = true
 script = ExtResource("1_06pyj")
 

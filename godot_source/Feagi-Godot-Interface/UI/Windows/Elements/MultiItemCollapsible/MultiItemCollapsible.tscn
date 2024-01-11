@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://bmc8qgeccqy5m"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.gd" id="1_55acr"]
+[ext_resource type="Texture2D" uid="uid://cnvigepdnf5si" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_left.png" id="2_hv0s0"]
+
+[node name="MultiItemCollapsible" type="BoxContainer"]
+size_flags_horizontal = 0
+size_flags_vertical = 0
+script = ExtResource("1_55acr")
+
+[node name="texture_button" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+texture_normal = ExtResource("2_hv0s0")
+texture_pressed = ExtResource("2_hv0s0")
+texture_hover = ExtResource("2_hv0s0")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Place_child_nodes_here" type="BoxContainer" parent="."]
+layout_mode = 2
+
+[connection signal="pressed" from="texture_button" to="." method="toggle"]

@@ -28,15 +28,15 @@ var _step2_label: Label
 var _step3_label: Label
 var _step3_info: PanelContainer
 var _step3_scroll: MorphologyScroll
-var _step3_MorphologyView: SmartMorphologyView
+var _step3_MorphologyView
 var _step3_MorphologyDetails: MorphologyGenericDetails
 var _step4_button: TextButton_Element
 
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false
 
-var _source: CorticalArea = null
-var _destination: CorticalArea = null
+var _source: BaseCorticalArea = null
+var _destination: BaseCorticalArea = null
 var _selected_morphology: Morphology = null
 
 func _ready() -> void:
@@ -63,7 +63,11 @@ func _ready() -> void:
 	_step3_panel.add_theme_stylebox_override("panel", style_incomplete)
 	current_state = POSSIBLE_STATES.SOURCE
 
-func on_user_select_cortical_area(cortial_area: CorticalArea) -> void:
+func setup(cortical_source_if_picked: BaseCorticalArea) -> void:
+	if cortical_source_if_picked != null:
+		_set_source(cortical_source_if_picked)
+
+func on_user_select_cortical_area(cortial_area: BaseCorticalArea) -> void:
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:
 			_set_source(cortial_area)
@@ -74,10 +78,9 @@ func on_user_select_cortical_area(cortial_area: CorticalArea) -> void:
 
 func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
-	var new_mapping: MappingProperties = MappingProperties.create_default_mapping(_source, _destination, _selected_morphology)
-	
+
 	# Make sure the cache has the current mapping state of the cortical to source area to append to
-	FeagiRequests.append_mapping_between_corticals(_source, _destination, new_mapping)
+	FeagiRequests.request_add_default_mapping_between_corticals(_source, _destination, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
 	
 	VisConfig.UI_manager.window_manager.force_close_window("quick_connect")
@@ -125,12 +128,16 @@ func _setting_destination() -> void:
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Morphology...")
+	var mapping_hint: MappingHints = MappingHints.new(_source, _destination)
 	_selected_morphology = null
 	_step3_label.text = "Please Select A Morphology..."
 	_step3_panel.add_theme_stylebox_override("panel", style_waiting)
+	if mapping_hint.is_morphologies_restricted:
+		_step3_scroll.set_morphologies(mapping_hint.restricted_morphologies)
+	_step3_scroll.select_morphology(mapping_hint.default_morphology)
 	
 
-func _set_source(cortical_area: CorticalArea) -> void:
+func _set_source(cortical_area: BaseCorticalArea) -> void:
 	_source = cortical_area
 	_step1_label.text = "Selected Source Area: [" + cortical_area.name + "]"
 	_step1_panel.add_theme_stylebox_override("panel", style_complete)
@@ -141,7 +148,7 @@ func _set_source(cortical_area: CorticalArea) -> void:
 		current_state = POSSIBLE_STATES.IDLE
 
 
-func _set_destination(cortical_area: CorticalArea) -> void:
+func _set_destination(cortical_area: BaseCorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = "Selected Destination Area: [" + cortical_area.name + "]"
 	_step2_panel.add_theme_stylebox_override("panel", style_complete)
@@ -158,8 +165,8 @@ func _set_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_step3_label.text = "Selected Morphology: " + morphology.name
 	_step3_panel.add_theme_stylebox_override("panel", style_complete)
-	_step3_MorphologyView.load_in_morphology(morphology)
-	_step3_MorphologyDetails.load_in_morphology(morphology)
+	_step3_MorphologyView.load_morphology(morphology)
+	_step3_MorphologyDetails.load_morphology(morphology)
 	_finished_selecting = true
 	current_state = POSSIBLE_STATES.IDLE
 

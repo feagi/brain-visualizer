@@ -16,6 +16,9 @@ signal mode_changed(new_mode: MODE)
 var screen_size: Vector2:  # keep as float for easy division
 	get: return _screen_size
 
+var screen_center: Vector2:
+	get: return _screen_size / 2.0
+
 var minimum_button_size_pixel: Vector2i:
 	get: return _minimum_button_size_pixel
 	set(v):
@@ -89,6 +92,19 @@ func switch_to_brain_visualizer_3D():
 
 func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	_notification_system_ref.add_notification(text, notification_type, time)
+
+#TODO TEMP
+## Tell BV to create a new singular cortical area preview
+func spawn_BV_single_preview(preview_dimensions: Vector3, preview_position: Vector3, color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> BrainMonitorSinglePreview:
+	var preview: BrainMonitorSinglePreview = $Brain_Visualizer.generate_single_preview(preview_dimensions, preview_position, color, is_rendering)
+	return preview
+	
+func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
+	#TODO change behavior depending on BV / CB
+	$Brain_Visualizer.snap_camera_to_cortical_area(cortical_area)
+
+func temp_get_temp_split() -> TempSplit:
+	return $temp_split
 
 ## Updates the screensize 
 func _update_screen_size():

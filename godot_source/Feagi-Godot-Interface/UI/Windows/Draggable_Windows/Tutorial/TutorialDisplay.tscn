@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://cou6ppgui40tg"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.gd" id="1_hw8c4"]
-[ext_resource type="Texture2D" uid="uid://byjulc80a8hx3" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t2.png" id="2_0o2b0"]
+[ext_resource type="Texture2D" uid="uid://dev102g04v2au" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t2.png" id="2_0o2b0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="3_gnven"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_8lkq6"]
 

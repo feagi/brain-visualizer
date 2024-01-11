@@ -1,0 +1,87 @@
+[gd_scene load_steps=9 format=3 uid="uid://c4hu4bdxc8gu3"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/GeneralMappingEditor.gd" id="1_qb704"]
+[ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_4ncc7"]
+[ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_cyihy"]
+[ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_khglo"]
+[ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_i00l0"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_yoib8"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="7_qe6x5"]
+[ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.tscn" id="8_3thsv"]
+
+[node name="Mapping_Details" type="VBoxContainer"]
+alignment = 1
+script = ExtResource("1_qb704")
+
+[node name="labels_box" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "Mapping Definition:"
+
+[node name="g1" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "Overwrite Scalar [X, Y, Z]"
+
+[node name="g2" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="Label3" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "PSP Multiplier"
+
+[node name="g3" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="Label4" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "Plasticity"
+
+[node name="g4" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="Label5" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "Plasticity Constant"
+
+[node name="g5" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label6" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "LTP Multiplier"
+
+[node name="g6" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label7" type="Label" parent="labels_box"]
+layout_mode = 2
+text = "LTD Multiplier"
+
+[node name="add_button" type="TextureButton" parent="labels_box"]
+custom_minimum_size = Vector2(25, 0)
+layout_mode = 2
+texture_normal = ExtResource("2_4ncc7")
+texture_pressed = ExtResource("3_cyihy")
+texture_hover = ExtResource("4_khglo")
+texture_disabled = ExtResource("5_i00l0")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("6_yoib8")
+
+[node name="Mappings" parent="." instance=ExtResource("7_qe6x5")]
+custom_minimum_size = Vector2(1300, 200)
+layout_mode = 2
+prefab_to_spawn = ExtResource("8_3thsv")
+
+[connection signal="pressed" from="labels_box/add_button" to="." method="_add_mapping_pressed"]

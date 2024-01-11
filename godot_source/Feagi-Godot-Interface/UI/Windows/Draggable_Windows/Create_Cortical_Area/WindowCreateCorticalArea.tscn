@@ -4,12 +4,12 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_vqh4i"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_6bao6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_3p5xp"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="4_4mpov"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="5_bw00h"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="6_0p0de"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="6_cb8ls"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/TemplateDropDown.gd" id="6_gu8i4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_o35ls"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="9_g54qy"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yf1xi"]
 bg_color = Color(0.105882, 0.133333, 0.184314, 1)
@@ -51,19 +51,25 @@ script = ExtResource("5_bw00h")
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
-text = "IPU"
+text = "Input"
 
 [node name="OPU" type="CheckBox" parent="Container/type/options"]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
-text = "OPU"
+text = "Output"
 
 [node name="CUSTOM" type="CheckBox" parent="Container/type/options"]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
-text = "CUSTOM"
+text = "Interconnect"
+
+[node name="MEMORY" type="CheckBox" parent="Container/type/options"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_yf1xi")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_xnv5t")
+text = "Memory"
 
 [node name="gap6" type="Control" parent="Container"]
 custom_minimum_size = Vector2(0, 3)
@@ -97,7 +103,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Dimensions"
 
-[node name="Dimensions" parent="Container/dimensions_holder" instance=ExtResource("4_4mpov")]
+[node name="Dimensions" parent="Container/dimensions_holder" instance=ExtResource("9_g54qy")]
 layout_mode = 2
 label_x_text = &"W"
 label_y_text = &"H"
@@ -105,7 +111,6 @@ label_z_text = &"D"
 int_x_min = 1
 int_y_min = 1
 int_z_min = 1
-initial_vector = Vector3i(1, 1, 1)
 initial_editable = false
 
 [node name="gap4" type="Control" parent="Container"]
@@ -156,7 +161,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "3D Coordinates"
 
-[node name="Coordinates_3D" parent="Container/HBoxContainer2" instance=ExtResource("4_4mpov")]
+[node name="Coordinates_3D" parent="Container/HBoxContainer2" instance=ExtResource("9_g54qy")]
 layout_mode = 2
 
 [node name="gap" type="Control" parent="Container"]

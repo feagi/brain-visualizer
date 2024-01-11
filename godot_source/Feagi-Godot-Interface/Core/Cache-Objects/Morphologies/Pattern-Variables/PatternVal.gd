@@ -3,7 +3,7 @@ class_name PatternVal
 ## PatternMorphology values can be ints, or "*" or "?". This can hold all of those
 
 ## All possible characters (non ints) a pattern var can be, as Strings
-const ACCEPTABLE_CHARS: PackedStringArray = ["*", "?"]
+const ACCEPTABLE_CHARS: PackedStringArray = [&"*", &"?"]
 
 var data: Variant:
 	get: return _data
@@ -40,13 +40,13 @@ static func create_empty() -> PatternVal:
 func duplicate() -> PatternVal:
 	return PatternVal.new(_data)
 
-func _verify(input) -> void:
+func _verify(input: Variant) -> void:
 	if typeof(input) == TYPE_INT: # Optimization problem, theoretically dropping this top if statement will still allow this to work, but would it perform better?
 		_data = input
 		return
-	var a = str(input)
+	var a: StringName = str(input)
 	if a in ACCEPTABLE_CHARS:
-		_data = StringName(a)
+		_data = a
 		return
 	_data = a.to_int() # if completely invalid, this will force it to 0
 

@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3 uid="uid://cyt5xxp0wi6lf"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
+[ext_resource type="PackedScene" uid="uid://dukfme5u3e3fl" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/CorticalArea_List/CorticalAreaScroll.tscn" id="2_k7lg4"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="3_3awq0"]
+
+[node name="WindowViewCorticalArea" type="Panel"]
+custom_minimum_size = Vector2(20, 20)
+offset_top = 40.0
+offset_right = 158.0
+offset_bottom = 201.0
+script = ExtResource("1_ypq52")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 250.0
+offset_bottom = 354.0
+
+[node name="Button" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Add Cortical Area..."
+
+[node name="CorticalAreaScroll" parent="VBoxContainer" instance=ExtResource("2_k7lg4")]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+
+[node name="TitleBar" parent="." instance=ExtResource("3_3awq0")]
+layout_mode = 0
+offset_top = -40.0
+offset_bottom = 0.0
+title = "View Cortical Areas"
+automatic_setup_hiding_closing = false
+automatic_setup_window_closing_for_window_manager_name = &"view_cortical"
+
+[connection signal="pressed" from="VBoxContainer/Button" to="." method="_press_add_cortical_area"]

@@ -4,9 +4,9 @@
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_wpd4y"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CircuitsDropDown.gd" id="2_h2svm"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="2_jkgck"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="3_21g0v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="4_q8pg3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_mnkif"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="6_84kt6"]
 
 [node name="Import_Circuit" type="Panel"]
 offset_top = 40.0
@@ -49,11 +49,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Circuit Size"
 
-[node name="Vector" parent="VBoxContainer/HBoxContainer2" instance=ExtResource("3_21g0v")]
+[node name="Vector" parent="VBoxContainer/HBoxContainer2" instance=ExtResource("6_84kt6")]
 layout_mode = 2
-label_x_text = &"W"
-label_y_text = &"H"
-label_z_text = &"D"
 initial_editable = false
 
 [node name="padding4" type="Control" parent="VBoxContainer"]
@@ -83,7 +80,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Import to 3D location  "
 
-[node name="Vector3fField" parent="VBoxContainer/HBoxContainer4" instance=ExtResource("3_21g0v")]
+[node name="Vector3fField" parent="VBoxContainer/HBoxContainer4" instance=ExtResource("6_84kt6")]
 layout_mode = 2
 
 [node name="padding5" type="Control" parent="VBoxContainer"]

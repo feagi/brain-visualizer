@@ -1,0 +1,65 @@
+[gd_scene load_steps=20 format=3 uid="uid://0pa5al454wse"]
+
+[ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/ToggleImageDropdown/ToggleImageDropDown.tscn" id="1_4pks6"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.gd" id="1_henmy"]
+[ext_resource type="Texture2D" uid="uid://ctkr664w0hq41" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_S.png" id="2_l3g2t"]
+[ext_resource type="Texture2D" uid="uid://dd6562yd125ro" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_C.png" id="3_5jy6u"]
+[ext_resource type="Texture2D" uid="uid://d1exbfboui15v" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_H.png" id="4_7w7dw"]
+[ext_resource type="Texture2D" uid="uid://ckemk8nw5x6a8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Circuit_Builder_D.png" id="5_38v0g"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_cy5cw"]
+[ext_resource type="Texture2D" uid="uid://ddstgvtfkn5u6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_S.png" id="7_46a7v"]
+[ext_resource type="Texture2D" uid="uid://c1hqk8a4fpufy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_C.png" id="8_keoos"]
+[ext_resource type="Texture2D" uid="uid://deht3llfjv0d2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_H.png" id="9_tqmib"]
+[ext_resource type="Texture2D" uid="uid://cken36prfs65w" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Brain_Visualizer_D.png" id="10_3fxxq"]
+[ext_resource type="Texture2D" uid="uid://c0uq1uf1e6iup" path="res://Feagi-Godot-Interface/UI/Resources/Icons/horiozontal_split_S.png" id="11_v22nc"]
+[ext_resource type="Texture2D" uid="uid://cvw4g1rcqcgal" path="res://Feagi-Godot-Interface/UI/Resources/Icons/horiozontal_split_C.png" id="12_od43l"]
+[ext_resource type="Texture2D" uid="uid://wsc01khsr4dl" path="res://Feagi-Godot-Interface/UI/Resources/Icons/horiozontal_split_H.png" id="13_thckr"]
+[ext_resource type="Texture2D" uid="uid://clcv77140ycu0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/horiozontal_split_D.png" id="14_hbnt3"]
+[ext_resource type="Texture2D" uid="uid://dsh5k5o6sasg1" path="res://Feagi-Godot-Interface/UI/Resources/Icons/vertical_split_S.png" id="15_p8pn0"]
+[ext_resource type="Texture2D" uid="uid://ds8fir13p6hst" path="res://Feagi-Godot-Interface/UI/Resources/Icons/vertical_split_C.png" id="16_t6hrr"]
+[ext_resource type="Texture2D" uid="uid://chqiu1wh70e5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/vertical_split_H.png" id="17_2knfj"]
+[ext_resource type="Texture2D" uid="uid://c02qik2erhqur" path="res://Feagi-Godot-Interface/UI/Resources/Icons/vertical_split_D.png" id="18_n0ta2"]
+
+[node name="SplitViewDropDown" type="BoxContainer"]
+script = ExtResource("1_henmy")
+
+[node name="ToggleImageDropDown" parent="." instance=ExtResource("1_4pks6")]
+layout_mode = 2
+dimensions = Vector2i(48, 48)
+initial_index = 1
+
+[node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
+layout_mode = 2
+texture_normal = ExtResource("2_l3g2t")
+texture_pressed = ExtResource("3_5jy6u")
+texture_hover = ExtResource("4_7w7dw")
+texture_disabled = ExtResource("5_38v0g")
+script = ExtResource("6_cy5cw")
+
+[node name="Brain Monitor" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
+layout_mode = 2
+texture_normal = ExtResource("7_46a7v")
+texture_pressed = ExtResource("8_keoos")
+texture_hover = ExtResource("9_tqmib")
+texture_disabled = ExtResource("10_3fxxq")
+script = ExtResource("6_cy5cw")
+
+[node name="Split Vertical" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
+layout_mode = 2
+texture_normal = ExtResource("15_p8pn0")
+texture_pressed = ExtResource("16_t6hrr")
+texture_hover = ExtResource("17_2knfj")
+texture_disabled = ExtResource("18_n0ta2")
+script = ExtResource("6_cy5cw")
+
+[node name="Split Horizontal" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
+layout_mode = 2
+texture_normal = ExtResource("11_v22nc")
+texture_pressed = ExtResource("12_od43l")
+texture_hover = ExtResource("13_thckr")
+texture_disabled = ExtResource("14_hbnt3")
+script = ExtResource("6_cy5cw")
+
+[connection signal="user_change_option" from="ToggleImageDropDown" to="." method="_user_request_view"]
+
+[editable path="ToggleImageDropDown"]

@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3 uid="uid://mwx2wythpo1l"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/ToggleImageDropdown/ToggleImageDropDown.gd" id="1_ghidh"]
+
+[node name="ToggleImageDropDown" type="TextureButton"]
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("1_ghidh")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BoxContainer" type="BoxContainer" parent="PanelContainer"]
+layout_mode = 2
+vertical = true
+
+[connection signal="pressed" from="." to="." method="dropdown_toggle"]

@@ -11,6 +11,7 @@ func _init(interface_reference: NetworkInterface, response_functions_reference: 
 	_response_functions_ref = response_functions_reference
 	_address_list = AddressList.new(_interface_ref.feagi_root_web_address)
 
+#region GET requests
 ## Get current IPU list
 func GET_FE_pns_current_ipu():
 	_interface_ref.single_FEAGI_request(_address_list.GET_feagi_pns_current_ipu, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_FE_pns_current_ipu)
@@ -32,8 +33,8 @@ func GET_GE_fileName():
 	_interface_ref.single_FEAGI_request(_address_list.GET_genome_fileName, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_fileName)
 
 ## return dict of cortical IDs mapped with dict of connected cortical area and number of mappings
-func GET_GE_corticalMap():
-	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap)
+func GET_GE_corticalMap_detailed():
+	_interface_ref.single_FEAGI_request(_address_list.GET_genome_corticalMap_detailed, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalMap_detailed)
 
 ## return dict of cortical IDs mapped with list of connected cortical areas
 func GET_CO_properties_mappings():
@@ -135,7 +136,7 @@ func GET_healthCheck_POLL_GENOME():
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck_POLL_MONITORING():
 	var dont_stop: PollingMethodNone = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE)
-	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_health, _response_functions_ref.GET_healthCheck_POLL_health, dont_stop, null, null, 10.0)
+	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_health, _response_functions_ref.GET_healthCheck_POLL_health, dont_stop, null, null, 10.0, false)
 
 ## returns dict by corticalID, with name, type, and 2d position
 func GET_CO_corticalAreas_list_detailed():
@@ -160,21 +161,21 @@ func GET_PNS_current_ipu() -> void:
 ## returns a list of IDs (not cortical loaded) of areas for initing OPUs
 func GET_PNS_current_opu() -> void:
 	_interface_ref.single_FEAGI_request(_address_list.GET_pns_current_opu, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_PNS_current_opu)
+#endregion
 
-
-
+#region POST requests
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
 	_interface_ref.single_FEAGI_request(_address_list.POST_feagi_burstEngine, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
 
 ## Adds a non-custom cortical area with non-definable dimensions
-func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 
+func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 
 	is_coordinate_2D_defined: bool, channel_count: int = 0, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 
 	var to_send: Dictionary = {
 		"cortical_id": template_cortical_ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
-		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+		"cortical_type": BaseCorticalArea.cortical_type_to_str(type),
 		"channel_count": channel_count
 	}
 
@@ -182,7 +183,7 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.C
 		"template_cortical_ID": template_cortical_ID,
 		"coordinates_3d": coordinates_3D,
 		"channel_count": channel_count,
-		"cortical_type_str": CorticalArea.CORTICAL_AREA_TYPE.keys()[type],
+		"cortical_type": type,
 	}
 
 	if is_coordinate_2D_defined:
@@ -195,31 +196,40 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: CorticalArea.C
 
 
 
-## Adds cortical area (with definable dimensions)
+## Adds cortical area (custom or memory) (with definable dimensions)
+## If copying a cortical ID, dimensions should be the same as the source dimensions
 func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, 
-	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> void:
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false, cortical_ID_to_copy: StringName = "") -> void:
 
 	var to_send: Dictionary = {
 		"cortical_name": str(name),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_type": CorticalArea.CORTICAL_AREA_TYPE.keys()[CorticalArea.CORTICAL_AREA_TYPE.CUSTOM]
+		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
 	}
 
 	var to_buffer: Dictionary = {
 		"cortical_name": name,
-		"coordinates_3d": coordinates_3D,
-		"cortical_dimensions": dimensions,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
+		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_sub_group": ""
 	}
 
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
-		to_buffer["coordinates_2d"] = coordinates_2D
+		to_buffer["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
-
+	if memory_type:
+		to_send["sub_group_id"] = "MEMORY"
+		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 	
+	if cortical_ID_to_copy != "":
+		to_send["copy_of"] = cortical_ID_to_copy
+		#to_send.erase("cortical_dimensions")
+
 	# Passthrough properties so we have them to build cortical area
 	_interface_ref.single_FEAGI_request(_address_list.POST_genome_customCorticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
 
@@ -253,12 +263,13 @@ func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
 	}
 	_interface_ref.single_FEAGI_request(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
 
+func POST_GE_amalgamationDestination(circuit_position: Vector3i, amalgamation_ID: StringName, _irrelevant: Variant) -> void:
+	var address: StringName = _address_list.POST_genome_amalgamationDestination + str(circuit_position.x) + &"&circuit_origin_y=" + str(circuit_position.y) + &"&circuit_origin_z=" + str(circuit_position.z) + "&amalgamation_id=" + amalgamation_ID
+	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_amalgamationDestination, {}) 
+	
+#endregion
 
-
-
-
-
-
+#region PUT requests
 ## Sets the properties of a specific cortical area
 ## Due to the numerous combinations possible, you must format the dictionary itself to the keys expected
 ## Only the keys being changed should be input, no need to pull everything
@@ -276,9 +287,9 @@ func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_morphology, to_buffer, morphology_name)
 
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
-func PUT_GE_mappingProperties(source_cortical: CorticalArea, destination_cortical: CorticalArea, mapping_data: Array):
+func PUT_GE_mappingProperties(source_cortical: BaseCorticalArea, destination_cortical: BaseCorticalArea, mapping_data: Array):
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
-	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "count": mapping_data.size()})
+	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "mapping_data_raw": mapping_data})
 
 ## Modifies the 2D location of many cortical areas at once without the need for polling
 func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
@@ -286,13 +297,9 @@ func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
 	for key in cortical_IDs_mapped_to_vector2is.keys():
 		to_send[key] = FEAGIUtils.vector2i_to_array(cortical_IDs_mapped_to_vector2is[key])
 	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_coord2d, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_coord2D, to_send, cortical_IDs_mapped_to_vector2is)
+#endregion
 
-
-## TODO clean up this
-func PUT_GE_mappingProperties_DEFUNCT(dataIn, extra_name := ""): ## We should rename these variables
-	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + extra_name, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_mappingProperties, dataIn)
-
-
+#region DELETE requests
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
 	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_corticalArea + corticalID, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_corticalArea, null, corticalID) # pass through cortical ID to know what we deleted
@@ -300,3 +307,9 @@ func DELETE_GE_corticalArea(corticalID: StringName):
 ## Deletes a morphology
 func DELETE_GE_morphology(morphology_name: StringName):
 	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_morphology + morphology_name, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_morphology, null, morphology_name) # pass through morphology name to know what we deleted
+
+func DELETE_GE_amalgamationCancelation(amalgamation_ID: StringName) -> void:
+	var address: StringName = _address_list.DELETE_GE_amalgamationCancellation + amalgamation_ID
+	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_amalgamationCancelation)
+	
+#endregion
