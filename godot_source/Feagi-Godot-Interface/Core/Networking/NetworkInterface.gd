@@ -1,7 +1,7 @@
 extends Object
 ## Manages all actual network traffic to and from FEAGI itself
 ##
-## Should generally not be called directly from most scripts, This script is intended to be mainly called from TODO
+## Should generally not be called directly from most scripts
 ##
 class_name NetworkInterface
 
@@ -37,14 +37,14 @@ var feagi_socket_address: StringName
 var feagi_outgoing_headers: PackedStringArray
 var endpoints: AddressList
 var num_workers_to_keep_available: int
-var request_workers_available: Array[RequestWorker]
+var request_workers_available: Array[APIRequestWorker]
 var current_websocket_state: WebSocketPeer.State
 
 
 var _request_worker_parent: Node
 var _socket: WebSocketPeer
 var _cache_websocket_data: PackedByteArray
-var _request_worker_prefab: PackedScene = preload("res://Feagi-Godot-Interface/Core/Networking/Workers/SingleCallWorker.tscn")
+var _request_worker_prefab: PackedScene = preload("res://Feagi-Godot-Interface/Core/Networking/API/SingleCallWorker.tscn")
 
 ## Used to init the network interface
 ## Required before usage
@@ -132,7 +132,7 @@ func init_network(worker_parent_root: Node) -> void:
 func single_FEAGI_request(full_request_address: StringName, call_method: HTTPClient.Method, function_to_respond_to_FEAGI: Callable, 
 	additional_data: Variant = null, data_to_pass_through: Variant = null):
 
-	var worker: RequestWorker = _grab_worker()
+	var worker: APIRequestWorker = _grab_worker()
 	worker.single_call(full_request_address, call_method, function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
 
 
@@ -140,7 +140,7 @@ func repeating_FEAGI_request(full_request_address: StringName, method: HTTPClien
 	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
 	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = false) -> void:
 
-	var worker: RequestWorker = _grab_worker()
+	var worker: APIRequestWorker = _grab_worker()
 	worker.repeat_polling_call(full_request_address, method, follow_up_function, mid_poll_call, polling_check, additional_data_to_send, data_to_buffer, polling_gap_seconds, kill_on_reset)
 
 func send_websocket_ping() -> void:
@@ -156,8 +156,8 @@ func websocket_send(data: Variant) -> void:
 
 
 ## Grabs either an available [RequestWorker] (or if none are available, spawns one first)
-func _grab_worker() -> RequestWorker:
-	var worker: RequestWorker
+func _grab_worker() -> APIRequestWorker:
+	var worker: APIRequestWorker
 	if request_workers_available.size() > 0:
 		worker = request_workers_available.pop_back()
 	else:
@@ -166,8 +166,8 @@ func _grab_worker() -> RequestWorker:
 	
 
 ## Spawns a RequestWorker
-func _spawn_worker() -> RequestWorker:
-	var worker: RequestWorker = _request_worker_prefab.instantiate()
+func _spawn_worker() -> APIRequestWorker:
+	var worker: APIRequestWorker = _request_worker_prefab.instantiate()
 	worker.initialization(self, DEF_HEADERSTOUSE, _request_worker_parent)
 	return worker
 
