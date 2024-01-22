@@ -27,7 +27,7 @@ var _poll_call_method: HTTPClient.Method
 var _mid_poll_call: Callable
 var _poll_data_to_send: Variant
 
-## Sets up this node with all rpereqs, should only be called once on instantiation
+## Sets up this node with all prereqs, should only be called once on instantiation
 func initialization(interface: NetworkInterface, call_header: PackedStringArray, node_parent: Node) -> void:
 	FeagiEvents.genome_is_about_to_reset.connect(_brain_visualizer_resetting)
 	request_completed.connect(_call_complete)
@@ -38,37 +38,37 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 	node_parent.add_child(self)
 	name = "New"
 
-
-## Makes a single call to FEAGI, gets a response, triggers the followup, then queues self for destruction
-func single_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable, 
-	additional_data_to_send: Variant = null, data_to_buffer: Variant = null) -> void:
-
-	_processing_type = CALL_PROCESS_TYPE.SINGLE
-	_buffer_data = data_to_buffer
-	_follow_up_function = follow_up_function
-	name = "single"
-	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
-
-## Starts polling calls to FEAGI, routinely gets responses until condition defined by polling_check is met
-func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
-	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = false) -> void:
-
-	_processing_type = CALL_PROCESS_TYPE.POLLING
-	_buffer_data = data_to_buffer
-	_follow_up_function = follow_up_function
-	_timer.wait_time = polling_gap_seconds
-	_timer.start(polling_gap_seconds)
-	_poll_address = full_request_address
-	_poll_call_method = method
-	_poll_data_to_send = additional_data_to_send
-	_polling_check = polling_check
-	_mid_poll_call = mid_poll_call
-	_killing_on_reset = kill_on_reset
-	
-	name = "polling"
-	
-	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
+## Setup and execute the worker as per the request definition
+func setup_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
+	match(request_definition.call_type):
+		CALL_PROCESS_TYPE.SINGLE:
+			# single call
+			name = "single"
+			_processing_type = request_definition.call_type
+			_buffer_data = request_definition.data_to_hold_for_follow_up_function
+			_follow_up_function = request_definition.follow_up_function
+			_killing_on_reset = request_definition.should_kill_on_genome_reset
+			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
+			
+		CALL_PROCESS_TYPE.POLLING:
+			# polling call
+			name = "polling"
+			_processing_type = request_definition.call_type
+			_buffer_data = request_definition.data_to_hold_for_follow_up_function
+			_follow_up_function = request_definition.follow_up_function
+			_killing_on_reset = request_definition.should_kill_on_genome_reset
+			_timer.wait_time = request_definition.seconds_between_polls
+			_timer.start(request_definition.seconds_between_polls)
+			_poll_address = request_definition.full_address
+			_poll_call_method = request_definition.method
+			_poll_data_to_send = request_definition.data_to_send_to_FEAGI
+			_polling_check = request_definition.polling_completion_check
+			_mid_poll_call = request_definition.mid_poll_function
+			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
+		_:
+			# unknown call type, just exit
+			push_error("Undefined call type from APIRequestWorkerDefinition. Stopping this APIRequestWorker...")
+			_query_for_destruction()
 
 ## Timer went off - time to poll
 func _poll_call_from_timer() -> void:
@@ -157,8 +157,6 @@ func _is_worker_busy(call_address: String) -> bool:
 		_:
 			return false
 		
-
-
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
