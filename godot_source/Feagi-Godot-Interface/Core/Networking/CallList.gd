@@ -258,12 +258,30 @@ func GET_healthCheck():
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck_POLL_GENOME():
 	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("genome_availability", true)
-	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_genome_availability, Callable(), searching_for)
+	const SECONDS_BETWEEN_POLLS: float = 0.5
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
+		_address_list.GET_healthCheck,
+		HTTPClient.Method.METHOD_GET,
+		{},
+		{},
+		_response_functions_ref.GET_healthCheck_POLL_genome_availability,
+		SECONDS_BETWEEN_POLLS,
+		searching_for
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck_POLL_MONITORING():
-	var dont_stop: PollingMethodNone = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE)
-	_interface_ref.repeating_FEAGI_request(_address_list.GET_healthCheck, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_healthCheck_POLL_health, _response_functions_ref.GET_healthCheck_POLL_health, dont_stop, null, null, 10.0, false)
+	const SECONDS_BETWEEN_POLLS: float = 5.0
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
+		_address_list.GET_healthCheck,
+		HTTPClient.Method.METHOD_GET,
+		{},
+		{},
+		_response_functions_ref.GET_healthCheck_POLL_health,
+		SECONDS_BETWEEN_POLLS,
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## returns dict by corticalID, with name, type, and 2d position
 func GET_CO_corticalAreas_list_detailed():
