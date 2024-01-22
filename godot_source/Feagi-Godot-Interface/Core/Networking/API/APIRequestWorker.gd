@@ -161,8 +161,8 @@ func _is_worker_busy(call_address: String) -> bool:
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
 func _query_for_destruction() -> void:
-	if _network_interface_ref.request_workers_available.size() <= _network_interface_ref.num_workers_to_keep_available:
-		_network_interface_ref.request_workers_available.push_back(self)
+	if _network_interface_ref.API_request_workers_available.size() <= _network_interface_ref.num_workers_to_keep_available:
+		_network_interface_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
 	else:
 		queue_free()
