@@ -1,5 +1,5 @@
 extends HTTPRequest
-class_name  RequestWorker
+class_name  APIRequestWorker
 ## GET/POST/PUT/DELETE worker for [NetworkInterface]
 ##
 ## On initialization, toggles multiThreading, sets internals, and parents itself to a given parent (this does not need to be done seperately)
