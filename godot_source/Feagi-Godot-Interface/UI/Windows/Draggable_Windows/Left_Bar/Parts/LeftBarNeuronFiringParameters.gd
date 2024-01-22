@@ -8,7 +8,7 @@ var _Fire_Threshold: IntInput
 var _Threshold_Limit: IntInput
 var _Refactory_Period: IntInput
 var _Leak_Constant: IntInput
-var _Leak_Varibility: IntInput
+var _Leak_Variability: IntInput
 var _Consecutive_Fire_Count: IntInput
 var _Snooze_Period: IntInput
 var _Threshold_Inc: Vector3fField
@@ -23,7 +23,7 @@ func _ready():
 	_Threshold_Limit = $Threshold_Limit/Threshold_Limit
 	_Refactory_Period = $Refactory_Period/Refactory_Period
 	_Leak_Constant = $Leak_Constant/Leak_Constant
-	_Leak_Varibility = $Leak_Varibility/Leak_Varibility
+	_Leak_Variability = $Leak_Variability/Leak_Variability
 	_Threshold_Inc = $Fire_Threshold_Increment
 	_Consecutive_Fire_Count = $Consecutive_Fire_Count/Consecutive_Fire_Count
 	_Snooze_Period = $Snooze_Period/Snooze_Period
@@ -34,7 +34,7 @@ func _ready():
 	_Threshold_Limit.int_confirmed.connect(user_request_Threshold_Limit)
 	_Refactory_Period.int_confirmed.connect(user_request_Refactory_Period)
 	_Leak_Constant.int_confirmed.connect(user_request_Leak_Constant)
-	_Leak_Varibility.int_confirmed.connect(user_request_Leak_Varibility)
+	_Leak_Variability.int_confirmed.connect(user_request_Leak_Variability)
 	_Consecutive_Fire_Count.int_confirmed.connect(user_request_Consecutive_Fire_Count)
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
 	_Threshold_Inc.user_updated_vector.connect(user_request_Threshold_Inc)
@@ -47,7 +47,7 @@ func display_cortical_properties(cortical_reference) -> void: #NOTE: Can't type 
 	_Threshold_Limit.current_int = cortical_reference.neuron_firing_threshold_limit
 	_Refactory_Period.current_int = cortical_reference.neuron_refractory_period
 	_Leak_Constant.current_int = cortical_reference.neuron_leak_coefficient
-	_Leak_Varibility.current_int = cortical_reference.neuron_leak_variability
+	_Leak_Variability.current_int = cortical_reference.neuron_leak_variability
 	_Consecutive_Fire_Count.current_int = cortical_reference.neuron_consecutive_fire_count
 	_Snooze_Period.current_int = cortical_reference.neuron_snooze_period
 	_Threshold_Inc.current_vector = cortical_reference.neuron_fire_threshold_increment
@@ -55,7 +55,7 @@ func display_cortical_properties(cortical_reference) -> void: #NOTE: Can't type 
 	
 	cortical_reference.neuron_mp_charge_accumulation_updated.connect(_feagi_update_MP_Accumumulation)
 	cortical_reference.neuron_leak_coefficient_updated.connect(_feagi_update_Leak_Constant)
-	cortical_reference.neuron_leak_variability_updated.connect(_feagi_update_Leak_Varibility)
+	cortical_reference.neuron_leak_variability_updated.connect(_feagi_update_Leak_Variability)
 	cortical_reference.neuron_refractory_period_updated.connect(_feagi_update_refactory_period)
 	cortical_reference.neuron_consecutive_fire_count_updated.connect(_feagi_update_Consecutive_Fire_Count)
 	cortical_reference.neuron_snooze_period_updated.connect(_feagi_update_Snooze_Period)
@@ -85,7 +85,7 @@ func user_request_Refactory_Period(value: int) -> void:
 func user_request_Leak_Constant(value: int) -> void:
 	_growing_cortical_update["neuron_leak_coefficient"] = value
 
-func user_request_Leak_Varibility(value: int) -> void:
+func user_request_Leak_Variability(value: int) -> void:
 	_growing_cortical_update["neuron_leak_variability"] = value
 
 func user_request_Threshold_Inc(value: Vector3) -> void:
@@ -115,8 +115,8 @@ func _feagi_update_refactory_period(value: int, _cortical_ref) -> void:
 func _feagi_update_Leak_Constant(value: int, _cortical_ref) -> void:
 	_Leak_Constant.current_int = value
 
-func _feagi_update_Leak_Varibility(value: int, _cortical_ref) -> void:
-	_Leak_Varibility.current_int = value
+func _feagi_update_Leak_Variability(value: int, _cortical_ref) -> void:
+	_Leak_Variability.current_int = value
 
 func _feagi_update_Threshold_Inc(value: Vector3, _cortical_ref) -> void:
 	_Threshold_Inc.current_vector = value
