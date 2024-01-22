@@ -12,7 +12,7 @@ var call_type: APIRequestWorker.CALL_PROCESS_TYPE ## Enum designating the type o
 var follow_up_function: Callable ## Godot function to call at the conclusion of this calls work (be it a single call or ending of a polling call). Must accept an int response code, a PackedByteArray response body, and an additional variant data variable
 var mid_poll_function: Callable ## Same as above, but only applicable for polling calls, the function to run when a poll call was complete but the conditions to end polling have not been met
 var polling_completion_check: PollingMethodInterface ## For polling calls, object used to check if we should stop polling
-var time_between_polls: float ## Time to wait between poll attempts
+var seconds_between_polls: float ## Time (seconds) to wait between poll attempts
 
 func _init() -> void:
 	## Dont create an instance of this object with new(), instead use one of the below static factories
@@ -62,7 +62,7 @@ static func define_polling_call(
 	define_data_to_send_to_FEAGI: Variant,
 	define_data_to_hold_for_follow_up_function: Variant,
 	define_follow_up_function: Callable,
-	define_time_between_polls: float, 
+	define_seconds_between_polls: float, 
 	define_mid_poll_function: Callable = Callable(), 
 	define_polling_completion_check: PollingMethodInterface = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE),
 	define_should_kill_on_genome_reset: bool = true
@@ -77,5 +77,6 @@ static func define_polling_call(
 		output.should_kill_on_genome_reset = define_should_kill_on_genome_reset
 		output.mid_poll_function = define_mid_poll_function
 		output.polling_completion_check = define_polling_completion_check
+		output.seconds_between_polls = define_seconds_between_polls
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.POLLING
 		return output
