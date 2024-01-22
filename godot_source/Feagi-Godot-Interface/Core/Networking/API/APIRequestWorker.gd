@@ -39,7 +39,7 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 	name = "New"
 
 ## Setup and execute the worker as per the request definition
-func setup_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
+func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
 	match(request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# single call
