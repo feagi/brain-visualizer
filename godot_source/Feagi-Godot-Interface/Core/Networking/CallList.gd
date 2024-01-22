@@ -350,8 +350,15 @@ func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalAr
 	else:
 		to_send["coordinates_2d"] = [null,null]
 
-	_interface_ref.single_FEAGI_request(_address_list.POST_genome_corticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_corticalArea, to_send, to_buffer)
 
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_genome_corticalArea,
+		HTTPClient.METHOD_POST,
+		to_send,
+		to_buffer,
+		_response_functions_ref.POST_GE_corticalArea
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 
 ## Adds cortical area (custom or memory) (with definable dimensions)
@@ -387,21 +394,42 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 	if cortical_ID_to_copy != "":
 		to_send["copy_of"] = cortical_ID_to_copy
 		#to_send.erase("cortical_dimensions")
-
+	
 	# Passthrough properties so we have them to build cortical area
-	_interface_ref.single_FEAGI_request(_address_list.POST_genome_customCorticalArea, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_customCorticalArea, to_send, to_buffer) 
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_genome_customCorticalArea,
+		HTTPClient.METHOD_POST,
+		to_send,
+		to_buffer,
+		_response_functions_ref.POST_GE_customCorticalArea
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## Adds a morphology
 func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, parameters: Dictionary) -> void:
 	var to_buffer: Dictionary = parameters.duplicate()
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
-	_interface_ref.single_FEAGI_request(_address_list.POST_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_morphology, parameters, to_buffer)
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_genome_customCorticalArea,
+		HTTPClient.METHOD_POST,
+		parameters,
+		to_buffer,
+		_response_functions_ref.POST_GE_customCorticalArea
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## adds a circuit
 func POST_GE_append(circuit_file_name: StringName, position: Vector3i) -> void:
 	var address: StringName = _address_list.POST_genome_append+circuit_file_name+"&circuit_origin_x="+str(position.x)+"&circuit_origin_y="+str(position.y)+"&circuit_origin_z="+str(position.z)
-	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_append, {}, {})
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		address,
+		HTTPClient.METHOD_POST,
+		{},
+		{},
+		_response_functions_ref.POST_GE_append
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## Sets membrane potential monitoring
 func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
@@ -410,7 +438,16 @@ func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
 		"ID": cortical_ID,
 		"state": state
 	}
-	_interface_ref.single_FEAGI_request(_address_list.POST_monitoring_neuron_membranePotential+cortical_ID+"&state="+boolean, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_MON_neuron_membranePotential, {}, passthrough) 
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_monitoring_neuron_membranePotential+cortical_ID+"&state="+boolean,
+		HTTPClient.METHOD_POST,
+		{},
+		passthrough,
+		_response_functions_ref.POST_MON_neuron_membranePotential
+	)
+	_interface_ref.FEAGI_API_Request(request)
+
 
 ## Sets membrane synaptic monitoring
 func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
@@ -419,12 +456,25 @@ func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
 		"ID": cortical_ID,
 		"state": state
 	}
-	_interface_ref.single_FEAGI_request(_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_MON_neuron_synapticPotential, {}, passthrough) 
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_monitoring_neuron_synapticPotential+cortical_ID+"&state="+boolean,
+		HTTPClient.METHOD_POST,
+		{},
+		passthrough,
+		_response_functions_ref.POST_MON_neuron_synapticPotential
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 func POST_GE_amalgamationDestination(circuit_position: Vector3i, amalgamation_ID: StringName, _irrelevant: Variant) -> void:
 	var address: StringName = _address_list.POST_genome_amalgamationDestination + str(circuit_position.x) + &"&circuit_origin_y=" + str(circuit_position.y) + &"&circuit_origin_z=" + str(circuit_position.z) + "&amalgamation_id=" + amalgamation_ID
-	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_GE_amalgamationDestination, {}) 
-	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		address,
+		HTTPClient.METHOD_POST,
+		{},
+		{},
+		_response_functions_ref.POST_GE_amalgamationDestination
+	)
+	_interface_ref.FEAGI_API_Request(request)
 #endregion
 
 #region PUT requests
@@ -434,40 +484,92 @@ func POST_GE_amalgamationDestination(circuit_position: Vector3i, amalgamation_ID
 func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
 	data_to_set["cortical_id"] = str(cortical_ID)
 	# Passthrough the corticalID so we know what cortical area was updated
-	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_corticalArea, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_corticalArea, data_to_set, cortical_ID) 
-	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.PUT_genome_corticalArea,
+		HTTPClient.METHOD_PUT,
+		data_to_set,
+		cortical_ID,
+		_response_functions_ref.PUT_GE_corticalArea
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, parameters: Dictionary) -> void:
 	var to_buffer: Dictionary = parameters.duplicate()
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
 	# passthrough morphology name so we know what was updated
-	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(), HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_morphology, to_buffer, morphology_name)
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.PUT_genome_morphology+morphology_name+"&morphology_type="+Morphology.MORPHOLOGY_TYPE.find_key(morphology_type).to_lower(),
+		HTTPClient.METHOD_PUT,
+		morphology_name,
+		to_buffer,
+		_response_functions_ref.PUT_GE_morphology
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## modifies the mapping properties between 2 cortical areas. The input array must be already formatted for FEAGI
 func PUT_GE_mappingProperties(source_cortical: BaseCorticalArea, destination_cortical: BaseCorticalArea, mapping_data: Array):
-	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_mappingProperties + "?src_cortical_area=" + source_cortical.cortical_ID + "&dst_cortical_area=" + destination_cortical.cortical_ID,
-	HTTPClient.Method.METHOD_PUT,  _response_functions_ref.PUT_GE_mappingProperties, mapping_data, {"src": source_cortical, "dst": destination_cortical, "mapping_data_raw": mapping_data})
+	var to_buffer: Dictionary = {
+		"src": source_cortical, 
+		"dst": destination_cortical, 
+		"mapping_data_raw": mapping_data
+	}
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.PUT_genome_mappingProperties+"?src_cortical_area="+source_cortical.cortical_ID+"&dst_cortical_area="+destination_cortical.cortical_ID,
+		HTTPClient.METHOD_PUT,
+		mapping_data,
+		to_buffer,
+		_response_functions_ref.PUT_GE_mappingProperties
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## Modifies the 2D location of many cortical areas at once without the need for polling
 func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
 	var to_send: Dictionary = {}
 	for key in cortical_IDs_mapped_to_vector2is.keys():
 		to_send[key] = FEAGIUtils.vector2i_to_array(cortical_IDs_mapped_to_vector2is[key])
-	_interface_ref.single_FEAGI_request(_address_list.PUT_genome_coord2d, HTTPClient.Method.METHOD_PUT, _response_functions_ref.PUT_GE_coord2D, to_send, cortical_IDs_mapped_to_vector2is)
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.PUT_genome_coord2d,
+		HTTPClient.METHOD_PUT,
+		to_send,
+		cortical_IDs_mapped_to_vector2is,
+		_response_functions_ref.PUT_GE_coord2D
+	)
+	_interface_ref.FEAGI_API_Request(request)
 #endregion
 
 #region DELETE requests
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
-	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_corticalArea + corticalID, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_corticalArea, null, corticalID) # pass through cortical ID to know what we deleted
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.DELETE_GE_corticalArea+corticalID,
+		HTTPClient.METHOD_DELETE,
+		{},
+		corticalID, # buffer this so we know what we deleted
+		_response_functions_ref.DELETE_GE_corticalArea
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## Deletes a morphology
 func DELETE_GE_morphology(morphology_name: StringName):
-	_interface_ref.single_FEAGI_request(_address_list.DELETE_GE_morphology + morphology_name, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_morphology, null, morphology_name) # pass through morphology name to know what we deleted
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.DELETE_GE_morphology+morphology_name,
+		HTTPClient.METHOD_DELETE,
+		{},
+		morphology_name, # buffer this so we know what we deleted
+		_response_functions_ref.DELETE_GE_morphology
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 func DELETE_GE_amalgamationCancelation(amalgamation_ID: StringName) -> void:
 	var address: StringName = _address_list.DELETE_GE_amalgamationCancellation + amalgamation_ID
-	_interface_ref.single_FEAGI_request(address, HTTPClient.Method.METHOD_DELETE, _response_functions_ref.DELETE_GE_amalgamationCancelation)
-	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		address,
+		HTTPClient.METHOD_DELETE,
+		{},
+		{},
+		_response_functions_ref.DELETE_GE_amalgamationCancelation
+	)
+	_interface_ref.FEAGI_API_Request(request)
+
 #endregion
