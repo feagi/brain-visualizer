@@ -63,8 +63,8 @@ static func define_polling_call(
 	define_data_to_hold_for_follow_up_function: Variant,
 	define_follow_up_function: Callable,
 	define_seconds_between_polls: float, 
-	define_mid_poll_function: Callable = Callable(), 
 	define_polling_completion_check: PollingMethodInterface = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE),
+	define_mid_poll_function: Callable = Callable(), 
 	define_should_kill_on_genome_reset: bool = true
 	) -> APIRequestWorkerDefinition:
 	
