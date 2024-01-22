@@ -223,21 +223,25 @@ func GET_GE_corticalTypes():
 
 ## returns bool of if a cortical area is monitoring membrane potential
 func GET_MO_neuron_membranePotential(corticalID: StringName):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.GET_genome_corticalAreaNameList,
-		_response_functions_ref.GET_GE_corticalAreaNameList
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.GET_monitoring_neuron_membranePotential+corticalID,
+		HTTPClient.METHOD_GET,
+		null,
+		corticalID,
+		_response_functions_ref.GET_MON_neuron_membranePotential
 	)
 	_interface_ref.FEAGI_API_Request(request)
-	_interface_ref.single_FEAGI_request(_address_list.GET_monitoring_neuron_membranePotential+corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_MON_neuron_membranePotential, null, corticalID)
-
+	
 ## returns bool of if a cortical area is monitoring synaptic potential
 func GET_MO_neuron_synapticPotential(corticalID: StringName):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.GET_genome_corticalAreaNameList,
-		_response_functions_ref.GET_GE_corticalAreaNameList
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.GET_monitoring_neuron_synapticPotential+corticalID,
+		HTTPClient.METHOD_GET,
+		null,
+		corticalID,
+		_response_functions_ref.GET_MON_neuron_synapticPotential
 	)
 	_interface_ref.FEAGI_API_Request(request)
-	_interface_ref.single_FEAGI_request(_address_list.GET_monitoring_neuron_synapticPotential+corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_MON_neuron_synapticPotential, null, corticalID)
 
 func GET_GE_corticalTypeOptions(corticalType: String):
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
