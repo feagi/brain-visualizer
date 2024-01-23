@@ -79,30 +79,52 @@ func GET_GE_corticalAreaNameList():
 
 ## by cortical name, returns 3D coordinates of the cortical area
 func GET_GE_corticalNameLocation(corticalName: String):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.POST_corticalAreas_corticalNameLocation+corticalName,
+	var to_send: Dictionary = {
+		"cortical_name": corticalName
+	}
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_corticalAreas_corticalNameLocation,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
 		_response_functions_ref.GET_GE_corticalNameLocation
 	)
 	_interface_ref.FEAGI_API_Request(request)
 
 ## By corticalID, returns dictionary of all cortical area details
 func GET_GE_corticalArea(corticalID: StringName):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.POST_corticalArea_corticalAreaProperties+corticalID,
-		 _response_functions_ref.GET_GE_corticalArea
+	var to_send: Dictionary = {
+		"cortical_id": corticalID
+	}
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_corticalArea_corticalAreaProperties,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
+		_response_functions_ref.GET_GE_corticalArea
 	)
 	_interface_ref.FEAGI_API_Request(request)
 
 ## By corticalID, returns dictionary of all cortical area details, but keeps polling until the cortical area is no longer transforming
 func GET_GE_corticalArea_POLL(corticalID: StringName):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.GET_corticalAreas_corticalAreaNameList,
-		_response_functions_ref.GET_GE_corticalAreaNameList
+	var to_send: Dictionary = {
+		"cortical_id": corticalID
+	}
+	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("transforming", false)
+
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
+		_address_list.POST_corticalArea_corticalAreaProperties,
+		HTTPClient.Method.METHOD_POST,
+		to_send,
+		null,
+		_response_functions_ref.GET_GE_corticalArea,
+		0.2,
+		searching_for
 	)
 	_interface_ref.FEAGI_API_Request(request)
-	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("transforming", false)
-	_interface_ref.repeating_FEAGI_request(_address_list.POST_corticalArea_corticalAreaProperties + corticalID, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalArea,
-		Callable() ,searching_for)
+	
 	
 
 ## returns dict of cortical names, mapped to an array of positions, unknown boolean, size, and ID
@@ -131,35 +153,61 @@ func GET_GE_corticalIDNameMapping():
 
 ## returns list of connected cortical IDs upsteam given ID
 func GET_GE_corticalMappings_afferents_corticalArea(corticalID: StringName):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.POST_corticalMappings_afferents_CORTICALAREAEQUALS+corticalID,
+	var to_send: Dictionary = {
+		"cortical_id": corticalID
+	}
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_corticalMappings_afferents,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
 		_response_functions_ref.GET_GE_corticalMappings_afferents_corticalArea
 	)
 	_interface_ref.FEAGI_API_Request(request)
 
 ## returns list of connected cortical IDs downstream given ID
 func GET_GE_corticalMappings_efferents_corticalArea(corticalID: StringName):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.POST_corticalMappings_efferents_CORTICALAREAEQUALS+corticalID,
+	var to_send: Dictionary = {
+		"cortical_id": corticalID
+	}
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_corticalMappings_efferents,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
 		_response_functions_ref.GET_GE_corticalMappings_efferents_corticalArea
 	)
 	_interface_ref.FEAGI_API_Request(request)
 	
 ## given name of morphology, returns dict of morphlogy details
 func GET_GE_morphology(morphologyName: String):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.POST_morphology_morphologyProperties+morphologyName,
+	var to_send: Dictionary = {
+		"morphology_name": morphologyName
+	}
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_morphology_morphologyProperties,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
 		_response_functions_ref.GET_GE_morphology
 	)
 	_interface_ref.FEAGI_API_Request(request)
 
 ## given morphology name, returns an array of arrays of source to destination cortical IDs where said morphology is used
 func GET_GE_morphologyUsage(morphologyName: String):
+
+	var to_send: Dictionary = {
+		"morphology_name": morphologyName
+	}
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_morphology_morphologyUsage+morphologyName,
-		HTTPClient.METHOD_GET,
-		null,
-		morphologyName,
+		_address_list.POST_morphology_morphologyUsage,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
 		_response_functions_ref.GET_GE_morphologyUsage
 	)
 	_interface_ref.FEAGI_API_Request(request)
@@ -168,10 +216,15 @@ func GET_GE_morphologyUsage(morphologyName: String):
 ## returns an array of dicts of morphology details of morphologies used between 2 cortical areas
 func GET_GE_mappingProperties(sourceCorticalID: StringName, destinationCorticalID: StringName):
 	# Pass through the source and destination cortical areas
+	var to_send: Dictionary = {
+		"src_cortical_area": sourceCorticalID,
+		"dst_cortical_area": destinationCorticalID
+	}
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_corticalMappings_mappingProperties+sourceCorticalID+"&dst_cortical_area="+destinationCorticalID,
-		HTTPClient.METHOD_GET,
-		null,
+		_address_list.POST_corticalMappings_mappingProperties,
+		HTTPClient.METHOD_POST,
+		to_send,
 		[sourceCorticalID, destinationCorticalID],
 		_response_functions_ref.GET_GE_mappingProperties
 	)
@@ -218,10 +271,14 @@ func GET_GE_corticalTypes():
 
 ## returns bool of if a cortical area is monitoring membrane potential
 func GET_MO_neuron_membranePotential(corticalID: StringName):
+	var to_send: Dictionary = {
+		"cortical_id": corticalID
+	}
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_insight_neurons_membranePotentialStatus+corticalID,
-		HTTPClient.METHOD_GET,
-		null,
+		_address_list.POST_insight_neurons_membranePotentialStatus,
+		HTTPClient.METHOD_POST,
+		to_send,
 		corticalID,
 		_response_functions_ref.GET_MON_neuron_membranePotential
 	)
@@ -229,22 +286,18 @@ func GET_MO_neuron_membranePotential(corticalID: StringName):
 	
 ## returns bool of if a cortical area is monitoring synaptic potential
 func GET_MO_neuron_synapticPotential(corticalID: StringName):
+	var to_send: Dictionary = {
+		"cortical_id": corticalID
+	}
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_insight_neuron_synapticPotentialStatus+corticalID,
-		HTTPClient.METHOD_GET,
-		null,
+		_address_list.POST_insight_neuron_synapticPotentialStatus,
+		HTTPClient.METHOD_POST,
+		to_send,
 		corticalID,
 		_response_functions_ref.GET_MON_neuron_synapticPotential
 	)
 	_interface_ref.FEAGI_API_Request(request)
-
-func GET_GE_corticalTypeOptions(corticalType: String):
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		_address_list.GET_corticalAreas_corticalAreaNameList,
-		_response_functions_ref.GET_GE_corticalAreaNameList
-	)
-	_interface_ref.FEAGI_API_Request(request)
-	_interface_ref.single_FEAGI_request(_address_list.POST_corticalArea_corticalTypeOptions_CORTICALTYPEQUALS+corticalType, HTTPClient.Method.METHOD_GET, _response_functions_ref.GET_GE_corticalTypeOptions)
 
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck():
@@ -301,11 +354,15 @@ func GET_MO_list_types():
 
 ## Returns membrane potential monitoring state of a cortical area
 func GET_MON_neuron_membranePotential(cortical_ID: StringName) -> void:
+	var to_send: Dictionary = {
+		"cortical_id": cortical_ID
+	}
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_insight_neurons_membranePotentialStatus+cortical_ID,
-		HTTPClient.METHOD_GET,
-		null,
-		cortical_ID,
+		_address_list.POST_insight_neurons_membranePotentialStatus,
+		HTTPClient.METHOD_POST,
+		to_send,
+		{},
 		_response_functions_ref.GET_MON_neuron_membranePotential
 	)
 	_interface_ref.FEAGI_API_Request(request)
