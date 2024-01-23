@@ -589,7 +589,7 @@ func PUT_GE_mappingProperties(source_cortical: BaseCorticalArea, destination_cor
 		"mapping_data_raw": mapping_data
 	}
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.PUT_genome_mappingProperties+"?src_cortical_area="+source_cortical.cortical_ID+"&dst_cortical_area="+destination_cortical.cortical_ID,
+		_address_list.PUT_genome_mappingProperties,
 		HTTPClient.METHOD_PUT,
 		mapping_data,
 		to_buffer,
