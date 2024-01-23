@@ -259,7 +259,7 @@ func GET_healthCheck_POLL_GENOME():
 	var searching_for: PollingMethodDictionaryValue = PollingMethodDictionaryValue.new("genome_availability", true)
 	const SECONDS_BETWEEN_POLLS: float = 0.5
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
-		_address_list.GET_healthCheck,
+		_address_list.GET_system_healthCheck,
 		HTTPClient.Method.METHOD_GET,
 		{},
 		{},
@@ -273,7 +273,7 @@ func GET_healthCheck_POLL_GENOME():
 func GET_healthCheck_POLL_MONITORING():
 	const SECONDS_BETWEEN_POLLS: float = 5.0
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
-		_address_list.GET_healthCheck,
+		_address_list.GET_system_healthCheck,
 		HTTPClient.Method.METHOD_GET,
 		{},
 		{},
