@@ -38,7 +38,7 @@ func _ready():
 	_Leak_Constant.int_confirmed.connect(user_request_Leak_Constant)
 	_Leak_Variability.int_confirmed.connect(user_request_Leak_Variability)
 	_Consecutive_Fire_Count.int_confirmed.connect(user_request_Consecutive_Fire_Count)
-	_neuron_excitability.int_confirmned.connect(_user_request_neuron_excitability)
+	_neuron_excitability.int_confirmed.connect(_user_request_neuron_excitability)
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
 	_Threshold_Inc.user_updated_vector.connect(user_request_Threshold_Inc)
 	_MP_Accumulation.toggled.connect(user_request_MP_Accumumulation)
