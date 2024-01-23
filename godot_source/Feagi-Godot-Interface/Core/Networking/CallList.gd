@@ -481,15 +481,21 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 
 ## Adds a morphology
 func POST_GE_morphology(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, parameters: Dictionary) -> void:
+	var to_feagi: Dictionary = {
+		"morphology_name": morphology_name,
+		"morphology_type": Morphology.morphology_type_to_string(morphology_type),
+		"morphology_parameters": parameters
+	}
+	
 	var to_buffer: Dictionary = parameters.duplicate()
 	to_buffer["type"] = morphology_type
 	to_buffer["morphology_name"] = morphology_name
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_genome_customCorticalArea,
+		_address_list.POST_genome_morphology,
 		HTTPClient.METHOD_POST,
-		parameters,
+		to_feagi,
 		to_buffer,
-		_response_functions_ref.POST_GE_customCorticalArea
+		_response_functions_ref.POST_GE_morphology
 	)
 	_interface_ref.FEAGI_API_Request(request)
 
