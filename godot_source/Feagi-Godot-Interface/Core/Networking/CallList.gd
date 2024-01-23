@@ -568,9 +568,12 @@ func PUT_GE_corticalArea(cortical_ID: StringName, data_to_set: Dictionary):
 	_interface_ref.FEAGI_API_Request(request)
 
 func PUT_GE_morphology(morphology_name: StringName, morphology_type: Morphology.MORPHOLOGY_TYPE, parameters: Dictionary) -> void:
-	var to_send: Dictionary = parameters.duplicate()
-	to_send["type"] = morphology_type
-	to_send["morphology_name"] = morphology_name
+	var to_send: Dictionary = {
+		"morphology_name": morphology_name,
+		"morphology_type": Morphology.morphology_type_to_string(morphology_type),
+		"morphology_parameters": parameters.duplicate()
+	}
+
 	# passthrough morphology name so we know what was updated
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
 		_address_list.PUT_genome_morphology,

@@ -102,7 +102,7 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			return
 		HTTPClient.METHOD_PUT:
 			# uncomment / breakpoint below to easily debug dictionary data
-			#var debug_JSON = JSON.stringify(data)
+			var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_DELETE:
