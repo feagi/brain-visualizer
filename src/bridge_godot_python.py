@@ -234,6 +234,8 @@ async def bridge_to_BV():
             try:
                 if ws_operation:
                     await ws_operation[0].send(zlib.compress(str(zmq_queue[0]).encode()))
+                    if "update" in zmq_queue[0]: # This code is written in 2 years ago. gg
+                        zmq_queue.popleft()
                     if "ping" in zmq_queue:
                         zmq_queue.popleft()
                     else:
