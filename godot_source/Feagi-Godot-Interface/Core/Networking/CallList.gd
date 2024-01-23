@@ -624,10 +624,14 @@ func PUT_GE_coord2D(cortical_IDs_mapped_to_vector2is: Dictionary):
 #region DELETE requests
  ## deletes cortical area
 func DELETE_GE_corticalArea(corticalID: StringName):
+	var to_FEAGI: Dictionary = {
+		"cortical_id": corticalID
+	} 
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
 		_address_list.DELETE_GE_corticalArea,
 		HTTPClient.METHOD_DELETE,
-		{},
+		to_FEAGI,
 		corticalID, # buffer this so we know what we deleted
 		_response_functions_ref.DELETE_GE_corticalArea
 	)
@@ -635,10 +639,14 @@ func DELETE_GE_corticalArea(corticalID: StringName):
 
 ## Deletes a morphology
 func DELETE_GE_morphology(morphology_name: StringName):
+	var to_FEAGI: Dictionary = {
+		"morphology_name": morphology_name
+	} 
+	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
 		_address_list.DELETE_GE_morphology,
 		HTTPClient.METHOD_DELETE,
-		{},
+		to_FEAGI,
 		morphology_name, # buffer this so we know what we deleted
 		_response_functions_ref.DELETE_GE_morphology
 	)
