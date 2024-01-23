@@ -81,6 +81,11 @@ func _brain_visualizer_resetting() -> void:
 	if !_killing_on_reset:
 		return
 	
+	if !_is_worker_busy("", true):
+		# This worker is likely idle, dont bother deleting this
+		return
+	
+	
 	print("NETWORK: WORKER: BV Reset Detected! Halting API Worker!")
 	cancel_request()
 	_timer.stop()
@@ -92,7 +97,7 @@ func _brain_visualizer_resetting() -> void:
 func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, data: Variant = null) -> void:
 
 	if _is_worker_busy(requestAddress):
-		return
+		push_error("Skipping_call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
 
 	match(method):
 		HTTPClient.METHOD_GET:
@@ -166,9 +171,14 @@ func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bo
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
 func _query_for_destruction() -> void:	
-	if _network_interface_ref.API_request_workers_available.size() <= _network_interface_ref.num_workers_to_keep_available:
+	if _network_interface_ref.API_request_workers_available.size() < _network_interface_ref.num_workers_to_keep_available:
 		_network_interface_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
+		_buffer_data = null
+		_initial_call_address = ""
+		_polling_check = null
+		_poll_address = ""
+		_poll_data_to_send = null
 	else:
 		queue_free()
 
