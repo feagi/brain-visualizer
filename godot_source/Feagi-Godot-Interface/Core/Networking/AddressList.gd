@@ -3,59 +3,59 @@ class_name AddressList
 ## Essentially a list of endpoints to FEAGI
 
 # Get Requests
-var GET_feagi_pns_current_ipu: StringName = "/v1/feagi/feagi/pns/current/ipu"
-var GET_feagi_pns_current_opu: StringName = "/v1/feagi/feagi/pns/current/opu"
-var GET_genome_corticalAreaIDList: StringName = "/v1/feagi/genome/cortical_area_id_list"
-var GET_genome_morphologyList: StringName = "/v1/feagi/genome/morphology_list"
-var GET_genome_fileName: StringName = "/v1/feagi/genome/file_name"
-var GET_genome_corticalAreaNameList: StringName = "/v1/feagi/genome/cortical_area_name_list"
-var GET_genome_corticalNameLocation: StringName = "/v1/feagi/genome/cortical_name_location?cortical_name="
-var GET_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area="
-var GET_genome_corticalMap_detailed: StringName = "/v1/feagi/genome/cortical_map_detailed"
-var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/afferents?cortical_area="
-var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
-var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
-var GET_genome_circuits: StringName = "/v1/feagi/genome/circuits"
+var GET_feagi_pns_current_ipu: StringName = "/v1/cortical_area/ipu"
+var GET_feagi_pns_current_opu: StringName = "/v1/cortical_area/opu"
+var GET_genome_corticalAreaIDList: StringName = "/v1/cortical_area/cortical_area_id_list"
+var GET_genome_morphologyList: StringName = "/v1/morphology/morphology_list"
+var GET_genome_fileName: StringName = "/v1/genome/file_name"
+var GET_genome_corticalAreaNameList: StringName = "/v1/cortical_area/cortical_area_name_list"
+var GET_genome_corticalNameLocation: StringName = "/v1/cortical_area/cortical_name_location?cortical_name="
+var GET_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area?cortical_area="
+var GET_genome_corticalMap_detailed: StringName = "/v1/cortical_area/cortical_map_detailed"
+var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/cortical_mapping/afferents?cortical_area="
+var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/cortical_mapping/efferents?cortical_area="
+var GET_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties?src_cortical_area="
+var GET_genome_circuits: StringName = "/v1/genome/circuits"
 var GET_genome_circuitDescription: StringName = "/v1/feagi/genome/circuit_description?circuit_name="
-var GET_genome_morphology_types: StringName = "/v1/feagi/genome/morphology_types"
-var GET_genome_morphologyName: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var GET_genome_morphologyUsage: StringName = "/v1/feagi/genome/morphology_usage?morphology_name="
-var GET_genome_corticalTypeOptions: StringName = '/v1/feagi/genome/cortical_type_options?cortical_type='
-var GET_genome_corticalIDNameMapping: StringName = '/v1/feagi/genome/cortical_id_name_mapping'
-var GET_genome_corticalLocations2D: StringName = '/v1/feagi/genome/cortical_locations_2d'
-var GET_genome_corticalArea_geometry: StringName = '/v1/feagi/genome/cortical_area/geometry'
-var GET_genome_corticalTypes: StringName = "/v1/feagi/genome/cortical_types"
-var GET_connectome_properties_dimensions: StringName = "/v1/feagi/connectome/properties/dimensions"
-var GET_connectome_properties_mappings: StringName = "/v1/feagi/connectome/properties/mappings"
-var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/feagi/connectome/cortical_areas/list/detailed"
-var GET_burstEngine_stimulationPeriod: StringName = "/v1/feagi/feagi/burst_engine/stimulation_period"
-var GET_healthCheck: StringName = "/v1/feagi/health_check"
-var GET_monitoring_neuron_membranePotential: StringName = '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
-var GET_monitoring_neuron_synapticPotential: StringName = '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
-var GET_morphologies_list_types: StringName = '/v1/feagi/morphologies/list/types'
+var GET_genome_morphology_types: StringName = "/v1/morphology/morphology_types"
+var GET_genome_morphologyName: StringName = "/v1/morphology/morphology?morphology_name="
+var GET_genome_morphologyUsage: StringName = "/v1/morphology/morphology_usage?morphology_name="
+var GET_genome_corticalTypeOptions: StringName = '/v1/cortical_area/cortical_type_options?cortical_type='
+var GET_genome_corticalIDNameMapping: StringName = '/v1/cortical_area/cortical_id_name_mapping'
+var GET_genome_corticalLocations2D: StringName = '/v1/cortical_area/cortical_locations_2d'
+var GET_genome_corticalArea_geometry: StringName = '/v1/cortical_area/cortical_area/geometry'
+var GET_genome_corticalTypes: StringName = "/v1/cortical_area/cortical_types"
+var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"
+var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/mappings"
+var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"
+var GET_burstEngine_stimulationPeriod: StringName = "/v1/burst_engine/stimulation_period"
+var GET_healthCheck: StringName = "/v1/system/health_check"
+var GET_monitoring_neuron_membranePotential: StringName = '/v1/insight/neurons/membrane_potential?cortical_area='
+var GET_monitoring_neuron_synapticPotential: StringName = '/v1/insight/neuron/synaptic_potential?cortical_area='
+var GET_morphologies_list_types: StringName = '/v1/morphology/list/types'
 var GET_pns_current_ipu: StringName = '/v1/feagi/feagi/pns/current/ipu'
 var GET_pns_current_opu: StringName = '/v1/feagi/feagi/pns/current/opu'
 
 # Post Requests
-var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
-var POST_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
-var POST_genome_customCorticalArea: StringName = "/v1/feagi/genome/custom_cortical_area"
-var POST_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var POST_genome_append: StringName = "/v1/feagi/genome/append?circuit_name="
-var POST_genome_amalgamationDestination: StringName = "/v1/feagi/genome/amalgamation_destination?circuit_origin_x="
-var POST_monitoring_neuron_membranePotential: StringName = "/v1/feagi/monitoring/neuron/membrane_potential?cortical_area="
-var POST_monitoring_neuron_synapticPotential: StringName = "/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area="
+var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
+var POST_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
+var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_cortical_area"
+var POST_genome_morphology: StringName = "/v1/morphology/morphology?morphology_name="
+var POST_genome_append: StringName = "/v1/feagi/genome/append?circuit_name=" # Leave this to Amir
+var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination?circuit_origin_x=" # actual example: http://127.0.0.1:8000/v1/genome/amalgamation_destination?circuit_origin_x=1&circuit_origin_y=2&circuit_origin_z=3&amalgamation_id=4
+var POST_monitoring_neuron_membranePotential: StringName = "/v1/insight/neurons/membrane_potential?cortical_area="
+var POST_monitoring_neuron_synapticPotential: StringName = "/v1/insight/neuron/synaptic_potential?cortical_area="
 
 # Put Requests
-var PUT_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
-var PUT_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties"
-var PUT_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var PUT_genome_coord2d: StringName = "/v1/feagi/genome/coord_2d"
+var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
+var PUT_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties"
+var PUT_genome_morphology: StringName = "/v1/morphology/morphology?morphology_name="
+var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 
 # Delete Requests
-var DELETE_GE_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area_name="
-var DELETE_GE_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var DELETE_GE_amalgamationCancellation = "/v1/feagi/genome/amalgamation_cancellation?amalgamation_id="
+var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area?cortical_area_name="
+var DELETE_GE_morphology: StringName = "/v1/morphology/morphology?morphology_name="
+var DELETE_GE_amalgamationCancellation = "/v1/genome/amalgamation_cancellation?amalgamation_id="
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	GET_feagi_pns_current_ipu = FEAGIFullAddress + GET_feagi_pns_current_ipu

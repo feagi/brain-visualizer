@@ -155,7 +155,7 @@ def download_genome(feagi_host_input, api_port_input, endpoint):
     """
     try:
         data_from_genome = requests.get('http://' + feagi_host_input + ':' + api_port_input +
-                                        '/v1/feagi/genome/download',
+                                        '/v1/genome/download',
                                         timeout=10).json()
         cortical_area_name = requests.get(
             'http://' + feagi_host_input + ':' + api_port_input + endpoint, timeout=10).json()
@@ -323,7 +323,7 @@ def main():
     Main script for bridge to communicate with FEAGI and Godot.
     """
     previous_genome_timestamp = 0
-    dimensions_endpoint = '/v1/feagi/connectome/properties/dimensions'
+    dimensions_endpoint = '/v1/connectome/properties/dimensions'
     print(
         "================================ @@@@@@@@@@@@@@@ "
         "==========================================")
@@ -475,7 +475,7 @@ def main():
             print("EMPTY!")
             data_from_godot = "{}"
             data_from_genome = requests.get('http://' + feagi_host + ':' + api_port +
-                                            '/v1/feagi/connectome/properties/dimensions',
+                                            '/v1/connectome/properties/dimensions',
                                             timeout=10).json()
             json_object = json.dumps(data_from_genome)
             zmq_queue.append("genome: " + json_object)
@@ -489,7 +489,7 @@ def main():
                 requests.get('http://' + feagi_host + ':' + api_port + dimensions_endpoint,
                              timeout=10).json()
         if "cortical_name" in data_from_godot:
-            url = "http://" + feagi_host + ":" + api_port + "/v1/feagi/genome/cortical_area"
+            url = "http://" + feagi_host + ":" + api_port + "/v1/cortical_area/cortical_area"
             request_obj = data_from_godot
             requests.post(url, data=request_obj, timeout=10)
             data_from_godot = {}
