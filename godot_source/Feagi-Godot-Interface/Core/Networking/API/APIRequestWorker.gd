@@ -20,7 +20,7 @@ var _processing_type: CALL_PROCESS_TYPE
 var _buffer_data: Variant
 var _follow_up_function: Callable
 var _killing_on_reset: bool
-
+var _initial_call_address: StringName
 var _polling_check: PollingMethodInterface
 var _poll_address: StringName
 var _poll_call_method: HTTPClient.Method
@@ -48,6 +48,7 @@ func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinitio
 			_buffer_data = request_definition.data_to_hold_for_follow_up_function
 			_follow_up_function = request_definition.follow_up_function
 			_killing_on_reset = request_definition.should_kill_on_genome_reset
+			_initial_call_address = request_definition.full_address
 			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
 			
 		CALL_PROCESS_TYPE.POLLING:
@@ -57,6 +58,7 @@ func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinitio
 			_buffer_data = request_definition.data_to_hold_for_follow_up_function
 			_follow_up_function = request_definition.follow_up_function
 			_killing_on_reset = request_definition.should_kill_on_genome_reset
+			_initial_call_address = request_definition.full_address
 			_timer.wait_time = request_definition.seconds_between_polls
 			_timer.start(request_definition.seconds_between_polls)
 			_poll_address = request_definition.full_address
@@ -78,7 +80,8 @@ func _poll_call_from_timer() -> void:
 func _brain_visualizer_resetting() -> void:
 	if !_killing_on_reset:
 		return
-	print("NETWORK: WORKER: BV Reset Detected! Halting Poll Worker!")
+	
+	print("NETWORK: WORKER: BV Reset Detected! Halting API Worker!")
 	cancel_request()
 	_timer.stop()
 	_query_for_destruction()
@@ -143,24 +146,26 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 					return
 
 ## Used to check if the web worker is currently doing anything
-func _is_worker_busy(call_address: String) -> bool:
+func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bool:
 	match get_http_client_status():
 		HTTPClient.Status.STATUS_RESOLVING:
-			push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
+			if !surpress_warning:
+				push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
 			return true
 		HTTPClient.Status.STATUS_REQUESTING:
-			push_warning("NETWORK: Still trying to request previous request! Skipping call to " + call_address)
+			if !surpress_warning:
+				push_warning("NETWORK: Still trying to request previous request to '%s'! Skipping call to '%s'" % [_initial_call_address, call_address])
 			return true
 		HTTPClient.Status.STATUS_CONNECTING:
-			push_warning("NETWORK: Still trying to finish previous request! Skipping call to " + call_address)
+			if !surpress_warning:
+				push_warning("NETWORK: Still trying to finish previous request to '%s'! Skipping call to '%s'" % [_initial_call_address, call_address])
 			return true
 		_:
 			return false
-		
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
-func _query_for_destruction() -> void:
+func _query_for_destruction() -> void:	
 	if _network_interface_ref.API_request_workers_available.size() <= _network_interface_ref.num_workers_to_keep_available:
 		_network_interface_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
