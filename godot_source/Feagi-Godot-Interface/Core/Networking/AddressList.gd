@@ -36,22 +36,22 @@ var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
 var POST_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_cortical_area"
-var POST_genome_morphology: StringName = "/v1/morphology/morphology?morphology_name="
-var POST_genome_append: StringName = "/v1/feagi/genome/append?circuit_name=" # Leave this to Amir
-var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination?circuit_origin_x=" # actual example: http://127.0.0.1:8000/v1/genome/amalgamation_destination?circuit_origin_x=1&circuit_origin_y=2&circuit_origin_z=3&amalgamation_id=4
+var POST_genome_morphology: StringName = "/v1/morphology/morphology"
+var POST_genome_append: StringName = "/v1/feagi/genome/append"
+var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential"
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var PUT_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties"
-var PUT_genome_morphology: StringName = "/v1/morphology/morphology?morphology_name="
+var PUT_genome_morphology: StringName = "/v1/morphology/morphology"
 var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 
 # Delete Requests
-var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area?cortical_area_name="
-var DELETE_GE_morphology: StringName = "/v1/morphology/morphology?morphology_name="
-var DELETE_GE_amalgamationCancellation = "/v1/genome/amalgamation_cancellation?amalgamation_id="
+var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
+var DELETE_GE_morphology: StringName = "/v1/morphology/morphology"
+var DELETE_GE_amalgamationCancellation = "/v1/genome/amalgamation_cancellation"
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	GET_corticalAreas_ipu = FEAGIFullAddress + GET_corticalAreas_ipu
