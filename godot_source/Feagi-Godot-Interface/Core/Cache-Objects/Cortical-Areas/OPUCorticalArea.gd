@@ -35,6 +35,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		neuron_snooze_period = data["neuron_snooze_period"]
 	if "neuron_mp_charge_accumulation" in data.keys(): 
 		neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
+	if "neuron_excitability" in data.keys():
+		neuron_excitability = data["neuron_excitability"]
 	return
 
 func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
@@ -45,16 +47,16 @@ func _has_neuron_firing_parameters() -> bool:
 #endregion
 
 #region Neuron Firing Parameters
-
-signal neuron_mp_charge_accumulation_updated(val: bool, this_cortical_area: OPUCorticalArea)
-signal neuron_leak_coefficient_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_leak_variability_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_refractory_period_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_consecutive_fire_count_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_snooze_period_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_fire_threshold_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_firing_threshold_limit_updated(val: int, this_cortical_area: OPUCorticalArea)
-signal neuron_fire_threshold_increment_updated(val: Vector3, this_cortical_area: OPUCorticalArea)
+signal neuron_mp_charge_accumulation_updated(val: bool, this_cortical_area: CoreCorticalArea)
+signal neuron_leak_coefficient_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_leak_variability_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_refractory_period_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_consecutive_fire_count_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_snooze_period_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_fire_threshold_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_firing_threshold_limit_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_fire_threshold_increment_updated(val: Vector3, this_cortical_area: CoreCorticalArea)
+signal neuron_excitability_updated(val: int, this_cortical_area: CoreCorticalArea)
 
 var neuron_mp_charge_accumulation: bool:
 	get:
@@ -110,6 +112,12 @@ var neuron_fire_threshold_increment: Vector3:
 	set(v):
 		_set_neuron_fire_threshold_increment(v)
 
+var neuron_excitability: int = 0:
+	get:
+		return _neuron_excitability
+	set(v):
+		_set_neuron_excitability(v)
+
 var _neuron_mp_charge_accumulation: bool = false
 var _neuron_leak_coefficient: int = 0
 var _neuron_leak_variability: int = 0
@@ -119,6 +127,7 @@ var _neuron_snooze_period: int = 0
 var _neuron_fire_threshold: int = 0
 var _neuron_firing_threshold_limit: int = 0
 var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
+var _neuron_excitability: int = 0
 
 func _set_neuron_mp_charge_accumulation(new_val: bool) -> void:
 	if new_val == _neuron_mp_charge_accumulation:
@@ -173,4 +182,10 @@ func _set_neuron_fire_threshold_increment(new_val: Vector3) -> void:
 		return
 	_neuron_fire_threshold_increment = new_val
 	neuron_fire_threshold_increment_updated.emit(new_val, self)
+
+func _set_neuron_excitability(new_val: int) -> void:
+	if new_val == _neuron_excitability: 
+		return
+	_neuron_excitability = new_val
+	neuron_excitability_updated.emit(new_val, self)
 #endregion

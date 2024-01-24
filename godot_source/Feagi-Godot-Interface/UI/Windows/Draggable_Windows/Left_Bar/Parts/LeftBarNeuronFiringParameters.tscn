@@ -44,16 +44,16 @@ layout_mode = 2
 alignment = 2
 script = ExtResource("3_ermgo")
 
-[node name="Leak_Varibility" type="HBoxContainer" parent="."]
+[node name="Leak_Variability" type="HBoxContainer" parent="."]
 layout_mode = 2
 tooltip_text = "The percentage of inconsistency that each neuron can have in their leak constant value"
 
-[node name="Label" type="Label" parent="Leak_Varibility"]
+[node name="Label" type="Label" parent="Leak_Variability"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Leak Varibility"
+text = "Leak Variability"
 
-[node name="Leak_Varibility" type="LineEdit" parent="Leak_Varibility"]
+[node name="Leak_Variability" type="LineEdit" parent="Leak_Variability"]
 layout_mode = 2
 alignment = 2
 script = ExtResource("3_ermgo")
@@ -128,6 +128,22 @@ layout_mode = 2
 alignment = 2
 script = ExtResource("3_ermgo")
 
+[node name="Neuron_Excitability" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "Chance of neuron becoming excited"
+
+[node name="Label" type="Label" parent="Neuron_Excitability"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Neuron Excitability"
+
+[node name="Neuron_Excitability" type="LineEdit" parent="Neuron_Excitability"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+max_value = 100
+min_value = 0
+
 [node name="Fire_Threshold_Label" type="Label" parent="."]
 layout_mode = 2
 tooltip_text = "Defined the level of Fire Threshold Increase in X, Y, Z directions of a cortical area"
@@ -161,11 +177,12 @@ layout_mode = 2
 
 [connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Leak_Constant/Leak_Constant" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Leak_Varibility/Leak_Varibility" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Leak_Variability/Leak_Variability" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Refactory_Period/Refactory_Period" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Consecutive_Fire_Count/Consecutive_Fire_Count" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Snooze_Period/Snooze_Period" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Fire_Threshold/Fire_Threshold" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Threshold_Limit/Threshold_Limit" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Neuron_Excitability/Neuron_Excitability" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Fire_Threshold_Increment" to="." method="_enable_update_button"]
 [connection signal="pressed" from="Update_Button" to="." method="_user_requests_update"]

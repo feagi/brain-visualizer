@@ -3,92 +3,84 @@ class_name AddressList
 ## Essentially a list of endpoints to FEAGI
 
 # Get Requests
-var GET_feagi_pns_current_ipu: StringName = "/v1/feagi/feagi/pns/current/ipu"
-var GET_feagi_pns_current_opu: StringName = "/v1/feagi/feagi/pns/current/opu"
-var GET_genome_corticalAreaIDList: StringName = "/v1/feagi/genome/cortical_area_id_list"
-var GET_genome_morphologyList: StringName = "/v1/feagi/genome/morphology_list"
-var GET_genome_fileName: StringName = "/v1/feagi/genome/file_name"
-var GET_genome_corticalAreaNameList: StringName = "/v1/feagi/genome/cortical_area_name_list"
-var GET_genome_corticalNameLocation: StringName = "/v1/feagi/genome/cortical_name_location?cortical_name="
-var GET_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area="
-var GET_genome_corticalMap_detailed: StringName = "/v1/feagi/genome/cortical_map_detailed"
-var GET_genome_corticalMappings_afferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/afferents?cortical_area="
-var GET_genome_corticalMappings_efferents_corticalArea: StringName = "/v1/feagi/genome/cortical_mappings/efferents?cortical_area="
-var GET_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties?src_cortical_area="
-var GET_genome_circuits: StringName = "/v1/feagi/genome/circuits"
-var GET_genome_circuitDescription: StringName = "/v1/feagi/genome/circuit_description?circuit_name="
-var GET_genome_morphology_types: StringName = "/v1/feagi/genome/morphology_types"
-var GET_genome_morphologyName: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var GET_genome_morphologyUsage: StringName = "/v1/feagi/genome/morphology_usage?morphology_name="
-var GET_genome_corticalTypeOptions: StringName = '/v1/feagi/genome/cortical_type_options?cortical_type='
-var GET_genome_corticalIDNameMapping: StringName = '/v1/feagi/genome/cortical_id_name_mapping'
-var GET_genome_corticalLocations2D: StringName = '/v1/feagi/genome/cortical_locations_2d'
-var GET_genome_corticalArea_geometry: StringName = '/v1/feagi/genome/cortical_area/geometry'
-var GET_genome_corticalTypes: StringName = "/v1/feagi/genome/cortical_types"
-var GET_connectome_properties_dimensions: StringName = "/v1/feagi/connectome/properties/dimensions"
-var GET_connectome_properties_mappings: StringName = "/v1/feagi/connectome/properties/mappings"
-var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/feagi/connectome/cortical_areas/list/detailed"
-var GET_burstEngine_stimulationPeriod: StringName = "/v1/feagi/feagi/burst_engine/stimulation_period"
-var GET_healthCheck: StringName = "/v1/feagi/health_check"
-var GET_monitoring_neuron_membranePotential: StringName = '/v1/feagi/monitoring/neuron/membrane_potential?cortical_area='
-var GET_monitoring_neuron_synapticPotential: StringName = '/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area='
-var GET_morphologies_list_types: StringName = '/v1/feagi/morphologies/list/types'
-var GET_pns_current_ipu: StringName = '/v1/feagi/feagi/pns/current/ipu'
-var GET_pns_current_opu: StringName = '/v1/feagi/feagi/pns/current/opu'
+var GET_corticalAreas_ipu: StringName = "/v1/cortical_area/ipu"
+var GET_corticalAreas_opu: StringName = "/v1/cortical_area/opu"
+var GET_corticalAreas_corticalAreaIDList: StringName = "/v1/cortical_area/cortical_area_id_list"
+var GET_neuronMorphologies_morphologyList: StringName = "/v1/morphology/morphology_list"
+var GET_genome_fileName: StringName = "/v1/genome/file_name"
+var GET_corticalAreas_corticalAreaNameList: StringName = "/v1/cortical_area/cortical_area_name_list"
+var POST_corticalAreas_corticalNameLocation: StringName = "/v1/cortical_area/cortical_name_location"
+var POST_corticalArea_corticalAreaProperties: StringName = "/v1/cortical_area/cortical_area_properties"
+var GET_corticalArea_corticalMapDetailed: StringName = "/v1/cortical_area/cortical_map_detailed"
+var POST_corticalMappings_afferents: StringName = "/v1/cortical_mapping/afferents"
+var POST_corticalMappings_efferents: StringName = "/v1/cortical_mapping/efferents"
+var POST_corticalMappings_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties"
+var GET_genome_circuits: StringName = "/v1/genome/circuits"
+var GET_morphology_morphology_types: StringName = "/v1/morphology/morphology_types"
+var POST_morphology_morphologyProperties: StringName = "/v1/morphology/morphology_properties"
+var POST_morphology_morphologyUsage: StringName = "/v1/morphology/morphology_usage"
+var GET_corticalArea_corticalIDNameMapping: StringName = '/v1/cortical_area/cortical_id_name_mapping'
+var GET_corticalArea_corticalLocations2D: StringName = '/v1/cortical_area/cortical_locations_2d'
+var GET_corticalArea_corticalArea_geometry: StringName = '/v1/cortical_area/cortical_area/geometry'
+var GET_corticalArea_corticalTypes: StringName = "/v1/cortical_area/cortical_types"
+var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"
+var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/mappings"
+var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"
+var GET_burstEngine_stimulationPeriod: StringName = "/v1/burst_engine/stimulation_period"
+var GET_system_healthCheck: StringName = "/v1/system/health_check"
+var POST_insight_neurons_membranePotentialStatus: StringName = '/v1/insight/neurons/membrane_potential_status'
+var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuron/synaptic_potential_status'
+var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 
 # Post Requests
-var POST_feagi_burstEngine: StringName = "/v1/feagi/feagi/burst_engine"
-var POST_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
-var POST_genome_customCorticalArea: StringName = "/v1/feagi/genome/custom_cortical_area"
-var POST_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var POST_genome_append: StringName = "/v1/feagi/genome/append?circuit_name="
-var POST_genome_amalgamationDestination: StringName = "/v1/feagi/genome/amalgamation_destination?circuit_origin_x="
-var POST_monitoring_neuron_membranePotential: StringName = "/v1/feagi/monitoring/neuron/membrane_potential?cortical_area="
-var POST_monitoring_neuron_synapticPotential: StringName = "/v1/feagi/monitoring/neuron/synaptic_potential?cortical_area="
+var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
+var POST_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
+var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_cortical_area"
+var POST_genome_morphology: StringName = "/v1/morphology/morphology"
+var POST_genome_append: StringName = "/v1/feagi/genome/append"
+var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
+var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential"
+var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential"
 
 # Put Requests
-var PUT_genome_corticalArea: StringName = "/v1/feagi/genome/cortical_area"
-var PUT_genome_mappingProperties: StringName = "/v1/feagi/genome/mapping_properties"
-var PUT_genome_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var PUT_genome_coord2d: StringName = "/v1/feagi/genome/coord_2d"
+var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
+var PUT_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties"
+var PUT_genome_morphology: StringName = "/v1/morphology/morphology"
+var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 
 # Delete Requests
-var DELETE_GE_corticalArea: StringName = "/v1/feagi/genome/cortical_area?cortical_area_name="
-var DELETE_GE_morphology: StringName = "/v1/feagi/genome/morphology?morphology_name="
-var DELETE_GE_amalgamationCancellation = "/v1/feagi/genome/amalgamation_cancellation?amalgamation_id="
+var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
+var DELETE_GE_morphology: StringName = "/v1/morphology/morphology"
+var DELETE_GE_amalgamationCancellation = "/v1/genome/amalgamation_cancellation"
 
 func _init(FEAGIFullAddress: StringName) -> void:
-	GET_feagi_pns_current_ipu = FEAGIFullAddress + GET_feagi_pns_current_ipu
-	GET_feagi_pns_current_opu = FEAGIFullAddress + GET_feagi_pns_current_opu
-	GET_genome_corticalAreaIDList = FEAGIFullAddress + GET_genome_corticalAreaIDList
-	GET_genome_morphologyList = FEAGIFullAddress + GET_genome_morphologyList
+	GET_corticalAreas_ipu = FEAGIFullAddress + GET_corticalAreas_ipu
+	GET_corticalAreas_opu = FEAGIFullAddress + GET_corticalAreas_opu
+	GET_corticalAreas_corticalAreaIDList = FEAGIFullAddress + GET_corticalAreas_corticalAreaIDList
+	GET_neuronMorphologies_morphologyList = FEAGIFullAddress + GET_neuronMorphologies_morphologyList
 	GET_genome_fileName = FEAGIFullAddress + GET_genome_fileName
-	GET_genome_corticalAreaNameList = FEAGIFullAddress + GET_genome_corticalAreaNameList
-	GET_genome_corticalNameLocation = FEAGIFullAddress + GET_genome_corticalNameLocation
-	GET_genome_corticalArea = FEAGIFullAddress + GET_genome_corticalArea
-	GET_genome_corticalMap_detailed = FEAGIFullAddress + GET_genome_corticalMap_detailed
-	GET_genome_corticalMappings_afferents_corticalArea = FEAGIFullAddress + GET_genome_corticalMappings_afferents_corticalArea
-	GET_genome_corticalMappings_efferents_corticalArea = FEAGIFullAddress + GET_genome_corticalMappings_efferents_corticalArea
-	GET_genome_mappingProperties = FEAGIFullAddress + GET_genome_mappingProperties
+	GET_corticalAreas_corticalAreaNameList = FEAGIFullAddress + GET_corticalAreas_corticalAreaNameList
+	POST_corticalAreas_corticalNameLocation = FEAGIFullAddress + POST_corticalAreas_corticalNameLocation
+	POST_corticalArea_corticalAreaProperties = FEAGIFullAddress + POST_corticalArea_corticalAreaProperties
+	GET_corticalArea_corticalMapDetailed = FEAGIFullAddress + GET_corticalArea_corticalMapDetailed
+	POST_corticalMappings_afferents = FEAGIFullAddress + POST_corticalMappings_afferents
+	POST_corticalMappings_efferents = FEAGIFullAddress + POST_corticalMappings_efferents
+	POST_corticalMappings_mappingProperties = FEAGIFullAddress + POST_corticalMappings_mappingProperties
 	GET_genome_circuits = FEAGIFullAddress + GET_genome_circuits
-	GET_genome_circuitDescription = FEAGIFullAddress + GET_genome_circuitDescription
 	GET_connectome_properties_dimensions = FEAGIFullAddress + GET_connectome_properties_dimensions
-	GET_genome_morphology_types = FEAGIFullAddress + GET_genome_morphology_types
-	GET_genome_morphologyName = FEAGIFullAddress + GET_genome_morphologyName
-	GET_genome_morphologyUsage = FEAGIFullAddress + GET_genome_morphologyUsage
-	GET_genome_corticalTypeOptions = FEAGIFullAddress + GET_genome_corticalTypeOptions
-	GET_genome_corticalIDNameMapping = FEAGIFullAddress + GET_genome_corticalIDNameMapping
-	GET_genome_corticalLocations2D = FEAGIFullAddress + GET_genome_corticalLocations2D
-	GET_genome_corticalArea_geometry = FEAGIFullAddress + GET_genome_corticalArea_geometry
-	GET_genome_corticalTypes = FEAGIFullAddress + GET_genome_corticalTypes
+	GET_morphology_morphology_types = FEAGIFullAddress + GET_morphology_morphology_types
+	POST_morphology_morphologyProperties = FEAGIFullAddress + POST_morphology_morphologyProperties
+	POST_morphology_morphologyUsage = FEAGIFullAddress + POST_morphology_morphologyUsage
+	GET_corticalArea_corticalIDNameMapping = FEAGIFullAddress + GET_corticalArea_corticalIDNameMapping
+	GET_corticalArea_corticalLocations2D = FEAGIFullAddress + GET_corticalArea_corticalLocations2D
+	GET_corticalArea_corticalArea_geometry = FEAGIFullAddress + GET_corticalArea_corticalArea_geometry
+	GET_corticalArea_corticalTypes = FEAGIFullAddress + GET_corticalArea_corticalTypes
 	GET_connectome_properties_mappings = FEAGIFullAddress + GET_connectome_properties_mappings
 	GET_burstEngine_stimulationPeriod = FEAGIFullAddress + GET_burstEngine_stimulationPeriod
-	GET_healthCheck = FEAGIFullAddress + GET_healthCheck
-	GET_monitoring_neuron_membranePotential = FEAGIFullAddress + GET_monitoring_neuron_membranePotential
-	GET_monitoring_neuron_synapticPotential = FEAGIFullAddress + GET_monitoring_neuron_synapticPotential
-	GET_morphologies_list_types = FEAGIFullAddress + GET_morphologies_list_types
-	GET_pns_current_ipu = FEAGIFullAddress + GET_pns_current_ipu
-	GET_pns_current_opu = FEAGIFullAddress + GET_pns_current_opu
+	GET_system_healthCheck = FEAGIFullAddress + GET_system_healthCheck
+	POST_insight_neurons_membranePotentialStatus = FEAGIFullAddress + POST_insight_neurons_membranePotentialStatus
+	POST_insight_neuron_synapticPotentialStatus = FEAGIFullAddress + POST_insight_neuron_synapticPotentialStatus
+	GET_morphology_list_types = FEAGIFullAddress + GET_morphology_list_types
 
 	POST_feagi_burstEngine = FEAGIFullAddress + POST_feagi_burstEngine
 	POST_genome_corticalArea = FEAGIFullAddress + POST_genome_corticalArea
@@ -96,8 +88,8 @@ func _init(FEAGIFullAddress: StringName) -> void:
 	POST_genome_morphology = FEAGIFullAddress + POST_genome_morphology
 	POST_genome_append = FEAGIFullAddress +  POST_genome_append
 	POST_genome_amalgamationDestination = FEAGIFullAddress + POST_genome_amalgamationDestination
-	POST_monitoring_neuron_membranePotential = FEAGIFullAddress + POST_monitoring_neuron_membranePotential
-	POST_monitoring_neuron_synapticPotential = FEAGIFullAddress + POST_monitoring_neuron_synapticPotential
+	POST_monitoring_neuron_membranePotential_set = FEAGIFullAddress + POST_monitoring_neuron_membranePotential_set
+	POST_monitoring_neuron_synapticPotential_set = FEAGIFullAddress + POST_monitoring_neuron_synapticPotential_set
 	
 	PUT_genome_corticalArea = FEAGIFullAddress + PUT_genome_corticalArea
 	PUT_genome_mappingProperties = FEAGIFullAddress + PUT_genome_mappingProperties

@@ -1,5 +1,5 @@
 extends HTTPRequest
-class_name  RequestWorker
+class_name  APIRequestWorker
 ## GET/POST/PUT/DELETE worker for [NetworkInterface]
 ##
 ## On initialization, toggles multiThreading, sets internals, and parents itself to a given parent (this does not need to be done seperately)
@@ -20,14 +20,14 @@ var _processing_type: CALL_PROCESS_TYPE
 var _buffer_data: Variant
 var _follow_up_function: Callable
 var _killing_on_reset: bool
-
+var _initial_call_address: StringName
 var _polling_check: PollingMethodInterface
 var _poll_address: StringName
 var _poll_call_method: HTTPClient.Method
 var _mid_poll_call: Callable
 var _poll_data_to_send: Variant
 
-## Sets up this node with all rpereqs, should only be called once on instantiation
+## Sets up this node with all prereqs, should only be called once on instantiation
 func initialization(interface: NetworkInterface, call_header: PackedStringArray, node_parent: Node) -> void:
 	FeagiEvents.genome_is_about_to_reset.connect(_brain_visualizer_resetting)
 	request_completed.connect(_call_complete)
@@ -38,37 +38,39 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 	node_parent.add_child(self)
 	name = "New"
 
-
-## Makes a single call to FEAGI, gets a response, triggers the followup, then queues self for destruction
-func single_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable, 
-	additional_data_to_send: Variant = null, data_to_buffer: Variant = null) -> void:
-
-	_processing_type = CALL_PROCESS_TYPE.SINGLE
-	_buffer_data = data_to_buffer
-	_follow_up_function = follow_up_function
-	name = "single"
-	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
-
-## Starts polling calls to FEAGI, routinely gets responses until condition defined by polling_check is met
-func repeat_polling_call(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
-	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = false) -> void:
-
-	_processing_type = CALL_PROCESS_TYPE.POLLING
-	_buffer_data = data_to_buffer
-	_follow_up_function = follow_up_function
-	_timer.wait_time = polling_gap_seconds
-	_timer.start(polling_gap_seconds)
-	_poll_address = full_request_address
-	_poll_call_method = method
-	_poll_data_to_send = additional_data_to_send
-	_polling_check = polling_check
-	_mid_poll_call = mid_poll_call
-	_killing_on_reset = kill_on_reset
-	
-	name = "polling"
-	
-	_make_call_to_FEAGI(full_request_address, method, additional_data_to_send)
+## Setup and execute the worker as per the request definition
+func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
+	match(request_definition.call_type):
+		CALL_PROCESS_TYPE.SINGLE:
+			# single call
+			name = "single"
+			_processing_type = request_definition.call_type
+			_buffer_data = request_definition.data_to_hold_for_follow_up_function
+			_follow_up_function = request_definition.follow_up_function
+			_killing_on_reset = request_definition.should_kill_on_genome_reset
+			_initial_call_address = request_definition.full_address
+			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
+			
+		CALL_PROCESS_TYPE.POLLING:
+			# polling call
+			name = "polling"
+			_processing_type = request_definition.call_type
+			_buffer_data = request_definition.data_to_hold_for_follow_up_function
+			_follow_up_function = request_definition.follow_up_function
+			_killing_on_reset = request_definition.should_kill_on_genome_reset
+			_initial_call_address = request_definition.full_address
+			_timer.wait_time = request_definition.seconds_between_polls
+			_timer.start(request_definition.seconds_between_polls)
+			_poll_address = request_definition.full_address
+			_poll_call_method = request_definition.method
+			_poll_data_to_send = request_definition.data_to_send_to_FEAGI
+			_polling_check = request_definition.polling_completion_check
+			_mid_poll_call = request_definition.mid_poll_function
+			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
+		_:
+			# unknown call type, just exit
+			push_error("Undefined call type from APIRequestWorkerDefinition. Stopping this APIRequestWorker...")
+			_query_for_destruction()
 
 ## Timer went off - time to poll
 func _poll_call_from_timer() -> void:
@@ -78,7 +80,13 @@ func _poll_call_from_timer() -> void:
 func _brain_visualizer_resetting() -> void:
 	if !_killing_on_reset:
 		return
-	print("NETWORK: WORKER: BV Reset Detected! Halting Poll Worker!")
+	
+	if !_is_worker_busy("", true):
+		# This worker is likely idle, dont bother deleting this
+		return
+	
+	
+	print("NETWORK: WORKER: BV Reset Detected! Halting API Worker!")
 	cancel_request()
 	_timer.stop()
 	_query_for_destruction()
@@ -89,7 +97,7 @@ func _brain_visualizer_resetting() -> void:
 func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, data: Variant = null) -> void:
 
 	if _is_worker_busy(requestAddress):
-		return
+		push_error("Skipping_call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
 
 	match(method):
 		HTTPClient.METHOD_GET:
@@ -97,12 +105,12 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			return
 		HTTPClient.METHOD_POST:
 			# uncomment / breakpoint below to easily debug dictionary data
-			#var debug_JSON = JSON.stringify(data)
+			var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_PUT:
 			# uncomment / breakpoint below to easily debug dictionary data
-			#var debug_JSON = JSON.stringify(data)
+			var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_DELETE:
@@ -143,29 +151,34 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 					return
 
 ## Used to check if the web worker is currently doing anything
-func _is_worker_busy(call_address: String) -> bool:
+func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bool:
 	match get_http_client_status():
 		HTTPClient.Status.STATUS_RESOLVING:
-			push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
+			if !surpress_warning:
+				push_warning("NETWORK: Still trying to resolve FEAGI Hostname! Skipping call to " + call_address)
 			return true
 		HTTPClient.Status.STATUS_REQUESTING:
-			push_warning("NETWORK: Still trying to request previous request! Skipping call to " + call_address)
+			if !surpress_warning:
+				push_warning("NETWORK: Still trying to request previous request to '%s'! Skipping call to '%s'" % [_initial_call_address, call_address])
 			return true
 		HTTPClient.Status.STATUS_CONNECTING:
-			push_warning("NETWORK: Still trying to finish previous request! Skipping call to " + call_address)
+			if !surpress_warning:
+				push_warning("NETWORK: Still trying to finish previous request to '%s'! Skipping call to '%s'" % [_initial_call_address, call_address])
 			return true
 		_:
 			return false
-		
-
-
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
-func _query_for_destruction() -> void:
-	if _network_interface_ref.request_workers_available.size() <= _network_interface_ref.num_workers_to_keep_available:
-		_network_interface_ref.request_workers_available.push_back(self)
+func _query_for_destruction() -> void:	
+	if _network_interface_ref.API_request_workers_available.size() < _network_interface_ref.num_workers_to_keep_available:
+		_network_interface_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
+		_buffer_data = null
+		_initial_call_address = ""
+		_polling_check = null
+		_poll_address = ""
+		_poll_data_to_send = null
 	else:
 		queue_free()
 
