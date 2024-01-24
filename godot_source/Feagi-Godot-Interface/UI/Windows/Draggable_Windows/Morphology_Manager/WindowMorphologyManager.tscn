@@ -7,13 +7,15 @@
 
 [node name="MorphologyManager" type="Panel"]
 offset_top = 40.0
-offset_right = 568.0
-offset_bottom = 510.0
+offset_right = 779.0
+offset_bottom = 517.0
 theme = ExtResource("1_1tu4k")
 script = ExtResource("1_11gqg")
 
 [node name="UIMorphologyOverviews" parent="." instance=ExtResource("3_08frl")]
 layout_mode = 0
+offset_right = 766.0
+offset_bottom = 435.0
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 0

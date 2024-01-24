@@ -17,6 +17,7 @@ offset_right = 250.0
 offset_bottom = 354.0
 
 [node name="Button" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 text = "Add Cortical Area..."
 
