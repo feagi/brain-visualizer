@@ -59,8 +59,7 @@ func spawn_create_morphology() -> void:
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
-	if morphology_to_preload != null:
-		morphology_manager.load_morphology(morphology_to_preload)
+	morphology_manager.setup_window("morphology_manager", morphology_to_preload)
 	
 
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
@@ -190,7 +189,7 @@ func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: String
 	
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
-		_window_memory_states[window_name] = loaded_windows[window_name].save_to_memory()
+		_window_memory_states[window_name] = loaded_windows[window_name].export_window_details()
 		loaded_windows[window_name].queue_free()
 		loaded_windows.erase(window_name)
 

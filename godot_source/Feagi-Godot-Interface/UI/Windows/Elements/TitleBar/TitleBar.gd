@@ -25,10 +25,11 @@ signal close_pressed()
 	set(v): 
 		$HBoxContainer/Title_Text.text = v
 
+var button_ref: Button:
+	get: return $HBoxContainer/Close_Button
+
 var _is_dragging: bool = false
 var _prev_window_minus_mouse_position: Vector2
-var _title_font_size: int
-var _close_button_size: Vector2i
 var _window_parent: BaseWindowPanel
 var _viewport: Viewport
 
