@@ -1,7 +1,7 @@
 extends Object
 ## Manages all actual network traffic to and from FEAGI itself
 ##
-## Should generally not be called directly from most scripts, This script is intended to be mainly called from TODO
+## Should generally not be called directly from most scripts
 ##
 class_name NetworkInterface
 
@@ -37,14 +37,14 @@ var feagi_socket_address: StringName
 var feagi_outgoing_headers: PackedStringArray
 var endpoints: AddressList
 var num_workers_to_keep_available: int
-var request_workers_available: Array[RequestWorker]
+var API_request_workers_available: Array[APIRequestWorker]
 var current_websocket_state: WebSocketPeer.State
 
 
 var _request_worker_parent: Node
 var _socket: WebSocketPeer
 var _cache_websocket_data: PackedByteArray
-var _request_worker_prefab: PackedScene = preload("res://Feagi-Godot-Interface/Core/Networking/Workers/SingleCallWorker.tscn")
+var _API_request_worker_prefab: PackedScene = preload("res://Feagi-Godot-Interface/Core/Networking/API/APIRequestWorker.tscn")
 
 ## Used to init the network interface
 ## Required before usage
@@ -129,19 +129,9 @@ func init_network(worker_parent_root: Node) -> void:
 	_socket.inbound_buffer_size = 1000000
 	current_websocket_state = WebSocketPeer.STATE_CONNECTING
 
-func single_FEAGI_request(full_request_address: StringName, call_method: HTTPClient.Method, function_to_respond_to_FEAGI: Callable, 
-	additional_data: Variant = null, data_to_pass_through: Variant = null):
-
-	var worker: RequestWorker = _grab_worker()
-	worker.single_call(full_request_address, call_method, function_to_respond_to_FEAGI, additional_data, data_to_pass_through)
-
-
-func repeating_FEAGI_request(full_request_address: StringName, method: HTTPClient.Method, follow_up_function: Callable,
-	mid_poll_call: Callable, polling_check: PollingMethodInterface, additional_data_to_send: Variant = null, 
-	data_to_buffer: Variant = null, polling_gap_seconds: float = 0.5, kill_on_reset = false) -> void:
-
-	var worker: RequestWorker = _grab_worker()
-	worker.repeat_polling_call(full_request_address, method, follow_up_function, mid_poll_call, polling_check, additional_data_to_send, data_to_buffer, polling_gap_seconds, kill_on_reset)
+func FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
+	var worker: APIRequestWorker = _grab_worker()
+	worker.setup_and_run_from_definition(request_definition)
 
 func send_websocket_ping() -> void:
 	websocket_send("ping")
@@ -153,21 +143,19 @@ func websocket_send(data: Variant) -> void:
 		return
 	_socket.send((data.to_ascii_buffer()).compress(1))
 
-
-
-## Grabs either an available [RequestWorker] (or if none are available, spawns one first)
-func _grab_worker() -> RequestWorker:
-	var worker: RequestWorker
-	if request_workers_available.size() > 0:
-		worker = request_workers_available.pop_back()
+## Grabs either an available [APIRequestWorker] (or if none are available, spawns one first)
+func _grab_worker() -> APIRequestWorker:
+	var worker: APIRequestWorker
+	if API_request_workers_available.size() > 0:
+		worker = API_request_workers_available.pop_back()
 	else:
 		worker = _spawn_worker()
 	return worker
 	
 
-## Spawns a RequestWorker
-func _spawn_worker() -> RequestWorker:
-	var worker: RequestWorker = _request_worker_prefab.instantiate()
+## Spawns a APIRequestWorker
+func _spawn_worker() -> APIRequestWorker:
+	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
 	worker.initialization(self, DEF_HEADERSTOUSE, _request_worker_parent)
 	return worker
 
@@ -175,7 +163,7 @@ func _spawn_worker() -> RequestWorker:
 ## Spawns initial RequestWorkers
 func _spawn_initial_workers() -> void:
 	for i in num_workers_to_keep_available:
-		request_workers_available.append(_spawn_worker())
+		API_request_workers_available.append(_spawn_worker())
 
 
 ## Prints connection information to log

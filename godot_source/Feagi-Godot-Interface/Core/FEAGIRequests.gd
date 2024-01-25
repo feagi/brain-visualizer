@@ -271,6 +271,12 @@ func poll_genome_availability_launch() -> void:
 func poll_genome_availability_monitoring() -> void:
 	_feagi_interface.calls.GET_healthCheck_POLL_MONITORING()
 
+func request_import_amalgamation(circuit_position: Vector3i, amalgamation_ID: StringName) -> void:
+	_feagi_interface.calls.POST_GE_amalgamationDestination(circuit_position, amalgamation_ID, null)
+
+func request_cancel_amalgamation(amalgamation_ID: StringName) -> void:
+	_feagi_interface.calls.DELETE_GE_amalgamationCancelation(amalgamation_ID)
+
 ## Sends a 'ping' to FEAGI for it to respond and for us to determine latency.
 func _on_ping_timer_end() -> void:
 	_feagi_interface.net.send_websocket_ping()
