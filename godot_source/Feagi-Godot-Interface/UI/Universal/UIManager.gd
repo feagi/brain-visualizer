@@ -93,13 +93,10 @@ func switch_to_brain_visualizer_3D():
 func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	_notification_system_ref.add_notification(text, notification_type, time)
 
+#TODO TEMP
 ## Tell BV to create a new singular cortical area preview
-func start_new_cortical_area_preview(coordinates_changed: Signal, dimensions_changed: Signal, close_signals: Array[Signal]) -> CorticalBoxPreview:
-	var preview: CorticalBoxPreview = $Brain_Visualizer.generate_prism_preview()
-	coordinates_changed.connect(preview.update_position)
-	dimensions_changed.connect(preview.update_size)
-	for close_signal in close_signals:
-		close_signal.connect(preview.delete_preview)
+func spawn_BV_single_preview(preview_dimensions: Vector3, preview_position: Vector3, color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> BrainMonitorSinglePreview:
+	var preview: BrainMonitorSinglePreview = $Brain_Visualizer.generate_single_preview(preview_dimensions, preview_position, color, is_rendering)
 	return preview
 	
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
