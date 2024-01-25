@@ -204,6 +204,7 @@ func force_close_window(window_name: StringName) -> void:
 		loaded_windows.erase(window_name)
 
 func bring_window_to_top(window: Control) -> void:
+		print("UI: WINDOW: Changing window order...")
 		move_child(window, -1)
 
 func force_close_all_windows() -> void:

@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowMorphologyManager
 
 var _UI_morphology_overviews: UIMorphologyOverviews

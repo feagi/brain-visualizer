@@ -30,7 +30,5 @@ layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
 title = "View Cortical Areas"
-automatic_setup_hiding_closing = false
-automatic_setup_window_closing_for_window_manager_name = &"view_cortical"
 
 [connection signal="pressed" from="VBoxContainer/Button" to="." method="_press_add_cortical_area"]
