@@ -38,7 +38,7 @@ layout_mode = 2
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("3_f73r0")
 texture_size = Vector2i(48, 48)
-button_text = &"Brain Areas"
+button_text = &"Cortical Areas"
 gap_between_text_and_texture = 5
 
 [node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
