@@ -41,19 +41,9 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
 	morphology_manager.setup(morphology_to_preload)
 	
-
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
-	if "edit_mappings" in loaded_windows.keys():
-		force_close_window("edit_mappings")
-	
-	print("user requests edit mappings window")
-	var edit_mappings: WindowEditMappingDefinition = _prefab_edit_mappings.instantiate()
-	add_child(edit_mappings)
-	edit_mappings.load_from_memory(_window_memory_states["edit_mappings"])
-	edit_mappings.closed_window.connect(force_close_window)
+	var edit_mappings: WindowEditMappingDefinition = _default_spawn_window(_prefab_edit_mappings, "edit_mappings") as WindowEditMappingDefinition
 	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)
-	loaded_windows["edit_mappings"] = edit_mappings
-	bring_window_to_top(edit_mappings)
 
 func spawn_create_cortical() -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_prefab_create_cortical, "create_cortical") as WindowCreateCorticalArea
@@ -63,6 +53,7 @@ func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_prefab_clone_cortical, "clone_cortical") as WindowCloneCorticalArea
 	clone_cortical.setup(cloning_from)
 
+#TODO DELETE
 func spawn_import_circuit() -> void:
 	if "import_circuit" in loaded_windows.keys():
 		force_close_window("import_circuit")
@@ -76,39 +67,16 @@ func spawn_import_circuit() -> void:
 	bring_window_to_top(import_circuit)
 
 func spawn_quick_connect(initial_source_area: BaseCorticalArea = null) -> void:
-	if "quick_connect" in loaded_windows.keys():
-		force_close_window("quick_connect")
-	
-	print("user requests create quick connect window")
-	var quick_connect: WindowQuickConnect = _prefab_quick_connect.instantiate()
-	add_child(quick_connect)
-	quick_connect.load_from_memory(_window_memory_states["quick_connect"])
-	quick_connect.closed_window.connect(force_close_window)
-	loaded_windows["quick_connect"] = quick_connect
+	var quick_connect: WindowQuickConnect = _default_spawn_window(_prefab_quick_connect, "quick_connect") as WindowQuickConnect
 	quick_connect.setup(initial_source_area)
-	bring_window_to_top(quick_connect)
-
 
 func spawn_tutorial() -> void:
-	if "tutorial" in loaded_windows.keys():
-		force_close_window("tutorial")
-	
-	var tutorial: TutorialDisplay = _prefab_tutorial.instantiate()
-	add_child(tutorial)
-	tutorial.load_from_memory(_window_memory_states["tutorial"])
-	tutorial.closed_window.connect(force_close_window)
-	loaded_windows["tutorial"] = tutorial
-	bring_window_to_top(tutorial)
+	var tutorial: TutorialDisplay = _default_spawn_window(_prefab_tutorial, "tutorial") as TutorialDisplay
+	tutorial.setup()
 
 func spawn_cortical_view() -> void:
-	if "view_cortical" in loaded_windows.keys():
-		force_close_window("view_cortical")	
-	var view_cortical: WindowViewCorticalArea = _prefab_cortical_view.instantiate()
-	add_child(view_cortical)
-	view_cortical.load_from_memory(_window_memory_states["view_cortical"])
-	view_cortical.closed_window.connect(force_close_window)
-	loaded_windows["view_cortical"] = view_cortical
-	bring_window_to_top(view_cortical)
+	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_prefab_cortical_view, "view_cortical") as WindowViewCorticalArea
+	view_cortical.setup()
 
 func spawn_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
 	var popup: WindowPopupInfo = _prefab_popup_info.instantiate()

@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowQuickConnect
 
 enum POSSIBLE_STATES {
@@ -40,7 +40,6 @@ var _destination: BaseCorticalArea = null
 var _selected_morphology: Morphology = null
 
 func _ready() -> void:
-	super()
 	_step1_panel = $VBoxContainer/step1
 	_step2_panel = $VBoxContainer/step2
 	_step3_panel = $VBoxContainer/step3
@@ -64,6 +63,7 @@ func _ready() -> void:
 	current_state = POSSIBLE_STATES.SOURCE
 
 func setup(cortical_source_if_picked: BaseCorticalArea) -> void:
+	_setup_base_window("quick_connect")
 	if cortical_source_if_picked != null:
 		_set_source(cortical_source_if_picked)
 
@@ -82,8 +82,7 @@ func establish_connection_button():
 	# Make sure the cache has the current mapping state of the cortical to source area to append to
 	FeagiRequests.request_add_default_mapping_between_corticals(_source, _destination, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
-	
-	VisConfig.UI_manager.window_manager.force_close_window("quick_connect")
+	close_window()
 
 # State Machine
 func _update_current_state(new_state: POSSIBLE_STATES) -> void:

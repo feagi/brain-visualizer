@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
@@ -10,12 +10,12 @@ var _general_mapping_details: GeneralMappingEditor
 var _spawn_default_mapping_if_applicable_on_spawn
 
 func _ready() -> void:
-	super()
 	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
 	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
 	_general_mapping_details = $BoxContainer/Mapping_Details
 
 func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable = false):
+	_setup_base_window("edit_mappings")
 	_spawn_default_mapping_if_applicable_on_spawn = spawn_default_mapping_if_applicable
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
@@ -67,7 +67,7 @@ func _request_apply_mappings_to_FEAGI():
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
 	var mapping_properties = _general_mapping_details.generate_mapping_propertys()
 	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, mapping_properties)
-	close_window("edit_mappings")
+	close_window()
 
 ## Returns true only if the source and destination areas selected are valid
 func _are_cortical_areas_valid() -> bool:

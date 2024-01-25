@@ -14,6 +14,7 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
+window_spawn_location = Vector2i(900, 150)
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 2
@@ -100,8 +101,6 @@ offset_right = 1152.0
 offset_bottom = 0.0
 grow_horizontal = 2
 title = "Edit Mappings"
-automatic_setup_hiding_closing = false
-automatic_setup_window_closing_for_window_manager_name = &"edit_mappings"
 
 [connection signal="resized" from="BoxContainer/Mapping_Details" to="BoxContainer" method="recalculate_size"]
 [connection signal="visibility_changed" from="BoxContainer/Mapping_Details" to="BoxContainer" method="recalculate_size"]
