@@ -97,7 +97,13 @@ func _brain_visualizer_resetting() -> void:
 func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, data: Variant = null) -> void:
 
 	if _is_worker_busy(requestAddress):
-		push_error("Skipping_call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
+		match _processing_type:
+			CALL_PROCESS_TYPE.SINGLE:
+				push_error("Skipping Single call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
+				_query_for_destruction()
+			CALL_PROCESS_TYPE.POLLING:
+				push_error("Skipping Polling call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
+				return
 
 	match(method):
 		HTTPClient.METHOD_GET:
