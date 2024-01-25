@@ -21,6 +21,7 @@ func _ready() -> void:
 	_preview_holder = GenericSinglePreviewHandler.new()
 
 func setup(cloning_cortical_area: BaseCorticalArea) -> void:
+	_setup_base_window("clone_cortical")
 	_cloning_cortical_area = cloning_cortical_area
 	_field_cortical_name.text = cloning_cortical_area.name + NAME_APPEND
 	_field_3d_location.current_vector = cloning_cortical_area.coordinates_3D + OFFSET_3D

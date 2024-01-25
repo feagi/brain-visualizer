@@ -87,17 +87,8 @@ func spawn_create_cortical() -> void:
 	bring_window_to_top(create_cortical)
 
 func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
-	if "clone_cortical" in loaded_windows.keys():
-		force_close_window("clone_cortical")
-	
-	print("user requests clone cortical window")
-	var clone_cortical: WindowCloneCorticalArea = _prefab_clone_cortical.instantiate()
-	add_child(clone_cortical)
-	clone_cortical.load_from_memory(_window_memory_states["clone_cortical"])
-	clone_cortical.closed_window.connect(force_close_window)
+	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_prefab_clone_cortical, "clone_cortical") as WindowCloneCorticalArea
 	clone_cortical.setup(cloning_from)
-	loaded_windows["clone_cortical"] = clone_cortical
-	bring_window_to_top(clone_cortical)
 
 func spawn_import_circuit() -> void:
 	if "import_circuit" in loaded_windows.keys():
