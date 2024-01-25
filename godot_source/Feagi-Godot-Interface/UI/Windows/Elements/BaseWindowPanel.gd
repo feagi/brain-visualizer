@@ -18,20 +18,6 @@ var _child: Container
 var _window_name: StringName # Internal name
 var _titlebar: TitleBar
 
-## Call to initialize window
-func setup_window(window_name: StringName) -> void:
-	_window_name = window_name
-	#NOTE: Make SURE that the window child is the first child, and the [TitleBar] is the second!
-	_child = get_child(0)
-	_titlebar = get_child(1)
-	_child.resized.connect(_update_sizes_given_child_size_update)
-	_titlebar.button_ref.pressed.connect(close_window)
-	_titlebar.setup_from_window(self)
-	
-	if additionally_bind_to_UI_scale_change:
-		VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(0)) # ignore the argument
-	_update_sizes_given_child_size_update()
-
 func bring_window_to_top():
 	VisConfig.UI_manager.window_manager.bring_window_to_top(self)
 
@@ -54,7 +40,21 @@ func export_default_window_details() -> Dictionary:
 ## Primarily used by Window Manager to load position (plus other details)
 func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
+
+## Call to initialize window
+func _setup_base_window(window_name: StringName) -> void:
+	_window_name = window_name
+	#NOTE: Make SURE that the window child is the first child, and the [TitleBar] is the second!
+	_child = get_child(0)
+	_titlebar = get_child(1)
+	_child.resized.connect(_update_sizes_given_child_size_update)
+	_titlebar.button_ref.pressed.connect(close_window)
+	_titlebar.setup_from_window(self)
 	
+	if additionally_bind_to_UI_scale_change:
+		VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(0)) # ignore the argument
+	_update_sizes_given_child_size_update()
+
 func _bring_to_top_if_click(event: InputEvent):
 	if !(event is InputEventMouseButton):
 		return

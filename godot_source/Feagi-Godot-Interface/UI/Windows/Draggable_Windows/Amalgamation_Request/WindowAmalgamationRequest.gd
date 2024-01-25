@@ -17,13 +17,14 @@ func _ready() -> void:
 	_preview_holder = GenericSinglePreviewHandler.new()
 	
 
-func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+func setup_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	_amalgamation_ID = amalgamation_ID
 	_circuit_size = circuit_size
 	_field_title.text = genome_title
 	_preview_holder.start_BM_preview(_circuit_size, _field_3d_location.current_vector)
 	var closed_signals: Array[Signal] = [close_window_requested]
 	_preview_holder.connect_BM_preview(_field_3d_location.user_updated_vector, null_dimchange_signal, closed_signals)
+	_setup_base_window("import_amalgamation")
 	
 func _cancel_pressed():
 	close_window()

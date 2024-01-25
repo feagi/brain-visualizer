@@ -8,7 +8,7 @@ func _ready() -> void:
 	_UI_morphology_overviews.request_close.connect(VisConfig.UI_manager.window_manager.force_close_window.bind("morphology_manager"))
 
 func setup_window(window_name: StringName, morphology: Morphology = null) -> void:
-	super(window_name)
+	_setup_base_window(window_name)
 	if morphology != null:
 		load_morphology(morphology)
 

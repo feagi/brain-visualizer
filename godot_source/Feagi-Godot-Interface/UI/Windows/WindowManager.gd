@@ -22,7 +22,6 @@ var loaded_windows: Dictionary
 var _window_memory_states: Dictionary = {
 	"left_bar": {"position": Vector2(50,300)},
 	"create_morphology": {"position": Vector2(400,300)},
-	"morphology_manager": {"position": Vector2(900,500)},
 	"edit_mappings": {"position": Vector2(900,150)},
 	"create_cortical": {"position": Vector2(400,550)},
 	"import_circuit": {"position": Vector2(400,850)},
