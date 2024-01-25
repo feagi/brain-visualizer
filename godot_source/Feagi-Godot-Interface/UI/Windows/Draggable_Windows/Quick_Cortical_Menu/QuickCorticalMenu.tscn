@@ -94,9 +94,8 @@ layout_mode = 2
 layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
-title = "CORTICAL_NAME"
-automatic_setup_hiding_closing = false
 show_close_button = false
+title = "CORTICAL_NAME"
 
 [connection signal="pressed" from="HBoxContainer/Details" to="." method="_button_details"]
 [connection signal="pressed" from="HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
