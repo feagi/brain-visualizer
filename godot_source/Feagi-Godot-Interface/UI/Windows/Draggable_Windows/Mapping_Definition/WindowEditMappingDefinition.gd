@@ -38,6 +38,7 @@ func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseC
 	if !((cortical_source == null) and (cortical_destination == null)):
 		_selected_cortical_areas_changed(cortical_source, cortical_destination)
 	
+	$BoxContainer.size = Vector2(0,0)
 
 func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: BaseCorticalArea) -> void:
 	if !_are_cortical_areas_valid():
@@ -52,6 +53,7 @@ func _retrieved_feagi_mapping_data(mappings: MappingProperties) -> void:
 	if _spawn_default_mapping_if_applicable_on_spawn:
 		_general_mapping_details.add_default_mapping_if_applicable()
 		_spawn_default_mapping_if_applicable_on_spawn = false
+	$BoxContainer.size = Vector2(0,0)
 
 ## Request FEAGI to give us the latest information on the user picked mapping (only if both the source and destination are valid)
 func _request_mappings_from_feagi() -> void:
