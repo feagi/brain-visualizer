@@ -28,6 +28,7 @@ func setup_window(window_name: StringName) -> void:
 	_titlebar = get_child(1)
 	_child.resized.connect(_update_sizes_given_child_size_update)
 	_titlebar.button_ref.pressed.connect(close_window)
+	_titlebar.setup_from_window(self)
 	
 	if additionally_bind_to_UI_scale_change:
 		VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(0)) # ignore the argument

@@ -14,11 +14,6 @@ offset_bottom = 40.0
 size_flags_horizontal = 0
 theme = ExtResource("1_iasjt")
 script = ExtResource("1_dpkpa")
-mouse_normal_click_button = null
-show_close_button = null
-screen_edge_buffer = null
-enable_close_button = null
-title = null
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2

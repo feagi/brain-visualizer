@@ -35,6 +35,7 @@ var _viewport: Viewport
 
 func _ready() -> void:
 	_viewport = get_viewport()
+	VisConfig.UI_manager.screen_size_changed.connect(set_in_bounds_with_window_size_change.unbind(1))
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
@@ -88,3 +89,8 @@ func _process_mouse_drag_event(mouse_event: InputEventMouseMotion) -> void:
 func _close_window_from_close_button() -> void:
 	close_pressed.emit()
 	_window_parent.close_window()
+
+func set_in_bounds_with_window_size_change() -> void:
+	if !is_titlebar_within_view_bounds():
+		_window_parent.position = _window_parent.window_spawn_location
+	
