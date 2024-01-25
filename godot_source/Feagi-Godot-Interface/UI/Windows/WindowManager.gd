@@ -75,16 +75,8 @@ func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorti
 	bring_window_to_top(edit_mappings)
 
 func spawn_create_cortical() -> void:
-	if "create_cortical" in loaded_windows.keys():
-		force_close_window("create_cortical")
-	
-	print("user requests create cortical window")
-	var create_cortical: WindowCreateCorticalArea = _prefab_create_cortical.instantiate()
-	add_child(create_cortical)
-	create_cortical.load_from_memory(_window_memory_states["create_cortical"])
-	create_cortical.closed_window.connect(force_close_window)
-	loaded_windows["create_cortical"] = create_cortical
-	bring_window_to_top(create_cortical)
+	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_prefab_create_cortical, "create_cortical") as WindowCreateCorticalArea
+	create_cortical.setup()
 
 func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_prefab_clone_cortical, "clone_cortical") as WindowCloneCorticalArea

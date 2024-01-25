@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowCreateCorticalArea
 
 signal dimensions_updated(dimensions: Vector3i)
@@ -15,8 +15,10 @@ var _holder_channel: HBoxContainer
 var _main_container: ContainerShrinker
 var _preview_handler = GenericSinglePreviewHandler
 
+func setup() -> void:
+	_setup_base_window("create_cortical")
+
 func _ready() -> void:
-	super._ready()
 	_main_container = $Container
 	var _create_button: TextButton_Element = $Container/Create_button
 	_field_cortical_name = $Container/HBoxContainer/Cortical_Name
@@ -36,7 +38,7 @@ func _ready() -> void:
 	_field_channel.int_confirmed.connect(_channel_changed)
 	_main_container.recalculate_size()
 	
-	var preview_close_signals: Array[Signal] = [closed_window_no_name]
+	var preview_close_signals: Array[Signal] = [close_window_requested]
 	_preview_handler = GenericSinglePreviewHandler.new()
 	_preview_handler.start_BM_preview(_field_dimensions.current_vector, _field_3D_coordinates.current_vector)
 	_preview_handler.connect_BM_preview(coordinates_updated, dimensions_updated, preview_close_signals)
@@ -152,5 +154,5 @@ func _create_pressed():
 			FeagiRequests.add_memory_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
 				false)
 	
-	close_window("create_cortical")
+	close_window()
 
