@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowCreateMorphology
 
 
@@ -12,7 +12,6 @@ var _vectors: ElementMorphologyVectorsView
 var _patterns: ElementMorphologyPatternView
 
 func _ready():
-	super._ready()
 	_morphology_name = $Container/Name/Name
 	_radio_selector = $Container/Type.button_group
 	_button_create_morphology = $Container/CreateMorphologyButton
@@ -31,7 +30,10 @@ func _ready():
 	if !get_parent() is Window:
 		# we are not testing this individual scene
 		FeagiRequests.refresh_morphology_list()
-	
+
+func setup() -> void:
+	_setup_base_window("create_morphology")
+
 func _on_type_button_pressed(_button_index: int, morphology_type: StringName) -> void:
 	match morphology_type:
 		&"Composite":
@@ -89,4 +91,4 @@ func _on_create_morphology_pressed():
 		&"Patterns":
 			FeagiRequests.request_create_morphology(_patterns.get_as_pattern_morphology(_morphology_name.text))
 	
-	close_window("create_morphology")
+	close_window()

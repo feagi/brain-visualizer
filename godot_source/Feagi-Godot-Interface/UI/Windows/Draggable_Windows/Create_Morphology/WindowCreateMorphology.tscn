@@ -23,6 +23,7 @@ offset_top = 41.0
 offset_bottom = 41.0
 theme = ExtResource("1_r8gt6")
 script = ExtResource("1_w1bco")
+window_spawn_location = Vector2i(400, 300)
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
@@ -115,8 +116,6 @@ offset_top = -40.0
 offset_right = 184.0
 offset_bottom = 0.0
 title = "Create Morphology"
-automatic_setup_hiding_closing = false
-automatic_setup_window_closing_for_window_manager_name = &"create_morphology"
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
 [connection signal="resized" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]

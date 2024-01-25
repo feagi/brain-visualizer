@@ -21,14 +21,11 @@ var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
 	"left_bar": {"position": Vector2(50,300)},
-	"create_morphology": {"position": Vector2(400,300)},
 	"edit_mappings": {"position": Vector2(900,150)},
-	"create_cortical": {"position": Vector2(400,550)},
 	"import_circuit": {"position": Vector2(400,850)},
 	"quick_connect": {"position": Vector2(500,100)},
 	"tutorial": {"position": Vector2(900,500)},
 	"view_cortical": {"position": Vector2(50,100)},
-	"clone_cortical": {"position": Vector2(400,550)},
 	"import_amalgamation": {"position": Vector2(500,550)},
 }
 
@@ -46,19 +43,12 @@ func spawn_left_panel(cortical_area: BaseCorticalArea) -> void:
 	bring_window_to_top(left_panel)
 
 func spawn_create_morphology() -> void:
-	if "create_morphology" in loaded_windows.keys():
-		force_close_window("create_morphology")
-	
-	var create_morphology: WindowCreateMorphology = _prefab_create_morphology.instantiate()
-	add_child(create_morphology)
-	create_morphology.load_from_memory(_window_memory_states["create_morphology"])
-	create_morphology.closed_window.connect(force_close_window)
-	loaded_windows["create_morphology"] = create_morphology
-	bring_window_to_top(create_morphology)
+	var create_morphology: WindowCreateMorphology = _default_spawn_window(_prefab_create_morphology, "create_morphology") as WindowCreateMorphology
+	create_morphology.setup()
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
-	morphology_manager.setup("morphology_manager", morphology_to_preload)
+	morphology_manager.setup(morphology_to_preload)
 	
 
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
@@ -140,15 +130,8 @@ func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
 	quick_cortical_menu.setup(cortical_area)
 
 func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
-	if "delete_confirmation" in loaded_windows.keys():
-		loaded_windows["delete_confirmation"].queue_free()
-	
-	var delete_confirmation: DeleteConfirmation = _prefab_confirm_deletion.instantiate()
-	add_child(delete_confirmation)
-	loaded_windows["delete_confirmation"] = delete_confirmation
+	var delete_confirmation: DeleteConfirmation = _default_spawn_window(_prefab_confirm_deletion, "delete_confirmation") as DeleteConfirmation
 	delete_confirmation.setup(cortical_area)
-	delete_confirmation.closed_window.connect(force_close_window)
-	bring_window_to_top(delete_confirmation)
 	
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_prefab_import_amalgamation, "import_amalgamation") as WindowAmalgamationRequest
