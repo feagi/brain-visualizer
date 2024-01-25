@@ -7,6 +7,8 @@ class_name PatternValInput
 # max_length
 # TODO: Bounds - limit number length
 
+const ACCEPTABLE_CHARACTERS_WHILE_TYPING: PackedStringArray = ["", "-"]
+
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
 ## Only emits if user changes the text THEN focuses off the textbox
@@ -60,6 +62,8 @@ func _focus_lost() -> void:
 		_user_attempt_change_value(text)
 
 func _user_attempt_change_value(input_text: String) -> void:
+	if input_text in ACCEPTABLE_CHARACTERS_WHILE_TYPING:
+		return
 	if !PatternVal.can_be_PatternVal(input_text):
 		text = _previous_patternval.as_StringName
 		return

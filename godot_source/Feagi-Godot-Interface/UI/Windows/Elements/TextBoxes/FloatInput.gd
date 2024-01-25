@@ -5,6 +5,8 @@ class_name FloatInput
 # useful properties inherited
 # editable
 
+const ACCEPTABLE_CHARACTERS_WHILE_TYPING: PackedStringArray = ["", "-"]
+
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
 ## Only emits if user changes the text THEN focuses off the textbox
@@ -55,7 +57,7 @@ func _focus_lost() -> void:
 		_user_attempt_confirm_value(text)
 
 func _user_attempt_change_value(input_text: String) -> void:
-	if text == "":
+	if input_text in ACCEPTABLE_CHARACTERS_WHILE_TYPING:
 		return
 	if !input_text.is_valid_float():
 		_set_value_UI(_previous_float)

@@ -45,6 +45,9 @@ static func morphology_array_to_string_array_of_names(morphologies: Array[Morpho
 		output.append(morphology.name)
 	return output
 
+static func morphology_type_to_string(morphology_type: MORPHOLOGY_TYPE) -> StringName:
+	return str(MORPHOLOGY_TYPE.keys()[int(morphology_type)]).to_lower()
+
 ## Called by feagi to update usage
 func feagi_update_usage(feagi_raw_input: Array[Array]) -> void:
 	_usage_by_cortical_area = []

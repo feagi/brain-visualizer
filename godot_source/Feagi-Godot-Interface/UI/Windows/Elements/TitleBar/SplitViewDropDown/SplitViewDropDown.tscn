@@ -20,13 +20,12 @@
 [ext_resource type="Texture2D" uid="uid://chqiu1wh70e5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/vertical_split_H.png" id="17_2knfj"]
 [ext_resource type="Texture2D" uid="uid://c02qik2erhqur" path="res://Feagi-Godot-Interface/UI/Resources/Icons/vertical_split_D.png" id="18_n0ta2"]
 
-[node name="SplitViewDropDown" type="Container"]
-custom_minimum_size = Vector2(70, 70)
+[node name="SplitViewDropDown" type="BoxContainer"]
 script = ExtResource("1_henmy")
 
 [node name="ToggleImageDropDown" parent="." instance=ExtResource("1_4pks6")]
 layout_mode = 2
-dimensions = Vector2i(70, 70)
+dimensions = Vector2i(48, 48)
 initial_index = 1
 
 [node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]

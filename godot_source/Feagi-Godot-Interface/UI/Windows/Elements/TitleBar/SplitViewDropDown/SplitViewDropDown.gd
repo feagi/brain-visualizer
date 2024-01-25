@@ -1,4 +1,4 @@
-extends Container
+extends BoxContainer
 class_name SplitViewDropDown
 
 signal requesting_view_change(view: TempSplit.STATES)

@@ -15,6 +15,7 @@ var _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI
 var _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
 var _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
 var _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
+var _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 
 var loaded_windows: Dictionary
 
@@ -29,6 +30,7 @@ var _window_memory_states: Dictionary = {
 	"tutorial": {"position": Vector2(900,500)},
 	"view_cortical": {"position": Vector2(50,100)},
 	"clone_cortical": {"position": Vector2(400,550)},
+	"import_amalgamation": {"position": Vector2(500,550)},
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -181,8 +183,19 @@ func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
 	add_child(delete_confirmation)
 	loaded_windows["delete_confirmation"] = delete_confirmation
 	delete_confirmation.setup(cortical_area)
+	delete_confirmation.closed_window.connect(force_close_window)
 	bring_window_to_top(delete_confirmation)
 	
+func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+	if "import_amalgamation" in loaded_windows.keys():
+		loaded_windows["import_amalgamation"].queue_free()
+	
+	var import_amalgamation: WindowAmalgamationRequest = _prefab_import_amalgamation.instantiate()
+	add_child(import_amalgamation)
+	loaded_windows["import_amalgamation"] = import_amalgamation
+	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size)
+	import_amalgamation.closed_window.connect(force_close_window)
+	bring_window_to_top(import_amalgamation)
 	
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

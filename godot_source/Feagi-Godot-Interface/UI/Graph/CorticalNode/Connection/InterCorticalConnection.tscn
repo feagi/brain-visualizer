@@ -10,6 +10,7 @@ shader_parameter/colorB = Vector4(1, 1, 1, 1)
 shader_parameter/numDivisions = 100.0
 
 [node name="InterCorticalConnection" type="GraphElement"]
+selectable = false
 script = ExtResource("1_esnl0")
 
 [node name="Line2D" type="Line2D" parent="."]
