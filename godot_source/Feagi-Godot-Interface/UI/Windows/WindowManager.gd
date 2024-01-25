@@ -152,7 +152,7 @@ func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_c
 	new_window.close_window_requested.connect(force_close_window)
 	# if we have no memopry of the window, load the defaults from the window itself
 	if window_name not in _window_memory_states:
-		_window_memory_states[_window_memory_states] = new_window.export_default_window_details()
+		_window_memory_states[window_name] = new_window.export_default_window_details()
 	else:
 		new_window.import_window_details(_window_memory_states[window_name])
 	bring_window_to_top(new_window)
