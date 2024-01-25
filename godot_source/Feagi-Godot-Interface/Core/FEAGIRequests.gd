@@ -279,7 +279,8 @@ func request_cancel_amalgamation(amalgamation_ID: StringName) -> void:
 
 ## Sends a 'ping' to FEAGI for it to respond and for us to determine latency.
 func _on_ping_timer_end() -> void:
-	_feagi_interface.net.send_websocket_ping()
+	pass
+	#_feagi_interface.net.send_websocket_ping()
 
 func _on_feagi_ping_back() -> void:
 	var delta_time: int = (Time.get_ticks_msec() - _last_ping_time) /  2
