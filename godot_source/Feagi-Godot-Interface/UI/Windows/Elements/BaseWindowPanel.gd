@@ -6,7 +6,6 @@ const MOUSE_BUTTONS_THAT_BRING_WINDOW_TO_TOP: Array = [MOUSE_BUTTON_LEFT, MOUSE_
 
 signal close_window_requested(self_window_name) ## Connected to WindowManager, which closes this window
 
-
 @export var left_pixel_gap_default: int = 8
 @export var right_pixel_gap_default: int = 8
 @export var top_pixel_gap_default: int = 8
@@ -14,7 +13,6 @@ signal close_window_requested(self_window_name) ## Connected to WindowManager, w
 @export var window_spawn_location: Vector2i = Vector2i(100,100)
 @export var should_scale_with_UI: bool = true
 @export var additionally_bind_to_UI_scale_change: bool = false
-
 
 var _child: Container
 var _window_name: StringName # Internal name
@@ -66,7 +64,6 @@ func _bring_to_top_if_click(event: InputEvent):
 	if !mouse_event.pressed:
 		return
 	bring_window_to_top()
-
 
 func _update_sizes_given_child_size_update() -> void:
 	# Apply scale

@@ -57,6 +57,7 @@ func load_morphology(morphology: Morphology, override_scroll_selection: bool = f
 	_UI_morphology_description.load_morphology(morphology)
 	if override_scroll_selection:
 		_morphology_scroll.select_morphology(morphology)
+	size = Vector2i(0,0) # Force shrink to minimum possible size
 
 func _user_requested_update_morphology() -> void:
 	var morphology_to_update: Morphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
