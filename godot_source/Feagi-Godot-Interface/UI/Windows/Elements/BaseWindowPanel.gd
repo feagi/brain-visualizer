@@ -81,6 +81,8 @@ func _update_sizes_given_child_size_update() -> void:
 		bottom_pixel_gap *= VisConfig.UI_manager.UI_scale
 	
 	var new_size: Vector2 = _child.size + Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
-	size = new_size # done seperately due to godot delay in updating size
 	_titlebar.size.x = new_size.x
 	_child.position =  Vector2i(left_pixel_gap, top_pixel_gap)
+	custom_minimum_size = new_size
+	size = Vector2(0,0)
+	

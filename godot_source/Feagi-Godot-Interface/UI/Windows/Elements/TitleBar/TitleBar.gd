@@ -16,9 +16,9 @@ signal close_pressed()
 
 ## if disabled, will disable (fade) the close button to prevent it from being clicked
 @export var enable_close_button: bool = true:
-	get: return $HBoxContainer/Close_Button.enabled
+	get: return $HBoxContainer/Close_Button.visible
 	set(v):
-		$HBoxContainer/Close_Button.enabled = v
+		$HBoxContainer/Close_Button.visible = v
 
 @export var title: String:
 	get: return $HBoxContainer/Title_Text.text
