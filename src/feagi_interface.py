@@ -165,9 +165,9 @@ def register_with_feagi(feagi_auth_url, feagi_settings, agent_settings, agent_ca
     Controller                      <--     FEAGI(IPU/OPU socket info)
     Controller (Capabilities)       -->     FEAGI
     """
-    network_endpoint = '/v1/feagi/feagi/network'
-    stimulation_period_endpoint = '/v1/feagi/feagi/burst_engine/stimulation_period'
-    burst_counter_endpoint = '/v1/feagi/feagi/burst_engine/burst_counter'
+    network_endpoint = '/v1/network/network'
+    stimulation_period_endpoint = '/v1/burst_engine/stimulation_period'
+    burst_counter_endpoint = '/v1/burst_engine/burst_counter'
     registration_endpoint = '/v1/agent/register'
 
     registration_complete = False

@@ -182,6 +182,8 @@ func GET_healthCheck_POLL_genome_availability(response_code: int, response_body:
 		statuses["genome_validity"],
 		statuses["brain_readiness"]
 	)
+	
+	
 
 func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	if response_code != 200: 
@@ -193,6 +195,15 @@ func GET_healthCheck_POLL_health(response_code: int, response_body: PackedByteAr
 		statuses["genome_validity"],
 		statuses["brain_readiness"]
 	)
+	# TEMP amalgamation stuff
+	if "amalgamation_pending" in statuses.keys():
+		
+		if VisConfig.TEMP_last_amalgamation_ID == statuses["amalgamation_pending"]["amalgamation_id"]:
+			return
+		VisConfig.TEMP_last_amalgamation_ID = statuses["amalgamation_pending"]["amalgamation_id"]
+		
+		# We have an amalgamation pending
+		VisConfig.UI_manager.window_manager.spawn_amalgamation_window(statuses["amalgamation_pending"]["amalgamation_id"], statuses["amalgamation_pending"]["genome_title"], FEAGIUtils.array_to_vector3i(statuses["amalgamation_pending"]["circuit_size"]))
 
 func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	if _response_code == 422:
@@ -279,6 +290,9 @@ func POST_MON_neuron_synapticPotential(response_code: int, _response_body: Packe
 		return
 	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
 
+func POST_GE_amalgamationDestination(response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
+	print("Feagi recieved amalgamation destination response!")
+	pass
 
 func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
 	if _response_code == 422:
@@ -323,6 +337,11 @@ func DELETE_GE_corticalArea(_response_code: int, _response_body: PackedByteArray
 func DELETE_GE_morphology(_response_code: int, _response_body: PackedByteArray, deleted_morphology_name: StringName) -> void:
 	print("FEAGI confirmed deletion of morphology " + deleted_morphology_name)
 	FeagiCache.morphology_cache.remove_morphology(deleted_morphology_name)
+
+func DELETE_GE_amalgamationCancelation(_response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
+	print("FEAGI deleted amalgamation request")
+	
+
 
 func _body_to_untyped_array(response_body: PackedByteArray) -> Array:
 	var data = response_body.get_string_from_utf8()

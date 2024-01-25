@@ -13,6 +13,7 @@ var _dropdown_cortical_dropdown: TemplateDropDown
 var _holder_dropdown: HBoxContainer
 var _holder_channel: HBoxContainer
 var _main_container: ContainerShrinker
+var _preview_handler = GenericSinglePreviewHandler
 
 func _ready() -> void:
 	super._ready()
@@ -36,7 +37,10 @@ func _ready() -> void:
 	_main_container.recalculate_size()
 	
 	var preview_close_signals: Array[Signal] = [closed_window_no_name]
-	VisConfig.UI_manager.start_new_cortical_area_preview(coordinates_updated, dimensions_updated, preview_close_signals)
+	_preview_handler = GenericSinglePreviewHandler.new()
+	_preview_handler.start_BM_preview(_field_dimensions.current_vector, _field_3D_coordinates.current_vector)
+	_preview_handler.connect_BM_preview(coordinates_updated, dimensions_updated, preview_close_signals)
+	
 
 
 func get_selected_type() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
