@@ -4,7 +4,8 @@ class_name BaseWindowPanel
 
 const MOUSE_BUTTONS_THAT_BRING_WINDOW_TO_TOP: Array = [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]
 
-signal width_updated_for_title_bar(width: int)
+signal close_window_requested(self_window_name) ## Connected to WindowManager, which closes this window
+
 
 @export var left_pixel_gap_default: int = 8
 @export var right_pixel_gap_default: int = 8
@@ -36,12 +37,18 @@ func bring_window_to_top():
 
 ## Tells the window manager to close this window
 func close_window():
-	VisConfig.UI_manager.window_manager.force_close_window(_window_name)
+	close_window_requested.emit(_window_name)
 
 ## Primarily used by Window Manager to save position (plus other details
 func export_window_details() -> Dictionary:
 	return {
 		"position": position,
+	}
+
+## First time window is spawned, put some default data in [WindowManager]
+func export_default_window_details() -> Dictionary:
+	return {
+		"position": window_spawn_location,
 	}
 
 ## Primarily used by Window Manager to load position (plus other details)

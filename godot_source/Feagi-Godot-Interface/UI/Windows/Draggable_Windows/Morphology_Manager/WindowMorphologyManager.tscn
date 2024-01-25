@@ -11,10 +11,6 @@ offset_right = 779.0
 offset_bottom = 517.0
 theme = ExtResource("1_1tu4k")
 script = ExtResource("1_11gqg")
-left_pixel_gap = null
-right_pixel_gap = null
-top_pixel_gap = null
-bottom_pixel_gap = null
 
 [node name="UIMorphologyOverviews" parent="." instance=ExtResource("3_08frl")]
 layout_mode = 0

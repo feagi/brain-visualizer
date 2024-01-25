@@ -58,16 +58,7 @@ func spawn_create_morphology() -> void:
 	bring_window_to_top(create_morphology)
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
-	#TODO add morphology preloading support
-	if "morphology_manager" in loaded_windows.keys():
-		force_close_window("morphology_manager")
-	
-	var morphology_manager: WindowMorphologyManager = _prefab_morphology_manager.instantiate()
-	add_child(morphology_manager)
-	morphology_manager.load_from_memory(_window_memory_states["morphology_manager"])
-	morphology_manager.closed_window.connect(force_close_window)
-	loaded_windows["morphology_manager"] = morphology_manager
-	bring_window_to_top(morphology_manager)
+	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
 	if morphology_to_preload != null:
 		morphology_manager.load_morphology(morphology_to_preload)
 	
@@ -211,3 +202,18 @@ func force_close_all_windows() -> void:
 	print("UI: All windows being forced closed")
 	for window in loaded_windows.keys():
 		force_close_window(window)
+
+func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_close_if_open: bool = true) -> BaseWindowPanel:
+	if (window_name in loaded_windows.keys()) && force_close_if_open:
+		force_close_window(window_name)
+	var new_window: BaseWindowPanel = prefab.instantiate()
+	add_child(new_window)
+	loaded_windows[window_name] = new_window
+	new_window.close_window_requested.connect(force_close_window)
+	# if we have no memopry of the window, load the defaults from the window itself
+	if window_name not in _window_memory_states:
+		_window_memory_states[_window_memory_states] = new_window.export_default_window_details()
+	else:
+		new_window.import_window_details(_window_memory_states[window_name])
+	bring_window_to_top(new_window)
+	return new_window
