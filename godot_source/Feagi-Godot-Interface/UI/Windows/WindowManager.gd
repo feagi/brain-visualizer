@@ -58,7 +58,7 @@ func spawn_create_morphology() -> void:
 
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
-	morphology_manager.setup_window("morphology_manager", morphology_to_preload)
+	morphology_manager.setup("morphology_manager", morphology_to_preload)
 	
 
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
@@ -153,16 +153,8 @@ func spawn_info_popup(title_text: StringName, message_text: StringName, button_t
 	popup.set_properties(title_text, message_text, button_text, icon)
 
 func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
-	if "quick_cortical_menu" in loaded_windows.keys():
-		loaded_windows["quick_cortical_menu"].queue_free()
-	
-	var quick_cortical_menu: QuickCorticalMenu = _prefab_quick_cortical_menu.instantiate()
-	add_child(quick_cortical_menu)
-	loaded_windows["quick_cortical_menu"] = quick_cortical_menu
+	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
 	quick_cortical_menu.setup(cortical_area)
-	bring_window_to_top(quick_cortical_menu)
-	if "left_bar" in loaded_windows.keys():
-		spawn_left_panel(cortical_area)
 
 func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
 	if "delete_confirmation" in loaded_windows.keys():
@@ -176,16 +168,9 @@ func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
 	bring_window_to_top(delete_confirmation)
 	
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
-	if "import_amalgamation" in loaded_windows.keys():
-		loaded_windows["import_amalgamation"].queue_free()
-	
-	var import_amalgamation: WindowAmalgamationRequest = _prefab_import_amalgamation.instantiate()
-	add_child(import_amalgamation)
-	loaded_windows["import_amalgamation"] = import_amalgamation
+	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_prefab_import_amalgamation, "import_amalgamation") as WindowAmalgamationRequest
 	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size)
-	import_amalgamation.closed_window.connect(force_close_window)
-	bring_window_to_top(import_amalgamation)
-	
+
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
 		_window_memory_states[window_name] = loaded_windows[window_name].export_window_details()
