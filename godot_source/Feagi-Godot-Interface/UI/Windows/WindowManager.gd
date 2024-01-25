@@ -20,7 +20,6 @@ var _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interf
 var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
-	"left_bar": {"position": Vector2(50,300)},
 	"edit_mappings": {"position": Vector2(900,150)},
 	"import_circuit": {"position": Vector2(400,850)},
 	"quick_connect": {"position": Vector2(500,100)},
@@ -31,16 +30,8 @@ var _window_memory_states: Dictionary = {
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
 func spawn_left_panel(cortical_area: BaseCorticalArea) -> void:
-	if "left_bar" in loaded_windows.keys():
-		force_close_window("left_bar")
-	
-	var left_panel: WindowLeftPanel = _prefab_left_bar.instantiate()
-	add_child(left_panel)
-	left_panel.setup_single_area_from_FEAGI(cortical_area)
-	left_panel.load_from_memory(_window_memory_states["left_bar"])
-	left_panel.closed_window.connect(force_close_window)
-	loaded_windows["left_bar"] = left_panel
-	bring_window_to_top(left_panel)
+	var left_bar: WindowLeftPanel = _default_spawn_window(_prefab_left_bar, "left_bar") as WindowLeftPanel
+	left_bar.setup(cortical_area)
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_prefab_create_morphology, "create_morphology") as WindowCreateMorphology

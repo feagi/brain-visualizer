@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowLeftPanel
 
 var _cortical_area_ref: BaseCorticalArea
@@ -20,7 +20,7 @@ var section_connections: LeftBarConnections
 var section_dangerzone: LeftBarDangerZone
 
 func _ready():
-	super._ready()
+	_setup_base_window("left_bar")
 	collapsible_cortical = $Main_Body/Cortical
 	collapsible_neuron_firing = $Main_Body/Neuron_Firing
 	collapsible_post_synaptic_potential = $Main_Body/Post_Synaptic_Potential
@@ -57,7 +57,7 @@ func _ready():
 		collapsible_cortical_monitoring.section_title = "(PREMIUM) Cortical Area Monitoring"
 
 ## Load in initial values of the cortical area from Cache
-func setup_single_area_from_FEAGI(cortical_area_reference: BaseCorticalArea) -> void:
+func setup(cortical_area_reference: BaseCorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
 	print("loading Left Pane Window for cortical area " + cortical_area_reference.cortical_ID)
 
@@ -102,7 +102,7 @@ func _user_requested_update(changed_values: Dictionary) -> void:
 func _FEAGI_deleted_cortical_area(removed_cortical_area: BaseCorticalArea):
 	# confirm this is the cortical area removed
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
-		close_window("left_bar")
+		close_window()
 
 ## Flexible method to return all collapsed sections in left bar
 func _get_expanded_sections() -> Array[bool]:
