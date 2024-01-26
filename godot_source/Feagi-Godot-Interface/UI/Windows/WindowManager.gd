@@ -6,7 +6,7 @@ var _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Wind
 var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
 var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
-var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
+var _prefab_spawn_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/WindowSpawnCorticalArea.tscn")
 var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
 var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
@@ -20,12 +20,7 @@ var _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interf
 var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
-	"edit_mappings": {"position": Vector2(900,150)},
 	"import_circuit": {"position": Vector2(400,850)},
-	"quick_connect": {"position": Vector2(500,100)},
-	"tutorial": {"position": Vector2(900,500)},
-	"view_cortical": {"position": Vector2(50,100)},
-	"import_amalgamation": {"position": Vector2(500,550)},
 }
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
@@ -46,7 +41,7 @@ func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorti
 	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)
 
 func spawn_create_cortical() -> void:
-	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_prefab_create_cortical, "create_cortical") as WindowCreateCorticalArea
+	var create_cortical: WindowSpawnCorticalArea = _default_spawn_window(_prefab_spawn_cortical, "spawn_cortical") as WindowSpawnCorticalArea
 	create_cortical.setup()
 
 func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
@@ -123,5 +118,6 @@ func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_c
 		_window_memory_states[window_name] = new_window.export_default_window_details()
 	else:
 		new_window.import_window_details(_window_memory_states[window_name])
+	new_window.position = _window_memory_states[window_name]["position"]
 	bring_window_to_top(new_window)
 	return new_window
