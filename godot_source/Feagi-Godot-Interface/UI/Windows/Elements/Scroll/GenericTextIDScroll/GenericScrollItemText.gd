@@ -9,13 +9,15 @@ var _default: StyleBoxFlat
 var _selected: StyleBoxFlat
 
 
-func setup(set_ID: Variant, button_text: StringName, default_look: StyleBoxFlat, selected_look: StyleBoxFlat) -> void:
+func setup(set_ID: Variant, button_text: StringName, default_look: StyleBoxFlat, selected_look: StyleBoxFlat, min_height: int = 0) -> void:
 	ID = set_ID
 	text = button_text
 	_default = default_look
 	_selected = selected_look
 	pressed.connect(user_selected)
 	add_theme_stylebox_override("normal", _default)
+	if min_height != 0:
+		custom_minimum_size.y = min_height
 
 func user_selected():
 	add_theme_stylebox_override("normal", _selected)
