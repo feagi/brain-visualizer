@@ -19,6 +19,7 @@ size_flags_horizontal = 3
 [node name="TemplateDropDown" type="OptionButton" parent="input_output_type"]
 custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
+fit_to_longest_item = false
 script = ExtResource("2_hm4ef")
 
 [node name="location" type="HBoxContainer" parent="."]
@@ -67,7 +68,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="PanelContainer/VBoxContainer/channel_count"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Set channel count:"
+text = "Set Channel Count:"
 
 [node name="channel_count" type="SpinBox" parent="PanelContainer/VBoxContainer/channel_count"]
 custom_minimum_size = Vector2(310, 0)
@@ -83,7 +84,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="PanelContainer/VBoxContainer/dimensions"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Choose dimensions:"
+text = "Choose Dimensions:"
 
 [node name="dimensions" parent="PanelContainer/VBoxContainer/dimensions" instance=ExtResource("6_yjcxe")]
 layout_mode = 2
