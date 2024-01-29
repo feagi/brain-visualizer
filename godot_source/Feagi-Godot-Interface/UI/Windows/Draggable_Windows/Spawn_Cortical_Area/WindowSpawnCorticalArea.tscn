@@ -1,9 +1,9 @@
 [gd_scene load_steps=12 format=3 uid="uid://ctyho04m7lek6"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/WindowSpawnCorticalArea.gd" id="1_jbcv8"]
-[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButton/IconButton.tscn" id="2_a5f3y"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_qr0ph"]
 [ext_resource type="Texture2D" uid="uid://4xisgfb734mk" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="3_ax8ql"]
+[ext_resource type="PackedScene" uid="uid://bw34ujm01meh7" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonVertical/IconButtonVertical.tscn" id="3_qovcm"]
 [ext_resource type="Texture2D" uid="uid://nqs7phsjl7c3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="4_t3mgt"]
 [ext_resource type="Texture2D" uid="uid://j3ukneruvm10" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="5_nsuta"]
 [ext_resource type="Texture2D" uid="uid://bigyevl2dgoec" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="6_p26jg"]
@@ -47,40 +47,36 @@ layout_mode = 2
 theme_override_constants/separation = 12
 script = ExtResource("2_qr0ph")
 
-[node name="Input" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
+[node name="Input" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(8, 32, 8, 32)
-is_vertical = true
+top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
 texture = ExtResource("3_ax8ql")
 texture_size = Vector2i(64, 64)
 button_text = &"Input"
 gap_between_text_and_texture = 4
 text_alignment = 1
 
-[node name="Output" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
+[node name="Output" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(8, 32, 8, 32)
-is_vertical = true
+top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
 texture = ExtResource("4_t3mgt")
 texture_size = Vector2i(64, 64)
 button_text = &"Output"
 gap_between_text_and_texture = 4
 text_alignment = 1
 
-[node name="Interconnect" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
+[node name="Custom" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(8, 32, 8, 32)
-is_vertical = true
+top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
 texture = ExtResource("5_nsuta")
 texture_size = Vector2i(64, 64)
 button_text = &"Interconnect"
 gap_between_text_and_texture = 4
 text_alignment = 1
 
-[node name="Memory" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
+[node name="Memory" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(8, 32, 8, 32)
-is_vertical = true
+top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
 texture = ExtResource("6_p26jg")
 texture_size = Vector2i(64, 64)
 button_text = &"Memory"
@@ -135,7 +131,7 @@ title = "Add Cortical Area"
 
 [connection signal="pressed" from="BoxContainer/Selection/options/Input" to="BoxContainer/Selection/options" method="_on_input_pressed"]
 [connection signal="pressed" from="BoxContainer/Selection/options/Output" to="BoxContainer/Selection/options" method="_on_output_pressed"]
-[connection signal="pressed" from="BoxContainer/Selection/options/Interconnect" to="BoxContainer/Selection/options" method="_on_interconnect_pressed"]
+[connection signal="pressed" from="BoxContainer/Selection/options/Custom" to="BoxContainer/Selection/options" method="_on_interconnect_pressed"]
 [connection signal="pressed" from="BoxContainer/Selection/options/Memory" to="BoxContainer/Selection/options" method="_on_memory_pressed"]
 [connection signal="pressed" from="BoxContainer/Buttons/Back" to="." method="_back_pressed"]
 [connection signal="pressed" from="BoxContainer/Buttons/Cancel" to="." method="_user_requesting_exit"]

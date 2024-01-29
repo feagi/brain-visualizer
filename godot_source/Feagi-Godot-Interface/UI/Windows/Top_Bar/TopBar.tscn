@@ -1,7 +1,7 @@
 [gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
-[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButton/IconButton.tscn" id="2_4d0u0"]
+[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
 [ext_resource type="Texture2D" uid="uid://5nb0yf2u7q5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_cortical_area.png" id="3_f73r0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
 [ext_resource type="Texture2D" uid="uid://dr5seahroxeg4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/neuron.png" id="4_w1ybr"]

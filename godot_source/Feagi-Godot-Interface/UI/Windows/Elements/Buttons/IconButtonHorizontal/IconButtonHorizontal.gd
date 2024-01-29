@@ -1,5 +1,5 @@
 extends Button
-class_name IconButton
+class_name IconButtonHorizontal
 ## Button with icon and text. more configurable than the stock button system
 
 var _margin: MarginContainer
@@ -10,9 +10,6 @@ var _text: Label
 
 ## Paddings on the top, right, bottom, and right, in that order
 @export var top_right_bottom_left_paddings: Vector4i
-
-## IFf the button is laid out horizontally
-@export var is_vertical: bool
 
 @export var texture: Texture2D
 
@@ -41,11 +38,7 @@ func _ready() -> void:
 	_margin.add_theme_constant_override("margin_bottom", top_right_bottom_left_paddings.z)
 	_margin.add_theme_constant_override("margin_right", top_right_bottom_left_paddings.y)
 	
-	_box.vertical = is_vertical
-	if is_vertical:
-		_gap.custom_minimum_size = Vector2(0, gap_between_text_and_texture)
-	else:
-		_gap.custom_minimum_size = Vector2(gap_between_text_and_texture, 0)
+	_gap.custom_minimum_size = Vector2(gap_between_text_and_texture, 0)
 	
 	_text.text = button_text
 	_text.horizontal_alignment = text_alignment
