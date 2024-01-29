@@ -1,0 +1,46 @@
+[gd_scene load_steps=2 format=3 uid="uid://bsn2d8qggug2w"]
+
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.gd" id="1_ra2rn"]
+
+[node name="DetailedButton" type="PanelContainer"]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_ra2rn")
+main_label_font_size = 20
+description_label_font_size = 12
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+
+[node name="BoxContainer" type="BoxContainer" parent="MarginContainer"]
+layout_mode = 2
+alignment = 1
+vertical = true
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/BoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+expand_mode = 1
+
+[node name="g1" type="Control" parent="MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+horizontal_alignment = 1
+
+[node name="g2" type="Control" parent="MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+shortcut_keys_enabled = false
