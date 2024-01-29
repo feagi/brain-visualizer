@@ -21,7 +21,7 @@ theme_override_constants/separation = 4
 [node name="AddMorphology" type="Button" parent="Listings"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-text = "Define New Morphology"
+text = "Define New Connectivity Rule"
 
 [node name="MorphologyScroll" parent="Listings" instance=ExtResource("1_saprm")]
 custom_minimum_size = Vector2(0, 200)
@@ -33,7 +33,7 @@ layout_mode = 2
 
 [node name="Name" type="Label" parent="SelectedDetails"]
 layout_mode = 2
-text = "No Morphology Loaded!"
+text = "No Connectivity Rule Loaded!"
 
 [node name="Details" type="PanelContainer" parent="SelectedDetails"]
 layout_mode = 2

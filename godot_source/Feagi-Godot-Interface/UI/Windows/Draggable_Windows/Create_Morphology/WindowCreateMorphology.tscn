@@ -42,7 +42,7 @@ layout_mode = 2
 [node name="Label_Element" type="Label" parent="Container/Name"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Name of New Morphology"
+text = "Name of New Connectivity Rule"
 script = ExtResource("2_nus1v")
 max_length = 40
 label_text = "Name of New Morphology"
@@ -85,7 +85,7 @@ layout_mode = 2
 
 [node name="Label_Element" type="Label" parent="Container"]
 layout_mode = 2
-text = "Morphology Definition:"
+text = "Connectivity Rule Definition:"
 script = ExtResource("2_nus1v")
 max_length = 30
 label_text = "Morphology Definition:"
@@ -108,7 +108,7 @@ layout_mode = 2
 
 [node name="CreateMorphologyButton" type="Button" parent="Container"]
 layout_mode = 2
-text = "Create Morphology"
+text = "Create Connectivity Rule"
 script = ExtResource("11_tmy0u")
 
 [node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
@@ -116,7 +116,7 @@ layout_mode = 0
 offset_top = -40.0
 offset_right = 184.0
 offset_bottom = 0.0
-title = "Create Morphology"
+title = "Create Connectivity Rule"
 
 [connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
 [connection signal="resized" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
