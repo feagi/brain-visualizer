@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://cmxa7e3wifiy2"]
+[gd_scene load_steps=5 format=3 uid="uid://cmxa7e3wifiy2"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.gd" id="1_00dhb"]
+[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_cknjl"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_neywh"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/PatternValInput.gd" id="3_3o6p7"]
 
@@ -12,6 +13,7 @@ label_z_text = &""
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_cknjl")
 text = "X"
 script = ExtResource("2_neywh")
 max_length = 5
@@ -26,6 +28,7 @@ script = ExtResource("3_3o6p7")
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Y"
 script = ExtResource("2_neywh")
 max_length = 5
@@ -40,6 +43,7 @@ script = ExtResource("3_3o6p7")
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Z
 "
 script = ExtResource("2_neywh")
