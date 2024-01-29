@@ -6,6 +6,7 @@
 offset_right = 250.0
 offset_bottom = 208.0
 script = ExtResource("1_pedaf")
+minimum_height_for_buttons = 32
 
 [node name="filter" type="LineEdit" parent="."]
 layout_mode = 2

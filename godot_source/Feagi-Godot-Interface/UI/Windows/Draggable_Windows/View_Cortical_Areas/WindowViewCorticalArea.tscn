@@ -25,6 +25,7 @@ text = "Add Cortical Area..."
 [node name="CorticalAreaScroll" parent="VBoxContainer" instance=ExtResource("2_k7lg4")]
 custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
+minimum_height_for_buttons = 32
 
 [node name="TitleBar" parent="." instance=ExtResource("3_3awq0")]
 layout_mode = 0
