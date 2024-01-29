@@ -55,6 +55,7 @@ texture = ExtResource("3_ax8ql")
 texture_size = Vector2i(64, 64)
 button_text = &"Input"
 gap_between_text_and_texture = 4
+text_alignment = 1
 
 [node name="Output" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
 layout_mode = 2
@@ -64,6 +65,7 @@ texture = ExtResource("4_t3mgt")
 texture_size = Vector2i(64, 64)
 button_text = &"Output"
 gap_between_text_and_texture = 4
+text_alignment = 1
 
 [node name="Interconnect" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
 layout_mode = 2
@@ -73,6 +75,7 @@ texture = ExtResource("5_nsuta")
 texture_size = Vector2i(64, 64)
 button_text = &"Interconnect"
 gap_between_text_and_texture = 4
+text_alignment = 1
 
 [node name="Memory" parent="BoxContainer/Selection/options" instance=ExtResource("2_a5f3y")]
 layout_mode = 2
@@ -82,6 +85,7 @@ texture = ExtResource("6_p26jg")
 texture_size = Vector2i(64, 64)
 button_text = &"Memory"
 gap_between_text_and_texture = 4
+text_alignment = 1
 
 [node name="Definition_IOPU" parent="BoxContainer" instance=ExtResource("8_6yn0n")]
 visible = false

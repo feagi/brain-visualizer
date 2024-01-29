@@ -24,6 +24,10 @@ var _text: Label
 
 @export var gap_between_text_and_texture: int
 
+@export var text_alignment: HorizontalAlignment = HorizontalAlignment.HORIZONTAL_ALIGNMENT_LEFT
+
+@export var clip_text_label: bool = false
+
 
 func _ready() -> void:
 	_margin = $MarginContainer
@@ -44,6 +48,8 @@ func _ready() -> void:
 		_gap.custom_minimum_size = Vector2(gap_between_text_and_texture, 0)
 	
 	_text.text = button_text
+	_text.horizontal_alignment = text_alignment
+	_text.clip_text = clip_text_label
 	
 	_texture_rect.texture = texture
 	_texture_rect.custom_minimum_size = texture_size

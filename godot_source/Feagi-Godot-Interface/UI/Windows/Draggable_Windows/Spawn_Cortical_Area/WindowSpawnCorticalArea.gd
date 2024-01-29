@@ -67,7 +67,7 @@ func _set_header(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	var label: Label = $BoxContainer/header/Label
 	var icon: TextureRect = $BoxContainer/header/icon
 	if cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
-		label.text = "Select Cortical Area Type"
+		label.text = "Select Cortical Area Type:"
 		icon.texture = null # clear texture
 		return
 	match(cortical_type):
