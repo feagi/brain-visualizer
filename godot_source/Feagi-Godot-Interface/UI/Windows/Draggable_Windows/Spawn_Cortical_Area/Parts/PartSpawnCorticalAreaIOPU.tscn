@@ -1,10 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://craawda1yun5y"]
+[gd_scene load_steps=5 format=3 uid="uid://craawda1yun5y"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="3_f5a7v"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="4_dpw1q"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="4_y0ej3"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
 theme_override_constants/separation = 8
@@ -18,7 +17,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="TemplateDropDown" type="OptionButton" parent="input_output_type"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 script = ExtResource("2_hm4ef")
 
@@ -28,9 +27,13 @@ layout_mode = 2
 [node name="Label" type="Label" parent="location"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Choose a location"
+text = "Choose a location:"
 
-[node name="location" parent="location" instance=ExtResource("3_f5a7v")]
+[node name="location" parent="location" instance=ExtResource("6_yjcxe")]
+layout_mode = 2
+
+[node name="Gap" type="Control" parent="."]
+custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="."]
@@ -51,10 +54,10 @@ layout_mode = 2
 [node name="Label" type="Label" parent="PanelContainer/VBoxContainer/name"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Custom Name"
+text = "Custom Name:"
 
 [node name="name" type="LineEdit" parent="PanelContainer/VBoxContainer/name"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 script = ExtResource("4_y0ej3")
 
@@ -64,14 +67,15 @@ layout_mode = 2
 [node name="Label" type="Label" parent="PanelContainer/VBoxContainer/channel_count"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Set channel count"
+text = "Set channel count:"
 
-[node name="channel_count" type="LineEdit" parent="PanelContainer/VBoxContainer/channel_count"]
-custom_minimum_size = Vector2(250, 0)
+[node name="channel_count" type="SpinBox" parent="PanelContainer/VBoxContainer/channel_count"]
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
-script = ExtResource("4_dpw1q")
-initial_int = 1
-min_value = 1
+min_value = 1.0
+max_value = 1e+10
+value = 1.0
+alignment = 1
 
 [node name="dimensions" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
@@ -79,10 +83,13 @@ layout_mode = 2
 [node name="Label" type="Label" parent="PanelContainer/VBoxContainer/dimensions"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Choose dimensions"
+text = "Choose dimensions:"
 
-[node name="dimensions" parent="PanelContainer/VBoxContainer/dimensions" instance=ExtResource("3_f5a7v")]
+[node name="dimensions" parent="PanelContainer/VBoxContainer/dimensions" instance=ExtResource("6_yjcxe")]
 layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
 int_x_min = 1
 int_y_min = 1
 int_z_min = 1

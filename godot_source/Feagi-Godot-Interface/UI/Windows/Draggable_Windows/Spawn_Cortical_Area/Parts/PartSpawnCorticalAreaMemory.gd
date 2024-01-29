@@ -4,7 +4,7 @@ class_name PartSpawnCorticalAreaMemory
 signal user_selected_back()
 signal user_request_close_window()
 
-var location: Vector3iField
+var location: Vector3iSpinboxField
 var cortical_name: TextInput
 
 func _ready() -> void:

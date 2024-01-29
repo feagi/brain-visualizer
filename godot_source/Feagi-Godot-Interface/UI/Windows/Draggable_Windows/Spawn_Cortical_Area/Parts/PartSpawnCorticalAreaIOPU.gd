@@ -5,10 +5,10 @@ signal user_selected_back()
 signal user_request_close_window()
 
 var dropdown: TemplateDropDown
-var location: Vector3iField
+var location: Vector3iSpinboxField
 var cortical_name: TextInput
-var channel_count: IntInput
-var dimensions: Vector3iField
+var channel_count: SpinBox
+var dimensions: Vector3iSpinboxField
 
 func _ready() -> void:
 	dropdown = $input_output_type/TemplateDropDown
@@ -26,4 +26,4 @@ func cortical_type_selected(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) 
 			$input_output_type/Label.text = "Select a motor output type"
 
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
-	dimensions.current_vector = cortical_template.calculate_IOPU_dimension(channel_count.current_int)
+	dimensions.current_vector = cortical_template.calculate_IOPU_dimension(channel_count.value)

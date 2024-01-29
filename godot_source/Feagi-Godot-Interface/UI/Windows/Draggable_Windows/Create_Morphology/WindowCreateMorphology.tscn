@@ -61,6 +61,7 @@ layout_mode = 2
 script = ExtResource("4_onsts")
 
 [node name="Composite" type="CheckBox" parent="Container/Type"]
+visible = false
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")

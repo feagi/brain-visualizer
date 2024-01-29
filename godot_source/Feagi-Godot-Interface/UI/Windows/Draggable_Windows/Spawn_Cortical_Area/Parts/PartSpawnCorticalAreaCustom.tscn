@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.gd" id="1_ita8s"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="2_k6lwm"]
-[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="3_58vgw"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="3_wwnb4"]
 
 [node name="Definition_Custom" type="VBoxContainer"]
 theme_override_constants/separation = 8
@@ -17,7 +17,7 @@ size_flags_horizontal = 3
 text = "Select a name:"
 
 [node name="name" type="LineEdit" parent="name"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 script = ExtResource("2_k6lwm")
 
@@ -29,8 +29,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Select  dimensions: "
 
-[node name="dimensions" parent="dimensions" instance=ExtResource("3_58vgw")]
+[node name="dimensions" parent="dimensions" instance=ExtResource("3_wwnb4")]
 layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
 int_x_min = 1
 int_y_min = 1
 int_z_min = 1
@@ -42,7 +45,9 @@ layout_mode = 2
 [node name="Label" type="Label" parent="location"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Choose a location"
+text = "Choose a location:"
 
-[node name="location" parent="location" instance=ExtResource("3_58vgw")]
+[node name="location" parent="location" instance=ExtResource("3_wwnb4")]
 layout_mode = 2
+
+[editable path="location/location"]

@@ -56,7 +56,3 @@ max_length = 5
 [node name="IntZ" type="SpinBox" parent="."]
 layout_mode = 2
 alignment = 1
-
-[node name="SpacerZ2" type="Control" parent="."]
-custom_minimum_size = Vector2(3, 0)
-layout_mode = 2

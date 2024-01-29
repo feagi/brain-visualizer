@@ -95,6 +95,10 @@ layout_mode = 2
 visible = false
 layout_mode = 2
 
+[node name="Button_Gap" type="Control" parent="BoxContainer"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+
 [node name="Buttons" type="HBoxContainer" parent="BoxContainer"]
 visible = false
 layout_mode = 2
