@@ -95,14 +95,14 @@ func _user_requesing_creation() -> void:
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			FeagiRequests.request_add_IOPU_cortical_area(
 				_IOPU_definition.dropdown.get_selected_template(),
-				_IOPU_definition.channel_count.current_int,
+				_IOPU_definition.channel_count.value,
 				_IOPU_definition.location.current_vector,
 				false
 			)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			FeagiRequests.request_add_IOPU_cortical_area(
 				_IOPU_definition.dropdown.get_selected_template(),
-				_IOPU_definition.channel_count.current_int,
+				_IOPU_definition.channel_count.value,
 				_IOPU_definition.location.current_vector,
 				false
 			)
