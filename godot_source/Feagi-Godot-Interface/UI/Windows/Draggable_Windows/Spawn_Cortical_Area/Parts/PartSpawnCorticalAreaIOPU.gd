@@ -17,8 +17,12 @@ func _ready() -> void:
 	channel_count = $PanelContainer/VBoxContainer/channel_count/channel_count
 	dimensions = $PanelContainer/VBoxContainer/dimensions/dimensions
 
-func cortical_type_selected(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+func cortical_type_selected(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal]) -> void:
 	dropdown.load_cortical_type_options(cortical_type)
+	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
+	preview_handler.start_BM_preview(dimensions.current_vector, location.current_vector)
+	preview_handler.connect_BM_preview(location.user_updated_vector, dimensions.user_updated_vector, preview_close_signals)
+	
 	match(cortical_type):
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			$input_output_type/Label.text = "Select a Input output type"

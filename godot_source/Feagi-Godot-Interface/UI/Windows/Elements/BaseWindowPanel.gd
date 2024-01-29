@@ -5,6 +5,7 @@ class_name BaseWindowPanel
 const MOUSE_BUTTONS_THAT_BRING_WINDOW_TO_TOP: Array = [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]
 
 signal close_window_requested(self_window_name) ## Connected to WindowManager, which closes this window
+signal close_window_requesed_no_arg() ## As above but passes no argument
 
 @export var left_pixel_gap_default: int = 8
 @export var right_pixel_gap_default: int = 8
@@ -24,6 +25,7 @@ func bring_window_to_top():
 ## Tells the window manager to close this window
 func close_window():
 	close_window_requested.emit(_window_name)
+	close_window_requesed_no_arg.emit()
 
 ## Primarily used by Window Manager to save position (plus other details
 func export_window_details() -> Dictionary:

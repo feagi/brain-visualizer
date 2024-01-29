@@ -1,10 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://q5xkg5bg8wnk"]
+[gd_scene load_steps=8 format=3 uid="uid://q5xkg5bg8wnk"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.gd" id="1_1yhba"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_3gu0l"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CorticalDropDown.gd" id="2_ds7ss"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_12gsw"]
 [ext_resource type="Texture2D" uid="uid://bc3ohcvien5j" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Triangle_Right_S.png" id="5_t4qeq"]
 [ext_resource type="PackedScene" uid="uid://c4hu4bdxc8gu3" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/GeneralMappingEditor.tscn" id="6_miy2l"]
 [ext_resource type="PackedScene" uid="uid://cbu2hexbc7qqg" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/SingleMappingConnectionToggle.tscn" id="7_k31fw"]
@@ -19,9 +18,8 @@ window_spawn_location = Vector2i(900, 150)
 [node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 2
 offset_right = 263.0
-offset_bottom = 323.0
+offset_bottom = 59.0
 vertical = true
-script = ExtResource("3_12gsw")
 
 [node name="gap" type="Control" parent="BoxContainer"]
 custom_minimum_size = Vector2(0, 5)

@@ -41,14 +41,27 @@ func _step_2_set_details(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> 
 	_type_selected = cortical_type
 	_selection.visible = false
 	
-	if cortical_type in [BaseCorticalArea.CORTICAL_AREA_TYPE.IPU, BaseCorticalArea.CORTICAL_AREA_TYPE.OPU]:
-		_IOPU_definition.visible = true
-		_IOPU_definition.cortical_type_selected(cortical_type)
-	else:
-		_IOPU_definition.visible = false
+	## All cases that a preview needs to be closed
+	var close_preview_signals: Array[Signal] = [
+		$BoxContainer/Buttons/Back.pressed,
+		close_window_requesed_no_arg
+	]
+	
+	_IOPU_definition.visible = cortical_type in [BaseCorticalArea.CORTICAL_AREA_TYPE.IPU, BaseCorticalArea.CORTICAL_AREA_TYPE.OPU]
 	_custom_definition.visible = cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 	_memory_definition.visible = cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	_buttons.visible = true
+	
+	match(cortical_type):
+		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			_custom_definition.cortical_type_selected(cortical_type, close_preview_signals)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			_memory_definition.cortical_type_selected(cortical_type, close_preview_signals)
+	
 
 func _set_header(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	var label: Label = $BoxContainer/header/Label
