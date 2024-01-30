@@ -32,8 +32,8 @@ func _ready() -> void:
 	# Get references
 	_add_morphology_button = $Listings/AddMorphology
 	_morphology_scroll = $Listings/MorphologyScroll
-	_morphology_name_label = $SelectedDetails/Name
-	_UI_morphology_definition = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/SmartMorphologyView
+	_morphology_name_label = $SelectedDetails/HBoxContainer/Name
+	_UI_morphology_definition = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/SmartMorphologyView
 	_UI_morphology_image = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage
 	_UI_morphology_usage = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage
 	_UI_morphology_description = $SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription
