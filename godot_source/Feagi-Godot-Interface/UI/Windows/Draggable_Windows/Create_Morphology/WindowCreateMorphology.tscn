@@ -33,6 +33,7 @@ offset_bottom = 203.0
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+theme_override_constants/separation = 12
 
 [node name="Header" type="Label" parent="VBoxContainer/Selection"]
 layout_mode = 2
@@ -74,8 +75,9 @@ size_flags_horizontal = 3
 text = "TEX"
 
 [node name="Name" type="LineEdit" parent="VBoxContainer/Selection/Name"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
+placeholder_text = "Type Rule Name Here..."
 script = ExtResource("3_6i23i")
 
 [node name="ElementMorphologyVectorsView" parent="VBoxContainer/Selection" instance=ExtResource("6_c1klg")]
@@ -98,7 +100,7 @@ text = "Description"
 
 [node name="Description_text" type="TextEdit" parent="VBoxContainer/Selection"]
 visible = false
-custom_minimum_size = Vector2(0, 160)
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 placeholder_text = "Type your custom description here..."
 

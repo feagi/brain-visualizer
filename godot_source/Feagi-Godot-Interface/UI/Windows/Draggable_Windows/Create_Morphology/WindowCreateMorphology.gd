@@ -69,12 +69,14 @@ func _step_2_input_properties(morphology_type: Morphology.MORPHOLOGY_TYPE):
 			_composite.visible = false
 			_vectors.visible = true
 			_patterns.visible = false
+			_header_label.text = HEADER_VECTOR
 			_morphology_name_header.text = NAME_VECTOR
 			_description_label.text = DESCRIPTION_VECTOR
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
 			_composite.visible = false
 			_vectors.visible = false
 			_patterns.visible = true
+			_header_label.text = HEADER_PATTERN
 			_morphology_name_header.text = NAME_PATTERN
 			_description_label.text = DESCRIPTION_PATTERN
 			
