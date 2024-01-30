@@ -52,6 +52,12 @@ func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
 	_line_voxel_neuron_density.editable = cortical_reference.user_can_edit_cortical_neuron_per_vox_count
 	_line_synaptic_attractivity.editable = cortical_reference.user_can_edit_cortical_synaptic_attractivity
 	_vector_dimensions.editable = cortical_reference.user_can_edit_dimensions
+	
+	cortical_reference.name_updated.connect(FEAGI_set_cortical_name)
+	cortical_reference.cortical_neuron_per_vox_count_updated.connect(FEAGI_set_voxel_neuron_density)
+	cortical_reference.cortical_synaptic_attractivity_updated.connect(FEAGI_set_synaptic_attractivity)
+	cortical_reference.dimensions_updated.connect(FEAGI_set_cortical_dimension)
+	cortical_reference.coordinates_3D_updated.connect(FEAGI_set_cortical_position)
 
 
 func FEAGI_set_cortical_name(new_name: StringName, _duplicate_ref: BaseCorticalArea):
