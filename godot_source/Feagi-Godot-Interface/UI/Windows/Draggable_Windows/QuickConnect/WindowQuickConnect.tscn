@@ -143,7 +143,7 @@ layout_mode = 2
 
 [node name="SmartMorphologyView" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("4_xe1wk")]
 layout_mode = 2
-morphology_editable = false
+editing_allowed_from_this_window = false
 
 [node name="MorphologyGenericDetails" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("5_lixjw")]
 layout_mode = 2

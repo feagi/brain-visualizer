@@ -45,7 +45,7 @@ func _ready() -> void:
 	_delete_morphology_button.visible = enable_delete_morphology_button
 	_close_button.visible = enable_close_button
 	_update_morphology_button.visible = enable_update_morphology_button
-	_UI_morphology_definition.morphology_editable = morphology_properties_editable
+	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
 
 func load_morphology(morphology: Morphology, override_scroll_selection: bool = false) -> void:
