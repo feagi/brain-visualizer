@@ -28,7 +28,8 @@ func _ready():
 	_vector_position = $Cortical_Position
 	_vector_dimensions = $Cortical_Size
 	_update_button = $Update_Button
-
+	
+	
 	_line_cortical_name.text_confirmed.connect(_user_edit_name)
 	_line_voxel_neuron_density.int_confirmed.connect(_user_edit_voxel_density)
 	_line_synaptic_attractivity.int_confirmed.connect(_user_edit_synaptic_attractivity)
