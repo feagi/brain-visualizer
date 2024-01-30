@@ -2,21 +2,20 @@
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_r8gt6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nus1v"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_6i23i"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/ContainerShrinker.gd" id="3_u67op"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/RadioButtons.gd" id="4_onsts"]
+[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_twh1n"]
+[ext_resource type="Texture2D" uid="uid://rbrajckwk48f" path="res://Feagi-Godot-Interface/UI/Resources/create_morphology/vectors.png" id="4_0ajep"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
+[ext_resource type="Texture2D" uid="uid://big0puw3xbcfg" path="res://Feagi-Godot-Interface/UI/Resources/create_morphology/patterns.png" id="5_63qii"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="11_tmy0u"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lphoj"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s6e1y"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ukkev"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5oeem"]
+bg_color = Color(0.909804, 0.909804, 0.909804, 1)
 
 [node name="WindowCreateMorphology" type="Panel"]
 offset_top = 41.0
@@ -25,91 +24,107 @@ theme = ExtResource("1_r8gt6")
 script = ExtResource("1_w1bco")
 window_spawn_location = Vector2i(400, 300)
 
-[node name="Container" type="BoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_right = 532.0
-offset_bottom = 159.0
-vertical = true
-script = ExtResource("3_u67op")
+offset_right = 536.0
+offset_bottom = 203.0
 
-[node name="gap" type="Control" parent="Container"]
-custom_minimum_size = Vector2(0, 5)
+[node name="Selection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+
+[node name="Header" type="Label" parent="VBoxContainer/Selection"]
+layout_mode = 2
+text = "Select Connectivity Rule Type:"
+
+[node name="Options" type="HBoxContainer" parent="VBoxContainer/Selection"]
+layout_mode = 2
+script = ExtResource("3_2s0i3")
+
+[node name="Vector" parent="VBoxContainer/Selection/Options" instance=ExtResource("3_twh1n")]
+layout_mode = 2
+icon = ExtResource("4_0ajep")
+icon_size = Vector2i(64, 64)
+main_label = &"Vector"
+description_label = &"[p][center]Vectors use magnitude and direction[/center][/p][p][center]to define how neurons from source[/center][/p][p][center]and destination connect.[/center][/p]"
+is_vertical = true
+gap_1 = 12
+gap_2 = 4
+moused_over = SubResource("StyleBoxFlat_s6e1y")
+clicked = SubResource("StyleBoxFlat_5oeem")
+
+[node name="Pattern" parent="VBoxContainer/Selection/Options" instance=ExtResource("3_twh1n")]
+layout_mode = 2
+icon = ExtResource("5_63qii")
+icon_size = Vector2i(64, 64)
+main_label = &"Pattern"
+description_label = &"[p][center]Patterns leverage wildcards to[/center][/p][p][center]define how source neurons reach[/center][/p][p][center]their destinations.[/center][/p]"
+is_vertical = true
+gap_1 = 12
+gap_2 = 4
+
+[node name="Name" type="HBoxContainer" parent="VBoxContainer/Selection"]
+visible = false
 layout_mode = 2
 
-[node name="Name" type="HBoxContainer" parent="Container"]
-layout_mode = 2
-
-[node name="Label_Element" type="Label" parent="Container/Name"]
+[node name="Label_Element" type="Label" parent="VBoxContainer/Selection/Name"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Name of New Connectivity Rule"
-script = ExtResource("2_nus1v")
-max_length = 40
-label_text = "Name of New Morphology"
+text = "TEX"
 
-[node name="Name" type="LineEdit" parent="Container/Name"]
+[node name="Name" type="LineEdit" parent="VBoxContainer/Selection/Name"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 script = ExtResource("3_6i23i")
 
-[node name="gap2" type="Control" parent="Container"]
-custom_minimum_size = Vector2(0, 5)
-layout_mode = 2
-
-[node name="Type" type="BoxContainer" parent="Container"]
-layout_mode = 2
-script = ExtResource("4_onsts")
-
-[node name="Composite" type="CheckBox" parent="Container/Type"]
+[node name="ElementMorphologyVectorsView" parent="VBoxContainer/Selection" instance=ExtResource("6_c1klg")]
 visible = false
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
-text = "Composite"
-
-[node name="Vectors" type="CheckBox" parent="Container/Type"]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
-text = "Vectors"
-
-[node name="Patterns" type="CheckBox" parent="Container/Type"]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_lphoj")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ukkev")
-text = "Patterns"
-
-[node name="spacer2" type="Control" parent="Container"]
-custom_minimum_size = Vector2(0, 15)
+custom_minimum_size = Vector2(630, 200)
 layout_mode = 2
 
-[node name="Label_Element" type="Label" parent="Container"]
-layout_mode = 2
-text = "Connectivity Rule Definition:"
-script = ExtResource("2_nus1v")
-max_length = 30
-label_text = "Morphology Definition:"
-
-[node name="ElementMorphologyCompositeView" parent="Container" instance=ExtResource("5_k76mc")]
+[node name="ElementMorphologyPatternView" parent="VBoxContainer/Selection" instance=ExtResource("7_w3816")]
 visible = false
 layout_mode = 2
 
-[node name="ElementMorphologyVectorsView" parent="Container" instance=ExtResource("6_c1klg")]
+[node name="ElementMorphologyCompositeView" parent="VBoxContainer/Selection" instance=ExtResource("5_k76mc")]
 visible = false
 layout_mode = 2
 
-[node name="ElementMorphologyPatternView" parent="Container" instance=ExtResource("7_w3816")]
+[node name="Description" type="Label" parent="VBoxContainer/Selection"]
 visible = false
 layout_mode = 2
+text = "Description"
 
-[node name="gap4" type="Control" parent="Container"]
-custom_minimum_size = Vector2(0, 5)
+[node name="Description_text" type="TextEdit" parent="VBoxContainer/Selection"]
+visible = false
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
+placeholder_text = "Type your custom description here..."
 
-[node name="CreateMorphologyButton" type="Button" parent="Container"]
+[node name="Buttons" type="HBoxContainer" parent="VBoxContainer/Selection"]
+visible = false
 layout_mode = 2
-text = "Create Connectivity Rule"
-script = ExtResource("11_tmy0u")
+theme_override_constants/separation = 4
+
+[node name="Back" type="Button" parent="VBoxContainer/Selection/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+text = "Back"
+
+[node name="Gap" type="Control" parent="VBoxContainer/Selection/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="VBoxContainer/Selection/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+text = "Cancel"
+
+[node name="Add" type="Button" parent="VBoxContainer/Selection/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+text = "Add"
 
 [node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
 layout_mode = 0
@@ -118,11 +133,9 @@ offset_right = 184.0
 offset_bottom = 0.0
 title = "Create Connectivity Rule"
 
-[connection signal="button_pressed" from="Container/Type" to="." method="_on_type_button_pressed"]
-[connection signal="resized" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
-[connection signal="visibility_changed" from="Container/ElementMorphologyCompositeView" to="Container" method="recalculate_size"]
-[connection signal="resized" from="Container/ElementMorphologyVectorsView" to="Container" method="recalculate_size"]
-[connection signal="visibility_changed" from="Container/ElementMorphologyVectorsView" to="Container" method="recalculate_size"]
-[connection signal="resized" from="Container/ElementMorphologyPatternView" to="Container" method="recalculate_size"]
-[connection signal="visibility_changed" from="Container/ElementMorphologyPatternView" to="Container" method="recalculate_size"]
-[connection signal="pressed" from="Container/CreateMorphologyButton" to="." method="_on_create_morphology_pressed"]
+[connection signal="morphology_type_selected" from="VBoxContainer/Selection/Options" to="." method="_step_2_input_properties"]
+[connection signal="pressed" from="VBoxContainer/Selection/Options/Vector" to="VBoxContainer/Selection/Options" method="_vector_select"]
+[connection signal="pressed" from="VBoxContainer/Selection/Options/Pattern" to="VBoxContainer/Selection/Options" method="_pattern_select"]
+[connection signal="pressed" from="VBoxContainer/Selection/Buttons/Back" to="." method="_step_1_pick_type"]
+[connection signal="pressed" from="VBoxContainer/Selection/Buttons/Cancel" to="." method="close_window"]
+[connection signal="pressed" from="VBoxContainer/Selection/Buttons/Add" to="." method="_on_create_morphology_pressed"]

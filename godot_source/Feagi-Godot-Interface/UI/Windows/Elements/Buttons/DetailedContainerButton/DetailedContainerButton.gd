@@ -7,10 +7,10 @@ class_name DetailedContainerButton
 @export var main_label_font_size: int = 28
 @export var description_label: StringName
 @export var description_label_font_size: int = 20
-@export var top_padding: int
-@export var right_padding: int
-@export var bottom_padding: int
-@export var left_padding: int
+@export var top_padding: int = 16
+@export var right_padding: int = 16
+@export var bottom_padding: int = 16
+@export var left_padding: int = 16
 @export var is_vertical: bool
 @export var gap_1: int
 @export var gap_2: int

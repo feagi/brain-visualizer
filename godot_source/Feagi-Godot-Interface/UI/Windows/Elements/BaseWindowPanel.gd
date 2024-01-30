@@ -43,6 +43,9 @@ func export_default_window_details() -> Dictionary:
 func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 
+func shrink_window() -> void:
+	_child.size = Vector2i(0,0)
+
 ## Call to initialize window
 func _setup_base_window(window_name: StringName) -> void:
 	_window_name = window_name

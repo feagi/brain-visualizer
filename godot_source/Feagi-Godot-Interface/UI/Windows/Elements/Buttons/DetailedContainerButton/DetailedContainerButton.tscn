@@ -1,6 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://bsn2d8qggug2w"]
+[gd_scene load_steps=4 format=3 uid="uid://bsn2d8qggug2w"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.gd" id="1_ra2rn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ml26h"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eslml"]
+bg_color = Color(0.831373, 0.831373, 0.831373, 1)
 
 [node name="DetailedButton" type="PanelContainer"]
 offset_right = 40.0
@@ -8,6 +13,8 @@ offset_bottom = 40.0
 script = ExtResource("1_ra2rn")
 main_label_font_size = 20
 description_label_font_size = 12
+moused_over = SubResource("StyleBoxFlat_ml26h")
+clicked = SubResource("StyleBoxFlat_eslml")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
