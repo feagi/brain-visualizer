@@ -9,6 +9,7 @@ script = ExtResource("1_pedaf")
 minimum_height_for_buttons = 32
 
 [node name="filter" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_vertical = 0
 
