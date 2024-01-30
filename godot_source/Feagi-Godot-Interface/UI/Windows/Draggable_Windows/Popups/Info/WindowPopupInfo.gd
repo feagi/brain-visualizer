@@ -17,7 +17,7 @@ func set_properties(title_text: StringName, message_text: StringName, button_tex
 	_set_texture(icon)
 	$VBoxContainer.size = Vector2(0,0) # force window to shrink
 	$TitleBar.close_pressed.connect(_close_popup)
-	$TitleBar._auto_maintain_width(size.x) #TODO This is dumb, but I dont time to do a cleaner implementation
+	$TitleBar.size.x = (size.x) #TODO This is dumb, but I dont time to do a cleaner implementation
 
 
 func _set_title_text(text: StringName) -> void:
