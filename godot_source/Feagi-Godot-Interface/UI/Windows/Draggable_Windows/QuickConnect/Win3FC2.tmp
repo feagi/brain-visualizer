@@ -135,6 +135,7 @@ visible = false
 layout_mode = 2
 
 [node name="MorphologyInfo" type="HBoxContainer" parent="VBoxContainer/MorphologyInfoContainer"]
+visible = false
 layout_mode = 2
 
 [node name="MorphologyScroll" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("3_ftgka")]
@@ -166,6 +167,6 @@ title = "Quick Connect"
 
 [connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
 [connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
-[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_update_current_state" binds= [3]]
+[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_update_current_state" binds= [4]]
 [connection signal="morphology_selected" from="VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
 [connection signal="pressed" from="VBoxContainer/Establish" to="." method="establish_connection_button"]
