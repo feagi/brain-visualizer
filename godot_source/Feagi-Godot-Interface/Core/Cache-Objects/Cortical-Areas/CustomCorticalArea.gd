@@ -34,5 +34,5 @@ func _user_can_clone_this_area() -> bool:
 #region Neuron Firing Parameters
 
 # Holds all Neuron Firing Parameters
-var neuron_firing_parameters: CorticalPropertyNeuronFiringParameters = CorticalPropertyNeuronFiringParameters.new()
+var neuron_firing_parameters: CorticalPropertyNeuronFiringParameters = CorticalPropertyNeuronFiringParameters.new(self)
 #endregion

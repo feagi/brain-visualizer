@@ -466,7 +466,7 @@ func get_allowed_efferent_morphology_names() -> PackedStringArray:
 #region Post Synaptic Potential Parameters
 
 ## Holds all post synaptic potential paramamters
-var post_synaptic_potential_paramamters: CorticalPropertyPostSynapticPotentialParameters = CorticalPropertyPostSynapticPotentialParameters.new()
+var post_synaptic_potential_paramamters: CorticalPropertyPostSynapticPotentialParameters = CorticalPropertyPostSynapticPotentialParameters.new(self)
 #endregion
 
 # Monitoring settings for this specific cortical area

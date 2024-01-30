@@ -107,63 +107,67 @@ var _neuron_fire_threshold: int = 0
 var _neuron_firing_threshold_limit: int = 0
 var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
 var _neuron_excitability: int = 0
+var _cortical_area: BaseCorticalArea
+
+func _init(cortical_area_ref: BaseCorticalArea) -> void:
+	_cortical_area = cortical_area_ref
 
 func _set_neuron_mp_charge_accumulation(new_val: bool) -> void:
 	if new_val == _neuron_mp_charge_accumulation:
 		return
 	_neuron_mp_charge_accumulation = new_val
-	neuron_mp_charge_accumulation_updated.emit(new_val, self)
+	neuron_mp_charge_accumulation_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_leak_coefficient(new_val: int) -> void:
 	if new_val == _neuron_leak_coefficient: 
 		return
 	_neuron_leak_coefficient = new_val
-	neuron_leak_coefficient_updated.emit(new_val, self)
+	neuron_leak_coefficient_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_leak_variability(new_val: int) -> void:
 	if new_val == _neuron_leak_variability: 
 		return
 	_neuron_leak_variability = new_val
-	neuron_leak_variability_updated.emit(new_val, self)
+	neuron_leak_variability_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_refractory_period(new_val: int) -> void:
 	if new_val == _neuron_refractory_period: 
 		return
 	_neuron_refractory_period = new_val
-	neuron_refractory_period_updated.emit(new_val, self)
+	neuron_refractory_period_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_consecutive_fire_count(new_val: int) -> void:
 	if new_val == _neuron_consecutive_fire_count: 
 		return
 	_neuron_consecutive_fire_count = new_val
-	neuron_consecutive_fire_count_updated.emit(new_val, self)
+	neuron_consecutive_fire_count_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_snooze_period(new_val: int) -> void:
 	if new_val == _neuron_snooze_period: 
 		return
 	_neuron_snooze_period = new_val
-	neuron_snooze_period_updated.emit(new_val, self)
+	neuron_snooze_period_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_fire_threshold(new_val: int) -> void:
 	if new_val == _neuron_fire_threshold: 
 		return
 	_neuron_fire_threshold = new_val
-	neuron_fire_threshold_updated.emit(new_val, self)
+	neuron_fire_threshold_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_firing_threshold_limit(new_val: int) -> void:
 	if new_val == _neuron_firing_threshold_limit: 
 		return
 	_neuron_firing_threshold_limit = new_val
-	neuron_firing_threshold_limit_updated.emit(new_val, self)
+	neuron_firing_threshold_limit_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_fire_threshold_increment(new_val: Vector3) -> void:
 	if new_val == _neuron_fire_threshold_increment: 
 		return
 	_neuron_fire_threshold_increment = new_val
-	neuron_fire_threshold_increment_updated.emit(new_val, self)
+	neuron_fire_threshold_increment_updated.emit(new_val, _cortical_area)
 
 func _set_neuron_excitability(new_val: int) -> void:
 	if new_val == _neuron_excitability: 
 		return
 	_neuron_excitability = new_val
-	neuron_excitability_updated.emit(new_val, self)
+	neuron_excitability_updated.emit(new_val, _cortical_area)

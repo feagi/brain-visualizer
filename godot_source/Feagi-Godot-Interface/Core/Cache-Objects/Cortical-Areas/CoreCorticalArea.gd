@@ -34,5 +34,5 @@ func _has_neuron_firing_parameters() -> bool:
 #region Neuron Firing Parameters
 
 # Holds all Neuron Firing Parameters
-var neuron_firing_parameters: CorticalPropertyNeuronFiringParameters = CorticalPropertyNeuronFiringParameters.new()
+var neuron_firing_parameters: CorticalPropertyNeuronFiringParameters = CorticalPropertyNeuronFiringParameters.new(self)
 #endregion

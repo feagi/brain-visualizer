@@ -37,5 +37,5 @@ func _has_memory_parameters() -> bool:
 #region Memory Parameters
 
 ## Holds all memory parameters
-var memory_parameters: CorticalPropertyMemoryParameters = CorticalPropertyMemoryParameters.new()
+var memory_parameters: CorticalPropertyMemoryParameters = CorticalPropertyMemoryParameters.new(self)
 #endregion

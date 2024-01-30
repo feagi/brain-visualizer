@@ -37,21 +37,25 @@ var longterm_memory_threshold: int:
 var _initial_neuron_lifespan: int = 0
 var _lifespan_growth_rate: int = 0
 var _longterm_memory_threshold: int = 0
+var _cortical_area: BaseCorticalArea
+
+func _init(cortical_area_ref: BaseCorticalArea) -> void:
+	_cortical_area = cortical_area_ref
 
 func _set_initial_neuron_lifespan(new_val: int) -> void:
 	if new_val == _initial_neuron_lifespan: 
 		return
 	_initial_neuron_lifespan = new_val
-	initial_neuron_lifespan_updated.emit(new_val, self)
+	initial_neuron_lifespan_updated.emit(new_val, _cortical_area)
 
 func _set_lifespan_growth_rate(new_val: int) -> void:
 	if new_val == _lifespan_growth_rate: 
 		return
 	_lifespan_growth_rate = new_val
-	lifespan_growth_rate_updated.emit(new_val, self)
+	lifespan_growth_rate_updated.emit(new_val, _cortical_area)
 
 func _set_longterm_memory_threshold(new_val: int) -> void:
 	if new_val == _longterm_memory_threshold: 
 		return
 	_longterm_memory_threshold = new_val
-	longterm_memory_threshold_updated.emit(new_val, self)
+	longterm_memory_threshold_updated.emit(new_val, _cortical_area)
