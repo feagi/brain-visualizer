@@ -1,22 +1,22 @@
 [gd_scene load_steps=12 format=3 uid="uid://ctyho04m7lek6"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_jbcv8"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_qr0ph"]
-[ext_resource type="Texture2D" uid="uid://4xisgfb734mk" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="3_ax8ql"]
-[ext_resource type="PackedScene" uid="uid://bw34ujm01meh7" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonVertical/IconButtonVertical.tscn" id="3_qovcm"]
-[ext_resource type="Texture2D" uid="uid://nqs7phsjl7c3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="4_t3mgt"]
-[ext_resource type="Texture2D" uid="uid://j3ukneruvm10" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="5_nsuta"]
-[ext_resource type="Texture2D" uid="uid://bigyevl2dgoec" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="6_p26jg"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="7_nyqca"]
-[ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="8_6yn0n"]
-[ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="9_t3gcw"]
-[ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="10_u0jsd"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
+[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
+[ext_resource type="Texture2D" uid="uid://4xisgfb734mk" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="4_5utqj"]
+[ext_resource type="Texture2D" uid="uid://nqs7phsjl7c3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="5_ffsab"]
+[ext_resource type="Texture2D" uid="uid://j3ukneruvm10" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="7_hbdve"]
+[ext_resource type="Texture2D" uid="uid://bigyevl2dgoec" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="8_miahu"]
+[ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
+[ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
+[ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
 
-[node name="WindowCreateCorticalArea" type="Panel"]
+[node name="WindowSpawnCorticalArea" type="Panel"]
 offset_top = 40.0
 offset_right = 182.0
 offset_bottom = 133.0
-script = ExtResource("1_jbcv8")
+script = ExtResource("1_0kirv")
 window_spawn_location = Vector2i(300, 300)
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
@@ -45,53 +45,57 @@ layout_mode = 2
 [node name="options" type="HBoxContainer" parent="BoxContainer/Selection"]
 layout_mode = 2
 theme_override_constants/separation = 12
-script = ExtResource("2_qr0ph")
+script = ExtResource("2_xy23b")
 
-[node name="Input" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
+[node name="Input" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
-texture = ExtResource("3_ax8ql")
-texture_size = Vector2i(64, 64)
-button_text = &"Input"
-gap_between_text_and_texture = 4
-text_alignment = 1
+icon = ExtResource("4_5utqj")
+icon_size = Vector2i(96, 96)
+main_label = &"Input"
+right_padding = 32
+left_padding = 32
+is_vertical = true
+gap_1 = 4
 
-[node name="Output" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
+[node name="Output" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
-texture = ExtResource("4_t3mgt")
-texture_size = Vector2i(64, 64)
-button_text = &"Output"
-gap_between_text_and_texture = 4
-text_alignment = 1
+icon = ExtResource("5_ffsab")
+icon_size = Vector2i(96, 96)
+main_label = &"Output"
+right_padding = 32
+left_padding = 32
+is_vertical = true
+gap_1 = 4
 
-[node name="Custom" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
+[node name="Custom" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
-texture = ExtResource("5_nsuta")
-texture_size = Vector2i(64, 64)
-button_text = &"Interconnect"
-gap_between_text_and_texture = 4
-text_alignment = 1
+icon = ExtResource("7_hbdve")
+icon_size = Vector2i(96, 96)
+main_label = &"Interconnect"
+right_padding = 24
+left_padding = 24
+is_vertical = true
+gap_1 = 4
 
-[node name="Memory" parent="BoxContainer/Selection/options" instance=ExtResource("3_qovcm")]
+[node name="Memory" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(16, 8, 16, 8)
-texture = ExtResource("6_p26jg")
-texture_size = Vector2i(64, 64)
-button_text = &"Memory"
-gap_between_text_and_texture = 4
-text_alignment = 1
+icon = ExtResource("8_miahu")
+icon_size = Vector2i(96, 96)
+main_label = &"Memory"
+right_padding = 32
+left_padding = 32
+is_vertical = true
+gap_1 = 4
 
-[node name="Definition_IOPU" parent="BoxContainer" instance=ExtResource("8_6yn0n")]
+[node name="Definition_IOPU" parent="BoxContainer" instance=ExtResource("9_54gus")]
 visible = false
 layout_mode = 2
 
-[node name="Definition_Custom" parent="BoxContainer" instance=ExtResource("9_t3gcw")]
+[node name="Definition_Custom" parent="BoxContainer" instance=ExtResource("10_vsdc8")]
 visible = false
 layout_mode = 2
 
-[node name="Definition_Memory" parent="BoxContainer" instance=ExtResource("10_u0jsd")]
+[node name="Definition_Memory" parent="BoxContainer" instance=ExtResource("11_leunr")]
 visible = false
 layout_mode = 2
 
@@ -123,7 +127,7 @@ custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Add"
 
-[node name="TitleBar" parent="." instance=ExtResource("7_nyqca")]
+[node name="TitleBar" parent="." instance=ExtResource("12_qi3gl")]
 layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0

@@ -37,8 +37,11 @@ func _ready() -> void:
 	main_text.text = main_label
 	main_text.add_theme_font_size_override("font_size", main_label_font_size)
 	
-	second_text.text = description_label
-	second_text.add_theme_font_size_override("font_size", description_label_font_size)
+	if description_label == &"":
+		second_text.queue_free()
+	else:
+		second_text.text = description_label
+		second_text.add_theme_font_size_override("font_size", description_label_font_size)
 	
 	box.vertical = is_vertical
 	if is_vertical:

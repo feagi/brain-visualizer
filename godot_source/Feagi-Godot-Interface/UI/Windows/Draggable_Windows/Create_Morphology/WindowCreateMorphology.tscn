@@ -46,7 +46,7 @@ script = ExtResource("3_2s0i3")
 [node name="Vector" parent="VBoxContainer/Selection/Options" instance=ExtResource("3_twh1n")]
 layout_mode = 2
 icon = ExtResource("4_0ajep")
-icon_size = Vector2i(64, 64)
+icon_size = Vector2i(96, 96)
 main_label = &"Vector"
 description_label = &"[p][center]Vectors use magnitude and direction[/center][/p][p][center]to define how neurons from source[/center][/p][p][center]and destination connect.[/center][/p]"
 is_vertical = true
@@ -58,7 +58,7 @@ clicked = SubResource("StyleBoxFlat_5oeem")
 [node name="Pattern" parent="VBoxContainer/Selection/Options" instance=ExtResource("3_twh1n")]
 layout_mode = 2
 icon = ExtResource("5_63qii")
-icon_size = Vector2i(64, 64)
+icon_size = Vector2i(96, 96)
 main_label = &"Pattern"
 description_label = &"[p][center]Patterns leverage wildcards to[/center][/p][p][center]define how source neurons reach[/center][/p][p][center]their destinations.[/center][/p]"
 is_vertical = true
