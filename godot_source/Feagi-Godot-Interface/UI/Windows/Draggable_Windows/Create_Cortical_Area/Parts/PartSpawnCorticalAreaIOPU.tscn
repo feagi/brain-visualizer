@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://craawda1yun5y"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="4_y0ej3"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]

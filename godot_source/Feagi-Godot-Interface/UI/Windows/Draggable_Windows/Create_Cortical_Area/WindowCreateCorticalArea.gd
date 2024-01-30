@@ -1,5 +1,5 @@
 extends BaseWindowPanel
-class_name WindowSpawnCorticalArea
+class_name WindowCreateCorticalArea
 
 var _top_container: BoxContainer
 var _selection: VBoxContainer
@@ -24,7 +24,7 @@ func _ready() -> void:
 
 
 func setup() -> void:
-	_setup_base_window("spawn_cortical")
+	_setup_base_window("create_cortical")
 	_step_1_pick_type()
 
 func _step_1_pick_type() -> void:

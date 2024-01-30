@@ -6,7 +6,7 @@ var _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Wind
 var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
 var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
-var _prefab_spawn_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Spawn_Cortical_Area/WindowSpawnCorticalArea.tscn")
+var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
 var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
 var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
 var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
@@ -41,7 +41,7 @@ func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorti
 	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)
 
 func spawn_create_cortical() -> void:
-	var create_cortical: WindowSpawnCorticalArea = _default_spawn_window(_prefab_spawn_cortical, "spawn_cortical") as WindowSpawnCorticalArea
+	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_prefab_create_cortical, "create_cortical") as WindowCreateCorticalArea
 	create_cortical.setup()
 
 func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
