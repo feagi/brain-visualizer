@@ -246,8 +246,6 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 ## Updates all cortical details in here from a dict from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	
-	if data == {}:
-		return
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
@@ -256,7 +254,7 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
-	
+
 	return
 
 func _set_name(new_name: StringName) -> void:
@@ -469,7 +467,6 @@ func get_allowed_efferent_morphology_names() -> PackedStringArray:
 
 ## Holds all post synaptic potential paramamters
 var post_synaptic_potential_paramamters: CorticalPropertyPostSynapticPotentialParameters = CorticalPropertyPostSynapticPotentialParameters.new()
-
 #endregion
 
 # Monitoring settings for this specific cortical area
