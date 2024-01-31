@@ -29,7 +29,6 @@ var _mapped_morphology: MorphologyDropDown
 var _is_UI_editable: bool
 
 
-
 func _ready() -> void:
 	_seed = $Seed/Seed_Vector
 	_patternX = $Patterns/X/X

@@ -17,6 +17,7 @@ script = ExtResource("1_mh6r8")
 [node name="Vector" parent="." instance=ExtResource("1_xmkfh")]
 layout_mode = 2
 size_flags_horizontal = 3
+alignment = 1
 
 [node name="DeleteButton" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)

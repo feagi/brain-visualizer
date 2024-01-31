@@ -38,6 +38,11 @@ func _ready():
 	_morphology_description = $VBoxContainer/Selection/Description_text
 	_bottom_buttons = $VBoxContainer/Selection/Buttons
 	FeagiRequests.refresh_morphology_list()
+	
+	_composite.setup(true)
+	_vectors.setup(true)
+	_patterns.setup(true)
+	
 	print("initialized create morphology window")
 
 func setup() -> void:

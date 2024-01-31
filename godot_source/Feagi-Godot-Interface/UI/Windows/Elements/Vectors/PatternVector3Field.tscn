@@ -18,9 +18,6 @@ text = "X"
 script = ExtResource("2_neywh")
 max_length = 5
 
-[node name="SpacerX" type="Control" parent="."]
-layout_mode = 2
-
 [node name="PVX" type="LineEdit" parent="."]
 layout_mode = 2
 alignment = 1
@@ -32,9 +29,6 @@ theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Y"
 script = ExtResource("2_neywh")
 max_length = 5
-
-[node name="SpacerY" type="Control" parent="."]
-layout_mode = 2
 
 [node name="PVY" type="LineEdit" parent="."]
 layout_mode = 2
@@ -48,9 +42,6 @@ text = "Z
 "
 script = ExtResource("2_neywh")
 max_length = 5
-
-[node name="SpacerZ" type="Control" parent="."]
-layout_mode = 2
 
 [node name="PVZ" type="LineEdit" parent="."]
 layout_mode = 2

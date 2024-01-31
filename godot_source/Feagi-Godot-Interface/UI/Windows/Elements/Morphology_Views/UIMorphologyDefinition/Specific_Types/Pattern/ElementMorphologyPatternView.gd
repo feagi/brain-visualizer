@@ -6,12 +6,15 @@ var _pattern_pair_scroll: BaseScroll
 var _pattern_pair_list: VBoxContainer
 var _add_pattern: TextureButton
 var _is_UI_editable: bool
-var _is_morphology_editable: bool
+var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
+var _subheader: HBoxContainer
 
 func _ready() -> void:
 	_pattern_pair_scroll = $Patterns
 	_pattern_pair_list = $Patterns/VBoxContainer
 	_add_pattern = $header/add_vector
+	_subheader = $subheader
+	_update_subheader_positions()
 
 func setup(allow_editing_if_morphology_editable: bool) -> void:
 	_is_UI_editable = allow_editing_if_morphology_editable
@@ -48,3 +51,11 @@ func _set_pattern_pair_array(input_pattern_pairs: Array[PatternVector3Pairs], is
 			"editable": is_editable,
 			"vectorPair": pattern_pair
 		})
+
+func _update_subheader_positions() -> void:
+	var gap1: Control = $subheader/initial_gap
+	var gap2: Control = $subheader/end_gap
+	
+	var new_width: int = int( (size.x - _subheader.size.x) / 2.0 )
+	gap1.custom_minimum_size.x = new_width
+	gap2.custom_minimum_size.x = new_width

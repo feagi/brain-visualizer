@@ -5,7 +5,7 @@ var _vectors_scroll: BaseScroll
 var _vectors_vector_list: VBoxContainer
 var _add_vector: TextureButton
 var _is_UI_editable: bool
-var _is_morphology_editable: bool
+var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
 
 
 func _ready() -> void:

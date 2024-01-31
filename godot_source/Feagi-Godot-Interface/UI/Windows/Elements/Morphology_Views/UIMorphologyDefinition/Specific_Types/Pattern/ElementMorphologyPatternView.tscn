@@ -33,6 +33,37 @@ texture_disabled = ExtResource("5_c7fbl")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="subheader" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="initial_gap" type="Control" parent="subheader"]
+layout_mode = 2
+
+[node name="source_label" type="Label" parent="subheader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Source [X, Y, Z]"
+horizontal_alignment = 1
+
+[node name="arrow_gap" type="Control" parent="subheader"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="source_label2" type="Label" parent="subheader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Destination [X, Y, Z]"
+horizontal_alignment = 1
+
+[node name="delete_gap" type="Control" parent="subheader"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="end_gap" type="Control" parent="subheader"]
+layout_mode = 2
+
 [node name="Patterns" parent="." instance=ExtResource("2_cj4db")]
 custom_minimum_size = Vector2(550, 180)
 layout_mode = 2
