@@ -1,10 +1,11 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowQuickConnect
 
 enum POSSIBLE_STATES {
 	SOURCE,
 	DESTINATION,
 	MORPHOLOGY,
+	EDIT_MORPHOLOGY,
 	IDLE
 }
 
@@ -28,8 +29,9 @@ var _step2_label: Label
 var _step3_label: Label
 var _step3_info: PanelContainer
 var _step3_scroll: MorphologyScroll
-var _step3_MorphologyView
-var _step3_MorphologyDetails: MorphologyGenericDetails
+var _step3_morphology_container: PanelContainer
+var _step3_morphology_view: UIMorphologyDefinition
+var _step3_morphology_details: MorphologyGenericDetails
 var _step4_button: TextButton_Element
 
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
@@ -40,7 +42,6 @@ var _destination: BaseCorticalArea = null
 var _selected_morphology: Morphology = null
 
 func _ready() -> void:
-	super()
 	_step1_panel = $VBoxContainer/step1
 	_step2_panel = $VBoxContainer/step2
 	_step3_panel = $VBoxContainer/step3
@@ -51,9 +52,10 @@ func _ready() -> void:
 	_step2_label = $VBoxContainer/step2/step2/Label
 	_step3_label = $VBoxContainer/step3/step3/HBoxContainer/Label
 	_step3_info = $VBoxContainer/MorphologyInfoContainer
+	_step3_morphology_container = $VBoxContainer/MorphologyInfoContainer
 	_step3_scroll = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll
-	_step3_MorphologyView = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView
-	_step3_MorphologyDetails = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails
+	_step3_morphology_view = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView
+	_step3_morphology_details = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails
 	_step4_button = $VBoxContainer/Establish
 	
 	FeagiEvents.user_selected_cortical_area.connect(on_user_select_cortical_area)
@@ -64,6 +66,7 @@ func _ready() -> void:
 	current_state = POSSIBLE_STATES.SOURCE
 
 func setup(cortical_source_if_picked: BaseCorticalArea) -> void:
+	_setup_base_window("quick_connect")
 	if cortical_source_if_picked != null:
 		_set_source(cortical_source_if_picked)
 
@@ -82,16 +85,11 @@ func establish_connection_button():
 	# Make sure the cache has the current mapping state of the cortical to source area to append to
 	FeagiRequests.request_add_default_mapping_between_corticals(_source, _destination, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
-	
-	VisConfig.UI_manager.window_manager.force_close_window("quick_connect")
+	close_window()
 
 # State Machine
 func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 	match new_state:
-		POSSIBLE_STATES.IDLE:
-			_toggle_add_buttons(true)
-			_step4_button.disabled = false
-
 		POSSIBLE_STATES.SOURCE:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
@@ -106,7 +104,12 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
 			_setting_morphology()
-
+		POSSIBLE_STATES.EDIT_MORPHOLOGY:
+			_step3_morphology_container.visible = !_step3_morphology_container.visible
+			shrink_window()
+		POSSIBLE_STATES.IDLE:
+			_toggle_add_buttons(true)
+			_step4_button.disabled = false
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -165,8 +168,8 @@ func _set_morphology(morphology: Morphology) -> void:
 	_selected_morphology = morphology
 	_step3_label.text = "Selected Morphology: " + morphology.name
 	_step3_panel.add_theme_stylebox_override("panel", style_complete)
-	_step3_MorphologyView.load_morphology(morphology)
-	_step3_MorphologyDetails.load_morphology(morphology)
+	_step3_morphology_view.load_morphology(morphology)
+	_step3_morphology_details.load_morphology(morphology)
 	_finished_selecting = true
 	current_state = POSSIBLE_STATES.IDLE
 

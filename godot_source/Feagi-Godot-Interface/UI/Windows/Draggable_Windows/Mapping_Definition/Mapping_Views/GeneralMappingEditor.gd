@@ -28,6 +28,7 @@ func update_displayed_mapping_properties(mappings_copy: MappingProperties, mappi
 		_spawn_full_mappings(mappings_copy, mapping_hints)
 	
 	_toggle_add_mapping_button_automatically()
+	size = Vector2(0,0)
 
 ## Creates an Array of [MappingProperty] given the items within the scroll section
 func generate_mapping_propertys() -> Array[MappingProperty]:

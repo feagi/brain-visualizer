@@ -36,6 +36,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	coordinates_2D: Vector2i = Vector2(0,0)) -> void:
 	_feagi_interface.calls.POST_GE_customCorticalArea(cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
 
+## TODO should only be 1,1,1 dimension
 ## Requests from FEAGI to add a cortical area using the custom call (subgroup memory)
 ## the call returns the FEAGI generated cortical ID
 ## Success emits cortical_area_added

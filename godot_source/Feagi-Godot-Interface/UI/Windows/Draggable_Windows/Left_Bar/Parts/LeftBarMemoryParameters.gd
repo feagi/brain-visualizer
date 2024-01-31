@@ -26,13 +26,13 @@ func _ready():
 
 ## set initial values from FEAGI Cache
 func display_cortical_properties(cortical_reference: MemoryCorticalArea) -> void:
-	_line_initial_neuron_lifespan.current_int = cortical_reference.initial_neuron_lifespan
-	_line_lifespan_growth_rate.current_int = cortical_reference.lifespan_growth_rate
-	_line_longterm_memory_threshold.current_int = cortical_reference.longterm_memory_threshold
+	_line_initial_neuron_lifespan.current_int = cortical_reference.memory_parameters.initial_neuron_lifespan
+	_line_lifespan_growth_rate.current_int = cortical_reference.memory_parameters.lifespan_growth_rate
+	_line_longterm_memory_threshold.current_int = cortical_reference.memory_parameters.longterm_memory_threshold
 	
-	cortical_reference.initial_neuron_lifespan_updated.connect(_feagi_initial_neuron_lifespan)
-	cortical_reference.lifespan_growth_rate_updated.connect(_feagi_lifespan_growth_rate)
-	cortical_reference.longterm_memory_threshold_updated.connect(_feagi_longterm_memory_threshold)
+	cortical_reference.memory_parameters.initial_neuron_lifespan_updated.connect(_feagi_initial_neuron_lifespan)
+	cortical_reference.memory_parameters.lifespan_growth_rate_updated.connect(_feagi_lifespan_growth_rate)
+	cortical_reference.memory_parameters.longterm_memory_threshold_updated.connect(_feagi_longterm_memory_threshold)
 	
 	
 ## User pressed update button
