@@ -123,7 +123,8 @@ func _spawn_efferent_terminal(mapping_properties: MappingProperties) -> InterCor
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
 	terminal.setup(mapping_properties.destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT, mapping_properties.is_any_mapping_plastic())
-	connection_positions_changed.emit()
+	_emit_if_any_terminal_moved()
+	terminal.terminal_moved.connect(_emit_if_any_terminal_moved)
 	return terminal
 
 func _delete_connection() -> void:
@@ -135,7 +136,8 @@ func _spawn_recursive_terminal(mapping: MappingProperties) -> RecursiveNodeTermi
 	add_child(terminal)
 	move_child(terminal, 1)
 	terminal.setup(mapping)
-	connection_positions_changed.emit()
+	_emit_if_any_terminal_moved()
+	terminal.terminal_moved.connect(_emit_if_any_terminal_moved)
 	return terminal
 
 ## User hit the X button to attempt to delete the cortical area
@@ -165,6 +167,9 @@ func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> vo
 
 	add_theme_stylebox_override("titlebar", style_box)
 
+
+func _emit_if_any_terminal_moved() -> void:
+	connection_positions_changed.emit()
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 	moved.emit(self, to_position)

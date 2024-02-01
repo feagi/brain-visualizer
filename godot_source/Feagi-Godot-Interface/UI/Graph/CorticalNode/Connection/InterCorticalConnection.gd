@@ -53,7 +53,7 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 	
 	# Labeling
 	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
-	_delayed_update_line_positions()
+	_update_position()
 	
 ## To delete the connection UI side
 func destroy_ui_connection() -> void:
@@ -74,10 +74,6 @@ func _update_position(_irrelevant = null) -> void:
 func _update_line_positions(start_point: Vector2, end_point: Vector2) -> void:
 	_line.points = _generate_cubic_bezier_points(start_point - position_offset, end_point - position_offset)
 
-#FIXME Get rid of this Sh*t
-## Utterly cursed
-func _delayed_update_line_positions() -> void:
-	call_deferred(&"_update_position")
 
 ## Update the mapping count
 func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
