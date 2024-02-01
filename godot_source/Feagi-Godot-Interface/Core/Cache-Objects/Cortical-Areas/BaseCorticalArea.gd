@@ -385,9 +385,10 @@ func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings:
 	
 	if len(mappings) == 0:
 		# A previously existing mapping was now emptied. Treat as a deletion
+		_efferent_mappings[destination_area.cortical_ID].mappings_about_to_be_deleted.emit() # Announce deletions from cached [MappingProperties] itself
+		efferent_mapping_removed.emit(_efferent_mappings[destination_area.cortical_ID]) # Announce deletion from cortical area
 		_efferent_mappings[destination_area.cortical_ID].clear()
 		destination_area.remove_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
-		efferent_mapping_removed.emit(_efferent_mappings[destination_area.cortical_ID])
 		_efferent_mappings.erase(destination_area.cortical_ID)
 		print("CORE: Removing mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
 		return
