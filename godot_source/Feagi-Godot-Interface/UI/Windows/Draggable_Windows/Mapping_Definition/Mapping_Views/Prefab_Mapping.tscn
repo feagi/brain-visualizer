@@ -1,10 +1,9 @@
-[gd_scene load_steps=14 format=3 uid="uid://2mmvclyd2pve"]
+[gd_scene load_steps=13 format=3 uid="uid://2mmvclyd2pve"]
 
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="1_1uw6c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.gd" id="1_tf7sq"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/MorphologyDropDown.gd" id="2_4r0x5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_2p8f4"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="5_c7vkc"]
 [ext_resource type="Texture2D" uid="uid://bvkp73g283e6g" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_S.png" id="5_dnfxt"]
 [ext_resource type="Texture2D" uid="uid://cicb3hd22142r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_C.png" id="6_wetbg"]
 [ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="7_6bygk"]
@@ -91,7 +90,6 @@ texture_hover = ExtResource("7_qk6mv")
 texture_disabled = ExtResource("8_qc3sj")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("5_c7vkc")
 
 [node name="remove" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(30, 0)
@@ -102,7 +100,6 @@ texture_hover = ExtResource("9_civpw")
 texture_disabled = ExtResource("10_yquya")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("5_c7vkc")
 
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]

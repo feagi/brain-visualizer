@@ -12,7 +12,6 @@ const INTERCORTICAL_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-In
 const RECURSIVE_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/RecursiveNodeTerminal.tscn")
 
 signal moved(cortical_node: CorticalNode, new_location: Vector2i)
-signal connection_positions_changed() ## Locations of connection points have updated
 
 enum ConnectionAvailibility {
 	INPUT_ONLY,
@@ -32,14 +31,13 @@ var cortical_area_ID: StringName:
 		return "ERROR NOT SETUP"
 var cortical_area_ref: BaseCorticalArea:
 	get: return _cortical_area_ref
-	
+
 var _cortical_area_ref: BaseCorticalArea
 var _graph: CorticalNodeGraph
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
 	dragged.connect(_on_finish_drag)
-	position_offset_changed.connect(_on_any_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
 	_graph = get_parent()
 
@@ -78,8 +76,7 @@ func spawn_afferent_terminal(mapping_properties: MappingProperties) -> InterCort
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(mapping_properties.source_cortical_area, InterCorticalNodeTerminal.TYPE.INPUT, mapping_properties.is_any_mapping_plastic())
-	connection_positions_changed.emit()
+	terminal.setup(mapping_properties, InterCorticalNodeTerminal.TYPE.INPUT, position_offset_changed)
 	return terminal
 
 func get_center_position_offset() -> Vector2:
@@ -122,8 +119,7 @@ func _spawn_efferent_terminal(mapping_properties: MappingProperties) -> InterCor
 	var terminal: InterCorticalNodeTerminal = INTERCORTICAL_TERMINAL_PREFAB.instantiate()
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
-	terminal.setup(mapping_properties.destination_cortical_area, InterCorticalNodeTerminal.TYPE.OUTPUT, mapping_properties.is_any_mapping_plastic())
-	connection_positions_changed.emit()
+	terminal.setup(mapping_properties, InterCorticalNodeTerminal.TYPE.OUTPUT, position_offset_changed)
 	return terminal
 
 func _delete_connection() -> void:
@@ -135,7 +131,6 @@ func _spawn_recursive_terminal(mapping: MappingProperties) -> RecursiveNodeTermi
 	add_child(terminal)
 	move_child(terminal, 1)
 	terminal.setup(mapping)
-	connection_positions_changed.emit()
 	return terminal
 
 ## User hit the X button to attempt to delete the cortical area
@@ -168,10 +163,7 @@ func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> vo
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 	moved.emit(self, to_position)
-
-func _on_any_drag():
-	connection_positions_changed.emit()
-
+			
 func _update_cortical_name(new_name: StringName, _this_cortical_area: BaseCorticalArea) -> void:
 	title = new_name
 
