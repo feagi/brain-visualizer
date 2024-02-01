@@ -14,7 +14,7 @@
 [ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="10_yquya"]
 
 [node name="Prefab_Mapping" type="HBoxContainer"]
-offset_right = 1285.0
+offset_right = 1240.0
 offset_bottom = 31.0
 script = ExtResource("1_tf7sq")
 
@@ -30,6 +30,7 @@ layout_mode = 2
 
 [node name="Scalar" parent="." instance=ExtResource("1_1uw6c")]
 layout_mode = 2
+alignment = 1
 label_x_text = &""
 label_y_text = &""
 label_z_text = &""

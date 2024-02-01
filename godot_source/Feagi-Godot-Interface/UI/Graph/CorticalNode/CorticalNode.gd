@@ -40,6 +40,7 @@ func _ready():
 	dragged.connect(_on_finish_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
 	_graph = get_parent()
+	child_order_changed.connect(_shrink)
 
 # Announce if cortical area was selected with one click and open left panel on double click
 func _gui_input(event):
@@ -160,10 +161,11 @@ func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> vo
 
 	add_theme_stylebox_override("titlebar", style_box)
 
-
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 	moved.emit(self, to_position)
 			
 func _update_cortical_name(new_name: StringName, _this_cortical_area: BaseCorticalArea) -> void:
 	title = new_name
 
+func _shrink() -> void:
+	size = Vector2(0,0)

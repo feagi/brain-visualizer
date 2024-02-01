@@ -72,6 +72,7 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 	$Gap5.visible = full_editing
 	$Gap6.visible = full_editing
 	$Gap7.visible = full_editing
+	size = Vector2(0,0)
 
 func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_plasticity_constant.editable = toggle_state
