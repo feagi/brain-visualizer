@@ -79,7 +79,7 @@ func spawn_afferent_terminal(mapping_properties: MappingProperties) -> InterCort
 	add_child(terminal)
 	move_child(terminal, _get_starting_afferent_index())
 	terminal.setup(mapping_properties.source_cortical_area, InterCorticalNodeTerminal.TYPE.INPUT, mapping_properties.is_any_mapping_plastic())
-	connection_positions_changed.emit()
+	_emit_if_any_terminal_moved()
 	return terminal
 
 func get_center_position_offset() -> Vector2:
