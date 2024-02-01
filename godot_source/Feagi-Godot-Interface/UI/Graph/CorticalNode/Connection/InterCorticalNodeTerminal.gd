@@ -29,14 +29,9 @@ var _parent_node: CorticalNode
 var _cortical_label: Button
 
 func _ready() -> void:
-	set_notify_local_transform(true)
 	_cortical_label = $Label
 	_input_point = $input
 	_output_point = $output
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
-		terminal_moved.emit()
 
 func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE, is_plastic: bool) -> void:
 	_parent_node = get_parent()
@@ -52,10 +47,12 @@ func setup(connecting_area: BaseCorticalArea, type_terminal: TYPE, is_plastic: b
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			_cortical_label.tooltip_text = "Afferent Connection"
 			_input_point.visible = true
+			_input_point.terminal_moved.connect(_terminal_texture_location_changed)
 		TYPE.OUTPUT:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			_cortical_label.tooltip_text = "Efferent Connection"
 			_output_point.visible = true
+			_output_point.terminal_moved.connect(_terminal_texture_location_changed)
 		_:
 			_cortical_label.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			push_error("UI: GRAPH: Unknown Terminal Type")
@@ -88,6 +85,9 @@ func get_input_location() -> Vector2:
 ## Get center point of the output terminal
 func get_output_location() -> Vector2:
 	return Vector2(_parent_node.position_offset) + Vector2(position) + Vector2(_output_point.position) + (_output_point.size / 2.0)
+
+func _terminal_texture_location_changed()-> void:
+	terminal_moved.emit()
 
 func _cortical_name_update(new_name: String, _area: BaseCorticalArea) -> void:
 	_cortical_label.text = new_name

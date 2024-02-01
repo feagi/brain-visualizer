@@ -167,7 +167,6 @@ func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> vo
 
 	add_theme_stylebox_override("titlebar", style_box)
 
-
 func _emit_if_any_terminal_moved() -> void:
 	connection_positions_changed.emit()
 
