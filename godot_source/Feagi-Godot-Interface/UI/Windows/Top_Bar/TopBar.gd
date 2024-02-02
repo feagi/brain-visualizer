@@ -55,8 +55,14 @@ func _details_section_toggle(_irrelevant: bool) -> void:
 func _open_cortical_areas() -> void:
 	VisConfig.UI_manager.window_manager.spawn_cortical_view()
 
+func _open_create_cortical() -> void:
+	VisConfig.UI_manager.window_manager.spawn_create_cortical()
+
 func _open_neuron_morphologies() -> void:
 	VisConfig.UI_manager.window_manager.spawn_manager_morphology()
+
+func _open_create_morpology() -> void:
+	VisConfig.UI_manager.window_manager.spawn_create_morphology()
 
 func _open_tutorials() -> void:
 	VisConfig.UI_manager.window_manager.spawn_tutorial()
