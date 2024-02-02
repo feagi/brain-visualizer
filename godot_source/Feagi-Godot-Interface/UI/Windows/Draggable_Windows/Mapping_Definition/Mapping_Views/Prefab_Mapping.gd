@@ -17,7 +17,7 @@ func _ready() -> void:
 	_morphologies = $Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
-	_plasticity = $Plasticity
+	_plasticity = $BoxContainer/Plasticity
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
@@ -65,13 +65,6 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 	_plasticity_constant.visible = full_editing
 	_LTP_multiplier.visible = full_editing
 	_LTD_multiplier.visible = full_editing
-	$Gap1.visible = full_editing
-	$Gap2.visible = full_editing
-	$Gap3.visible = full_editing
-	$Gap4.visible = full_editing
-	$Gap5.visible = full_editing
-	$Gap6.visible = full_editing
-	$Gap7.visible = full_editing
 	size = Vector2(0,0)
 
 func _on_user_toggle_plasticity(toggle_state: bool) -> void:
