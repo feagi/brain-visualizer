@@ -32,8 +32,8 @@ func _ready() -> void:
 	# Get references
 	_add_morphology_button = $Listings/AddMorphology
 	_morphology_scroll = $Listings/MorphologyScroll
-	_morphology_name_label = $SelectedDetails/Name
-	_UI_morphology_definition = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/SmartMorphologyView
+	_morphology_name_label = $SelectedDetails/HBoxContainer/Name
+	_UI_morphology_definition = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/SmartMorphologyView
 	_UI_morphology_image = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage
 	_UI_morphology_usage = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage
 	_UI_morphology_description = $SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription
@@ -45,7 +45,7 @@ func _ready() -> void:
 	_delete_morphology_button.visible = enable_delete_morphology_button
 	_close_button.visible = enable_close_button
 	_update_morphology_button.visible = enable_update_morphology_button
-	_UI_morphology_definition.morphology_editable = morphology_properties_editable
+	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
 
 func load_morphology(morphology: Morphology, override_scroll_selection: bool = false) -> void:
@@ -57,6 +57,7 @@ func load_morphology(morphology: Morphology, override_scroll_selection: bool = f
 	_UI_morphology_description.load_morphology(morphology)
 	if override_scroll_selection:
 		_morphology_scroll.select_morphology(morphology)
+	size = Vector2i(0,0) # Force shrink to minimum possible size
 
 func _user_requested_update_morphology() -> void:
 	var morphology_to_update: Morphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)

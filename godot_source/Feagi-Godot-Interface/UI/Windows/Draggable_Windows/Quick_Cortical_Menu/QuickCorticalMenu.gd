@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name QuickCorticalMenu
 
 const CENTER_OFFSET: Vector2 = Vector2(0,200)
@@ -6,10 +6,8 @@ const CENTER_OFFSET: Vector2 = Vector2(0,200)
 var _cortical_area: BaseCorticalArea
 var _title_bar: TitleBar
 
-func _ready():
-	super._ready()
-
 func setup(cortical_area: BaseCorticalArea) -> void:
+	_setup_base_window("quick_cortical_menu")
 	_cortical_area = cortical_area
 	_title_bar = $TitleBar
 	_title_bar.title = _cortical_area.name
@@ -22,6 +20,7 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 		$HBoxContainer/Clone.disabled = true
 		$HBoxContainer/Clone.tooltip_text = "This Cortical Area Cannot Be Cloned"
 	grab_focus()
+	
 
 func _button_details() -> void:
 	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area)

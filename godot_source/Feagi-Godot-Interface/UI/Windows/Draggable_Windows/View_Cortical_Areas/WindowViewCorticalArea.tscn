@@ -10,6 +10,7 @@ offset_top = 40.0
 offset_right = 158.0
 offset_bottom = 201.0
 script = ExtResource("1_ypq52")
+window_spawn_location = Vector2i(50, 100)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
@@ -17,19 +18,19 @@ offset_right = 250.0
 offset_bottom = 354.0
 
 [node name="Button" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 text = "Add Cortical Area..."
 
 [node name="CorticalAreaScroll" parent="VBoxContainer" instance=ExtResource("2_k7lg4")]
 custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
+minimum_height_for_buttons = 32
 
 [node name="TitleBar" parent="." instance=ExtResource("3_3awq0")]
 layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
 title = "View Cortical Areas"
-automatic_setup_hiding_closing = false
-automatic_setup_window_closing_for_window_manager_name = &"view_cortical"
 
 [connection signal="pressed" from="VBoxContainer/Button" to="." method="_press_add_cortical_area"]

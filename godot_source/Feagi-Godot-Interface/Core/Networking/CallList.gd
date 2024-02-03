@@ -398,7 +398,21 @@ func GET_PNS_current_opu() -> void:
 #region POST requests
 ## sets delay between bursts in seconds
 func POST_FE_burstEngine(newBurstRate: float):
-	_interface_ref.single_FEAGI_request(_address_list.POST_feagi_burstEngine, HTTPClient.Method.METHOD_POST, _response_functions_ref.POST_FE_burstEngine, {"burst_duration": newBurstRate})
+	var to_send: Dictionary = {
+		"burst_duration": newBurstRate
+		}
+
+	var to_buffer: Dictionary = {
+	}
+
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		_address_list.POST_feagi_burstEngine,
+		HTTPClient.METHOD_POST,
+		to_send,
+		to_buffer,
+		_response_functions_ref.POST_FE_burstEngine
+	)
+	_interface_ref.FEAGI_API_Request(request)
 
 ## Adds a non-custom cortical area with non-definable dimensions
 func POST_GE_corticalArea(template_cortical_ID: StringName, type: BaseCorticalArea.CORTICAL_AREA_TYPE, coordinates_3D: Vector3i, 

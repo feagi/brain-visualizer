@@ -1,9 +1,12 @@
-[gd_scene format=3 uid="uid://cn63wh2rl81w2"]
+[gd_scene load_steps=2 format=3 uid="uid://cn63wh2rl81w2"]
+
+[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="1_pd2t0"]
 
 [node name="Vector3Spinbox" type="BoxContainer"]
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("1_pd2t0")
 text = "X "
 
 [node name="SpacerX" type="Control" parent="."]
@@ -17,6 +20,7 @@ alignment = 1
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("1_pd2t0")
 text = "Y "
 
 [node name="SpacerY" type="Control" parent="."]
@@ -30,6 +34,7 @@ alignment = 1
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("1_pd2t0")
 text = "Z "
 
 [node name="SpacerZ" type="Control" parent="."]
