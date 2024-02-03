@@ -9,6 +9,7 @@ enum SIGNAL_TYPE{
 }
 
 signal mappings_changed(self_mappings: MappingProperties)
+signal mappings_about_to_be_deleted()
 
 var source_cortical_area: BaseCorticalArea:
 	get: return _src_cortical
@@ -138,7 +139,7 @@ func get_PSP_signal_type() -> SIGNAL_TYPE:
 func is_recursive() -> bool:
 	return source_cortical_area.cortical_ID == destination_cortical_area.cortical_ID
 
-## Returns true if there are no mappings (disconnected)
+## Returns true if there are no mappings (disconnected), about to be deleted
 func is_empty() -> bool:
 	return len(_mappings) == 0
 

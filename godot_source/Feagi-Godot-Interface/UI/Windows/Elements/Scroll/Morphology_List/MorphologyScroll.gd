@@ -5,7 +5,7 @@ class_name MorphologyScroll
 signal morphology_selected(morphology: Morphology)
 
 @export var load_morphologies_on_load: bool = true
-@export var call_for_morphology_reload_on_load: bool = true #TODO turn false
+@export var call_for_morphology_reload_on_load: bool = true
 
 func _ready():
 	super()
