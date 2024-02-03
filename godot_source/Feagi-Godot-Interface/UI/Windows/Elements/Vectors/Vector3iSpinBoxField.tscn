@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://ci8uvawjvxfax"]
+[gd_scene load_steps=4 format=3 uid="uid://ci8uvawjvxfax"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
+[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_57b1k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nonhb"]
 
 [node name="Vector3fField" type="BoxContainer"]
@@ -12,6 +13,7 @@ layout_mode = 2
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_57b1k")
 text = "X"
 script = ExtResource("2_nonhb")
 max_length = 5
@@ -30,6 +32,7 @@ layout_mode = 2
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_57b1k")
 text = "Y"
 script = ExtResource("2_nonhb")
 max_length = 5
@@ -48,6 +51,7 @@ layout_mode = 2
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_57b1k")
 text = "Z
 "
 script = ExtResource("2_nonhb")
@@ -56,7 +60,3 @@ max_length = 5
 [node name="IntZ" type="SpinBox" parent="."]
 layout_mode = 2
 alignment = 1
-
-[node name="SpacerZ2" type="Control" parent="."]
-custom_minimum_size = Vector2(3, 0)
-layout_mode = 2

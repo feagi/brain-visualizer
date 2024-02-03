@@ -1,9 +1,8 @@
-[gd_scene load_steps=9 format=3 uid="uid://d1tg3odgc36tb"]
+[gd_scene load_steps=8 format=3 uid="uid://d1tg3odgc36tb"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.gd" id="1_5hdhx"]
 [ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_iw5kc"]
 [ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_li0mh"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_plqeh"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="4_8mw72"]
 [ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_qk7tm"]
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/Prefab_VectorWithDelete.tscn" id="5_dnbvl"]
@@ -22,10 +21,10 @@ layout_mode = 2
 [node name="Label" type="Label" parent="header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Vectors"
+text = "Vector Definition:"
 
 [node name="add_vector" type="TextureButton" parent="header"]
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 texture_normal = ExtResource("2_iw5kc")
 texture_pressed = ExtResource("3_li0mh")
@@ -33,37 +32,6 @@ texture_hover = ExtResource("4_qk7tm")
 texture_disabled = ExtResource("5_excb5")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("3_plqeh")
-scale_multiplier = 0.5
-
-[node name="labels" type="HBoxContainer" parent="."]
-layout_mode = 2
-
-[node name="Control2" type="Control" parent="labels"]
-custom_minimum_size = Vector2(2, 2)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="labels"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "X"
-horizontal_alignment = 1
-
-[node name="Label2" type="Label" parent="labels"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Y"
-horizontal_alignment = 1
-
-[node name="Label3" type="Label" parent="labels"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Z"
-horizontal_alignment = 1
-
-[node name="deletegap" type="Control" parent="labels"]
-custom_minimum_size = Vector2(25, 25)
-layout_mode = 2
 
 [node name="Vectors" parent="." node_paths=PackedStringArray("main_window") instance=ExtResource("4_8mw72")]
 custom_minimum_size = Vector2(0, 180)

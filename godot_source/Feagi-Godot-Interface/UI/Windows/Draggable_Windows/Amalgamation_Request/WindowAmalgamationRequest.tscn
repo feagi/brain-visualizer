@@ -14,6 +14,7 @@ offset_bottom = 40.0
 size_flags_horizontal = 0
 theme = ExtResource("1_i42xn")
 script = ExtResource("2_wg6iy")
+window_spawn_location = Vector2i(500, 550)
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0
@@ -81,8 +82,6 @@ offset_top = -40.0
 offset_right = 391.0
 offset_bottom = 0.0
 title = "Import Amalgamation"
-automatic_setup_hiding_closing = false
-automatic_setup_window_closing_for_window_manager_name = &"import_amalgamation"
 
 [connection signal="pressed" from="Container/HBoxContainer3/cancel" to="." method="_cancel_pressed"]
 [connection signal="pressed" from="Container/HBoxContainer3/import" to="." method="_import_pressed"]

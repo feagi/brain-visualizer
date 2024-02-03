@@ -17,7 +17,7 @@ func connect_BM_preview(coordinates_3D_changed: Signal, dimensions_changed: Sign
 	for close_signal in close_signals: #TODO this isnt bm specific!
 		close_signal.connect(delete_preview)
 
-func delete_preview() -> void:
+func delete_preview(_irrelevant: Variant = null) -> void:
 	if _BM_preview != null:
 		_BM_preview.delete_preview()
 	#free() #TODO

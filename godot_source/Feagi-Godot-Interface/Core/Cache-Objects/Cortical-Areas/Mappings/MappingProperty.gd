@@ -1,9 +1,11 @@
 extends Object
 class_name MappingProperty
 ## a SINGLE Mapping property between 2 cortical areas (there can be multiple, which is stored in [MappingProperties])
-## This object is never actually stored in a cache, its created as needed to represent a connections details
+## Whenever [MappingProperties] updates to a new set of MappingPropertys, it completely deletes the old ones and replaces it with the new ones
 
 const INT8_MAX: int = 2147483647 # This is likely the max supported int in vector3i, but you should NOT be getting this close anyways
+
+
 
 var morphology_used: Morphology:
 	get: return _morphology_used
