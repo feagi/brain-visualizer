@@ -12,6 +12,7 @@ signal UI_settings_changed()
 signal user_changed_typing_status(is_typing: bool) ## Emits whenever a user starts / stops interaction with a text box
 signal user_changed_window_drag_status(is_dragging_a_window: bool) ## Emits whenever a user starts / stops dragging a window
 signal mode_changed(new_mode: MODE)
+signal UI_scale_changed(multiplier: float)
 
 var screen_size: Vector2:  # keep as float for easy division
 	get: return _screen_size
@@ -45,6 +46,12 @@ var is_user_dragging_a_window: bool:
 		_is_user_dragging_a_window = v
 		user_changed_window_drag_status.emit(v)
 
+var UI_scale: float:
+	get: return _UI_scale
+	set(v):
+		_UI_scale = v
+		UI_scale_changed.emit(v)
+
 var _window_manager_ref: WindowManager
 var _notification_system_ref: NotificationSystem
 var _screen_size: Vector2
@@ -52,6 +59,7 @@ var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should
 var _is_user_typing: bool = false
 var _is_user_dragging_a_window: bool = false
 var _current_mode: MODE = MODE.VISUALIZER_3D
+var _UI_scale: float = 1.0
 
 func _ready():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -60,8 +68,6 @@ func _ready():
 	_notification_system_ref = $NotificationSystem
 	VisConfig.UI_manager = self
 	_update_screen_size()
-	#TEST
-
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode

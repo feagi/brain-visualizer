@@ -7,18 +7,19 @@
 
 [node name="MorphologyManager" type="Panel"]
 offset_top = 40.0
-offset_right = 568.0
-offset_bottom = 510.0
+offset_right = 779.0
+offset_bottom = 517.0
 theme = ExtResource("1_1tu4k")
 script = ExtResource("1_11gqg")
+window_spawn_location = Vector2i(900, 500)
 
 [node name="UIMorphologyOverviews" parent="." instance=ExtResource("3_08frl")]
 layout_mode = 0
+offset_right = 766.0
+offset_bottom = 435.0
 
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
 layout_mode = 0
 offset_top = -40.0
 offset_bottom = 0.0
-title = "Morphology Manager"
-automatic_setup_hiding_closing = false
-automatic_setup_window_closing_for_window_manager_name = &"morphology_manager"
+title = "Connectivity Rule Manager"

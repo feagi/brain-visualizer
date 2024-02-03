@@ -246,8 +246,6 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 ## Updates all cortical details in here from a dict from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	
-	if data == {}:
-		return
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
@@ -255,17 +253,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "cortical_synaptic_attractivity" in data.keys(): 
 		cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
 	
-	# Post Synaptic Potential Parameters
-	if "neuron_post_synaptic_potential" in data.keys(): 
-		neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
-	if "neuron_post_synaptic_potential_max" in data.keys(): 
-		neuron_post_synaptic_potential_max = data["neuron_post_synaptic_potential_max"]
-	if "neuron_degeneracy_coefficient" in data.keys(): 
-		neuron_degeneracy_coefficient = data["neuron_degeneracy_coefficient"]
-	if "neuron_psp_uniform_distribution" in data.keys(): 
-		neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
-	if "neuron_mp_driven_psp" in data.keys():
-		neuron_mp_driven_psp = data["neuron_mp_driven_psp"]
+	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
+
 	return
 
 func _set_name(new_name: StringName) -> void:
@@ -396,9 +385,10 @@ func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings:
 	
 	if len(mappings) == 0:
 		# A previously existing mapping was now emptied. Treat as a deletion
+		_efferent_mappings[destination_area.cortical_ID].mappings_about_to_be_deleted.emit() # Announce deletions from cached [MappingProperties] itself
+		efferent_mapping_removed.emit(_efferent_mappings[destination_area.cortical_ID]) # Announce deletion from cortical area
 		_efferent_mappings[destination_area.cortical_ID].clear()
 		destination_area.remove_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
-		efferent_mapping_removed.emit(_efferent_mappings[destination_area.cortical_ID])
 		_efferent_mappings.erase(destination_area.cortical_ID)
 		print("CORE: Removing mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
 		return
@@ -476,78 +466,8 @@ func get_allowed_efferent_morphology_names() -> PackedStringArray:
 
 #region Post Synaptic Potential Parameters
 
-signal neuron_psp_uniform_distribution_updated(new_val: bool, this_cortical_area: BaseCorticalArea)
-signal neuron_neuron_mp_driven_psp_updated(new_val: bool, this_cortical_area: BaseCorticalArea)
-signal neuron_post_synaptic_potential_updated(new_val: float, this_cortical_area: BaseCorticalArea)
-signal neuron_post_synaptic_potential_max_updated(new_val: float, this_cortical_area: BaseCorticalArea)
-signal neuron_degeneracy_coefficient_updated(new_val: int, this_cortical_area: BaseCorticalArea)
-
-var neuron_psp_uniform_distribution: bool:
-	get:
-		return _neuron_psp_uniform_distribution
-	set(v):
-		_set_neuron_psp_uniform_distribution(v)
-
-var neuron_mp_driven_psp: bool:
-	get:
-		return _neuron_mp_driven_psp
-	set(v):
-		_set_neuron_mp_driven_psp(v)
-
-var neuron_post_synaptic_potential: float:
-	get:
-		return _neuron_post_synaptic_potential
-	set(v):
-		_set_neuron_post_synaptic_potential(v)
-
-var neuron_post_synaptic_potential_max: float:
-	get:
-		return _neuron_post_synaptic_potential_max
-	set(v):
-		_set_neuron_post_synaptic_potential_max(v)
-
-var neuron_degeneracy_coefficient: int:
-	get:
-		return _neuron_degeneracy_coefficient
-	set(v):
-		_set_neuron_degeneracy_coefficient(v)
-
-var _neuron_psp_uniform_distribution: bool = false
-var _neuron_mp_driven_psp: bool = false
-var _neuron_post_synaptic_potential: float = 0.0
-var _neuron_post_synaptic_potential_max: float = 0.0
-var _neuron_degeneracy_coefficient: int = 0
-
-func _set_neuron_psp_uniform_distribution(new_val: bool) -> void:
-	if new_val == _neuron_psp_uniform_distribution: 
-		return
-	_neuron_psp_uniform_distribution = new_val
-	neuron_psp_uniform_distribution_updated.emit(new_val, self)
-
-func _set_neuron_mp_driven_psp(new_val: bool) -> void:
-	if new_val == _neuron_mp_driven_psp: 
-		return
-	_neuron_mp_driven_psp = new_val
-	neuron_neuron_mp_driven_psp_updated.emit(new_val, self)
-
-func _set_neuron_post_synaptic_potential(new_val: float) -> void:
-	if new_val == _neuron_post_synaptic_potential: 
-		return
-	_neuron_post_synaptic_potential = new_val
-	neuron_post_synaptic_potential_updated.emit(new_val, self)
-
-func _set_neuron_post_synaptic_potential_max(new_val: float) -> void:
-	if new_val == _neuron_post_synaptic_potential_max: 
-		return
-	_neuron_post_synaptic_potential_max = new_val
-	neuron_post_synaptic_potential_max_updated.emit(new_val, self)
-
-func _set_neuron_degeneracy_coefficient(new_val: int) -> void:
-	if new_val == _neuron_degeneracy_coefficient: 
-		return
-	_neuron_degeneracy_coefficient = new_val
-	neuron_degeneracy_coefficient_updated.emit(new_val, self)
-
+## Holds all post synaptic potential paramamters
+var post_synaptic_potential_paramamters: CorticalPropertyPostSynapticPotentialParameters = CorticalPropertyPostSynapticPotentialParameters.new(self)
 #endregion
 
 # Monitoring settings for this specific cortical area

@@ -111,15 +111,6 @@ text = "Position"
 [node name="Cortical_Position" parent="." instance=ExtResource("4_8p7n5")]
 layout_mode = 2
 
-[node name="SpacerX" parent="Cortical_Position" index="0"]
-custom_minimum_size = Vector2(5, 0)
-
-[node name="SpacerX2" parent="Cortical_Position" index="3"]
-custom_minimum_size = Vector2(7, 0)
-
-[node name="SpacerY2" parent="Cortical_Position" index="7"]
-custom_minimum_size = Vector2(7, 0)
-
 [node name="gap" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
@@ -134,5 +125,3 @@ script = ExtResource("5_lcq15")
 [node name="gap2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
-
-[editable path="Cortical_Position"]

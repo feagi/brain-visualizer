@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name TutorialDisplay
 
 const MAX_NUMBER_SLIDES: int = 10
@@ -9,14 +9,15 @@ var _TextureBox: TextureRect
 var _current_slide_number: int = 2
 
 func _ready():
-	super()
 	_TextureBox = $VBoxContainer/Texture
 	_previous_button = $VBoxContainer/HBoxContainer/previous_button
 	_next_button = $VBoxContainer/HBoxContainer/next_button
 	_previous_button.pressed.connect(_decrement_slide)
 	_next_button.pressed.connect(_increment_slide)
 	_previous_button.disabled = true
-	
+
+func setup() -> void:
+	_setup_base_window("tutorial")
 
 ## Incrememnts slide count, and controls button availability depending on slide number
 func _increment_slide() -> void:

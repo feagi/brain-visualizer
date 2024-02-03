@@ -28,7 +28,8 @@ func _ready():
 	_vector_position = $Cortical_Position
 	_vector_dimensions = $Cortical_Size
 	_update_button = $Update_Button
-
+	
+	
 	_line_cortical_name.text_confirmed.connect(_user_edit_name)
 	_line_voxel_neuron_density.int_confirmed.connect(_user_edit_voxel_density)
 	_line_synaptic_attractivity.int_confirmed.connect(_user_edit_synaptic_attractivity)
@@ -51,6 +52,12 @@ func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
 	_line_voxel_neuron_density.editable = cortical_reference.user_can_edit_cortical_neuron_per_vox_count
 	_line_synaptic_attractivity.editable = cortical_reference.user_can_edit_cortical_synaptic_attractivity
 	_vector_dimensions.editable = cortical_reference.user_can_edit_dimensions
+	
+	cortical_reference.name_updated.connect(FEAGI_set_cortical_name)
+	cortical_reference.cortical_neuron_per_vox_count_updated.connect(FEAGI_set_voxel_neuron_density)
+	cortical_reference.cortical_synaptic_attractivity_updated.connect(FEAGI_set_synaptic_attractivity)
+	cortical_reference.dimensions_updated.connect(FEAGI_set_cortical_dimension)
+	cortical_reference.coordinates_3D_updated.connect(FEAGI_set_cortical_position)
 
 
 func FEAGI_set_cortical_name(new_name: StringName, _duplicate_ref: BaseCorticalArea):
@@ -112,7 +119,7 @@ func _append_to_growing_update(key: StringName, value: Variant) -> void:
 	_update_button.disabled = false
 
 func _enable_3D_preview():
-		var preview_close_signals: Array[Signal] = [_update_button.pressed, top_panel.closed_window_no_name, top_panel.tree_exiting]
+		var preview_close_signals: Array[Signal] = [_update_button.pressed, top_panel.close_window_requested, top_panel.tree_exiting]
 		_preview_handler = GenericSinglePreviewHandler.new()
 		_preview_handler.start_BM_preview(_vector_dimensions.current_vector, _vector_position.current_vector)
 		_preview_handler.connect_BM_preview(_vector_position.user_updated_vector, _vector_dimensions.user_updated_vector, preview_close_signals)
