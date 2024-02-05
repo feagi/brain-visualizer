@@ -49,5 +49,4 @@ text = "Choose a location:"
 
 [node name="location" parent="location" instance=ExtResource("3_wwnb4")]
 layout_mode = 2
-
-[editable path="location/location"]
+initial_vector = Vector3i(40, 0, 0)
