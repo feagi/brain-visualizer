@@ -28,6 +28,8 @@ layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
 
 [node name="TitleBar" parent="." instance=ExtResource("2_1dl3f")]
 layout_mode = 0
