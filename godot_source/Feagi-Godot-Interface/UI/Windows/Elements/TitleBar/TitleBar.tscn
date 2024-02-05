@@ -18,6 +18,10 @@ script = ExtResource("1_dpkpa")
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
+[node name="gap" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
 [node name="Title_Text" type="Label" parent="HBoxContainer"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
