@@ -22,8 +22,8 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	grab_focus()
 
 	# TODO this really shouldnt be here
-	if "left_bar" in UIManager.window_manager.loaded_windows.keys():
-		UIManager.window_manager.spawn_cortical_properties(cortical_area)
+	if "left_bar" in VisConfig.UI_manager.window_manager.loaded_windows.keys():
+		VisConfig.UI_manager.window_manager.spawn_cortical_properties(cortical_area)
 	
 
 func _button_details() -> void:
