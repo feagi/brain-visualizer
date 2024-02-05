@@ -27,3 +27,4 @@ signal retrieved_latest_FEAGI_health(burst_engine: bool, genome_availibility: bo
 
 ## User selected a cortical area in BV or CB
 signal user_selected_cortical_area(cortical_area: BaseCorticalArea)
+# TODO this should be moved to the UI manager
