@@ -52,7 +52,7 @@ text = "1. Please Select A Source Area..."
 
 [node name="TextureButton" type="TextureButton" parent="VBoxContainer/step1/step1"]
 visible = false
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -82,7 +82,7 @@ text = "2. Please Select A Destination Area..."
 
 [node name="TextureButton" type="TextureButton" parent="VBoxContainer/step2/step2"]
 visible = false
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -115,7 +115,7 @@ text = "3. Please Select A Morphology..."
 
 [node name="TextureButton" type="TextureButton" parent="VBoxContainer/step3/step3/HBoxContainer"]
 visible = false
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

@@ -158,8 +158,8 @@ func _set_destination(cortical_area: BaseCorticalArea) -> void:
 	FeagiRequests.get_mapping_properties_between_two_areas(_source, _destination)
 	if !_finished_selecting:
 		_step3_panel.visible = true
-		_step3_info.visible = true
 		current_state = POSSIBLE_STATES.MORPHOLOGY
+		pass
 	else:
 		current_state = POSSIBLE_STATES.IDLE
 
