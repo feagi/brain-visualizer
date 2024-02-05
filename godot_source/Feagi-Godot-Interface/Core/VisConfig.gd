@@ -26,8 +26,5 @@ func _ready() -> void:
 	push_warning("Init Brain Visualizer Verion " + str(version.manual_version))
 	push_warning("Compile time: " + Time.get_datetime_string_from_unix_time(version.automatic_version))
 
-func show_info_popup(title_text: StringName, message_text: StringName, button_text: StringName, icon: WindowPopupInfo.ICON = WindowPopupInfo.ICON.DEFAULT) -> void:
-	UI_manager.window_manager.spawn_info_popup(title_text, message_text, button_text, icon)
-
 func _on_ping_timer_end() -> void:
 	FeagiRequests.send_ping_to_FEAGI()

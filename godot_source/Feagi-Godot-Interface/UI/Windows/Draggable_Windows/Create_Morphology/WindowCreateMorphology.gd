@@ -90,15 +90,11 @@ func _step_2_input_properties(morphology_type: Morphology.MORPHOLOGY_TYPE):
 func _on_create_morphology_pressed():
 
 	if _morphology_name.text == "":
-		VisConfig.show_info_popup("Unable to create morphology",
-		"Please define a name for your morphology!",
-		"ok")
+		#TODO
 		return
 	
 	if _morphology_name.text in FeagiCache.morphology_cache.available_morphologies.keys():
-		VisConfig.show_info_popup("Unable to create morphology",
-		"That morphology name is already in use!",
-		"ok")
+		#TODO
 		return
 
 	match _selected_morphology_type:
