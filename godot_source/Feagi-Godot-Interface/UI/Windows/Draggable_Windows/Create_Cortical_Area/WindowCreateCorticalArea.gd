@@ -107,13 +107,38 @@ func _user_requesing_creation() -> void:
 				false
 			)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			# Checks...
+			if _custom_definition.cortical_name.text == "":
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				return
+			
+			if FeagiCache.cortical_areas_cache.exist_cortical_area_of_name(_custom_definition.cortical_name.text):
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				return
+			
+			#Create
 			FeagiRequests.add_custom_cortical_area(
 				_custom_definition.cortical_name.text,
 				_custom_definition.location.current_vector,
 				_custom_definition.dimensions.current_vector,
 				false
 				)
+				
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			# Checks...
+			if _memory_definition.cortical_name.text == "":
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				return
+			
+			if FeagiCache.cortical_areas_cache.exist_cortical_area_of_name(_memory_definition.cortical_name.text):
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				return
+			
+			#Create
 			FeagiRequests.add_memory_cortical_area(
 				_memory_definition.cortical_name.text,
 				_memory_definition.location.current_vector,
