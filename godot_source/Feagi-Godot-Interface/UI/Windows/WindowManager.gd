@@ -2,7 +2,7 @@ extends Node
 class_name WindowManager
 ## Coordinates all the visible windows
 
-const _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.tscn")
+const _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/WindowCorticalProperties.tscn")
 const _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
 const _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 const _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
@@ -25,7 +25,7 @@ var _window_memory_states: Dictionary = {
 
 ## Opens a left pane allowing the user to view and edit details of a particular cortical area
 func spawn_left_panel(cortical_area: BaseCorticalArea) -> void:
-	var left_bar: WindowLeftPanel = _default_spawn_window(_prefab_left_bar, "left_bar") as WindowLeftPanel
+	var left_bar: WindowCorticalProperties = _default_spawn_window(_prefab_left_bar, "left_bar") as WindowCorticalProperties
 	left_bar.setup(cortical_area)
 
 func spawn_create_morphology() -> void:

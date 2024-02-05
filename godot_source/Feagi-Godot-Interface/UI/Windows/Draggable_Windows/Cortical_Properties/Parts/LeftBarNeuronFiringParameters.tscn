@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://rvvhpq3y0on7"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarNeuronFiringParameters.gd" id="1_ko350"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarNeuronFiringParameters.gd" id="1_ko350"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_ermgo"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="4_uex0y"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_7rehv"]

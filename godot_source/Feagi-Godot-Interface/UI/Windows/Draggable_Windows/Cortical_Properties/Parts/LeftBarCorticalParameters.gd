@@ -6,7 +6,7 @@ class_name LeftBarCorticalParameters
 ## User pressed update button, the following changes are requested
 signal user_requested_update(changed_values: Dictionary)
 
-var top_panel: WindowLeftPanel
+var top_panel: WindowCorticalProperties
 var _line_cortical_name: TextInput
 var _line_cortical_ID: TextInput
 var _line_cortical_type: TextInput

@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3 uid="uid://da355xfk6trdo"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMapping.gd" id="1_1eg3c"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarBottomMapping.gd" id="1_1eg3c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="2_dtqim"]
 [ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="3_wmdqc"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_xmo8e"]

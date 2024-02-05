@@ -1,5 +1,5 @@
 extends BaseWindowPanel
-class_name WindowLeftPanel
+class_name WindowCorticalProperties
 
 var _cortical_area_ref: BaseCorticalArea
 

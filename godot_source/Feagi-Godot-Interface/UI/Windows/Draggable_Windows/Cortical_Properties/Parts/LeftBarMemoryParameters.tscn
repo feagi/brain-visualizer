@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://dm68mg7exp1ca"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarMemoryParameters.gd" id="1_dvgya"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarMemoryParameters.gd" id="1_dvgya"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="2_6ygxt"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_ij6sh"]
 
