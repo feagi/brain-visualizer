@@ -1,8 +1,8 @@
 [gd_scene load_steps=2 format=3 uid="uid://ckkgl10utu0i8"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarCorticalAreaMonitoring.gd" id="1_ofec4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.gd" id="1_ofec4"]
 
-[node name="LeftBarPremium" type="VBoxContainer"]
+[node name="CorticalPropertiesCorticalMonitoring" type="VBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

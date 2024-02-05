@@ -1,11 +1,11 @@
 [gd_scene load_steps=5 format=3 uid="uid://de7cguh4dnbxg"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarPostSynapticPotentialParameters.gd" id="1_srbdr"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesPostSynapticPotentialParameters.gd" id="1_srbdr"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="2_r401c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_mgt73"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_6mq6g"]
 
-[node name="LeftBarPostSynapticPotentialParameters" type="VBoxContainer"]
+[node name="CorticalPropertiesPostSynapticPotentialParameters" type="VBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

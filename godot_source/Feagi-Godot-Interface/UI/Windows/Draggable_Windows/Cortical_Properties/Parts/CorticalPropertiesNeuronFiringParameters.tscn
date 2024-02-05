@@ -1,12 +1,12 @@
 [gd_scene load_steps=6 format=3 uid="uid://rvvhpq3y0on7"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarNeuronFiringParameters.gd" id="1_ko350"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.gd" id="1_ko350"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_ermgo"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="4_uex0y"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_7rehv"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_xb4by"]
 
-[node name="LeftBarMiddle" type="VBoxContainer"]
+[node name="CorticalPropertiesNeuronFiringParameters" type="VBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

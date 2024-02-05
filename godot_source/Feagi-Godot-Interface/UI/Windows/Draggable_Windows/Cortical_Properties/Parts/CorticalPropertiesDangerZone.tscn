@@ -1,12 +1,12 @@
 [gd_scene load_steps=6 format=3 uid="uid://ckej7m86vhcdj"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/LeftBarDangerZone.gd" id="1_7ba0m"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesDangerZone.gd" id="1_7ba0m"]
 [ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="2_2yub4"]
 [ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="3_a33b0"]
 [ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="4_kkn3p"]
 [ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="5_ydqdk"]
 
-[node name="LeftBarDangerZone" type="VBoxContainer"]
+[node name="CorticalPropertiesDangerZone" type="VBoxContainer"]
 script = ExtResource("1_7ba0m")
 
 [node name="Delete" type="HBoxContainer" parent="."]
