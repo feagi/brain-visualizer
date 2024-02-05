@@ -32,11 +32,11 @@ func setup(data: Dictionary, _main_window: Node) -> void:
 	
 
 func _user_pressed_delete_button():
-	print("Left Bar is requesting Cortical Connection Deletion")
+	print("Cortical Properties is requesting Cortical Connection Deletion")
 	FeagiRequests.request_delete_mapping_between_corticals(_source_area, _destination_area)
 	
 func _user_pressed_edit_button():
-	print("Left Bar is requesting Cortical Connection Editing")
+	print("Cortical Properties is requesting Cortical Connection Editing")
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_area, _destination_area)
 
 func _cortical_name_changed(new_name: StringName, _cortical_area: BaseCorticalArea) -> void:

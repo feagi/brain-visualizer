@@ -104,7 +104,7 @@ func _FEAGI_deleted_cortical_area(removed_cortical_area: BaseCorticalArea):
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
 		close_window()
 
-## Flexible method to return all collapsed sections in left bar
+## Flexible method to return all collapsed sections in Cortical Properties
 func _get_expanded_sections() -> Array[bool]:
 	var main_body: Control = get_child(0)
 	var output: Array[bool] = []
@@ -113,7 +113,7 @@ func _get_expanded_sections() -> Array[bool]:
 			output.append((child as VerticalCollapsible).is_open)
 	return output
 
-## Flexible method to set all collapsed sections in left bar
+## Flexible method to set all collapsed sections in Cortical Properties
 func _set_expanded_sections(expanded: Array[bool]) -> void:
 	var collapsibles: Array[VerticalCollapsible] = []
 	var main_body: Control = get_child(0)
