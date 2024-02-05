@@ -2,20 +2,20 @@ extends Node
 class_name WindowManager
 ## Coordinates all the visible windows
 
-var _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.tscn")
-var _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
-var _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
-var _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
-var _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
-var _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
-var _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
-var _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
-var _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
-var _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
-var _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
-var _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
-var _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
-var _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
+const _prefab_left_bar: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/WindowLeftPanel.tscn")
+const _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.tscn")
+const _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
+const _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
+const _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
+const _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
+const _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
+const _prefab_popup_info: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
+const _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
+const _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
+const _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
+const _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
+const _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
+const _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 
 var loaded_windows: Dictionary
 
