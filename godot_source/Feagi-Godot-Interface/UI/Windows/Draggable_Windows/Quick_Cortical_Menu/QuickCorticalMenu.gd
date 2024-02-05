@@ -20,6 +20,10 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 		$HBoxContainer/Clone.disabled = true
 		$HBoxContainer/Clone.tooltip_text = "This Cortical Area Cannot Be Cloned"
 	grab_focus()
+
+	# TODO this really shouldnt be here
+	if "left_bar" in UIManager.window_manager.loaded_windows.keys():
+		UIManager.window_manager.spawn_cortical_properties(cortical_area)
 	
 
 func _button_details() -> void:
