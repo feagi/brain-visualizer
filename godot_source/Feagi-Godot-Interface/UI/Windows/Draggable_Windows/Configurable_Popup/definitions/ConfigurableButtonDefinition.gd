@@ -2,7 +2,7 @@ extends Object
 class_name ConfigurableButtonDefinition
 ## Used by [ConfigurablePopupDefinition] to add a button
 
-const DEFAULT_MIN_SIZE: Vector2i = Vector2i(64, 128)
+const DEFAULT_MIN_SIZE: Vector2i = Vector2i(128, 64)
 
 var text: StringName
 var pressed_action: Callable
