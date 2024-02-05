@@ -23,7 +23,7 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	
 
 func _button_details() -> void:
-	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area)
+	VisConfig.UI_manager.window_manager.spawn_cortical_properties(_cortical_area)
 	_close_window()
 
 func _button_quick_connect() -> void:

@@ -59,7 +59,7 @@ func _ready():
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_reference: BaseCorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
-	print("loading Left Pane Window for cortical area " + cortical_area_reference.cortical_ID)
+	print("loading Cortical Properties Window for cortical area " + cortical_area_reference.cortical_ID)
 
 	section_cortical.display_cortical_properties(cortical_area_reference)
 	section_post_synaptic_potential.display_cortical_properties(cortical_area_reference)
