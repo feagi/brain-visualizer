@@ -1,5 +1,5 @@
 extends Node
-class_name LeftBarBottomMappingPrefab
+class_name CorticalPropertiesBottomMappingPrefab
 
 var _ID_Button: TextButton_Element
 var _Delete_Button: TextureButton_Element

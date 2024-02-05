@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarConnections
+class_name CorticalPropertiesConnections
 
 var _scroll_afferent: BaseScroll
 var _scroll_efferent: BaseScroll

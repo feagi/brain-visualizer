@@ -11,13 +11,13 @@ var collapsible_cortical_monitoring: VerticalCollapsible
 var collapsible_connections: VerticalCollapsible
 var collapsible_dangerzone: VerticalCollapsible
 
-var section_cortical: LeftBarCorticalParameters
-var section_neuron_firing: LeftBarNeuronFiringParameters
-var section_post_synaptic_potential: LeftBarPostSynapticPotentialParameters
-var section_memory: LeftBarMemoryParameters
-var section_cortical_monitoring: LeftBarCorticalAreaMonitoring
-var section_connections: LeftBarConnections
-var section_dangerzone: LeftBarDangerZone
+var section_cortical: CorticalPropertiesCorticalParameters
+var section_neuron_firing: CorticalPropertiesNeuronFiringParameters
+var section_post_synaptic_potential: CorticalPropertiesPostSynapticPotentialParameters
+var section_memory: CorticalPropertiesMemoryParameters
+var section_cortical_monitoring: CorticalPropertiesCorticalAreaMonitoring
+var section_connections: CorticalPropertiesConnections
+var section_dangerzone: CorticalPropertiesDangerZone
 
 func _ready():
 	_setup_base_window("left_bar")

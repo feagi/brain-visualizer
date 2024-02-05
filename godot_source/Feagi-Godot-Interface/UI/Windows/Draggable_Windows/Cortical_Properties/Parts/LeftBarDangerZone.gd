@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarDangerZone
+class_name CorticalPropertiesDangerZone
 
 # https://www.youtube.com/watch?v=yK0P1Bk8Cx4
 

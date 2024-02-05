@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarCorticalParameters
+class_name CorticalPropertiesCorticalParameters
 ## Top Section of the Cortical Properties Window
 ## TODO add field color changing
 
