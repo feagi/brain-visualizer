@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3 uid="uid://da355xfk6trdo"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMapping.gd" id="1_1eg3c"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesBottomMapping.gd" id="1_1eg3c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="2_dtqim"]
 [ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="3_wmdqc"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_xmo8e"]
@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="5_shpep"]
 [ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="6_bv1kt"]
 
-[node name="LeftBarBottomMappingPrefab" type="HBoxContainer"]
+[node name="CorticalPropertiesBottomMappingPrefab" type="HBoxContainer"]
 script = ExtResource("1_1eg3c")
 
 [node name="Cortical_ID" type="Button" parent="."]

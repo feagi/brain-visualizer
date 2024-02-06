@@ -40,6 +40,20 @@ tooltip_text = "Post-Synaptic Potential
 "
 alignment = 1
 script = ExtResource("3_2p8f4")
+min_value = 0.0
+
+[node name="BoxContainer2" type="BoxContainer" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="Inhibitory" type="CheckButton" parent="BoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 4
+tooltip_text = "Plasticity"
+alignment = 1
+clip_text = true
+icon_alignment = 1
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 custom_minimum_size = Vector2(100, 0)
@@ -95,6 +109,7 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
+[connection signal="toggled" from="BoxContainer2/Inhibitory" to="." method="_on_user_toggle_plasticity"]
 [connection signal="toggled" from="BoxContainer/Plasticity" to="." method="_on_user_toggle_plasticity"]
 [connection signal="pressed" from="edit" to="." method="_on_info_pressed"]
 [connection signal="pressed" from="remove" to="." method="_on_delete_pressed"]

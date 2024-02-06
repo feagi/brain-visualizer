@@ -49,7 +49,7 @@ button_text = &"Cortical Areas"
 gap_between_text_and_texture = 5
 
 [node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(54, 54)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 texture_normal = ExtResource("4_ot5te")
 texture_pressed = ExtResource("5_58ohp")
@@ -70,7 +70,7 @@ button_text = &"Connectivity Rules"
 gap_between_text_and_texture = 5
 
 [node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2"]
-custom_minimum_size = Vector2(54, 54)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 texture_normal = ExtResource("4_ot5te")
 texture_pressed = ExtResource("5_58ohp")

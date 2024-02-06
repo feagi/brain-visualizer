@@ -64,13 +64,13 @@ func _input(event: InputEvent):
 func reset_camera() -> void:
 	teleport_to(_initial_position, _initial_euler_rotation)
 
-
 func teleport_to(new_position: Vector3, new_euler_rotation: Vector3) -> void:
 	position = new_position
 	rotation_degrees = new_euler_rotation
 
 func point_camera_at(position_to_look_at: Vector3) -> void:
 	look_at(position_to_look_at, Vector3.UP)
+
 
 func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
 

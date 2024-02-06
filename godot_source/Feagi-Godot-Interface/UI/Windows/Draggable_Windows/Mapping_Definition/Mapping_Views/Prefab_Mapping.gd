@@ -6,6 +6,7 @@ signal mapping_to_be_deleted()
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
+var _inhibitory: Button
 var _plasticity: Button
 var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
@@ -17,6 +18,7 @@ func _ready() -> void:
 	_morphologies = $Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
+	_inhibitory = $BoxContainer2/Inhibitory
 	_plasticity = $BoxContainer/Plasticity
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
@@ -27,7 +29,8 @@ func _ready() -> void:
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]
 	_scalar.current_vector = _mapping_ref.scalar
-	_PSP.current_float = _mapping_ref.post_synaptic_current_multiplier
+	_PSP.current_float = abs(_mapping_ref.post_synaptic_current_multiplier)
+	_inhibitory.button_pressed = _mapping_ref.post_synaptic_current_multiplier < 0
 	_plasticity.button_pressed = _mapping_ref.is_plastic
 	_plasticity_constant.current_float = _mapping_ref.plasticity_constant
 	_LTP_multiplier.current_float = _mapping_ref.LTP_multiplier
@@ -46,6 +49,8 @@ func generate_mapping_property() -> MappingProperty:
 	var morphology_used: Morphology = _morphologies.get_selected_morphology()
 	var scalar: Vector3i = _scalar.current_vector
 	var PSP: float = _PSP.current_float
+	if _inhibitory.button_pressed:
+		PSP = -PSP
 	var is_plastic: bool = _plasticity.button_pressed
 	var plasticity_constant: float = _plasticity_constant.current_float
 	var LTP_multiplier: float = _LTP_multiplier.current_float
@@ -80,6 +85,6 @@ func _on_delete_pressed() -> void:
 func _on_info_pressed() -> void:
 	var morphology_used: Morphology = _morphologies.get_selected_morphology()
 	if morphology_used is NullMorphology:
-		VisConfig.show_info_popup("Missing Morphology", "Please ensure morphologies are defined for all mappings", "OK")
+		#TODO
 		return
 	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)

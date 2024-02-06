@@ -31,6 +31,7 @@ text = "Choose a location"
 
 [node name="location" parent="location" instance=ExtResource("3_dcueh")]
 layout_mode = 2
+initial_vector = Vector3i(40, 0, 0)
 
 [node name="Gap" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 4)

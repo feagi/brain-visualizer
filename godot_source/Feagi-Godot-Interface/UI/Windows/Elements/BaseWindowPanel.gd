@@ -19,6 +19,9 @@ var _child: Container
 var _window_name: StringName # Internal name
 var _titlebar: TitleBar
 
+func _gui_input(event: InputEvent) -> void:
+	_bring_to_top_if_click(event)
+
 func bring_window_to_top():
 	VisConfig.UI_manager.window_manager.bring_window_to_top(self)
 
@@ -55,6 +58,7 @@ func _setup_base_window(window_name: StringName) -> void:
 	_child.resized.connect(_update_sizes_given_child_size_update)
 	_titlebar.button_ref.pressed.connect(close_window)
 	_titlebar.setup_from_window(self)
+	_titlebar.clicked.connect(bring_window_to_top)
 	
 	if additionally_bind_to_UI_scale_change:
 		VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(0)) # ignore the argument

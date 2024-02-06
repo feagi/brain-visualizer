@@ -1,15 +1,15 @@
 [gd_scene load_steps=9 format=3 uid="uid://bsjtfu2i0eyou"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarConnections.gd" id="1_kpjok"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesConnections.gd" id="1_kpjok"]
 [ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_6cgqo"]
 [ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_8k7yo"]
 [ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_kwhmv"]
 [ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_sawim"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_omc12"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="7_wa44s"]
-[ext_resource type="PackedScene" uid="uid://da355xfk6trdo" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Left_Bar/Parts/LeftBarBottomMappingPrefab.tscn" id="8_4w5yx"]
+[ext_resource type="PackedScene" uid="uid://da355xfk6trdo" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesBottomMappingPrefab.tscn" id="8_4w5yx"]
 
-[node name="LeftBarBottom" type="VBoxContainer"]
+[node name="CorticalPropertiesConnections" type="VBoxContainer"]
 script = ExtResource("1_kpjok")
 
 [node name="L_A" type="HBoxContainer" parent="."]

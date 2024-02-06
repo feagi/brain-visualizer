@@ -53,6 +53,7 @@ func _gui_input(event: InputEvent) -> void:
 
 func _UI_scale_changed(multiplier: float) -> void:
 	var label: Label = $HBoxContainer/Title_Text
+	#TODO
 
 ## The parent window object calls this to finish setting up this child. Technically not best practice
 func setup_from_window(window: BaseWindowPanel) -> void:

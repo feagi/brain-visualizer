@@ -1,7 +1,7 @@
 extends BaseWindowPanel
 class_name QuickCorticalMenu
 
-const CENTER_OFFSET: Vector2 = Vector2(0,200)
+const CENTER_OFFSET: Vector2 = Vector2(0, 100)
 
 var _cortical_area: BaseCorticalArea
 var _title_bar: TitleBar
@@ -12,7 +12,11 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	_title_bar = $TitleBar
 	_title_bar.title = _cortical_area.name
 	focus_exited.connect(_on_focus_lost)
-	position = Vector2(VisConfig.UI_manager.screen_center.x, 0) - (size / 2.0) + CENTER_OFFSET
+	
+	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - CENTER_OFFSET
+	if position_to_spawn.y < CENTER_OFFSET.y:
+		position_to_spawn.y += CENTER_OFFSET.y * 2.0
+	position = position_to_spawn
 	if !_cortical_area.user_can_delete_this_area:
 		$HBoxContainer/Delete.disabled = true
 		$HBoxContainer/Delete.tooltip_text = "This Cortical Area Cannot Be Deleted"
@@ -20,10 +24,14 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 		$HBoxContainer/Clone.disabled = true
 		$HBoxContainer/Clone.tooltip_text = "This Cortical Area Cannot Be Cloned"
 	grab_focus()
+
+	# TODO this really shouldnt be here
+	if "left_bar" in VisConfig.UI_manager.window_manager.loaded_windows.keys():
+		VisConfig.UI_manager.window_manager.spawn_cortical_properties(cortical_area)
 	
 
 func _button_details() -> void:
-	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area)
+	VisConfig.UI_manager.window_manager.spawn_cortical_properties(_cortical_area)
 	_close_window()
 
 func _button_quick_connect() -> void:
