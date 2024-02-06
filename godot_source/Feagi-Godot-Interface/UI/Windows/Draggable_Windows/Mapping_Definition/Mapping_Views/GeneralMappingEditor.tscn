@@ -38,6 +38,13 @@ layout_mode = 2
 text = "PSP Multiplier"
 horizontal_alignment = 1
 
+[node name="Label8" type="Label" parent="labels_box"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Inhibitory"
+horizontal_alignment = 1
+clip_text = true
+
 [node name="Label4" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
