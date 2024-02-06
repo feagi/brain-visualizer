@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarMemoryParameters
+class_name CorticalPropertiesMemoryParameters
 
 ## User pressed update button, the following changes are requested
 signal user_requested_update(changed_values: Dictionary)

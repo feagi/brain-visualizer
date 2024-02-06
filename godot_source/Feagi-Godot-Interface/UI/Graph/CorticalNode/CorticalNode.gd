@@ -42,7 +42,7 @@ func _ready():
 	_graph = get_parent()
 	child_order_changed.connect(_shrink)
 
-# Announce if cortical area was selected with one click and open left panel on double click
+# Announce if cortical area was selected with one click and open cortical properties panel on double click
 func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event

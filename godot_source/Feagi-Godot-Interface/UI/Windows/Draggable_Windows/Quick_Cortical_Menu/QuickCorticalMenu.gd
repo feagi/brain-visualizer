@@ -20,10 +20,14 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 		$HBoxContainer/Clone.disabled = true
 		$HBoxContainer/Clone.tooltip_text = "This Cortical Area Cannot Be Cloned"
 	grab_focus()
+
+	# TODO this really shouldnt be here
+	if "left_bar" in VisConfig.UI_manager.window_manager.loaded_windows.keys():
+		VisConfig.UI_manager.window_manager.spawn_cortical_properties(cortical_area)
 	
 
 func _button_details() -> void:
-	VisConfig.UI_manager.window_manager.spawn_left_panel(_cortical_area)
+	VisConfig.UI_manager.window_manager.spawn_cortical_properties(_cortical_area)
 	_close_window()
 
 func _button_quick_connect() -> void:

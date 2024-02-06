@@ -145,9 +145,10 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 ## Returns an array of cortical areas whose name contains a given substring
 ## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
 func search_for_cortical_areas_by_name(search_term: StringName) -> Array[BaseCorticalArea]:
+	var lowercase_search: StringName = search_term.to_lower()
 	var output: Array[BaseCorticalArea] = []
 	for cortical_area in _cortical_areas.values():
-		if cortical_area.name.to_lower().contains(search_term.to_lower()):
+		if cortical_area.name.to_lower().contains(lowercase_search):
 			output.append(cortical_area)
 	return output
 
@@ -221,3 +222,11 @@ func hard_wipe_cortical_areas():
 		remove_cortical_area(cortical_area_ID)
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
 #endregion
+
+#region queries
+## Returns true if a cortical area exists with a given name (NOT ID)
+func exist_cortical_area_of_name(searching_name: StringName) -> bool:
+	for cortical_area in _cortical_areas.values():
+		if cortical_area.name.to_lower().contains(searching_name.to_lower()):
+			return true
+	return false

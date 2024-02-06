@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarDangerZone
+class_name CorticalPropertiesDangerZone
 
 # https://www.youtube.com/watch?v=yK0P1Bk8Cx4
 
@@ -10,5 +10,5 @@ func initial_values_from_FEAGI(cortical_reference: BaseCorticalArea) -> void:
 
 ## Called via delete button press (signal connected via tscn)
 func _user_pressed_delete_button() -> void:
-	print("Left Bar requesting cortical area deletion for " + _cortical_area_ref.cortical_ID)
+	print("Cortical Properties requesting cortical area deletion for " + _cortical_area_ref.cortical_ID)
 	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)

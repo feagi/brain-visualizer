@@ -1,5 +1,5 @@
 extends VBoxContainer
-class_name LeftBarCorticalAreaMonitoring
+class_name CorticalPropertiesCorticalAreaMonitoring
 
 var membrane_toggle: CheckButton
 var post_synaptic_toggle: CheckButton

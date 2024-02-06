@@ -1,5 +1,5 @@
 extends BaseWindowPanel
-class_name WindowLeftPanel
+class_name WindowCorticalProperties
 
 var _cortical_area_ref: BaseCorticalArea
 
@@ -11,13 +11,13 @@ var collapsible_cortical_monitoring: VerticalCollapsible
 var collapsible_connections: VerticalCollapsible
 var collapsible_dangerzone: VerticalCollapsible
 
-var section_cortical: LeftBarCorticalParameters
-var section_neuron_firing: LeftBarNeuronFiringParameters
-var section_post_synaptic_potential: LeftBarPostSynapticPotentialParameters
-var section_memory: LeftBarMemoryParameters
-var section_cortical_monitoring: LeftBarCorticalAreaMonitoring
-var section_connections: LeftBarConnections
-var section_dangerzone: LeftBarDangerZone
+var section_cortical: CorticalPropertiesCorticalParameters
+var section_neuron_firing: CorticalPropertiesNeuronFiringParameters
+var section_post_synaptic_potential: CorticalPropertiesPostSynapticPotentialParameters
+var section_memory: CorticalPropertiesMemoryParameters
+var section_cortical_monitoring: CorticalPropertiesCorticalAreaMonitoring
+var section_connections: CorticalPropertiesConnections
+var section_dangerzone: CorticalPropertiesDangerZone
 
 func _ready():
 	_setup_base_window("left_bar")
@@ -59,7 +59,7 @@ func _ready():
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_reference: BaseCorticalArea) -> void:
 	_cortical_area_ref = cortical_area_reference
-	print("loading Left Pane Window for cortical area " + cortical_area_reference.cortical_ID)
+	print("loading Cortical Properties Window for cortical area " + cortical_area_reference.cortical_ID)
 
 	section_cortical.display_cortical_properties(cortical_area_reference)
 	section_post_synaptic_potential.display_cortical_properties(cortical_area_reference)
@@ -104,7 +104,7 @@ func _FEAGI_deleted_cortical_area(removed_cortical_area: BaseCorticalArea):
 	if removed_cortical_area.cortical_ID == _cortical_area_ref.cortical_ID:
 		close_window()
 
-## Flexible method to return all collapsed sections in left bar
+## Flexible method to return all collapsed sections in Cortical Properties
 func _get_expanded_sections() -> Array[bool]:
 	var main_body: Control = get_child(0)
 	var output: Array[bool] = []
@@ -113,7 +113,7 @@ func _get_expanded_sections() -> Array[bool]:
 			output.append((child as VerticalCollapsible).is_open)
 	return output
 
-## Flexible method to set all collapsed sections in left bar
+## Flexible method to set all collapsed sections in Cortical Properties
 func _set_expanded_sections(expanded: Array[bool]) -> void:
 	var collapsibles: Array[VerticalCollapsible] = []
 	var main_body: Control = get_child(0)

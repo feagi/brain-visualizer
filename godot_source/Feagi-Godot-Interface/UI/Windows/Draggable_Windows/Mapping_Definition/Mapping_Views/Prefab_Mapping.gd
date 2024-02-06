@@ -80,6 +80,6 @@ func _on_delete_pressed() -> void:
 func _on_info_pressed() -> void:
 	var morphology_used: Morphology = _morphologies.get_selected_morphology()
 	if morphology_used is NullMorphology:
-		VisConfig.show_info_popup("Missing Morphology", "Please ensure morphologies are defined for all mappings", "OK")
+		#TODO
 		return
 	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)
