@@ -11,6 +11,11 @@ grow_horizontal = 2
 grow_vertical = 2
 snapping_enabled = false
 right_disconnects = true
+show_menu = false
+show_zoom_buttons = false
+show_grid_buttons = false
+show_minimap_button = false
+show_arrange_button = false
 script = ExtResource("1_06pyj")
 
 [node name="Timer" type="Timer" parent="."]
