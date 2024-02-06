@@ -19,7 +19,7 @@ var _child: Container
 var _window_name: StringName # Internal name
 var _titlebar: TitleBar
 
-func _input(event: InputEvent) -> void:
+func _gui_input(event: InputEvent) -> void:
 	_bring_to_top_if_click(event)
 
 func bring_window_to_top():
