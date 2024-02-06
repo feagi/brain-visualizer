@@ -89,5 +89,8 @@ stretch_mode = 0
 custom_minimum_size = Vector2(1300, 200)
 layout_mode = 2
 prefab_to_spawn = ExtResource("8_3thsv")
+enable_button_notice_when_list_is_empty = true
+button_notice_text = &"No mapping detected for the selected cortical areas. Click here to add one!"
 
 [connection signal="pressed" from="labels_box/add_button" to="." method="_add_mapping_pressed"]
+[connection signal="internal_add_button_pressed" from="Mappings" to="." method="_add_mapping_pressed"]
