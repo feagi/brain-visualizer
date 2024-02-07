@@ -8,6 +8,8 @@ signal internal_add_button_pressed()
 @export var main_window: Node
 @export var enable_button_notice_when_list_is_empty: bool = false
 @export var button_notice_text: StringName
+@export var top_gap: int = 8
+@export var bottom_gap: int = 8
 
 var _item_holder: BoxContainer # Can be either H or V
 var _add_button_container: BoxContainer
@@ -17,6 +19,12 @@ func _ready():
 	_add_button_container = $VBoxContainer/add_button_notice
 	$VBoxContainer/add_button_notice/Button.text = button_notice_text
 	_add_button_container.visible = enable_button_notice_when_list_is_empty
+	$VBoxContainer/add_button_notice/gap.custom_minimum_size.y = top_gap
+	$VBoxContainer/add_button_notice/gap2.custom_minimum_size.y = bottom_gap
+	if enable_button_notice_when_list_is_empty:
+		# Binds are used for the offset value, given that these signals fire before the node actually left, so that the get_number_of_children() call will be incorrect by 1 in either direction
+		_item_holder.child_exiting_tree.connect( _show_empty_button_if_empty.bind(-1))
+		_item_holder.child_entered_tree.connect( _show_empty_button_if_empty.bind(1))
 
 ## Used to spawn a child of the prefab defined, and pass in data in its 'setup' function
 func spawn_list_item(data: Dictionary = {}) -> Node:
@@ -33,10 +41,6 @@ func remove_child_by_index(index: int) -> void:
 		return
 	_item_holder.get_child(index + 1).queue_free()
 	
-	if !enable_button_notice_when_list_is_empty:
-		return
-	if get_number_of_children() != 0:
-		return
 	_add_button_container.visible = true
 
 ## Delete child by node name
@@ -46,15 +50,8 @@ func remove_child_by_name(child_name: StringName) -> void:
 		if child.name == child_name:
 			child.queue_free()
 			
-			if !enable_button_notice_when_list_is_empty:
-				return
-			if get_number_of_children() != 0:
-				return
-			_add_button_container.visible = true
-			
 			return
 	push_warning("Attempted to delete nonexistant child %s from scrollbar. skipping..." % child_name)
-	
 
 ## Deletes all children (list items)
 func remove_all_children() -> void:
@@ -75,3 +72,6 @@ func _get_children_of_list() -> Array[Node]:
 
 func _add_button_proxy() -> void:
 	internal_add_button_pressed.emit()
+
+func _show_empty_button_if_empty(_irrelevant, offset: int) -> void:
+	_add_button_container.visible = get_number_of_children() + offset == 0
