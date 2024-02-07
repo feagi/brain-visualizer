@@ -39,5 +39,8 @@ layout_mode = 2
 size_flags_vertical = 3
 prefab_to_spawn = ExtResource("5_dnbvl")
 main_window = NodePath("..")
+enable_button_notice_when_list_is_empty = true
+button_notice_text = &"   Add a vector   "
 
 [connection signal="pressed" from="header/add_vector" to="." method="add_vector_row"]
+[connection signal="internal_add_button_pressed" from="Vectors" to="." method="add_vector_row"]

@@ -69,5 +69,7 @@ custom_minimum_size = Vector2(550, 180)
 layout_mode = 2
 size_flags_vertical = 3
 prefab_to_spawn = ExtResource("3_k6hof")
+enable_button_notice_when_list_is_empty = true
+button_notice_text = &"   Add a pattern pair   "
 
 [connection signal="pressed" from="header/add_vector" to="." method="add_pattern_pair_row"]
