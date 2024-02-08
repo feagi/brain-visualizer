@@ -187,7 +187,7 @@ However, there is an array of corticalIDs denoting all afferent connections from
 
 
 # UI
-UI Elements, such as the bar on the top of the screen, all windows, the Circuit Builder, and the Brain Monitor, ALL read directly from the cache. TO request any changees, they go through the relevant function in **FeagiRequests**.
+UI Elements, such as the bar on the top of the screen, all windows, the Circuit Builder, and the Brain Monitor, ALL read directly from the cache. To request any changees, they go through the relevant function in **FeagiRequests**.
 
 UI elements in the brain visualizer all extend from the base UI functionality Godot itself provides, particuarly the use of [Containers](https://docs.godotengine.org/en/stable/tutorials/ui/gui_containers.html).
 
