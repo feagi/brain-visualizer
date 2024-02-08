@@ -53,7 +53,7 @@ The heart of the networking system lies in the **NetworkInterface** script. This
 For HTTP calls: Every HTTP endpoint of FEAGI has an equivalent function in the singular shared instance of **CallList** of the same name. Each function takes in any required parameters, and the return function (from a shared instance of **ResponseProxyFunctions**) to run at the end of the call with the HTTP response. each function retrieves the full endpoint URL from **AddressList**, and assembles a **RequestWorkerDefinition**, an object that defines instructions for how the HTTP request is to be processed.
 - **RequestWorkerDefinition** defines the type of HTTP call to make (GET, POST, etc), the URL endpoint to use, the parameters to pass, if the endpoint is a single call or should be polled (and if so, until what condition should the endpoint stop being polled). It is essentially a set of instructions, this object does not do anything on its own
 
-The assembled RequestWorkerDefinition is passed to a singular NetworkInterface instance, which is responsible for maintaining a pool of RequestWorkers, nodes that extend off of Godot's own HTTPRequest (TODO link), and that each handle a single HTTP request at a time. The NetworkInterface assigns an available RequestWorker (or will spawn an additional RequestWorker for it if none are available) and passes the RequestWorkerDefinition object.
+The assembled RequestWorkerDefinition is passed to a singular NetworkInterface instance, which is responsible for maintaining a pool of RequestWorkers, nodes that extend off of Godot's own [HTTPRequest](https://docs.godotengine.org/en/stable/classes/class_httprequest.html), and that each handle a single HTTP request at a time. The NetworkInterface assigns an available RequestWorker (or will spawn an additional RequestWorker for it if none are available) and passes the RequestWorkerDefinition object.
 
 The RequestWorker then executes the call as defined by the RequestWorkerDefinition
 
@@ -186,18 +186,35 @@ Mapping data (what cortical areas are connected to what, and using what morpholo
 However, there is an array of corticalIDs denoting all afferent connections from a cortical area as well. This way, we can see deduce all connections going in or out of a cortical area.
 
 
-(Following is old)
+# UI
+UI Elements, such as the bar on the top of the screen, all windows, the Circuit Builder, and the Brain Monitor, ALL read directly from the cache. TO request any changees, they go through the relevant function in **FeagiRequests**.
 
-### UI
-UI Elements, such as the bar on the top of the screen, all windows, the Circuit Builder, and the Brain Monitor All read directly from the cache, or directly are updated from FEAGI responses when displaying data.
+UI elements in the brain visualizer all extend from the base UI functionality Godot itself provides, particuarly the use of [Containers](https://docs.godotengine.org/en/stable/tutorials/ui/gui_containers.html).
 
-### Notable Scripts
-- FeagiRequests
-	- Autoloaded Script to centralize requests towards FEAGI, such as editing cortical areas or modifying morphologies
-- FEAGICache
-	- Autoloaded Script that holds all cached information about the state of the current genome
-- FEAGICacheEvents
-	- Autoloaded script that simply holds all signals correlating to FEAGI responses pertaining to cached data.
-		- Keep in mind many cache data type objects also have their own signals. FEAGICacheEvents is simply available as an option
-- FeagiEvents
-	- Autoloaded script that simply holds all signals correlating to FEAGI responses NOT pertaining to cached data.
+## UIManager
+**UIManager** is the root of all UI systems and itself coordinates UI interactions between UI systems (such as the WIndows, Circuit Builder, and Brain visualizer), and handles broad UI control over things such as resolution and window size change detection.
+
+## Windows
+All Windows (with the exception of the top bar as it is static) are saved as scene files. Each window acts independently, and are spawned and destroyed by the actions of **WindowManager**.
+
+### Window Manager
+This node/script spawns windows via instantiation of tscn files, as well as close them by name. All Windows are children of this node in the scene tree. This object also caches certain window states, such as position, such that they are not reset when a window is closed and reopened. This object also is responsible for actually closing windows.
+
+### BaseWindowPanel
+This is the base class all windows extend from. This class contains interactions for initialization (include the setup of its TitleBar), sizing, and closing. This class expects to be the root of the window scene, with its first child being a BoxContainer with the actual window internals, and the second child being a TitleBar element. Each window inherints from this base class and extends with functionality related to that windows purpose.
+
+#### WindowConfigurablePopup
+This is a unique window that starts blank, but is dynamically configured with the use of a **ConfigurablePopupDefinition** object. There are various factory methods that make producing this object very easy, and can then be passed to **WindowManager** to spawn. These are often used for simple notification or error popups throughout the program.
+
+## Circuit Builder
+Primarily handled by **CorticalNodeGraph**, This is the GUI element that allows view of the FEAGI genome as a 2D map. It is a heavily extended [GraphEdit](https://docs.godotengine.org/en/stable/classes/class_graphedit.html) that makes use of custom lines (since the built in connections of GraphEdit do not allow sufficient line customization.
+
+### CorticalNode
+This is the actual nodes visible on the graph that represent a cortical area. They listen to various signals of their associated **BaseCorticalArea** object from the cache to remain up to date with the FEAGI state.
+
+### InterCorticalConnection
+This is the custom connection line used by CorticalNode to denote mapping between cortical areas.
+
+## 3D Monitor
+This is the 3D visualization tool to see neuronal activity of various cortical areas. *CURRENTLY UNDERSET TO RECIEVE MAJOR REFACTORING, DOCUMENTATION TO BE UPDATED*
+
