@@ -13,7 +13,6 @@ const _prefab_popup_info_OLD: PackedScene = preload("res://Feagi-Godot-Interface
 const _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 const _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
 const _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
-const _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
 const _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
 const _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 const _prefab_configurable_popup: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Configurable_Popup/WindowConfigurablePopup.tscn")
@@ -82,10 +81,6 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> void:
 func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
 	quick_cortical_menu.setup(cortical_area)
-
-func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
-	var delete_confirmation: DeleteConfirmation = _default_spawn_window(_prefab_confirm_deletion, "delete_confirmation") as DeleteConfirmation
-	delete_confirmation.setup(cortical_area)
 	
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_prefab_import_amalgamation, "import_amalgamation") as WindowAmalgamationRequest
