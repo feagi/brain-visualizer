@@ -20,7 +20,7 @@ func _init(button_text: StringName, button_action: Callable,  button_closes_wind
 ## Create a button witha  specific action
 static func create_custom_button_definition(button_text: StringName, button_action: Callable, callable_arguments: Array = [], close_after: bool = true,  button_min_size: Vector2i = DEFAULT_MIN_SIZE) -> ConfigurableButtonDefinition:
 	if len(callable_arguments) > 0:
-		button_action.bindv(callable_arguments)
+		button_action = button_action.bindv(callable_arguments)
 	return ConfigurableButtonDefinition.new(button_text, button_action, false, close_after, button_min_size)
 	
 ## Create a button that closes the popup
