@@ -24,7 +24,7 @@ sequenceDiagram
 - **Core**: Responsibile for exchanging data with FEAGI and storing cached responses for immediate access
 - **UI**: All elements the users interacts with. None interact with feagi directly, but rather all read from the Core's cache and make change requests through Core.
 
-In essence, the Core is the 'backend' and the UI is the 'frontend'.
+In essence, the Core is the 'backend / middleware' and the UI is the 'frontend'.
 
 This division of labor is done since several UI elements all interact with the same data, and having only a single source of truth greatly reduces the chance of desyncs between UI elements, such as between the Brain Monitor and Circuit Builder
 
@@ -37,9 +37,11 @@ The Core is a collection of scripts defining nodes and objects to send requests 
   - HTTP requests (GET, POST, etc) are organized inside BV as functions with converted naming conventions as the actual endpoint call, and these functions each spawn their own web worker to make the call, and await for the response. The pool of workers is dynamic and can expand and shrink as needed to handle spikes in the requests for information
   - Websocket data allows back and forth communication between FEAGI and the BV client. Currently it is used to retrieve neuronal activity data and FEAGI calls to reset the BV state.
   - It is important to note future refactoring of BV is intending to move many network related communications away from web endpoints and towards websocket and webRTC
+  - Notable Scripts: FEAGIRequests.gd, FEAGIInterface.gd, NetworkInterface.gd, APIRequestWorker.gd, CallList.gd
 - **Cache**: A collection of objects intended to store data retrieved from FEAGI in an accessible manner. 
   - UI elements can never write to the Cache directly, only responses from FEAGI can effect the state of the Cache. 
   - Various objects in Cache have signals that emit when various variables are updated from FEAGI. This is utilized heavily in UI elements to keep information displayed to the user up to date
+  - Notable Scripts: ResponseProxyFunctions.gd, FEAGICache.gd, CorticalAreasCache.gd, MorphologiesCache.gd
 
 ## Networking
 
@@ -167,7 +169,7 @@ That being said, we continue refresh details from FEAGI on every detail lookup e
 
 **MorphologiesCache** stores morphology data as objects under a dictionary, which is key'd by the string name of the morphology in question. The MorphologiesCache object itself has methods for spawning morphology objects and inserting them into its dictionary given output data from FEAGI, as well as removing them. but otherwise simply manages the pool. It 
 
-All morphologies are stored in various morpholgy objects (such as **CompositeMorphology** or **FuncitonMorphology**) given the type of morphology they are. All these objects inherit from the **BaseMorphology** class, which contains properties utilized by all morphologies, such as their name. These morphology objects also each include signals that fire when their properties are updated, or if they are about to be deleted. 
+All morphologies are stored in various morpholgy objects (such as **CompositeMorphology** or **FunctionMorphology**) given the type of morphology they are. All these objects inherit from the **BaseMorphology** class, which contains properties utilized by all morphologies, such as their name. These morphology objects also each include signals that fire when their properties are updated, or if they are about to be deleted. 
 
 A **NullMorphology** object exists simply to be thrown in an error or to act as a stand in for data not yet retrieved.
 
@@ -179,11 +181,9 @@ Again like with morphologies, all cortical area objects are of various class typ
 
 ### Mapping Data
 
-Mapping data (what cortical areas are connected to what, and using what morphologies) is cached within the BaseCorticalArea object. Technically it is stored on the afferent cortical area of each connection, in a dictionary key'd by the cortical ID of the efferent end of that connection. The data is stored in the form of an **MappingProperties** object, which itself holds all the individual mappings beween those 2 cortical areas in that direction, with each being stored as a **MappingProperty** object. MappingProperties itself contains signals for when any internal MappingProperty is updated, it als contains properties describing other details of the mapping as a whole.
+Mapping data (what cortical areas are connected to what, and using what morphologies) is cached within the BaseCorticalArea object. Technically it is stored on the afferent cortical area of each connection, in a dictionary key'd by the cortical ID of the efferent end of that connection. The data is stored in the form of an **MappingProperties** object, which itself holds all the individual mappings beween those 2 cortical areas in that direction, with each being stored as a **MappingProperty** object (watch the plural!). MappingProperties itself contains signals for when any internal MappingProperty is updated, it also contains properties describing other details of the mapping as a whole.
 
-However, there is an array corticalIDs denoting all afferent connections from a cortical area as well. This way, we can see deduce all connections going in or out of a cortical area.
-
-TODO: Chart showing hwo cortical areas and how mapping data is stored between
+However, there is an array of corticalIDs denoting all afferent connections from a cortical area as well. This way, we can see deduce all connections going in or out of a cortical area.
 
 
 (Following is old)
