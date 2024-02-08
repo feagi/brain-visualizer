@@ -26,8 +26,7 @@ func generate_single_preview(initial_dimensions: Vector3, initial_position: Vect
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	var camera: BVCam = $Camera3D
 	var bv_location: Vector3 = cortical_area.BV_position()
-	camera.position = cortical_area.BV_position() + camera_snap_offset
-	camera.point_camera_at(cortical_area.BV_position())
+	camera.teleport_to_look_at_without_changing_angle(bv_location)
 
 func on_cortical_area_added(cortical_area: BaseCorticalArea) -> void:
 	generate_cortical_area(cortical_area)
