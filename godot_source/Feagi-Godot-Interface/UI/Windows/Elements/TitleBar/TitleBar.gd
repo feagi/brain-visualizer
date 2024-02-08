@@ -1,124 +1,43 @@
 extends PanelContainer
 class_name TitleBar
 
-const MINIMUM_TITLEBAR_HEIGHT: int = 40
-const DEFAULT_RESPAWN_POSITION: Vector2 = Vector2(100,100)
-
 signal drag_started(current_window_position: Vector2, current_mouse_position: Vector2)
-signal dragged(window_position: Vector2, mouse_position: Vector2,  mouse_delta_offset: Vector2)
 signal drag_finished(current_window_position: Vector2, current_mouse_position: Vector2)
+signal clicked()
 signal close_pressed()
 
 @export var mouse_normal_click_button: MouseButton = MOUSE_BUTTON_LEFT
 
-## Whether title bar movement calculations should use positional changes over frames rather delta directly
-@export var use_position_instead_of_delta_movement: bool = true
-
-## How far out remaining the titlebar can be before automatic repositioning occurs
-@export var reposition_buffer: int = 45
-
-@export var title_gap: int: #TODO
-	get: return 0
-	set(v): pass
-
-@export var title: String:
-	get: return $HBoxContainer/Title_Text.text #NOTE: DO not use cached references for exports
-	set(v): $HBoxContainer/Title_Text.text = v
-
-## if True, will attempt to automatically set up dragging behavior on parent window
-@export var automatic_setup_dragging: bool = true
-
-## if True, will attempt to automatically set up closing behavior (by hiding the window)
-@export var automatic_setup_hiding_closing: bool = true
-
-## if True, will attempt to set the correct width of the parent window, and maintain it
-@export var automatic_maintain_width: bool = true
-
-## if set to a non blank string, will attempt to automatically set up closing behavior on parent window for the window manager. CANNOT be mixed with hiding closing
-@export var automatic_setup_window_closing_for_window_manager_name: StringName
-
 ## if disabled, hide the close button entirely:
 @export var show_close_button: bool = true
 
-var is_dragging: bool:
-	get: return _is_dragging
+## How far out in any direction the title bar can go before it snaps back
+@export var screen_edge_buffer: int = 4
+
+## if disabled, will disable (fade) the close button to prevent it from being clicked
+@export var enable_close_button: bool = true:
+	get: return $HBoxContainer/Close_Button.visible
 	set(v):
-		if v == _is_dragging: 
-			return # ignore setting to the same value
-			
-		_is_dragging = v
-		if v:
-			# Start Drag
-			drag_started.emit(_parent.position, _viewport.get_mouse_position())
-			VisConfig.UI_manager.is_user_dragging_a_window = true
-			if _parent is DraggableWindow:
-				_parent.move_to_front()
-		else:
-			# end Drag
-			var screen_rect: Rect2 = Rect2(Vector2(0,0), VisConfig.UI_manager.screen_size)
-			var self_rect: Rect2 = get_global_rect().grow(-reposition_buffer).abs()
-			if !screen_rect.intersects(self_rect):
-				_parent.position = DEFAULT_RESPAWN_POSITION
-				print("UI: Windows: Snapping back out of bounds window!")
-			drag_finished.emit(_parent.position, _viewport.get_mouse_position())
-			VisConfig.UI_manager.is_user_dragging_a_window = false
+		$HBoxContainer/Close_Button.visible = v
 
-var _is_mousing_over: bool = false
+@export var title: String:
+	get: return $HBoxContainer/Title_Text.text
+	set(v): 
+		$HBoxContainer/Title_Text.text = v
+
+var button_ref: Button:
+	get: return $HBoxContainer/Close_Button
+
 var _is_dragging: bool = false
-var _parent: Control
-var _sibling: Control
-var _horizontal_box: HBoxContainer
-var _title: Label
-var _close_button: TextureButton
-
-var _initial_position: Vector2i
 var _prev_window_minus_mouse_position: Vector2
+var _window_parent: BaseWindowPanel
 var _viewport: Viewport
 
-
-func _ready():
+func _ready() -> void:
 	_viewport = get_viewport()
-	_horizontal_box = $HBoxContainer
-	_title = $HBoxContainer/Title_Text
-	_close_button = $HBoxContainer/Close_Button
-	_parent = get_parent()
-	_sibling = _parent.get_child(0)
-	
-	mouse_entered.connect(_mouse_enter)
-	mouse_exited.connect(_mouse_leave)
-	
-	custom_minimum_size = Vector2(0, MINIMUM_TITLEBAR_HEIGHT)
-	
-	if automatic_setup_hiding_closing and automatic_setup_window_closing_for_window_manager_name != &"":
-		push_warning("TitleBar cannot have multiple close methods defined at once. Please check this windows titleBar settings")
-		automatic_setup_window_closing_for_window_manager_name = "" # To Prevent weird issues, disable this method
+	VisConfig.UI_manager.screen_size_changed.connect(set_in_bounds_with_window_size_change.unbind(1))
 
-		
-	if automatic_setup_dragging:
-		if use_position_instead_of_delta_movement:
-			drag_started.connect(_auto_drag_move_parent_position_start)
-			dragged.connect(_auto_drag_move_parent_position)
-		else:
-			dragged.connect(_auto_drag_move_parent_delta)
-	
-	if automatic_setup_hiding_closing:
-		_close_button.pressed.connect(_auto_hide_parent)
-	
-	if automatic_maintain_width:
-		if _parent is DraggableWindow:
-			var draggable_parent: DraggableWindow = _parent as DraggableWindow
-			draggable_parent.width_changed.connect(_auto_maintain_width)
-		else:
-			push_warning("Unable to set up 'automatic_maintain_width' on non-DraggableWindow parent object!")
-	
-	if automatic_setup_window_closing_for_window_manager_name != &"":
-		_close_button.pressed.connect(_window_manager_close)
-	
-	_initial_position = position
-	_close_button.visible = show_close_button
-
-func _input(event):
-
+func _gui_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		# user touched screen
 		pass
@@ -126,74 +45,53 @@ func _input(event):
 		# user dragged on touchscreen
 		pass
 	if event is InputEventMouseButton:
-		# user clicked mouse (or clicked / scrolled mouse wheel)
-		_mouse_click(event)
+		_process_mouse_click_event(event as InputEventMouseButton)
 	if event is InputEventMouseMotion:
-		_dragging(event)
+		if !_is_dragging:
+			return # If we arent dragging (as decided by _process_mouse_click_event), then dont process this is a drag
+		_process_mouse_drag_event(event as InputEventMouseMotion)
 
-func _height_resized() -> void:
-	custom_minimum_size.y = VisConfig._minimum_button_size_pixel.y
-	_horizontal_box.custom_minimum_size.y = custom_minimum_size.y
-	# Because button is a square
+func _UI_scale_changed(multiplier: float) -> void:
+	var label: Label = $HBoxContainer/Title_Text
+	#TODO
 
-## USe the draggable windows close function to call for a close
-func _window_manager_close() -> void:
-	var draggable_parent: DraggableWindow = _parent as DraggableWindow
-	draggable_parent.close_window(automatic_setup_window_closing_for_window_manager_name)
+## The parent window object calls this to finish setting up this child. Technically not best practice
+func setup_from_window(window: BaseWindowPanel) -> void:
+	_window_parent = window
 
-## What is the minimum width the title bar needs to be to fit everything?
-func _recalculate_title_bar_min_width() -> void:
-	custom_minimum_size.x = int(_close_button.custom_minimum_size.y) + int(_title.size.x) + title_gap # Yes, using the close button Y is intentional to avoid repositioning loops
-	_horizontal_box.custom_minimum_size.x =  int(_close_button.custom_minimum_size.y) + int(_title.size.x)
+## Check if TitleBar is within bounds
+func is_titlebar_within_view_bounds() -> bool:
+	var self_rect: Rect2 = get_global_rect().grow(-screen_edge_buffer).abs() # Calculate bounds
+	var screen_rect: Rect2 = Rect2(Vector2(0,0), VisConfig.UI_manager.screen_size) # Get Screen Rect
+	return screen_rect.encloses(self_rect)
 
-func _mouse_enter() -> void:
-	_is_mousing_over = true
-
-func _mouse_leave() -> void:
-	_is_mousing_over = false
-
-
-func _mouse_click(click: InputEventMouseButton) -> void:
-	if click.button_index != mouse_normal_click_button:
-		return
-	
-	# if click while mousing over, start dragging
-	if click.pressed:
-		if !_is_mousing_over:
+## Processes Mouse clicks on the title bar
+func _process_mouse_click_event(mouse_event: InputEventMouseButton) -> void:
+		if mouse_event.button_index != mouse_normal_click_button:
 			return
-		is_dragging = true
-	else:
-		is_dragging = false
+		if mouse_event.pressed:
+			_is_dragging = true
+			clicked.emit()
+			VisConfig.UI_manager.is_user_dragging_a_window = true
+			drag_started.emit(_window_parent.position, _viewport.get_mouse_position())
+			_prev_window_minus_mouse_position = _window_parent.position - _viewport.get_mouse_position()
+		else:
+			_is_dragging = false
+			VisConfig.UI_manager.is_user_dragging_a_window = false
+			if !is_titlebar_within_view_bounds():
+				_window_parent.position = _window_parent.window_spawn_location
+			drag_finished.emit(_window_parent.position, _viewport.get_mouse_position())
+			
 
-func _dragging(drag: InputEventMouseMotion) -> void:
-	if !is_dragging:
-		return # if we arent dragging, don't do anything!
-	dragged.emit(_parent.position, drag.position, drag.relative)
+## Processes Mouse Dragging (mouse movement while _is_dragging is true)
+func _process_mouse_drag_event(mouse_event: InputEventMouseMotion) -> void:
+	_window_parent.position = _prev_window_minus_mouse_position + _viewport.get_mouse_position()
 
-func _close_proxy():
+func _close_window_from_close_button() -> void:
 	close_pressed.emit()
+	_window_parent.close_window()
 
-## IF auto-setup-dragging is enabled (with delta), responsible for moving parent around
-func _auto_drag_move_parent_delta(_window_position: Vector2, _mouse_position: Vector2, delta_offset: Vector2) -> void:
-	_parent.position = _parent.position + delta_offset
-
-## IF auto-setup-dragging is enabled (without delta), responsible for starting to moving parent around
-func _auto_drag_move_parent_position_start(current_window_position: Vector2, current_mouse_position: Vector2) -> void:
-	_prev_window_minus_mouse_position = current_window_position - current_mouse_position
-
-## IF auto-setup-dragging is enabled (without delta), responsible for moving parent around
-func _auto_drag_move_parent_position(_window_position: Vector2, mouse_position: Vector2,  _delta_offset: Vector2) -> void:
-	_parent.position = _prev_window_minus_mouse_position + mouse_position
-
-
-## IF automatic_setup_hiding_closing is enabled, responsible for hiding parent
-func _auto_hide_parent() -> void:
-	_parent.visible = false
-
-func _auto_maintain_width(new_width: float) -> void:
-	size.x = new_width
-
-
-
-
-
+func set_in_bounds_with_window_size_change() -> void:
+	if !is_titlebar_within_view_bounds():
+		_window_parent.position = _window_parent.window_spawn_location
+	

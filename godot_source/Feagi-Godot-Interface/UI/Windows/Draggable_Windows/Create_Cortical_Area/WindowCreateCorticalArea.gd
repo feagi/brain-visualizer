@@ -1,156 +1,149 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowCreateCorticalArea
 
-signal dimensions_updated(dimensions: Vector3i)
-signal coordinates_updated(location: Vector3i)
+var _top_container: BoxContainer
+var _selection: VBoxContainer
+var _selection_options: PartSpawnCorticalAreaSelection
+var _IOPU_definition: PartSpawnCorticalAreaIOPU
+var _custom_definition: PartSpawnCorticalAreaCustom
+var _memory_definition: PartSpawnCorticalAreaMemory
+var _buttons: HBoxContainer
+var _type_selected: BaseCorticalArea.CORTICAL_AREA_TYPE
 
-var _field_cortical_name: TextInput
-var _field_3D_coordinates: Vector3iSpinboxField
-var _field_type_radio: RadioButtons
-var _field_dimensions: Vector3iSpinboxField
-var _field_channel: IntInput
-var _dropdown_cortical_dropdown: TemplateDropDown
-var _holder_dropdown: HBoxContainer
-var _holder_channel: HBoxContainer
-var _main_container: ContainerShrinker
-var _preview_handler = GenericSinglePreviewHandler
 
 func _ready() -> void:
-	super._ready()
-	_main_container = $Container
-	var _create_button: TextButton_Element = $Container/Create_button
-	_field_cortical_name = $Container/HBoxContainer/Cortical_Name
-	_field_3D_coordinates = $Container/HBoxContainer2/Coordinates_3D
-	_field_type_radio = $Container/type/options
-	_field_dimensions = $Container/dimensions_holder/Dimensions
-	_field_channel = $Container/channel_holder/Channel_Input
-	_dropdown_cortical_dropdown = $Container/cortical_dropdown_holder/CorticalTemplateDropDown
-	_holder_dropdown = $Container/cortical_dropdown_holder
-	_holder_channel = $Container/channel_holder
+	_top_container = $BoxContainer
+	_selection = $BoxContainer/Selection
+	_selection_options = $BoxContainer/Selection/options
+	_IOPU_definition = $BoxContainer/Definition_IOPU
+	_custom_definition = $BoxContainer/Definition_Custom
+	_memory_definition = $BoxContainer/Definition_Memory
+	_buttons = $BoxContainer/Buttons
 	
-	_create_button.pressed.connect(_create_pressed)
-	_field_type_radio.button_pressed.connect(_radio_button_proxy)
-	_field_3D_coordinates.user_updated_vector.connect(_coordinate_proxy)
-	_field_dimensions.user_updated_vector.connect(_dimensions_updated_proxy)
-	_dropdown_cortical_dropdown.template_picked.connect(_template_dropdown_changed)
-	_field_channel.int_confirmed.connect(_channel_changed)
-	_main_container.recalculate_size()
+	_selection_options.cortical_type_selected.connect(_step_2_set_details)
+
+
+func setup() -> void:
+	_setup_base_window("create_cortical")
+	_step_1_pick_type()
+
+func _step_1_pick_type() -> void:
+	_IOPU_definition.visible = false
+	_custom_definition.visible = false
+	_memory_definition.visible = false
+	_buttons.visible = false
+	_selection.visible = true
+	_top_container.size = Vector2(0,0)
+	_set_header(BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN)
+
+func _step_2_set_details(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+	_set_header(cortical_type)
+	_type_selected = cortical_type
+	_selection.visible = false
 	
-	var preview_close_signals: Array[Signal] = [closed_window_no_name]
-	_preview_handler = GenericSinglePreviewHandler.new()
-	_preview_handler.start_BM_preview(_field_dimensions.current_vector, _field_3D_coordinates.current_vector)
-	_preview_handler.connect_BM_preview(coordinates_updated, dimensions_updated, preview_close_signals)
+	## All cases that a preview needs to be closed
+	var close_preview_signals: Array[Signal] = [
+		$BoxContainer/Buttons/Back.pressed,
+		close_window_requesed_no_arg
+	]
 	
-
-
-func get_selected_type() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.cortical_type_human_readable_str_to_type(_field_type_radio.currently_selected_text)
-
-func _radio_button_proxy(_button_index: int, button_label: StringName) -> void:
-	_switch_UI_between_cortical_types(BaseCorticalArea.cortical_type_human_readable_str_to_type(button_label))
-	_main_container.recalculate_size()
-
-func _coordinate_proxy(input: Vector3) -> void:
-	coordinates_updated.emit(input)
-
-
-## Called regardless of if updated by user or from template
-func _dimensions_updated_proxy(input:Vector3) -> void:
-	dimensions_updated.emit(input)
-
-
-func _template_dropdown_changed(selected_template: CorticalTemplate) -> void:
-	var cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
-	_field_cortical_name.text = selected_template.cortical_name
-	if (cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.IPU) || (cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.OPU):
-		_field_dimensions.current_vector = selected_template.calculate_IOPU_dimension(_field_channel.current_int)
-		_dimensions_updated_proxy(_field_dimensions.current_vector)
-		return
-	if cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.CORE:
-		_field_dimensions.current_vector = selected_template.resolution
-		_dimensions_updated_proxy(_field_dimensions.current_vector)
-		return
-
-func _channel_changed(new_channel_count: int) -> void:
-	if _dropdown_cortical_dropdown.selected == -1:
-		return # nothing to change if no drop down is selected
-	var selected_template: CorticalTemplate = _dropdown_cortical_dropdown.get_selected_template()
-	_field_dimensions.current_vector = selected_template.calculate_IOPU_dimension(new_channel_count)
-	_dimensions_updated_proxy(_field_dimensions.current_vector)
-
-func _switch_UI_between_cortical_types(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
-	_field_cortical_name.text = ""
-	match cortical_type:
+	_IOPU_definition.visible = cortical_type in [BaseCorticalArea.CORTICAL_AREA_TYPE.IPU, BaseCorticalArea.CORTICAL_AREA_TYPE.OPU]
+	_custom_definition.visible = cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+	_memory_definition.visible = cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	_buttons.visible = true
+	
+	match(cortical_type):
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			_holder_dropdown.visible = true
-			_holder_channel.visible = true
-			_field_dimensions.editable = false
-			_field_cortical_name.editable = false
-			_dropdown_cortical_dropdown.load_cortical_type_options(cortical_type)
-			_dropdown_cortical_dropdown.selected = -1
-			_field_cortical_name.placeholder_text = "Will load from Template"
+			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			_holder_dropdown.visible = true
-			_holder_channel.visible = true
-			_field_dimensions.editable = false
-			_field_cortical_name.editable = false
-			_dropdown_cortical_dropdown.load_cortical_type_options(cortical_type)
-			_dropdown_cortical_dropdown.selected = -1
-			_field_cortical_name.placeholder_text = "Will load from Template"
+			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			_holder_dropdown.visible = false
-			_holder_channel.visible = false
-			_field_dimensions.editable = true
-			_field_cortical_name.editable = true
-			_field_cortical_name.placeholder_text = "Type Name Here"
+			_custom_definition.cortical_type_selected(cortical_type, close_preview_signals)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			_holder_dropdown.visible = false
-			_holder_channel.visible = false
-			_field_dimensions.editable = false
-			_field_dimensions.current_vector = Vector3i(1,1,1)
-			_field_cortical_name.editable = true
-			_field_cortical_name.placeholder_text = "Type Name Here"
+			_memory_definition.cortical_type_selected(cortical_type, close_preview_signals)
+	
 
-func _create_pressed():
-	var generating_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE = get_selected_type()
-	if generating_cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
-		VisConfig.show_info_popup("Unable to create cortical area",
-		"Please define a cortical area type!",
-		"ok")
+func _set_header(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+	var label: Label = $BoxContainer/header/Label
+	var icon: TextureRect = $BoxContainer/header/icon
+	if cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
+		label.text = "Select Cortical Area Type:"
+		icon.texture = null # clear texture
+		return
+	match(cortical_type):
+		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			label.text = "Adding input Cortical Area"
+			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/input.png")
+		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			label.text = "Adding output Cortical Area"
+			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/output.png")
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			label.text = "Adding interconnect Cortical Area"
+			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png")
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			label.text = "Adding memory Cortical Area"
+			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png")
 		
-		return
-	
-	match generating_cortical_type:
+func _back_pressed() -> void:
+	_step_1_pick_type()
+
+func _user_requesting_exit() -> void:
+	close_window()
+
+func _user_requesing_creation() -> void:
+	match(_type_selected):
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			if _dropdown_cortical_dropdown.selected == -1:
-				VisConfig.show_info_popup("Unable to create cortical area",
-				"Please define a template!",
-				"ok")
-				return 
-			FeagiRequests.request_add_IOPU_cortical_area(_dropdown_cortical_dropdown.get_selected_template(), _field_channel.current_int,
-				_field_3D_coordinates.current_vector, false)
-
+			FeagiRequests.request_add_IOPU_cortical_area(
+				_IOPU_definition.dropdown.get_selected_template(),
+				_IOPU_definition.channel_count.value,
+				_IOPU_definition.location.current_vector,
+				false
+			)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			if _dropdown_cortical_dropdown.selected == -1:
-				VisConfig.show_info_popup("Unable to create cortical area",
-				"Please define a template!",
-				"ok")
-				return 
-			FeagiRequests.request_add_IOPU_cortical_area(_dropdown_cortical_dropdown.get_selected_template(), _field_channel.current_int,
-				_field_3D_coordinates.current_vector, false)
-
+			FeagiRequests.request_add_IOPU_cortical_area(
+				_IOPU_definition.dropdown.get_selected_template(),
+				_IOPU_definition.channel_count.value,
+				_IOPU_definition.location.current_vector,
+				false
+			)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			if _field_cortical_name.text == "":
-				VisConfig.show_info_popup("Warning", "Please define a name for your interconnect cortical area", "ok", )
+			# Checks...
+			if _custom_definition.cortical_name.text == "":
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
 				return
-			FeagiRequests.add_custom_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
-				false)
+			
+			if FeagiCache.cortical_areas_cache.exist_cortical_area_of_name(_custom_definition.cortical_name.text):
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				return
+			
+			#Create
+			FeagiRequests.add_custom_cortical_area(
+				_custom_definition.cortical_name.text,
+				_custom_definition.location.current_vector,
+				_custom_definition.dimensions.current_vector,
+				false
+				)
+				
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			if _field_cortical_name.text == "":
-				VisConfig.show_info_popup("Warning", "Please define a name for your memory cortical area", "ok", )
+			# Checks...
+			if _memory_definition.cortical_name.text == "":
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
 				return
-			FeagiRequests.add_memory_cortical_area(_field_cortical_name.text, _field_3D_coordinates.current_vector, _field_dimensions.current_vector,
-				false)
+			
+			if FeagiCache.cortical_areas_cache.exist_cortical_area_of_name(_memory_definition.cortical_name.text):
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
+				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				return
+			
+			#Create
+			FeagiRequests.add_memory_cortical_area(
+				_memory_definition.cortical_name.text,
+				_memory_definition.location.current_vector,
+				Vector3i(1,1,1),
+				false
+			)
 	
-	close_window("create_cortical")
-
+	close_window()

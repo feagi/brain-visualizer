@@ -68,6 +68,5 @@ layout_mode = 1
 offset_top = -38.0
 offset_right = 45.0
 offset_bottom = 2.0
-automatic_setup_hiding_closing = false
 
 [connection signal="pressed" from="VBoxContainer/TextButton_Element" to="." method="_close_popup"]

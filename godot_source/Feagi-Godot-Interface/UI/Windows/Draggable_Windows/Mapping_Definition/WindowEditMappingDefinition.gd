@@ -1,4 +1,4 @@
-extends DraggableWindow
+extends BaseWindowPanel
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
@@ -10,12 +10,12 @@ var _general_mapping_details: GeneralMappingEditor
 var _spawn_default_mapping_if_applicable_on_spawn
 
 func _ready() -> void:
-	super()
 	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
 	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
 	_general_mapping_details = $BoxContainer/Mapping_Details
 
 func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable = false):
+	_setup_base_window("edit_mappings")
 	_spawn_default_mapping_if_applicable_on_spawn = spawn_default_mapping_if_applicable
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
@@ -31,9 +31,6 @@ func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseC
 	else:
 		_destinations_dropdown.select(-1)
 		_spawn_default_mapping_if_applicable_on_spawn = false
-	
-	_sources_dropdown.user_selected_cortical_area.connect(_source_changed)
-	_destinations_dropdown.user_selected_cortical_area.connect(_destination_changed)
 
 	if !((cortical_source == null) and (cortical_destination == null)):
 		_selected_cortical_areas_changed(cortical_source, cortical_destination)
@@ -42,6 +39,7 @@ func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseC
 func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: BaseCorticalArea) -> void:
 	if !_are_cortical_areas_valid():
 		return
+	
 	_request_mappings_from_feagi()
 	
 
@@ -67,7 +65,7 @@ func _request_apply_mappings_to_FEAGI():
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
 	var mapping_properties = _general_mapping_details.generate_mapping_propertys()
 	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, mapping_properties)
-	close_window("edit_mappings")
+	close_window()
 
 ## Returns true only if the source and destination areas selected are valid
 func _are_cortical_areas_valid() -> bool:
@@ -76,7 +74,9 @@ func _are_cortical_areas_valid() -> bool:
 	return true
 
 func _source_changed(new_source: BaseCorticalArea) -> void:
+	_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
 	_source_area = new_source
+	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
 func _destination_changed(new_destination: BaseCorticalArea) -> void:

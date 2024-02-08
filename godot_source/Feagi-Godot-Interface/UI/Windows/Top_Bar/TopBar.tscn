@@ -1,11 +1,15 @@
-[gd_scene load_steps=11 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=15 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
-[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButton/IconButton.tscn" id="2_4d0u0"]
-[ext_resource type="Texture2D" uid="uid://cqg52nj8nvld5" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_connectivity_rules.png" id="2_4yah1"]
+[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
 [ext_resource type="Texture2D" uid="uid://5nb0yf2u7q5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_cortical_area.png" id="3_f73r0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://v4f5jjaxrov0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_tutorials.png" id="5_qirw1"]
+[ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="4_ot5te"]
+[ext_resource type="Texture2D" uid="uid://dr5seahroxeg4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/neuron.png" id="4_w1ybr"]
+[ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="5_58ohp"]
+[ext_resource type="Texture2D" uid="uid://bjlc1lc7ctryc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials.png" id="5_81ib4"]
+[ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="6_h0c21"]
+[ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="7_wa0pf"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="9_jcvuj"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
@@ -31,28 +35,55 @@ theme_override_constants/margin_bottom = 0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
 
-[node name="BrainAreas" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="BrainAreas" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("3_f73r0")
 texture_size = Vector2i(48, 48)
-button_text = &"Brain Areas"
+button_text = &"Cortical Areas"
 gap_between_text_and_texture = 5
 
-[node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+texture_normal = ExtResource("4_ot5te")
+texture_pressed = ExtResource("5_58ohp")
+texture_hover = ExtResource("6_h0c21")
+texture_disabled = ExtResource("7_wa0pf")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
-texture = ExtResource("2_4yah1")
+texture = ExtResource("4_w1ybr")
 texture_size = Vector2i(50, 48)
 button_text = &"Connectivity Rules"
 gap_between_text_and_texture = 5
 
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+texture_normal = ExtResource("4_ot5te")
+texture_pressed = ExtResource("5_58ohp")
+texture_hover = ExtResource("6_h0c21")
+texture_disabled = ExtResource("7_wa0pf")
+ignore_texture_size = true
+stretch_mode = 0
+
 [node name="Tutorials" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
+visible = false
 layout_mode = 2
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
-texture = ExtResource("5_qirw1")
+texture = ExtResource("5_81ib4")
 texture_size = Vector2i(48, 48)
 button_text = &"Tutorials"
 gap_between_text_and_texture = 5
@@ -68,7 +99,6 @@ theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 
 [node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
-custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 
 [node name="DetailsPanel" type="PanelContainer" parent="."]
@@ -119,8 +149,10 @@ vertical_alignment = 1
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/ConnectivityRules" to="." method="_open_neuron_morphologies"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/ConnectivityRules" to="." method="_open_neuron_morphologies"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/TextureButton" to="." method="_open_create_morpology"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/Tutorials" to="." method="_open_tutorials"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

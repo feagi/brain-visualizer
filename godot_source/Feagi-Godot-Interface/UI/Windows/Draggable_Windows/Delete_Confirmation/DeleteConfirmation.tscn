@@ -37,7 +37,6 @@ offset_top = -30.0
 offset_right = 82.0
 offset_bottom = 10.0
 title = "Confirm Deletion"
-automatic_setup_window_closing_for_window_manager_name = &"ConfirmDeletion"
 
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/cancel" to="." method="_button_cancel"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/confirm" to="." method="_button_confirm"]

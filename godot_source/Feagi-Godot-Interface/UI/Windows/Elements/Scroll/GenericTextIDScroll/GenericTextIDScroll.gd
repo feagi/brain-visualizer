@@ -7,6 +7,7 @@ signal item_selected(ID: Variant)
 @export var setup_filter_by_name: bool = true
 @export var button_selected_color: Color = Color.GRAY
 @export var button_unselected_color: Color = Color.DIM_GRAY
+@export var minimum_height_for_buttons: int = 0
 
 var _text_button_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/GenericTextIDScroll/GenericScrollItemText.tscn")
 var _filter_text: LineEdit
@@ -33,7 +34,7 @@ func _ready() -> void:
 func append_single_item(ID: Variant, text: StringName) -> void:
 	var new_button: GenericScrollItemText = _text_button_prefab.instantiate()
 	_scroll_holder.add_child(new_button)
-	new_button.setup(ID, text, _default, _selected)
+	new_button.setup(ID, text, _default, _selected, minimum_height_for_buttons)
 	new_button.selected.connect(_selection_proxy)
 
 ## Adds from an array of names and IDs. Array lengths MUST match

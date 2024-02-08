@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://dtoic0bf8v2f2"]
+[gd_scene load_steps=4 format=3 uid="uid://dtoic0bf8v2f2"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.gd" id="1_joewg"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_857nh"]
+[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_lk01u"]
 
 [node name="Vector3Labels" type="BoxContainer"]
 script = ExtResource("1_joewg")
@@ -12,6 +13,7 @@ label_z_text = &""
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_lk01u")
 text = "X"
 horizontal_alignment = 1
 script = ExtResource("2_857nh")
@@ -23,6 +25,7 @@ layout_mode = 2
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_lk01u")
 text = "Y"
 horizontal_alignment = 1
 script = ExtResource("2_857nh")
@@ -34,6 +37,7 @@ layout_mode = 2
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_lk01u")
 text = "Z
 "
 horizontal_alignment = 1

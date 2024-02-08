@@ -4,7 +4,7 @@ class_name UIMorphologyDefinition
 
 @export var title_enabled: bool = true
 @export var type_enabled: bool = true
-@export var morphology_editable: bool = true
+@export var editing_allowed_from_this_window: bool = true
 
 var morphology_type_loaded: Morphology.MORPHOLOGY_TYPE:
 	get:  
@@ -32,6 +32,10 @@ func _ready() -> void:
 	composite_view = $ElementMorphologyCompositeView
 	vectors_view = $ElementMorphologyVectorsView
 	patterns_view = $ElementMorphologyPatternView
+	
+	composite_view.setup(editing_allowed_from_this_window)
+	vectors_view.setup(editing_allowed_from_this_window)
+	patterns_view.setup(editing_allowed_from_this_window)
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
 func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) -> void:

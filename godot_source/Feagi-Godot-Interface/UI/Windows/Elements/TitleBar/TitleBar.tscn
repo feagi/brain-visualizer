@@ -9,7 +9,7 @@
 
 [node name="TitleBar" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 40)
-offset_right = 80.0
+offset_right = 92.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
 theme = ExtResource("1_iasjt")
@@ -18,6 +18,11 @@ script = ExtResource("1_dpkpa")
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
+[node name="gap" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+mouse_filter = 1
+
 [node name="Title_Text" type="Label" parent="HBoxContainer"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
@@ -25,6 +30,7 @@ size_flags_horizontal = 3
 text = "TEXT"
 horizontal_alignment = 1
 vertical_alignment = 1
+clip_text = true
 
 [node name="Close_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -35,5 +41,3 @@ texture_hover = ExtResource("5_uuesj")
 texture_disabled = ExtResource("6_crhnf")
 ignore_texture_size = true
 stretch_mode = 0
-
-[connection signal="pressed" from="HBoxContainer/Close_Button" to="." method="_close_proxy"]

@@ -5,6 +5,8 @@ var _button: Button
 var _parent_node: CorticalNode
 var _mapping_properties: MappingProperties
 
+
+
 func _ready() -> void:
 	_button = $Button
 	_parent_node = get_parent()

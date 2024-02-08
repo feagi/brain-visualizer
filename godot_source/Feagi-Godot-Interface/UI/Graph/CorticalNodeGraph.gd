@@ -45,8 +45,6 @@ func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> Cortic
 	cortical_node.moved.connect(_cortical_node_moved)
 	cortical_nodes[cortical_area.cortical_ID] = cortical_node
 	
-	#cortical_area.efferent_mapping_edited.connect(feagi_create_connection_button_from_efferent)
-	
 	return cortical_node
 
 ## Deletes a cortical Node, should only be called via FEAGI
