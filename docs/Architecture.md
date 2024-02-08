@@ -57,14 +57,92 @@ The RequestWorker then executes the call as defined by the RequestWorkerDefiniti
 
 Upon completion of the HTTP call:
 - If the response code from the server is **200**, The worker will call the relevant response processing in ResponseProxyFunctions as defined by the RequestWorkerDefinition
-- If the response code from the server is **400** , the worker will commence error logging as FEAGI is expected to return a JSON in such cases with the error code and message.
+- If the response code from the server is **400** , the worker will commence error logging as FEAGI is expected to return a JSON in such cases with the error code and optionally a request for BV to reset / resync its state
 - If the response code from the server is **anything else** (this shouldn't happen), the worker will simply log this to the console
 
 Following the above, the worker will return itself to the available worker pool inside the NetworkInterface if there is available space and remain idle, otherwise it will simply delete itself
 
-All response functions defined in ResponseProxyFunctions take the returned data from the RequestWorker and typically update something within the Cache (which itself can fire signals), or fire signals directly, depending on the use case
+All response functions defined in ResponseProxyFunctions take the returned data from the RequestWorker and typically update something within the Cache (which itself can fire signals), or fire signals directly, depending on the use case.
 
-TODO: chart showing example
+Example of a user requesting the latest properties of a Morphology:
+```mermaid
+graph TB
+	
+Any_Script --> FeagiRequestsgd
+FeagiRequestsgd --> CallList.gd
+CallList.gd --> NetworkInterface.gd
+NetworkInterface.gd --> APIRequestWorker.gd
+APIRequestWorker.gd --> ResponseProxyFunctions.gd
+
+
+    subgraph Any_Script["Any Script"]
+        direction LR
+        Any_Call["Any Event that wishes to update morphology properties"]
+    end
+
+    subgraph FeagiRequestsgd["FeagiRequests.gd"]
+        direction LR
+        subgraph refresh_morphology_properties["refresh_morphology_properties()"]
+            direction LR
+            Verify_input["Verify Input"] --> make_call["Initiate Network Call by calling to appropriate network call function in CallList.gd"]
+            
+        end
+    end
+
+    subgraph CallList.gd
+        direction LR
+        subgraph GET_GE_morphology["GET_GE_morphology()"]
+            direction LR
+            process["Process input into json forms expected by FEAGI"]
+            APIRequestWorkerDefinition["Construct APIRequestWorkerDefinition object with the input, URL, and callback function from ResponseProxyFunctions.gd (GET_GE_morphology)"]
+            request_web_worker["Request an APIRequestWorker to work on the call"]
+
+            process --> APIRequestWorkerDefinition
+            APIRequestWorkerDefinition --> request_web_worker
+        end
+    end
+
+    subgraph NetworkInterface.gd
+        direction LR
+        subgraph FEAGI_API_Request["FEAGI_API_Request()"]
+            direction LR
+            grab_worker["Grab worker from pool if an idle one is available, otherwise spawn a new one"]
+            pass_definition_to_worker["Pass worker the APIRequestWorkerDefinition to start working on it"]
+
+            grab_worker --> pass_definition_to_worker
+        end
+    end
+
+    subgraph APIRequestWorker.gd
+	direction TB
+	subgraph setup_and_run_from_definition["setup_and_run_from_definition()"]
+	    direction TB
+	    cache_data["Cache relevant data to the APIRequestWorkerDefinition object"] --> make_actual_call["Make the actual web call towards FEAGI and await response in _call_complete()"]
+	end
+        subgraph _call_complete["_call_complete()"]
+            direction TB
+            assess_response["Asses response from FEAGI"]
+            response_error["If FEAGI returned with an error, halt this call and engage error logging"]
+            response_success["If FEAGI returned with expected data, continue on to the defined callback function 'GET_GE_morphology'"]
+            stop_worker["If there is space in the APIRequestWorker pool in NetworkInterface, return self there. Otherwise destroy self"]
+
+            assess_response --> response_error
+            assess_response --> response_success
+            response_error --> stop_worker
+            response_success --> stop_worker
+        end
+    end
+
+subgraph ResponseProxyFunctions.gd
+    direction TB
+    subgraph callback_function_func["GET_GE_morphology()"]
+	direction LR
+	update_cache["Update Cache with this latest retrieved information"]
+
+    end
+end
+
+```
 
 ### WebSocket
 **NOTE: It is important to note this section is set to be refactored**
