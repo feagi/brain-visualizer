@@ -60,6 +60,7 @@ func _button_delete() -> void:
 		)
 	VisConfig.UI_manager.window_manager.spawn_popup(delete_confirmation)
 
+
 	
 	_close_window()
 

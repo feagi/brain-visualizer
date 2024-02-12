@@ -105,15 +105,17 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 
-func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
-	if _result == 400:
+func _call_complete(result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+	if result == 400:
 		_http_400_generic_handling(body)
 		_query_for_destruction()
 		return
-	if _result == 500:
+	if result == 500:
 		_http_500_generic_handling(body)
 		_query_for_destruction()
 		return
+	
+	
 	
 	match(_processing_type):
 		CALL_PROCESS_TYPE.SINGLE:
