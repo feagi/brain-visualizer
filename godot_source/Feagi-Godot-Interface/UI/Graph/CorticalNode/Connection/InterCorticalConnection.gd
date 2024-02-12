@@ -4,8 +4,8 @@ class_name InterCorticalConnection
 
 const LINE_COLOR_PSPP_PLASTIC: Color = Color.DARK_GREEN
 const LINE_COLOR_PSPP_INPLASTIC: Color = Color.DARK_GREEN
-const LINE_COLOR_PSPN_PLASTIC: Color = Color.RED
-const LINE_COLOR_PSPN_INPLASTIC: Color = Color.RED
+const LINE_COLOR_PSPN_PLASTIC: Color = Color.DARK_RED
+const LINE_COLOR_PSPN_INPLASTIC: Color = Color.DARK_RED
 const LINE_COLOR_TRANSPARENT: Color = Color(0,0,0,0)
 const LINE_INPUT_X_OFFSET: int = 200
 const LINE_OUTPUT_X_OFFSET: int = -200
