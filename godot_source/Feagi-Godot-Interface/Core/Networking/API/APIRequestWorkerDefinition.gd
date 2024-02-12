@@ -13,6 +13,9 @@ var follow_up_function: Callable ## Godot function to call at the conclusion of 
 var mid_poll_function: Callable ## Same as above, but only applicable for polling calls, the function to run when a poll call was complete but the conditions to end polling have not been met
 var polling_completion_check: PollingMethodInterface ## For polling calls, object used to check if we should stop polling
 var seconds_between_polls: float ## Time (seconds) to wait between poll attempts
+var http_400_call: Callable ## Custom Godot function to call if FEAGI returns a 400. Can be left empty for no custom action
+var http_500_call: Callable ## Custom Godot function to call if FEAGI returns a 500. Can be left empty for no custom action
+
 
 func _init() -> void:
 	## Dont create an instance of this object with new(), instead use one of the below static factories
@@ -22,7 +25,9 @@ func _init() -> void:
 static func define_single_GET_call(
 	define_full_address: StringName,
 	define_follow_up_function: Callable,
-	define_should_kill_on_genome_reset: bool = true
+	define_should_kill_on_genome_reset: bool = true,
+	http_400_error_call: Callable = Callable(),
+	http_500_error_call: Callable = Callable()
 	) -> APIRequestWorkerDefinition:
 		
 		var output = APIRequestWorkerDefinition.new()
@@ -42,7 +47,9 @@ static func define_single_call(
 	define_data_to_send_to_FEAGI: Variant,
 	define_data_to_hold_for_follow_up_function: Variant,
 	define_follow_up_function: Callable,
-	define_should_kill_on_genome_reset: bool = true
+	define_should_kill_on_genome_reset: bool = true,
+	http_400_error_call: Callable = Callable(),
+	http_500_error_call: Callable = Callable()
 	) -> APIRequestWorkerDefinition:
 	
 		var output = APIRequestWorkerDefinition.new()
@@ -65,7 +72,9 @@ static func define_polling_call(
 	define_seconds_between_polls: float, 
 	define_polling_completion_check: PollingMethodInterface = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE),
 	define_mid_poll_function: Callable = Callable(), 
-	define_should_kill_on_genome_reset: bool = true
+	define_should_kill_on_genome_reset: bool = true,
+	http_400_error_call: Callable = Callable(),
+	http_500_error_call: Callable = Callable()
 	) -> APIRequestWorkerDefinition:
 	
 		var output = APIRequestWorkerDefinition.new()
