@@ -45,7 +45,7 @@ func remove_child_by_index(index: int) -> void:
 
 ## Delete child by node name
 func remove_child_by_name(child_name: StringName) -> void:
-	var children: Array =_get_children_of_list()
+	var children: Array = get_children_as_list()
 	for child in children:
 		if child.name == child_name:
 			child.queue_free()
@@ -55,7 +55,7 @@ func remove_child_by_name(child_name: StringName) -> void:
 
 ## Deletes all children (list items)
 func remove_all_children() -> void:
-	var children: Array = _get_children_of_list()
+	var children: Array = get_children_as_list()
 	for child in children:
 		child.queue_free()
 	if enable_button_notice_when_list_is_empty:
@@ -65,7 +65,7 @@ func remove_all_children() -> void:
 func get_number_of_children() -> int:
 	return len(_item_holder.get_children()) - 1
 	
-func _get_children_of_list() -> Array[Node]:
+func get_children_as_list() -> Array[Node]:
 	var output: Array[Node] = _item_holder.get_children()
 	output.pop_front()
 	return output

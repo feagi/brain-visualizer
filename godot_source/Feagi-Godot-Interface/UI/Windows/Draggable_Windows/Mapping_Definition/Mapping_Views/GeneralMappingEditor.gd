@@ -34,8 +34,7 @@ func update_displayed_mapping_properties(mappings_copy: MappingProperties, mappi
 ## Creates an Array of [MappingProperty] given the items within the scroll section
 func generate_mapping_propertys() -> Array[MappingProperty]:
 	var mappings: Array[MappingProperty]= []
-	var scroll_box_box: VBoxContainer = _mappings_scroll.get_node("VBoxContainer")
-	var children_of_scroll_box: Array = scroll_box_box.get_children()
+	var children_of_scroll_box: Array = _mappings_scroll.get_children_as_list()
 	for mapping_prefab in children_of_scroll_box:
 		mappings.append(mapping_prefab.generate_mapping_property())
 	return mappings
