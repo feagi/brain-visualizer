@@ -66,6 +66,7 @@ func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
+## This is the start in CB of connection creation
 func FEAGI_create_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
 		if mapping_properties.is_recursive():
 		# recurssive connection
