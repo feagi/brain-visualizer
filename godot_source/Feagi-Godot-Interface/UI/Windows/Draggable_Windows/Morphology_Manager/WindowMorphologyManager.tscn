@@ -11,7 +11,6 @@ offset_right = 779.0
 offset_bottom = 517.0
 theme = ExtResource("1_1tu4k")
 script = ExtResource("1_11gqg")
-window_spawn_location = Vector2i(900, 500)
 
 [node name="UIMorphologyOverviews" parent="." instance=ExtResource("3_08frl")]
 layout_mode = 0

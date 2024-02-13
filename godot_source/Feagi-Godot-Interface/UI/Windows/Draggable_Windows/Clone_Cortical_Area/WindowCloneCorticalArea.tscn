@@ -15,7 +15,6 @@ offset_bottom = 40.0
 size_flags_horizontal = 0
 theme = ExtResource("1_reqsy")
 script = ExtResource("2_8fxof")
-window_spawn_location = Vector2i(400, 550)
 
 [node name="Container" type="BoxContainer" parent="."]
 layout_mode = 0

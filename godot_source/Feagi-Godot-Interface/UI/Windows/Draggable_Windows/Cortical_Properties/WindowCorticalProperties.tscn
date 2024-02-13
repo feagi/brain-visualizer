@@ -21,7 +21,6 @@ offset_top = 50.0
 offset_bottom = 50.0
 theme = ExtResource("1_dxtt6")
 script = ExtResource("1_1jbcd")
-window_spawn_location = Vector2i(50, 300)
 
 [node name="Main_Body" type="BoxContainer" parent="."]
 layout_mode = 0
