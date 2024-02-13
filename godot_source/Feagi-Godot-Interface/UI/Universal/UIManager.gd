@@ -107,10 +107,9 @@ func switch_to_brain_visualizer_3D():
 func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	_notification_system_ref.add_notification(text, notification_type, time)
 
-
-
-
-
+func make_error_notification(key: StringName, replacements: Dictionary, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.ERROR, time: float = SingleNotification.DEFAULT_TIME) -> void:
+	var string_to_post: StringName = _rosetta.get_text(key, replacements)
+	_notification_system_ref.add_notification(string_to_post, notification_type, time)
 
 #TODO TEMP
 ## Tell BV to create a new singular cortical area preview
