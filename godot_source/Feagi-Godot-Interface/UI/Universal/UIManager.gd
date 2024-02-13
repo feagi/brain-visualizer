@@ -52,8 +52,12 @@ var UI_scale: float:
 		_UI_scale = v
 		UI_scale_changed.emit(v)
 
+var rosetta: Rosetta:
+	get: return _rosetta
+
 var _window_manager_ref: WindowManager
 var _notification_system_ref: NotificationSystem
+var _rosetta: Rosetta
 var _screen_size: Vector2
 var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4
 var _is_user_typing: bool = false
@@ -68,6 +72,7 @@ func _ready():
 	_notification_system_ref = $NotificationSystem
 	VisConfig.UI_manager = self
 	_update_screen_size()
+	_rosetta = Rosetta.new()
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode
@@ -98,6 +103,11 @@ func switch_to_brain_visualizer_3D():
 
 func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	_notification_system_ref.add_notification(text, notification_type, time)
+
+
+
+
+
 
 #TODO TEMP
 ## Tell BV to create a new singular cortical area preview
