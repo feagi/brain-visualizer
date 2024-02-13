@@ -17,6 +17,7 @@ extends Camera3D
 class_name BVCam
 
 const CAMERA_TURN_SPEED = 200
+const CAMERA_TELEPORT_FROM_DISTANCE: float = 50.0
 
 @export var camera_pan_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var camera_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
@@ -70,6 +71,11 @@ func teleport_to(new_position: Vector3, new_euler_rotation: Vector3) -> void:
 
 func point_camera_at(position_to_look_at: Vector3) -> void:
 	look_at(position_to_look_at, Vector3.UP)
+
+func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -> void:
+	position = _get_endpoint_position(position_to_point_at, CAMERA_TELEPORT_FROM_DISTANCE, -rotation)
+
+	
 
 
 func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
@@ -148,4 +154,8 @@ func _mouse_motion(event: InputEventMouseMotion) -> void:
 		var move: Vector3 = Vector3(event.relative.x * -camera_pan_speed, event.relative.y * camera_pan_speed, 0)
 		translate(move)
 
+func _get_endpoint_position(start_position: Vector3, linear_distance: float, euler_angles_radians: Vector3) -> Vector3:
+	var offset: Vector3 = (quaternion * (Vector3.FORWARD)) * -linear_distance
+	return start_position + offset
+	
 

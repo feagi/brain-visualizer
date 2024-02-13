@@ -34,20 +34,24 @@ var cortical_area_ref: BaseCorticalArea:
 
 var _cortical_area_ref: BaseCorticalArea
 var _graph: CorticalNodeGraph
+var _dragged: bool
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
+	dragged
 	dragged.connect(_on_finish_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
 	_graph = get_parent()
 	child_order_changed.connect(_shrink)
+	position_offset_changed.connect(_on_position_changed)
 
 # Announce if cortical area was selected with one click and open cortical properties panel on double click
 func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event
-	if !mouse_event.is_pressed(): return
+	if mouse_event.is_pressed(): return
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
+	if _dragged: return
 	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
 	#if !mouse_event.double_click: return
 	VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(_cortical_area_ref)
@@ -61,11 +65,13 @@ func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
 	_cortical_area_ref.efferent_mapping_added.connect(FEAGI_create_mapping_from_efferent)
 	_setup_node_color(cortical_area.group)
+	_dragged = false
 
 ## FEAGI deleted cortical area, so this node must go
 func FEAGI_delete_cortical_area() -> void:
 	queue_free()
 
+## This is the start in CB of connection creation
 func FEAGI_create_mapping_from_efferent(mapping_properties: MappingProperties) -> void:
 		if mapping_properties.is_recursive():
 		# recurssive connection
@@ -162,8 +168,13 @@ func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> vo
 	add_theme_stylebox_override("titlebar", style_box)
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
+	_dragged = false
 	moved.emit(self, to_position)
-			
+
+func _on_position_changed() -> void:
+	_dragged = true
+
+
 func _update_cortical_name(new_name: StringName, _this_cortical_area: BaseCorticalArea) -> void:
 	title = new_name
 

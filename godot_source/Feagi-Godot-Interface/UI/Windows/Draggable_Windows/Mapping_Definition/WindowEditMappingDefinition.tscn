@@ -13,13 +13,13 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
-window_spawn_location = Vector2i(900, 150)
+window_spawn_location = Vector2i(50, 200)
 metadata/_edit_use_anchors_ = true
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 2
-offset_right = 263.0
-offset_bottom = 59.0
+offset_right = 1150.0
+offset_bottom = 340.0
 vertical = true
 
 [node name="SourceAndDestination" type="HBoxContainer" parent="BoxContainer"]

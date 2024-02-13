@@ -29,7 +29,6 @@ script = ExtResource("1_pefds")
 style_incomplete = SubResource("StyleBoxFlat_0fl3t")
 style_waiting = SubResource("StyleBoxFlat_hcpwn")
 style_complete = SubResource("StyleBoxFlat_rdpvy")
-window_spawn_location = Vector2i(500, 100)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 custom_minimum_size = Vector2(600, 0)
@@ -102,18 +101,15 @@ visible = false
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step3" type="VBoxContainer" parent="VBoxContainer/step3"]
+[node name="step3" type="HBoxContainer" parent="VBoxContainer/step3"]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/step3/step3"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="VBoxContainer/step3/step3/HBoxContainer"]
+[node name="Label" type="Label" parent="VBoxContainer/step3/step3"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3. Please Select A Morphology..."
 
-[node name="TextureButton" type="TextureButton" parent="VBoxContainer/step3/step3/HBoxContainer"]
+[node name="TextureButton" type="TextureButton" parent="VBoxContainer/step3/step3"]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -126,7 +122,7 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="VBoxContainer/step3/step3/HBoxContainer"]
+[node name="Control" type="Control" parent="VBoxContainer/step3/step3"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
@@ -166,6 +162,6 @@ title = "Quick Connect"
 
 [connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
 [connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
-[connection signal="pressed" from="VBoxContainer/step3/step3/HBoxContainer/TextureButton" to="." method="_update_current_state" binds= [3]]
+[connection signal="pressed" from="VBoxContainer/step3/step3/TextureButton" to="." method="_update_current_state" binds= [3]]
 [connection signal="morphology_selected" from="VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
 [connection signal="pressed" from="VBoxContainer/Establish" to="." method="establish_connection_button"]

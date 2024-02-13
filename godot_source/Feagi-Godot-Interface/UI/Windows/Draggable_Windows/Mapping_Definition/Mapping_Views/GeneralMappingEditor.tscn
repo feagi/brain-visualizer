@@ -9,33 +9,35 @@
 [ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.tscn" id="8_3thsv"]
 
 [node name="Mapping_Details" type="VBoxContainer"]
-offset_right = 1300.0
+offset_right = 1150.0
 offset_bottom = 236.0
 alignment = 1
 script = ExtResource("1_qb704")
 
 [node name="labels_box" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 8
 
 [node name="Label" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Mapping Definition"
 horizontal_alignment = 1
 clip_text = true
 
 [node name="Label2" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(280, 0)
+custom_minimum_size = Vector2(264, 0)
 layout_mode = 2
 text = "Overwrite Scalar [X, Y, Z]"
 horizontal_alignment = 1
 clip_text = true
 
 [node name="Label3" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-text = "PSP Multiplier"
+tooltip_text = "Plasticity Multiplier"
+mouse_filter = 1
+text = "PSP Multi."
 horizontal_alignment = 1
 
 [node name="Label8" type="Label" parent="labels_box"]
@@ -53,21 +55,25 @@ horizontal_alignment = 1
 clip_text = true
 
 [node name="Label5" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-text = "Plasticity Constant"
+tooltip_text = "Plasticity Constant"
+mouse_filter = 1
+text = "Plast. Const."
 horizontal_alignment = 1
 
 [node name="Label6" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-text = "LTP Multiplier"
+tooltip_text = "LTP Multiplier"
+mouse_filter = 1
+text = "LTP Multi."
 horizontal_alignment = 1
 
 [node name="Label7" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-text = "LTD Multiplier"
+text = "LTD Multi."
 horizontal_alignment = 1
 
 [node name="edit_placeholder" type="Control" parent="labels_box"]
@@ -86,8 +92,11 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [node name="Mappings" parent="." instance=ExtResource("7_qe6x5")]
-custom_minimum_size = Vector2(1300, 200)
+custom_minimum_size = Vector2(1060, 200)
 layout_mode = 2
 prefab_to_spawn = ExtResource("8_3thsv")
+enable_button_notice_when_list_is_empty = true
+button_notice_text = &"   No mapping detected for the selected cortical areas. Click here to add one!   "
 
 [connection signal="pressed" from="labels_box/add_button" to="." method="_add_mapping_pressed"]
+[connection signal="internal_add_button_pressed" from="Mappings" to="." method="_add_mapping_pressed"]

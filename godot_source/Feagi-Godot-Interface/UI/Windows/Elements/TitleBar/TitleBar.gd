@@ -12,7 +12,7 @@ signal close_pressed()
 @export var show_close_button: bool = true
 
 ## How far out in any direction the title bar can go before it snaps back
-@export var screen_edge_buffer: int = 4
+@export var screen_edge_buffer: int = 16
 
 ## if disabled, will disable (fade) the close button to prevent it from being clicked
 @export var enable_close_button: bool = true:

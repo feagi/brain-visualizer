@@ -27,7 +27,6 @@ var _step3_button: TextureButton
 var _step1_label: Label
 var _step2_label: Label
 var _step3_label: Label
-var _step3_info: PanelContainer
 var _step3_scroll: MorphologyScroll
 var _step3_morphology_container: PanelContainer
 var _step3_morphology_view: UIMorphologyDefinition
@@ -47,11 +46,10 @@ func _ready() -> void:
 	_step3_panel = $VBoxContainer/step3
 	_step1_button = $VBoxContainer/step1/step1/TextureButton
 	_step2_button = $VBoxContainer/step2/step2/TextureButton
-	_step3_button = $VBoxContainer/step3/step3/HBoxContainer/TextureButton
+	_step3_button = $VBoxContainer/step3/step3/TextureButton
 	_step1_label = $VBoxContainer/step1/step1/Label
 	_step2_label = $VBoxContainer/step2/step2/Label
-	_step3_label = $VBoxContainer/step3/step3/HBoxContainer/Label
-	_step3_info = $VBoxContainer/MorphologyInfoContainer
+	_step3_label = $VBoxContainer/step3/step3/Label
 	_step3_morphology_container = $VBoxContainer/MorphologyInfoContainer
 	_step3_scroll = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll
 	_step3_morphology_view = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView

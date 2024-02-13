@@ -15,17 +15,9 @@ enum CALL_PROCESS_TYPE {
 var _network_interface_ref: NetworkInterface
 var _timer: Timer
 
+var _request_definition: APIRequestWorkerDefinition
 var _outgoing_headers: PackedStringArray # headers to make requests with
 var _processing_type: CALL_PROCESS_TYPE
-var _buffer_data: Variant
-var _follow_up_function: Callable
-var _killing_on_reset: bool
-var _initial_call_address: StringName
-var _polling_check: PollingMethodInterface
-var _poll_address: StringName
-var _poll_call_method: HTTPClient.Method
-var _mid_poll_call: Callable
-var _poll_data_to_send: Variant
 
 ## Sets up this node with all prereqs, should only be called once on instantiation
 func initialization(interface: NetworkInterface, call_header: PackedStringArray, node_parent: Node) -> void:
@@ -40,32 +32,20 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
+	_request_definition = request_definition
 	match(request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# single call
 			name = "single"
 			_processing_type = request_definition.call_type
-			_buffer_data = request_definition.data_to_hold_for_follow_up_function
-			_follow_up_function = request_definition.follow_up_function
-			_killing_on_reset = request_definition.should_kill_on_genome_reset
-			_initial_call_address = request_definition.full_address
 			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
 			
 		CALL_PROCESS_TYPE.POLLING:
 			# polling call
 			name = "polling"
 			_processing_type = request_definition.call_type
-			_buffer_data = request_definition.data_to_hold_for_follow_up_function
-			_follow_up_function = request_definition.follow_up_function
-			_killing_on_reset = request_definition.should_kill_on_genome_reset
-			_initial_call_address = request_definition.full_address
 			_timer.wait_time = request_definition.seconds_between_polls
 			_timer.start(request_definition.seconds_between_polls)
-			_poll_address = request_definition.full_address
-			_poll_call_method = request_definition.method
-			_poll_data_to_send = request_definition.data_to_send_to_FEAGI
-			_polling_check = request_definition.polling_completion_check
-			_mid_poll_call = request_definition.mid_poll_function
 			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
 		_:
 			# unknown call type, just exit
@@ -74,11 +54,11 @@ func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinitio
 
 ## Timer went off - time to poll
 func _poll_call_from_timer() -> void:
-	_make_call_to_FEAGI(_poll_address, _poll_call_method, _poll_data_to_send)
+	_make_call_to_FEAGI(_request_definition.full_address, _request_definition.method, _request_definition.data_to_send_to_FEAGI)
 
 ## Recieved signal that BV is resetting
 func _brain_visualizer_resetting() -> void:
-	if !_killing_on_reset:
+	if !_request_definition.should_kill_on_genome_reset:
 		return
 	
 	if !_is_worker_busy("", true):
@@ -99,10 +79,10 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 	if _is_worker_busy(requestAddress):
 		match _processing_type:
 			CALL_PROCESS_TYPE.SINGLE:
-				push_error("Skipping Single call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
+				push_error("Skipping Single call to %s and doing call to %s instead due to call being made on an active worker" % [_request_definition.full_address, requestAddress])
 				_query_for_destruction()
 			CALL_PROCESS_TYPE.POLLING:
-				push_error("Skipping Polling call to %s and doing call to %s instead due to call being made on an active worker" % [_initial_call_address, requestAddress])
+				push_error("Skipping Polling call to %s and doing call to %s instead due to call being made on an active worker" % [_request_definition.full_address, requestAddress])
 				return
 
 	match(method):
@@ -125,33 +105,39 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 
-func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+func _call_complete(result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+	
+	if response_code != 200:
+		_http_generic_error_response_handling(body)
+		_query_for_destruction()
+		return
+	
 	match(_processing_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# Default, no polling required
-			_follow_up_function.call(response_code, body, _buffer_data)
+			_request_definition.follow_up_function.call(response_code, body, _request_definition.data_to_hold_for_follow_up_function)
 			_query_for_destruction()
 		CALL_PROCESS_TYPE.POLLING:
 			# we are polling
-			var polling_response: PollingMethodInterface.POLLING_CONFIRMATION = _polling_check.confirm_complete(response_code, body)
+			var polling_response: PollingMethodInterface.POLLING_CONFIRMATION = _request_definition.polling_completion_check.confirm_complete(response_code, body)
 			match polling_response:
 				PollingMethodInterface.POLLING_CONFIRMATION.COMPLETE:
 				# We are done polling!
-					if !_follow_up_function.is_null():
-						_follow_up_function.call(response_code, body, _buffer_data)
+					if !_request_definition.follow_up_function.is_null():
+						_request_definition.follow_up_function.call(response_code, body, _request_definition.data_to_hold_for_follow_up_function)
 					_timer.stop()
 					_query_for_destruction()
 					return
 				PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE:
 					# not done polling, keep going!
-					if !_mid_poll_call.is_null():
+					if !_request_definition.mid_poll_function.is_null():
 						# we defined a call to make during polling. use it!
-						_mid_poll_call.call(response_code, body, _buffer_data)
+						_request_definition.mid_poll_function.call(response_code, body, _request_definition.data_to_hold_for_follow_up_function)
 					else:
-						print("Continuing to poll " + _poll_address)
+						print("Continuing to poll " + _request_definition.full_address)
 				PollingMethodInterface.POLLING_CONFIRMATION.ERROR:
 					# Something went wrong, stop polling and report
-					push_error("NETWORK: Polling endpoint %s has failed! Halting!" % _poll_address)
+					push_error("NETWORK: Polling endpoint %s has failed! Halting!" % _request_definition.full_address)
 					_timer.stop()
 					_query_for_destruction()
 					return
@@ -165,14 +151,23 @@ func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bo
 			return true
 		HTTPClient.Status.STATUS_REQUESTING:
 			if !surpress_warning:
-				push_warning("NETWORK: Still trying to request previous request to '%s'! Skipping call to '%s'" % [_initial_call_address, call_address])
+				push_warning("NETWORK: Still trying to request previous request to '%s'! Skipping call to '%s'" % [_request_definition.full_address, call_address])
 			return true
 		HTTPClient.Status.STATUS_CONNECTING:
 			if !surpress_warning:
-				push_warning("NETWORK: Still trying to finish previous request to '%s'! Skipping call to '%s'" % [_initial_call_address, call_address])
+				push_warning("NETWORK: Still trying to finish previous request to '%s'! Skipping call to '%s'" % [_request_definition.full_address, call_address])
 			return true
 		_:
 			return false
+
+func _http_generic_error_response_handling(response_body: PackedByteArray) -> void:
+	var feagi_error_response: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
+	if "code" not in feagi_error_response:
+		## If feagi didnt even send back the dict correctly, something went very wrong
+		#TODO action?
+		return
+	VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], _request_definition.http_error_replacements)
+
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
@@ -180,13 +175,8 @@ func _query_for_destruction() -> void:
 	if _network_interface_ref.API_request_workers_available.size() < _network_interface_ref.num_workers_to_keep_available:
 		_network_interface_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
-		_buffer_data = null
-		_initial_call_address = ""
-		_polling_check = null
-		_poll_address = ""
-		_poll_data_to_send = null
 	else:
-		queue_free()
+		free()
 
 
 

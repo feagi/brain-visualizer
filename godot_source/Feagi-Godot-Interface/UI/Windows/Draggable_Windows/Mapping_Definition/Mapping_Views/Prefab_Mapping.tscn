@@ -16,17 +16,17 @@
 [node name="Prefab_Mapping" type="HBoxContainer"]
 offset_right = 826.0
 offset_bottom = 32.0
-theme_override_constants/separation = 20
+theme_override_constants/separation = 8
 script = ExtResource("1_tf7sq")
 
 [node name="Morphology_List" type="OptionButton" parent="."]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 fit_to_longest_item = false
 script = ExtResource("2_4r0x5")
 
 [node name="Scalar" parent="." instance=ExtResource("1_1uw6c")]
-custom_minimum_size = Vector2(280, 0)
+custom_minimum_size = Vector2(264, 0)
 layout_mode = 2
 alignment = 1
 label_x_text = &""
@@ -34,7 +34,7 @@ label_y_text = &""
 label_z_text = &""
 
 [node name="PSP" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 tooltip_text = "Post-Synaptic Potential
 "
@@ -69,21 +69,20 @@ clip_text = true
 icon_alignment = 1
 
 [node name="Plasticity_Constant" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 tooltip_text = "Plasticity"
 alignment = 1
 script = ExtResource("3_2p8f4")
 
 [node name="LTP_Multiplier" type="LineEdit" parent="."]
-clip_contents = true
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_2p8f4")
 
 [node name="LTD_Multiplier" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_2p8f4")

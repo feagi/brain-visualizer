@@ -11,7 +11,7 @@ signal close_window_requesed_no_arg() ## As above but passes no argument
 @export var right_pixel_gap_default: int = 8
 @export var top_pixel_gap_default: int = 8
 @export var bottom_pixel_gap_default: int = 8
-@export var window_spawn_location: Vector2i = Vector2i(100,100)
+@export var window_spawn_location: Vector2i = Vector2i(200,200)
 @export var should_scale_with_UI: bool = true
 @export var additionally_bind_to_UI_scale_change: bool = false
 

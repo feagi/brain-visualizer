@@ -43,7 +43,25 @@ func _button_clone() -> void:
 	_close_window()
 
 func _button_delete() -> void:
-	VisConfig.UI_manager.window_manager.spawn_delete_confirmation(_cortical_area)
+	var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
+		"No"
+		)
+	var yes_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_custom_button_definition(
+		"Yes",
+		FeagiRequests.delete_cortical_area,
+		[_cortical_area.cortical_ID]
+	)
+	var button_array: Array[ConfigurableButtonDefinition] = [no_button, yes_button]
+
+	var delete_confirmation: ConfigurablePopupDefinition = ConfigurablePopupDefinition.new(
+		"Confirm Deletion", 
+		"Are you sure you wish to delete cortical area %s?" % _cortical_area.name,
+		button_array
+		)
+	VisConfig.UI_manager.window_manager.spawn_popup(delete_confirmation)
+
+
+	
 	_close_window()
 
 func _on_focus_lost() -> void:
