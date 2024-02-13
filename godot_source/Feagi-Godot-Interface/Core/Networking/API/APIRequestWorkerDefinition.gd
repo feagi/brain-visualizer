@@ -13,8 +13,7 @@ var follow_up_function: Callable ## Godot function to call at the conclusion of 
 var mid_poll_function: Callable ## Same as above, but only applicable for polling calls, the function to run when a poll call was complete but the conditions to end polling have not been met
 var polling_completion_check: PollingMethodInterface ## For polling calls, object used to check if we should stop polling
 var seconds_between_polls: float ## Time (seconds) to wait between poll attempts
-var http_400_call: Callable ## Custom Godot function to call if FEAGI returns a 400. Can be left empty for no custom action
-var http_500_call: Callable ## Custom Godot function to call if FEAGI returns a 500. Can be left empty for no custom action
+var http_error_call: Callable ## Custom Godot function to call if FEAGI returns a 400 or 500. Can be left empty for no custom action
 var http_error_replacements: Dictionary ## keys mapped to text replacements for any text to replace in an error (key being target minus $, value being replacement)
 
 func _init() -> void:
@@ -27,8 +26,7 @@ static func define_single_GET_call(
 	define_follow_up_function: Callable,
 	error_replacement = {},
 	define_should_kill_on_genome_reset: bool = true,
-	http_400_error_call: Callable = Callable(),
-	http_500_error_call: Callable = Callable(),
+	feagi_http_error_call: Callable = Callable(),
 	) -> APIRequestWorkerDefinition:
 		
 		var output = APIRequestWorkerDefinition.new()
@@ -40,6 +38,7 @@ static func define_single_GET_call(
 		output.data_to_hold_for_follow_up_function = null
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 		output.http_error_replacements = error_replacement
+		output.http_error_call = feagi_http_error_call
 		return output
 
 ## In-depth constructor for single calls
@@ -51,8 +50,7 @@ static func define_single_call(
 	define_follow_up_function: Callable,
 	error_replacement = {},
 	define_should_kill_on_genome_reset: bool = true,
-	http_400_error_call: Callable = Callable(),
-	http_500_error_call: Callable = Callable(),
+	feagi_http_error_call: Callable = Callable(),
 	) -> APIRequestWorkerDefinition:
 	
 		var output = APIRequestWorkerDefinition.new()
@@ -64,6 +62,7 @@ static func define_single_call(
 		output.should_kill_on_genome_reset = define_should_kill_on_genome_reset
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 		output.http_error_replacements = error_replacement
+		output.http_error_call = feagi_http_error_call
 		return output
 
 ## Constructor for polling calls. Default 'define_polling_completion_check' is set to poll forever. Default 'define_mid_poll_function' is Callable() (Invalid, IE no mid poll function)
@@ -78,8 +77,7 @@ static func define_polling_call(
 	error_replacement = {},
 	define_mid_poll_function: Callable = Callable(), 
 	define_should_kill_on_genome_reset: bool = true,
-	http_400_error_call: Callable = Callable(),
-	http_500_error_call: Callable = Callable(),
+	feagi_http_error_call: Callable = Callable(),
 	) -> APIRequestWorkerDefinition:
 	
 		var output = APIRequestWorkerDefinition.new()
@@ -94,4 +92,5 @@ static func define_polling_call(
 		output.seconds_between_polls = define_seconds_between_polls
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.POLLING
 		output.http_error_replacements = error_replacement
+		output.http_error_call = feagi_http_error_call
 		return output
