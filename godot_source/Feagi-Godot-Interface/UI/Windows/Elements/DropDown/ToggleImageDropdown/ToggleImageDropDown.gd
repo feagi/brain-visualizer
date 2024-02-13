@@ -23,7 +23,6 @@ func _ready() -> void:
 	_toggle_menu(false)
 	focus_exited.connect(_toggle_menu.bind(false))
 
-
 ## Sets the selected button for the dropdown
 func set_option(option: int, emit_signal: bool = true, close_dropdown_menu: bool = true) -> void:
 	if option == -1:
@@ -64,12 +63,7 @@ func get_number_of_buttons() -> int:
 func _toggle_menu(show_menu: bool) -> void:
 	_panel.visible = show_menu
 	if show_menu:
-		var offset: Vector2i
-		if is_vertical:
-			offset = Vector2(0, size.y)
-		else:
-			offset = Vector2(size.x, 0)
-		_panel.position = offset 
+		_panel.position = Vector2(0,0) 
 		grab_focus()
 	else:
 		release_focus()
