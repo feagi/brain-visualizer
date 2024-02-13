@@ -83,14 +83,14 @@ func setup(cortical_area_reference: BaseCorticalArea) -> void:
 	FeagiRequests.refresh_cortical_area(cortical_area_reference)
 
 ## OVERRIDDEN from Window manager, to save previous position and collapsible states
-func save_to_memory() -> Dictionary:
+func export_window_details() -> Dictionary:
 	return {
 		"position": position,
 		"toggles": _get_expanded_sections()
 	}
 
 ## OVERRIDDEN from Window manager, to load previous position and collapsible states
-func load_from_memory(previous_data: Dictionary) -> void:
+func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 	if "toggles" in previous_data.keys():
 		_set_expanded_sections(previous_data["toggles"])
