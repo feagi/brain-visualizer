@@ -13,12 +13,13 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme = ExtResource("1_3gu0l")
 script = ExtResource("1_1yhba")
+window_spawn_location = Vector2i(50, 200)
 metadata/_edit_use_anchors_ = true
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 2
-offset_right = 263.0
-offset_bottom = 59.0
+offset_right = 1150.0
+offset_bottom = 340.0
 vertical = true
 
 [node name="SourceAndDestination" type="HBoxContainer" parent="BoxContainer"]
@@ -94,7 +95,6 @@ layout_mode = 2
 offset_top = -40.0
 offset_right = 45.0
 offset_bottom = 0.0
-screen_edge_buffer = 10
 title = "Edit Mappings"
 
 [connection signal="user_selected_cortical_area" from="BoxContainer/SourceAndDestination/src_box/src_dropdown" to="." method="_source_changed"]
