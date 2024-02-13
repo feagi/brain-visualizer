@@ -1,3 +1,4 @@
 {
-	"TESTING_ERROR_HANDLING": "Unable to create cortical area of type $CORTICAL_TYPE"
+	"TESTING_ERROR_HANDLING": "Unable to create cortical area of type $CORTICAL_NAME",
+	"TESTING_ERROR_HANDLING2": "Unable to create cortical area of type $CORTICAL_NAME"
 } 

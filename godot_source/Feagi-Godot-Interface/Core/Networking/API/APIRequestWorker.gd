@@ -106,16 +106,11 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			return
 
 func _call_complete(result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
-	if response_code == 400:
-		_http_400_generic_handling(body)
+	
+	if response_code != 200:
+		_http_generic_error_response_handling(body)
 		_query_for_destruction()
 		return
-	if response_code == 500:
-		_http_500_generic_handling(body)
-		_query_for_destruction()
-		return
-	
-	
 	
 	match(_processing_type):
 		CALL_PROCESS_TYPE.SINGLE:
@@ -165,7 +160,7 @@ func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bo
 		_:
 			return false
 
-func _http_400_generic_handling(response_body: PackedByteArray) -> void:
+func _http_generic_error_response_handling(response_body: PackedByteArray) -> void:
 	var feagi_error_response: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
 	if "code" not in feagi_error_response:
 		## If feagi didnt even send back the dict correctly, something went very wrong
@@ -173,13 +168,6 @@ func _http_400_generic_handling(response_body: PackedByteArray) -> void:
 		return
 	VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], _request_definition.http_error_replacements)
 
-func _http_500_generic_handling(response_body: PackedByteArray) -> void:
-	var feagi_error_response: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
-	if "code" not in feagi_error_response:
-		## If feagi didnt even send back the dict correctly, something went very wrong
-		#TODO action?
-		return
-	VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], _request_definition.http_error_replacements)
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
