@@ -25,10 +25,10 @@ func _init() -> void:
 static func define_single_GET_call(
 	define_full_address: StringName,
 	define_follow_up_function: Callable,
+	error_replacement = {},
 	define_should_kill_on_genome_reset: bool = true,
 	http_400_error_call: Callable = Callable(),
 	http_500_error_call: Callable = Callable(),
-	error_replacement = {}
 	) -> APIRequestWorkerDefinition:
 		
 		var output = APIRequestWorkerDefinition.new()
@@ -49,10 +49,10 @@ static func define_single_call(
 	define_data_to_send_to_FEAGI: Variant,
 	define_data_to_hold_for_follow_up_function: Variant,
 	define_follow_up_function: Callable,
+	error_replacement = {},
 	define_should_kill_on_genome_reset: bool = true,
 	http_400_error_call: Callable = Callable(),
 	http_500_error_call: Callable = Callable(),
-	error_replacement = {}
 	) -> APIRequestWorkerDefinition:
 	
 		var output = APIRequestWorkerDefinition.new()
@@ -75,11 +75,11 @@ static func define_polling_call(
 	define_follow_up_function: Callable,
 	define_seconds_between_polls: float, 
 	define_polling_completion_check: PollingMethodInterface = PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE),
+	error_replacement = {},
 	define_mid_poll_function: Callable = Callable(), 
 	define_should_kill_on_genome_reset: bool = true,
 	http_400_error_call: Callable = Callable(),
 	http_500_error_call: Callable = Callable(),
-	error_replacement = {}
 	) -> APIRequestWorkerDefinition:
 	
 		var output = APIRequestWorkerDefinition.new()

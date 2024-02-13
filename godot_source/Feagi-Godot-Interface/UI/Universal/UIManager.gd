@@ -109,7 +109,9 @@ func make_notification(text: StringName, notification_type: SingleNotification.N
 
 func make_error_notification(key: StringName, replacements: Dictionary, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.ERROR, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	var string_to_post: StringName = _rosetta.get_text(key, replacements)
+	push_error("Posting error to user: %s" % string_to_post)
 	_notification_system_ref.add_notification(string_to_post, notification_type, time)
+	
 
 #TODO TEMP
 ## Tell BV to create a new singular cortical area preview

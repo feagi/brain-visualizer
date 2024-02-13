@@ -483,13 +483,18 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		to_send["copy_of"] = cortical_ID_to_copy
 		#to_send.erase("cortical_dimensions")
 	
+	var error_replacements: Dictionary = {
+		"CORTICAL_TYPE" = to_send["sub_group_id"]
+	}
+	
 	# Passthrough properties so we have them to build cortical area
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
 		_address_list.POST_genome_customCorticalArea,
 		HTTPClient.METHOD_POST,
 		to_send,
 		to_buffer,
-		_response_functions_ref.POST_GE_customCorticalArea
+		_response_functions_ref.POST_GE_customCorticalArea,
+		error_replacements
 	)
 	_interface_ref.FEAGI_API_Request(request)
 

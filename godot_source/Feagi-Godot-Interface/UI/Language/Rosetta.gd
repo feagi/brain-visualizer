@@ -21,12 +21,12 @@ func get_text(key: StringName, replacements: Dictionary = {}) -> StringName:
 	if current_language_ISO != "EN":
 		if key in foreign_json.keys():
 			return _replace_texts_from_dictionary(foreign_json[key], replacements)
-		push_warning("Unable to find translation for key %s for language %s! Falling back to English...")
+		push_warning("Unable to find translation for key %s for language %s! Falling back to English..." % key)
 	
 	if key in eng_json.keys():
 		return _replace_texts_from_dictionary(eng_json[key], replacements)
 	
-	push_error("Unable to find translation for key %s in English! Falling back to returning the key...")
+	push_error("Unable to find translation for key %s in English! Falling back to returning the key..." % key)
 	return key
 
 ## Sets current loaded language
