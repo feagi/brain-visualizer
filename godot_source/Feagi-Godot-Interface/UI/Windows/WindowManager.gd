@@ -7,9 +7,7 @@ const _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interf
 const _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 const _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 const _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
-const _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
 const _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
-const _prefab_popup_info_OLD: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
 const _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 const _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
 const _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
@@ -48,19 +46,6 @@ func spawn_create_cortical() -> void:
 func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_prefab_clone_cortical, "clone_cortical") as WindowCloneCorticalArea
 	clone_cortical.setup(cloning_from)
-
-#TODO DELETE
-func spawn_import_circuit() -> void:
-	if "import_circuit" in loaded_windows.keys():
-		force_close_window("import_circuit")
-	
-	print("user requests create import circuit window")
-	var import_circuit: WindowImportCircuit = _prefab_import_circuit.instantiate()
-	add_child(import_circuit)
-	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
-	import_circuit.closed_window.connect(force_close_window)
-	loaded_windows["import_circuit"] = import_circuit
-	bring_window_to_top(import_circuit)
 
 func spawn_quick_connect(initial_source_area: BaseCorticalArea = null) -> void:
 	var quick_connect: WindowQuickConnect = _default_spawn_window(_prefab_quick_connect, "quick_connect") as WindowQuickConnect
