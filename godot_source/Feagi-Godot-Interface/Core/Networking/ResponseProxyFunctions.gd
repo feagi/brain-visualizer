@@ -239,15 +239,12 @@ func POST_GE_corticalArea(_response_code: int, response_body: PackedByteArray, o
 
 func POST_GE_customCorticalArea(_response_code: int, response_body: PackedByteArray, other_properties: Dictionary) -> void:
 	# returns a dict of cortical ID
-	if _response_code == 422:
-		push_error("Unable to process new custom cortical area dict, skipping!")
-		return
 
 	var cortical_ID_raw: Dictionary = _body_to_dictionary(response_body)
 
-	if "cortical_id" not in cortical_ID_raw.keys():
-		push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
-		return
+	#if "cortical_id" not in cortical_ID_raw.keys():
+	#	push_error("FEAGI did not respond with a cortical ID when trying to generate a custom cortical area, something likely went wrong")
+	#	return
 	
 	FeagiCache.cortical_areas_cache.add_cortical_area_from_dict(other_properties, cortical_ID_raw["cortical_id"])
 	
