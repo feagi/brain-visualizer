@@ -53,7 +53,7 @@ var UI_scale: float:
 		UI_scale_changed.emit(v)
 
 var circuit_builder: CorticalNodeGraph:
-	get: return $NodeGraph
+	get: return $temp_split/NodeGraph
 
 var rosetta: Rosetta:
 	get: return _rosetta
