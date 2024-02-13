@@ -2,7 +2,6 @@ extends VBoxContainer
 class_name ElementMorphologyVectorsView
 
 var _vectors_scroll: BaseScroll
-var _vectors_vector_list: VBoxContainer
 var _add_vector: TextureButton
 var _is_UI_editable: bool
 var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
@@ -10,7 +9,6 @@ var _is_morphology_editable: bool = true # in case no morphology is defined, def
 
 func _ready() -> void:
 	_vectors_scroll = $Vectors
-	_vectors_vector_list = $Vectors/VBoxContainer
 	_add_vector = $header/add_vector
 
 func setup(allow_editing_if_morphology_editable: bool) -> void:
@@ -36,7 +34,7 @@ func add_vector_row() -> void:
 
 func _get_vector_array() -> Array[Vector3i]:
 	var _vectors: Array[Vector3i] = []
-	for child in _vectors_vector_list.get_children():
+	for child in _vectors_scroll.get_children_as_list():
 		_vectors.append(child.current_vector)
 	return _vectors
 

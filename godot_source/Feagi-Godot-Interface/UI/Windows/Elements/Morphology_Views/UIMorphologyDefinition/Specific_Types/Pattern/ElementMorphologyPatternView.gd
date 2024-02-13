@@ -3,7 +3,6 @@ class_name ElementMorphologyPatternView
 
 
 var _pattern_pair_scroll: BaseScroll
-var _pattern_pair_list: VBoxContainer
 var _add_pattern: TextureButton
 var _is_UI_editable: bool
 var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
@@ -11,7 +10,6 @@ var _subheader: HBoxContainer
 
 func _ready() -> void:
 	_pattern_pair_scroll = $Patterns
-	_pattern_pair_list = $Patterns/VBoxContainer
 	_add_pattern = $header/add_vector
 	_subheader = $subheader
 	_update_subheader_positions()
@@ -40,7 +38,7 @@ func add_pattern_pair_row() -> void:
 
 func _get_pattern_pair_array() -> Array[PatternVector3Pairs]:
 	var pairs: Array[PatternVector3Pairs] = []
-	for child in _pattern_pair_list.get_children():
+	for child in _pattern_pair_scroll.get_children_as_list():
 		pairs.append(child.current_vector_pair)
 	return pairs
 
