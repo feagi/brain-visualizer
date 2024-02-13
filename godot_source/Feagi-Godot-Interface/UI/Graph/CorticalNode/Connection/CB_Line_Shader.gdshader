@@ -18,7 +18,7 @@ vec4 addLinearFunctionAmount(vec4 inputColor, float UVX, float linearConstant, f
 
 void vertex() {
 	// Called for every vertex the material is visible on.
-	//VERTEX = VERTEX + (vec2(100.0 * cos(TIME), 100.0 * sin(TIME))); // funni
+	VERTEX.y += sin(TIME * 5.0 + VERTEX.x);
 }
 
 
