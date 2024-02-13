@@ -65,6 +65,9 @@ var _is_user_dragging_a_window: bool = false
 var _current_mode: MODE = MODE.VISUALIZER_3D
 var _UI_scale: float = 1.0
 
+func _init():
+	_rosetta = Rosetta.new()
+
 func _ready():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
@@ -72,7 +75,7 @@ func _ready():
 	_notification_system_ref = $NotificationSystem
 	VisConfig.UI_manager = self
 	_update_screen_size()
-	_rosetta = Rosetta.new()
+
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode
