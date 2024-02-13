@@ -468,24 +468,28 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
 		"cortical_sub_group": ""
 	}
-
+	
+	var error_replacements: Dictionary = {
+		"CORTICAL_TYPE" = "Interconnect"
+	}
+	
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 		to_buffer["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
+	
 	if memory_type:
 		to_send["sub_group_id"] = "MEMORY"
 		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+		error_replacements["CORTICAL_TYPE"] = "Memory"
 	
 	if cortical_ID_to_copy != "":
 		to_send["copy_of"] = cortical_ID_to_copy
 		#to_send.erase("cortical_dimensions")
 	
-	var error_replacements: Dictionary = {
-		"CORTICAL_TYPE" = to_send["sub_group_id"]
-	}
+	
 	
 	# Passthrough properties so we have them to build cortical area
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
