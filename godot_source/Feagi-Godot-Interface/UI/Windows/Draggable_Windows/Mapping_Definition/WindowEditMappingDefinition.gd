@@ -40,8 +40,13 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 	if !_are_cortical_areas_valid():
 		return
 	
+	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(source, destination, true)
 	_request_mappings_from_feagi()
-	
+
+## Overridden!
+func close_window():
+	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	super()
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
 func _retrieved_feagi_mapping_data(mappings: MappingProperties) -> void:
@@ -75,10 +80,12 @@ func _are_cortical_areas_valid() -> bool:
 
 func _source_changed(new_source: BaseCorticalArea) -> void:
 	_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
+	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_source_area = new_source
 	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
 func _destination_changed(new_destination: BaseCorticalArea) -> void:
+	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_destination_area = new_destination
 	_selected_cortical_areas_changed(_source_area, _destination_area)

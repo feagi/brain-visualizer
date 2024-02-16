@@ -52,6 +52,9 @@ var UI_scale: float:
 		_UI_scale = v
 		UI_scale_changed.emit(v)
 
+var circuit_builder: CorticalNodeGraph:
+	get: return $temp_split/NodeGraph
+
 var rosetta: Rosetta:
 	get: return _rosetta
 
@@ -87,7 +90,6 @@ func set_mode(new_mode: MODE) -> void:
 	mode_changed.emit(new_mode)
 
 func switch_to_circuit_builder():
-	var circuit_builder: CorticalNodeGraph = $NodeGraph
 	var brain_visualizer = $Brain_Visualizer
 	var brain_visualizer_back: FullScreenControl = $Brain_Visualizer/BV_Background
 
@@ -96,7 +98,6 @@ func switch_to_circuit_builder():
 	brain_visualizer_back.visible = false # hacky thing to do until this is corrected
 
 func switch_to_brain_visualizer_3D():
-	var circuit_builder: CorticalNodeGraph = $NodeGraph
 	var brain_visualizer = $Brain_Visualizer
 	var brain_visualizer_back: FullScreenControl = $Brain_Visualizer/BV_Background
 

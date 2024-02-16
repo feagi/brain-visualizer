@@ -3,8 +3,9 @@ class_name CorticalNodeGraph
 
 const NODE_SIZE: Vector2i = Vector2i(300, 100) ## Controls spacing betweeen nodes on intiial load
 
-## All cortical nodes on CB, key'd by their ID
-var cortical_nodes: Dictionary = {}
+var cortical_nodes: Dictionary = {} ## All cortical nodes on CB, key'd by their ID
+var connections: Dictionary = {} ## Connection lines key'd by their name function string output
+
 @export var algorithm_cortical_area_spacing: Vector2i =  Vector2i(10,6)
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 
@@ -28,6 +29,14 @@ func _ready():
 
 	connection_request.connect(_user_request_connection)
 
+
+func set_outlining_state_of_connection(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, highlighting: bool) -> void:
+	var line_name: StringName = InterCorticalConnection.generate_name(source_area.cortical_ID, destination_area.cortical_ID)
+	if !(line_name in connections.keys()):
+		push_warning("Unable to find connection line to set outlining! Skipping!")
+		return
+	var line: InterCorticalConnection = connections[line_name]
+	line.toggle_outlining(highlighting)
 
 ## Spawns a cortical Node, should only be called via FEAGI
 func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> CorticalNode:

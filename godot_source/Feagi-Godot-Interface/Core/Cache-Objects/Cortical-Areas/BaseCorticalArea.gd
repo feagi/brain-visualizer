@@ -363,7 +363,11 @@ var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
 
 # Mapping Related
 
+func is_cortical_area_afferent_to_this_area(possibly_afferent_cortical_area: BaseCorticalArea) -> bool:
+	return possibly_afferent_cortical_area in _afferent_connections
 
+func is_cortical_area_efferent_to_this_area(possibly_efferent_cortical_area: BaseCorticalArea) -> bool:
+	return possibly_efferent_cortical_area.cortical_ID in _efferent_mappings.keys()
 
 ## SHOULD ONLY BE CALLED FROM FEAGI! Set (create / overwrite / clear) the mappings to a destination area
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:

@@ -6,14 +6,11 @@ signal user_change_option(label: StringName, index: int)
 @export var dimensions: Vector2i = Vector2i(1,1)
 @export var is_vertical: bool = true
 @export var initial_index: int = -1
+@export var fade_out_selected_option: bool = true
 
-var current_setting_name: StringName:
-	get: return _current_setting_name
-
-var _current_setting_name: StringName
 var _panel: PanelContainer
 var _button_holder: BoxContainer
-
+var _current_setting_index: int = -2 # start withs omething invalid that the initial index overrides on start
 
 
 func _ready() -> void:
@@ -26,7 +23,6 @@ func _ready() -> void:
 	_toggle_menu(false)
 	focus_exited.connect(_toggle_menu.bind(false))
 
-
 ## Sets the selected button for the dropdown
 func set_option(option: int, emit_signal: bool = true, close_dropdown_menu: bool = true) -> void:
 	if option == -1:
@@ -38,15 +34,22 @@ func set_option(option: int, emit_signal: bool = true, close_dropdown_menu: bool
 	if option > get_number_of_buttons():
 		push_error("Unable to set Texture Dropdown to an option with an index larger than available!")
 		return
-	var button: TextureButton = _get_texture_button(option)
-	texture_normal = button.texture_normal
-	texture_hover = button.texture_hover
-	texture_pressed = button.texture_pressed
-	texture_disabled = button.texture_disabled
+	
+	if _current_setting_index != -2:
+		var old_button: TextureButton = _get_texture_button(_current_setting_index)
+		old_button.disabled = false
+		
+	_current_setting_index = option
+	var new_button: TextureButton = _get_texture_button(option)
+	texture_normal = new_button.texture_normal
+	texture_hover = new_button.texture_hover
+	texture_pressed = new_button.texture_pressed
+	texture_disabled = new_button.texture_disabled
+	new_button.disabled = true
 	if close_dropdown_menu:
 		_toggle_menu(false)
 	if emit_signal:
-		user_change_option.emit(button.name, option)
+		user_change_option.emit(new_button.name, option)
 
 func dropdown_toggle() -> void:
 	if _is_menu_shown():
@@ -60,12 +63,7 @@ func get_number_of_buttons() -> int:
 func _toggle_menu(show_menu: bool) -> void:
 	_panel.visible = show_menu
 	if show_menu:
-		var offset: Vector2i
-		if is_vertical:
-			offset = Vector2(0, size.y)
-		else:
-			offset = Vector2(size.x, 0)
-		_panel.position = offset 
+		_panel.position = Vector2(0,0) 
 		grab_focus()
 	else:
 		release_focus()

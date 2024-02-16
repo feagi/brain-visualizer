@@ -31,6 +31,8 @@ const CAMERA_TELEPORT_FROM_DISTANCE: float = 50.0
 @export var right_action = "ui_right"
 @export var spacebar = "ui_select"
 @export var reset = "reset"
+@export var fast_camera_button: Key = Key.KEY_SHIFT
+@export var fast_camera_speed_multiplier: float = 3.0
 
 var _is_user_currently_focusing_camera: bool = false
 var _initial_position: Vector3
@@ -131,7 +133,11 @@ func _keyboard_camera_movement(_keyboard_event: InputEventKey) -> void:
 	if Input.is_key_pressed(KEY_RIGHT):
 		dir += Vector3(1,0,0)
 	
-	dir = dir.normalized() * camera_movement_speed
+	var speed: float = camera_movement_speed
+	if Input.is_key_pressed(fast_camera_button):
+		speed *= fast_camera_speed_multiplier
+	
+	dir = dir.normalized() * speed
 	translate(dir)
 
 
