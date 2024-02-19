@@ -53,9 +53,21 @@ func execute_json() -> void:
 	
 	# Generate animation
 	var generated_animation: Animation = Animation.new()
-	var time_offset: float = 0.0
 	generated_animation.add_track(Animation.TrackType.TYPE_POSITION_3D, 0)
 	generated_animation.add_track(Animation.TrackType.TYPE_ROTATION_3D, 1)
+	var frame_pos: Vector3
+	var frame_rot: Quaternion
+	var frame_time: float = 0.0
+	
+	for i in num_frames:
+		var frame: Dictionary = input_frames[i]
+		frame_pos = FEAGIUtils.untyped_array_to_vector3(frame["position"])
+		frame_rot = FEAGIUtils.untyped_array_to_quaternion(frame["rotation"])
+		generated_animation.position_track_insert_key(0, frame_time, frame_pos)
+		generated_animation.rotation_track_insert_key(0, frame_time, frame_rot)
+		frame_time += frame["time"]
+	
+	
 	
 	
 	
