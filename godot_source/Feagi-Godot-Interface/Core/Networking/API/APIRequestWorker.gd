@@ -91,12 +91,12 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			return
 		HTTPClient.METHOD_POST:
 			# uncomment / breakpoint below to easily debug dictionary data
-			var debug_JSON = JSON.stringify(data)
+			#var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_PUT:
 			# uncomment / breakpoint below to easily debug dictionary data
-			var debug_JSON = JSON.stringify(data)
+			#var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 		HTTPClient.METHOD_DELETE:
@@ -105,7 +105,7 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 
-func _call_complete(result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
 	
 	if response_code != 200:
 		_http_generic_error_response_handling(body)

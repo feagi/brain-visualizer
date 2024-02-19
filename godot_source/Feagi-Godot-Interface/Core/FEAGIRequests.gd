@@ -284,7 +284,7 @@ func _on_ping_timer_end() -> void:
 	#_feagi_interface.net.send_websocket_ping()
 
 func _on_feagi_ping_back() -> void:
-	var delta_time: int = (Time.get_ticks_msec() - _last_ping_time) /  2
+	var delta_time: int = int((Time.get_ticks_msec() - _last_ping_time) /  2.0)
 	_last_ping_time = Time.get_ticks_msec()
 	FeagiEvents.retrieved_latest_latency.emit(delta_time)
 

@@ -15,7 +15,7 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	
 	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - CENTER_OFFSET
 	if position_to_spawn.y < CENTER_OFFSET.y:
-		position_to_spawn.y += CENTER_OFFSET.y * 2.0
+		position_to_spawn.y += int(CENTER_OFFSET.y * 2.0)
 	position = position_to_spawn
 	if !_cortical_area.user_can_delete_this_area:
 		$HBoxContainer/Delete.disabled = true

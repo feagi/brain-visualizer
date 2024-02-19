@@ -18,9 +18,9 @@ func _init(window_title: StringName, window_message: StringName, window_buttons:
 ## Generates a definition of a window with a simple window and a single button to close it
 static func create_single_button_close_popup(window_title: StringName, window_message: StringName, button_text: StringName = "OK", window_minumum_size: Vector2i = Vector2i(0,0)) -> ConfigurablePopupDefinition:
 	var button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(button_text)
-	var buttons: Array[ConfigurableButtonDefinition] = []
-	buttons.append(button)
-	return ConfigurablePopupDefinition.new(window_title, window_message, buttons, window_minumum_size)
+	var button_arr: Array[ConfigurableButtonDefinition] = []
+	button_arr.append(button)
+	return ConfigurablePopupDefinition.new(window_title, window_message, button_arr, window_minumum_size)
 
 func _generate_random_letters(num_letters: int) -> StringName:
 	var result: String = ""

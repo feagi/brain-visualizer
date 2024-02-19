@@ -24,7 +24,7 @@ func _ready() -> void:
 	focus_exited.connect(_toggle_menu.bind(false))
 
 ## Sets the selected button for the dropdown
-func set_option(option: int, emit_signal: bool = true, close_dropdown_menu: bool = true) -> void:
+func set_option(option: int, should_emit_signal: bool = true, close_dropdown_menu: bool = true) -> void:
 	if option == -1:
 		_set_empty()
 		return
@@ -48,7 +48,7 @@ func set_option(option: int, emit_signal: bool = true, close_dropdown_menu: bool
 	new_button.disabled = true
 	if close_dropdown_menu:
 		_toggle_menu(false)
-	if emit_signal:
+	if should_emit_signal:
 		user_change_option.emit(new_button.name, option)
 
 func dropdown_toggle() -> void:

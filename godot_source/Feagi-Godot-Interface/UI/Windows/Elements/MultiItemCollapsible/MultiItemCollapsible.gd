@@ -3,7 +3,7 @@ class_name MultiItemCollapsible
 
 @export var texture_open: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_right.png")
 @export var texture_closed: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_left.png")
-@export var is_vertical: bool = false
+@export var setup_as_vertical: bool = false
 @export var child_nodes_to_run_toggle_collapse_on: Array[Control] = []
 @export var start_open: bool = false
 
@@ -23,8 +23,8 @@ func _ready() -> void:
 	for child: Control in ($Place_child_nodes_here).get_children():
 		_children.append(child)
 	toggle_open_state(start_open, true)
-	vertical = is_vertical
-	($Place_child_nodes_here).vertical = is_vertical
+	vertical = setup_as_vertical
+	($Place_child_nodes_here).vertical = setup_as_vertical
 	_opened = start_open
 
 ## toggles whether the UI is open or not

@@ -219,7 +219,7 @@ func POST_MON_neuron_synapticPotential(_response_code: int, _response_body: Pack
 		return
 	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
 
-func POST_GE_amalgamationDestination(response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
+func POST_GE_amalgamationDestination(_response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
 	print("Feagi recieved amalgamation destination response!")
 	pass
 

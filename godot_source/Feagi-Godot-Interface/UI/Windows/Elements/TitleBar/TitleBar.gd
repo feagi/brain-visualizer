@@ -51,8 +51,8 @@ func _gui_input(event: InputEvent) -> void:
 			return # If we arent dragging (as decided by _process_mouse_click_event), then dont process this is a drag
 		_process_mouse_drag_event(event as InputEventMouseMotion)
 
-func _UI_scale_changed(multiplier: float) -> void:
-	var label: Label = $HBoxContainer/Title_Text
+func _UI_scale_changed(_multiplier: float) -> void:
+	var _label: Label = $HBoxContainer/Title_Text
 	#TODO
 
 ## The parent window object calls this to finish setting up this child. Technically not best practice
@@ -84,7 +84,7 @@ func _process_mouse_click_event(mouse_event: InputEventMouseButton) -> void:
 			
 
 ## Processes Mouse Dragging (mouse movement while _is_dragging is true)
-func _process_mouse_drag_event(mouse_event: InputEventMouseMotion) -> void:
+func _process_mouse_drag_event(_mouse_event: InputEventMouseMotion) -> void:
 	_window_parent.position = _prev_window_minus_mouse_position + _viewport.get_mouse_position()
 
 func _close_window_from_close_button() -> void:
