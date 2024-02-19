@@ -38,10 +38,11 @@ const ANIMATION_TIMER_NAME: NodePath = "AnimTimer"
 @export var fast_camera_button: Key = Key.KEY_SHIFT
 @export var fast_camera_speed_multiplier: float = 3.0
 
+var is_playing_animation: bool = false
+
 var _is_user_currently_focusing_camera: bool = false
 var _initial_position: Vector3
 var _initial_euler_rotation: Vector3
-var _is_playing_animation: bool = false
 
 func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
@@ -53,7 +54,7 @@ func _ready() -> void:
 # Guard Clauses!
 func _input(event: InputEvent):
 	
-	if _is_playing_animation:
+	if is_playing_animation:
 		return
 	
 	# Feagi Interaction doesnt require camera control
@@ -87,6 +88,9 @@ func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -
 
 
 func play_animation(animation: Animation) -> void:	
+	if is_playing_animation:
+		return
+	
 	# Create Animation Player
 	var animation_player: AnimationPlayer
 	if get_node_or_null(ANIMATION_PLAYER_NAME) != null:
@@ -105,29 +109,22 @@ func play_animation(animation: Animation) -> void:
 	if animation_library.has_animation(CAMERA_ANIMATION_NAME):
 		animation_library.remove_animation(CAMERA_ANIMATION_NAME)
 	animation_library.add_animation(CAMERA_ANIMATION_NAME, animation)
-	_is_playing_animation = true
+	is_playing_animation = true
 	animation_player.play(CAMERA_LIBRARY_NAME + "/" + CAMERA_ANIMATION_NAME)
 	
 	# add ending timer
-	var timer: Timer = Timer.new()
-	add_child(timer)
-	timer.name = str(ANIMATION_TIMER_NAME)
-	timer.wait_time = animation.length
-	timer.one_shot
-	timer.timeout.connect(kill_animation)
-	timer.start()
+	await get_tree().create_timer(animation.length).timeout
+	kill_animation()
 	
 
 func kill_animation() -> void:
-	_is_playing_animation = false
+	is_playing_animation = false
 	if get_node_or_null(ANIMATION_PLAYER_NAME) == null:
 		return
 	var animation_player: AnimationPlayer = $AnimationPlayer
 	animation_player.stop()
 	animation_player.queue_free()
 	
-	if get_node_or_null(ANIMATION_TIMER_NAME) != null:
-		get_node(ANIMATION_PLAYER_NAME).queue_free()
 	
 	
 
