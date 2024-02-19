@@ -14,7 +14,7 @@ const _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Inte
 const _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
 const _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 const _prefab_configurable_popup: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Configurable_Popup/WindowConfigurablePopup.tscn")
-
+const _prefab_developer_options: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Developer_Options/WindowDeveloperOptions.tscn")
 
 var loaded_windows: Dictionary
 
@@ -34,7 +34,11 @@ func spawn_create_morphology() -> void:
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
 	morphology_manager.setup(morphology_to_preload)
-	
+
+func spawn_developer_options() -> void:
+	var developer_window: WindowDeveloperOptions = _default_spawn_window(_prefab_developer_options, "developer_options")
+	developer_window.setup()
+
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
 	var edit_mappings: WindowEditMappingDefinition = _default_spawn_window(_prefab_edit_mappings, "edit_mappings") as WindowEditMappingDefinition
 	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)

@@ -64,6 +64,7 @@ script = ExtResource("1_43i4l")
 
 [node name="UI" type="Node" parent="."]
 script = ExtResource("3_5tyy7")
+enable_developer_options = true
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
 script = ExtResource("3_1xkbx")
