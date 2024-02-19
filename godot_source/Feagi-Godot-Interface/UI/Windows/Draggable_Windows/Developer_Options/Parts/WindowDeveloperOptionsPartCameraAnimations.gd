@@ -17,7 +17,7 @@ func clear_stored_data() -> void:
 	counter.current_int = 0
 
 func add_frame() -> void:
-	_append_camera_transform(_camera.position, _camera.rotation)
+	_append_camera_transform(_camera.position, _camera.quaternion)
 
 func export_into_json() -> void:
 	var text_node: TextEdit = $AnimationSave
@@ -58,13 +58,14 @@ func execute_json() -> void:
 	generated_animation.add_track(Animation.TrackType.TYPE_ROTATION_3D, 1)
 	
 	
+	
 		
 
-func _append_camera_transform(cam_position: Vector3, cam_euclidean_rotation: Vector3) -> void:
+func _append_camera_transform(cam_position: Vector3, cam_rotation: Quaternion) -> void:
 	var tran_time_node: FloatInput = $transition_time
 	var counter: IntInput = $HBoxContainer/num_animation_points
 	_stored_positions.append(cam_position)
-	_stored_rotations.append(cam_euclidean_rotation)
+	_stored_rotations.append(cam_rotation)
 	_stored_times.append(tran_time_node.current_float)
 	counter.current_int += 1
 
