@@ -129,6 +129,8 @@ fast_camera_speed_multiplier = 4.0
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="UI/Brain_Visualizer/Camera3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.622, -33.7407, -100)
 
+[node name="AnimationPlayer" type="AnimationPlayer" parent="UI/Brain_Visualizer/Camera3D"]
+
 [node name="BV_Background" type="Control" parent="UI/Brain_Visualizer"]
 layout_mode = 3
 anchors_preset = 0

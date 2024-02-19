@@ -20,6 +20,7 @@ const CAMERA_TURN_SPEED = 200
 const CAMERA_TELEPORT_FROM_DISTANCE: float = 50.0
 const CAMERA_ANIMATION_NAME: StringName = "CAMERA_PATH"
 const CAMERA_LIBRARY_NAME: StringName = "CAMERA_ANIM_LIB"
+const ANIMATION_PLAYER_NAME: NodePath = "AnimationPlayer"
 
 @export var camera_pan_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var camera_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
@@ -87,28 +88,30 @@ func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -
 func play_animation(animation: Animation) -> void:	
 	# Create Animation Player
 	var animation_player: AnimationPlayer
-	if $AnimationPlayer != null:
+	if get_node_or_null(ANIMATION_PLAYER_NAME) != null:
 		kill_animation() 
 	animation_player = AnimationPlayer.new()
 	add_child(animation_player)
+	animation_player.name = str(ANIMATION_PLAYER_NAME)
+	animation_player.root_node = ("/root")
 	
 	# Confirm animation Library
 	if !animation_player.has_animation_library(CAMERA_LIBRARY_NAME):
 		animation_player.add_animation_library(CAMERA_LIBRARY_NAME, AnimationLibrary.new())
 	
 	# Add animation to library
-	var animation_library: AnimationLibrary = animation_player.get_animation_library(CAMERA_LIBRARY_NAME) # Not the best method. Too Bad!
+	var animation_library: AnimationLibrary = animation_player.get_animation_library(CAMERA_LIBRARY_NAME)
 	if animation_library.has_animation(CAMERA_ANIMATION_NAME):
 		animation_library.remove_animation(CAMERA_ANIMATION_NAME)
 	animation_library.add_animation(CAMERA_ANIMATION_NAME, animation)
 	_is_playing_animation = true
-	animation_player.play(CAMERA_ANIMATION_NAME)
+	animation_player.play(CAMERA_LIBRARY_NAME + "/" + CAMERA_ANIMATION_NAME)
 	animation_player.animation_changed.connect(kill_animation)
 	
 
 func kill_animation(_irrelevant: Variant = null) -> void:
 	_is_playing_animation = false
-	if $AnimationPlayer == null:
+	if get_node_or_null(ANIMATION_PLAYER_NAME) == null:
 		return
 	var animation_player: AnimationPlayer = $AnimationPlayer
 	animation_player.stop()
