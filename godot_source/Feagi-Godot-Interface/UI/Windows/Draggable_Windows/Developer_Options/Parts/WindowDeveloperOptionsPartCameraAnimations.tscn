@@ -51,3 +51,4 @@ text = "Play"
 [connection signal="pressed" from="HBoxContainer/clear" to="." method="clear_stored_data"]
 [connection signal="pressed" from="Add" to="." method="add_frame"]
 [connection signal="pressed" from="Export" to="." method="export_into_json"]
+[connection signal="pressed" from="Play" to="." method="execute_json"]

@@ -55,6 +55,9 @@ func execute_json() -> void:
 	var generated_animation: Animation = Animation.new()
 	generated_animation.add_track(Animation.TrackType.TYPE_POSITION_3D, 0)
 	generated_animation.add_track(Animation.TrackType.TYPE_ROTATION_3D, 1)
+	generated_animation.track_set_path(0, _camera.get_path())
+	generated_animation.track_set_path(1, _camera.get_path())
+	
 	var frame_pos: Vector3
 	var frame_rot: Quaternion
 	var frame_time: float = 0.0
@@ -64,14 +67,10 @@ func execute_json() -> void:
 		frame_pos = FEAGIUtils.untyped_array_to_vector3(frame["position"])
 		frame_rot = FEAGIUtils.untyped_array_to_quaternion(frame["rotation"])
 		generated_animation.position_track_insert_key(0, frame_time, frame_pos)
-		generated_animation.rotation_track_insert_key(0, frame_time, frame_rot)
+		generated_animation.rotation_track_insert_key(1, frame_time, frame_rot)
 		frame_time += frame["time"]
 	
-	
-	
-	
-	
-		
+	_camera.play_animation(generated_animation)
 
 func _append_camera_transform(cam_position: Vector3, cam_rotation: Quaternion) -> void:
 	var tran_time_node: FloatInput = $transition_time
