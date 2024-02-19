@@ -47,6 +47,10 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 		output.append(array_to_vector2i(sub_array))
 	return output
 
+static func quaternion_to_array(input: Quaternion) -> Array[float]:
+	var output: Array[float] = [input.x, input.y, input.z, input.w]
+	return output
+
 ## Converts a Vector3i to a 3 long int array
 static func vector3i_to_array(input: Vector3i) -> Array[int]:
 	var output: Array[int] = [input.x, input.y, input.z]
