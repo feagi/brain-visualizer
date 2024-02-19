@@ -33,7 +33,7 @@ layout_mode = 2
 tooltip_text = "transition time"
 script = ExtResource("3_b7a62")
 initial_float = 5.0
-suffix = "seconds"
+suffix = " seconds"
 min_value = 0.1
 
 [node name="Export" type="Button" parent="."]
@@ -50,4 +50,5 @@ layout_mode = 2
 text = "Play"
 
 [connection signal="pressed" from="HBoxContainer/clear" to="." method="clear_stored_data"]
+[connection signal="pressed" from="Add" to="." method="add_frame"]
 [connection signal="pressed" from="Export" to="." method="export_into_json"]

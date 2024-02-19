@@ -1,9 +1,13 @@
 extends VBoxContainer
 class_name WindowDeveloperOptionsPartCameraAnimations # Microsoft would be proud
 
+var _camera: BVCam
 var _stored_positions: Array[Vector3] = []
 var _stored_rotations: Array[Vector3] = []
 var _stored_times: Array[float] = []
+
+func _ready() -> void:
+	_camera = get_node("/root/FeagiRoot/UI/Brain_Visualizer/Camera3D")
 
 func clear_stored_data() -> void:
 	var counter: IntInput = $HBoxContainer/num_animation_points
@@ -11,16 +15,9 @@ func clear_stored_data() -> void:
 	_stored_rotations = []
 	_stored_times = []
 	counter.current_int = 0
-	
 
-func append_camera_transform(cam_position: Vector3, cam_euclidean_rotation: Vector3) -> void:
-	var tran_time_node: FloatInput = $initial_float
-	var counter: IntInput = $HBoxContainer/num_animation_points
-	_stored_positions.append(cam_position)
-	_stored_rotations.append(cam_euclidean_rotation)
-	_stored_times.append(tran_time_node.current_float)
-	counter.current_int += 1
-	
+func add_frame() -> void:
+	_append_camera_transform(_camera.position, _camera.rotation)
 
 func export_into_json() -> void:
 	var text_node: TextEdit = $AnimationSave
@@ -31,6 +28,13 @@ func export_into_json() -> void:
 	var json: StringName = JSON.stringify(output_arr)
 	text_node.text = json
 
+func _append_camera_transform(cam_position: Vector3, cam_euclidean_rotation: Vector3) -> void:
+	var tran_time_node: FloatInput = $transition_time
+	var counter: IntInput = $HBoxContainer/num_animation_points
+	_stored_positions.append(cam_position)
+	_stored_rotations.append(cam_euclidean_rotation)
+	_stored_times.append(tran_time_node.current_float)
+	counter.current_int += 1
 
 func _export_index_as_dict(index: int) -> Dictionary:
 	return {
