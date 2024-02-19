@@ -69,6 +69,7 @@ func execute_json() -> void:
 		generated_animation.position_track_insert_key(0, frame_time, frame_pos)
 		generated_animation.rotation_track_insert_key(1, frame_time, frame_rot)
 		frame_time += frame["time"]
+	generated_animation.length = frame_time
 	
 	_camera.play_animation(generated_animation)
 

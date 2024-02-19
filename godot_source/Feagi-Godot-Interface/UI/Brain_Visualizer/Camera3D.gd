@@ -21,6 +21,7 @@ const CAMERA_TELEPORT_FROM_DISTANCE: float = 50.0
 const CAMERA_ANIMATION_NAME: StringName = "CAMERA_PATH"
 const CAMERA_LIBRARY_NAME: StringName = "CAMERA_ANIM_LIB"
 const ANIMATION_PLAYER_NAME: NodePath = "AnimationPlayer"
+const ANIMATION_TIMER_NAME: NodePath = "AnimTimer"
 
 @export var camera_pan_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var camera_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
@@ -106,16 +107,28 @@ func play_animation(animation: Animation) -> void:
 	animation_library.add_animation(CAMERA_ANIMATION_NAME, animation)
 	_is_playing_animation = true
 	animation_player.play(CAMERA_LIBRARY_NAME + "/" + CAMERA_ANIMATION_NAME)
-	animation_player.animation_changed.connect(kill_animation)
+	
+	# add ending timer
+	var timer: Timer = Timer.new()
+	add_child(timer)
+	timer.name = str(ANIMATION_TIMER_NAME)
+	timer.wait_time = animation.length
+	timer.one_shot
+	timer.timeout.connect(kill_animation)
+	timer.start()
 	
 
-func kill_animation(_irrelevant: Variant = null) -> void:
+func kill_animation() -> void:
 	_is_playing_animation = false
 	if get_node_or_null(ANIMATION_PLAYER_NAME) == null:
 		return
 	var animation_player: AnimationPlayer = $AnimationPlayer
 	animation_player.stop()
 	animation_player.queue_free()
+	
+	if get_node_or_null(ANIMATION_TIMER_NAME) != null:
+		get_node(ANIMATION_PLAYER_NAME).queue_free()
+	
 	
 
 func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
