@@ -43,7 +43,6 @@ text = "Export Current Points"
 [node name="AnimationSave" type="TextEdit" parent="."]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
-editable = false
 
 [node name="Play" type="Button" parent="."]
 layout_mode = 2
