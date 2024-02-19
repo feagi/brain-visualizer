@@ -17,15 +17,15 @@
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
 [node name="WindowCorticalProperties" type="Panel"]
-offset_top = 50.0
-offset_bottom = 50.0
+offset_top = 40.0
+offset_bottom = 40.0
 theme = ExtResource("1_dxtt6")
 script = ExtResource("1_1jbcd")
 
 [node name="Main_Body" type="BoxContainer" parent="."]
-layout_mode = 0
+layout_mode = 1
 offset_right = 335.0
-offset_bottom = 207.0
+offset_bottom = 360.0
 vertical = true
 script = ExtResource("3_thls4")
 
