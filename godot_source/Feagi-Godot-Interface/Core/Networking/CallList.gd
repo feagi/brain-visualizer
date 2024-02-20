@@ -536,7 +536,6 @@ func POST_GE_append(circuit_file_name: StringName, position: Vector3i) -> void:
 
 ## Sets membrane potential monitoring
 func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
-	var boolean: StringName = FEAGIUtils.bool_2_string(state)
 	var passthrough: Dictionary = {
 		"ID": cortical_ID,
 		"state": state
@@ -554,7 +553,6 @@ func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
 
 ## Sets membrane synaptic monitoring
 func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
-	var boolean: StringName = FEAGIUtils.bool_2_string(state)
 	var passthrough: Dictionary = {
 		"ID": cortical_ID,
 		"state": state

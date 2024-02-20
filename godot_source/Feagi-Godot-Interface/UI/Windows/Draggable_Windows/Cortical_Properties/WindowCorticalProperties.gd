@@ -122,10 +122,10 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 		if child is VerticalCollapsible:
 			collapsibles.append((child as VerticalCollapsible))
 	
-	var max: int = len(collapsibles)
-	if len(expanded) < max:
-		max = len(expanded)
+	var masimum: int = len(collapsibles)
+	if len(expanded) < masimum:
+		masimum = len(expanded)
 	
-	for i: int in max:
+	for i: int in masimum:
 		collapsibles[i].is_open = expanded[i]
 	

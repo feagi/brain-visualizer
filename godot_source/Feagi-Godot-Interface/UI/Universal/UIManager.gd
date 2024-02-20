@@ -14,6 +14,9 @@ signal user_changed_window_drag_status(is_dragging_a_window: bool) ## Emits when
 signal mode_changed(new_mode: MODE)
 signal UI_scale_changed(multiplier: float)
 
+@export var enable_developer_options: bool = false
+@export var developer_options_key: Key = KEY_BACKSLASH
+
 var screen_size: Vector2:  # keep as float for easy division
 	get: return _screen_size
 
@@ -79,6 +82,16 @@ func _ready():
 	VisConfig.UI_manager = self
 	_update_screen_size()
 
+func _input(event: InputEvent) -> void:
+	if !enable_developer_options:
+		return
+	
+	if !(event is InputEventKey):
+		return
+	
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event.keycode == developer_options_key:
+		window_manager.spawn_developer_options()
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode

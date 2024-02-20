@@ -64,6 +64,7 @@ script = ExtResource("1_43i4l")
 
 [node name="UI" type="Node" parent="."]
 script = ExtResource("3_5tyy7")
+enable_developer_options = true
 
 [node name="Brain_Visualizer" type="Node3D" parent="UI"]
 script = ExtResource("3_1xkbx")
@@ -153,7 +154,6 @@ mouse_filter = 2
 
 [node name="NodeGraph" parent="UI/temp_split" instance=ExtResource("2_yy50b")]
 layout_mode = 2
-scroll_offset = Vector2(-9, 0)
 
 [node name="Windows" type="Node" parent="UI"]
 script = ExtResource("9_jshmh")

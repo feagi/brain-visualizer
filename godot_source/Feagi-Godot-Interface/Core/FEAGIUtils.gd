@@ -14,6 +14,9 @@ static func arr_to_float_arr(arr: Array) -> Array[float]:
 	out.assign(arr)
 	return out
 
+static func untyped_array_to_quaternion(input: Array) -> Quaternion:
+	return Quaternion(input[0], input[1], input[2], input[3])
+
 ## Converts a 3 long int array to a Vector3i
 static func int_array_to_vector3i(input: Array[int]) -> Vector3i:
 	return Vector3i(int(input[0]), int(input[1]), int(input[2]))
@@ -45,6 +48,10 @@ static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vect
 	var output: Array[Vector2i] = []
 	for sub_array in input:
 		output.append(array_to_vector2i(sub_array))
+	return output
+
+static func quaternion_to_array(input: Quaternion) -> Array[float]:
+	var output: Array[float] = [input.x, input.y, input.z, input.w]
 	return output
 
 ## Converts a Vector3i to a 3 long int array
@@ -135,7 +142,6 @@ static func find_total_non_repeating(array_1: Array, array_2: Array) -> Array:
 		if !(e2 in output):
 			output.append(e2)
 	return output
-
 
 ## why is this so dumb
 static func untyped_array_to_int_array(input: Array) -> Array[int]:

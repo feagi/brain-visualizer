@@ -100,8 +100,8 @@ func revoke_filter() -> void:
 	for child in _scroll_holder.get_children():
 		child.visible = true
 
-func toggle_filter_text_box(enable_filter_box: bool) -> void:
-	_filter_text.visible = enable_filter_box
+func toggle_filter_text_box(is_enabled_filter_box: bool) -> void:
+	_filter_text.visible = is_enabled_filter_box
 
 func _find_child_index_with_ID(searching_ID: Variant) -> int:
 	for child in _scroll_holder.get_children():

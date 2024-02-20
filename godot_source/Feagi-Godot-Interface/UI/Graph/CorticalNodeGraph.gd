@@ -12,7 +12,6 @@ var connections: Dictionary = {} ## Connection lines key'd by their name functio
 var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
 var intercortical_connection_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalConnection.tscn")
 var _spawn_sorter: CorticalNodeSpawnSorter
-var _connection_buttons: Dictionary = {} # key'd by Source_ID {Destination_ID[button]}
 var _move_timer: Timer
 var _moved_cortical_areas_buffer: Dictionary = {}
 

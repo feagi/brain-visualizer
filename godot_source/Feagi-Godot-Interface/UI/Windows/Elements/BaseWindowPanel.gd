@@ -81,10 +81,10 @@ func _update_sizes_given_child_size_update() -> void:
 	var top_pixel_gap: int = top_pixel_gap_default
 	var bottom_pixel_gap: int = bottom_pixel_gap_default
 	if should_scale_with_UI:
-		left_pixel_gap *= VisConfig.UI_manager.UI_scale
-		right_pixel_gap *= VisConfig.UI_manager.UI_scale
-		top_pixel_gap *= VisConfig.UI_manager.UI_scale
-		bottom_pixel_gap *= VisConfig.UI_manager.UI_scale
+		left_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
+		right_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
+		top_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
+		bottom_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
 	
 	var new_size: Vector2 = _child.size + Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
 	_titlebar.size.x = new_size.x

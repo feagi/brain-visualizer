@@ -38,7 +38,6 @@ var _dragged: bool
 
 ## We can only use this to init connections since we do not have _cortical_area_ref yet
 func _ready():
-	dragged
 	dragged.connect(_on_finish_drag)
 	delete_request.connect(_user_request_delete_cortical_area)
 	_graph = get_parent()
