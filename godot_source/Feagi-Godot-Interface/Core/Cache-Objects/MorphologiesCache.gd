@@ -96,7 +96,6 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 	
 	# remove removed morphologies
 	for remove in removed:
-		
 		_available_morphologies.erase(remove)
 	
 	# note: not preallocating here due to reference shenanigans, attempt later when system is stable
@@ -106,7 +105,7 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 		var adding_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[(_new_listing_with_types[add].to_upper())]
 		var adding_morphology: Morphology = MorphologyFactory.create_placeholder(add, adding_type)
 		_available_morphologies[add] = adding_morphology
-		FeagiCacheEvents.morphology_added.emit(adding_morphology)
+		morphology_added.emit(adding_morphology)
 	
 func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringName], surpress_missing_error: bool = false) -> Array[Morphology]:
 	var output: Array[Morphology] = []
