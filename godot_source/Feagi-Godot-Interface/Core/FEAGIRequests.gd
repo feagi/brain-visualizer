@@ -154,10 +154,10 @@ func request_create_morphology(morphology_to_create: Morphology) -> void:
 func request_delete_morphology(morphology: Morphology) -> void:
 	print("User requested deletion of morphology " + morphology.name)
 	if morphology not in FeagiCache.morphology_cache.available_morphologies.values():
-		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology.name])
+		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % morphology.name)
 		return
 	if !morphology.is_user_editable:
-		push_error("Unable to delete morphology that is not user editable! Skipping!" % [morphology.name])
+		push_error("Unable to delete morphology %s that is not user editable! Skipping!" % morphology.name)
 		return
 	_feagi_interface.calls.DELETE_GE_morphology(morphology.name)
 
