@@ -2,6 +2,10 @@ extends Object
 class_name MorphologiesCache
 ## Stores all morphologies available in the genome
 
+signal morphology_added(morphology: Morphology)
+signal morphology_about_to_be_removed(morphology: Morphology)
+signal morphology_updated(morphology: Morphology)
+
 ## A list of all available morphologies in the FEAGI genome by name
 var available_morphologies: Dictionary:
 	get: return _available_morphologies
@@ -16,7 +20,7 @@ func add_morphology_by_dict(properties: Dictionary) -> void:
 		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
 		return
 	_available_morphologies[morphology_name] = MorphologyFactory.create(morphology_name, morphology_type, properties)
-	FeagiCacheEvents.morphology_added.emit(_available_morphologies[morphology_name])
+	morphology_added.emit(_available_morphologies[morphology_name])
 
 #TODO make this more consistant to how cortical areas are done!
 func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
@@ -47,7 +51,7 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 			return
 	_available_morphologies[morphology_name].is_placeholder_data = false
 	_available_morphologies[morphology_name].numerical_properties_updated.emit(_available_morphologies[morphology_name]) #TODO NO
-	FeagiCacheEvents.morphology_updated.emit(_available_morphologies[morphology_name])
+	morphology_updated.emit(_available_morphologies[morphology_name])
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:
@@ -55,8 +59,10 @@ func remove_morphology(morphology_Name: StringName) -> void:
 		push_error("Attemped to delete non-cached morphology %s, Skipping..." % [morphology_Name])
 		return
 	var deleting: Morphology = _available_morphologies[morphology_Name]
-	deleting.about_to_be_deleted.emit() # Tell all dependents this morphology is about to go
+	morphology_about_to_be_removed.emit(deleting)
 	_available_morphologies.erase(morphology_Name)
+	deleting.free()
+	
 
 ## Removes all morphologies from cache. Should only be called during a reset
 func hard_wipe_cached_morphologies():
@@ -90,7 +96,7 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 	
 	# remove removed morphologies
 	for remove in removed:
-		FeagiCacheEvents.morphology_removed.emit(_available_morphologies[remove])
+		
 		_available_morphologies.erase(remove)
 	
 	# note: not preallocating here due to reference shenanigans, attempt later when system is stable
@@ -109,5 +115,5 @@ func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringN
 			output.append(_available_morphologies[req_morph])
 		else:
 			if !surpress_missing_error:
-				push_error("Unable to find requested morphology by name of '%s', Skipping!" % req_morph)
+				push_error("Unable to find requested morphology by name of '%s', Returning Empty!" % req_morph)
 	return output

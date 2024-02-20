@@ -7,9 +7,6 @@ func _ready():
 	if !OS.is_debug_build():
 		queue_free()
 	
-	FeagiCacheEvents.morphology_added.connect(cache_morphology_added)
-	FeagiCacheEvents.morphology_removed.connect(cache_morphology_removed)
-	FeagiCacheEvents.morphology_updated.connect(cache_morphology_updated)
 	FeagiCacheEvents.cortical_area_added.connect(cache_cortical_added)
 	FeagiCacheEvents.cortical_area_removed.connect(cache_cortical_removed)
 	FeagiCacheEvents.cortical_area_updated.connect(cache_cortical_updated)
@@ -18,14 +15,6 @@ func _ready():
 	
 	
 
-func cache_morphology_added(morphology: Morphology) -> void:
-	print("CACHE: Added Morphology " + morphology.name)
-
-func cache_morphology_removed(morphology: Morphology) -> void:
-	print("CACHE: Removed Morphology " + morphology.name)
-
-func cache_morphology_updated(morphology: Morphology) -> void:
-	print("CACHE: Updated Morphology " + morphology.name)
 
 func cache_cortical_added(cortical_area: BaseCorticalArea) -> void:
 	print("CACHE: Added Cortical Area " + cortical_area.cortical_ID)

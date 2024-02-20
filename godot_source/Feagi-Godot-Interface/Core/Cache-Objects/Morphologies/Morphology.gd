@@ -6,7 +6,7 @@ const USER_NONEDITABLE_MORPHOLOGIES: PackedStringArray = ["memory"] # Which morp
 signal numerical_properties_updated(self_reference: Morphology)
 signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
 signal retrieved_description(description: StringName, self_reference: Morphology)
-signal about_to_be_deleted()
+signal about_to_be_deleted(self_reference: Morphology)
 
 # Probably redudant to have an enum when we have multiple classes, but here somewhat for legacy reasons
 enum MORPHOLOGY_TYPE {
@@ -38,6 +38,10 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool):
 	name = morphology_name
 	is_placeholder_data = is_using_placeholder_data
 	is_user_editable = !morphology_name in USER_NONEDITABLE_MORPHOLOGIES
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		about_to_be_deleted.emit(self) # Notify all others about deletion
 
 static func morphology_array_to_string_array_of_names(morphologies: Array[Morphology]) -> Array[StringName]:
 	var output: Array[StringName] = []
