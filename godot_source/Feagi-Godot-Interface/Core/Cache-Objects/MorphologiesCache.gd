@@ -15,43 +15,28 @@ var _available_morphologies: Dictionary = {}
 func add_morphology_by_dict(properties: Dictionary) -> void:
 	var morphology_name: StringName = properties["morphology_name"]
 	var morphology_type: Morphology.MORPHOLOGY_TYPE  = properties["type"]
+	var morphology_internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS
+	if "internal_class" in properties.keys():
+		morphology_internal_class = properties["internal_class"]
+	else:
+		morphology_internal_class = Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
 	
 	if morphology_name in available_morphologies.keys():
 		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
 		return
-	_available_morphologies[morphology_name] = MorphologyFactory.create(morphology_name, morphology_type, properties)
+	_available_morphologies[morphology_name] = Morphology.create(morphology_name, morphology_type, morphology_internal_class, properties)
 	morphology_added.emit(_available_morphologies[morphology_name])
 
-#TODO make this more consistant to how cortical areas are done!
+## Retrieved updated info of morphology from FEAGI
 func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 	var morphology_name: StringName = morphology_properties["morphology_name"]
 	if morphology_name not in _available_morphologies.keys():
 		push_error("Attemped to update non-cached morphology %s, Skipping..." % [morphology_properties["morphology_name"]])
 		return
-	var morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[morphology_properties["type"].to_upper()]
-	match morphology_type:
-		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			var raw_pattern_array: Array[Array] = []
-			raw_pattern_array.assign(morphology_properties["parameters"]["patterns"])  # manual array casting
-			_available_morphologies[morphology_name].patterns = PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(raw_pattern_array)
-		Morphology.MORPHOLOGY_TYPE.VECTORS:
-			var raw_vector3_array: Array[Array] = []
-			raw_vector3_array.assign(morphology_properties["parameters"]["vectors"]) # manual array casting
-			_available_morphologies[morphology_name].vectors = FEAGIUtils.array_of_arrays_to_vector3i_array(raw_vector3_array)
-		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
-			_available_morphologies[morphology_name].parameters = morphology_properties["parameters"]
-		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
-			_available_morphologies[morphology_name].source_seed = FEAGIUtils.array_to_vector3i(morphology_properties["parameters"]["src_seed"])
-			var raw_source_pattern_array: Array[Array] = []
-			raw_source_pattern_array.assign(morphology_properties["parameters"]["src_pattern"]) # manual array casting
-			_available_morphologies[morphology_name].source_pattern = FEAGIUtils.array_of_arrays_to_vector2i_array(raw_source_pattern_array)
-			_available_morphologies[morphology_name].mapper_morphology_name = morphology_properties["parameters"]["mapper_morphology"]
-		_:
-			push_error("Unknown Morphology Type! Skipping update!")
-			return
-	_available_morphologies[morphology_name].is_placeholder_data = false
-	_available_morphologies[morphology_name].numerical_properties_updated.emit(_available_morphologies[morphology_name]) #TODO NO
-	morphology_updated.emit(_available_morphologies[morphology_name])
+	var updating_morphology: Morphology = _available_morphologies[morphology_name]
+	var morphology_internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS = Morphology.MORPHOLOGY_INTERNAL_CLASS[morphology_properties["class"].to_upper()]
+	updating_morphology.feagi_update(morphology_properties["parameters"], morphology_internal_class)
+	morphology_updated.emit(updating_morphology)
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:
@@ -63,7 +48,6 @@ func remove_morphology(morphology_Name: StringName) -> void:
 	_available_morphologies.erase(morphology_Name)
 	deleting.free()
 	
-
 ## Removes all morphologies from cache. Should only be called during a reset
 func hard_wipe_cached_morphologies():
 	print("CACHE: Wiping morphologies...")
@@ -103,7 +87,7 @@ func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -
 	for add in added:
 		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
 		var adding_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOGY_TYPE[(_new_listing_with_types[add].to_upper())]
-		var adding_morphology: Morphology = MorphologyFactory.create_placeholder(add, adding_type)
+		var adding_morphology: Morphology = Morphology.create_placeholder(add, adding_type)
 		_available_morphologies[add] = adding_morphology
 		morphology_added.emit(adding_morphology)
 	
