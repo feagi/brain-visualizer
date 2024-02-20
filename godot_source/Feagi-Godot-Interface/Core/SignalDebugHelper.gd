@@ -6,6 +6,7 @@ extends Node
 func _ready():
 	if !OS.is_debug_build():
 		queue_free()
+		return
 	
 	FeagiCacheEvents.cortical_area_added.connect(cache_cortical_added)
 	FeagiCacheEvents.cortical_area_removed.connect(cache_cortical_removed)

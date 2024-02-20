@@ -3,7 +3,6 @@ class_name UIMorphologyOverviews
 
 signal request_close()
 signal requested_updating_morphology(morphology_name: StringName)
-signal request_deleting_morphology(morphology_name: StringName)
 
 @export var enable_add_morphology_button: bool = true
 @export var enable_update_morphology_button: bool = true
@@ -73,7 +72,7 @@ func _user_requested_closing() -> void:
 func _user_request_delete_morphology() -> void:
 	if _loaded_morphology == null:
 		return
-	request_deleting_morphology.emit(_loaded_morphology.name)
+	FeagiRequests.request_delete_morphology(_loaded_morphology)
 
 func _user_selected_morphology_from_scroll(morphology) -> void:
 	load_morphology(morphology)
