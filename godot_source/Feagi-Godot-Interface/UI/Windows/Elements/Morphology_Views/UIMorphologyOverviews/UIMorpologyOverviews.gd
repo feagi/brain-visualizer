@@ -49,7 +49,10 @@ func _ready() -> void:
 
 func load_morphology(morphology: Morphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
-	_morphology_name_label.text = morphology.name
+	if morphology is NullMorphology:
+		_morphology_name_label.text = "No Connectivity Rule Loaded!"
+	else:
+		_morphology_name_label.text = morphology.name
 	_UI_morphology_definition.load_morphology(morphology)
 	_UI_morphology_image.load_morphology(morphology)
 	_UI_morphology_usage.load_morphology(morphology)
