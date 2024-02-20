@@ -5,7 +5,7 @@ var _vectors_scroll: BaseScroll
 var _add_vector: TextureButton
 var _is_UI_editable: bool
 var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
-
+var _internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS = Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
 
 func _ready() -> void:
 	_vectors_scroll = $Vectors
@@ -16,10 +16,11 @@ func setup(allow_editing_if_morphology_editable: bool) -> void:
 
 ## Return current UI view as a [VectorMorphology] object
 func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool = false) -> VectorMorphology:
-	return VectorMorphology.new(morphology_name, is_placeholder, _get_vector_array())
+	return VectorMorphology.new(morphology_name, is_placeholder, _internal_class, _get_vector_array())
 	
 ## Overwrite the current UI view with a [VectorMorphology] object
 func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:
+	_internal_class = vector_morphology.internal_class
 	_is_morphology_editable = vector_morphology.is_user_editable
 	_add_vector.disabled = !(_is_UI_editable && vector_morphology.is_user_editable)
 	_set_vector_array(vector_morphology.vectors, vector_morphology.is_user_editable && _is_UI_editable)

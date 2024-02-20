@@ -7,6 +7,7 @@ var _add_pattern: TextureButton
 var _is_UI_editable: bool
 var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
 var _subheader: HBoxContainer
+var _internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS = Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
 
 func _ready() -> void:
 	_pattern_pair_scroll = $Patterns
@@ -19,10 +20,11 @@ func setup(allow_editing_if_morphology_editable: bool) -> void:
 
 ## Return current UI view as a [PatternMorphology] object
 func get_as_pattern_morphology(morphology_name: StringName, is_placeholder: bool = false) -> PatternMorphology:
-	return PatternMorphology.new(morphology_name, is_placeholder, _get_pattern_pair_array())
+	return PatternMorphology.new(morphology_name, is_placeholder, _internal_class, _get_pattern_pair_array())
 	
 ## Overwrite the current UI view with a [PatternMorphology] object
 func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:
+	_internal_class = pattern_morphology.internal_class
 	_is_morphology_editable = pattern_morphology.is_user_editable
 	_add_pattern.disabled = !(_is_UI_editable && pattern_morphology.is_user_editable)
 	_set_pattern_pair_array(pattern_morphology.patterns, pattern_morphology.is_user_editable && _is_UI_editable)
