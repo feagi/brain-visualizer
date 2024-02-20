@@ -69,7 +69,14 @@ func execute_json() -> void:
 		generated_animation.position_track_insert_key(0, frame_time, frame_pos)
 		generated_animation.rotation_track_insert_key(1, frame_time, frame_rot)
 		frame_time += frame["time"]
+		
 	generated_animation.length = frame_time
+	var lin_interp_option: OptionButton = $HBoxContainer2/move_interp
+	var rot_interp_option: OptionButton = $HBoxContainer3/rot_interp
+	var lin_interp: Animation.InterpolationType = lin_interp_option.get_selected_id() as Animation.InterpolationType
+	var rot_interp: Animation.InterpolationType = rot_interp_option.get_selected_id() as Animation.InterpolationType
+	generated_animation.track_set_interpolation_type(0, lin_interp)
+	generated_animation.track_set_interpolation_type(1, rot_interp)
 	
 	_camera.play_animation(generated_animation)
 
