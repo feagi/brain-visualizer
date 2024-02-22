@@ -1,15 +1,15 @@
 extends Object
 class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
-const USER_NONEDITABLE_MORPHOLOGIES_AS_PER_FEAGI: Array[MORPHOLOGY_INTERNAL_CLASS] = [MORPHOLOGY_INTERNAL_CLASS.CORE, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN] # Which morphologies can the user not edit the details of?
+const USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI: Array[MORPHOLOGY_INTERNAL_CLASS] = [MORPHOLOGY_INTERNAL_CLASS.CORE, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN] # Which morphologies classes can the user not edit the details of?
 
 signal numerical_properties_updated(self_reference: Morphology)
 signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
 signal retrieved_description(description: StringName, self_reference: Morphology)
-signal internal_class_updated(new_internal_class: MORPHOLOGY_INTERNAL_CLASS)
+signal internal_class_updated(new_internal_class: MORPHOLOGY_INTERNAL_CLASS) # Mainly used when we go from placeholder data to real data
 signal editability_changed(editable: bool)
+signal deletability_changed(deletable: bool)
 signal about_to_be_deleted(self_reference: Morphology)
-
 
 # Probably redudant to have an enum when we have multiple classes, but here somewhat for legacy reasons
 enum MORPHOLOGY_TYPE {
@@ -31,21 +31,30 @@ var description: StringName # TODO retrieve!
 var type: MORPHOLOGY_TYPE
 var internal_class: MORPHOLOGY_INTERNAL_CLASS # Will ALWAYS be CORE if data is placeholder
 var is_placeholder_data: bool
-var usage_by_cortical_area: Array[PackedStringArray]: ## May be out of date, be sure to poll latest when needed
+var latest_known_usage_by_cortical_area: Array[PackedStringArray]: ## May be out of date, be sure to poll latest when needed
 	get: 
-		return _usage_by_cortical_area
-var number_of_uses: int:
+		return _last_known_usage_by_cortical_area
+		
+var latest_known_number_of_uses: int:
 	get:
-		return len(_usage_by_cortical_area)
-var is_being_used: bool:
+		return len(_last_known_usage_by_cortical_area)
+		
+var latest_known_is_being_used: bool:
 	get:
-		return len(_usage_by_cortical_area) > 0
+		return len(_last_known_usage_by_cortical_area) > 0
+		
+var latest_known_is_user_deletable: bool:
+	get:
+		if internal_class in USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI:
+			return false
+		return !latest_known_is_being_used	
+		
 var is_user_editable: bool:
 	get: 
-		return !internal_class in USER_NONEDITABLE_MORPHOLOGIES_AS_PER_FEAGI
-
-
-var _usage_by_cortical_area: Array[PackedStringArray] = []
+		return !internal_class in USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI
+		#NOTE: Even if technically editable, warn user if morphology is being used before editing!
+		
+var _last_known_usage_by_cortical_area: Array[PackedStringArray] = []
 
 func _init(morphology_name: StringName, is_using_placeholder_data: bool, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS):
 	name = morphology_name
@@ -101,19 +110,23 @@ static func morphology_type_to_string(morphology_type: MORPHOLOGY_TYPE) -> Strin
 
 ## Called by feagi to update usage
 func feagi_update_usage(feagi_raw_input: Array[Array]) -> void:
-	_usage_by_cortical_area = []
+	var was_deletable: bool = latest_known_is_user_deletable
+	_last_known_usage_by_cortical_area = []
 	for mapping: Array in feagi_raw_input:
-		_usage_by_cortical_area.append(PackedStringArray([mapping[0], mapping[1]]))
-	retrieved_usage.emit(_usage_by_cortical_area, is_being_used, self)
-
+		_last_known_usage_by_cortical_area.append(PackedStringArray([mapping[0], mapping[1]]))
+	retrieved_usage.emit(_last_known_usage_by_cortical_area, latest_known_is_being_used, self)
+	if was_deletable != latest_known_is_user_deletable:
+		deletability_changed.emit(!was_deletable)
+		
 ## Called by FEAGI when updating a morphology definition (when type is consistent)
 func feagi_update(_parameter_value: Dictionary, retrieved_internal_class: MORPHOLOGY_INTERNAL_CLASS) -> void:
 	# extend in child classes
+	var was_deletable: bool = latest_known_is_user_deletable
 	is_placeholder_data = false
 	if retrieved_internal_class != internal_class:
 		internal_class = retrieved_internal_class
 		internal_class_updated.emit(internal_class)
 		editability_changed.emit(is_user_editable)
+		if was_deletable != latest_known_is_user_deletable:
+			deletability_changed.emit(!was_deletable)
 	numerical_properties_updated.emit(self)
-	
-
