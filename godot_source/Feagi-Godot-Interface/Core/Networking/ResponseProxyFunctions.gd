@@ -233,6 +233,7 @@ func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArr
 	dict_arr.assign(buffered_data["mapping_data_raw"])
 	mappings.assign(MappingProperty.from_array_of_dict(dict_arr))
 	cortical_src.set_mappings_to_efferent_area(cortical_dst, mappings)
+	FeagiEvents.when_mappings_confirmed_updated.emit(cortical_src, cortical_dst)
 
 
 

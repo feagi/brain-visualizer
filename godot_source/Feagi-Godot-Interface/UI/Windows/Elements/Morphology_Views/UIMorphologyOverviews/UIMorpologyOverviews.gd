@@ -46,6 +46,7 @@ func _ready() -> void:
 	_update_morphology_button.visible = enable_update_morphology_button
 	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
+	FeagiEvents.when_mappings_confirmed_updated.connect(feagi_updated_mappings)
 
 func load_morphology(morphology: Morphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
@@ -62,7 +63,12 @@ func load_morphology(morphology: Morphology, override_scroll_selection: bool = f
 		_morphology_scroll.select_morphology(morphology)
 	
 	size = Vector2i(0,0) # Force shrink to minimum possible size
-	
+
+## Only called when feagi updated a mapping. This is a hacky work around to have morphology refresh if any mapping changes
+func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> void:
+	#TODO this is hacky, we need to move away from this
+	if _loaded_morphology != null:
+		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
 	var morphology_to_update: Morphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
