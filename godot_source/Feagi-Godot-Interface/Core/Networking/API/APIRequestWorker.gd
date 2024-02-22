@@ -32,7 +32,7 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
-	_request_definition = request_definition
+	_request_definition = request_definition.duplicate()
 	match(request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# single call
