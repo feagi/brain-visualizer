@@ -9,6 +9,7 @@ func load_morphology(morphology: Morphology) -> void:
 			_loaded_morphology.editability_changed.disconnect(_deletability_updated)
 	_loaded_morphology = morphology
 	_deletability_updated(morphology.get_latest_known_deletability())
+	_loaded_morphology.editability_changed.connect(_deletability_updated)
 
 func _deletability_updated(deletable: Morphology.DELETABILITY) -> void:
 	match(deletable):
