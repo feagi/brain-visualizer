@@ -20,7 +20,7 @@ var _UI_morphology_definition: UIMorphologyDefinition
 var _UI_morphology_image: UIMorphologyImage
 var _UI_morphology_usage: UIMorphologyUsage
 var _UI_morphology_description: UIMorphologyDescription
-var _delete_morphology_button: TextureButton
+var _UI_morphology_delete_button: UIMorphologyDeleteButton
 var _close_button: Button
 var _update_morphology_button: Button
 
@@ -36,12 +36,12 @@ func _ready() -> void:
 	_UI_morphology_image = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage
 	_UI_morphology_usage = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage
 	_UI_morphology_description = $SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription
-	_delete_morphology_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete
+	_UI_morphology_delete_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete
 	_close_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close
 	_update_morphology_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close
 	
 	_add_morphology_button.visible = enable_add_morphology_button
-	_delete_morphology_button.visible = enable_delete_morphology_button
+	_UI_morphology_delete_button.visible = enable_delete_morphology_button
 	_close_button.visible = enable_close_button
 	_update_morphology_button.visible = enable_update_morphology_button
 	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
@@ -57,6 +57,7 @@ func load_morphology(morphology: Morphology, override_scroll_selection: bool = f
 	_UI_morphology_image.load_morphology(morphology)
 	_UI_morphology_usage.load_morphology(morphology)
 	_UI_morphology_description.load_morphology(morphology)
+	_UI_morphology_delete_button.load_morphology(morphology)
 	if override_scroll_selection:
 		_morphology_scroll.select_morphology(morphology)
 	

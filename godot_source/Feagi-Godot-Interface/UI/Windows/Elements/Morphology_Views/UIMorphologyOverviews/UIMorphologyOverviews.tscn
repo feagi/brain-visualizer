@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dojgkcnlpiq4v"]
+[gd_scene load_steps=9 format=3 uid="uid://dojgkcnlpiq4v"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyOverviews/UIMorpologyOverviews.gd" id="1_7f4of"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="1_saprm"]
@@ -6,10 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dyagjs5244b30" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyImage/UIMorphologyImage.tscn" id="3_chxvu"]
 [ext_resource type="PackedScene" uid="uid://ba1t0ymgdahvl" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyUsage/UIMorphologyUsage.tscn" id="4_5atic"]
 [ext_resource type="PackedScene" uid="uid://c5m4dalq0ept6" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDescription/UIMorphologyDescription.tscn" id="5_isl0m"]
-[ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="6_mafl5"]
-[ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="7_bfja8"]
-[ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="8_u4ql0"]
-[ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="9_n2u6i"]
+[ext_resource type="PackedScene" uid="uid://c0v1sjxbjdmgb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDeleteButton/UIMorphologyDeleteButton.tscn" id="7_26hxb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vxism"]
 bg_color = Color(0.2, 0.223529, 0.270588, 1)
@@ -93,17 +90,8 @@ layout_mode = 2
 [node name="Buttons" type="HBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Delete" type="TextureButton" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
-custom_minimum_size = Vector2(64, 64)
+[node name="Delete" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" instance=ExtResource("7_26hxb")]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-texture_normal = ExtResource("6_mafl5")
-texture_pressed = ExtResource("7_bfja8")
-texture_hover = ExtResource("8_u4ql0")
-texture_disabled = ExtResource("9_n2u6i")
-ignore_texture_size = true
-stretch_mode = 0
 
 [node name="Gap" type="Control" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
 layout_mode = 2
@@ -122,6 +110,5 @@ text = "Update
 
 [connection signal="pressed" from="Listings/AddMorphology" to="." method="_user_request_create_morphology"]
 [connection signal="morphology_selected" from="Listings/MorphologyScroll" to="." method="_user_selected_morphology_from_scroll"]
-[connection signal="pressed" from="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete" to="." method="_user_request_delete_morphology"]
 [connection signal="pressed" from="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close" to="." method="_user_requested_closing"]
 [connection signal="pressed" from="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Update" to="." method="_user_requested_update_morphology"]
