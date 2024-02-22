@@ -143,6 +143,7 @@ func feagi_update_usage(feagi_raw_input: Array[Array]) -> void:
 		deletability_changed.emit(get_latest_known_deletability())
 	if editability != get_latest_known_editability():
 		editability_changed.emit(get_latest_known_editability())
+	
 		
 ## Called by FEAGI when updating a morphology definition (when type is consistent)
 func feagi_update(_parameter_value: Dictionary, retrieved_internal_class: MORPHOLOGY_INTERNAL_CLASS) -> void:

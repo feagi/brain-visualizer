@@ -223,15 +223,17 @@ func POST_GE_amalgamationDestination(_response_code: int, _response_body: Packed
 	print("Feagi recieved amalgamation destination response!")
 	pass
 
-func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, src_dst_data: Dictionary) -> void:
-	var cortical_src: BaseCorticalArea = src_dst_data["src"]
-	var cortical_dst: BaseCorticalArea = src_dst_data["dst"]
+func PUT_GE_mappingProperties(_response_code: int, _response_body: PackedByteArray, buffered_data: Dictionary) -> void:
+	var cortical_src: BaseCorticalArea = buffered_data["src"]
+	var cortical_dst: BaseCorticalArea = buffered_data["dst"]
 	print("FEAGI sucessfully updated the mapping between %s and %s" % [cortical_src.cortical_ID, cortical_dst.cortical_ID])
+
 	var mappings: Array[MappingProperty] = []
 	var dict_arr: Array[Dictionary] = []
-	dict_arr.assign(src_dst_data["mapping_data_raw"])
+	dict_arr.assign(buffered_data["mapping_data_raw"])
 	mappings.assign(MappingProperty.from_array_of_dict(dict_arr))
 	cortical_src.set_mappings_to_efferent_area(cortical_dst, mappings)
+
 
 
 func PUT_GE_corticalArea(_response_code: int, _response_body: PackedByteArray, changed_cortical_ID: StringName) -> void:

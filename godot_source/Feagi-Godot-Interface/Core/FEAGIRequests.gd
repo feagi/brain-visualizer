@@ -190,7 +190,7 @@ func request_set_mapping_between_corticals(source_area: BaseCorticalArea, destin
 	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
 		push_error("Requested Mapping appears to be invalid! Skip sending requesting mapping configuration to FEAGI!")
 		return
-	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_array(mappings))
+	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings))
 
 ## Request FEAGI to append mappings to a current mappings
 ## NOTE: This assumes Cache is up to date on the current mapping state

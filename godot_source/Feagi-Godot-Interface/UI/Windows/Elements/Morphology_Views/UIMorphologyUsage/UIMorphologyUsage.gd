@@ -3,23 +3,29 @@ class_name UIMorphologyUsage
 
 var _loaded_morphology: Morphology
 
+#signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
+
 func load_morphology(morphology: Morphology, request_update_usage_from_feagi: bool = true) -> void:
 	if _loaded_morphology != null:
 		if _loaded_morphology.retrieved_usage.is_connected(_usage_updated):
 			_loaded_morphology.retrieved_usage.disconnect(_usage_updated)
 	_loaded_morphology = morphology
 	text = _usage_array_to_string(morphology.latest_known_usage_by_cortical_area)
+	_loaded_morphology.retrieved_usage.connect(_usage_updated)
 	if request_update_usage_from_feagi:
 		FeagiRequests.get_morphology_usage(morphology.name)
-	
 
 func clear_morphology() -> void:
 	_loaded_morphology = null
 	text = ""
 	editable = false
 
-func _usage_updated(new_description: StringName, _self_reference: Morphology) -> void:
-	text = new_description
+func _usage_updated(usage_mappings: Array[PackedStringArray], is_being_used: bool, _self_reference: Morphology) -> void:
+	if !is_being_used:
+		text = "Morphology not in use!"
+		return
+	text = _usage_array_to_string(usage_mappings)
+
 
 ## Given usage array is for relevant morphology, formats out a string to show usage
 func _usage_array_to_string(usage: Array[PackedStringArray]) -> StringName:
