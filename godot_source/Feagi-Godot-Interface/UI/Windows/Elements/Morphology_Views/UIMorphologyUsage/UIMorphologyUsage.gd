@@ -8,7 +8,7 @@ func load_morphology(morphology: Morphology, request_update_usage_from_feagi: bo
 		if _loaded_morphology.retrieved_usage.is_connected(_usage_updated):
 			_loaded_morphology.retrieved_usage.disconnect(_usage_updated)
 	_loaded_morphology = morphology
-	text = _usage_array_to_string(morphology.usage_by_cortical_area)
+	text = _usage_array_to_string(morphology.latest_known_usage_by_cortical_area)
 	if request_update_usage_from_feagi:
 		FeagiRequests.get_morphology_usage(morphology.name)
 	

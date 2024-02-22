@@ -60,8 +60,6 @@ func load_morphology(morphology: Morphology, override_scroll_selection: bool = f
 	if override_scroll_selection:
 		_morphology_scroll.select_morphology(morphology)
 	
-	_delete_morphology_button.disabled = !morphology.is_user_editable
-	
 	size = Vector2i(0,0) # Force shrink to minimum possible size
 	
 
