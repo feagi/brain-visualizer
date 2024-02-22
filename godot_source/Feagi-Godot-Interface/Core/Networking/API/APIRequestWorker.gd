@@ -190,7 +190,7 @@ func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bo
 
 func _http_generic_error_response_handling(response_body: PackedByteArray) -> void:
 	var feagi_error_response: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
-	if "code" not in feagi_error_response:
+	if "code" not in feagi_error_response.keys():
 		## If feagi didnt even send back the dict correctly, something went very wrong
 		#TODO action?
 		return
