@@ -38,12 +38,13 @@ enum DELETABILITY {
 	NOT_DELETABLE_USED,
 	NOT_DELETABLE_UNKNOWN
 }
-
+#TODO some of these vars should be privated with a public property access only!
 var name: StringName
 var description: StringName # TODO retrieve!
 var type: MORPHOLOGY_TYPE
 var internal_class: MORPHOLOGY_INTERNAL_CLASS # Will ALWAYS be CORE if data is placeholder
-var is_placeholder_data: bool
+var is_placeholder_data: bool ## If numerical data inside this morphology is empty not because it is empty, but because we havent retrieved it from FEAGI yet
+#TODO var is_definition_vessel: bool = false ## If this morphology object is merely a vessel to transport a definition around, and is not actually stored in cache or serves any other function
 var latest_known_usage_by_cortical_area: Array[PackedStringArray]: ## May be out of date, be sure to poll latest when needed
 	get: 
 		return _last_known_usage_by_cortical_area
