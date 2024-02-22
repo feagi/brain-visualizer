@@ -176,7 +176,7 @@ func _query_for_destruction() -> void:
 		_network_interface_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
 	else:
-		free()
+		queue_free()
 
 
 

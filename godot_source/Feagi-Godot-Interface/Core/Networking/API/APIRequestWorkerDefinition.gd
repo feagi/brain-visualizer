@@ -109,5 +109,5 @@ func duplicate() -> APIRequestWorkerDefinition:
 	output.polling_completion_check = polling_completion_check
 	output.seconds_between_polls = seconds_between_polls
 	output.http_error_call = http_error_call
-	output.http_error_replacements = http_error_replacements
+	output.http_error_replacements = http_error_replacements.duplicate()
 	return output
