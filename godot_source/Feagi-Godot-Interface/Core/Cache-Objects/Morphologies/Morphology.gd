@@ -1,17 +1,16 @@
 extends Object
 class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
-const USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI: Array[MORPHOLOGY_INTERNAL_CLASS] = [MORPHOLOGY_INTERNAL_CLASS.CORE, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN] # Which morphologies classes can the user not edit the details of?
+const USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI: Array[MORPHOLOGY_INTERNAL_CLASS] = [MORPHOLOGY_INTERNAL_CLASS.CORE] # Which morphologies classes can the user not edit the details of?
 
 signal numerical_properties_updated(self_reference: Morphology)
 signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
 signal retrieved_description(description: StringName, self_reference: Morphology)
 signal internal_class_updated(new_internal_class: MORPHOLOGY_INTERNAL_CLASS) # Mainly used when we go from placeholder data to real data
-signal editability_changed(editable: bool)
-signal deletability_changed(deletable: bool)
+signal editability_changed(editable: EDITABILITY)
+signal deletability_changed(deletable: DELETABILITY)
 signal about_to_be_deleted(self_reference: Morphology)
 
-# Probably redudant to have an enum when we have multiple classes, but here somewhat for legacy reasons
 enum MORPHOLOGY_TYPE {
 	PATTERNS,
 	VECTORS,
@@ -24,6 +23,20 @@ enum MORPHOLOGY_INTERNAL_CLASS {
 	CUSTOM,
 	CORE,
 	UNKNOWN
+}
+
+enum EDITABILITY {
+	IS_EDITABLE,
+	NOT_EDITABLE_CORE_CLASS,
+	NOT_EDITABLE_UNKNOWN,
+	WARNING_EDITABLE_USED
+}
+
+enum DELETABILITY {
+	IS_DELETABLE,
+	NOT_EDITABLE_CORE_CLASS,
+	NOT_DELETABLE_USED,
+	NOT_DELETABLE_UNKNOWN
 }
 
 var name: StringName
@@ -43,17 +56,6 @@ var latest_known_is_being_used: bool:
 	get:
 		return len(_last_known_usage_by_cortical_area) > 0
 		
-var latest_known_is_user_deletable: bool:
-	get:
-		if internal_class in USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI:
-			return false
-		return !latest_known_is_being_used	
-		
-var is_user_editable: bool:
-	get: 
-		return !internal_class in USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI
-		#NOTE: Even if technically editable, warn user if morphology is being used before editing!
-		
 var _last_known_usage_by_cortical_area: Array[PackedStringArray] = []
 
 func _init(morphology_name: StringName, is_using_placeholder_data: bool, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS):
@@ -66,16 +68,16 @@ func _notification(what: int) -> void:
 		about_to_be_deleted.emit(self) # Notify all others about deletion
 
 ## Spawns correct morphology type given dict from FEAGI
-static func create(name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> Morphology:
+static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> Morphology:
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
-			return FunctionMorphology.new(name, false, feagi_defined_internal_class, morphology_details["parameters"])
+			return FunctionMorphology.new(morphology_name, false, feagi_defined_internal_class, morphology_details["parameters"])
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
-			return VectorMorphology.new(name, false, feagi_defined_internal_class, FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_details["vectors"]))
+			return VectorMorphology.new(morphology_name, false, feagi_defined_internal_class, FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_details["vectors"]))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			return PatternMorphology.new(name, false, feagi_defined_internal_class, PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_details["patterns"]))
+			return PatternMorphology.new(morphology_name, false, feagi_defined_internal_class, PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_details["patterns"]))
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
-			return CompositeMorphology.new(name, false, feagi_defined_internal_class, FEAGIUtils.array_to_vector3i(morphology_details["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_details["src_pattern"]), morphology_details["mapper_morphology"])
+			return CompositeMorphology.new(morphology_name, false, feagi_defined_internal_class, FEAGIUtils.array_to_vector3i(morphology_details["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_details["src_pattern"]), morphology_details["mapper_morphology"])
 		_:
 			# Something else? Error out
 			@warning_ignore("assert_always_false")
@@ -83,16 +85,16 @@ static func create(name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_def
 			return NullMorphology.new()
 
 ## creates a morphology object but fills data with placeholder data until FEAGI responds
-static func create_placeholder(name: StringName, type: MORPHOLOGY_TYPE) -> Morphology:
-	match type:
+static func create_placeholder(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE) -> Morphology:
+	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
-			return FunctionMorphology.new(name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, {})
+			return FunctionMorphology.new(morphology_name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, {})
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
-			return VectorMorphology.new(name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, [])
+			return VectorMorphology.new(morphology_name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, [])
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
-			return PatternMorphology.new(name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, [])
+			return PatternMorphology.new(morphology_name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, [])
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
-			return CompositeMorphology.new(name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, Vector3i(1,1,1), [], "NOT_SET")
+			return CompositeMorphology.new(morphology_name, true, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN, Vector3i(1,1,1), [], "NOT_SET")
 		_:
 			# Something else? Error out
 			@warning_ignore("assert_always_false")
@@ -108,25 +110,50 @@ static func morphology_array_to_string_array_of_names(morphologies: Array[Morpho
 static func morphology_type_to_string(morphology_type: MORPHOLOGY_TYPE) -> StringName:
 	return str(MORPHOLOGY_TYPE.keys()[int(morphology_type)]).to_lower()
 
+## Use to retrieve if the morphology is deletable. Can become out of date without recent morphology and morphlogy usage data!
+func get_latest_known_deletability() -> DELETABILITY:
+	if internal_class == MORPHOLOGY_INTERNAL_CLASS.UNKNOWN:
+		return DELETABILITY.NOT_DELETABLE_UNKNOWN
+	if internal_class in USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI:
+		return DELETABILITY.NOT_EDITABLE_CORE_CLASS
+	if latest_known_is_being_used:
+		return DELETABILITY.NOT_DELETABLE_USED
+	return DELETABILITY.IS_DELETABLE
+
+## Use to retrieve if the morphology is editable. Can become out of date without recent morphology and morphlogy usage data!
+func get_latest_known_editability() -> EDITABILITY:
+	if internal_class == MORPHOLOGY_INTERNAL_CLASS.UNKNOWN:
+		return EDITABILITY.NOT_EDITABLE_UNKNOWN
+	if internal_class in USER_NONMODIFIABLE_MORPHOLOGY_CLASSES_AS_PER_FEAGI:
+		return EDITABILITY.NOT_EDITABLE_CORE_CLASS
+	if latest_known_is_being_used:
+		return EDITABILITY.WARNING_EDITABLE_USED
+	return EDITABILITY.IS_EDITABLE
+
 ## Called by feagi to update usage
 func feagi_update_usage(feagi_raw_input: Array[Array]) -> void:
-	var was_deletable: bool = latest_known_is_user_deletable
+	var deletability: DELETABILITY = get_latest_known_deletability()
+	var editability: EDITABILITY = get_latest_known_editability()
 	_last_known_usage_by_cortical_area = []
 	for mapping: Array in feagi_raw_input:
 		_last_known_usage_by_cortical_area.append(PackedStringArray([mapping[0], mapping[1]]))
 	retrieved_usage.emit(_last_known_usage_by_cortical_area, latest_known_is_being_used, self)
-	if was_deletable != latest_known_is_user_deletable:
-		deletability_changed.emit(!was_deletable)
+	if deletability != get_latest_known_deletability():
+		deletability_changed.emit(get_latest_known_deletability())
+	if editability != get_latest_known_editability():
+		editability_changed.emit(get_latest_known_editability())
 		
 ## Called by FEAGI when updating a morphology definition (when type is consistent)
 func feagi_update(_parameter_value: Dictionary, retrieved_internal_class: MORPHOLOGY_INTERNAL_CLASS) -> void:
 	# extend in child classes
-	var was_deletable: bool = latest_known_is_user_deletable
+	var deletability: DELETABILITY = get_latest_known_deletability()
+	var editability: EDITABILITY = get_latest_known_editability()
 	is_placeholder_data = false
 	if retrieved_internal_class != internal_class:
 		internal_class = retrieved_internal_class
 		internal_class_updated.emit(internal_class)
-		editability_changed.emit(is_user_editable)
-		if was_deletable != latest_known_is_user_deletable:
-			deletability_changed.emit(!was_deletable)
+		if deletability != get_latest_known_deletability():
+			deletability_changed.emit(get_latest_known_deletability())
+		if editability != get_latest_known_editability():
+			editability_changed.emit(get_latest_known_editability())
 	numerical_properties_updated.emit(self)
