@@ -1,13 +1,15 @@
 extends Object
 class_name Morphology
 ## Base morpology class, should not be spawned directly, instead spawn one of the types
-const USER_NONEDITABLE_MORPHOLOGIES_AS_PER_FEAGI: Array[MORPHOLOGY_INTERNAL_CLASS] = [MORPHOLOGY_INTERNAL_CLASS.CORE] # Which morphologies can the user not edit the details of?
+const USER_NONEDITABLE_MORPHOLOGIES_AS_PER_FEAGI: Array[MORPHOLOGY_INTERNAL_CLASS] = [MORPHOLOGY_INTERNAL_CLASS.CORE, MORPHOLOGY_INTERNAL_CLASS.UNKNOWN] # Which morphologies can the user not edit the details of?
 
 signal numerical_properties_updated(self_reference: Morphology)
 signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
 signal retrieved_description(description: StringName, self_reference: Morphology)
 signal internal_class_updated(new_internal_class: MORPHOLOGY_INTERNAL_CLASS)
+signal editability_changed(editable: bool)
 signal about_to_be_deleted(self_reference: Morphology)
+
 
 # Probably redudant to have an enum when we have multiple classes, but here somewhat for legacy reasons
 enum MORPHOLOGY_TYPE {
@@ -29,7 +31,6 @@ var description: StringName # TODO retrieve!
 var type: MORPHOLOGY_TYPE
 var internal_class: MORPHOLOGY_INTERNAL_CLASS # Will ALWAYS be CORE if data is placeholder
 var is_placeholder_data: bool
-var is_user_editable: bool = true ## if false, morphology cannot be edited or deleted
 var usage_by_cortical_area: Array[PackedStringArray]: ## May be out of date, be sure to poll latest when needed
 	get: 
 		return _usage_by_cortical_area
@@ -39,6 +40,10 @@ var number_of_uses: int:
 var is_being_used: bool:
 	get:
 		return len(_usage_by_cortical_area) > 0
+var is_user_editable: bool:
+	get: 
+		return !internal_class in USER_NONEDITABLE_MORPHOLOGIES_AS_PER_FEAGI
+
 
 var _usage_by_cortical_area: Array[PackedStringArray] = []
 
@@ -46,7 +51,6 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, feagi_d
 	name = morphology_name
 	is_placeholder_data = is_using_placeholder_data
 	internal_class = feagi_defined_internal_class
-	is_user_editable = !internal_class in USER_NONEDITABLE_MORPHOLOGIES_AS_PER_FEAGI
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
@@ -109,6 +113,7 @@ func feagi_update(_parameter_value: Dictionary, retrieved_internal_class: MORPHO
 	if retrieved_internal_class != internal_class:
 		internal_class = retrieved_internal_class
 		internal_class_updated.emit(internal_class)
+		editability_changed.emit(is_user_editable)
 	numerical_properties_updated.emit(self)
 	
 
