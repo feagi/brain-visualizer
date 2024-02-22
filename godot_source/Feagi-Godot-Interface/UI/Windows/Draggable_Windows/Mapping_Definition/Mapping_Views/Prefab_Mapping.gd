@@ -37,7 +37,7 @@ func setup(data: Dictionary, _main_window) -> void:
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
 	_on_user_toggle_plasticity(_plasticity.button_pressed)
 	_on_user_change_morphology(_mapping_ref.morphology_used)
-	_edit.disabled = !_mapping_ref.morphology_used.is_user_editable
+	_edit.disabled = !_determine_boolean_editability(_mapping_ref.morphology_used.get_latest_known_editability())
 	if "simple" in data.keys():
 		_toggle_show_full_editing(false)
 	if "allowed_morphologies" in data.keys():
@@ -58,10 +58,7 @@ func generate_mapping_property() -> MappingProperty:
 	return MappingProperty.new(morphology_used, scalar, PSP, is_plastic, plasticity_constant, LTP_multiplier, LTD_multiplier)
 
 func _on_user_change_morphology(morphology: Morphology) -> void:
-	_scalar.editable = morphology.is_user_editable
-	_PSP.editable = morphology.is_user_editable
-	_plasticity.disabled = !morphology.is_user_editable
-	_on_user_toggle_plasticity(_plasticity.button_pressed and morphology.is_user_editable) #reuse this function
+	_on_user_toggle_plasticity(_plasticity.button_pressed and _determine_boolean_editability(morphology.get_latest_known_editability())) #reuse this function
 
 func _toggle_show_full_editing(full_editing: bool) -> void:
 	_scalar.visible = full_editing
@@ -88,3 +85,12 @@ func _on_info_pressed() -> void:
 		#TODO
 		return
 	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)
+
+func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool:
+	match editability:
+		Morphology.EDITABILITY.IS_EDITABLE:
+			return true
+		Morphology.EDITABILITY.WARNING_EDITABLE_USED:
+			return true
+		_: # any thing else
+			return false
