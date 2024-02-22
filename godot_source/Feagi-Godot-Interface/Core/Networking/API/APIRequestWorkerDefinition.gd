@@ -94,20 +94,3 @@ static func define_polling_call(
 		output.http_error_replacements = error_replacement
 		output.http_error_call = feagi_http_error_call
 		return output
-
-## Duplicates this object in memory. This is an attempt to fix a weird memory bug of the Godot Engine and otherwise shouldnt be used
-func duplicate() -> APIRequestWorkerDefinition:
-	var output = APIRequestWorkerDefinition.new()
-	output.full_address = full_address
-	output.method = method
-	output.data_to_send_to_FEAGI = data_to_send_to_FEAGI
-	output.data_to_hold_for_follow_up_function = data_to_hold_for_follow_up_function
-	output.should_kill_on_genome_reset = should_kill_on_genome_reset
-	output.call_type = call_type
-	output.follow_up_function = follow_up_function
-	output.mid_poll_function = mid_poll_function
-	output.polling_completion_check = polling_completion_check
-	output.seconds_between_polls = seconds_between_polls
-	output.http_error_call = http_error_call
-	output.http_error_replacements = http_error_replacements.duplicate()
-	return output
