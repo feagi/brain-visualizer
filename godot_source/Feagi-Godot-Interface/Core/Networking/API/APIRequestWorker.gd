@@ -126,6 +126,12 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			return
 
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+	
+	if response_code != 200:
+		#_http_generic_error_response_handling(body)
+		_query_for_destruction()
+		return
+	
 	match(_processing_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# Default, no polling required
