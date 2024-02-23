@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bmc8qgeccqy5m"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.gd" id="1_55acr"]
-[ext_resource type="Texture2D" uid="uid://cdktl0ffd5k00" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_right.png" id="2_77fkg"]
+[ext_resource type="Texture2D" uid="uid://b7fb5nsqyikjg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_right.png" id="2_77fkg"]
 
 [node name="MultiItemCollapsible" type="BoxContainer"]
 size_flags_horizontal = 0

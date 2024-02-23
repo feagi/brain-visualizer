@@ -3,7 +3,6 @@ class_name UIMorphologyOverviews
 
 signal request_close()
 signal requested_updating_morphology(morphology_name: StringName)
-signal request_deleting_morphology(morphology_name: StringName)
 
 @export var enable_add_morphology_button: bool = true
 @export var enable_update_morphology_button: bool = true
@@ -21,7 +20,7 @@ var _UI_morphology_definition: UIMorphologyDefinition
 var _UI_morphology_image: UIMorphologyImage
 var _UI_morphology_usage: UIMorphologyUsage
 var _UI_morphology_description: UIMorphologyDescription
-var _delete_morphology_button: TextureButton
+var _UI_morphology_delete_button: UIMorphologyDeleteButton
 var _close_button: Button
 var _update_morphology_button: Button
 
@@ -37,27 +36,39 @@ func _ready() -> void:
 	_UI_morphology_image = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage
 	_UI_morphology_usage = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage
 	_UI_morphology_description = $SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription
-	_delete_morphology_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete
+	_UI_morphology_delete_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete
 	_close_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close
 	_update_morphology_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close
 	
 	_add_morphology_button.visible = enable_add_morphology_button
-	_delete_morphology_button.visible = enable_delete_morphology_button
+	_UI_morphology_delete_button.visible = enable_delete_morphology_button
 	_close_button.visible = enable_close_button
 	_update_morphology_button.visible = enable_update_morphology_button
 	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
+	FeagiEvents.when_mappings_confirmed_updated.connect(feagi_updated_mappings)
 
 func load_morphology(morphology: Morphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
-	_morphology_name_label.text = morphology.name
+	if morphology is NullMorphology:
+		_morphology_name_label.text = "No Connectivity Rule Loaded!"
+	else:
+		_morphology_name_label.text = morphology.name
 	_UI_morphology_definition.load_morphology(morphology)
 	_UI_morphology_image.load_morphology(morphology)
 	_UI_morphology_usage.load_morphology(morphology)
 	_UI_morphology_description.load_morphology(morphology)
+	_UI_morphology_delete_button.load_morphology(morphology)
 	if override_scroll_selection:
 		_morphology_scroll.select_morphology(morphology)
+	
 	size = Vector2i(0,0) # Force shrink to minimum possible size
+
+## Only called when feagi updated a mapping. This is a hacky work around to have morphology refresh if any mapping changes
+func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> void:
+	#TODO this is hacky, we need to move away from this
+	if _loaded_morphology != null:
+		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
 	var morphology_to_update: Morphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
@@ -73,7 +84,7 @@ func _user_requested_closing() -> void:
 func _user_request_delete_morphology() -> void:
 	if _loaded_morphology == null:
 		return
-	request_deleting_morphology.emit(_loaded_morphology.name)
+	FeagiRequests.request_delete_morphology(_loaded_morphology)
 
 func _user_selected_morphology_from_scroll(morphology) -> void:
 	load_morphology(morphology)

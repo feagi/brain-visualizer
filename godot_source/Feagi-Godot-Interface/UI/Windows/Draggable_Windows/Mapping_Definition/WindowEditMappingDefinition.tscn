@@ -4,7 +4,7 @@
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_3gu0l"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/CorticalDropDown.gd" id="2_ds7ss"]
-[ext_resource type="Texture2D" uid="uid://cmh3vo4np7jq2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow1.png" id="4_q8idl"]
+[ext_resource type="Texture2D" uid="uid://ckee7md41wenp" path="res://Feagi-Godot-Interface/UI/Resources/Icons/arrow1.png" id="4_q8idl"]
 [ext_resource type="PackedScene" uid="uid://c4hu4bdxc8gu3" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/GeneralMappingEditor.tscn" id="6_miy2l"]
 [ext_resource type="PackedScene" uid="uid://cbu2hexbc7qqg" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/SingleMappingConnectionToggle.tscn" id="7_k31fw"]
 

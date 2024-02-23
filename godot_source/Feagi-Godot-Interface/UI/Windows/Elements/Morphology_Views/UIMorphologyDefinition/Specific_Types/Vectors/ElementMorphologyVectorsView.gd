@@ -1,36 +1,60 @@
 extends VBoxContainer
 class_name ElementMorphologyVectorsView
 
+signal editability_changed(can_edit: bool) # used by scroll element children to update editability state
+
 var _vectors_scroll: BaseScroll
 var _add_vector: TextureButton
-var _is_UI_editable: bool
-var _is_morphology_editable: bool = true # in case no morphology is defined, default to true
-
+var _loaded_morphology: VectorMorphology
+var _allow_editing_if_morphology_editable: bool
 
 func _ready() -> void:
 	_vectors_scroll = $Vectors
 	_add_vector = $header/add_vector
 
 func setup(allow_editing_if_morphology_editable: bool) -> void:
-	_is_UI_editable = allow_editing_if_morphology_editable
+	_allow_editing_if_morphology_editable = allow_editing_if_morphology_editable
 
 ## Return current UI view as a [VectorMorphology] object
 func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool = false) -> VectorMorphology:
-	return VectorMorphology.new(morphology_name, is_placeholder, _get_vector_array())
+	return VectorMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, _get_vector_array())
 	
 ## Overwrite the current UI view with a [VectorMorphology] object
 func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:
-	_is_morphology_editable = vector_morphology.is_user_editable
-	_add_vector.disabled = !(_is_UI_editable && vector_morphology.is_user_editable)
-	_set_vector_array(vector_morphology.vectors, vector_morphology.is_user_editable && _is_UI_editable)
+	if _loaded_morphology != null:
+		if _loaded_morphology.editability_changed.is_connected(_editability_updated):
+			_loaded_morphology.editability_changed.disconnect(_editability_updated)
+	_loaded_morphology = vector_morphology
+	_loaded_morphology.editability_changed.connect(_editability_updated)
+	var can_edit: bool = _determine_boolean_editability(vector_morphology.get_latest_known_editability())
+	_add_vector.disabled = !can_edit
+	_set_vector_array(vector_morphology.vectors, can_edit)
 
 ## Spawn in an additional row, usually for editing
 func add_vector_row() -> void:
-	# NOTE: Theoretically, "editable" will always end up true, because the only time we can call this function is if we can edit...
+	# NOTE: "allow_editing" will always end up true, because the only time we can call this function is if we can edit...
 	_vectors_scroll.spawn_list_item({
-		"editable": _is_morphology_editable && _is_UI_editable,
+		"allow_editing_signal": editability_changed,
+		"allow_editing": true,
 		"vector": Vector3i(0,0,0)
 	})
+
+func _editability_updated(new_editability: Morphology.EDITABILITY) -> void:
+	#NOTE: Due to how this is used in signals, we cannot simplify the input to a bool
+	var can_edit: bool = _determine_boolean_editability(new_editability)
+	_add_vector.disabled = !can_edit
+	editability_changed.emit(can_edit)
+	
+func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool:
+	if !_allow_editing_if_morphology_editable:
+		return false
+	match editability:
+		Morphology.EDITABILITY.IS_EDITABLE:
+			return true
+		Morphology.EDITABILITY.WARNING_EDITABLE_USED:
+			return true
+		_: # any thing else
+			return false
 
 func _get_vector_array() -> Array[Vector3i]:
 	var _vectors: Array[Vector3i] = []
@@ -38,10 +62,13 @@ func _get_vector_array() -> Array[Vector3i]:
 		_vectors.append(child.current_vector)
 	return _vectors
 
-
 func _set_vector_array(input_vectors: Array[Vector3i], is_morphology_editable: bool) -> void:
 	_vectors_scroll.remove_all_children()
-	for vector in input_vectors:
-		_vectors_scroll.spawn_list_item({
-			"editable": is_morphology_editable,
-			"vector": vector})
+	for vector: Vector3i in input_vectors:
+		_vectors_scroll.spawn_list_item(
+			{
+				"allow_editing_signal": editability_changed,
+				"allow_editing": is_morphology_editable,
+				"vector": vector
+			}
+		)

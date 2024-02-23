@@ -125,6 +125,7 @@ func make_error_notification(key: StringName, replacements: Dictionary, notifica
 	var string_to_post: StringName = _rosetta.get_text(key, replacements)
 	push_error("Posting error to user: %s" % string_to_post)
 	_notification_system_ref.add_notification(string_to_post, notification_type, time)
+
 	
 
 #TODO TEMP
