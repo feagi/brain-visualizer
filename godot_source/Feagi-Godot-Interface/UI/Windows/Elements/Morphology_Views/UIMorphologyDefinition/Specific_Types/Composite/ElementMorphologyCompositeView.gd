@@ -26,6 +26,7 @@ var _patternX: Vector2iField
 var _patternY: Vector2iField
 var _patternZ: Vector2iField
 var _mapped_morphology: MorphologyDropDown
+var _internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS = Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
 var _is_UI_editable: bool
 
 
@@ -42,11 +43,12 @@ func setup(allow_editing_if_morphology_editable: bool) -> void:
 ## Return current UI view as a [CompositeMorphology] object
 func get_as_composite_morphology(morphology_name: StringName, is_placeholder: bool = false) -> CompositeMorphology:
 	var XYZ: Array[Vector2i] = [patternX, patternY, patternZ]
-	return CompositeMorphology.new(morphology_name, is_placeholder, composite_seed, XYZ, mapped_morphology.name)
+	return CompositeMorphology.new(morphology_name, is_placeholder, _internal_class, composite_seed, XYZ, mapped_morphology.name)
 
 ## Overwrite the current UI view with a [CompositeMorphology] object
 func set_from_composite_morphology(composite: CompositeMorphology) -> void:
 	composite_seed = composite.source_seed
+	_internal_class = composite.internal_class
 	if composite.is_placeholder_data:
 		# Placeholder data implies that the mapped morphology is invalid. set dropdown to blank
 		_mapped_morphology.deselect_all()

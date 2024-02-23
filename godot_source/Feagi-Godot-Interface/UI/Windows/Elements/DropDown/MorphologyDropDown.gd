@@ -22,15 +22,14 @@ var _popup: PopupMenu
 func _ready():
 	_popup = get_popup()
 	if load_available_morphologies_on_start:
-		releod_available_morphologies()
-	if sync_removed_morphologies:
-		FeagiCacheEvents.morphology_removed.connect(_morphology_was_deleted_from_cache)
-	if sync_added_morphologies:
-		FeagiCacheEvents.morphology_removed.connect(_morphology_was_added_to_cache)
+		reload_available_morphologies()
 	item_selected.connect(_user_selected_option)
-	
+	if sync_removed_morphologies:
+		FeagiCache.morphology_cache.morphology_about_to_be_removed.connect(_morphology_was_deleted_from_cache)
+	if sync_added_morphologies:
+		FeagiCache.morphology_cache.morphology_added.connect(_morphology_was_added_to_cache)
 
-func releod_available_morphologies() -> void:
+func reload_available_morphologies() -> void:
 	var morphologies: Array[Morphology] = []
 	morphologies.assign(FeagiCache.morphology_cache.available_morphologies.values())
 	overwrite_morphologies(morphologies)
@@ -49,10 +48,6 @@ func overwrite_morphologies(new_morphology: Array[Morphology]) -> void:
 ## Add a singular morphology to the end of the drop down
 func add_morphology(new_morphology: Morphology) -> void:
 	_listed_morphologies.append(new_morphology)
-	#if(display_names_instead_of_IDs):
-	#	add_item(new_area.name)
-	#else:
-	#	add_item(new_area.cortical_ID)
 	add_item(new_morphology.name) # using name only since as of writing, morphologies do not have IDs
 	if hide_circle_select_icon:
 		_popup.set_item_as_radio_checkable(_popup.get_item_count() - 1, false) # Remove Circle Selection
@@ -81,7 +76,7 @@ func set_selected_morphology(set_morphology: Morphology) -> void:
 
 func set_selected_morphology_by_name(morphology_name: StringName) -> void:
 	if morphology_name not in FeagiCache.morphology_cache.available_morphologies.keys():
-		push_error("Attempted to set morphology dropdown to morphology not found in cache by anme of " + morphology_name + ". Skipping!")
+		push_error("Attempted to set morphology dropdown to morphology not found in cache by name of " + morphology_name + ". Skipping!")
 		return
 	set_selected_morphology(FeagiCache.morphology_cache.available_morphologies[morphology_name])
 

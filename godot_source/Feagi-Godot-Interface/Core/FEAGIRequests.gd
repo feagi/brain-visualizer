@@ -154,10 +154,10 @@ func request_create_morphology(morphology_to_create: Morphology) -> void:
 func request_delete_morphology(morphology: Morphology) -> void:
 	print("User requested deletion of morphology " + morphology.name)
 	if morphology not in FeagiCache.morphology_cache.available_morphologies.values():
-		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % [morphology.name])
+		push_error("Attempted to delete morphology %s that not located in cache! Skipping!" % morphology.name)
 		return
-	if !morphology.is_user_editable:
-		push_error("Unable to delete morphology that is not user editable! Skipping!" % [morphology.name])
+	if morphology.get_latest_known_deletability() in [Morphology.DELETABILITY.NOT_DELETABLE_USED, Morphology.DELETABILITY.NOT_DELETABLE_UNKNOWN]:
+		push_error("Unable to delete morphology %s that is not allowed for deletion! Skipping!" % morphology.name)
 		return
 	_feagi_interface.calls.DELETE_GE_morphology(morphology.name)
 
@@ -190,7 +190,7 @@ func request_set_mapping_between_corticals(source_area: BaseCorticalArea, destin
 	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
 		push_error("Requested Mapping appears to be invalid! Skip sending requesting mapping configuration to FEAGI!")
 		return
-	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_array(mappings))
+	_feagi_interface.calls.PUT_GE_mappingProperties(source_area, destination_area, MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings))
 
 ## Request FEAGI to append mappings to a current mappings
 ## NOTE: This assumes Cache is up to date on the current mapping state

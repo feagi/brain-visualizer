@@ -62,7 +62,7 @@ static func create_default_mapping(source_area: BaseCorticalArea, destination_ar
 	return MappingProperties.new(source_area, destination_area, default_mapping)
 
 ## Returns an array of the [MappingProperty] objects as FEAGI formatted dictionaries
-static func mapping_properties_to_array(input_mappings: Array[MappingProperty]) -> Array[Dictionary]:
+static func mapping_properties_to_FEAGI_formated_array(input_mappings: Array[MappingProperty]) -> Array[Dictionary]:
 	var output: Array[Dictionary] = []
 	for mapping: MappingProperty in input_mappings:
 		if !mapping.is_null_placeholder:
@@ -71,9 +71,17 @@ static func mapping_properties_to_array(input_mappings: Array[MappingProperty]) 
 			push_error("Exporting MappingProperty that is a placeholder mapping. These placeholders will be skipped in the export in an attempt at stability, but this should never happen!")
 	return output
 
+## Returns an array with no duplicates of all morphologies within an array of Mapping Propertys
+static func get_involved_morphologies_from_mapping_propertys(input_mappings: Array[MappingProperty]) -> Array[Morphology]:
+	var morphologies_involved: Array[Morphology] = []
+	for mapping: MappingProperty in input_mappings:
+		if !(mapping.morphology_used in morphologies_involved):
+			morphologies_involved.append(mapping.morphology_used)
+	return morphologies_involved
+
 ## Returns an array of the internal [MappingProperty] objects as FEAGI formatted dictionaries
-func to_array() -> Array[Dictionary]:
-	return MappingProperties.mapping_properties_to_array(_mappings)
+func to_FEAGI_formatted_array() -> Array[Dictionary]:
+	return MappingProperties.mapping_properties_to_FEAGI_formated_array(_mappings)
 
 func add_mapping_manually(new_mapping: MappingProperty) -> void:
 	_mappings.append(new_mapping)
