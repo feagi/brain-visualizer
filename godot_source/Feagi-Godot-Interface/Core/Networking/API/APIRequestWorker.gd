@@ -192,6 +192,8 @@ func _http_generic_error_response_handling(response_body: PackedByteArray) -> vo
 		## If feagi didnt even send back the dict correctly, something went very wrong
 		#TODO action?
 		return
+	if VisConfig.visualizer_state != VisConfig.STATES.READY:
+		return
 	#VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], _http_error_replacements)
 	VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], {})
 
