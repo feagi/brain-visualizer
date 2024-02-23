@@ -43,8 +43,8 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
 	
-	_http_error_call = request_definition.http_error_call
-	_http_error_replacements = request_definition.http_error_replacements
+	#_http_error_call = request_definition.http_error_call
+	#_http_error_replacements = request_definition.http_error_replacements
 	
 	match(request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
@@ -188,7 +188,7 @@ func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bo
 
 func _http_generic_error_response_handling(response_body: PackedByteArray) -> void:
 	var feagi_error_response: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
-	if "code" not in feagi_error_response:
+	if "code" not in feagi_error_response.keys():
 		## If feagi didnt even send back the dict correctly, something went very wrong
 		#TODO action?
 		return
