@@ -192,10 +192,9 @@ func _http_generic_error_response_handling(response_body: PackedByteArray) -> vo
 		## If feagi didnt even send back the dict correctly, something went very wrong
 		#TODO action?
 		return
-	if VisConfig.visualizer_state != VisConfig.STATES.READY:
-		return
+	var temp_test: StringName = feagi_error_response["code"]
 	#VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], _http_error_replacements)
-	VisConfig.UI_manager.make_error_notification(feagi_error_response["code"], {})
+	VisConfig.UI_manager.make_error_notification(temp_test, {})
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
