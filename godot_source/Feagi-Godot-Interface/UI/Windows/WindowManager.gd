@@ -7,17 +7,14 @@ const _prefab_create_morphology: PackedScene = preload("res://Feagi-Godot-Interf
 const _prefab_edit_mappings: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
 const _prefab_morphology_manager: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.tscn")
 const _prefab_create_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.tscn")
-const _prefab_import_circuit: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Import_Circuit/Import_Circuit.tscn")
 const _prefab_quick_connect: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.tscn")
-const _prefab_popup_info_OLD: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Popups/Info/WindowPopupInfo.tscn")
 const _prefab_tutorial: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.tscn")
 const _prefab_cortical_view: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
 const _prefab_quick_cortical_menu: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Quick_Cortical_Menu/QuickCorticalMenu.tscn")
-const _prefab_confirm_deletion: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Delete_Confirmation/DeleteConfirmation.tscn")
 const _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Clone_Cortical_Area/WindowCloneCorticalArea.tscn")
 const _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 const _prefab_configurable_popup: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Configurable_Popup/WindowConfigurablePopup.tscn")
-
+const _prefab_developer_options: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Developer_Options/WindowDeveloperOptions.tscn")
 
 var loaded_windows: Dictionary
 
@@ -37,7 +34,11 @@ func spawn_create_morphology() -> void:
 func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 	var morphology_manager: WindowMorphologyManager = _default_spawn_window(_prefab_morphology_manager, "morphology_manager") as WindowMorphologyManager
 	morphology_manager.setup(morphology_to_preload)
-	
+
+func spawn_developer_options() -> void:
+	var developer_window: WindowDeveloperOptions = _default_spawn_window(_prefab_developer_options, "developer_options")
+	developer_window.setup()
+
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
 	var edit_mappings: WindowEditMappingDefinition = _default_spawn_window(_prefab_edit_mappings, "edit_mappings") as WindowEditMappingDefinition
 	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)
@@ -49,19 +50,6 @@ func spawn_create_cortical() -> void:
 func spawn_clone_cortical(cloning_from: BaseCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_prefab_clone_cortical, "clone_cortical") as WindowCloneCorticalArea
 	clone_cortical.setup(cloning_from)
-
-#TODO DELETE
-func spawn_import_circuit() -> void:
-	if "import_circuit" in loaded_windows.keys():
-		force_close_window("import_circuit")
-	
-	print("user requests create import circuit window")
-	var import_circuit: WindowImportCircuit = _prefab_import_circuit.instantiate()
-	add_child(import_circuit)
-	import_circuit.load_from_memory(_window_memory_states["import_circuit"])
-	import_circuit.closed_window.connect(force_close_window)
-	loaded_windows["import_circuit"] = import_circuit
-	bring_window_to_top(import_circuit)
 
 func spawn_quick_connect(initial_source_area: BaseCorticalArea = null) -> void:
 	var quick_connect: WindowQuickConnect = _default_spawn_window(_prefab_quick_connect, "quick_connect") as WindowQuickConnect
@@ -80,12 +68,10 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> void:
 	configurable_popup.setup(popup_definition)
 
 func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
+	if "quick_connect" in loaded_windows:
+		return # dont open this window if quick connect is open!
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
 	quick_cortical_menu.setup(cortical_area)
-
-func spawn_delete_confirmation(cortical_area: BaseCorticalArea) -> void:
-	var delete_confirmation: DeleteConfirmation = _default_spawn_window(_prefab_confirm_deletion, "delete_confirmation") as DeleteConfirmation
-	delete_confirmation.setup(cortical_area)
 	
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_prefab_import_amalgamation, "import_amalgamation") as WindowAmalgamationRequest
@@ -108,7 +94,7 @@ func force_close_all_windows() -> void:
 
 func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_close_if_open: bool = true) -> BaseWindowPanel:
 	if (window_name in loaded_windows.keys()) && force_close_if_open:
-		force_close_window(window_name)
+		loaded_windows[window_name].close_window()
 	var new_window: BaseWindowPanel = prefab.instantiate()
 	add_child(new_window)
 	loaded_windows[window_name] = new_window

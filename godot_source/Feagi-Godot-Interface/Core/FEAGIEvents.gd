@@ -12,6 +12,9 @@ signal retrieved_visualization_data(data: Array)
 ## When we get a listing of circuits
 signal retrieved_circuit_listing(circuit_file_names: PackedStringArray)
 
+## When amppings between 2 areas are updated
+signal when_mappings_confirmed_updated(source_area: BaseCorticalArea, destination_area: BaseCorticalArea)
+
 ## We got details of a specific circuit
 signal retrieved_circuit_details(circuit_details: CircuitDetails)
 

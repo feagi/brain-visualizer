@@ -51,12 +51,14 @@ func remove_by_ID(ID_to_remove: Variant) -> void:
 	if index_to_select != -1:
 		_scroll_holder.get_child(index_to_select).queue_free()
 
-## Selects a child item by ID
+## Selects a child item by ID, causes the button to emit its selection signal (unless item is not found)
 func set_selected(ID_to_select: Variant) -> void:
 	deselect_all()
 	var index_to_select: int = _find_child_index_with_ID(ID_to_select)
 	if index_to_select != -1:
 		_scroll_holder.get_child(index_to_select).user_selected()
+	else:
+		deselect_all() # if ID doesnt exist, deselect everything
 
 func get_button_by_ID(ID_to_select: Variant) -> GenericScrollItemText:
 	var index_to_select: int = _find_child_index_with_ID(ID_to_select)
@@ -100,8 +102,8 @@ func revoke_filter() -> void:
 	for child in _scroll_holder.get_children():
 		child.visible = true
 
-func toggle_filter_text_box(enable_filter_box: bool) -> void:
-	_filter_text.visible = enable_filter_box
+func toggle_filter_text_box(is_enabled_filter_box: bool) -> void:
+	_filter_text.visible = is_enabled_filter_box
 
 func _find_child_index_with_ID(searching_ID: Variant) -> int:
 	for child in _scroll_holder.get_children():

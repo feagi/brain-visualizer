@@ -83,18 +83,18 @@ func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) ->
 		FeagiRequests.refresh_morphology_properties(morphology.name)
 
 ## Loads in a blank morphology of given type
-func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE) -> void:
+func load_blank_morphology(morphology_type: Morphology.MORPHOLOGY_TYPE, morphology_internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS = Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM) -> void:
 	print("UIMorphologyDefinition is loading in a blank morphology")
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.COMPOSITE:
 			var src_pattern: Array[Vector2i] = []
-			load_morphology(CompositeMorphology.new("NO_NAME", true, Vector3i(0,0,0), src_pattern, ""))
+			load_morphology(CompositeMorphology.new("NO_NAME", true, morphology_internal_class, Vector3i(0,0,0), src_pattern, ""))
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			var vectors: Array[Vector3i] = []
-			load_morphology(VectorMorphology.new("NO_NAME", true, vectors))
+			load_morphology(VectorMorphology.new("NO_NAME", true, morphology_internal_class, vectors))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
 			var patterns: Array[PatternVector3Pairs] = []
-			load_morphology(PatternMorphology.new("NO_NAME", true, patterns))
+			load_morphology(PatternMorphology.new("NO_NAME", true, morphology_internal_class, patterns))
 		_:
 			load_morphology(NullMorphology.new())
 	

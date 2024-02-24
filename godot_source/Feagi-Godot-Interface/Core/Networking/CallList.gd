@@ -468,20 +468,28 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
 		"cortical_sub_group": ""
 	}
-
+	
+	var error_replacements: Dictionary = {
+		"CORTICAL_TYPE" = "Interconnect"
+	}
+	
 	if is_coordinate_2D_defined:
 		to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 		to_buffer["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	else:
 		to_send["coordinates_2d"] = [null,null]
 	
+	
 	if memory_type:
 		to_send["sub_group_id"] = "MEMORY"
 		to_buffer["cortical_group"] = BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+		error_replacements["CORTICAL_TYPE"] = "Memory"
 	
 	if cortical_ID_to_copy != "":
 		to_send["copy_of"] = cortical_ID_to_copy
 		#to_send.erase("cortical_dimensions")
+	
+	
 	
 	# Passthrough properties so we have them to build cortical area
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
@@ -489,7 +497,8 @@ func POST_GE_customCorticalArea(name: StringName, coordinates_3D: Vector3i, dime
 		HTTPClient.METHOD_POST,
 		to_send,
 		to_buffer,
-		_response_functions_ref.POST_GE_customCorticalArea
+		_response_functions_ref.POST_GE_customCorticalArea,
+		error_replacements
 	)
 	_interface_ref.FEAGI_API_Request(request)
 
@@ -527,7 +536,6 @@ func POST_GE_append(circuit_file_name: StringName, position: Vector3i) -> void:
 
 ## Sets membrane potential monitoring
 func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
-	var boolean: StringName = FEAGIUtils.bool_2_string(state)
 	var passthrough: Dictionary = {
 		"ID": cortical_ID,
 		"state": state
@@ -545,7 +553,6 @@ func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
 
 ## Sets membrane synaptic monitoring
 func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
-	var boolean: StringName = FEAGIUtils.bool_2_string(state)
 	var passthrough: Dictionary = {
 		"ID": cortical_ID,
 		"state": state
@@ -615,7 +622,7 @@ func PUT_GE_mappingProperties(source_cortical: BaseCorticalArea, destination_cor
 	var to_buffer: Dictionary = {
 		"src": source_cortical, 
 		"dst": destination_cortical, 
-		"mapping_data_raw": mapping_data
+		"mapping_data_raw": mapping_data,
 	}
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
 		_address_list.PUT_genome_mappingProperties,

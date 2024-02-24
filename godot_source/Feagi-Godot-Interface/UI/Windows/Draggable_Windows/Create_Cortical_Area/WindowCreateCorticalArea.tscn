@@ -3,10 +3,10 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
 [ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
-[ext_resource type="Texture2D" uid="uid://4xisgfb734mk" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="4_5utqj"]
-[ext_resource type="Texture2D" uid="uid://nqs7phsjl7c3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="5_ffsab"]
-[ext_resource type="Texture2D" uid="uid://j3ukneruvm10" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="7_hbdve"]
-[ext_resource type="Texture2D" uid="uid://bigyevl2dgoec" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="8_miahu"]
+[ext_resource type="Texture2D" uid="uid://ceo6nw4e6o3ri" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="4_5utqj"]
+[ext_resource type="Texture2D" uid="uid://cfvi1x2cbphwm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="5_ffsab"]
+[ext_resource type="Texture2D" uid="uid://b1yxiksxac7sw" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="7_hbdve"]
+[ext_resource type="Texture2D" uid="uid://bcq66d5cvi0gb" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="8_miahu"]
 [ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
 [ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
 [ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
@@ -17,7 +17,6 @@ offset_top = 40.0
 offset_right = 182.0
 offset_bottom = 133.0
 script = ExtResource("1_0kirv")
-window_spawn_location = Vector2i(300, 300)
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 custom_minimum_size = Vector2(350, 0)

@@ -2,6 +2,8 @@ extends HBoxContainer
 class_name InterCorticalNodeTerminal
 ## Terminal below cortical area that is specific for a specific connection
 
+signal line_highlighting_set(line_highlighting: bool)
+
 enum TYPE {
 	INPUT,
 	OUTPUT
@@ -60,6 +62,8 @@ func setup(mapping_properties: MappingProperties, type_terminal: TYPE, when_node
 	name = _connected_area.cortical_ID
 	_connected_area.name_updated.connect(_cortical_name_update)
 	when_node_moves.connect(_terminal_location_changed)
+	_parent_node.node_selected.connect(_parent_node_selected)
+	_parent_node.node_deselected.connect(_parent_node_deselected)
 
 ## Get reference to child [TerminalPortTexture]
 func get_port_reference() -> TerminalPortTexture:
@@ -78,5 +82,11 @@ func _terminal_location_changed()-> void:
 
 func _cortical_name_update(new_name: String, _area: BaseCorticalArea) -> void:
 	_cortical_label.text = new_name
+
+func _parent_node_selected() -> void:
+	line_highlighting_set.emit(true)
+
+func _parent_node_deselected() -> void:
+	line_highlighting_set.emit(false)
 
 #TODO have the button send you to the cortical Area

@@ -2,15 +2,41 @@ extends GraphElement
 class_name InterCorticalConnection
 ## Shows number of mappings, and controls the line creationa and destruction
 
-const LINE_COLOR_PSPP_PLASTIC: Color = Color.LIME_GREEN
-const LINE_COLOR_PSPP_INPLASTIC: Color = Color.LIME_GREEN
-const LINE_COLOR_PSPN_PLASTIC: Color = Color.RED
-const LINE_COLOR_PSPN_INPLASTIC: Color = Color.RED
+const LINE_COLOR_PSPP: Color = Color.DARK_GREEN
+const LINE_COLOR_PSPN: Color = Color.DARK_RED
 const LINE_COLOR_TRANSPARENT: Color = Color(0,0,0,0)
 const LINE_INPUT_X_OFFSET: int = 200
 const LINE_OUTPUT_X_OFFSET: int = -200
 const NUM_POINTS_PER_CURVE: int = 20
 const NUM_DOTTED_LINE_DIVISIONS: int = 50
+const COLOR_CONSTANT_OFFSET_HIGHLIGHT: float = 0.4
+const COLOR_SLOPE_OFFSET_HIGHLIGHT: float = 0.4
+
+enum HIGHLIGHT{
+	NO_HIGHLIGHT,
+	LEFT_HIGHLIGHT,
+	RIGHT_HIGHLIGHT,
+	BOTH_HIGHLIGHT
+}
+
+var left_side_highlighted: bool:
+	get: return _left_side_highlighted
+	set(v):
+		_left_side_highlighted = v
+		if v:
+			_set_highlighting(HIGHLIGHT.BOTH_HIGHLIGHT if _right_side_highlighted else HIGHLIGHT.LEFT_HIGHLIGHT) 
+		else:
+			_set_highlighting(HIGHLIGHT.RIGHT_HIGHLIGHT if _right_side_highlighted else HIGHLIGHT.NO_HIGHLIGHT) 
+
+var right_side_highlighted: bool:
+	get: return _right_side_highlighted
+	set(v):
+		_right_side_highlighted = v
+		if v:
+			_set_highlighting(HIGHLIGHT.BOTH_HIGHLIGHT if _left_side_highlighted else HIGHLIGHT.RIGHT_HIGHLIGHT) 
+		else:
+			_set_highlighting(HIGHLIGHT.LEFT_HIGHLIGHT if _left_side_highlighted else HIGHLIGHT.NO_HIGHLIGHT) 
+
 
 var _node_graph: CorticalNodeGraph
 var _source_terminal: InterCorticalNodeTerminal
@@ -18,6 +44,8 @@ var _destination_terminal: InterCorticalNodeTerminal
 var _source_node: CorticalNode
 var _destination_node: CorticalNode
 var _mapping_properties: MappingProperties
+var _left_side_highlighted: bool
+var _right_side_highlighted: bool
 
 var _button: Button
 var _line: Line2D
@@ -30,6 +58,9 @@ func _ready():
 	_line.material = unique_line_material
 	for i in NUM_POINTS_PER_CURVE: # TODO optimize! This should be static in TSCN
 		_line.add_point(Vector2(0,0))
+
+static func generate_name(source_cortical_area_ID: StringName, destination_cortical_area_ID: StringName) -> StringName:
+	return "Connection_" + source_cortical_area_ID + "->" + destination_cortical_area_ID
 
 func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: InterCorticalNodeTerminal, mapping_properties: MappingProperties):
 	
@@ -47,20 +78,65 @@ func setup(source_terminal: InterCorticalNodeTerminal, destination_terminal: Int
 	_source_terminal.get_port_reference().terminal_moved.connect(_update_position)
 	_destination_terminal.get_port_reference().terminal_moved.connect(_update_position)
 	_mapping_properties.mappings_changed.connect(_feagi_updated_mapping)
-
+	
+	# Line Highlighting
+	_source_terminal.line_highlighting_set.connect(set_left_side_highlighting)
+	_destination_terminal.line_highlighting_set.connect(set_right_side_highlighting)
+	#TODO set initial state
+	
 	# update Line Properties
 	_feagi_updated_mapping(_mapping_properties)
 	
 	# Labeling
-	name = "count_" + _source_node.cortical_area_ID + "->" + _destination_node.cortical_area_ID
+	name = InterCorticalConnection.generate_name(_source_node.cortical_area_ID, _destination_node.cortical_area_ID)
+	_node_graph.connections[name] = self
 	_update_position()
 	
 ## To delete the connection UI side
 func destroy_ui_connection() -> void:
 	_source_terminal.queue_free()
 	_destination_terminal.queue_free()
+	if name in _node_graph.connections.keys():
+		_node_graph.connections.erase(name)
+	else:
+		push_warning("Unable to locate reference to connection in cortical node graph to delete, skipping!")
 	queue_free()
 
+## Set the highlighting on the left side of the line
+func set_left_side_highlighting(is_left_highlighted: bool) -> void:
+	_left_side_highlighted = is_left_highlighted
+	if is_left_highlighted:
+		_set_highlighting(HIGHLIGHT.BOTH_HIGHLIGHT if _right_side_highlighted else HIGHLIGHT.LEFT_HIGHLIGHT) 
+	else:
+		_set_highlighting(HIGHLIGHT.RIGHT_HIGHLIGHT if _right_side_highlighted else HIGHLIGHT.NO_HIGHLIGHT) 
+
+## Set the highlighting on the right side of the line
+func set_right_side_highlighting(is_right_highlighted: bool) -> void:
+	_right_side_highlighted = is_right_highlighted
+	if is_right_highlighted:
+		_set_highlighting(HIGHLIGHT.BOTH_HIGHLIGHT if _left_side_highlighted else HIGHLIGHT.RIGHT_HIGHLIGHT) 
+	else:
+		_set_highlighting(HIGHLIGHT.LEFT_HIGHLIGHT if _left_side_highlighted else HIGHLIGHT.NO_HIGHLIGHT) 
+
+func toggle_outlining(outlining: bool) -> void:
+	_line.material.set_shader_parameter(&"isOutlined", outlining)
+
+## Sets highlighting of the line
+func _set_highlighting(setting: HIGHLIGHT) -> void:
+	match(setting):
+		HIGHLIGHT.NO_HIGHLIGHT:
+			_line.material.set_shader_parameter(&"linConstant", 0.0)
+			_line.material.set_shader_parameter(&"linSlope", 0.0)
+		HIGHLIGHT.LEFT_HIGHLIGHT:
+			_line.material.set_shader_parameter(&"linConstant", COLOR_CONSTANT_OFFSET_HIGHLIGHT)
+			_line.material.set_shader_parameter(&"linSlope", -COLOR_SLOPE_OFFSET_HIGHLIGHT)
+		HIGHLIGHT.RIGHT_HIGHLIGHT:
+			_line.material.set_shader_parameter(&"linConstant", 0.0)
+			_line.material.set_shader_parameter(&"linSlope", COLOR_SLOPE_OFFSET_HIGHLIGHT)
+		HIGHLIGHT.BOTH_HIGHLIGHT:
+			_line.material.set_shader_parameter(&"linConstant", COLOR_CONSTANT_OFFSET_HIGHLIGHT)
+			_line.material.set_shader_parameter(&"linSlope", 0.0)
+	
 func _spawn_edit_mapping_window() -> void:
 	VisConfig.UI_manager.window_manager.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
 
@@ -81,28 +157,21 @@ func _feagi_updated_mapping(_updated_mapping_data: MappingProperties) -> void:
 		destroy_ui_connection()
 		return
 	_update_mapping_counter(_mapping_properties.number_mappings)
-	_update_line_look(_updated_mapping_data)
+	_update_line_shader_with_mapping_changes(_updated_mapping_data)
 
 func _update_mapping_counter(number_of_mappings: int):
 	_button.text = " " + str(number_of_mappings) + " "
 
-func _update_line_look(_updated_mapping_data: MappingProperties) -> void:
+func _update_line_shader_with_mapping_changes(_updated_mapping_data: MappingProperties) -> void:
 		if _updated_mapping_data.is_any_PSP_multiplier_negative():
-			if _updated_mapping_data.is_any_mapping_plastic():
-				_set_line_params(LINE_COLOR_PSPN_PLASTIC, LINE_COLOR_TRANSPARENT, NUM_DOTTED_LINE_DIVISIONS)
-			else:
-				_set_line_params(LINE_COLOR_PSPN_INPLASTIC, LINE_COLOR_PSPN_INPLASTIC, NUM_DOTTED_LINE_DIVISIONS)
+			_line.material.set_shader_parameter(&"baseColor", Vector4(LINE_COLOR_PSPN.r, LINE_COLOR_PSPN.g, LINE_COLOR_PSPN.b, LINE_COLOR_PSPN.a))
 		else:
-			if _updated_mapping_data.is_any_mapping_plastic():
-				_set_line_params(LINE_COLOR_PSPP_PLASTIC, LINE_COLOR_TRANSPARENT, NUM_DOTTED_LINE_DIVISIONS)
-			else:
-				_set_line_params(LINE_COLOR_PSPP_INPLASTIC, LINE_COLOR_PSPP_INPLASTIC, NUM_DOTTED_LINE_DIVISIONS)
+			_line.material.set_shader_parameter(&"baseColor", Vector4(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PSPP.a))
 			
+		_line.material.set_shader_parameter(&"isDashed", _updated_mapping_data.is_any_mapping_plastic())
 
-func _set_line_params(color_a: Color, color_b: Color, number_of_divisions: float) -> void:
-	_line.material.set_shader_parameter(&"colorA", Vector4(color_a.r, color_a.g, color_a.b, color_a.a))
-	_line.material.set_shader_parameter(&"colorB", Vector4(color_b.r, color_b.g, color_b.b, color_b.a))
-	_line.material.set_shader_parameter(&"numDivisions", number_of_divisions)
+
+
 
 ## Cubic bezier curve approximation, where t is between 0 and 1
 func _cubic_bezier(t: float, p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2) -> Vector2:

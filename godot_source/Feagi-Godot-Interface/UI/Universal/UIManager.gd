@@ -14,6 +14,9 @@ signal user_changed_window_drag_status(is_dragging_a_window: bool) ## Emits when
 signal mode_changed(new_mode: MODE)
 signal UI_scale_changed(multiplier: float)
 
+@export var enable_developer_options: bool = false
+@export var developer_options_key: Key = KEY_BACKSLASH
+
 var screen_size: Vector2:  # keep as float for easy division
 	get: return _screen_size
 
@@ -52,14 +55,24 @@ var UI_scale: float:
 		_UI_scale = v
 		UI_scale_changed.emit(v)
 
+var circuit_builder: CorticalNodeGraph:
+	get: return $temp_split/NodeGraph
+
+var rosetta: Rosetta:
+	get: return _rosetta
+
 var _window_manager_ref: WindowManager
 var _notification_system_ref: NotificationSystem
+var _rosetta: Rosetta
 var _screen_size: Vector2
 var _minimum_button_size_pixel: Vector2i = Vector2i(40,40) # HINT: number should be divisible by 4
 var _is_user_typing: bool = false
 var _is_user_dragging_a_window: bool = false
 var _current_mode: MODE = MODE.VISUALIZER_3D
 var _UI_scale: float = 1.0
+
+func _init():
+	_rosetta = Rosetta.new()
 
 func _ready():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -68,6 +81,17 @@ func _ready():
 	_notification_system_ref = $NotificationSystem
 	VisConfig.UI_manager = self
 	_update_screen_size()
+
+func _input(event: InputEvent) -> void:
+	if !enable_developer_options:
+		return
+	
+	if !(event is InputEventKey):
+		return
+	
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event.keycode == developer_options_key:
+		window_manager.spawn_developer_options()
 
 func set_mode(new_mode: MODE) -> void:
 	_current_mode = new_mode
@@ -79,7 +103,6 @@ func set_mode(new_mode: MODE) -> void:
 	mode_changed.emit(new_mode)
 
 func switch_to_circuit_builder():
-	var circuit_builder: CorticalNodeGraph = $NodeGraph
 	var brain_visualizer = $Brain_Visualizer
 	var brain_visualizer_back: FullScreenControl = $Brain_Visualizer/BV_Background
 
@@ -88,7 +111,6 @@ func switch_to_circuit_builder():
 	brain_visualizer_back.visible = false # hacky thing to do until this is corrected
 
 func switch_to_brain_visualizer_3D():
-	var circuit_builder: CorticalNodeGraph = $NodeGraph
 	var brain_visualizer = $Brain_Visualizer
 	var brain_visualizer_back: FullScreenControl = $Brain_Visualizer/BV_Background
 
@@ -98,6 +120,13 @@ func switch_to_brain_visualizer_3D():
 
 func make_notification(text: StringName, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.INFO, time: float = SingleNotification.DEFAULT_TIME) -> void:
 	_notification_system_ref.add_notification(text, notification_type, time)
+
+func make_error_notification(key: StringName, replacements: Dictionary, notification_type: SingleNotification.NOTIFICATION_TYPE = SingleNotification.NOTIFICATION_TYPE.ERROR, time: float = SingleNotification.DEFAULT_TIME) -> void:
+	var string_to_post: StringName = _rosetta.get_text(key, replacements)
+	push_error("Posting error to user: %s" % string_to_post)
+	_notification_system_ref.add_notification(string_to_post, notification_type, time)
+
+	
 
 #TODO TEMP
 ## Tell BV to create a new singular cortical area preview

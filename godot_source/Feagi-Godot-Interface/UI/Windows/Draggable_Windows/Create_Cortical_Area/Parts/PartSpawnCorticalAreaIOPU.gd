@@ -30,4 +30,4 @@ func cortical_type_selected(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE, 
 			$input_output_type/Label.text = "Select an output type:"
 
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
-	dimensions.current_vector = cortical_template.calculate_IOPU_dimension(channel_count.value)
+	dimensions.current_vector = cortical_template.calculate_IOPU_dimension(int(channel_count.value))

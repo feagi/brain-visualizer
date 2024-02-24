@@ -27,4 +27,6 @@ func _generate_buttons(button_definitions: Array[ConfigurableButtonDefinition]) 
 			button.pressed.connect(close_window)
 		else:
 			button.pressed.connect(definition.pressed_action)
+			if definition.close_after_press:
+				button.pressed.connect(close_window)
 		_button_container.add_child(button)

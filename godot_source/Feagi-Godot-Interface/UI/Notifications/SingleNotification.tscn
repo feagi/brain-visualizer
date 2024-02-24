@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Notifications/SingleNotification.gd" id="1_ib5cw"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Texture_Element.gd" id="2_ybmk1"]
-[ext_resource type="Texture2D" uid="uid://b3ummhoiswkb7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_S.png" id="3_ypn32"]
-[ext_resource type="Texture2D" uid="uid://cdk46tfku3rbg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_C.png" id="4_s0s1r"]
+[ext_resource type="Texture2D" uid="uid://dg0i8egfxgjsb" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_S.png" id="3_ypn32"]
+[ext_resource type="Texture2D" uid="uid://1qptc7y2hcb6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_C.png" id="4_s0s1r"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="4_t35d1"]
-[ext_resource type="Texture2D" uid="uid://f3assbibvj8x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_H.png" id="5_jjahx"]
-[ext_resource type="Texture2D" uid="uid://d13jijnc01gm4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_D.png" id="6_53bey"]
+[ext_resource type="Texture2D" uid="uid://x3e40uq3q7k2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_H.png" id="5_jjahx"]
+[ext_resource type="Texture2D" uid="uid://tbwmm3jps1he" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_D.png" id="6_53bey"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hjnie"]
 bg_color = Color(0.321569, 0.321569, 0.321569, 0.65098)

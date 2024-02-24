@@ -26,6 +26,8 @@ var _poll_address: StringName
 var _poll_call_method: HTTPClient.Method
 var _mid_poll_call: Callable
 var _poll_data_to_send: Variant
+var _http_error_call: Callable
+var _http_error_replacements: Dictionary
 
 ## Sets up this node with all prereqs, should only be called once on instantiation
 func initialization(interface: NetworkInterface, call_header: PackedStringArray, node_parent: Node) -> void:
@@ -40,6 +42,10 @@ func initialization(interface: NetworkInterface, call_header: PackedStringArray,
 
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(request_definition: APIRequestWorkerDefinition) -> void:
+	
+	#_http_error_call = request_definition.http_error_call
+	#_http_error_replacements = request_definition.http_error_replacements
+	
 	match(request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# single call
@@ -126,6 +132,12 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			return
 
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+	
+	if response_code != 200:
+		_http_generic_error_response_handling(body)
+		_query_for_destruction()
+		return
+	
 	match(_processing_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# Default, no polling required
@@ -173,6 +185,15 @@ func _is_worker_busy(call_address: String, surpress_warning: bool = false) -> bo
 			return true
 		_:
 			return false
+
+func _http_generic_error_response_handling(response_body: PackedByteArray) -> void:
+	var feagi_error_response: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
+	if "code" not in feagi_error_response.keys():
+		## If feagi didnt even send back the dict correctly, something went very wrong
+		#TODO action?
+		return
+	var error_code_identifier: StringName = feagi_error_response["code"]
+	#VisConfig.UI_manager.make_error_notification(error_code_identifier, _http_error_replacements)
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self

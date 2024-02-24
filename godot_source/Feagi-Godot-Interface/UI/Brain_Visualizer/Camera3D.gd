@@ -17,6 +17,11 @@ extends Camera3D
 class_name BVCam
 
 const CAMERA_TURN_SPEED = 200
+const CAMERA_TELEPORT_FROM_DISTANCE: float = 50.0
+const CAMERA_ANIMATION_NAME: StringName = "CAMERA_PATH"
+const CAMERA_LIBRARY_NAME: StringName = "CAMERA_ANIM_LIB"
+const ANIMATION_PLAYER_NAME: NodePath = "AnimationPlayer"
+const ANIMATION_TIMER_NAME: NodePath = "AnimTimer"
 
 @export var camera_pan_button: MouseButton = MOUSE_BUTTON_LEFT
 @export var camera_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
@@ -30,6 +35,10 @@ const CAMERA_TURN_SPEED = 200
 @export var right_action = "ui_right"
 @export var spacebar = "ui_select"
 @export var reset = "reset"
+@export var fast_camera_button: Key = Key.KEY_SHIFT
+@export var fast_camera_speed_multiplier: float = 3.0
+
+var is_playing_animation: bool = false
 
 var _is_user_currently_focusing_camera: bool = false
 var _initial_position: Vector3
@@ -44,7 +53,10 @@ func _ready() -> void:
 
 # Guard Clauses!
 func _input(event: InputEvent):
-
+	
+	if is_playing_animation:
+		return
+	
 	# Feagi Interaction doesnt require camera control
 	if event is InputEventKey:
 		_FEAGI_data_interaction(event)
@@ -71,6 +83,50 @@ func teleport_to(new_position: Vector3, new_euler_rotation: Vector3) -> void:
 func point_camera_at(position_to_look_at: Vector3) -> void:
 	look_at(position_to_look_at, Vector3.UP)
 
+func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -> void:
+	position = _get_endpoint_position(position_to_point_at, CAMERA_TELEPORT_FROM_DISTANCE)
+
+
+func play_animation(animation: Animation) -> void:	
+	if is_playing_animation:
+		return
+	
+	# Create Animation Player
+	var animation_player: AnimationPlayer
+	if get_node_or_null(ANIMATION_PLAYER_NAME) != null:
+		kill_animation() 
+	animation_player = AnimationPlayer.new()
+	add_child(animation_player)
+	animation_player.name = str(ANIMATION_PLAYER_NAME)
+	animation_player.root_node = ("/root")
+	
+	# Confirm animation Library
+	if !animation_player.has_animation_library(CAMERA_LIBRARY_NAME):
+		animation_player.add_animation_library(CAMERA_LIBRARY_NAME, AnimationLibrary.new())
+	
+	# Add animation to library
+	var animation_library: AnimationLibrary = animation_player.get_animation_library(CAMERA_LIBRARY_NAME)
+	if animation_library.has_animation(CAMERA_ANIMATION_NAME):
+		animation_library.remove_animation(CAMERA_ANIMATION_NAME)
+	animation_library.add_animation(CAMERA_ANIMATION_NAME, animation)
+	is_playing_animation = true
+	animation_player.play(CAMERA_LIBRARY_NAME + "/" + CAMERA_ANIMATION_NAME)
+	
+	# add ending timer
+	await get_tree().create_timer(animation.length).timeout
+	kill_animation()
+	
+
+func kill_animation() -> void:
+	is_playing_animation = false
+	if get_node_or_null(ANIMATION_PLAYER_NAME) == null:
+		return
+	var animation_player: AnimationPlayer = $AnimationPlayer
+	animation_player.stop()
+	animation_player.queue_free()
+	
+	
+	
 
 func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
 
@@ -125,7 +181,11 @@ func _keyboard_camera_movement(_keyboard_event: InputEventKey) -> void:
 	if Input.is_key_pressed(KEY_RIGHT):
 		dir += Vector3(1,0,0)
 	
-	dir = dir.normalized() * camera_movement_speed
+	var speed: float = camera_movement_speed
+	if Input.is_key_pressed(fast_camera_button):
+		speed *= fast_camera_speed_multiplier
+	
+	dir = dir.normalized() * speed
 	translate(dir)
 
 
@@ -148,4 +208,7 @@ func _mouse_motion(event: InputEventMouseMotion) -> void:
 		var move: Vector3 = Vector3(event.relative.x * -camera_pan_speed, event.relative.y * camera_pan_speed, 0)
 		translate(move)
 
-
+func _get_endpoint_position(start_position: Vector3, linear_distance: float) -> Vector3:
+	var offset: Vector3 = (quaternion * (Vector3.FORWARD)) * -linear_distance
+	return start_position + offset
+	
