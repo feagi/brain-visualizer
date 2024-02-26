@@ -12,7 +12,7 @@ enum CALL_PROCESS_TYPE {
 	POLLING
 }
 
-var _network_interface_ref: NetworkInterface
+var _pool_ref: APIRequestWorkerPool
 var _timer: Timer
 
 var _outgoing_headers: PackedStringArray # headers to make requests with
@@ -30,10 +30,10 @@ var _http_error_call: Callable
 var _http_error_replacements: Dictionary
 
 ## Sets up this node with all prereqs, should only be called once on instantiation
-func initialization(interface: NetworkInterface, call_header: PackedStringArray, node_parent: Node) -> void:
+func initialization(pool_ref: APIRequestWorkerPool, call_header: PackedStringArray, node_parent: Node) -> void:
 	FeagiEvents.genome_is_about_to_reset.connect(_brain_visualizer_resetting)
 	request_completed.connect(_call_complete)
-	_network_interface_ref = interface
+	_pool_ref = pool_ref
 	_timer = $Timer
 	_timer.timeout.connect(_poll_call_from_timer)
 	_outgoing_headers = call_header
@@ -198,8 +198,8 @@ func _http_generic_error_response_handling(response_body: PackedByteArray) -> vo
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
 func _query_for_destruction() -> void:	
-	if _network_interface_ref.API_request_workers_available.size() < _network_interface_ref.num_workers_to_keep_available:
-		_network_interface_ref.API_request_workers_available.push_back(self)
+	if _pool_ref.API_request_workers_available.size() < _pool_ref.DEF_MINWORKERSAVAILABLE:
+		_pool_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
 		_buffer_data = null
 		_initial_call_address = ""
