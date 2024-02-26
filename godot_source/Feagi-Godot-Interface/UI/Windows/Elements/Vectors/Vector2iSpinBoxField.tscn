@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_d468w"]
-[ext_resource type="FontFile" uid="uid://cayuqdnckuy4b" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_depso"]
+[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_depso"]
 
 [node name="Vector2iSpingBoxField" type="BoxContainer"]
 script = ExtResource("1_ppcmy")

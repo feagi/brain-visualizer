@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesBottomMapping.gd" id="1_1eg3c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="2_dtqim"]
-[ext_resource type="Texture2D" uid="uid://b3hmjxf8ocgay" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="3_wmdqc"]
+[ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="3_wmdqc"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_xmo8e"]
-[ext_resource type="Texture2D" uid="uid://d62h7s7duqkl" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="4_m58hk"]
-[ext_resource type="Texture2D" uid="uid://cbfgruwh1myow" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="5_shpep"]
-[ext_resource type="Texture2D" uid="uid://mcj52k0u5h68" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="6_bv1kt"]
+[ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="4_m58hk"]
+[ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="5_shpep"]
+[ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="6_bv1kt"]
 
 [node name="CorticalPropertiesBottomMappingPrefab" type="HBoxContainer"]
 script = ExtResource("1_1eg3c")

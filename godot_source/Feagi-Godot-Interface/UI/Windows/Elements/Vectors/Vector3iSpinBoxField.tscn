@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://ci8uvawjvxfax"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
-[ext_resource type="FontFile" uid="uid://cayuqdnckuy4b" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_57b1k"]
+[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_57b1k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_nonhb"]
 
 [node name="Vector3fField" type="BoxContainer"]
