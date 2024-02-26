@@ -6,10 +6,10 @@ var _address_list: AddressList
 var _request_pool: APIRequestWorkerPool
 var _response_functions_ref: ResponseProxyFunctions
 
-func _init(request_pool: APIRequestWorkerPool, response_functions_reference: ResponseProxyFunctions):
+func _init(request_pool: APIRequestWorkerPool, response_functions_reference: ResponseProxyFunctions, feagi_root_web_address: StringName):
 	_request_pool = request_pool
 	_response_functions_ref = response_functions_reference
-	_address_list = AddressList.new(_request_pool.feagi_root_web_address)
+	_address_list = AddressList.new(feagi_root_web_address)
 
 #region GET requests
 ## Get current IPU list

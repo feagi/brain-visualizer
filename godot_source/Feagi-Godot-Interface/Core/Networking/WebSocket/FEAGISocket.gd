@@ -5,6 +5,7 @@ class_name FEAGISocket
 const DEF_SOCKET_MAX_QUEUED_PACKETS: int = 10000000
 const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
 const DEF_SOCKET_BUFFER_SIZE: int = 10000000
+const DEF_PING_INTERVAL_SECONDS: float = 2.0
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 
@@ -17,14 +18,22 @@ var websocket_state: WebSocketPeer.State:
 var _websocket_state: WebSocketPeer.State
 var _cache_websocket_data: PackedByteArray
 var _socket: WebSocketPeer
+var _ping_timer: Timer
+var _last_ping_time: int
 
-func _init(feagi_socket_address: StringName) -> void:
+
+func _init(feagi_socket_address: StringName, ping_timer: Timer) -> void:
 	_socket =  WebSocketPeer.new()
 	_socket.connect_to_url(feagi_socket_address)
 	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
 
-func send_websocket_ping() -> void:
-	websocket_send("ping")
+	_ping_timer = ping_timer
+	_ping_timer.wait_time = DEF_PING_INTERVAL_SECONDS
+	_ping_timer.one_shot = false
+	_ping_timer.timeout.connect(_send_websocket_ping)
+	_ping_timer.start()
+
+
 
 ## attempts to send data over websocket
 func websocket_send(data: Variant) -> void:
@@ -46,6 +55,7 @@ func socket_status_poll() -> void:
 					FeagiRequests.hard_reset_genome_from_FEAGI()  # notify that genome was updated
 				elif _cache_websocket_data.get_string_from_utf8() == SOCKET_GENEOME_UPDATE_LATENCY:
 					feagi_return_ping.emit()
+					_on_feagi_ping_back()
 				else:
 					# assume its visualization data
 					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
@@ -67,4 +77,10 @@ func _refresh_socket_state() -> void:
 	_websocket_state = new_state
 	socket_state_changed.emit(new_state)
 
+func _send_websocket_ping() -> void:
+	websocket_send("ping")
 
+func _on_feagi_ping_back() -> void:
+	var delta_time: int = int((Time.get_ticks_msec() - _last_ping_time) /  2.0)
+	_last_ping_time = Time.get_ticks_msec()
+	FeagiEvents.retrieved_latest_latency.emit(delta_time)

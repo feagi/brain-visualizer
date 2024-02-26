@@ -198,7 +198,7 @@ func _http_generic_error_response_handling(response_body: PackedByteArray) -> vo
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self
 func _query_for_destruction() -> void:	
-	if _pool_ref.API_request_workers_available.size() < _pool_ref.DEF_MINWORKERSAVAILABLE:
+	if _pool_ref.API_request_workers_available.size() < _pool_ref.DEF_MIN_WORKERS_AVAILABLE:
 		_pool_ref.API_request_workers_available.push_back(self)
 		name = "Idle"
 		_buffer_data = null

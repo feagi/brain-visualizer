@@ -12,10 +12,10 @@ var _headers_to_use: PackedStringArray
 var _API_request_worker_parent: Node
 
 func _init(feagi_root_web_address: StringName, headers_to_use: PackedStringArray, API_request_worker_parent: Node) -> void:
+	_API_request_worker_parent = API_request_worker_parent
 	endpoints = AddressList.new(feagi_root_web_address)
 	_spawn_initial_workers()
 	_headers_to_use = headers_to_use
-	_API_request_worker_parent = API_request_worker_parent
 
 ## For sending out HTTP Requests
 func FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
