@@ -1,5 +1,6 @@
 extends Label
 class_name ScalingLabel
+## [Label' but it scales its font in accordance to UI scale changes
 
 var _default_font_size: int
 

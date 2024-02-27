@@ -40,6 +40,7 @@ var _left_gap: Control
 
 var _default_font_size: int
 var _default_font: Font
+var _default_y_offset: int
 
 func _ready() -> void:
 	_viewport = get_viewport()
@@ -48,6 +49,7 @@ func _ready() -> void:
 	_left_gap = $HBoxContainer/gap
 	_default_font_size = _title.get_theme_font_size(&"font_size")
 	_default_font = _title.get_theme_font(&"font")
+	_default_y_offset = position.y
 	
 	VisConfig.UI_manager.screen_size_changed.connect(set_in_bounds_with_window_size_change.unbind(1))
 	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
@@ -89,8 +91,7 @@ func _update_size(multiplier: float) -> void:
 	_left_gap.custom_minimum_size = Vector2i(CLOSE_BUTTON_DEFAULT_SIZE * multiplier)
 	custom_minimum_size.y = int(CLOSE_BUTTON_DEFAULT_SIZE.y * multiplier)
 	size = Vector2(0,0)
-	var minimum_width: int = 2 * int(CLOSE_BUTTON_DEFAULT_SIZE.y * multiplier) # size of the close button and left gap
-	minimum_width += _default_font.get_string_size(_title.text, HORIZONTAL_ALIGNMENT_CENTER, -1, int(float(_default_font_size) * multiplier)).x
+	position.y = int(multiplier * _default_y_offset)
 
 ## Processes Mouse clicks on the title bar
 func _process_mouse_click_event(mouse_event: InputEventMouseButton) -> void:

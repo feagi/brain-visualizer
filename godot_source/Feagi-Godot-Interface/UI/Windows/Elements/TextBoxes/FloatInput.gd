@@ -38,6 +38,7 @@ var _previous_float: float
 var _prefix_length: int
 var _suffix_length: int
 
+
 func _ready():
 	_previous_float = initial_float
 	_prefix_length = len(prefix)

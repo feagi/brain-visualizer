@@ -13,16 +13,19 @@ script = ExtResource("1_6ctk4")
 
 [node name="BoxContainer" type="BoxContainer" parent="."]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 174.0
+offset_bottom = 23.0
 script = ExtResource("2_mhr6c")
 
 [node name="Size Scaling" type="HBoxContainer" parent="BoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Label" type="Label" parent="BoxContainer/Size Scaling"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Screen Scaling"
+vertical_alignment = 1
 script = ExtResource("2_2peet")
 
 [node name="FloatInput" type="LineEdit" parent="BoxContainer/Size Scaling"]
