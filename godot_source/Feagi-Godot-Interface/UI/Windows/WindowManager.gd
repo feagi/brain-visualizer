@@ -68,6 +68,8 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> void:
 	configurable_popup.setup(popup_definition)
 
 func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
+	# cortical area was selected, make sure its selected in both sides
+	VisConfig.UI_manager.circuit_builder.cortical_nodes[cortical_area.cortical_ID].selected = true
 	if "quick_connect" in loaded_windows:
 		return # dont open this window if quick connect is open!
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
