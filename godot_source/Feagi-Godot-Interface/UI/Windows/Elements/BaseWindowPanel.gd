@@ -12,8 +12,6 @@ signal close_window_requesed_no_arg() ## As above but passes no argument
 @export var top_pixel_gap_default: int = 8
 @export var bottom_pixel_gap_default: int = 8
 @export var window_spawn_location: Vector2i = Vector2i(200,200)
-@export var should_scale_with_UI: bool = true
-@export var additionally_bind_to_UI_scale_change: bool = false
 
 var _child: Container
 var _window_name: StringName # Internal name
@@ -60,8 +58,7 @@ func _setup_base_window(window_name: StringName) -> void:
 	_titlebar.setup_from_window(self)
 	_titlebar.clicked.connect(bring_window_to_top)
 	
-	if additionally_bind_to_UI_scale_change:
-		VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(0)) # ignore the argument
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(1)) # ignore the argument
 	_update_sizes_given_child_size_update()
 
 func _bring_to_top_if_click(event: InputEvent):
@@ -76,19 +73,20 @@ func _bring_to_top_if_click(event: InputEvent):
 
 func _update_sizes_given_child_size_update() -> void:
 	# Apply scale
-	var left_pixel_gap: int = left_pixel_gap_default
-	var right_pixel_gap: int = right_pixel_gap_default
-	var top_pixel_gap: int = top_pixel_gap_default
-	var bottom_pixel_gap: int = bottom_pixel_gap_default
-	if should_scale_with_UI:
-		left_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-		right_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-		top_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-		bottom_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
+	var left_pixel_gap: int = left_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
+	var right_pixel_gap: int = right_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
+	var top_pixel_gap: int = top_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
+	var bottom_pixel_gap: int = bottom_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
 	
 	var new_size: Vector2 = _child.size + Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
-	_titlebar.size.x = new_size.x
 	_child.position =  Vector2i(left_pixel_gap, top_pixel_gap)
 	custom_minimum_size = new_size
-	size = Vector2(0,0)
+	var size_x: int = new_size.x
+	var min_taskbar_width: int = _titlebar.get_minimum_width(VisConfig.UI_manager.UI_scale)
+	if size_x > min_taskbar_width:
+		_titlebar.size.x = size_x
+	else:
+		_titlebar.size.x = min_taskbar_width
+		size_x =  min_taskbar_width
+	size = Vector2(size_x,0)
 	
