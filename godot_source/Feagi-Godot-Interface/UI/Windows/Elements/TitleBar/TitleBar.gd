@@ -91,6 +91,7 @@ func _update_size(multiplier: float) -> void:
 	_left_gap.custom_minimum_size = Vector2i(CLOSE_BUTTON_DEFAULT_SIZE * multiplier)
 	custom_minimum_size.y = int(CLOSE_BUTTON_DEFAULT_SIZE.y * multiplier)
 	size = Vector2(0,0)
+	#multiplier = max(1, multiplier) # the minimum value should be 1 for the next step to avoid clipping
 	position.y = int(multiplier * _default_y_offset)
 
 ## Processes Mouse clicks on the title bar

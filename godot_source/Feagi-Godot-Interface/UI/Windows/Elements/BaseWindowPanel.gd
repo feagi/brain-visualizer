@@ -75,10 +75,10 @@ func _update_sizes_given_child_size_update() -> void:
 	#NOTE: This isn't very efficient, this call can get called numerous times when scaling.
 	#TODO: Look for a way to cut down the number of calls this goes through to resize
 	# Apply scale
-	var left_pixel_gap: int = left_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
-	var right_pixel_gap: int = right_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
-	var top_pixel_gap: int = top_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
-	var bottom_pixel_gap: int = bottom_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
+	var left_pixel_gap: int = int(left_pixel_gap_default * VisConfig.UI_manager.UI_scale)
+	var right_pixel_gap: int = int(right_pixel_gap_default * VisConfig.UI_manager.UI_scale)
+	var top_pixel_gap: int = int(top_pixel_gap_default * VisConfig.UI_manager.UI_scale)
+	var bottom_pixel_gap: int = int(bottom_pixel_gap_default * VisConfig.UI_manager.UI_scale)
 	
 	var new_size: Vector2 = _child.size + Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
 	_child.position =  Vector2i(left_pixel_gap, top_pixel_gap)
