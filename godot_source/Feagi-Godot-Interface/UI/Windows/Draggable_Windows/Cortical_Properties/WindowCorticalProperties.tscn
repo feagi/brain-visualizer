@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/WindowCorticalProperties.gd" id="1_1jbcd"]
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_dxtt6"]
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ContainerShrinker.gd" id="3_thls4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ContainerShrinker.gd" id="3_jl623"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 [ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalParameters.tscn" id="5_2tr5n"]
 [ext_resource type="PackedScene" uid="uid://rvvhpq3y0on7" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.tscn" id="6_k1df6"]
@@ -27,7 +27,7 @@ layout_mode = 1
 offset_right = 335.0
 offset_bottom = 360.0
 vertical = true
-script = ExtResource("3_thls4")
+script = ExtResource("3_jl623")
 
 [node name="Cortical" parent="Main_Body" instance=ExtResource("2_wrcar")]
 custom_minimum_size = Vector2(300, 0)

@@ -1,9 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://rvvhpq3y0on7"]
+[gd_scene load_steps=4 format=3 uid="uid://rvvhpq3y0on7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.gd" id="1_ko350"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_ermgo"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_7rehv"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_xb4by"]
 
 [node name="CorticalPropertiesNeuronFiringParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -165,7 +164,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
-script = ExtResource("5_xb4by")
 
 [node name="GAP2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)

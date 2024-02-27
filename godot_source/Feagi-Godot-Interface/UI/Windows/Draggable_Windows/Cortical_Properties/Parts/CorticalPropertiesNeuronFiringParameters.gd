@@ -15,7 +15,7 @@ var _Snooze_Period: IntInput
 var _Threshold_Inc: Vector3fField
 var _MP_Accumulation: CheckButton
 
-var _update_button: TextButton_Element
+var _update_button: Button
 
 var _growing_cortical_update: Dictionary
 

@@ -14,7 +14,7 @@ var _cloning_cortical_area: BaseCorticalArea
 var _preview_holder: GenericSinglePreviewHandler
 
 func _ready() -> void:
-	var _create_button: TextButton_Element = $Container/Create_button
+	var _create_button: Button = $Container/Create_button
 	_field_cortical_name = $Container/HBoxContainer/Cortical_Name
 	_field_3d_location = $Container/HBoxContainer2/Coordinates_3D
 	_field_2d_location = $Container/HBoxContainer3/Coordinates_2D

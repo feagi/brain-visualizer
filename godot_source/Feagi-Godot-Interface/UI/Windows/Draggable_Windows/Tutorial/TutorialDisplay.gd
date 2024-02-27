@@ -3,8 +3,8 @@ class_name TutorialDisplay
 
 const MAX_NUMBER_SLIDES: int = 10
 
-var _previous_button: TextButton_Element
-var _next_button: TextButton_Element
+var _previous_button: Button
+var _next_button: Button
 var _TextureBox: TextureRect
 var _current_slide_number: int = 2
 

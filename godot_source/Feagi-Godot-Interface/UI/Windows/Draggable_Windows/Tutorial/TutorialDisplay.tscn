@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Tutorial/TutorialDisplay.gd" id="1_hw8c4"]
 [ext_resource type="Texture2D" uid="uid://dev102g04v2au" path="res://Feagi-Godot-Interface/UI/Resources/tutorial_assets/t2.png" id="2_0o2b0"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="3_gnven"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_8lkq6"]
 
 [node name="TutorialDisplay" type="Panel"]
@@ -35,7 +34,6 @@ alignment = 1
 [node name="previous_button" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "Previous"
-script = ExtResource("3_gnven")
 
 [node name="gap" type="Control" parent="VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(20, 0)
@@ -44,7 +42,6 @@ layout_mode = 2
 [node name="next_button" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "Next"
-script = ExtResource("3_gnven")
 
 [node name="TitleBar" parent="." instance=ExtResource("4_8lkq6")]
 layout_mode = 0

@@ -1,11 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://b4ksbionxkwg"]
+[gd_scene load_steps=7 format=3 uid="uid://b4ksbionxkwg"]
 
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_i42xn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.gd" id="2_wg6iy"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ContainerShrinker.gd" id="3_71xpo"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ContainerShrinker.gd" id="3_7786q"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="4_1iehj"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="5_2iifs"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="7_ikphh"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="8_gn5it"]
 
 [node name="WindowAmalgamationRequest" type="Panel"]
@@ -20,7 +19,7 @@ layout_mode = 0
 offset_right = 440.0
 offset_bottom = 127.0
 vertical = true
-script = ExtResource("3_71xpo")
+script = ExtResource("3_7786q")
 
 [node name="gap1" type="Control" parent="Container"]
 custom_minimum_size = Vector2(0, 5)
@@ -67,13 +66,11 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancel"
-script = ExtResource("7_ikphh")
 
 [node name="import" type="Button" parent="Container/HBoxContainer3"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Import"
-script = ExtResource("7_ikphh")
 
 [node name="TitleBar" parent="." instance=ExtResource("8_gn5it")]
 layout_mode = 0

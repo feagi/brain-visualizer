@@ -10,7 +10,7 @@ var _Degeneracy_Constant: IntInput
 var _PSP_Uniformity: CheckButton
 var _MP_Driven_PSP: CheckButton
 
-var _update_button: TextButton_Element
+var _update_button: Button
 
 var _growing_cortical_update: Dictionary
 
