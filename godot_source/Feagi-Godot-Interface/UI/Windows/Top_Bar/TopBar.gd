@@ -30,7 +30,9 @@ func _ready():
 	
 	# from FEAGI
 	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
-	FeagiEvents.retrieved_latest_FEAGI_health.connect(state_indicator.set_health_states)
+	FeagiEvents.retrieved_latest_FEAGI_health.connect(state_indicator.set_feagi_states)
+	var interface: FEAGIInterface =  get_tree().current_scene.get_node(NodePath("FEAGIInterface"))
+	interface.FEAGI_websocket.socket_state_changed.connect(state_indicator.set_websocket_state)
 	FeagiEvents.retrieved_latest_latency.connect(_FEAGI_retireved_latency)
 	# from user
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
