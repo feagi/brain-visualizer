@@ -24,6 +24,8 @@ text = "Screen Scaling"
 [node name="FloatInput" type="LineEdit" parent="BoxContainer/Size Scaling"]
 layout_mode = 2
 script = ExtResource("2_cq3jw")
+initial_float = 1.0
+min_value = 1.0
 
 [node name="TitleBar" parent="." instance=ExtResource("2_3a2ou")]
 layout_mode = 0

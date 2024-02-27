@@ -29,7 +29,7 @@ func _ready():
 	_header_label = $VBoxContainer/Selection/Header
 	_options = $VBoxContainer/Selection/Options
 	_name_holder = $VBoxContainer/Selection/Name
-	_morphology_name_header = $VBoxContainer/Selection/Name/Label_Element
+	_morphology_name_header = $VBoxContainer/Selection/Name/Label
 	_morphology_name = $VBoxContainer/Selection/Name/Name
 	_vectors = $VBoxContainer/Selection/ElementMorphologyVectorsView
 	_patterns = $VBoxContainer/Selection/ElementMorphologyPatternView

@@ -1,7 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://brwx50pyfywb7"]
+[gd_scene load_steps=3 format=3 uid="uid://brwx50pyfywb7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_d468w"]
 [ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_depso"]
 
 [node name="Vector2iSpingBoxField" type="BoxContainer"]
@@ -15,8 +14,6 @@ layout_mode = 2
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_depso")
 text = "X"
-script = ExtResource("2_d468w")
-max_length = 5
 
 [node name="IntX" type="SpinBox" parent="."]
 layout_mode = 2
@@ -34,8 +31,6 @@ layout_mode = 2
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_depso")
 text = "Y"
-script = ExtResource("2_d468w")
-max_length = 5
 
 [node name="IntY" type="SpinBox" parent="."]
 layout_mode = 2

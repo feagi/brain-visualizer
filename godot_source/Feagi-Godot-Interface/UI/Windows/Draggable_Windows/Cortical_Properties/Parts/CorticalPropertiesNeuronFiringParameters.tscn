@@ -1,8 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://rvvhpq3y0on7"]
+[gd_scene load_steps=5 format=3 uid="uid://rvvhpq3y0on7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.gd" id="1_ko350"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_ermgo"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="4_uex0y"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_7rehv"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="5_xb4by"]
 
@@ -149,9 +148,6 @@ layout_mode = 2
 tooltip_text = "Defined the level of Fire Threshold Increase in X, Y, Z directions of a cortical area"
 mouse_filter = 1
 text = "Fire Threshold Increment"
-script = ExtResource("4_uex0y")
-max_length = 50
-label_text = "Fire Threshold Increment"
 
 [node name="Fire_Threshold_Increment" parent="." instance=ExtResource("5_7rehv")]
 layout_mode = 2

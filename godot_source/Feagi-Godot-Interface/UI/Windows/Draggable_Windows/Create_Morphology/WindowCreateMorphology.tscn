@@ -68,7 +68,7 @@ gap_2 = 4
 visible = false
 layout_mode = 2
 
-[node name="Label_Element" type="Label" parent="VBoxContainer/Selection/Name"]
+[node name="Label" type="Label" parent="VBoxContainer/Selection/Name"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "TEX"

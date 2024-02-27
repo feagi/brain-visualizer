@@ -1,8 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://dbmhqblcfnapj"]
+[gd_scene load_steps=5 format=3 uid="uid://dbmhqblcfnapj"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.gd" id="1_nh6j0"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="1_op66g"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_tfe2p"]
 [ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iField.tscn" id="3_i80nu"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/MorphologyDropDown.gd" id="5_1jdcn"]
 
@@ -24,12 +23,9 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="Label_Element" type="Label" parent="."]
+[node name="Label" type="Label" parent="."]
 layout_mode = 2
 text = "Patterns:"
-script = ExtResource("2_tfe2p")
-max_length = 20
-label_text = "Patterns:"
 
 [node name="Patterns" type="VBoxContainer" parent="."]
 layout_mode = 2
