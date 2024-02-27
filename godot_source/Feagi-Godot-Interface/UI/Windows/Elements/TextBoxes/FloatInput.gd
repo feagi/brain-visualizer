@@ -37,6 +37,7 @@ var current_float: float:
 var _previous_float: float
 var _prefix_length: int
 var _suffix_length: int
+var _default_font_size: int
 
 
 func _ready():
@@ -48,6 +49,9 @@ func _ready():
 	focus_exited.connect(_focus_lost)
 	text_changed .connect(_user_attempt_change_value)
 	text_submitted.connect(_user_attempt_confirm_value)
+	_default_font_size = get_theme_font_size(&"font_size")
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func _focus_entered() -> void:
 	text = str(_previous_float)
@@ -75,6 +79,9 @@ func _user_attempt_confirm_value(input_text: String) -> void:
 	float_confirmed.emit(_previous_float)
 	release_focus()
 	
+func _update_size(multiplier: float) -> void:
+	add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
+	size = Vector2(0,0)
 
 func _set_value_UI(new_float: float) -> void:
 	text = prefix + str(clamp(new_float, min_value, max_value)) + suffix

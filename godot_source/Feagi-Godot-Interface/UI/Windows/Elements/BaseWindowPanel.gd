@@ -72,7 +72,7 @@ func _bring_to_top_if_click(event: InputEvent):
 	bring_window_to_top()
 
 func _update_sizes_given_child_size_update() -> void:
-	#NOTE: This is very efficient, this call can get called numerous times when scaling.
+	#NOTE: This isn't very efficient, this call can get called numerous times when scaling.
 	#TODO: Look for a way to cut down the number of calls this goes through to resize
 	# Apply scale
 	var left_pixel_gap: int = left_pixel_gap_default * int(VisConfig.UI_manager.UI_scale)
@@ -91,7 +91,7 @@ func _update_sizes_given_child_size_update() -> void:
 	else:
 		# Window too narrow
 		_titlebar.size.x = min_titlebar_width
-		size_x =  min_titlebar_width
+		size_x =  min_titlebar_width 
 		_child.size.x = _titlebar.size.x - left_pixel_gap - right_pixel_gap
 	size = Vector2(size_x,0)
 	

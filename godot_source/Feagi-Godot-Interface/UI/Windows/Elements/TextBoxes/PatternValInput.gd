@@ -41,6 +41,7 @@ var current_patternval: PatternVal:
 var _previous_patternval: PatternVal
 var _prefix_length: int
 var _suffix_length: int
+var _default_font_size: int
 
 func _ready():
 	
@@ -52,6 +53,9 @@ func _ready():
 	focus_exited.connect(_focus_lost)
 	text_changed .connect(_user_attempt_change_value)
 	text_submitted.connect(_user_attempt_change_value)
+	_default_font_size = get_theme_font_size(&"font_size")
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func _focus_entered() -> void:
 	text = _previous_patternval.as_StringName
@@ -70,6 +74,10 @@ func _user_attempt_change_value(input_text: String) -> void:
 	_previous_patternval = PatternVal.new(input_text)
 	patternval_changed.emit(_previous_patternval)
 	user_interacted.emit()
+
+func _update_size(multiplier: float) -> void:
+	add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
+	size = Vector2(0,0)
 
 func _set_value_UI(new_value: PatternVal) -> void:
 	text = prefix + new_value.as_StringName + suffix
