@@ -69,5 +69,8 @@ func _open_create_morpology() -> void:
 func _open_tutorials() -> void:
 	VisConfig.UI_manager.window_manager.spawn_tutorial()
 
+func _open_options() -> void:
+	VisConfig.UI_manager.window_manager.spawn_user_options()
+
 func _FEAGI_retireved_latency(latency_ms: int) -> void:
 	_latency_field.current_int = latency_ms
