@@ -139,7 +139,7 @@ func GET_healthCheck_POLL_genome_availability(_response_code: int, response_body
 		statuses["brain_readiness"]
 	)
 	
-	
+
 
 func GET_healthCheck_POLL_health(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var statuses: Dictionary = _body_to_dictionary(response_body)

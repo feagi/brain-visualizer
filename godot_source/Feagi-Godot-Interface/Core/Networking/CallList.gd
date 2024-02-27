@@ -332,6 +332,9 @@ func GET_healthCheck_POLL_MONITORING():
 		{},
 		_response_functions_ref.GET_healthCheck_POLL_health,
 		SECONDS_BETWEEN_POLLS,
+		PollingMethodNone.new(PollingMethodInterface.POLLING_CONFIRMATION.INCOMPLETE),
+		{},
+		_response_functions_ref.GET_healthCheck_POLL_health
 	)
 	_request_pool.FEAGI_API_Request(request)
 
