@@ -42,7 +42,7 @@ var is_open: bool:
 		_is_open = v
 
 var _is_open: bool
-var _collapsing_button_toggle: TextureButton_Element
+var _collapsing_button_toggle: TextureButton
 var _margin_container: MarginContainer
 var _collapsing_node: Variant
 

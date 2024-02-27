@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://506fv2gitw7k"]
+[gd_scene load_steps=6 format=3 uid="uid://506fv2gitw7k"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalParameters.gd" id="1_cw12e"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="2_2t536"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_yn385"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="4_8p7n5"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="5_58ops"]
 
 [node name="CorticalPropertiesCorticalParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -119,6 +120,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
+script = ExtResource("5_58ops")
 
 [node name="gap2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)

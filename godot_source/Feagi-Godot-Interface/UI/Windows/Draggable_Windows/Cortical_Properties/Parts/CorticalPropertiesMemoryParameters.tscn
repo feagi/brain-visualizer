@@ -2,17 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesMemoryParameters.gd" id="1_dvgya"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="2_6ygxt"]
-
-[sub_resource type="GDScript" id="GDScript_4ptxu"]
-script/source = "extends Button
-class_name TextButton_Element
-
-func _ready():
-	VisConfig.UI_manager.UI_settings_changed.connect(_update_size)
-
-func _update_size() -> void:
-	custom_minimum_size = VisConfig.UI_manager.minimum_button_size_pixel
-"
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="3_reum2"]
 
 [node name="CorticalPropertiesMemoryParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -77,7 +67,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
-script = SubResource("GDScript_4ptxu")
+script = ExtResource("3_reum2")
 
 [node name="GAP2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
