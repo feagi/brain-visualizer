@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://rvvhpq3y0on7"]
+[gd_scene load_steps=7 format=3 uid="uid://rvvhpq3y0on7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.gd" id="1_ko350"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_sgy66"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_ermgo"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="4_pbm66"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_7rehv"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="5_7yfjh"]
 
 [node name="CorticalPropertiesNeuronFiringParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -25,6 +27,7 @@ tooltip_text = "If True, the neuron will hold on to its level of membrane potent
 layout_mode = 2
 size_flags_horizontal = 3
 text = "MP Accumulation"
+script = ExtResource("2_sgy66")
 
 [node name="MP_Accumulation" type="CheckButton" parent="MP_Accumulation"]
 layout_mode = 2
@@ -37,6 +40,7 @@ tooltip_text = "The amount of membrane potential a neuron will loose with the pa
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Leak Constant"
+script = ExtResource("2_sgy66")
 
 [node name="Leak_Constant" type="LineEdit" parent="Leak_Constant"]
 layout_mode = 2
@@ -51,6 +55,7 @@ tooltip_text = "The percentage of inconsistency that each neuron can have in the
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Leak Variability"
+script = ExtResource("2_sgy66")
 
 [node name="Leak_Variability" type="LineEdit" parent="Leak_Variability"]
 layout_mode = 2
@@ -65,6 +70,7 @@ tooltip_text = "The number of bursts where neuron cannot fire after it has alrea
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Refactory Period"
+script = ExtResource("2_sgy66")
 
 [node name="Refactory_Period" type="LineEdit" parent="Refactory_Period"]
 layout_mode = 2
@@ -79,6 +85,7 @@ tooltip_text = "The max number of consecutive firing a neuron can have at a time
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Consecutive Fire Count"
+script = ExtResource("2_sgy66")
 
 [node name="Consecutive_Fire_Count" type="LineEdit" parent="Consecutive_Fire_Count"]
 layout_mode = 2
@@ -93,6 +100,7 @@ tooltip_text = "The number of burst where the neuron cannot fire after the Conse
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Snooze Period"
+script = ExtResource("2_sgy66")
 
 [node name="Snooze_Period" type="LineEdit" parent="Snooze_Period"]
 layout_mode = 2
@@ -107,6 +115,7 @@ tooltip_text = "The level of membrane potential each neuron has to reach that wo
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Fire Threshold"
+script = ExtResource("2_sgy66")
 
 [node name="Fire_Threshold" type="LineEdit" parent="Fire_Threshold"]
 layout_mode = 2
@@ -121,6 +130,7 @@ tooltip_text = "The max level of membrane potential value that can trigger a neu
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Fire Threshold Limit"
+script = ExtResource("2_sgy66")
 
 [node name="Threshold_Limit" type="LineEdit" parent="Threshold_Limit"]
 layout_mode = 2
@@ -135,6 +145,7 @@ tooltip_text = "Chance of neuron becoming excited"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Neuron Excitability"
+script = ExtResource("2_sgy66")
 
 [node name="Neuron_Excitability" type="LineEdit" parent="Neuron_Excitability"]
 layout_mode = 2
@@ -148,6 +159,7 @@ layout_mode = 2
 tooltip_text = "Defined the level of Fire Threshold Increase in X, Y, Z directions of a cortical area"
 mouse_filter = 1
 text = "Fire Threshold Increment"
+script = ExtResource("2_sgy66")
 
 [node name="Fire_Threshold_Increment" parent="." instance=ExtResource("5_7rehv")]
 layout_mode = 2
@@ -159,6 +171,7 @@ label_z_text = &"Z"
 [node name="GAP" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
+script = ExtResource("5_7yfjh")
 
 [node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
@@ -170,6 +183,7 @@ script = ExtResource("4_pbm66")
 [node name="GAP2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
+script = ExtResource("5_7yfjh")
 
 [connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Leak_Constant/Leak_Constant" to="." method="_enable_update_button"]

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://ckkgl10utu0i8"]
+[gd_scene load_steps=3 format=3 uid="uid://ckkgl10utu0i8"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.gd" id="1_ofec4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_w3lfj"]
 
 [node name="CorticalPropertiesCorticalMonitoring" type="VBoxContainer"]
 anchors_preset = 15
@@ -17,6 +18,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Membrane Monitoring"
+script = ExtResource("2_w3lfj")
 
 [node name="Membrane" type="CheckButton" parent="HBoxContainer"]
 layout_mode = 2
@@ -28,6 +30,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Post-Synaptic  Monitoring"
+script = ExtResource("2_w3lfj")
 
 [node name="PostSynaptic" type="CheckButton" parent="HBoxContainer2"]
 layout_mode = 2

@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://pg6obfpceakc"]
+[gd_scene load_steps=5 format=3 uid="uid://pg6obfpceakc"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Configurable_Popup/WindowConfigurablePopup.gd" id="1_7ua63"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_1dl3f"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_bjxy3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_uk0kv"]
 
 [node name="WindowConfigurablePopup" type="Panel"]
 offset_top = 40.0
@@ -19,14 +21,17 @@ offset_bottom = 40.0
 [node name="gap1" type="Control" parent="VBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+script = ExtResource("2_bjxy3")
 
 [node name="Message" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 horizontal_alignment = 1
+script = ExtResource("2_uk0kv")
 
 [node name="gap2" type="Control" parent="VBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+script = ExtResource("2_bjxy3")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
