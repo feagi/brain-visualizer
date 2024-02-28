@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://ci8uvawjvxfax"]
+[gd_scene load_steps=5 format=3 uid="uid://ci8uvawjvxfax"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
 [ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_57b1k"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_417nr"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="4_7tci3"]
 
 [node name="Vector3fField" type="BoxContainer"]
 script = ExtResource("1_2xsvd")
@@ -9,11 +11,13 @@ script = ExtResource("1_2xsvd")
 [node name="SpacerX" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_417nr")
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_57b1k")
 text = "X"
+script = ExtResource("4_7tci3")
 
 [node name="IntX" type="SpinBox" parent="."]
 layout_mode = 2
@@ -22,15 +26,18 @@ alignment = 1
 [node name="SpacerX2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_417nr")
 
 [node name="SpacerY" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_417nr")
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_57b1k")
 text = "Y"
+script = ExtResource("4_7tci3")
 
 [node name="IntY" type="SpinBox" parent="."]
 layout_mode = 2
@@ -39,16 +46,19 @@ alignment = 1
 [node name="SpacerY2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_417nr")
 
 [node name="SpacerZ" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_417nr")
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_57b1k")
 text = "Z
 "
+script = ExtResource("4_7tci3")
 
 [node name="IntZ" type="SpinBox" parent="."]
 layout_mode = 2

@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://do28ox8hb6e08"]
+[gd_scene load_steps=6 format=3 uid="uid://do28ox8hb6e08"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.gd" id="1_com4y"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_0wtr1"]
 [ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_tlcnq"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_uer0m"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="4_2u2aa"]
 
 [node name="Vector3fField" type="BoxContainer"]
 offset_right = 256.0
@@ -12,12 +14,14 @@ script = ExtResource("1_com4y")
 [node name="SpacerX" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_0wtr1")
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_tlcnq")
 text = "X"
 horizontal_alignment = 2
+script = ExtResource("4_2u2aa")
 
 [node name="FloatX" type="LineEdit" parent="."]
 layout_mode = 2
@@ -27,15 +31,18 @@ script = ExtResource("3_uer0m")
 [node name="SpacerX2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_0wtr1")
 
 [node name="SpacerY" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_0wtr1")
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_tlcnq")
 text = "Y"
+script = ExtResource("4_2u2aa")
 
 [node name="FloatY" type="LineEdit" parent="."]
 layout_mode = 2
@@ -45,10 +52,12 @@ script = ExtResource("3_uer0m")
 [node name="SpacerY2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_0wtr1")
 
 [node name="SpacerZ" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_0wtr1")
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
@@ -57,6 +66,7 @@ text = "Z
 "
 horizontal_alignment = 2
 vertical_alignment = 1
+script = ExtResource("4_2u2aa")
 
 [node name="FloatZ" type="LineEdit" parent="."]
 layout_mode = 2

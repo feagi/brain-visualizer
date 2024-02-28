@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://boj8wsv76jqlm"]
+[gd_scene load_steps=6 format=3 uid="uid://boj8wsv76jqlm"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.gd" id="1_hv1wd"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_5ago8"]
 [ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_ul7t1"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_vm86m"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="4_stjp7"]
 
 [node name="Vector3fField" type="BoxContainer"]
 script = ExtResource("1_hv1wd")
@@ -10,11 +12,13 @@ script = ExtResource("1_hv1wd")
 [node name="SpacerX" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_5ago8")
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_ul7t1")
 text = "X"
+script = ExtResource("4_stjp7")
 
 [node name="IntX" type="LineEdit" parent="."]
 layout_mode = 2
@@ -24,15 +28,18 @@ script = ExtResource("3_vm86m")
 [node name="SpacerX2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_5ago8")
 
 [node name="SpacerY" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_5ago8")
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_ul7t1")
 text = "Y"
+script = ExtResource("4_stjp7")
 
 [node name="IntY" type="LineEdit" parent="."]
 layout_mode = 2
@@ -42,16 +49,19 @@ script = ExtResource("3_vm86m")
 [node name="SpacerY2" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_5ago8")
 
 [node name="SpacerZ" type="Control" parent="."]
 custom_minimum_size = Vector2(3, 0)
 layout_mode = 2
+script = ExtResource("2_5ago8")
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_ul7t1")
 text = "Z
 "
+script = ExtResource("4_stjp7")
 
 [node name="IntZ" type="LineEdit" parent="."]
 layout_mode = 2
