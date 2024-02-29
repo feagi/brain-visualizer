@@ -4,13 +4,14 @@ class_name QuickCorticalMenu
 const CENTER_OFFSET: Vector2 = Vector2(0, 100)
 
 var _cortical_area: BaseCorticalArea
-var _title_bar: TitleBar
 
 func setup(cortical_area: BaseCorticalArea) -> void:
+	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
+	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
+	
 	_setup_base_window("quick_cortical_menu")
 	_cortical_area = cortical_area
-	_title_bar = $TitleBar
-	_title_bar.title = _cortical_area.name
+	_titlebar.title = _cortical_area.name
 	focus_exited.connect(_on_focus_lost)
 	
 	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - CENTER_OFFSET
@@ -18,11 +19,11 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 		position_to_spawn.y += int(CENTER_OFFSET.y * 2.0)
 	position = position_to_spawn
 	if !_cortical_area.user_can_delete_this_area:
-		$HBoxContainer/Delete.disabled = true
-		$HBoxContainer/Delete.tooltip_text = "This Cortical Area Cannot Be Deleted"
+		delete_button.disabled = true
+		delete_button.tooltip_text = "This Cortical Area Cannot Be Deleted"
 	if !_cortical_area.user_can_clone_this_cortical_area:
-		$HBoxContainer/Clone.disabled = true
-		$HBoxContainer/Clone.tooltip_text = "This Cortical Area Cannot Be Cloned"
+		clone_button.disabled = true
+		clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
 	grab_focus()
 
 	# TODO this really shouldnt be here
