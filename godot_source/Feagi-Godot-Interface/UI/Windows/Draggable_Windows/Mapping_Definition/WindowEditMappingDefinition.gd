@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 

@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowViewCorticalArea
 
 func _ready() -> void:

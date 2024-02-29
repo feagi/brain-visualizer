@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowCreateCorticalArea
 
 var _top_container: BoxContainer

@@ -32,7 +32,7 @@ var button_ref: Button:
 
 var _is_dragging: bool = false
 var _prev_window_minus_mouse_position: Vector2
-var _window_parent: BaseWindowPanel
+var _window_parent: BaseDraggableWindow
 var _viewport: Viewport
 var _title: Label
 var _tex_button: TextureButton
@@ -71,7 +71,7 @@ func _gui_input(event: InputEvent) -> void:
 		_process_mouse_drag_event(event as InputEventMouseMotion)
 
 ## The parent window object calls this to finish setting up this child. Technically not best practice
-func setup_from_window(window: BaseWindowPanel) -> void:
+func setup_from_window(window: BaseDraggableWindow) -> void:
 	_window_parent = window
 
 ## Check if TitleBar is within bounds

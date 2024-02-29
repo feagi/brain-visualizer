@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowCloneCorticalArea
 
 signal null_dimensions_signal(vector: Vector3i) #not utilized but required as an empty input for a func

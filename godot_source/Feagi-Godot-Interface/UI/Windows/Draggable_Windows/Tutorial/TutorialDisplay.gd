@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name TutorialDisplay
 
 const MAX_NUMBER_SLIDES: int = 10

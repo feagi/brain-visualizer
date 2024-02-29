@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowDeveloperOptions
 
 var _camera_animation_section: VerticalCollapsible

@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowCorticalProperties
 
 var _cortical_area_ref: BaseCorticalArea

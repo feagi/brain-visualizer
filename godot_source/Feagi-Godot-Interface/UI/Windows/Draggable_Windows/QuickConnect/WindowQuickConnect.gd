@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowQuickConnect
 
 enum POSSIBLE_STATES {

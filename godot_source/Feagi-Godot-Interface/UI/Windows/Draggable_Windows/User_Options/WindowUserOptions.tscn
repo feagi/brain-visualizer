@@ -1,43 +1,51 @@
-[gd_scene load_steps=6 format=3 uid="uid://bcex1stwk5f1y"]
+[gd_scene load_steps=5 format=3 uid="uid://bcex1stwk5f1y"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/User_Options/WindowUserOptions.gd" id="1_6ctk4"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_2peet"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_3a2ou"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="2_cq3jw"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ContainerShrinker.gd" id="2_mhr6c"]
 
-[node name="WindowUserOptions" type="Panel"]
-offset_top = 40.0
-offset_bottom = 40.0
-script = ExtResource("1_6ctk4")
-
-[node name="BoxContainer" type="BoxContainer" parent="."]
-layout_mode = 0
+[node name="WindowUserOptions" type="VBoxContainer"]
 offset_right = 174.0
-offset_bottom = 23.0
-script = ExtResource("2_mhr6c")
+offset_bottom = 44.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_6ctk4")
+left_pixel_gap_default = null
+right_pixel_gap_default = null
+top_pixel_gap_default = null
+bottom_pixel_gap_default = null
+window_spawn_location = null
 
-[node name="Size Scaling" type="HBoxContainer" parent="BoxContainer"]
+[node name="TitleBar" parent="." instance=ExtResource("2_3a2ou")]
+layout_mode = 2
+title = "User Options"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="Size Scaling" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="BoxContainer/Size Scaling"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Size Scaling"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Screen Scaling"
 vertical_alignment = 1
 script = ExtResource("2_2peet")
 
-[node name="FloatInput" type="LineEdit" parent="BoxContainer/Size Scaling"]
+[node name="FloatInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Size Scaling"]
 layout_mode = 2
 script = ExtResource("2_cq3jw")
 initial_float = 1.0
 min_value = 0.0
 
-[node name="TitleBar" parent="." instance=ExtResource("2_3a2ou")]
-layout_mode = 0
-offset_top = -40.0
-offset_bottom = 0.0
-title = "User Options"
-
-[connection signal="float_confirmed" from="BoxContainer/Size Scaling/FloatInput" to="." method="_user_change_scale"]
+[connection signal="float_confirmed" from="WindowPanel/WindowMargin/WindowInternals/Size Scaling/FloatInput" to="." method="_user_change_scale"]

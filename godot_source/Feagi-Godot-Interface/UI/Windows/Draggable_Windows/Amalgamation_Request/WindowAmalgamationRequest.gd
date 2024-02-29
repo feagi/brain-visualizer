@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowAmalgamationRequest
 
 signal null_dimchange_signal(val: Vector3i) # Not technically utilized, but needed as a placeholder as a required arg

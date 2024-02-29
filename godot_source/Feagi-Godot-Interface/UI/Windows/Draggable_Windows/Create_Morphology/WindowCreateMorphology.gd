@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowCreateMorphology
 
 const HEADER_CHOOSE_TYPE: StringName = "Select Connectivity Rule Type:"
