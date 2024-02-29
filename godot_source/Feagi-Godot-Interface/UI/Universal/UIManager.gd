@@ -52,6 +52,8 @@ var is_user_dragging_a_window: bool:
 var UI_scale: float:
 	get: return _UI_scale
 	set(v):
+		if v == _UI_scale:
+			return
 		_UI_scale = v
 		UI_scale_changed.emit(v)
 
