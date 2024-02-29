@@ -59,7 +59,6 @@ CheckButton/styles/hover_pressed = SubResource("StyleBoxFlat_x416a")
 CheckButton/styles/normal = SubResource("StyleBoxFlat_u1fsi")
 CheckButton/styles/pressed = SubResource("StyleBoxFlat_uk23p")
 GraphEdit/styles/panel = SubResource("StyleBoxFlat_1yqa0")
-LineEdit/font_sizes/font_size = 16
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
 LineEdit/styles/read_only = SubResource("StyleBoxFlat_a2rtm")
 Panel/styles/panel = SubResource("StyleBoxFlat_3bdj3")
