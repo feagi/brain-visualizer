@@ -2,14 +2,14 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
-[ext_resource type="Texture2D" uid="uid://870imoboqds8" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_cortical_area.png" id="3_f73r0"]
+[ext_resource type="Texture2D" uid="uid://5nb0yf2u7q5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_cortical_area.png" id="3_f73r0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://4n2ny5eldpib" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="4_ot5te"]
-[ext_resource type="Texture2D" uid="uid://cdn8dwlw1eib7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/neuron.png" id="4_w1ybr"]
-[ext_resource type="Texture2D" uid="uid://blx6k86t0r6qf" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="5_58ohp"]
-[ext_resource type="Texture2D" uid="uid://crkunobt1seoq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials.png" id="5_81ib4"]
-[ext_resource type="Texture2D" uid="uid://b5ii11qnfxjmo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="6_h0c21"]
-[ext_resource type="Texture2D" uid="uid://cnf35b13cj2rm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="7_wa0pf"]
+[ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="4_ot5te"]
+[ext_resource type="Texture2D" uid="uid://dr5seahroxeg4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/neuron.png" id="4_w1ybr"]
+[ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="5_58ohp"]
+[ext_resource type="Texture2D" uid="uid://bjlc1lc7ctryc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials.png" id="5_81ib4"]
+[ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="6_h0c21"]
+[ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="7_wa0pf"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="9_jcvuj"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
@@ -129,24 +129,28 @@ script = ExtResource("3_v82xb")
 suffix = " Hz"
 min_value = 0.1
 
-[node name="Ping_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+[node name="options" type="Button" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+layout_mode = 2
+text = "Options"
+
+[node name="Ping_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
 text = "Latency"
 vertical_alignment = 1
 
-[node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+[node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
 layout_mode = 2
 alignment = 1
 editable = false
 script = ExtResource("9_jcvuj")
 suffix = "ms"
 
-[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
 layout_mode = 2
 text = "System Health"
 vertical_alignment = 1
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]
@@ -154,5 +158,6 @@ layout_mode = 2
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/ConnectivityRules" to="." method="_open_neuron_morphologies"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/TextureButton" to="." method="_open_create_morpology"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/Tutorials" to="." method="_open_tutorials"]
+[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/options" to="." method="_open_options"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

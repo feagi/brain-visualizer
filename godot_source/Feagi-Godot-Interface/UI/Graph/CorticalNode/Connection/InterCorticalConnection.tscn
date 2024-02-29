@@ -5,9 +5,13 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tuauv"]
 shader = ExtResource("2_ecekl")
-shader_parameter/colorA = Vector4(1, 1, 1, 1)
-shader_parameter/colorB = Vector4(1, 1, 1, 1)
+shader_parameter/baseColor = Vector4(1, 1, 1, 1)
+shader_parameter/colorHighLight = Vector4(1, 1, 1, 1)
+shader_parameter/isOutlined = false
+shader_parameter/isDashed = true
 shader_parameter/numDivisions = 100.0
+shader_parameter/linConstant = 0.0
+shader_parameter/linSlope = 0.0
 
 [node name="InterCorticalConnection" type="GraphElement"]
 selectable = false

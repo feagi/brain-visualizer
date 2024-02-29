@@ -4,7 +4,7 @@ class_name WindowCloneCorticalArea
 signal null_dimensions_signal(vector: Vector3i) #not utilized but required as an empty input for a func
 
 const NAME_APPEND: StringName = &"_copy"
-const OFFSET_3D: Vector3i = Vector3i(10,10,10)
+const OFFSET_3D: Vector3i = Vector3i(10,0,0)
 const OFFSET_2D: Vector2i = Vector2i(10,10)
 
 var _field_cortical_name: TextInput

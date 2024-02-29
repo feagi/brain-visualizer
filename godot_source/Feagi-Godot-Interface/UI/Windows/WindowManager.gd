@@ -15,6 +15,7 @@ const _prefab_clone_cortical: PackedScene = preload("res://Feagi-Godot-Interface
 const _prefab_import_amalgamation: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 const _prefab_configurable_popup: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Configurable_Popup/WindowConfigurablePopup.tscn")
 const _prefab_developer_options: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Developer_Options/WindowDeveloperOptions.tscn")
+const _prefab_user_options: PackedScene = preload("res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/User_Options/WindowUserOptions.tscn")
 
 var loaded_windows: Dictionary
 
@@ -38,6 +39,10 @@ func spawn_manager_morphology(morphology_to_preload: Morphology = null) -> void:
 func spawn_developer_options() -> void:
 	var developer_window: WindowDeveloperOptions = _default_spawn_window(_prefab_developer_options, "developer_options")
 	developer_window.setup()
+
+func spawn_user_options() -> void:
+	var user_window: WindowUserOptions = _default_spawn_window(_prefab_user_options, "user_options")
+	user_window.setup()
 
 func spawn_edit_mappings(source: BaseCorticalArea = null, destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
 	var edit_mappings: WindowEditMappingDefinition = _default_spawn_window(_prefab_edit_mappings, "edit_mappings") as WindowEditMappingDefinition
@@ -68,6 +73,8 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> void:
 	configurable_popup.setup(popup_definition)
 
 func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
+	# cortical area was selected, make sure its selected in both sides
+	VisConfig.UI_manager.circuit_builder.cortical_nodes[cortical_area.cortical_ID].selected = true
 	if "quick_connect" in loaded_windows:
 		return # dont open this window if quick connect is open!
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
