@@ -31,6 +31,8 @@ func _ready() -> void:
 		right_pixel_gap_default, 
 		bottom_pixel_gap_default, 
 		left_pixel_gap_default)
+	
+	VisConfig.UI_manager.UI_scale_changed.connect(shrink_window_delayed.unbind(1)) # Fix stupid bnug related to fractional scaling
 
 func _gui_input(event: InputEvent) -> void:
 	_bring_to_top_if_click(event)
@@ -58,6 +60,10 @@ func export_default_window_details() -> Dictionary:
 ## Primarily used by Window Manager to load position (plus other details)
 func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
+
+#WARNING: BAD, GET RID OF ME ASAP
+func shrink_window_delayed() -> void:
+	call_deferred("shrink_window")
 
 func shrink_window() -> void:
 	size = Vector2i(0,0)

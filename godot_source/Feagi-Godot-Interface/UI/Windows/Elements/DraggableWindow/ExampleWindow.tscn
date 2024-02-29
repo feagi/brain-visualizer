@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_m61t8"]
 
 [node name="ExampleWindow" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
