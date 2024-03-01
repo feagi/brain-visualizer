@@ -28,9 +28,9 @@ var collapsing_node: Variant:
 	get: return _collapsing_node
 
 var section_title: StringName:
-	get: return get_child(0).get_node("Section_Title").text
+	get: return $VerticalCollapsible/HBoxContainer/Section_Title.text
 	set(v):
-		get_child(0).get_node("Section_Title").text = v
+		$VerticalCollapsible/HBoxContainer/Section_Title.text = v
 
 ## Whether the collapsible section is open (or collapsed)
 var is_open: bool:
@@ -38,7 +38,7 @@ var is_open: bool:
 	set(v):
 		_toggle_button_texture(v)
 		_toggle_collapsible_section(v)
-		size = Vector2(0,0) # force section to rescale properly
+		#size = Vector2(0,0) # force section to rescale properly
 		_is_open = v
 
 var _is_open: bool

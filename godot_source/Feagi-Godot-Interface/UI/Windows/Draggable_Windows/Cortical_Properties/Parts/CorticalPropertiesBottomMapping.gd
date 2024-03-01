@@ -1,4 +1,4 @@
-extends Node
+extends HBoxContainer
 class_name CorticalPropertiesBottomMappingPrefab
 
 var _ID_Button: Button

@@ -6,16 +6,16 @@ var _title_bar: TitleBar
 var _button_container: HBoxContainer
 
 func _ready() -> void:
-	_message_box = $VBoxContainer/Message
-	_title_bar = $TitleBar
-	_button_container = $VBoxContainer/HBoxContainer
+	super()
+	_message_box = _window_internals.get_node("Message")
+	_button_container = _window_internals.get_node("HBoxContainer")
 
 func setup(popup_definition: ConfigurablePopupDefinition) -> void:
 	_setup_base_window(popup_definition.window_name) #TODO: come up witha  better method later
 	_title_bar.title = popup_definition.title
 	_message_box.text = popup_definition.message
 	_generate_buttons(popup_definition.buttons)
-	custom_minimum_size = popup_definition.minimum_size
+	custom_minimum_size = popup_definition.minimum_size # TODO proper scaling support
 
 
 func _generate_buttons(button_definitions: Array[ConfigurableButtonDefinition]) -> void:
