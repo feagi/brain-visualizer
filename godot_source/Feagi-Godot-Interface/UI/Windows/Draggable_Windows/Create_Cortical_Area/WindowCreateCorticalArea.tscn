@@ -1,7 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://ctyho04m7lek6"]
+[gd_scene load_steps=15 format=3 uid="uid://ctyho04m7lek6"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_dlnla"]
 [ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
 [ext_resource type="Texture2D" uid="uid://4xisgfb734mk" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="4_5utqj"]
 [ext_resource type="Texture2D" uid="uid://nqs7phsjl7c3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="5_ffsab"]
@@ -42,11 +43,13 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/header"]
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("3_dlnla")
 
 [node name="icon" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/header"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 expand_mode = 1
+script = ExtResource("13_oqeoe")
 
 [node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -111,6 +114,7 @@ layout_mode = 2
 [node name="Button_Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
+script = ExtResource("13_oqeoe")
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
