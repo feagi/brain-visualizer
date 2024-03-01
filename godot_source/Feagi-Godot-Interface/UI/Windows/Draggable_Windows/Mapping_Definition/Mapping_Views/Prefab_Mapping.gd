@@ -12,6 +12,7 @@ var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
 var _LTD_multiplier: FloatInput
 var _edit: TextureButton
+var _default_seperation: float # Save as float to avoid rounding errors when multiplying
 
 
 func _ready() -> void:
@@ -25,6 +26,9 @@ func _ready() -> void:
 	_LTD_multiplier = $LTD_Multiplier
 	_edit = $edit
 	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
+	_default_seperation = get_theme_constant(&"separation")
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]
@@ -94,3 +98,7 @@ func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool
 			return true
 		_: # any thing else
 			return false
+
+func _update_size(multiplier: float) -> void:
+	var new_seperation: int = int(_default_seperation * multiplier)
+	add_theme_constant_override(&"seperation", new_seperation)

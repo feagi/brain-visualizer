@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://2mmvclyd2pve"]
+[gd_scene load_steps=14 format=3 uid="uid://2mmvclyd2pve"]
 
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iField.tscn" id="1_1uw6c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.gd" id="1_tf7sq"]
@@ -10,11 +10,12 @@
 [ext_resource type="Texture2D" uid="uid://vamfis48qpti" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_H.png" id="7_qk6mv"]
 [ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="8_bshfw"]
 [ext_resource type="Texture2D" uid="uid://e3m6d6mlnlsh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_D.png" id="8_qc3sj"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="9_c4488"]
 [ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="9_civpw"]
 [ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="10_yquya"]
 
 [node name="Prefab_Mapping" type="HBoxContainer"]
-offset_right = 826.0
+offset_right = 1150.0
 offset_bottom = 32.0
 theme_override_constants/separation = 8
 script = ExtResource("1_tf7sq")
@@ -96,6 +97,7 @@ texture_hover = ExtResource("7_qk6mv")
 texture_disabled = ExtResource("8_qc3sj")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("9_c4488")
 
 [node name="remove" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
@@ -106,6 +108,7 @@ texture_hover = ExtResource("9_civpw")
 texture_disabled = ExtResource("10_yquya")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("9_c4488")
 
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="BoxContainer2/Inhibitory" to="." method="_on_user_toggle_plasticity"]
