@@ -66,7 +66,7 @@ func shrink_window_delayed() -> void:
 	call_deferred("shrink_window")
 
 func shrink_window() -> void:
-	size = Vector2i(0,0)
+	size = Vector2i(0,0) # look into await() - checkw ith web export
 
 ## Call to initialize window
 func _setup_base_window(window_name: StringName) -> void:
