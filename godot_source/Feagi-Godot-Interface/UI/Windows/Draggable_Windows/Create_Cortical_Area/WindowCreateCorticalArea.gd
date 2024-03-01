@@ -1,7 +1,6 @@
 extends BaseDraggableWindow
 class_name WindowCreateCorticalArea
 
-var _top_container: BoxContainer
 var _selection: VBoxContainer
 var _selection_options: PartSpawnCorticalAreaSelection
 var _IOPU_definition: PartSpawnCorticalAreaIOPU
@@ -12,13 +11,13 @@ var _type_selected: BaseCorticalArea.CORTICAL_AREA_TYPE
 
 
 func _ready() -> void:
-	_top_container = $BoxContainer
-	_selection = $BoxContainer/Selection
-	_selection_options = $BoxContainer/Selection/options
-	_IOPU_definition = $BoxContainer/Definition_IOPU
-	_custom_definition = $BoxContainer/Definition_Custom
-	_memory_definition = $BoxContainer/Definition_Memory
-	_buttons = $BoxContainer/Buttons
+	super()
+	_selection = _window_internals.get_node("Selection")
+	_selection_options = _window_internals.get_node("Selection/options")
+	_IOPU_definition = _window_internals.get_node("Definition_IOPU")
+	_custom_definition = _window_internals.get_node("Definition_Custom")
+	_memory_definition = _window_internals.get_node("Definition_Memory")
+	_buttons = _window_internals.get_node("Buttons")
 	
 	_selection_options.cortical_type_selected.connect(_step_2_set_details)
 
@@ -33,7 +32,6 @@ func _step_1_pick_type() -> void:
 	_memory_definition.visible = false
 	_buttons.visible = false
 	_selection.visible = true
-	_top_container.size = Vector2(0,0)
 	_set_header(BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN)
 
 func _step_2_set_details(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
@@ -43,7 +41,7 @@ func _step_2_set_details(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> 
 	
 	## All cases that a preview needs to be closed
 	var close_preview_signals: Array[Signal] = [
-		$BoxContainer/Buttons/Back.pressed,
+		_window_internals.get_node("Buttons/Back").pressed,
 		close_window_requesed_no_arg
 	]
 	
@@ -64,8 +62,8 @@ func _step_2_set_details(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> 
 	
 
 func _set_header(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
-	var label: Label = $BoxContainer/header/Label
-	var icon: TextureRect = $BoxContainer/header/icon
+	var label: Label = _window_internals.get_node("header/Label")
+	var icon: TextureRect = _window_internals.get_node("header/icon")
 	if cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
 		label.text = "Select Cortical Area Type:"
 		icon.texture = null # clear texture
