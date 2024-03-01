@@ -1,12 +1,15 @@
-[gd_scene load_steps=8 format=3 uid="uid://ddn8pt45rca4n"]
+[gd_scene load_steps=11 format=3 uid="uid://ddn8pt45rca4n"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.gd" id="1_q5gkp"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="2_cj4db"]
 [ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_ftdb2"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_n3pcv"]
 [ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="3_k6hof"]
 [ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_tay1s"]
 [ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_q8f6c"]
 [ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_c7fbl"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="7_06srf"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="7_nqmes"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
 custom_minimum_size = Vector2(630, 0)
@@ -22,6 +25,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Patterns"
+script = ExtResource("2_n3pcv")
 
 [node name="add_vector" type="TextureButton" parent="header"]
 custom_minimum_size = Vector2(32, 32)
@@ -32,37 +36,44 @@ texture_hover = ExtResource("4_q8f6c")
 texture_disabled = ExtResource("5_c7fbl")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("7_nqmes")
 
 [node name="subheader" type="HBoxContainer" parent="."]
 layout_mode = 2
 
 [node name="initial_gap" type="Control" parent="subheader"]
 layout_mode = 2
+script = ExtResource("7_06srf")
 
 [node name="source_label" type="Label" parent="subheader"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Source [X, Y, Z]"
 horizontal_alignment = 1
+script = ExtResource("2_n3pcv")
 
 [node name="arrow_gap" type="Control" parent="subheader"]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 size_flags_horizontal = 4
+script = ExtResource("7_06srf")
 
 [node name="source_label2" type="Label" parent="subheader"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Destination [X, Y, Z]"
 horizontal_alignment = 1
+script = ExtResource("2_n3pcv")
 
 [node name="delete_gap" type="Control" parent="subheader"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
+script = ExtResource("7_06srf")
 
 [node name="end_gap" type="Control" parent="subheader"]
 layout_mode = 2
+script = ExtResource("7_06srf")
 
 [node name="Patterns" parent="." instance=ExtResource("2_cj4db")]
 custom_minimum_size = Vector2(550, 180)
