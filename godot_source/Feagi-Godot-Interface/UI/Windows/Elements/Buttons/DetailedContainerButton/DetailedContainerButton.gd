@@ -72,7 +72,8 @@ func _update_size(multiplier: float) -> void:
 		_gap1.size = Vector2(0,0)
 		_gap2.size = Vector2(0,0)
 	
-	_second_text.add_theme_font_size_override(&"normal_font_size", int(float(description_label_font_size) * multiplier))
+	if _second_text != null:
+		_second_text.add_theme_font_size_override(&"normal_font_size", int(float(description_label_font_size) * multiplier))
 	
 	_margins.add_theme_constant_override("margin_top", int(float(top_padding) * multiplier))
 	_margins.add_theme_constant_override("margin_left", int(float(left_padding) * multiplier))
