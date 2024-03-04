@@ -17,6 +17,8 @@ signal user_selected_cortical_area(cortical_area_reference: BaseCorticalArea)
 
 var _listed_areas: Array[BaseCorticalArea] = []
 var _popup: PopupMenu
+var _default_font_size: int
+var _default_min_size: Vector2
 
 func _ready():
 	_popup = get_popup()
@@ -27,6 +29,11 @@ func _ready():
 	if sync_all_areas_on_load:
 		list_all_cached_areas()
 	item_selected.connect(_user_selected_option)
+	_default_font_size = get_theme_font_size(&"font_size")
+	if custom_minimum_size != Vector2(0,0):
+		_default_min_size = custom_minimum_size
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 ## Clears all listed cortical areas
 func clear_all_cortical_areas() -> void:
@@ -95,3 +102,9 @@ func _cortical_area_was_deleted_from_cache(deleted_cortical: BaseCorticalArea) -
 func _cortical_area_was_added_to_cache(added_cortical: BaseCorticalArea) -> void:
 	if added_cortical not in _listed_areas:
 		add_cortical_area(added_cortical)
+
+func _update_size(multiplier: float) -> void:
+	add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
+	if _default_min_size != Vector2(0,0):
+		custom_minimum_size = _default_min_size * multiplier
+	size = Vector2(0,0)
