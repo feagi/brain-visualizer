@@ -120,5 +120,6 @@ script = ExtResource("3_dugtp")
 
 [connection signal="pressed" from="Listings/AddMorphology" to="." method="_user_request_create_morphology"]
 [connection signal="morphology_selected" from="Listings/MorphologyScroll" to="." method="_user_selected_morphology_from_scroll"]
+[connection signal="pressed" from="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete" to="." method="_user_request_delete_morphology"]
 [connection signal="pressed" from="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close" to="." method="_user_requested_closing"]
 [connection signal="pressed" from="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Update" to="." method="_user_requested_update_morphology"]

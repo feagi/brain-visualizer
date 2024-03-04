@@ -2,7 +2,6 @@ extends BaseDraggableWindow
 class_name WindowConfigurablePopup
 
 var _message_box: Label
-var _title_bar: TitleBar
 var _button_container: HBoxContainer
 
 func _ready() -> void:
@@ -12,7 +11,7 @@ func _ready() -> void:
 
 func setup(popup_definition: ConfigurablePopupDefinition) -> void:
 	_setup_base_window(popup_definition.window_name) #TODO: come up witha  better method later
-	_title_bar.title = popup_definition.title
+	_titlebar.title = popup_definition.title
 	_message_box.text = popup_definition.message
 	_generate_buttons(popup_definition.buttons)
 	custom_minimum_size = popup_definition.minimum_size # TODO proper scaling support
