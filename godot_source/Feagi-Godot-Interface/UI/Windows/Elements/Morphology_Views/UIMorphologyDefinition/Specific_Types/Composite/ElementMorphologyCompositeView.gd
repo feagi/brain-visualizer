@@ -57,7 +57,8 @@ func set_from_composite_morphology(composite: CompositeMorphology) -> void:
 	patternY = composite.source_pattern[1]
 	patternZ = composite.source_pattern[2]
 	_mapped_morphology.set_selected_morphology_by_name(composite.mapper_morphology_name)
-	_set_editable(composite.is_user_editable && _is_UI_editable)
+	var can_edit: bool = _determine_boolean_editability(composite.get_latest_known_editability())
+	_set_editable(can_edit)
 
 ## Defines if UI view is editable
 func _set_editable(editable: bool) -> void:
@@ -67,3 +68,13 @@ func _set_editable(editable: bool) -> void:
 	_patternZ.editable = editable
 	_mapped_morphology.disabled = !editable
 	
+func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool:
+	if !_is_UI_editable:
+		return false
+	match editability:
+		Morphology.EDITABILITY.IS_EDITABLE:
+			return true
+		Morphology.EDITABILITY.WARNING_EDITABLE_USED:
+			return true
+		_: # any thing else
+			return false
