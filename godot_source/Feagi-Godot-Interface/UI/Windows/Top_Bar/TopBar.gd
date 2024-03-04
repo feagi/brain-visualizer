@@ -2,9 +2,15 @@ extends HBoxContainer
 class_name TopBar
 
 @export var universal_padding: int = 15
+@export var possible_zoom_levels: Array[float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+@export var starting_size_index: int = 2
 
 var _refresh_rate_field: FloatInput
 var _latency_field: IntInput
+var _index_scale: int
+
+var _increase_scale_button: TextureButton
+var _decrease_scale_button: TextureButton
 
 func _ready():
 	# references
@@ -12,6 +18,10 @@ func _ready():
 	_latency_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/ping
 	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
+	_index_scale = starting_size_index
+	
+	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
+	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
 	
 	# apply padding
 	$Buttons/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
@@ -40,6 +50,14 @@ func _ready():
 	
 	size = Vector2(0,0) #force to smallest possible size
 	
+
+func _set_scale(index_movement: int) -> void:
+	_index_scale += index_movement
+	_index_scale = mini(_index_scale, len(possible_zoom_levels) - 1)
+	_index_scale = maxi(_index_scale, 0)
+	VisConfig.UI_manager.UI_scale = possible_zoom_levels[_index_scale]
+	_increase_scale_button.disabled =  _index_scale == len(possible_zoom_levels) - 1
+	_decrease_scale_button.disabled =  _index_scale == 0
 	
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
@@ -74,3 +92,9 @@ func _open_options() -> void:
 
 func _FEAGI_retireved_latency(latency_ms: int) -> void:
 	_latency_field.current_int = latency_ms
+
+func _smaller_scale() -> void:
+	_set_scale(-1)
+	
+func _bigger_scale() -> void:
+	_set_scale(1)

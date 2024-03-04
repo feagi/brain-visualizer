@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=26 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
@@ -12,9 +12,17 @@
 [ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="7_wa0pf"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="9_jcvuj"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
+[ext_resource type="Texture2D" uid="uid://cyvo2f332cp6h" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_S.png" id="11_jknrr"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="12_gx8rc"]
+[ext_resource type="Texture2D" uid="uid://vg2x5rvfansy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_C.png" id="12_ot48k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="12_q8vn7"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="13_q5dbc"]
+[ext_resource type="Texture2D" uid="uid://c8bfn8a5awwfm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_H.png" id="13_u0vqk"]
+[ext_resource type="Texture2D" uid="uid://c5xw7oybgv2lt" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_D.png" id="14_8iire"]
+[ext_resource type="Texture2D" uid="uid://dwcx8rikdgeeo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_S.png" id="15_45b5e"]
+[ext_resource type="Texture2D" uid="uid://dqgvmcem2svih" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_C.png" id="16_10002"]
+[ext_resource type="Texture2D" uid="uid://clgsqd63pp6g4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_H.png" id="17_814js"]
+[ext_resource type="Texture2D" uid="uid://dqk41bwqlaxmq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_D.png" id="18_wm2pd"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
@@ -45,6 +53,8 @@ layout_mode = 2
 
 [node name="BrainAreas" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("3_f73r0")
 texture_size = Vector2i(48, 48)
@@ -67,6 +77,8 @@ layout_mode = 2
 
 [node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("4_w1ybr")
 texture_size = Vector2i(50, 48)
@@ -92,6 +104,45 @@ texture = ExtResource("5_81ib4")
 texture_size = Vector2i(48, 48)
 button_text = &"Tutorials"
 gap_between_text_and_texture = 5
+
+[node name="ChangeSize" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ChangeSize"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
+layout_mode = 2
+
+[node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture_normal = ExtResource("11_jknrr")
+texture_pressed = ExtResource("12_ot48k")
+texture_hover = ExtResource("13_u0vqk")
+texture_disabled = ExtResource("14_8iire")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("12_q8vn7")
+
+[node name="Bigger" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture_normal = ExtResource("15_45b5e")
+texture_pressed = ExtResource("16_10002")
+texture_hover = ExtResource("17_814js")
+texture_disabled = ExtResource("18_wm2pd")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("12_q8vn7")
 
 [node name="DropDownPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -170,6 +221,8 @@ layout_mode = 2
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/ConnectivityRules" to="." method="_open_neuron_morphologies"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/TextureButton" to="." method="_open_create_morpology"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/Tutorials" to="." method="_open_tutorials"]
+[connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
+[connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/options" to="." method="_open_options"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]
