@@ -8,7 +8,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="7_flsw2"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="10_smykg"]
 
-[node name="ExampleWindow" type="VBoxContainer"]
+[node name="WindowCloneCorticalArea" type="VBoxContainer"]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0

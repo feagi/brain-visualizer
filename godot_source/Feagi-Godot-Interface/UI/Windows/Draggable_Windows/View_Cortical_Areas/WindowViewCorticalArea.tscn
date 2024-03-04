@@ -1,35 +1,38 @@
-[gd_scene load_steps=4 format=3 uid="uid://cyt5xxp0wi6lf"]
+[gd_scene load_steps=5 format=3 uid="uid://cyt5xxp0wi6lf"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
 [ext_resource type="PackedScene" uid="uid://dukfme5u3e3fl" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/CorticalArea_List/CorticalAreaScroll.tscn" id="2_k7lg4"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="3_3awq0"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="3_aex5g"]
 
-[node name="WindowViewCorticalArea" type="Panel"]
-custom_minimum_size = Vector2(20, 20)
-offset_top = 40.0
-offset_right = 158.0
-offset_bottom = 201.0
+[node name="WindowViewCorticalArea" type="VBoxContainer"]
+offset_right = 250.0
+offset_bottom = 444.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_ypq52")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 250.0
-offset_bottom = 354.0
+[node name="TitleBar" parent="." instance=ExtResource("3_3awq0")]
+layout_mode = 2
+title = "View Cortical Areas"
 
-[node name="Button" type="Button" parent="VBoxContainer"]
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 text = "Add Cortical Area..."
+script = ExtResource("3_aex5g")
 
-[node name="CorticalAreaScroll" parent="VBoxContainer" instance=ExtResource("2_k7lg4")]
+[node name="CorticalAreaScroll" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("2_k7lg4")]
 custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 minimum_height_for_buttons = 32
-
-[node name="TitleBar" parent="." instance=ExtResource("3_3awq0")]
-layout_mode = 0
-offset_top = -40.0
-offset_bottom = 0.0
-title = "View Cortical Areas"
-
-[connection signal="pressed" from="VBoxContainer/Button" to="." method="_press_add_cortical_area"]
