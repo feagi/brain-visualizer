@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=27 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalarMarginContainer.gd" id="2_0ln6a"]
@@ -18,7 +18,6 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="12_gx8rc"]
 [ext_resource type="Texture2D" uid="uid://vg2x5rvfansy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_C.png" id="12_ot48k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="12_q8vn7"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="13_q5dbc"]
 [ext_resource type="Texture2D" uid="uid://c8bfn8a5awwfm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_H.png" id="13_u0vqk"]
 [ext_resource type="Texture2D" uid="uid://c5xw7oybgv2lt" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_D.png" id="14_8iire"]
 [ext_resource type="Texture2D" uid="uid://dwcx8rikdgeeo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_S.png" id="15_45b5e"]
@@ -205,32 +204,26 @@ script = ExtResource("3_v82xb")
 suffix = " Hz"
 min_value = 0.1
 
-[node name="options" type="Button" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
-visible = false
-layout_mode = 2
-text = "Options"
-script = ExtResource("13_q5dbc")
-
-[node name="Ping_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+[node name="Ping_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
 text = "Latency"
 vertical_alignment = 1
 script = ExtResource("12_gx8rc")
 
-[node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+[node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
 alignment = 1
 editable = false
 script = ExtResource("9_jcvuj")
 suffix = "ms"
 
-[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
+[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
 layout_mode = 2
 text = "System Health"
 vertical_alignment = 1
 script = ExtResource("12_gx8rc")
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]
@@ -240,6 +233,5 @@ layout_mode = 2
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/Tutorials" to="." method="_open_tutorials"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
-[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/options" to="." method="_open_options"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]
