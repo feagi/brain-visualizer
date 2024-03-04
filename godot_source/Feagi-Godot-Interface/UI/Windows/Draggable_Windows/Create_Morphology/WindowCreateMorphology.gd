@@ -44,10 +44,12 @@ func _ready():
 	_vectors.setup(true)
 	_patterns.setup(true)
 	
+	
 	print("initialized create morphology window")
 
 func setup() -> void:
 	_setup_base_window("create_morphology")
+	
 
 func _step_1_pick_type():
 	_options.visible = true

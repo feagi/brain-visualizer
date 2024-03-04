@@ -1,4 +1,4 @@
-extends TextureButton
+extends ScalingTextureButton
 class_name UIMorphologyDeleteButton
 
 var _loaded_morphology: Morphology

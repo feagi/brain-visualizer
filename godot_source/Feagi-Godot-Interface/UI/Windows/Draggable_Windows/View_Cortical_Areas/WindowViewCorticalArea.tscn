@@ -36,3 +36,5 @@ script = ExtResource("3_aex5g")
 custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 minimum_height_for_buttons = 32
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Button" to="." method="_press_add_cortical_area"]
