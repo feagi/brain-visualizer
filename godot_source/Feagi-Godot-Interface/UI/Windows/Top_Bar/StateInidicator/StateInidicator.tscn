@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://ch82fu6g530dm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/BooleanIndicator/BooleanIndicator.tscn" id="2_otodu"]
 
 [node name="StateInidicator" type="HBoxContainer"]
-offset_right = 116.0
+offset_right = 176.0
 offset_bottom = 61.0
 size_flags_horizontal = 0
 script = ExtResource("1_0acba")
