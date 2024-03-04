@@ -7,13 +7,14 @@ var _box: BoxContainer
 var _texture_rect: TextureRect
 var _gap: Control
 var _text: Label
+var _default_font_size: int
 
 ## Paddings on the top, right, bottom, and right, in that order
 @export var top_right_bottom_left_paddings: Vector4i
 
 @export var texture: Texture2D
 
-## The dimensions of the texture
+## The default dimensions of the texture
 @export var texture_size: Vector2i
 
 ## The Text to start with
@@ -33,22 +34,40 @@ func _ready() -> void:
 	_gap = $MarginContainer/BoxContainer/Gap
 	_text = $MarginContainer/BoxContainer/Label
 	
-	_margin.add_theme_constant_override("margin_top", top_right_bottom_left_paddings.x)
-	_margin.add_theme_constant_override("margin_left", top_right_bottom_left_paddings.w)
-	_margin.add_theme_constant_override("margin_bottom", top_right_bottom_left_paddings.z)
-	_margin.add_theme_constant_override("margin_right", top_right_bottom_left_paddings.y)
-	
-	_gap.custom_minimum_size = Vector2(gap_between_text_and_texture, 0)
+	_default_font_size = _text.get_theme_font_size(&"font_size")
 	
 	_text.text = button_text
 	_text.horizontal_alignment = text_alignment
 	_text.clip_text = clip_text_label
 	
 	_texture_rect.texture = texture
-	_texture_rect.custom_minimum_size = texture_size
 	
 	custom_minimum_size = _margin.custom_minimum_size
 	_margin.minimum_size_changed.connect(_child_min_size_change)
 	
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+
+	
 func _child_min_size_change() -> void:
 	custom_minimum_size = _margin.size
+	size = Vector2(0,0)
+
+func _update_size(multiplier: float) -> void:
+	_text.add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
+	
+	_gap.custom_minimum_size = Vector2(int(float(gap_between_text_and_texture) * multiplier), 0)
+	_gap.size = Vector2(0,0)
+	
+	_texture_rect.custom_minimum_size = Vector2i(Vector2(texture_size) * multiplier)
+	_texture_rect.size = Vector2(0,0)
+	
+	_margin.add_theme_constant_override("margin_top", int(float(top_right_bottom_left_paddings.x) * multiplier))
+	_margin.add_theme_constant_override("margin_left", int(float(top_right_bottom_left_paddings.w) * multiplier))
+	_margin.add_theme_constant_override("margin_bottom", int(float(top_right_bottom_left_paddings.z) * multiplier))
+	_margin.add_theme_constant_override("margin_right", int(float(top_right_bottom_left_paddings.y) * multiplier))
+	
+	
+	
+	
+
