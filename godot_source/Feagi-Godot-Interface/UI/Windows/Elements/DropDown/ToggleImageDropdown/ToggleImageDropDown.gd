@@ -11,10 +11,10 @@ signal user_change_option(label: StringName, index: int)
 var _panel: PanelContainer
 var _button_holder: BoxContainer
 var _current_setting_index: int = -2 # start withs omething invalid that the initial index overrides on start
-
+var _default_custom_minimum_size: Vector2i
 
 func _ready() -> void:
-	custom_minimum_size = dimensions
+	_default_custom_minimum_size = dimensions
 	_panel = $PanelContainer
 	_button_holder = $PanelContainer/BoxContainer
 	_button_holder.vertical = is_vertical
@@ -22,6 +22,8 @@ func _ready() -> void:
 	set_option(initial_index, false)
 	_toggle_menu(false)
 	focus_exited.connect(_toggle_menu.bind(false))
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 ## Sets the selected button for the dropdown
 func set_option(option: int, should_emit_signal: bool = true, close_dropdown_menu: bool = true) -> void:
@@ -62,8 +64,17 @@ func get_number_of_buttons() -> int:
 
 func _toggle_menu(show_menu: bool) -> void:
 	_panel.visible = show_menu
+	var child_button: TextureButton
 	if show_menu:
-		_panel.position = Vector2(0,0) 
+		_panel.position = Vector2(0,0)
+		for child in _button_holder.get_children():
+			if !(child is TextureButton):
+				push_error("Non-TextureButton found in ToggleImageDropDown! Skipping!")
+				continue
+			child_button = (child as TextureButton)
+			child_button.custom_minimum_size = Vector2i(_default_custom_minimum_size * VisConfig.UI_manager.UI_scale)
+			child_button.size = Vector2(0,0)
+		_panel.size = Vector2(0,0)
 		grab_focus()
 	else:
 		release_focus()
@@ -86,7 +97,7 @@ func _setup_all_buttons() -> void:
 		child_button = (child as TextureButton)
 		child_button.ignore_texture_size = ignore_texture_size
 		child_button.stretch_mode = stretch_mode
-		child_button.custom_minimum_size = dimensions
+		child_button.custom_minimum_size = Vector2i(_default_custom_minimum_size * VisConfig.UI_manager.UI_scale)
 		child_button.focus_mode = Control.FOCUS_NONE # prevent menu from closing when we click a button
 		
 		# connect signals
@@ -94,7 +105,11 @@ func _setup_all_buttons() -> void:
 			child_button.pressed.disconnect(set_option) # prevent duplicate connections
 		child_button.pressed.connect(set_option.bind(index)) # bind the index of the button to the signal such that when the call is made, we know which button made it
 		index += 1
-	
+
+func _update_size(multiplier: float) -> void:
+	custom_minimum_size = Vector2i(_default_custom_minimum_size * multiplier)
+	size = Vector2(0,0)
+
 func _set_empty() -> void:
 	texture_normal = null
 	texture_hover = null
