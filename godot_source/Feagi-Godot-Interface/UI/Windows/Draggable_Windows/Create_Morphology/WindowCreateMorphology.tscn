@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=17 format=3 uid="uid://bvdaq4i6y2aer"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="12_3rdkl"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/MultiLineTextInput.gd" id="12_koy8n"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="13_lo4cp"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s6e1y"]
@@ -89,7 +90,6 @@ script = ExtResource("3_6i23i")
 
 [node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_c1klg")]
 visible = false
-custom_minimum_size = Vector2(630, 200)
 layout_mode = 2
 
 [node name="ElementMorphologyPatternView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("7_w3816")]
@@ -111,6 +111,7 @@ visible = false
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 placeholder_text = "Type your custom description here..."
+script = ExtResource("12_koy8n")
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false

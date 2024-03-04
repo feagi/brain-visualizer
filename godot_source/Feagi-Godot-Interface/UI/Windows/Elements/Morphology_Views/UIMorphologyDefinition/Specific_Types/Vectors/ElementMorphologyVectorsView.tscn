@@ -11,9 +11,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="7_6kwax"]
 
 [node name="ElementMorphologyVectorsView" type="VBoxContainer"]
-custom_minimum_size = Vector2(300, 200)
-offset_right = 102.0
-offset_bottom = 240.0
+offset_right = 172.0
+offset_bottom = 36.0
 size_flags_horizontal = 3
 script = ExtResource("1_5hdhx")
 
@@ -38,13 +37,14 @@ stretch_mode = 0
 script = ExtResource("7_6kwax")
 
 [node name="Vectors" parent="." node_paths=PackedStringArray("main_window") instance=ExtResource("4_8mw72")]
-custom_minimum_size = Vector2(0, 180)
+custom_minimum_size = Vector2(300, 180)
 layout_mode = 2
 size_flags_vertical = 3
 prefab_to_spawn = ExtResource("5_dnbvl")
 main_window = NodePath("..")
 enable_button_notice_when_list_is_empty = true
 button_notice_text = &"   Add a vector   "
+minimum_width_to_avoid_scroll = 300
 
 [connection signal="pressed" from="header/add_vector" to="." method="add_vector_row"]
 [connection signal="internal_add_button_pressed" from="Vectors" to="." method="add_vector_row"]

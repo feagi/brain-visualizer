@@ -4,8 +4,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="2_76vhq"]
 
 [node name="Scroll_Vertical" type="ScrollContainer"]
-offset_right = 102.0
-offset_bottom = 92.0
+offset_right = 298.0
+offset_bottom = 51.0
 script = ExtResource("1_mgl7a")
 button_notice_text = &"ADD ITEM"
 

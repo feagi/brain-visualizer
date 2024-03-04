@@ -61,5 +61,6 @@ size_flags_vertical = 3
 
 [node name="ElementMorphologyPatternView" parent="." instance=ExtResource("4_elcaa")]
 visible = false
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 size_flags_vertical = 3

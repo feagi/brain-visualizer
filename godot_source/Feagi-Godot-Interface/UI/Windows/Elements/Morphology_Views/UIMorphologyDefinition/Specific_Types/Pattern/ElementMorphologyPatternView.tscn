@@ -12,7 +12,6 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="7_nqmes"]
 
 [node name="ElementMorphologyPatternView" type="VBoxContainer"]
-custom_minimum_size = Vector2(630, 0)
 offset_right = 630.0
 offset_bottom = 275.0
 size_flags_horizontal = 3
@@ -76,12 +75,13 @@ layout_mode = 2
 script = ExtResource("7_06srf")
 
 [node name="Patterns" parent="." instance=ExtResource("2_cj4db")]
-custom_minimum_size = Vector2(550, 180)
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
 prefab_to_spawn = ExtResource("3_k6hof")
 enable_button_notice_when_list_is_empty = true
 button_notice_text = &"   Add a pattern pair   "
+minimum_width_to_avoid_scroll = 570
 
 [connection signal="pressed" from="header/add_vector" to="." method="add_pattern_pair_row"]
 [connection signal="internal_add_button_pressed" from="Patterns" to="." method="add_pattern_pair_row"]
