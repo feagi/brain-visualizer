@@ -1,7 +1,8 @@
-[gd_scene load_steps=8 format=3 uid="uid://deakdqregtx4w"]
+[gd_scene load_steps=9 format=3 uid="uid://deakdqregtx4w"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Notifications/SingleNotification.gd" id="1_ib5cw"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="2_4t5b2"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_31i85"]
 [ext_resource type="Texture2D" uid="uid://b3ummhoiswkb7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_S.png" id="3_ypn32"]
 [ext_resource type="Texture2D" uid="uid://cdk46tfku3rbg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_C.png" id="4_s0s1r"]
 [ext_resource type="Texture2D" uid="uid://f3assbibvj8x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_H.png" id="5_jjahx"]
@@ -14,7 +15,7 @@ bg_color = Color(0.321569, 0.321569, 0.321569, 0.65098)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -204.0
+offset_left = -250.0
 offset_bottom = 50.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_hjnie")
@@ -26,11 +27,12 @@ layout_mode = 2
 [node name="gap2" type="Control" parent="Notification"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
+script = ExtResource("2_31i85")
 
 [node name="Texture_Element" type="TextureRect" parent="Notification"]
 layout_mode = 2
 mouse_filter = 2
-script = ExtResource("2_4t5b2")
+script = ExtResource("2_31i85")
 
 [node name="RichTextLabel" type="RichTextLabel" parent="Notification"]
 clip_contents = false
@@ -49,8 +51,10 @@ layout_mode = 2
 [node name="Control" type="Control" parent="Notification/VBoxContainer"]
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
+script = ExtResource("2_31i85")
 
 [node name="CloseButton" type="TextureButton" parent="Notification/VBoxContainer"]
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
@@ -66,6 +70,7 @@ script = ExtResource("2_4t5b2")
 [node name="gap" type="Control" parent="Notification"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
+script = ExtResource("2_31i85")
 
 [node name="notification_timer" type="Timer" parent="Notification"]
 wait_time = 5.0
