@@ -11,6 +11,7 @@ var _index_scale: int
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
+var _default_seperation: float # Save as float to avoid rounding errors when multiplying
 
 func _ready():
 	# references
@@ -48,7 +49,10 @@ func _ready():
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
 	details_section.toggled.connect(_details_section_toggle)
 	
-	size = Vector2(0,0) #force to smallest possible size
+	_default_seperation = get_theme_constant(&"separation")
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+	
 	
 
 func _set_scale(index_movement: int) -> void:
@@ -98,3 +102,8 @@ func _smaller_scale() -> void:
 	
 func _bigger_scale() -> void:
 	_set_scale(1)
+
+func _update_size(multiplier: float) -> void:
+	var new_seperation: int = int(_default_seperation * multiplier)
+	add_theme_constant_override(&"seperation", new_seperation)
+	size = Vector2(0,0) #force to smallest possible size
