@@ -6,8 +6,8 @@ signal mapping_to_be_deleted()
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
-var _inhibitory: Button
-var _plasticity: Button
+var _inhibitory: ToggleButton
+var _plasticity: ToggleButton
 var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
 var _LTD_multiplier: FloatInput
@@ -19,8 +19,8 @@ func _ready() -> void:
 	_morphologies = $Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
-	_inhibitory = $BoxContainer2/Inhibitory
-	_plasticity = $BoxContainer/Plasticity
+	_inhibitory = $Inhibitory
+	_plasticity = $Plasticity
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier

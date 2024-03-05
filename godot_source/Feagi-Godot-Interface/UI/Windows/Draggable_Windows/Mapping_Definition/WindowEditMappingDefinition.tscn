@@ -97,3 +97,6 @@ text = "Cancel"
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Update"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/BottomButtons/cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/BottomButtons/update" to="." method="_request_apply_mappings_to_FEAGI"]
