@@ -8,6 +8,7 @@ const TEX_ENABLED_OFF: Texture = preload("res://Feagi-Godot-Interface/UI/Resourc
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	super()
 	toggle_mode = true
 	toggled.connect(_set_enable_toggle)
 	_set_enable_toggle(button_pressed)

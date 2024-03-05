@@ -25,6 +25,7 @@ script = ExtResource("1_tf7sq")
 [node name="Morphology_List" type="OptionButton" parent="."]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+clip_text = true
 fit_to_longest_item = false
 script = ExtResource("2_4r0x5")
 
@@ -46,7 +47,7 @@ script = ExtResource("3_2p8f4")
 min_value = 0.0
 
 [node name="Inhibitory" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_ymi66")
 ignore_texture_size = true
@@ -54,7 +55,7 @@ stretch_mode = 0
 script = ExtResource("6_e7x6h")
 
 [node name="Plasticity" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_ymi66")
 ignore_texture_size = true
