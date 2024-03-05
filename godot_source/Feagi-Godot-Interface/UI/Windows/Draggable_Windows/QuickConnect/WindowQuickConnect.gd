@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowQuickConnect
 
 enum POSSIBLE_STATES {
@@ -31,7 +31,7 @@ var _step3_scroll: MorphologyScroll
 var _step3_morphology_container: PanelContainer
 var _step3_morphology_view: UIMorphologyDefinition
 var _step3_morphology_details: MorphologyGenericDetails
-var _step4_button: TextButton_Element
+var _step4_button: Button
 
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false

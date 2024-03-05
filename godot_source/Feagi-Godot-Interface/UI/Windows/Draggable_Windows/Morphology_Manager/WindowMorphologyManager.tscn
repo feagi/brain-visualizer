@@ -1,24 +1,29 @@
-[gd_scene load_steps=5 format=3 uid="uid://cdymw36o30rp1"]
+[gd_scene load_steps=4 format=3 uid="uid://cdymw36o30rp1"]
 
-[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_1tu4k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://dojgkcnlpiq4v" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyOverviews/UIMorphologyOverviews.tscn" id="3_08frl"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
-[node name="MorphologyManager" type="Panel"]
-offset_top = 40.0
-offset_right = 779.0
-offset_bottom = 517.0
-theme = ExtResource("1_1tu4k")
+[node name="MorphologyManager" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_11gqg")
 
-[node name="UIMorphologyOverviews" parent="." instance=ExtResource("3_08frl")]
-layout_mode = 0
-offset_right = 766.0
-offset_bottom = 435.0
-
 [node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
-layout_mode = 0
-offset_top = -40.0
-offset_bottom = 0.0
+layout_mode = 2
 title = "Connectivity Rule Manager"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="UIMorphologyOverviews" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_08frl")]
+layout_mode = 2

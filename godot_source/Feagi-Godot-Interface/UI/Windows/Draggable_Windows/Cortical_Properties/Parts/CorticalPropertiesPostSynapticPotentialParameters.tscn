@@ -1,9 +1,13 @@
-[gd_scene load_steps=5 format=3 uid="uid://de7cguh4dnbxg"]
+[gd_scene load_steps=9 format=3 uid="uid://de7cguh4dnbxg"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesPostSynapticPotentialParameters.gd" id="1_srbdr"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_hlih5"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="2_r401c"]
+[ext_resource type="Texture2D" uid="uid://dmqgq8xtqc1rx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_off.png" id="3_6cukn"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_mgt73"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="6_6mq6g"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="4_fef38"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/ToggleButton.gd" id="4_uoy01"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="5_x55f0"]
 
 [node name="CorticalPropertiesPostSynapticPotentialParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -25,9 +29,15 @@ tooltip_text = "The amount of PSP that a neuron synapse will degrade every time 
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PSP Uniformity"
+script = ExtResource("2_hlih5")
 
-[node name="PSP_Uniformity" type="CheckButton" parent="PSP_Uniformity"]
+[node name="PSP_Uniformity" type="TextureButton" parent="PSP_Uniformity"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+texture_normal = ExtResource("3_6cukn")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_uoy01")
 
 [node name="MP_Driven_PSP" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -37,9 +47,15 @@ tooltip_text = "Overwrites the Post Synaptic Potential (PSP) of the cortical are
 layout_mode = 2
 size_flags_horizontal = 3
 text = "MP Driven PSP"
+script = ExtResource("2_hlih5")
 
-[node name="MP_Driven_PSP" type="CheckButton" parent="MP_Driven_PSP"]
+[node name="MP_Driven_PSP" type="TextureButton" parent="MP_Driven_PSP"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+texture_normal = ExtResource("3_6cukn")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_uoy01")
 
 [node name="Post_Synaptic_Potential" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -49,6 +65,7 @@ tooltip_text = "The mount of membrane potential increase each neuron can have on
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Post-Synaptic Potential (PSP)"
+script = ExtResource("2_hlih5")
 
 [node name="Post_Synaptic_Potential" type="LineEdit" parent="Post_Synaptic_Potential"]
 layout_mode = 2
@@ -63,6 +80,7 @@ tooltip_text = "The max value the Post Synaptic Potential can grow to"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PSP Max"
+script = ExtResource("2_hlih5")
 
 [node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
 layout_mode = 2
@@ -77,6 +95,7 @@ tooltip_text = "The number of burst where the neuron cannot fire after the Conse
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Degeneracy Constant"
+script = ExtResource("2_hlih5")
 
 [node name="Degeneracy_Constant" type="LineEdit" parent="Degeneracy_Constant"]
 layout_mode = 2
@@ -86,20 +105,22 @@ script = ExtResource("2_r401c")
 [node name="GAP" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
+script = ExtResource("5_x55f0")
 
 [node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
-script = ExtResource("6_6mq6g")
+script = ExtResource("4_fef38")
 
 [node name="GAP2" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
+script = ExtResource("5_x55f0")
 
-[connection signal="pressed" from="PSP_Uniformity/PSP_Uniformity" to="." method="_enable_update_button"]
-[connection signal="pressed" from="MP_Driven_PSP/MP_Driven_PSP" to="." method="_enable_update_button"]
+[connection signal="toggled" from="PSP_Uniformity/PSP_Uniformity" to="." method="user_request_PSP_Uniforimity"]
+[connection signal="toggled" from="MP_Driven_PSP/MP_Driven_PSP" to="." method="user_request_MP_Driven_PSP"]
 [connection signal="user_interacted" from="Post_Synaptic_Potential/Post_Synaptic_Potential" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="PSP_Max/PSP_Max" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Degeneracy_Constant/Degeneracy_Constant" to="." method="_enable_update_button"]

@@ -11,9 +11,9 @@ class_name Vector3Labels
 
 
 func _ready():
-	get_node("LabelX").label_text = label_x_text
-	get_node("LabelY").label_text = label_y_text
-	get_node("LabelZ").label_text = label_z_text
+	get_node("LabelX").text = label_x_text
+	get_node("LabelY").text = label_y_text
+	get_node("LabelZ").text = label_z_text
 	
 	get_node("SpacerX").custom_minimum_size.x = spacer_x
 	get_node("SpacerY").custom_minimum_size.x = spacer_y

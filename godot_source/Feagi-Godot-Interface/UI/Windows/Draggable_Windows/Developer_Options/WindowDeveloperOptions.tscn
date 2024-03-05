@@ -5,26 +5,30 @@
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_62jap"]
 [ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="3_136gr"]
 
-[node name="WindowDeveloperOptions" type="Panel"]
-offset_top = 40.0
+[node name="WindowDeveloperOptions" type="VBoxContainer"]
+offset_right = 126.0
 offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_ifhbl")
 
-[node name="BoxContainer" type="BoxContainer" parent="."]
-layout_mode = 1
-offset_right = 111.0
-offset_bottom = 48.0
-vertical = true
+[node name="TitleBar" parent="." instance=ExtResource("2_55gg2")]
+layout_mode = 2
+title = "DEVELOPER OPTIONS"
 
-[node name="Camera_Animation" parent="BoxContainer" instance=ExtResource("2_62jap")]
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="Camera_Animation" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("2_62jap")]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 prefab_to_spawn = ExtResource("3_136gr")
 section_text = &"Camera Animation"
-
-[node name="TitleBar" parent="." instance=ExtResource("2_55gg2")]
-layout_mode = 1
-offset_top = -40.0
-offset_bottom = 0.0
-title = "DEVELOPER OPTIONS"

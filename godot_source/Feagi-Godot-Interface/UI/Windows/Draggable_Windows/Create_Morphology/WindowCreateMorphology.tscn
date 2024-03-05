@@ -1,9 +1,9 @@
-[gd_scene load_steps=14 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene load_steps=17 format=3 uid="uid://bvdaq4i6y2aer"]
 
-[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres" id="1_r8gt6"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/WindowCreateMorphology.gd" id="1_w1bco"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Morphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_6i23i"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_pjj1q"]
 [ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_twh1n"]
 [ext_resource type="Texture2D" uid="uid://rbrajckwk48f" path="res://Feagi-Godot-Interface/UI/Resources/create_morphology/vectors.png" id="4_0ajep"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
@@ -11,38 +11,46 @@
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="12_3rdkl"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/MultiLineTextInput.gd" id="12_koy8n"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="13_lo4cp"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s6e1y"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5oeem"]
 bg_color = Color(0.909804, 0.909804, 0.909804, 1)
 
-[node name="WindowCreateMorphology" type="Panel"]
-offset_top = 41.0
-offset_bottom = 41.0
-theme = ExtResource("1_r8gt6")
+[node name="WindowCreateMorphology" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_w1bco")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 536.0
-offset_bottom = 203.0
-
-[node name="Selection" type="VBoxContainer" parent="VBoxContainer"]
+[node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
-theme_override_constants/separation = 12
+title = "Create Connectivity Rule"
 
-[node name="Header" type="Label" parent="VBoxContainer/Selection"]
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 text = "Select Connectivity Rule Type:"
+script = ExtResource("3_pjj1q")
 
-[node name="Options" type="HBoxContainer" parent="VBoxContainer/Selection"]
+[node name="Options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 script = ExtResource("3_2s0i3")
 
-[node name="Vector" parent="VBoxContainer/Selection/Options" instance=ExtResource("3_twh1n")]
+[node name="Vector" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("3_twh1n")]
 layout_mode = 2
 icon = ExtResource("4_0ajep")
 icon_size = Vector2i(96, 96)
@@ -54,7 +62,7 @@ gap_2 = 4
 moused_over = SubResource("StyleBoxFlat_s6e1y")
 clicked = SubResource("StyleBoxFlat_5oeem")
 
-[node name="Pattern" parent="VBoxContainer/Selection/Options" instance=ExtResource("3_twh1n")]
+[node name="Pattern" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("3_twh1n")]
 layout_mode = 2
 icon = ExtResource("5_63qii")
 icon_size = Vector2i(96, 96)
@@ -64,79 +72,78 @@ is_vertical = true
 gap_1 = 12
 gap_2 = 4
 
-[node name="Name" type="HBoxContainer" parent="VBoxContainer/Selection"]
+[node name="Name" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
 
-[node name="Label_Element" type="Label" parent="VBoxContainer/Selection/Name"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "TEX"
+script = ExtResource("3_pjj1q")
 
-[node name="Name" type="LineEdit" parent="VBoxContainer/Selection/Name"]
+[node name="Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 placeholder_text = "Type Rule Name Here..."
 script = ExtResource("3_6i23i")
 
-[node name="ElementMorphologyVectorsView" parent="VBoxContainer/Selection" instance=ExtResource("6_c1klg")]
-visible = false
-custom_minimum_size = Vector2(630, 200)
-layout_mode = 2
-
-[node name="ElementMorphologyPatternView" parent="VBoxContainer/Selection" instance=ExtResource("7_w3816")]
+[node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_c1klg")]
 visible = false
 layout_mode = 2
 
-[node name="ElementMorphologyCompositeView" parent="VBoxContainer/Selection" instance=ExtResource("5_k76mc")]
+[node name="ElementMorphologyPatternView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("7_w3816")]
 visible = false
 layout_mode = 2
 
-[node name="Description" type="Label" parent="VBoxContainer/Selection"]
+[node name="ElementMorphologyCompositeView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("5_k76mc")]
+visible = false
+layout_mode = 2
+
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
 text = "Description"
+script = ExtResource("3_pjj1q")
 
-[node name="Description_text" type="TextEdit" parent="VBoxContainer/Selection"]
+[node name="Description_text" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 placeholder_text = "Type your custom description here..."
+script = ExtResource("12_koy8n")
 
-[node name="Buttons" type="HBoxContainer" parent="VBoxContainer/Selection"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Back" type="Button" parent="VBoxContainer/Selection/Buttons"]
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Back"
+script = ExtResource("12_3rdkl")
 
-[node name="Gap" type="Control" parent="VBoxContainer/Selection/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("13_lo4cp")
 
-[node name="Cancel" type="Button" parent="VBoxContainer/Selection/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Cancel"
+script = ExtResource("12_3rdkl")
 
-[node name="Add" type="Button" parent="VBoxContainer/Selection/Buttons"]
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Add"
+script = ExtResource("12_3rdkl")
 
-[node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
-layout_mode = 0
-offset_top = -40.0
-offset_right = 184.0
-offset_bottom = 0.0
-title = "Create Connectivity Rule"
-
-[connection signal="morphology_type_selected" from="VBoxContainer/Selection/Options" to="." method="_step_2_input_properties"]
-[connection signal="pressed" from="VBoxContainer/Selection/Options/Vector" to="VBoxContainer/Selection/Options" method="_vector_select"]
-[connection signal="pressed" from="VBoxContainer/Selection/Options/Pattern" to="VBoxContainer/Selection/Options" method="_pattern_select"]
-[connection signal="pressed" from="VBoxContainer/Selection/Buttons/Back" to="." method="_step_1_pick_type"]
-[connection signal="pressed" from="VBoxContainer/Selection/Buttons/Cancel" to="." method="close_window"]
-[connection signal="pressed" from="VBoxContainer/Selection/Buttons/Add" to="." method="_on_create_morphology_pressed"]
+[connection signal="morphology_type_selected" from="WindowPanel/WindowMargin/WindowInternals/Options" to="." method="_step_2_input_properties"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Options/Vector" to="WindowPanel/WindowMargin/WindowInternals/Options" method="_vector_select"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Options/Pattern" to="WindowPanel/WindowMargin/WindowInternals/Options" method="_pattern_select"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Back" to="." method="_step_1_pick_type"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Add" to="." method="_on_create_morphology_pressed"]

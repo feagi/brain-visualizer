@@ -1,4 +1,4 @@
-extends TextButton_Element
+extends Button
 class_name ScrollButtonPrefab
 ## A very simple prefab that can be spawned in for the scroll container
 ## Use this as a simple tutorial for how to create Scroll Prefabs
@@ -6,7 +6,6 @@ class_name ScrollButtonPrefab
 signal prefab_pressed(prefab_reference: ScrollButtonPrefab)
 
 func _ready():
-	super._ready()
 	pressed.connect(_on_pressed)
 
 # All prefabs are required to have a setup funciton to take in a dictionary

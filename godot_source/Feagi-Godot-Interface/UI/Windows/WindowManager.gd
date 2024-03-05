@@ -99,10 +99,10 @@ func force_close_all_windows() -> void:
 	for window in loaded_windows.keys():
 		force_close_window(window)
 
-func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_close_if_open: bool = true) -> BaseWindowPanel:
+func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_close_if_open: bool = true) -> BaseDraggableWindow:
 	if (window_name in loaded_windows.keys()) && force_close_if_open:
 		loaded_windows[window_name].close_window()
-	var new_window: BaseWindowPanel = prefab.instantiate()
+	var new_window: BaseDraggableWindow = prefab.instantiate()
 	add_child(new_window)
 	loaded_windows[window_name] = new_window
 	new_window.close_window_requested.connect(force_close_window)

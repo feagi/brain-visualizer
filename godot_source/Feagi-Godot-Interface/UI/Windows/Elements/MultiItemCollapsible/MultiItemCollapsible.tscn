@@ -10,7 +10,7 @@ theme_override_constants/separation = 12
 script = ExtResource("1_55acr")
 
 [node name="texture_button" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(16, 0)
+custom_minimum_size = Vector2(16, 56)
 layout_mode = 2
 texture_normal = ExtResource("2_77fkg")
 texture_pressed = ExtResource("2_77fkg")

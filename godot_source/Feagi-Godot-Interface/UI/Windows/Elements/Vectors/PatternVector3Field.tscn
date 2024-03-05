@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.gd" id="1_00dhb"]
 [ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_cknjl"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Label_Element.gd" id="2_neywh"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_0by6c"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/PatternValInput.gd" id="3_3o6p7"]
 
 [node name="PatternVector3Field" type="BoxContainer"]
@@ -15,8 +15,7 @@ label_z_text = &""
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_cknjl")
 text = "X"
-script = ExtResource("2_neywh")
-max_length = 5
+script = ExtResource("3_0by6c")
 
 [node name="PVX" type="LineEdit" parent="."]
 layout_mode = 2
@@ -27,8 +26,7 @@ script = ExtResource("3_3o6p7")
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Y"
-script = ExtResource("2_neywh")
-max_length = 5
+script = ExtResource("3_0by6c")
 
 [node name="PVY" type="LineEdit" parent="."]
 layout_mode = 2
@@ -40,8 +38,7 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Z
 "
-script = ExtResource("2_neywh")
-max_length = 5
+script = ExtResource("3_0by6c")
 
 [node name="PVZ" type="LineEdit" parent="."]
 layout_mode = 2

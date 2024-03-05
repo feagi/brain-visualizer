@@ -1,6 +1,7 @@
-extends Panel
-class_name BaseWindowPanel
+extends VBoxContainer
+class_name BaseDraggableWindow
 ## Base Window Behaviors
+#NOTE: Best to use this using the ExampleWindow.tscn to get the expected structure and settings
 
 const MOUSE_BUTTONS_THAT_BRING_WINDOW_TO_TOP: Array = [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]
 
@@ -12,12 +13,26 @@ signal close_window_requesed_no_arg() ## As above but passes no argument
 @export var top_pixel_gap_default: int = 8
 @export var bottom_pixel_gap_default: int = 8
 @export var window_spawn_location: Vector2i = Vector2i(200,200)
-@export var should_scale_with_UI: bool = true
-@export var additionally_bind_to_UI_scale_change: bool = false
 
-var _child: Container
 var _window_name: StringName # Internal name
 var _titlebar: TitleBar
+var _window_panel: PanelContainer
+var _window_margin: MarginContainer
+var _window_internals: VBoxContainer # the internals the most every window will be caring about
+
+func _ready() -> void:
+	# Set References
+	_titlebar = $TitleBar
+	_window_panel = $WindowPanel
+	_window_margin = $WindowPanel/WindowMargin
+	_window_internals = $WindowPanel/WindowMargin/WindowInternals
+	
+	_set_margins(top_pixel_gap_default, 
+		right_pixel_gap_default, 
+		bottom_pixel_gap_default, 
+		left_pixel_gap_default)
+	
+	VisConfig.UI_manager.UI_scale_changed.connect(shrink_window_delayed.unbind(1)) # Fix stupid bnug related to fractional scaling
 
 func _gui_input(event: InputEvent) -> void:
 	_bring_to_top_if_click(event)
@@ -46,23 +61,19 @@ func export_default_window_details() -> Dictionary:
 func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 
+#WARNING: BAD, GET RID OF ME ASAP
+func shrink_window_delayed() -> void:
+	call_deferred("shrink_window")
+
 func shrink_window() -> void:
-	_child.size = Vector2i(0,0)
+	size = Vector2i(0,0) # look into await() - checkw ith web export
 
 ## Call to initialize window
 func _setup_base_window(window_name: StringName) -> void:
 	_window_name = window_name
-	#NOTE: Make SURE that the window child is the first child, and the [TitleBar] is the second!
-	_child = get_child(0)
-	_titlebar = get_child(1)
-	_child.resized.connect(_update_sizes_given_child_size_update)
 	_titlebar.button_ref.pressed.connect(close_window)
 	_titlebar.setup_from_window(self)
 	_titlebar.clicked.connect(bring_window_to_top)
-	
-	if additionally_bind_to_UI_scale_change:
-		VisConfig.UI_manager.UI_scale_changed.connect(_update_sizes_given_child_size_update.unbind(0)) # ignore the argument
-	_update_sizes_given_child_size_update()
 
 func _bring_to_top_if_click(event: InputEvent):
 	if !(event is InputEventMouseButton):
@@ -74,21 +85,10 @@ func _bring_to_top_if_click(event: InputEvent):
 		return
 	bring_window_to_top()
 
-func _update_sizes_given_child_size_update() -> void:
-	# Apply scale
-	var left_pixel_gap: int = left_pixel_gap_default
-	var right_pixel_gap: int = right_pixel_gap_default
-	var top_pixel_gap: int = top_pixel_gap_default
-	var bottom_pixel_gap: int = bottom_pixel_gap_default
-	if should_scale_with_UI:
-		left_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-		right_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-		top_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-		bottom_pixel_gap *= int(VisConfig.UI_manager.UI_scale)
-	
-	var new_size: Vector2 = _child.size + Vector2(left_pixel_gap + right_pixel_gap, top_pixel_gap + bottom_pixel_gap)
-	_titlebar.size.x = new_size.x
-	_child.position =  Vector2i(left_pixel_gap, top_pixel_gap)
-	custom_minimum_size = new_size
-	size = Vector2(0,0)
+
+func _set_margins(top: int, right: int, bottom: int, left: int) -> void:
+	_window_margin.add_theme_constant_override("margin_top", top)
+	_window_margin.add_theme_constant_override("margin_left", right)
+	_window_margin.add_theme_constant_override("margin_bottom", bottom)
+	_window_margin.add_theme_constant_override("margin_right", left)
 	

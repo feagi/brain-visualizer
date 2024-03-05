@@ -17,10 +17,10 @@ var composite_view: ElementMorphologyCompositeView
 var vectors_view: ElementMorphologyVectorsView
 var patterns_view: ElementMorphologyPatternView
 
-
 var _header_title: LineEdit
 var _header_type: LineEdit
 var _morphology_loaded: Morphology
+var _default_custom_minimum_size: Vector2
 
 func _ready() -> void:
 	$Header/HBoxContainer.visible = title_enabled
@@ -36,6 +36,10 @@ func _ready() -> void:
 	composite_view.setup(editing_allowed_from_this_window)
 	vectors_view.setup(editing_allowed_from_this_window)
 	patterns_view.setup(editing_allowed_from_this_window)
+	
+	_default_custom_minimum_size = custom_minimum_size
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 	
 ## Loads in a given morphology, and open the correct view to view that morphology type
 func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = true) -> void:
@@ -114,3 +118,7 @@ func retrieve_morphology(morphology_name: StringName, _morphology_details: Strin
 
 func _morphology_updated(_self_morphology: Morphology) -> void:
 	load_morphology(_morphology_loaded, false)
+
+func _update_size(multiplier: float) -> void:
+	custom_minimum_size = Vector2i(_default_custom_minimum_size * multiplier)
+	size = Vector2(0,0)

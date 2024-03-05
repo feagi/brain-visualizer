@@ -11,7 +11,6 @@
 custom_minimum_size = Vector2(0, 40)
 offset_right = 92.0
 offset_bottom = 40.0
-size_flags_horizontal = 0
 theme = ExtResource("1_iasjt")
 script = ExtResource("1_dpkpa")
 
@@ -24,13 +23,11 @@ layout_mode = 2
 mouse_filter = 1
 
 [node name="Title_Text" type="Label" parent="HBoxContainer"]
-custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "TEXT"
 horizontal_alignment = 1
 vertical_alignment = 1
-clip_text = true
 
 [node name="Close_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)

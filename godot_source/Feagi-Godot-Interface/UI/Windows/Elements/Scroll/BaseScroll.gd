@@ -10,9 +10,11 @@ signal internal_add_button_pressed()
 @export var button_notice_text: StringName
 @export var top_gap: int = 8
 @export var bottom_gap: int = 8
+@export var minimum_width_to_avoid_scroll: int
 
 var _item_holder: BoxContainer # Can be either H or V
 var _add_button_container: BoxContainer
+var _default_y_minimum_size: int
 
 func _ready():
 	_item_holder = get_child(0)
@@ -21,10 +23,14 @@ func _ready():
 	_add_button_container.visible = enable_button_notice_when_list_is_empty
 	$VBoxContainer/add_button_notice/gap.custom_minimum_size.y = top_gap
 	$VBoxContainer/add_button_notice/gap2.custom_minimum_size.y = bottom_gap
+	_default_y_minimum_size = custom_minimum_size.y
 	if enable_button_notice_when_list_is_empty:
 		# Binds are used for the offset value, given that these signals fire before the node actually left, so that the get_number_of_children() call will be incorrect by 1 in either direction
 		_item_holder.child_exiting_tree.connect( _show_empty_button_if_empty.bind(-1))
 		_item_holder.child_entered_tree.connect( _show_empty_button_if_empty.bind(1))
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+
 
 ## Used to spawn a child of the prefab defined, and pass in data in its 'setup' function
 func spawn_list_item(data: Dictionary = {}) -> Node:
@@ -75,3 +81,8 @@ func _add_button_proxy() -> void:
 
 func _show_empty_button_if_empty(_irrelevant, offset: int) -> void:
 	_add_button_container.visible = get_number_of_children() + offset == 0
+
+func _update_size(multiplier: float) -> void:
+	custom_minimum_size.x = int(float(minimum_width_to_avoid_scroll) * multiplier)
+	custom_minimum_size.y = int(float(_default_y_minimum_size) * multiplier)
+	size = Vector2(0,0)

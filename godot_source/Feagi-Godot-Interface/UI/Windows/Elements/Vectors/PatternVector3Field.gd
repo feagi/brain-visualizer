@@ -38,9 +38,9 @@ var _field_z: PatternValInput
 var _editable: bool = true
 
 func _ready():
-	get_node("LabelX").label_text = label_x_text
-	get_node("LabelY").label_text = label_y_text
-	get_node("LabelZ").label_text = label_z_text
+	get_node("LabelX").text = label_x_text
+	get_node("LabelY").text = label_y_text
+	get_node("LabelZ").text = label_z_text
 
 	_field_x = get_node("PVX")
 	_field_y = get_node("PVY")

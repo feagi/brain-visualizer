@@ -1,10 +1,12 @@
-[gd_scene load_steps=6 format=3 uid="uid://ckej7m86vhcdj"]
+[gd_scene load_steps=8 format=3 uid="uid://ckej7m86vhcdj"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesDangerZone.gd" id="1_7ba0m"]
 [ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="2_2yub4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_h8gft"]
 [ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="3_a33b0"]
 [ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="4_kkn3p"]
 [ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="5_ydqdk"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="7_fmskc"]
 
 [node name="CorticalPropertiesDangerZone" type="VBoxContainer"]
 script = ExtResource("1_7ba0m")
@@ -16,6 +18,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "DELETE Cortical Area"
+script = ExtResource("2_h8gft")
 
 [node name="DeleteButton" type="TextureButton" parent="Delete"]
 custom_minimum_size = Vector2(40, 40)
@@ -26,5 +29,6 @@ texture_hover = ExtResource("4_kkn3p")
 texture_disabled = ExtResource("5_ydqdk")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("7_fmskc")
 
 [connection signal="pressed" from="Delete/DeleteButton" to="." method="_user_pressed_delete_button"]

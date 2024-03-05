@@ -1,12 +1,12 @@
 [gd_scene load_steps=8 format=3 uid="uid://da355xfk6trdo"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesBottomMapping.gd" id="1_1eg3c"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextButton_Element.gd" id="2_dtqim"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="2_0jb3j"]
 [ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="3_wmdqc"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="3_xmo8e"]
 [ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="4_m58hk"]
 [ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="5_shpep"]
 [ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="6_bv1kt"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="7_82kfg"]
 
 [node name="CorticalPropertiesBottomMappingPrefab" type="HBoxContainer"]
 script = ExtResource("1_1eg3c")
@@ -14,7 +14,7 @@ script = ExtResource("1_1eg3c")
 [node name="Cortical_ID" type="Button" parent="."]
 layout_mode = 2
 text = "NAME GO HERE"
-script = ExtResource("2_dtqim")
+script = ExtResource("2_0jb3j")
 
 [node name="Delete_Button" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(40, 40)
@@ -25,7 +25,7 @@ texture_hover = ExtResource("5_shpep")
 texture_disabled = ExtResource("6_bv1kt")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("3_xmo8e")
+script = ExtResource("7_82kfg")
 
 [connection signal="pressed" from="Cortical_ID" to="." method="_user_pressed_edit_button"]
 [connection signal="pressed" from="Delete_Button" to="." method="_user_pressed_delete_button"]

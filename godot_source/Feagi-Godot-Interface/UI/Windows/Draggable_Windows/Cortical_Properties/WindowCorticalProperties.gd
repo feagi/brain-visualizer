@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowCorticalProperties
 
 var _cortical_area_ref: BaseCorticalArea
@@ -20,14 +20,14 @@ var section_connections: CorticalPropertiesConnections
 var section_dangerzone: CorticalPropertiesDangerZone
 
 func _ready():
-	_setup_base_window("left_bar")
-	collapsible_cortical = $Main_Body/Cortical
-	collapsible_neuron_firing = $Main_Body/Neuron_Firing
-	collapsible_post_synaptic_potential = $Main_Body/Post_Synaptic_Potential
-	collapsible_memory = $Main_Body/Memory
-	collapsible_cortical_monitoring = $Main_Body/Coritcal_Monitoring
-	collapsible_connections = $Main_Body/Connections
-	collapsible_dangerzone = $Main_Body/DangerZone
+	super()
+	collapsible_cortical = _window_internals.get_node("Cortical")
+	collapsible_neuron_firing = _window_internals.get_node("Neuron_Firing")
+	collapsible_post_synaptic_potential = _window_internals.get_node("Post_Synaptic_Potential")
+	collapsible_memory = _window_internals.get_node("Memory")
+	collapsible_cortical_monitoring = _window_internals.get_node("Coritcal_Monitoring")
+	collapsible_connections = _window_internals.get_node("Connections")
+	collapsible_dangerzone = _window_internals.get_node("DangerZone")
 	
 	collapsible_cortical.setup()
 	collapsible_neuron_firing.setup()
@@ -58,6 +58,7 @@ func _ready():
 
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_reference: BaseCorticalArea) -> void:
+	_setup_base_window("left_bar")
 	_cortical_area_ref = cortical_area_reference
 	print("loading Cortical Properties Window for cortical area " + cortical_area_reference.cortical_ID)
 

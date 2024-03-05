@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
@@ -10,9 +10,10 @@ var _general_mapping_details: GeneralMappingEditor
 var _spawn_default_mapping_if_applicable_on_spawn
 
 func _ready() -> void:
-	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
-	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
-	_general_mapping_details = $BoxContainer/Mapping_Details
+	super()
+	_sources_dropdown = _window_internals.get_node("SourceAndDestination/src_box/src_dropdown")
+	_destinations_dropdown = _window_internals.get_node("SourceAndDestination/des_box/des_dropdown")
+	_general_mapping_details = _window_internals.get_node("Mapping_Details")
 
 func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable = false):
 	_setup_base_window("edit_mappings")
