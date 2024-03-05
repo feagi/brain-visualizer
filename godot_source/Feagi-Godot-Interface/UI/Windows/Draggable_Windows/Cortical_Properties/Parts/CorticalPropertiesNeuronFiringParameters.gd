@@ -13,7 +13,7 @@ var _Leak_Variability: IntInput
 var _Consecutive_Fire_Count: IntInput
 var _Snooze_Period: IntInput
 var _Threshold_Inc: Vector3fField
-var _MP_Accumulation: CheckButton
+var _MP_Accumulation: ToggleButton
 
 var _update_button: Button
 
@@ -41,7 +41,6 @@ func _ready():
 	_neuron_excitability.int_confirmed.connect(_user_request_neuron_excitability)
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
 	_Threshold_Inc.user_updated_vector.connect(user_request_Threshold_Inc)
-	_MP_Accumulation.toggled.connect(user_request_MP_Accumumulation)
 
 
 ## set initial values from FEAGI Cache
@@ -55,7 +54,7 @@ func display_cortical_properties(cortical_reference) -> void: #NOTE: Can't type 
 	_Snooze_Period.current_int = cortical_reference.neuron_firing_parameters.neuron_snooze_period
 	_Threshold_Inc.current_vector = cortical_reference.neuron_firing_parameters.neuron_fire_threshold_increment
 	_neuron_excitability.current_int = cortical_reference.neuron_firing_parameters.neuron_excitability
-	_MP_Accumulation.set_pressed_no_signal(cortical_reference.neuron_firing_parameters.neuron_mp_charge_accumulation)
+	_MP_Accumulation.set_toggle_no_signal(cortical_reference.neuron_firing_parameters.neuron_mp_charge_accumulation)
 	
 	cortical_reference.neuron_firing_parameters.neuron_mp_charge_accumulation_updated.connect(_feagi_update_MP_Accumumulation)
 	cortical_reference.neuron_firing_parameters.neuron_leak_coefficient_updated.connect(_feagi_update_Leak_Constant)
@@ -137,8 +136,9 @@ func _feagi_update_Neuron_Excitability(value: int, _cortical_ref) -> void:
 	_neuron_excitability.current_int = value
 
 func _feagi_update_MP_Accumumulation(value: bool, _cortical_ref) -> void:
-	_MP_Accumulation.set_pressed_no_signal(value)
+	_MP_Accumulation.set_toggle_no_signal(value)
 
 # Connected via TSCN to editable textboxes
 func _enable_update_button():
 	_update_button.disabled = false
+

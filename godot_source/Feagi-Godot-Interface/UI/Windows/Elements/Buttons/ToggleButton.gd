@@ -14,6 +14,10 @@ func _ready():
 	_set_enable_toggle(button_pressed)
 	
 
+## USE THIS INSTEAD OF SET_PRESSED_NO_SIGNAL! If only I could actually override this shit
+func set_toggle_no_signal(val: bool) -> void:
+	_set_enable_toggle(val)
+	set_pressed_no_signal(val)
 
 func _set_enable_toggle(is_press: bool) -> void:
 	if is_press:

@@ -1,8 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://rvvhpq3y0on7"]
+[gd_scene load_steps=9 format=3 uid="uid://rvvhpq3y0on7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.gd" id="1_ko350"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_sgy66"]
+[ext_resource type="Texture2D" uid="uid://dmqgq8xtqc1rx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_off.png" id="3_73v2w"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_ermgo"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/ToggleButton.gd" id="4_kamkc"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="4_pbm66"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3fField.tscn" id="5_7rehv"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="5_7yfjh"]
@@ -29,8 +31,13 @@ size_flags_horizontal = 3
 text = "MP Accumulation"
 script = ExtResource("2_sgy66")
 
-[node name="MP_Accumulation" type="CheckButton" parent="MP_Accumulation"]
+[node name="MP_Accumulation" type="TextureButton" parent="MP_Accumulation"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+texture_normal = ExtResource("3_73v2w")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_kamkc")
 
 [node name="Leak_Constant" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -185,7 +192,7 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 script = ExtResource("5_7yfjh")
 
-[connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
+[connection signal="toggled" from="MP_Accumulation/MP_Accumulation" to="." method="user_request_MP_Accumumulation"]
 [connection signal="user_interacted" from="Leak_Constant/Leak_Constant" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Leak_Variability/Leak_Variability" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Refactory_Period/Refactory_Period" to="." method="_enable_update_button"]

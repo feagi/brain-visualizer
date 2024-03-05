@@ -7,8 +7,8 @@ signal user_requested_update(changed_values: Dictionary)
 var _Post_Synaptic_Potential: FloatInput
 var _PSP_Max: FloatInput
 var _Degeneracy_Constant: IntInput
-var _PSP_Uniformity: CheckButton
-var _MP_Driven_PSP: CheckButton
+var _PSP_Uniformity: ToggleButton
+var _MP_Driven_PSP: ToggleButton
 
 var _update_button: Button
 
@@ -25,8 +25,6 @@ func _ready():
 	_Post_Synaptic_Potential.float_confirmed.connect(user_request_Post_Synaptic_Potential)
 	_PSP_Max.float_confirmed.connect(user_request_PSP_Max)
 	_Degeneracy_Constant.int_confirmed.connect(user_request_Degeneracy_Constant)
-	_PSP_Uniformity.toggled.connect(user_request_PSP_Uniforimity)
-	_MP_Driven_PSP.toggled.connect(user_request_MP_Driven_PSP)
 
 
 ## set initial values from FEAGI Cache
@@ -34,8 +32,8 @@ func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
 	_Post_Synaptic_Potential.current_float = cortical_reference.post_synaptic_potential_paramamters.neuron_post_synaptic_potential
 	_PSP_Max.current_float = cortical_reference.post_synaptic_potential_paramamters.neuron_post_synaptic_potential_max
 	_Degeneracy_Constant.current_int = cortical_reference.post_synaptic_potential_paramamters.neuron_degeneracy_coefficient
-	_PSP_Uniformity.set_pressed_no_signal(cortical_reference.post_synaptic_potential_paramamters.neuron_psp_uniform_distribution)
-	_MP_Driven_PSP.set_pressed_no_signal(cortical_reference.post_synaptic_potential_paramamters.neuron_mp_driven_psp)
+	_PSP_Uniformity.set_toggle_no_signal(cortical_reference.post_synaptic_potential_paramamters.neuron_psp_uniform_distribution)
+	_MP_Driven_PSP.set_toggle_no_signal(cortical_reference.post_synaptic_potential_paramamters.neuron_mp_driven_psp)
 	
 	cortical_reference.post_synaptic_potential_paramamters.neuron_degeneracy_coefficient_updated.connect(FEAGI_set_Degeneracy_Constant)
 	cortical_reference.post_synaptic_potential_paramamters.neuron_psp_uniform_distribution_updated.connect(FEAGI_set_PSP_Uniformity)
@@ -48,11 +46,11 @@ func FEAGI_set_Degeneracy_Constant(new_val: int, _duplicate_ref: BaseCorticalAre
 	_FEAGI_confirmed_update()
 
 func FEAGI_set_PSP_Uniformity(new_val: bool, _duplicate_ref: BaseCorticalArea):
-	_PSP_Uniformity.set_pressed_no_signal(new_val)
+	_PSP_Uniformity.set_toggle_no_signal(new_val)
 	_FEAGI_confirmed_update()
 
 func FEAGI_set_MP_Driven_PSP(new_val: bool, _duplicate_ref: BaseCorticalArea):
-	_MP_Driven_PSP.set_pressed_no_signal(new_val)
+	_MP_Driven_PSP.set_toggle_no_signal(new_val)
 	_FEAGI_confirmed_update()
 
 func FEAGI_set_Post_Synaptic_Potential(new_val: float, _duplicate_ref: BaseCorticalArea):
