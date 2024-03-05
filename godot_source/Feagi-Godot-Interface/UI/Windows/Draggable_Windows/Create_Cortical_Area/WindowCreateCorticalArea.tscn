@@ -16,8 +16,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="13_oqeoe"]
 
 [node name="WindowSpawnCorticalArea" type="VBoxContainer"]
-offset_right = 126.0
-offset_bottom = 40.0
+offset_right = 396.0
+offset_bottom = 223.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -37,7 +37,6 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="header" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/header"]
@@ -48,6 +47,8 @@ script = ExtResource("3_dlnla")
 [node name="icon" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/header"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 expand_mode = 1
 script = ExtResource("13_oqeoe")
 

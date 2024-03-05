@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="5_vpwob"]
 
 [node name="Definition_Memory" type="VBoxContainer"]
+offset_right = 473.0
+offset_bottom = 128.0
 theme_override_constants/separation = 8
 script = ExtResource("1_se87m")
 

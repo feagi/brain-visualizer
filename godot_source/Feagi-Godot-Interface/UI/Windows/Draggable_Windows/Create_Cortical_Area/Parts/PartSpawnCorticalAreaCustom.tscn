@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="3_wwnb4"]
 
 [node name="Definition_Custom" type="VBoxContainer"]
+offset_right = 466.0
+offset_bottom = 85.0
 theme_override_constants/separation = 8
 script = ExtResource("1_ita8s")
 

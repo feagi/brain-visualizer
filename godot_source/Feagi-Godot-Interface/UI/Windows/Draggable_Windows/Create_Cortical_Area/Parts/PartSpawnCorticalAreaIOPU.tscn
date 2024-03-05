@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntSpinBox.gd" id="7_bf7bt"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
+offset_right = 471.0
+offset_bottom = 186.0
 theme_override_constants/separation = 8
 script = ExtResource("1_ucbj0")
 
