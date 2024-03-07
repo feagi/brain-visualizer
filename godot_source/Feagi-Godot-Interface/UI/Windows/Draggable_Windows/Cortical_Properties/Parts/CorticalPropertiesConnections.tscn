@@ -23,6 +23,7 @@ text = "Afferent (inputs)"
 script = ExtResource("2_l8ttr")
 
 [node name="Add" type="TextureButton" parent="L_A"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 texture_normal = ExtResource("2_6cgqo")
 texture_pressed = ExtResource("3_8k7yo")
@@ -47,6 +48,7 @@ text = "Efferent (outputs)"
 script = ExtResource("2_l8ttr")
 
 [node name="Add" type="TextureButton" parent="L_E"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 texture_normal = ExtResource("2_6cgqo")
 texture_pressed = ExtResource("3_8k7yo")
