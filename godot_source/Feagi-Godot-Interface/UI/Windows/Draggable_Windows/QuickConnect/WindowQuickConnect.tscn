@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" uid="uid://bvkp73g283e6g" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_S.png" id="2_3u6kv"]
@@ -10,45 +10,40 @@
 [ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="5_lixjw"]
 [ext_resource type="Texture2D" uid="uid://e3m6d6mlnlsh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_D.png" id="5_udoep"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0fl3t"]
-bg_color = Color(0.243137, 0.278431, 0.345098, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hcpwn"]
-bg_color = Color(0.105882, 0.133333, 0.184314, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rdpvy"]
-bg_color = Color(0, 0.27451, 0.541176, 1)
-
-[node name="WindowQuickConnect" type="Panel"]
-custom_minimum_size = Vector2(10, 10)
-offset_top = 40.0
-offset_right = 10.0
-offset_bottom = 50.0
+[node name="WindowQuickConnect" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_pefds")
-style_incomplete = SubResource("StyleBoxFlat_0fl3t")
-style_waiting = SubResource("StyleBoxFlat_hcpwn")
-style_complete = SubResource("StyleBoxFlat_rdpvy")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-custom_minimum_size = Vector2(600, 0)
-layout_mode = 0
-offset_top = 39.0
-offset_right = 40.0
-offset_bottom = 79.0
+[node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
+layout_mode = 2
+title = "Quick Connect"
 
-[node name="step1" type="PanelContainer" parent="VBoxContainer"]
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="step1" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step1" type="HBoxContainer" parent="VBoxContainer/step1"]
+[node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step1"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/step1/step1"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "1. Please Select A Source Area..."
 
-[node name="TextureButton" type="TextureButton" parent="VBoxContainer/step1/step1"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -61,24 +56,24 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="VBoxContainer/step1/step1"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="step2" type="PanelContainer" parent="VBoxContainer"]
+[node name="step2" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step2" type="HBoxContainer" parent="VBoxContainer/step2"]
+[node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step2"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/step2/step2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "2. Please Select A Destination Area..."
 
-[node name="TextureButton" type="TextureButton" parent="VBoxContainer/step2/step2"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -91,24 +86,24 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="VBoxContainer/step2/step2"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="step3" type="PanelContainer" parent="VBoxContainer"]
+[node name="step3" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step3" type="HBoxContainer" parent="VBoxContainer/step3"]
+[node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step3"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/step3/step3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3. Please Select A Morphology..."
 
-[node name="TextureButton" type="TextureButton" parent="VBoxContainer/step3/step3"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -121,45 +116,39 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="VBoxContainer/step3/step3"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="MorphologyInfoContainer" type="PanelContainer" parent="VBoxContainer"]
+[node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
 
-[node name="MorphologyInfo" type="HBoxContainer" parent="VBoxContainer/MorphologyInfoContainer"]
+[node name="MorphologyInfo" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer"]
 layout_mode = 2
 
-[node name="MorphologyScroll" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("3_ftgka")]
+[node name="MorphologyScroll" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("3_ftgka")]
 custom_minimum_size = Vector2(250, 300)
 layout_mode = 2
 
-[node name="SmartMorphologyView" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("4_xe1wk")]
+[node name="SmartMorphologyView" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("4_xe1wk")]
 layout_mode = 2
 editing_allowed_from_this_window = false
 
-[node name="MorphologyGenericDetails" parent="VBoxContainer/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("5_lixjw")]
+[node name="MorphologyGenericDetails" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("5_lixjw")]
 layout_mode = 2
 
-[node name="gap" type="Control" parent="VBoxContainer"]
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="Establish" type="Button" parent="VBoxContainer"]
+[node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 disabled = true
 text = "Establish the Connection"
 
-[node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
-layout_mode = 0
-offset_top = -40.0
-offset_bottom = 0.0
-title = "Quick Connect"
-
-[connection signal="pressed" from="VBoxContainer/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
-[connection signal="pressed" from="VBoxContainer/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
-[connection signal="pressed" from="VBoxContainer/step3/step3/TextureButton" to="." method="_update_current_state" binds= [3]]
-[connection signal="morphology_selected" from="VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
-[connection signal="pressed" from="VBoxContainer/Establish" to="." method="establish_connection_button"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step3/step3/TextureButton" to="." method="_update_current_state" binds= [3]]
+[connection signal="morphology_selected" from="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="establish_connection_button"]
