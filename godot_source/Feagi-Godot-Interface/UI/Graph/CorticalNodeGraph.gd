@@ -30,6 +30,13 @@ func _ready():
 
 
 func set_outlining_state_of_connection(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, highlighting: bool) -> void:
+	if source_area == null:
+		push_error("Unable to set connection line details with a null source area! Skip[ping!]")
+		return
+	if destination_area == null:
+		push_error("Unable to set connection line details with a null destination area! Skipping!")
+		return
+	
 	var line_name: StringName = InterCorticalConnection.generate_name(source_area.cortical_ID, destination_area.cortical_ID)
 	if !(line_name in connections.keys()):
 		push_warning("Unable to find connection line to set outlining! Skipping!")

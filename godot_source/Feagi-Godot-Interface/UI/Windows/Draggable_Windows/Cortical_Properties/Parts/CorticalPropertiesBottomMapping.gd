@@ -2,7 +2,7 @@ extends HBoxContainer
 class_name CorticalPropertiesBottomMappingPrefab
 
 var _ID_Button: Button
-var _Delete_Button: TextureButton_Element
+var _Delete_Button: ScalingTextureButton
 var _source_area: BaseCorticalArea
 var _destination_area: BaseCorticalArea
 var _left_window_ref: Node
