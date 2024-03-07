@@ -23,7 +23,6 @@ var feagi_root_websocket_address: StringName
 var feagi_socket_SSL: StringName
 var feagi_socket_address: StringName
 var feagi_outgoing_headers: PackedStringArray
-var endpoints: AddressList
 
 func init_network() -> void:
 	var ip_result = JavaScriptBridge.eval(""" 
