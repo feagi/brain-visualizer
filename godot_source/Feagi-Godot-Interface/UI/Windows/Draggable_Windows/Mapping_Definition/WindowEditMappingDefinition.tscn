@@ -101,5 +101,7 @@ custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Update"
 
+[connection signal="user_selected_cortical_area" from="WindowPanel/WindowMargin/WindowInternals/SourceAndDestination/src_box/src_dropdown" to="." method="_source_changed"]
+[connection signal="user_selected_cortical_area" from="WindowPanel/WindowMargin/WindowInternals/SourceAndDestination/des_box/des_dropdown" to="." method="_destination_changed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/BottomButtons/cancel" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/BottomButtons/update" to="." method="_request_apply_mappings_to_FEAGI"]

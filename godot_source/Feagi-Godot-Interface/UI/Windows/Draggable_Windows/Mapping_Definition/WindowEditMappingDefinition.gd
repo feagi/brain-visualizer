@@ -42,6 +42,7 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 		return
 	
 	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(source, destination, true)
+	
 	_request_mappings_from_feagi()
 
 ## Overridden!
@@ -81,13 +82,16 @@ func _are_cortical_areas_valid() -> bool:
 	return true
 
 func _source_changed(new_source: BaseCorticalArea) -> void:
-	_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	if _source_area != null:
+		if _source_area.efferent_mapping_retrieved_from_feagi.is_connected(_retrieved_feagi_mapping_data):
+			_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
+		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_source_area = new_source
 	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
 func _destination_changed(new_destination: BaseCorticalArea) -> void:
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	if _destination_area != null:
+		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_destination_area = new_destination
 	_selected_cortical_areas_changed(_source_area, _destination_area)
