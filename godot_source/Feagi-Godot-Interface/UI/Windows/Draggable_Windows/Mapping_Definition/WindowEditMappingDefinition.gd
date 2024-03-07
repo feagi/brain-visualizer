@@ -46,7 +46,8 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 
 ## Overridden!
 func close_window():
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	if _source_area != null && _destination_area != null:
+		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	super()
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
