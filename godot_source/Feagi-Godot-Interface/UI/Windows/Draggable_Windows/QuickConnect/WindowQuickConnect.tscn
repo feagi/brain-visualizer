@@ -1,14 +1,18 @@
-[gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene load_steps=14 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" uid="uid://bvkp73g283e6g" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_S.png" id="2_3u6kv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="3_ad4rt"]
 [ext_resource type="Texture2D" uid="uid://cicb3hd22142r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_C.png" id="3_atlgv"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.tscn" id="3_ftgka"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_s3yxb"]
 [ext_resource type="Texture2D" uid="uid://vamfis48qpti" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_H.png" id="4_d1vcp"]
 [ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="4_xe1wk"]
 [ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="5_lixjw"]
 [ext_resource type="Texture2D" uid="uid://e3m6d6mlnlsh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/edit_D.png" id="5_udoep"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="8_tf1s3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="9_a7815"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="13_8e7di"]
 
 [node name="WindowQuickConnect" type="VBoxContainer"]
 offset_right = 126.0
@@ -42,6 +46,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "1. Please Select A Source Area..."
+script = ExtResource("3_s3yxb")
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 visible = false
@@ -55,10 +60,12 @@ texture_hover = ExtResource("4_d1vcp")
 texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("8_tf1s3")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
+script = ExtResource("9_a7815")
 
 [node name="step2" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
@@ -72,6 +79,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "2. Please Select A Destination Area..."
+script = ExtResource("3_s3yxb")
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 visible = false
@@ -85,10 +93,12 @@ texture_hover = ExtResource("4_d1vcp")
 texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("8_tf1s3")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
+script = ExtResource("9_a7815")
 
 [node name="step3" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
@@ -102,6 +112,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3. Please Select A Morphology..."
+script = ExtResource("3_s3yxb")
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 visible = false
@@ -115,10 +126,12 @@ texture_hover = ExtResource("4_d1vcp")
 texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
+script = ExtResource("8_tf1s3")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
+script = ExtResource("9_a7815")
 
 [node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
@@ -141,11 +154,13 @@ layout_mode = 2
 [node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
+script = ExtResource("9_a7815")
 
 [node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 disabled = true
 text = "Establish the Connection"
+script = ExtResource("13_8e7di")
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
