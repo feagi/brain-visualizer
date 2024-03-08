@@ -119,7 +119,9 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 script = ExtResource("5_x55f0")
 
+[connection signal="pressed" from="PSP_Uniformity/PSP_Uniformity" to="." method="_enable_update_button"]
 [connection signal="toggled" from="PSP_Uniformity/PSP_Uniformity" to="." method="user_request_PSP_Uniforimity"]
+[connection signal="pressed" from="MP_Driven_PSP/MP_Driven_PSP" to="." method="_enable_update_button"]
 [connection signal="toggled" from="MP_Driven_PSP/MP_Driven_PSP" to="." method="user_request_MP_Driven_PSP"]
 [connection signal="user_interacted" from="Post_Synaptic_Potential/Post_Synaptic_Potential" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="PSP_Max/PSP_Max" to="." method="_enable_update_button"]
