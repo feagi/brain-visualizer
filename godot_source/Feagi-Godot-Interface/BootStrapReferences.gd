@@ -1,5 +1,5 @@
 extends Node
-## Appends required reference to VisCOnfig Autoload before deleting self.
+## Appends required reference to VisConfig Autoload before deleting self.
 # This is terrible. Too Bad!
 
 func _ready():

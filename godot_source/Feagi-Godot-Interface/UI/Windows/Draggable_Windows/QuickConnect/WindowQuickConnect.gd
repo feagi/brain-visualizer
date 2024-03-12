@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowQuickConnect
 
 enum POSSIBLE_STATES {
@@ -31,7 +31,7 @@ var _step3_scroll: MorphologyScroll
 var _step3_morphology_container: PanelContainer
 var _step3_morphology_view: UIMorphologyDefinition
 var _step3_morphology_details: MorphologyGenericDetails
-var _step4_button: TextButton_Element
+var _step4_button: Button
 
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false
@@ -41,20 +41,21 @@ var _destination: BaseCorticalArea = null
 var _selected_morphology: Morphology = null
 
 func _ready() -> void:
-	_step1_panel = $VBoxContainer/step1
-	_step2_panel = $VBoxContainer/step2
-	_step3_panel = $VBoxContainer/step3
-	_step1_button = $VBoxContainer/step1/step1/TextureButton
-	_step2_button = $VBoxContainer/step2/step2/TextureButton
-	_step3_button = $VBoxContainer/step3/step3/TextureButton
-	_step1_label = $VBoxContainer/step1/step1/Label
-	_step2_label = $VBoxContainer/step2/step2/Label
-	_step3_label = $VBoxContainer/step3/step3/Label
-	_step3_morphology_container = $VBoxContainer/MorphologyInfoContainer
-	_step3_scroll = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll
-	_step3_morphology_view = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView
-	_step3_morphology_details = $VBoxContainer/MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails
-	_step4_button = $VBoxContainer/Establish
+	super()
+	_step1_panel = _window_internals.get_node("step1")
+	_step2_panel = _window_internals.get_node("step2")
+	_step3_panel = _window_internals.get_node("step3")
+	_step1_button = _window_internals.get_node("step1/step1/TextureButton")
+	_step2_button = _window_internals.get_node("step2/step2/TextureButton")
+	_step3_button = _window_internals.get_node("step3/step3/TextureButton")
+	_step1_label = _window_internals.get_node("step1/step1/Label")
+	_step2_label = _window_internals.get_node("step2/step2/Label")
+	_step3_label = _window_internals.get_node("step3/step3/Label")
+	_step3_morphology_container = _window_internals.get_node("MorphologyInfoContainer")
+	_step3_scroll = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyScroll")
+	_step3_morphology_view = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView")
+	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
+	_step4_button = _window_internals.get_node("Establish")
 	
 	FeagiEvents.user_selected_cortical_area.connect(on_user_select_cortical_area)
 	

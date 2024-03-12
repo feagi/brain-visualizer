@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowCreateMorphology
 
 const HEADER_CHOOSE_TYPE: StringName = "Select Connectivity Rule Type:"
@@ -26,27 +26,30 @@ var _selected_morphology_type: Morphology.MORPHOLOGY_TYPE = Morphology.MORPHOLOG
 
 
 func _ready():
-	_header_label = $VBoxContainer/Selection/Header
-	_options = $VBoxContainer/Selection/Options
-	_name_holder = $VBoxContainer/Selection/Name
-	_morphology_name_header = $VBoxContainer/Selection/Name/Label_Element
-	_morphology_name = $VBoxContainer/Selection/Name/Name
-	_vectors = $VBoxContainer/Selection/ElementMorphologyVectorsView
-	_patterns = $VBoxContainer/Selection/ElementMorphologyPatternView
-	_composite = $VBoxContainer/Selection/ElementMorphologyCompositeView
-	_description_label = $VBoxContainer/Selection/Description
-	_morphology_description = $VBoxContainer/Selection/Description_text
-	_bottom_buttons = $VBoxContainer/Selection/Buttons
+	super()
+	_header_label = _window_internals.get_node("Header")
+	_options = _window_internals.get_node("Options")
+	_name_holder = _window_internals.get_node("Name")
+	_morphology_name_header = _window_internals.get_node("Name/Label")
+	_morphology_name = _window_internals.get_node("Name/Name")
+	_vectors = _window_internals.get_node("ElementMorphologyVectorsView")
+	_patterns = _window_internals.get_node("ElementMorphologyPatternView")
+	_composite = _window_internals.get_node("ElementMorphologyCompositeView")
+	_description_label = _window_internals.get_node("Description")
+	_morphology_description = _window_internals.get_node("Description_text")
+	_bottom_buttons = _window_internals.get_node("Buttons")
 	FeagiRequests.refresh_morphology_list()
 	
 	_composite.setup(true)
 	_vectors.setup(true)
 	_patterns.setup(true)
 	
+	
 	print("initialized create morphology window")
 
 func setup() -> void:
 	_setup_base_window("create_morphology")
+	
 
 func _step_1_pick_type():
 	_options.visible = true

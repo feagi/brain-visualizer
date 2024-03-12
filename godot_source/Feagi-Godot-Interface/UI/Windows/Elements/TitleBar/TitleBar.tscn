@@ -2,16 +2,15 @@
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.gd" id="1_dpkpa"]
 [ext_resource type="Theme" uid="uid://p6ywvq4vpomt" path="res://Feagi-Godot-Interface/UI/Resources/theme/TitleBar_theme.tres" id="1_iasjt"]
-[ext_resource type="Texture2D" uid="uid://dg0i8egfxgjsb" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_S.png" id="3_b7bry"]
-[ext_resource type="Texture2D" uid="uid://1qptc7y2hcb6" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_C.png" id="4_aacjk"]
-[ext_resource type="Texture2D" uid="uid://x3e40uq3q7k2" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_H.png" id="5_uuesj"]
-[ext_resource type="Texture2D" uid="uid://tbwmm3jps1he" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_D.png" id="6_crhnf"]
+[ext_resource type="Texture2D" uid="uid://b3ummhoiswkb7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_S.png" id="3_b7bry"]
+[ext_resource type="Texture2D" uid="uid://cdk46tfku3rbg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_C.png" id="4_aacjk"]
+[ext_resource type="Texture2D" uid="uid://f3assbibvj8x" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_H.png" id="5_uuesj"]
+[ext_resource type="Texture2D" uid="uid://d13jijnc01gm4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/close_D.png" id="6_crhnf"]
 
 [node name="TitleBar" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 40)
 offset_right = 92.0
 offset_bottom = 40.0
-size_flags_horizontal = 0
 theme = ExtResource("1_iasjt")
 script = ExtResource("1_dpkpa")
 
@@ -24,13 +23,11 @@ layout_mode = 2
 mouse_filter = 1
 
 [node name="Title_Text" type="Label" parent="HBoxContainer"]
-custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "TEXT"
 horizontal_alignment = 1
 vertical_alignment = 1
-clip_text = true
 
 [node name="Close_Button" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)

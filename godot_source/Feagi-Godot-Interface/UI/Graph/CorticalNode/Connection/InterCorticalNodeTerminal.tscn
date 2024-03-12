@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://bnmchhiw734os"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.gd" id="1_nf13s"]
-[ext_resource type="Texture2D" uid="uid://dtnhtrcqcj8y0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port.png" id="2_h1v3v"]
+[ext_resource type="Texture2D" uid="uid://jb3ip0eag7g7" path="res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port.png" id="2_h1v3v"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/TerminalPortTexture.gd" id="3_1xt86"]
 
 [node name="InterCorticalNodeTerminal" type="HBoxContainer"]

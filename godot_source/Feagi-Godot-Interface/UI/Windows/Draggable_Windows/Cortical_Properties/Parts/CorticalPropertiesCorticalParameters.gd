@@ -14,7 +14,7 @@ var _line_voxel_neuron_density: IntInput
 var _line_synaptic_attractivity: IntInput
 var _vector_position: Vector3iSpinboxField
 var _vector_dimensions: Vector3iSpinboxField
-var _update_button: TextButton_Element
+var _update_button: Button
 var _growing_cortical_update: Dictionary
 var _preview_handler: GenericSinglePreviewHandler = null
 

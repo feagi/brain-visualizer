@@ -9,7 +9,7 @@ var _line_lifespan_growth_rate: IntInput
 var _line_longterm_memory_threshold: IntInput
 
 
-var _update_button: TextButton_Element
+var _update_button: Button
 
 var _growing_cortical_update: Dictionary
 

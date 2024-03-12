@@ -226,16 +226,6 @@ func request_add_circuit(circuit_file_name: StringName, circuit_position: Vector
 const DELAY_BETWEEN_WEBSOCKET_PINGS: float = 0.5
 
 var _ping_timer: Timer
-var _last_ping_time: int
-
-func _ready() -> void:
-	_ping_timer = Timer.new()
-	add_child(_ping_timer)
-	_ping_timer.name = "ping_timer"
-	_ping_timer.timeout.connect(_on_ping_timer_end)
-	_ping_timer.one_shot = false # repeat timer
-	_ping_timer.start(DELAY_BETWEEN_WEBSOCKET_PINGS)
-	_feagi_interface.net.feagi_return_ping.connect(_on_feagi_ping_back)
 
 ## Get current burst rate
 func refresh_delay_between_bursts() -> void:
@@ -278,14 +268,5 @@ func request_import_amalgamation(circuit_position: Vector3i, amalgamation_ID: St
 func request_cancel_amalgamation(amalgamation_ID: StringName) -> void:
 	_feagi_interface.calls.DELETE_GE_amalgamationCancelation(amalgamation_ID)
 
-## Sends a 'ping' to FEAGI for it to respond and for us to determine latency.
-func _on_ping_timer_end() -> void:
-	pass
-	#_feagi_interface.net.send_websocket_ping()
-
-func _on_feagi_ping_back() -> void:
-	var delta_time: int = int((Time.get_ticks_msec() - _last_ping_time) /  2.0)
-	_last_ping_time = Time.get_ticks_msec()
-	FeagiEvents.retrieved_latest_latency.emit(delta_time)
 
 #endregion

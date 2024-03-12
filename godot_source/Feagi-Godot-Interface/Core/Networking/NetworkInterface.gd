@@ -156,7 +156,7 @@ func _grab_worker() -> APIRequestWorker:
 ## Spawns a APIRequestWorker
 func _spawn_worker() -> APIRequestWorker:
 	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
-	worker.initialization(self, DEF_HEADERSTOUSE, _request_worker_parent)
+	#worker.initialization(self, DEF_HEADERSTOUSE, _request_worker_parent)
 	return worker
 
 

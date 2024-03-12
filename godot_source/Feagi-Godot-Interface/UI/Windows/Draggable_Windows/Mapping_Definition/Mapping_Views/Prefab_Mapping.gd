@@ -6,25 +6,29 @@ signal mapping_to_be_deleted()
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
-var _inhibitory: Button
-var _plasticity: Button
+var _inhibitory: ToggleButton
+var _plasticity: ToggleButton
 var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
 var _LTD_multiplier: FloatInput
 var _edit: TextureButton
+var _default_seperation: float # Save as float to avoid rounding errors when multiplying
 
 
 func _ready() -> void:
 	_morphologies = $Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
-	_inhibitory = $BoxContainer2/Inhibitory
-	_plasticity = $BoxContainer/Plasticity
+	_inhibitory = $Inhibitory
+	_plasticity = $Plasticity
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
 	_edit = $edit
 	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
+	_default_seperation = get_theme_constant(&"separation")
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]
@@ -94,3 +98,7 @@ func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool
 			return true
 		_: # any thing else
 			return false
+
+func _update_size(multiplier: float) -> void:
+	var new_seperation: int = int(_default_seperation * multiplier)
+	add_theme_constant_override(&"seperation", new_seperation)

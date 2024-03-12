@@ -17,7 +17,12 @@ func setup(allow_editing_if_morphology_editable: bool) -> void:
 
 ## Return current UI view as a [VectorMorphology] object
 func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool = false) -> VectorMorphology:
-	return VectorMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, _get_vector_array())
+	if _loaded_morphology != null:
+		return VectorMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, _get_vector_array())
+	# In the case of creating new morphologies, we would have not loaded in one, spo we cannot use the class from a loaded one
+	# we can assume however, that any created morphology will always be of class Custom
+	return VectorMorphology.new(morphology_name, is_placeholder, Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, _get_vector_array())
+	
 	
 ## Overwrite the current UI view with a [VectorMorphology] object
 func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:

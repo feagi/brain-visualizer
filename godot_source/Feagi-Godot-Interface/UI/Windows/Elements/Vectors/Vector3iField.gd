@@ -41,12 +41,12 @@ var _field_x: IntInput
 var _field_y: IntInput
 var _field_z: IntInput
 var _editable: bool = true
-
+var _default_min_size: Vector2
 
 func _ready():
-	get_node("LabelX").label_text = label_x_text
-	get_node("LabelY").label_text = label_y_text
-	get_node("LabelZ").label_text = label_z_text
+	get_node("LabelX").text = label_x_text
+	get_node("LabelY").text = label_y_text
+	get_node("LabelZ").text = label_z_text
 
 	_field_x = get_node("IntX")
 	_field_y = get_node("IntY")
@@ -76,6 +76,10 @@ func _ready():
 	_field_z.user_interacted.connect(_emit_user_interaction)
 
 	editable = initial_editable
+	if custom_minimum_size != Vector2(0,0):
+		_default_min_size = custom_minimum_size
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func _emit_new_vector(_dont_care: int) -> void:
 	user_updated_vector.emit(current_vector)
@@ -83,3 +87,8 @@ func _emit_new_vector(_dont_care: int) -> void:
 func _emit_user_interaction():
 	user_interacted.emit()
 
+
+func _update_size(multiplier: float) -> void:
+	if _default_min_size != Vector2(0,0):
+		custom_minimum_size = _default_min_size * multiplier
+	size = Vector2(0,0)

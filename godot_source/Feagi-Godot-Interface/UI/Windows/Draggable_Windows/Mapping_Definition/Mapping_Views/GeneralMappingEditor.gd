@@ -46,7 +46,7 @@ func add_default_mapping_if_applicable(override_child_check: bool = false) -> vo
 		return
 	
 	if _mapping_hints == null:
-		push_error("Unable to spawn default mapping without mapping_hints defined")
+		push_warning("Unable to spawn default mapping without mapping_hints defined! Ignoring user request...")
 		return
 	
 	if _mapping_hints.default_morphology == null:

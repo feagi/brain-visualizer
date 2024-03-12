@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://ckkgl10utu0i8"]
+[gd_scene load_steps=5 format=3 uid="uid://ckkgl10utu0i8"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.gd" id="1_ofec4"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_w3lfj"]
+[ext_resource type="Texture2D" uid="uid://dmqgq8xtqc1rx" path="res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_off.png" id="3_008v8"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/ToggleButton.gd" id="4_gi7tw"]
 
 [node name="CorticalPropertiesCorticalMonitoring" type="VBoxContainer"]
 anchors_preset = 15
@@ -17,9 +20,15 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Membrane Monitoring"
+script = ExtResource("2_w3lfj")
 
-[node name="Membrane" type="CheckButton" parent="HBoxContainer"]
+[node name="Membrane" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+texture_normal = ExtResource("3_008v8")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_gi7tw")
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -28,6 +37,12 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Post-Synaptic  Monitoring"
+script = ExtResource("2_w3lfj")
 
-[node name="PostSynaptic" type="CheckButton" parent="HBoxContainer2"]
+[node name="PostSynaptic" type="TextureButton" parent="HBoxContainer2"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+texture_normal = ExtResource("3_008v8")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_gi7tw")

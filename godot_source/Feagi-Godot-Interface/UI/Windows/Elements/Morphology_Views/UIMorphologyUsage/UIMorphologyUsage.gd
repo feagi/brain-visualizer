@@ -2,8 +2,16 @@ extends TextEdit
 class_name UIMorphologyUsage
 
 var _loaded_morphology: Morphology
+var _default_font_size: int
+var _default_min_size: Vector2
 
 #signal retrieved_usage(usage_mappings: Array[PackedStringArray], is_being_used: bool, self_reference: Morphology)
+
+func _ready() -> void:
+	_default_font_size = get_theme_font_size(&"font_size")
+	_default_min_size = custom_minimum_size
+	_update_size(VisConfig.UI_manager.UI_scale)
+	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func load_morphology(morphology: Morphology, request_update_usage_from_feagi: bool = true) -> void:
 	if _loaded_morphology != null:
@@ -50,3 +58,8 @@ func _print_since_usage_mapping(mapping: PackedStringArray) -> String:
 		push_error("Unable to locate cortical area of ID %s in cache!" % mapping[1])
 		output = output + "UNKNOWN"
 	return output
+
+func _update_size(multiplier: float) -> void:
+	add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
+	custom_minimum_size = _default_min_size * multiplier
+	size = Vector2(0,0)

@@ -1,11 +1,12 @@
-[gd_scene load_steps=9 format=3 uid="uid://bsjtfu2i0eyou"]
+[gd_scene load_steps=10 format=3 uid="uid://bsjtfu2i0eyou"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesConnections.gd" id="1_kpjok"]
-[ext_resource type="Texture2D" uid="uid://4n2ny5eldpib" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_6cgqo"]
-[ext_resource type="Texture2D" uid="uid://blx6k86t0r6qf" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_8k7yo"]
-[ext_resource type="Texture2D" uid="uid://b5ii11qnfxjmo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_kwhmv"]
-[ext_resource type="Texture2D" uid="uid://cnf35b13cj2rm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_sawim"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/TextureButton_Element.gd" id="6_omc12"]
+[ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="2_6cgqo"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_l8ttr"]
+[ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="3_8k7yo"]
+[ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="4_kwhmv"]
+[ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="5_sawim"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="7_iyhg8"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Scroll_Vertical.tscn" id="7_wa44s"]
 [ext_resource type="PackedScene" uid="uid://da355xfk6trdo" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesBottomMappingPrefab.tscn" id="8_4w5yx"]
 
@@ -19,8 +20,10 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Afferent (inputs)"
+script = ExtResource("2_l8ttr")
 
 [node name="Add" type="TextureButton" parent="L_A"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 texture_normal = ExtResource("2_6cgqo")
 texture_pressed = ExtResource("3_8k7yo")
@@ -28,8 +31,7 @@ texture_hover = ExtResource("4_kwhmv")
 texture_disabled = ExtResource("5_sawim")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("6_omc12")
-scale_multiplier = 0.75
+script = ExtResource("7_iyhg8")
 
 [node name="Afferent" parent="." instance=ExtResource("7_wa44s")]
 custom_minimum_size = Vector2(300, 80)
@@ -43,8 +45,10 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Efferent (outputs)"
+script = ExtResource("2_l8ttr")
 
 [node name="Add" type="TextureButton" parent="L_E"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 texture_normal = ExtResource("2_6cgqo")
 texture_pressed = ExtResource("3_8k7yo")
@@ -52,8 +56,7 @@ texture_hover = ExtResource("4_kwhmv")
 texture_disabled = ExtResource("5_sawim")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("6_omc12")
-scale_multiplier = 0.75
+script = ExtResource("7_iyhg8")
 
 [node name="Efferent" parent="." instance=ExtResource("7_wa44s")]
 custom_minimum_size = Vector2(300, 80)

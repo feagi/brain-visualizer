@@ -1,10 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://ch82fu6g530dm"]
+[gd_scene load_steps=3 format=3 uid="uid://ch82fu6g530dm"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/BooleanIndicator/BooleanIndicator.gd" id="1_vvts3"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_j4ow8"]
 
 [node name="BooleanIndicator" type="MarginContainer"]
-custom_minimum_size = Vector2(20, 0)
-offset_right = 20.0
+offset_right = 26.0
 offset_bottom = 27.0
 theme_override_constants/margin_left = 3
 theme_override_constants/margin_top = 1
@@ -13,4 +13,6 @@ theme_override_constants/margin_bottom = 1
 script = ExtResource("1_vvts3")
 
 [node name="ColorRect" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
+script = ExtResource("2_j4ow8")

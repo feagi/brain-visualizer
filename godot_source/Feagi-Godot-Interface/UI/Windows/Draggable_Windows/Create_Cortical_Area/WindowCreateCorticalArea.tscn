@@ -1,52 +1,66 @@
-[gd_scene load_steps=12 format=3 uid="uid://ctyho04m7lek6"]
+[gd_scene load_steps=15 format=3 uid="uid://ctyho04m7lek6"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_dlnla"]
 [ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
-[ext_resource type="Texture2D" uid="uid://ceo6nw4e6o3ri" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="4_5utqj"]
-[ext_resource type="Texture2D" uid="uid://cfvi1x2cbphwm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="5_ffsab"]
-[ext_resource type="Texture2D" uid="uid://b1yxiksxac7sw" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="7_hbdve"]
-[ext_resource type="Texture2D" uid="uid://bcq66d5cvi0gb" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="8_miahu"]
+[ext_resource type="Texture2D" uid="uid://4xisgfb734mk" path="res://Feagi-Godot-Interface/UI/Resources/Icons/input.png" id="4_5utqj"]
+[ext_resource type="Texture2D" uid="uid://nqs7phsjl7c3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/output.png" id="5_ffsab"]
+[ext_resource type="Texture2D" uid="uid://j3ukneruvm10" path="res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png" id="7_hbdve"]
+[ext_resource type="Texture2D" uid="uid://bigyevl2dgoec" path="res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png" id="8_miahu"]
 [ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
 [ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
 [ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="12_1cajn"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="13_oqeoe"]
 
-[node name="WindowSpawnCorticalArea" type="Panel"]
-offset_top = 40.0
-offset_right = 182.0
-offset_bottom = 133.0
+[node name="WindowSpawnCorticalArea" type="VBoxContainer"]
+offset_right = 396.0
+offset_bottom = 223.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_0kirv")
 
-[node name="BoxContainer" type="BoxContainer" parent="."]
-custom_minimum_size = Vector2(350, 0)
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-vertical = true
+[node name="TitleBar" parent="." instance=ExtResource("12_qi3gl")]
+layout_mode = 2
+title = "Add Cortical Area"
 
-[node name="header" type="HBoxContainer" parent="BoxContainer"]
-custom_minimum_size = Vector2(0, 64)
+[node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/header"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="header" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/header"]
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("3_dlnla")
 
-[node name="icon" type="TextureRect" parent="BoxContainer/header"]
+[node name="icon" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/header"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 expand_mode = 1
+script = ExtResource("13_oqeoe")
 
-[node name="Selection" type="VBoxContainer" parent="BoxContainer"]
+[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
-[node name="options" type="HBoxContainer" parent="BoxContainer/Selection"]
+[node name="options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 script = ExtResource("2_xy23b")
 
-[node name="Input" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
+[node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("4_5utqj")
 icon_size = Vector2i(96, 96)
@@ -56,7 +70,7 @@ left_padding = 32
 is_vertical = true
 gap_1 = 4
 
-[node name="Output" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
+[node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("5_ffsab")
 icon_size = Vector2i(96, 96)
@@ -66,7 +80,7 @@ left_padding = 32
 is_vertical = true
 gap_1 = 4
 
-[node name="Custom" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
+[node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("7_hbdve")
 icon_size = Vector2i(96, 96)
@@ -76,7 +90,7 @@ left_padding = 24
 is_vertical = true
 gap_1 = 4
 
-[node name="Memory" parent="BoxContainer/Selection/options" instance=ExtResource("3_juefr")]
+[node name="Memory" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("8_miahu")
 icon_size = Vector2i(96, 96)
@@ -86,56 +100,54 @@ left_padding = 32
 is_vertical = true
 gap_1 = 4
 
-[node name="Definition_IOPU" parent="BoxContainer" instance=ExtResource("9_54gus")]
+[node name="Definition_IOPU" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("9_54gus")]
 visible = false
 layout_mode = 2
 
-[node name="Definition_Custom" parent="BoxContainer" instance=ExtResource("10_vsdc8")]
+[node name="Definition_Custom" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("10_vsdc8")]
 visible = false
 layout_mode = 2
 
-[node name="Definition_Memory" parent="BoxContainer" instance=ExtResource("11_leunr")]
+[node name="Definition_Memory" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("11_leunr")]
 visible = false
 layout_mode = 2
 
-[node name="Button_Gap" type="Control" parent="BoxContainer"]
+[node name="Button_Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
+script = ExtResource("13_oqeoe")
 
-[node name="Buttons" type="HBoxContainer" parent="BoxContainer"]
-visible = false
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Back" type="Button" parent="BoxContainer/Buttons"]
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Back"
+script = ExtResource("12_1cajn")
 
-[node name="Gap" type="Control" parent="BoxContainer/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("13_oqeoe")
 
-[node name="Cancel" type="Button" parent="BoxContainer/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Cancel"
+script = ExtResource("12_1cajn")
 
-[node name="Add" type="Button" parent="BoxContainer/Buttons"]
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Add"
+script = ExtResource("12_1cajn")
 
-[node name="TitleBar" parent="." instance=ExtResource("12_qi3gl")]
-layout_mode = 0
-offset_top = -40.0
-offset_bottom = 0.0
-title = "Add Cortical Area"
-
-[connection signal="pressed" from="BoxContainer/Selection/options/Input" to="BoxContainer/Selection/options" method="_on_input_pressed"]
-[connection signal="pressed" from="BoxContainer/Selection/options/Output" to="BoxContainer/Selection/options" method="_on_output_pressed"]
-[connection signal="pressed" from="BoxContainer/Selection/options/Custom" to="BoxContainer/Selection/options" method="_on_interconnect_pressed"]
-[connection signal="pressed" from="BoxContainer/Selection/options/Memory" to="BoxContainer/Selection/options" method="_on_memory_pressed"]
-[connection signal="pressed" from="BoxContainer/Buttons/Back" to="." method="_back_pressed"]
-[connection signal="pressed" from="BoxContainer/Buttons/Cancel" to="." method="_user_requesting_exit"]
-[connection signal="pressed" from="BoxContainer/Buttons/Add" to="." method="_user_requesing_creation"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_input_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_output_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_interconnect_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_memory_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Back" to="." method="_back_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="_user_requesting_exit"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Add" to="." method="_user_requesing_creation"]

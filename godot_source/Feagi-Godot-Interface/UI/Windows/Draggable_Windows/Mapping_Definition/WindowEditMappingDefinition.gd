@@ -1,4 +1,4 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
@@ -10,9 +10,10 @@ var _general_mapping_details: GeneralMappingEditor
 var _spawn_default_mapping_if_applicable_on_spawn
 
 func _ready() -> void:
-	_sources_dropdown = $BoxContainer/SourceAndDestination/src_box/src_dropdown
-	_destinations_dropdown = $BoxContainer/SourceAndDestination/des_box/des_dropdown
-	_general_mapping_details = $BoxContainer/Mapping_Details
+	super()
+	_sources_dropdown = _window_internals.get_node("SourceAndDestination/src_box/src_dropdown")
+	_destinations_dropdown = _window_internals.get_node("SourceAndDestination/des_box/des_dropdown")
+	_general_mapping_details = _window_internals.get_node("Mapping_Details")
 
 func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable = false):
 	_setup_base_window("edit_mappings")
@@ -41,11 +42,13 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 		return
 	
 	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(source, destination, true)
+	
 	_request_mappings_from_feagi()
 
 ## Overridden!
 func close_window():
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	if _source_area != null && _destination_area != null:
+		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	super()
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
@@ -79,13 +82,16 @@ func _are_cortical_areas_valid() -> bool:
 	return true
 
 func _source_changed(new_source: BaseCorticalArea) -> void:
-	_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	if _source_area != null:
+		if _source_area.efferent_mapping_retrieved_from_feagi.is_connected(_retrieved_feagi_mapping_data):
+			_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
+		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_source_area = new_source
 	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
 func _destination_changed(new_destination: BaseCorticalArea) -> void:
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+	if _destination_area != null:
+		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_destination_area = new_destination
 	_selected_cortical_areas_changed(_source_area, _destination_area)

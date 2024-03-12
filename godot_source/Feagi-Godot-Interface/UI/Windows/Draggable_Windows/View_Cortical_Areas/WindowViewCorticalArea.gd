@@ -1,8 +1,9 @@
-extends BaseWindowPanel
+extends BaseDraggableWindow
 class_name WindowViewCorticalArea
 
 func _ready() -> void:
-	var cortical_list: CorticalAreaScroll = $VBoxContainer/CorticalAreaScroll
+	super()
+	var cortical_list: CorticalAreaScroll = _window_internals.get_node("CorticalAreaScroll")
 	cortical_list.cortical_area_selected.connect(VisConfig.UI_manager.snap_camera_to_cortical_area)
 
 func setup() -> void:

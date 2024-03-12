@@ -13,6 +13,7 @@ signal user_changed_typing_status(is_typing: bool) ## Emits whenever a user star
 signal user_changed_window_drag_status(is_dragging_a_window: bool) ## Emits whenever a user starts / stops dragging a window
 signal mode_changed(new_mode: MODE)
 signal UI_scale_changed(multiplier: float)
+signal UI_scale_changed_spinbox(new_theme: Theme)
 
 @export var enable_developer_options: bool = false
 @export var developer_options_key: Key = KEY_BACKSLASH
@@ -49,17 +50,22 @@ var is_user_dragging_a_window: bool:
 		_is_user_dragging_a_window = v
 		user_changed_window_drag_status.emit(v)
 
-var UI_scale: float:
+var UI_scale: float: 
 	get: return _UI_scale
 	set(v):
+		if v == _UI_scale:
+			return
 		_UI_scale = v
 		UI_scale_changed.emit(v)
+		UI_scale_changed_spinbox.emit(_generate_theme_for_spinbox(v))
 
 var circuit_builder: CorticalNodeGraph:
 	get: return $temp_split/NodeGraph
 
 var rosetta: Rosetta:
 	get: return _rosetta
+
+var temp_spinbox_theme: Theme #TODO this is bad, migrate away once spinbox supports theme overrides
 
 var _window_manager_ref: WindowManager
 var _notification_system_ref: NotificationSystem
@@ -70,6 +76,7 @@ var _is_user_typing: bool = false
 var _is_user_dragging_a_window: bool = false
 var _current_mode: MODE = MODE.VISUALIZER_3D
 var _UI_scale: float = 1.0
+var _global_theme: Theme
 
 func _init():
 	_rosetta = Rosetta.new()
@@ -81,6 +88,8 @@ func _ready():
 	_notification_system_ref = $NotificationSystem
 	VisConfig.UI_manager = self
 	_update_screen_size()
+	_global_theme = load(ProjectSettings.get_setting("gui/theme/custom")) #cursed
+	temp_spinbox_theme = _generate_theme_for_spinbox(1.0)
 
 func _input(event: InputEvent) -> void:
 	if !enable_developer_options:
@@ -126,13 +135,19 @@ func make_error_notification(key: StringName, replacements: Dictionary, notifica
 	push_error("Posting error to user: %s" % string_to_post)
 	_notification_system_ref.add_notification(string_to_post, notification_type, time)
 
-	
-
 #TODO TEMP
 ## Tell BV to create a new singular cortical area preview
 func spawn_BV_single_preview(preview_dimensions: Vector3, preview_position: Vector3, color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> BrainMonitorSinglePreview:
 	var preview: BrainMonitorSinglePreview = $Brain_Visualizer.generate_single_preview(preview_dimensions, preview_position, color, is_rendering)
 	return preview
+	
+## Utterly cursed workaround to generate a custom theme for spinboxes since thye cannot set overrides
+func _generate_theme_for_spinbox(multiplier: float) -> Theme:
+	var new_theme: Theme = _global_theme.duplicate()
+	var original_font_size: float = new_theme.get_font_size("font_size", "LineEdit")
+	var new_font_size: int = int(multiplier * original_font_size)
+	new_theme.set_font_size("font_size", "LineEdit", int(multiplier * original_font_size))
+	return new_theme
 	
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
