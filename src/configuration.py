@@ -28,7 +28,7 @@ feagi_settings = {
 
 agent_settings = {
     "agent_data_port": "30000",
-    "agent_id": "godot",
+    "agent_id": "bv_ctlr",
     "agent_type": "monitor",
     'TTL': 2,
     'last_message': 0,
