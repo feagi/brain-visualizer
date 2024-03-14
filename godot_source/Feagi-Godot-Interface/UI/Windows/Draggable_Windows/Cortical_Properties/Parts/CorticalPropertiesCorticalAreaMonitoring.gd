@@ -11,9 +11,6 @@ func _ready() -> void:
 	if !VisConfig.is_premium:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true
-	else:
-		membrane_toggle.toggled.connect(_user_request_change_membrane_monitoring_status)
-		post_synaptic_toggle.toggled.connect(_user_request_change_synaptic_monitoring_status)
 
 
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
