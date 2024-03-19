@@ -11,14 +11,11 @@ func _ready() -> void:
 	if !VisConfig.is_premium:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true
-	else:
-		membrane_toggle.toggled.connect(_user_request_change_membrane_monitoring_status)
-		post_synaptic_toggle.toggled.connect(_user_request_change_synaptic_monitoring_status)
 
 
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
-	membrane_toggle.button_pressed = cortical_reference.is_monitoring_membrane_potential
-	post_synaptic_toggle.button_pressed = cortical_reference.is_monitoring_synaptic_potential
+	membrane_toggle.set_pressed_no_signal(cortical_reference.is_monitoring_membrane_potential)
+	post_synaptic_toggle.set_pressed_no_signal(cortical_reference.is_monitoring_synaptic_potential)
 	cortical_reference.changed_monitoring_membrane_potential.connect(_FEAGI_set_membrane_toggle)
 	cortical_reference.changed_monitoring_synaptic_potential.connect(_FEAGI_set_synaptic_toggle)
 	_cortical_reference = cortical_reference

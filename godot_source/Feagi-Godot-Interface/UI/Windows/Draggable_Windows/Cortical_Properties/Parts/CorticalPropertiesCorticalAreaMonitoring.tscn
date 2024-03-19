@@ -46,3 +46,6 @@ texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("4_gi7tw")
+
+[connection signal="toggled" from="HBoxContainer/Membrane" to="." method="_user_request_change_membrane_monitoring_status"]
+[connection signal="toggled" from="HBoxContainer2/PostSynaptic" to="." method="_user_request_change_synaptic_monitoring_status"]

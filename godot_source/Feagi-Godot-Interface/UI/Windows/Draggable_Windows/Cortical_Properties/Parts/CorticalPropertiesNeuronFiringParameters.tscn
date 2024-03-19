@@ -192,6 +192,7 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 script = ExtResource("5_7yfjh")
 
+[connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
 [connection signal="toggled" from="MP_Accumulation/MP_Accumulation" to="." method="user_request_MP_Accumumulation"]
 [connection signal="user_interacted" from="Leak_Constant/Leak_Constant" to="." method="_enable_update_button"]
 [connection signal="user_interacted" from="Leak_Variability/Leak_Variability" to="." method="_enable_update_button"]
