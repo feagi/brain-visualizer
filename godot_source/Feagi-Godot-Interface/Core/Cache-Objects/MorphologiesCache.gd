@@ -56,8 +56,36 @@ func hard_wipe_cached_morphologies():
 		remove_morphology(morphology_name)
 	print("CACHE: Wiping morphologies complete!")
 
+
+## To update morphology listing given a dict with details about all morphologies
+func update_morphology_cache_from_summary(all_morphology_details: Dictionary) -> void:
+	print("CACHE: Replacing morphology detail cache...")
+	
+	for current_morphology: StringName in _available_morphologies.keys():
+		if !(all_morphology_details.keys().has(current_morphology)):
+			# This morphology doesnt exist anymore, delete it
+			print("CACHE: deleting morphology no longer in use: %s..." % current_morphology)
+			_available_morphologies.erase(current_morphology)
+	
+	var current_morphlogy_dict: Dictionary
+	for feagi_retrieved_morphology_name: StringName in all_morphology_details.keys():
+		current_morphlogy_dict = all_morphology_details[feagi_retrieved_morphology_name]
+		if feagi_retrieved_morphology_name in _available_morphologies.keys():
+			# Morphology exists but needs to be updated
+			_available_morphologies[feagi_retrieved_morphology_name].feagi_update(
+				current_morphlogy_dict["parameters"],
+				Morphology.morphology_class_str_to_class(current_morphlogy_dict["class"])
+			)
+		else:
+			# Morphology doesn't exist in cache, create it!	
+			_available_morphologies[feagi_retrieved_morphology_name] = Morphology.create_from_FEAGI_template(feagi_retrieved_morphology_name, current_morphlogy_dict)
+
+
+
+
+# TODO: OLD, remove this!
 ## To update morphology listing given a dict with keys of morphology names and its value being the str type of morphology (NOT FULL OBJECT / DICTIONARY)
-func update_morphology_cache_from_summary(_new_listing_with_types: Dictionary) -> void:
+func update_morphology_cache_from_summary_deprecated(_new_listing_with_types: Dictionary) -> void:
 	
 	# TODO: Possible optimizations used packedStringArrays and less duplications
 	var new_listing: Array = _new_listing_with_types.keys()

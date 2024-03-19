@@ -98,7 +98,7 @@ func GET_GE_morphologyUsage(_response_code: int, response_body: PackedByteArray,
 
 func GET_morphology_morphologies(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphology_summary: Dictionary = _body_to_dictionary(response_body)
-	sdf
+	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphology_summary)
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 
