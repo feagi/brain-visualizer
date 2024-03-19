@@ -39,8 +39,8 @@ var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_corti
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"
 var POST_genome_append: StringName = "/v1/feagi/genome/append"
 var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
-var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential"
-var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential"
+var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"
+var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"

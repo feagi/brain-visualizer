@@ -545,9 +545,9 @@ func POST_MON_neuron_membranePotential(cortical_ID: StringName, state: bool):
 	}
 	
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_monitoring_neuron_membranePotential_set,
+		_address_list.POST_monitoring_neuron_membranePotential_set + "?state=%s" % state, #TODO: no URL parameters!
 		HTTPClient.METHOD_POST,
-		{},
+		{"cortical_id": str(cortical_ID)},
 		passthrough,
 		_response_functions_ref.POST_MON_neuron_membranePotential
 	)
@@ -561,9 +561,9 @@ func POST_MON_neuron_synapticPotential(cortical_ID: StringName, state: bool):
 		"state": state
 	}
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
-		_address_list.POST_monitoring_neuron_synapticPotential_set,
+		_address_list.POST_monitoring_neuron_synapticPotential_set + "?state=%s" % state,  #TODO: no URL parameters!
 		HTTPClient.METHOD_POST,
-		{},
+		{"cortical_id": str(cortical_ID)},
 		passthrough,
 		_response_functions_ref.POST_MON_neuron_synapticPotential
 	)

@@ -210,6 +210,7 @@ func POST_MON_neuron_membranePotential(_response_code: int, _response_body: Pack
 		push_error("Unable to find cortical area %s in cache to update monitoring status of membrane potential" % set_values["ID"])
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential
 		return
+	print("Updated membrane potential monitoring of cortical area %s to %s" % [set_values["ID"], set_values["state"]])
 	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_membrane_potential = set_values["state"]
 
 func POST_MON_neuron_synapticPotential(_response_code: int, _response_body: PackedByteArray, set_values: Dictionary) -> void:
@@ -217,6 +218,7 @@ func POST_MON_neuron_synapticPotential(_response_code: int, _response_body: Pack
 		push_error("Unable to find cortical area %s in cache to update monitoring status of synaptic potential" % set_values["ID"])
 		FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential
 		return
+	print("Updated synaptic potential monitoring of cortical area %s to %s" % [set_values["ID"], set_values["state"]])
 	FeagiCache.cortical_areas_cache.cortical_areas[set_values["ID"]].is_monitoring_synaptic_potential = set_values["state"]
 
 func POST_GE_amalgamationDestination(_response_code: int, _response_body: PackedByteArray, _irrelevant: Variant) -> void:
