@@ -299,6 +299,14 @@ func GET_MO_neuron_synapticPotential(corticalID: StringName):
 	)
 	_request_pool.FEAGI_API_Request(request)
 
+## returns a summary of all details of all morphologies
+func GET_morphology_morphologies() -> void:
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
+		_address_list.GET_morphology_morphologies,
+		_response_functions_ref.GET_morphology_morphologies,
+	)
+	_request_pool.FEAGI_API_Request(request)
+
 ## returns dict of various feagi health stats as booleans
 func GET_healthCheck():
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
