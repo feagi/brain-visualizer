@@ -111,6 +111,19 @@ static func morphology_array_to_string_array_of_names(morphologies: Array[Morpho
 static func morphology_type_to_string(morphology_type: MORPHOLOGY_TYPE) -> StringName:
 	return str(MORPHOLOGY_TYPE.keys()[int(morphology_type)]).to_lower()
 
+static func morphology_type_str_to_type(morphology_type_str: StringName) -> MORPHOLOGY_TYPE:
+	if morphology_type_str.to_upper() not in MORPHOLOGY_INTERNAL_CLASS:
+		return MORPHOLOGY_TYPE.NULL
+	return Morphology.MORPHOLOGY_TYPE[(morphology_type_str.to_upper())]
+
+static func morphology_class_to_string(morphology_class: MORPHOLOGY_INTERNAL_CLASS) -> StringName:
+	return str(MORPHOLOGY_INTERNAL_CLASS.keys()[int(morphology_class)]).to_lower()
+
+static func morphology_class_str_to_class(morphology_class_str: StringName) -> MORPHOLOGY_INTERNAL_CLASS:
+	if morphology_class_str.to_upper() not in MORPHOLOGY_INTERNAL_CLASS:
+		return MORPHOLOGY_INTERNAL_CLASS.UNKNOWN
+	return Morphology.MORPHOLOGY_INTERNAL_CLASS[(morphology_class_str.to_upper())]
+
 ## Use to retrieve if the morphology is deletable. Can become out of date without recent morphology and morphlogy usage data!
 func get_latest_known_deletability() -> DELETABILITY:
 	if internal_class == MORPHOLOGY_INTERNAL_CLASS.UNKNOWN:
