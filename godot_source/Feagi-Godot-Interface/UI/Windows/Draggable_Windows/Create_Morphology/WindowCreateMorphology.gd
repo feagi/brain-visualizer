@@ -93,11 +93,13 @@ func _step_2_input_properties(morphology_type: Morphology.MORPHOLOGY_TYPE):
 func _on_create_morphology_pressed():
 
 	if _morphology_name.text == "":
-		#TODO
+		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("Missing Name", "Please define a name for your morphology!")
+		VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
 		return
 	
 	if _morphology_name.text in FeagiCache.morphology_cache.available_morphologies.keys():
-		#TODO
+		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("Existing Name", "A morphology with this name already exists!!")
+		VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
 		return
 
 	match _selected_morphology_type:
