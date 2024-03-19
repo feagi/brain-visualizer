@@ -68,7 +68,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		about_to_be_deleted.emit(self) # Notify all others about deletion
 
-## Spawns correct morphology type given dict from FEAGI
+## Spawns correct morphology type given dict from FEAGI and other details
 static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> Morphology:
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
@@ -84,6 +84,13 @@ static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE
 			@warning_ignore("assert_always_false")
 			assert(false, "Invalid Morphology attempted to spawn")
 			return NullMorphology.new()
+
+## Creates a morphology as per the template from feagi
+static func create_from_FEAGI_template(morphology_name: StringName, template_from_FEAGI_summary_call: Dictionary) -> Morphology:
+	var type: MORPHOLOGY_TYPE = Morphology.morphology_type_str_to_type(template_from_FEAGI_summary_call["type"])
+	var morphology_class: MORPHOLOGY_INTERNAL_CLASS = Morphology.morphology_class_str_to_class(template_from_FEAGI_summary_call["class"])
+	var parameters: Dictionary = template_from_FEAGI_summary_call["parameters"]
+	return Morphology.create(morphology_name, type, morphology_class, parameters)
 
 ## creates a morphology object but fills data with placeholder data until FEAGI responds
 static func create_placeholder(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE) -> Morphology:
