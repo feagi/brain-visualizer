@@ -72,7 +72,12 @@ func _notification(what: int) -> void:
 static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> Morphology:
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
-			return FunctionMorphology.new(morphology_name, false, feagi_defined_internal_class, morphology_details["parameters"])
+			var params: Dictionary
+			if "parameters" in morphology_details.keys():
+				params = morphology_details["parameters"]
+			else:
+				params = morphology_details
+			return FunctionMorphology.new(morphology_name, false, feagi_defined_internal_class, params)
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			return VectorMorphology.new(morphology_name, false, feagi_defined_internal_class, FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_details["vectors"]))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
@@ -119,7 +124,7 @@ static func morphology_type_to_string(morphology_type: MORPHOLOGY_TYPE) -> Strin
 	return str(MORPHOLOGY_TYPE.keys()[int(morphology_type)]).to_lower()
 
 static func morphology_type_str_to_type(morphology_type_str: StringName) -> MORPHOLOGY_TYPE:
-	if morphology_type_str.to_upper() not in MORPHOLOGY_INTERNAL_CLASS:
+	if morphology_type_str.to_upper() not in MORPHOLOGY_TYPE:
 		return MORPHOLOGY_TYPE.NULL
 	return Morphology.MORPHOLOGY_TYPE[(morphology_type_str.to_upper())]
 
