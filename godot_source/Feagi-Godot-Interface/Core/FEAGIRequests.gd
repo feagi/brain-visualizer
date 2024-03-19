@@ -116,7 +116,7 @@ func delete_cortical_area(cortical_id: StringName) -> void:
 ## Triggers an update in FEAGI Cached morphologies, which cascades to signals for morphologies added / removed
 func refresh_morphology_list() -> void:
 	print("User requested refresh of the morphology listing")
-	_feagi_interface.calls.GET_MO_list_types()
+	_feagi_interface.calls.GET_morphology_morphologies()
 
 ## Requests the latest info on a specific morphology name
 ## Success emits morphology_updated
