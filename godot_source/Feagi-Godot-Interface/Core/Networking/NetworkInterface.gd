@@ -16,6 +16,8 @@ const DEF_SOCKET_PORT: int = 9050
 const DEF_SOCKET_MAX_QUEUED_PACKETS: int = 10000000
 const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
 const DEF_SOCKET_BUFFER_SIZE: int = 10000000
+const DEF_RTC_LABEL: StringName = "chat"
+const DEF_RTC_channel: int = 1
 
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"

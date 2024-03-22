@@ -8,9 +8,13 @@ const DEF_FEAGI_SSL: StringName = "http://"
 const DEF_SOCKET_SSL: StringName = "ws://"
 const DEF_WEB_PORT: int = 8000
 const DEF_SOCKET_PORT: int = 9050
+const DEF_RTC_PORT: int = 8080
 const DEF_SOCKET_MAX_QUEUED_PACKETS: int = 10000000
 const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
 const DEF_SOCKET_BUFFER_SIZE: int = 10000000
+const DEF_RTC_LABEL: StringName = "chat"
+const DEF_RTC_channel: int = 1
+
 
 signal base_network_initialization_completed()
 
@@ -18,6 +22,7 @@ var feagi_TLD: StringName
 var feagi_SSL: StringName
 var feagi_web_port: int
 var feagi_socket_port: int
+var feagi_RTC_port: int
 var feagi_root_web_address: StringName
 var feagi_root_websocket_address: StringName
 var feagi_socket_SSL: StringName
@@ -91,6 +96,9 @@ func init_network() -> void:
 		feagi_socket_address = websocket_url
 	else:
 		feagi_socket_address = feagi_socket_SSL + feagi_TLD + ":" + str(feagi_socket_port)
-
+	
+	# TEMP RTC stuff
+	feagi_RTC_port = DEF_RTC_PORT
+	
 	# Network ready,
 	base_network_initialization_completed.emit()
