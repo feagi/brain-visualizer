@@ -35,7 +35,7 @@ func second_stage_network_initialization() -> void:
 	var turn_urls: Array[StringName] = []
 	stun_urls.assign([_network_boostrap.DEF_FEAGI_TLD + ":" + str(_network_boostrap.DEF_RTC_PORT)])
 	turn_urls.assign([_network_boostrap.DEF_FEAGI_TLD + ":" + str(_network_boostrap.DEF_RTC_PORT)])
-	FEAGI_RTC = FEAGIRTC.new(stun_urls, turn_urls, _network_boostrap.DEF_RTC_LABEL, _network_boostrap.DEF_RTC_PORT)
+	FEAGI_RTC = FEAGIRTC.new(stun_urls, turn_urls, _network_boostrap.DEF_RTC_LABEL, _network_boostrap.DEF_RTC_channel)
 	
 
 	FeagiRequests.poll_genome_availability_launch()
@@ -51,6 +51,7 @@ func _socket_changed_state(state: WebSocketPeer.State) -> void:
 	#	set_process(false)
 	pass # come up with better logic later to better support rtc
 
-
+func _physics_process(delta):
+	FEAGI_RTC.send_data("Testing".to_utf8_buffer())
 
 

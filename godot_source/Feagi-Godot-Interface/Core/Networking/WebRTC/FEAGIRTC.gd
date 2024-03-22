@@ -58,5 +58,6 @@ func poll() -> void:
 
 func send_data(data: PackedByteArray) -> void:
 	if _channel.get_ready_state() != WebRTCDataChannel.STATE_OPEN:
+		#push_warning("Unable to send data to closed RTC!")
 		return
 	_channel.put_packet(data)
