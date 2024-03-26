@@ -68,11 +68,16 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		about_to_be_deleted.emit(self) # Notify all others about deletion
 
-## Spawns correct morphology type given dict from FEAGI
+## Spawns correct morphology type given dict from FEAGI and other details
 static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> Morphology:
 	match morphology_type:
 		Morphology.MORPHOLOGY_TYPE.FUNCTIONS:
-			return FunctionMorphology.new(morphology_name, false, feagi_defined_internal_class, morphology_details["parameters"])
+			var params: Dictionary
+			if "parameters" in morphology_details.keys():
+				params = morphology_details["parameters"]
+			else:
+				params = morphology_details
+			return FunctionMorphology.new(morphology_name, false, feagi_defined_internal_class, params)
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			return VectorMorphology.new(morphology_name, false, feagi_defined_internal_class, FEAGIUtils.array_of_arrays_to_vector3i_array(morphology_details["vectors"]))
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
@@ -84,6 +89,13 @@ static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE
 			@warning_ignore("assert_always_false")
 			assert(false, "Invalid Morphology attempted to spawn")
 			return NullMorphology.new()
+
+## Creates a morphology as per the template from feagi
+static func create_from_FEAGI_template(morphology_name: StringName, template_from_FEAGI_summary_call: Dictionary) -> Morphology:
+	var type: MORPHOLOGY_TYPE = Morphology.morphology_type_str_to_type(template_from_FEAGI_summary_call["type"])
+	var morphology_class: MORPHOLOGY_INTERNAL_CLASS = Morphology.morphology_class_str_to_class(template_from_FEAGI_summary_call["class"])
+	var parameters: Dictionary = template_from_FEAGI_summary_call["parameters"]
+	return Morphology.create(morphology_name, type, morphology_class, parameters)
 
 ## creates a morphology object but fills data with placeholder data until FEAGI responds
 static func create_placeholder(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE) -> Morphology:
@@ -110,6 +122,19 @@ static func morphology_array_to_string_array_of_names(morphologies: Array[Morpho
 
 static func morphology_type_to_string(morphology_type: MORPHOLOGY_TYPE) -> StringName:
 	return str(MORPHOLOGY_TYPE.keys()[int(morphology_type)]).to_lower()
+
+static func morphology_type_str_to_type(morphology_type_str: StringName) -> MORPHOLOGY_TYPE:
+	if morphology_type_str.to_upper() not in MORPHOLOGY_TYPE:
+		return MORPHOLOGY_TYPE.NULL
+	return Morphology.MORPHOLOGY_TYPE[(morphology_type_str.to_upper())]
+
+static func morphology_class_to_string(morphology_class: MORPHOLOGY_INTERNAL_CLASS) -> StringName:
+	return str(MORPHOLOGY_INTERNAL_CLASS.keys()[int(morphology_class)]).to_lower()
+
+static func morphology_class_str_to_class(morphology_class_str: StringName) -> MORPHOLOGY_INTERNAL_CLASS:
+	if morphology_class_str.to_upper() not in MORPHOLOGY_INTERNAL_CLASS:
+		return MORPHOLOGY_INTERNAL_CLASS.UNKNOWN
+	return Morphology.MORPHOLOGY_INTERNAL_CLASS[(morphology_class_str.to_upper())]
 
 ## Use to retrieve if the morphology is deletable. Can become out of date without recent morphology and morphlogy usage data!
 func get_latest_known_deletability() -> DELETABILITY:
