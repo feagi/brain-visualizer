@@ -19,7 +19,7 @@ func _init(going_in: PatternVector3, going_out: PatternVector3):
 	_outgoing = going_out.duplicate()
 
 ## Converts an array of arrays from the pattern morphologies into an array of PatternVector3Pairs
-static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Array[Array]) -> Array[PatternVector3Pairs]:
+static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Array) -> Array[PatternVector3Pairs]:
 	# Preinit up here to reduce GC
 
 	var pair: Array = [null, null]
