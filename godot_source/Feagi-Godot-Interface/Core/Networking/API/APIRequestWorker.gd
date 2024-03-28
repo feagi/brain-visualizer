@@ -133,6 +133,10 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
 	
+	if response_code == 0:
+		_query_for_destruction()
+		return
+	
 	if response_code != 200:
 		_http_generic_error_response_handling(body)
 		_query_for_destruction()
@@ -194,6 +198,12 @@ func _http_generic_error_response_handling(response_body: PackedByteArray) -> vo
 		return
 	var error_code_identifier: StringName = feagi_error_response["code"]
 	#VisConfig.UI_manager.make_error_notification(error_code_identifier, _http_error_replacements)
+
+## Handles BV response when FEAGI does not respond to any communication. FEAGI likely crashed. Engage disconnection
+func _http_no_response_handling() -> void:
+	#TODO develop a proper disconnect protocol
+	push_error("CORE: Feagi did not respond to a web call. Is it dead? Stopping APIRequestWorker...")
+	_query_for_destruction()
 
 ## If space is available in the [RequestWorker] pool, add self to the end there
 ## Otherwise, destroy self

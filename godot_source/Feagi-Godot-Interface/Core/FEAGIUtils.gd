@@ -37,14 +37,14 @@ static func array_to_vector2i(input: Array) -> Vector2i:
 	return Vector2i(int(input[0]), int(input[1]))
 
 ## Converts an array of 3 long int arrays to an array of Vector3i
-static func array_of_arrays_to_vector3i_array(input: Array[Array]) -> Array[Vector3i]:
+static func array_of_arrays_to_vector3i_array(input: Array) -> Array[Vector3i]:
 	var output: Array[Vector3i] = []
 	for sub_array in input:
 		output.append(array_to_vector3i(sub_array))
 	return output
 
 ## Converts an array of 2 long int arrays to an array of Vector3i
-static func array_of_arrays_to_vector2i_array(input: Array[Array]) -> Array[Vector2i]:
+static func array_of_arrays_to_vector2i_array(input: Array) -> Array[Vector2i]:
 	var output: Array[Vector2i] = []
 	for sub_array in input:
 		output.append(array_to_vector2i(sub_array))

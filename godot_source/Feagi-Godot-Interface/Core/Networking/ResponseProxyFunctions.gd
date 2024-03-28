@@ -9,7 +9,7 @@ func GET_GE_fileName(_response_code: int, response_body: PackedByteArray, _irrel
 ## returns dict of morphology names keyd to their type string
 func GET_MO_list_types(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var morphologies_and_types: Dictionary = _body_to_dictionary(response_body)
-	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphologies_and_types)
+	FeagiCache.morphology_cache.update_morphology_cache_from_summary_deprecated(morphologies_and_types)
 	FeagiEvents.retrieved_latest_morphology_listing.emit(morphologies_and_types.keys())
 
 ## returns a dict of the mapping of cortical areas
@@ -95,6 +95,10 @@ func GET_GE_morphologyUsage(_response_code: int, response_body: PackedByteArray,
 	morphology_used.feagi_update_usage(usage_array)
 	FeagiEvents.retrieved_latest_usuage_of_morphology.emit(morphology_used, usage_array)
 	
+
+func GET_morphology_morphologies(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
+	var morphology_summary: Dictionary = _body_to_dictionary(response_body)
+	FeagiCache.morphology_cache.update_morphology_cache_from_summary(morphology_summary)
 
 func GET_GE_morphology(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 
