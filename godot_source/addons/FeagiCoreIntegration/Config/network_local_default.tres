@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="FCFeagiEndpointDetails" load_steps=2 format=3 uid="uid://bbmq3e8wtka4s"]
+
+[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/ConfigScripts/FC_FeagiEndpointDetails.gd" id="1_w80e7"]
+
+[resource]
+script = ExtResource("1_w80e7")
+header = ["Content-Type: application/json"]
+feagi_tld = &"127.0.0.1"
+API_port = 8000
+websocket_port = 9050
+is_encrypted = false
