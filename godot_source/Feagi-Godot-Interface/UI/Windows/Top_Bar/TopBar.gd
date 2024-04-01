@@ -113,18 +113,26 @@ func _bigger_scale() -> void:
 	_set_scale(1)
 
 func _update_counts(stats: Dictionary) -> void:
-	_neuron_count.text = _shorten_number(int(stats["neuron_count"])) + "/" + _shorten_number(int(stats["neuron_count_max"]))
-	_synapse_count.text = _shorten_number(int(stats["synapse_count"])) + "/" + _shorten_number(int(stats["synapse_count_max"]))
+	_neuron_count.text = _format_number_with_commas(int(stats["neuron_count"]))
+	_synapse_count.text = _format_number_with_commas(int(stats["synapse_count"]))
+	_neuron_count.tooltip_text = "The number of currently loaded neurons vs the total allowed. Currently at %s out of %s." % [_format_number_with_commas(int(stats["neuron_count"])),  _format_number_with_commas(int(stats["neuron_count_max"]))]
+	_synapse_count.tooltip_text = "The number of currently loaded synapses vs the total allowed. Currently at %s out of %s." % [_format_number_with_commas(int(stats["synapse_count"])),  _format_number_with_commas(int(stats["synapse_count_max"]))]
 
-func _shorten_number(num: float) -> String:
-	var a: int
-	if num > 1000000:
-		a = roundi(num / 1000000.0)
-		return str(a) + "M"
-	if num > 1000:
-		a = roundi(num / 1000.0)
-		return str(a) + "K"
-	return str(a)
+
+func _format_number_with_commas(number: int) -> String:
+	var str_number: String = str(number)  # Convert integer to string
+	var formatted_number: String = ""      # Initialize formatted number string
+	var comma_count: int = 0               # Initialize comma count
+
+	# Iterate over each character in the string in reverse order
+	for i in range(str_number.length() - 1, -1, -1):
+		formatted_number = str_number[i] + formatted_number
+		comma_count += 1
+		if comma_count == 3 and i != 0:
+			formatted_number = "," + formatted_number
+			comma_count = 0  # Reset comma count
+	
+	return formatted_number
 
 
 func _update_size(multiplier: float) -> void:
