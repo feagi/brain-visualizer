@@ -6,7 +6,7 @@ class_name TopBar
 @export var starting_size_index: int = 2
 
 var _refresh_rate_field: FloatInput
-var _latency_field: IntInput
+#var _latency_field: IntInput
 var _index_scale: int
 
 var _neuron_count: TextInput
@@ -19,7 +19,7 @@ var _default_seperation: float # Save as float to avoid rounding errors when mul
 func _ready():
 	# references
 	_refresh_rate_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/RR_Float
-	_latency_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/ping
+	#_latency_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/ping
 	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	_index_scale = starting_size_index
@@ -103,7 +103,8 @@ func _open_options() -> void:
 	VisConfig.UI_manager.window_manager.spawn_user_options()
 
 func _FEAGI_retireved_latency(latency_ms: int) -> void:
-	_latency_field.current_int = latency_ms
+	pass
+	#_latency_field.current_int = latency_ms
 
 func _smaller_scale() -> void:
 	_set_scale(-1)
