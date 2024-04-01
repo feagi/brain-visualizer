@@ -44,6 +44,10 @@ func add_vector_row() -> void:
 		"vector": Vector3i(0,0,0)
 	})
 
+## Get the number of vectors
+func get_number_rows() -> int:
+	return _vectors_scroll.get_number_of_children()
+
 func _editability_updated(new_editability: Morphology.EDITABILITY) -> void:
 	#NOTE: Due to how this is used in signals, we cannot simplify the input to a bool
 	var can_edit: bool = _determine_boolean_editability(new_editability)
