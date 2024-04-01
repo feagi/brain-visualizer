@@ -60,6 +60,7 @@ script = ExtResource("2_pnhrs")
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "View Brain Areas"
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("3_f73r0")
 texture_size = Vector2i(48, 48)
@@ -71,6 +72,7 @@ custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Add Brain Area..."
 texture_normal = ExtResource("4_ot5te")
 texture_pressed = ExtResource("5_58ohp")
 texture_hover = ExtResource("6_h0c21")
@@ -87,6 +89,7 @@ script = ExtResource("2_pnhrs")
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "View Connectivity Rules"
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("4_w1ybr")
 texture_size = Vector2i(50, 48)
@@ -98,6 +101,7 @@ custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Add Connectivity Rule..."
 texture_normal = ExtResource("4_ot5te")
 texture_pressed = ExtResource("5_58ohp")
 texture_hover = ExtResource("6_h0c21")
@@ -135,6 +139,7 @@ custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Decrease UI Size"
 texture_normal = ExtResource("11_jknrr")
 texture_pressed = ExtResource("12_ot48k")
 texture_hover = ExtResource("13_u0vqk")
@@ -148,6 +153,7 @@ custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Increase UI Size"
 texture_normal = ExtResource("15_45b5e")
 texture_pressed = ExtResource("16_10002")
 texture_hover = ExtResource("17_814js")
@@ -200,6 +206,7 @@ script = ExtResource("12_gx8rc")
 
 [node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
 layout_mode = 2
+tooltip_text = "The frequency FEAGI runs at"
 alignment = 1
 script = ExtResource("3_v82xb")
 suffix = " Hz"
@@ -213,6 +220,7 @@ script = ExtResource("12_gx8rc")
 
 [node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
+tooltip_text = "Latency between FEAGI and you"
 alignment = 1
 editable = false
 script = ExtResource("9_jcvuj")
@@ -226,6 +234,7 @@ script = ExtResource("12_gx8rc")
 
 [node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
 layout_mode = 2
+tooltip_text = "The number of currently loaded neurons vs the total allowed"
 alignment = 1
 editable = false
 script = ExtResource("26_84r3k")
@@ -238,12 +247,14 @@ script = ExtResource("12_gx8rc")
 
 [node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="7"]
 layout_mode = 2
+tooltip_text = "The number of currently loaded synapses vs the total allowed"
 alignment = 1
 editable = false
 script = ExtResource("26_84r3k")
 
 [node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="8"]
 layout_mode = 2
+tooltip_text = "The overall health of FEAGI"
 text = "System Health"
 vertical_alignment = 1
 script = ExtResource("12_gx8rc")
