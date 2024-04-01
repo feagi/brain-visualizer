@@ -106,13 +106,13 @@ func _on_create_morphology_pressed():
 	match _selected_morphology_type:
 		Morphology.MORPHOLOGY_TYPE.VECTORS:
 			if _vectors.get_number_rows() == 0:
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Vectors", "Please define at least one vector for your morphology!")
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Vectors", "Please define at least one vector for your Connectivity Rule!")
 				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
 				return
 			FeagiRequests.request_create_morphology(_vectors.get_as_vector_morphology(_morphology_name.text))	
 		Morphology.MORPHOLOGY_TYPE.PATTERNS:
 			if _patterns.get_number_rows() == 0:
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Patterns", "Please define at least one pattern for your morphology!")
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Patterns", "Please define at least one pattern for your Connectivity Rule!")
 				VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
 				return
 			FeagiRequests.request_create_morphology(_patterns.get_as_pattern_morphology(_morphology_name.text))
