@@ -6,8 +6,11 @@ class_name TopBar
 @export var starting_size_index: int = 2
 
 var _refresh_rate_field: FloatInput
-var _latency_field: IntInput
+#var _latency_field: IntInput
 var _index_scale: int
+
+var _neuron_count: TextInput
+var _synapse_count: TextInput
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
@@ -16,13 +19,16 @@ var _default_seperation: float # Save as float to avoid rounding errors when mul
 func _ready():
 	# references
 	_refresh_rate_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/RR_Float
-	_latency_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/ping
+	#_latency_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/ping
 	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	_index_scale = starting_size_index
 	
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
+	
+	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/neuron
+	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/synapse
 	
 	# apply padding
 	$Buttons/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
@@ -52,6 +58,8 @@ func _ready():
 	_default_seperation = get_theme_constant(&"separation")
 	_update_size(VisConfig.UI_manager.UI_scale)
 	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+	
+	FeagiEvents.retrieved_latest_FEAGI_health.connect(_update_counts)
 	
 	
 
@@ -95,13 +103,37 @@ func _open_options() -> void:
 	VisConfig.UI_manager.window_manager.spawn_user_options()
 
 func _FEAGI_retireved_latency(latency_ms: int) -> void:
-	_latency_field.current_int = latency_ms
+	pass
+	#_latency_field.current_int = latency_ms
 
 func _smaller_scale() -> void:
 	_set_scale(-1)
 	
 func _bigger_scale() -> void:
 	_set_scale(1)
+
+func _update_counts(stats: Dictionary) -> void:
+	_neuron_count.text = _format_number_with_commas(int(stats["neuron_count"]))
+	_synapse_count.text = _format_number_with_commas(int(stats["synapse_count"]))
+	_neuron_count.tooltip_text = "The number of currently loaded neurons vs the total allowed. Currently at %s out of %s." % [_format_number_with_commas(int(stats["neuron_count"])),  _format_number_with_commas(int(stats["neuron_count_max"]))]
+	_synapse_count.tooltip_text = "The number of currently loaded synapses vs the total allowed. Currently at %s out of %s." % [_format_number_with_commas(int(stats["synapse_count"])),  _format_number_with_commas(int(stats["synapse_count_max"]))]
+
+
+func _format_number_with_commas(number: int) -> String:
+	var str_number: String = str(number)  # Convert integer to string
+	var formatted_number: String = ""      # Initialize formatted number string
+	var comma_count: int = 0               # Initialize comma count
+
+	# Iterate over each character in the string in reverse order
+	for i in range(str_number.length() - 1, -1, -1):
+		formatted_number = str_number[i] + formatted_number
+		comma_count += 1
+		if comma_count == 3 and i != 0:
+			formatted_number = "," + formatted_number
+			comma_count = 0  # Reset comma count
+	
+	return formatted_number
+
 
 func _update_size(multiplier: float) -> void:
 	var new_seperation: int = int(_default_seperation * multiplier)

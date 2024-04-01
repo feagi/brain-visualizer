@@ -16,9 +16,13 @@ func _ready():
 	_data = $Data
 	_summary = $Summary
 
-func set_feagi_states(burst_engine: bool, genome_availibility: bool, genome_validity: bool, brain_readiness: bool) -> void:
+func set_feagi_states(dict: Dictionary) -> void:
+	var burst_engine: bool = dict["burst_engine"]
+	var genome_availability: bool = dict["genome_availability"]
+	var genome_validity: bool = dict["genome_validity"]
+	var brain_readiness: bool = dict["brain_readiness"]
 	_burst_engine.boolean_state = burst_engine
-	_genome_availibility.boolean_state = genome_availibility
+	_genome_availibility.boolean_state = genome_availability
 	_genome_validity.boolean_state = genome_validity
 	_brain_readiness.boolean_state = brain_readiness
 	_refresh_summary()
