@@ -112,8 +112,8 @@ func _bigger_scale() -> void:
 	_set_scale(1)
 
 func _update_counts(stats: Dictionary) -> void:
-	_neuron_count.text = _shorten_number(stats["neuron_count"]) + "/" + _shorten_number(stats["neuron_count_max"])
-	_synapse_count.text = _shorten_number(stats["synapse_count"]) + "/" + _shorten_number(stats["synapse_count_max"])
+	_neuron_count.text = _shorten_number(int(stats["neuron_count"])) + "/" + _shorten_number(int(stats["neuron_count_max"]))
+	_synapse_count.text = _shorten_number(int(stats["synapse_count"])) + "/" + _shorten_number(int(stats["synapse_count_max"]))
 
 func _shorten_number(num: float) -> String:
 	var a: int
