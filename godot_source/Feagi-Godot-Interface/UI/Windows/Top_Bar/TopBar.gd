@@ -9,6 +9,9 @@ var _refresh_rate_field: FloatInput
 var _latency_field: IntInput
 var _index_scale: int
 
+var _neuron_count: TextInput
+var _synapse_count: TextInput
+
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
 var _default_seperation: float # Save as float to avoid rounding errors when multiplying
@@ -23,6 +26,9 @@ func _ready():
 	
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
+	
+	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/neuron
+	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/synapse
 	
 	# apply padding
 	$Buttons/MarginContainer.add_theme_constant_override("margin_top", universal_padding)
@@ -52,6 +58,8 @@ func _ready():
 	_default_seperation = get_theme_constant(&"separation")
 	_update_size(VisConfig.UI_manager.UI_scale)
 	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+	
+	FeagiEvents.retrieved_latest_FEAGI_health.connect(_update_counts)
 	
 	
 
@@ -102,6 +110,21 @@ func _smaller_scale() -> void:
 	
 func _bigger_scale() -> void:
 	_set_scale(1)
+
+func _update_counts(stats: Dictionary) -> void:
+	_neuron_count.text = _shorten_number(stats["neuron_count"]) + "/" + _shorten_number(stats["neuron_count_max"])
+	_synapse_count.text = _shorten_number(stats["synapse_count"]) + "/" + _shorten_number(stats["synapse_count_max"])
+
+func _shorten_number(num: float) -> String:
+	var a: int
+	if num > 1000000:
+		a = roundi(num / 1000000.0)
+		return str(a) + "M"
+	if num > 1000:
+		a = roundi(num / 1000.0)
+		return str(a) + "K"
+	return str(a)
+
 
 func _update_size(multiplier: float) -> void:
 	var new_seperation: int = int(_default_seperation * multiplier)

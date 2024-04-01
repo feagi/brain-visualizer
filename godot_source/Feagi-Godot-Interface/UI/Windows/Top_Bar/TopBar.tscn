@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=28 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalarMarginContainer.gd" id="2_0ln6a"]
@@ -26,6 +26,7 @@
 [ext_resource type="Texture2D" uid="uid://dqk41bwqlaxmq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_D.png" id="18_wm2pd"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
+[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="26_84r3k"]
 
 [node name="TopBar" type="HBoxContainer"]
 offset_left = 10.0
@@ -217,13 +218,37 @@ editable = false
 script = ExtResource("9_jcvuj")
 suffix = "ms"
 
-[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+layout_mode = 2
+text = "Neurons"
+vertical_alignment = 1
+script = ExtResource("12_gx8rc")
+
+[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
+layout_mode = 2
+alignment = 1
+editable = false
+script = ExtResource("26_84r3k")
+
+[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6"]
+layout_mode = 2
+text = "Synapses"
+vertical_alignment = 1
+script = ExtResource("12_gx8rc")
+
+[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="7"]
+layout_mode = 2
+alignment = 1
+editable = false
+script = ExtResource("26_84r3k")
+
+[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="8"]
 layout_mode = 2
 text = "System Health"
 vertical_alignment = 1
 script = ExtResource("12_gx8rc")
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="9" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]

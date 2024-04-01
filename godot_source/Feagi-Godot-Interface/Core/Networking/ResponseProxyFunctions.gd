@@ -140,7 +140,11 @@ func GET_healthCheck_POLL_genome_availability(_response_code: int, response_body
 		statuses["burst_engine"],
 		statuses["genome_availability"],
 		statuses["genome_validity"],
-		statuses["brain_readiness"]
+		statuses["brain_readiness"],
+		statuses["neuron_count_max"],
+		statuses["synapse_count_max"],
+		statuses["neuron_count"],
+		statuses["synapse_count"]
 	)
 	
 
@@ -148,10 +152,7 @@ func GET_healthCheck_POLL_genome_availability(_response_code: int, response_body
 func GET_healthCheck_POLL_health(_response_code: int, response_body: PackedByteArray, _irrelevant_data: Variant) -> void:
 	var statuses: Dictionary = _body_to_dictionary(response_body)
 	FeagiEvents.retrieved_latest_FEAGI_health.emit(
-		statuses["burst_engine"],
-		statuses["genome_availability"],
-		statuses["genome_validity"],
-		statuses["brain_readiness"]
+		statuses
 	)
 	# TEMP amalgamation stuff
 	if "amalgamation_pending" in statuses.keys():
