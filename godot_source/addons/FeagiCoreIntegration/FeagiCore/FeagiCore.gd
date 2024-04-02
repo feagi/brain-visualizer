@@ -14,14 +14,23 @@ enum CONNECTION_STATE {
 
 
 var connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
+var network: FEAGINetworking
 var genome_requests
 var genome_cache
 
 
 # Zeroth Stage loading. FEAGICore initialization starts here
 func _enter_tree():
-	var HTTP_Node: Node = Node.new()
-	add_child(HTTP_Node)
+	network = FEAGINetworking.new()
+	network.name = "FEAGINetworking"
+	add_child(network)
+	var http_node: FEAGIHTTPAPI = FEAGIHTTPAPI.new()
+	http_node.name = "FEAGIHTTPAPI"
+	network.add_child(http_node)
+
+	# TEST
+	attempt_connection(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/network_local_default.tres"))
+	
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
 ## Use this to attempt connecting to FEAGI using details from the javascript. Returns true is javascript retireved valid info (DOES NOT MEAN CONNECTION WORKED)
@@ -36,7 +45,6 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 	if connection_state != CONNECTION_STATE.DISCONNECTED:
 		push_error("FEAGICORE: Cannot initiate a new connection when one is already active!")
 		return
-	
-	pass
+	network.check_connection_to_FEAGI(feagi_endpoint_details)
 
 

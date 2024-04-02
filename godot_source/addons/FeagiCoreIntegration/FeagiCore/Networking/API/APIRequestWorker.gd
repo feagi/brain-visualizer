@@ -29,6 +29,7 @@ func setup_and_run_from_definition(call_header: PackedStringArray, request_defin
 	request_completed.connect(_call_complete)
 	_outgoing_headers = call_header
 	_request_definition = request_definition
+	timeout = request_definition.http_timeout
 	
 	# Setup and run call
 	match(request_definition.call_type):
@@ -85,14 +86,22 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	# Unresponsive FEAGI handling
 	if response_code == 0:
 		push_warning("FEAGI NETWORK HTTP: FEAGI did not respond on endpoint: %s" % _request_definition.full_address)
-		FEAGI_unresponsive.emit(_request_definition)
+		if _request_definition.http_unresponsive_call.is_valid():
+			# A custom function has been defined, run that instead
+			_request_definition.http_unresponsive_call.call(_request_definition)
+		else:
+			FEAGI_unresponsive.emit(_request_definition)
 		queue_free()
 		return
 	
 	# Generic FEAGI error handling
 	if response_code != 200:
 		push_warning("FEAGI NETWORK HTTP: FEAGI responded from endpoint: %s with HTTP error code: %s" % [_request_definition.full_address, response_code])
-		FEAGI_responded_error.emit(response_code, body, _request_definition)
+		if _request_definition.http_error_call.is_valid():
+			# A custom function has been defined, run that instead
+			_request_definition.http_error_call.call(_request_definition, body)
+		else:
+			FEAGI_responded_error.emit(response_code, body, _request_definition)
 		queue_free()
 		return
 	

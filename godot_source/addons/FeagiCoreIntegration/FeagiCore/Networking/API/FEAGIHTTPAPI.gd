@@ -2,10 +2,19 @@ extends Node
 class_name FEAGIHTTPAPI
 # Holds all APIRequestWorkers as children and manages them.
 
+enum HTTP_HEALTH {
+	NO_CONNECTION,
+	ERROR,
+	CONNECTABLE
+}
+
+signal FEAGI_http_health_changed(health: HTTP_HEALTH)
 signal FEAGI_returned_error(error_identifier: StringName, errored_request_definition: APIRequestWorkerDefinition) # FEAGI responded with an error identifier (or 'UNDECODABLE' if unable to be decoded)
 signal FEAGI_unresponsive(unresponded_request_definition: APIRequestWorkerDefinition)
 
+var http_health: HTTP_HEALTH = HTTP_HEALTH.NO_CONNECTION
 var call_list: FEAGIHTTPCallList ## All the calls one can send to the FEAGI API, wrapped in an easy class
+
 
 var _API_request_worker_prefab: PackedScene = preload("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.tscn")
 var _headers_to_use: PackedStringArray
@@ -25,6 +34,7 @@ func kill_all_children() -> void:
 ## For sending out HTTP Requests, best not to call directly, use the function in call_list
 func _FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
 	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
+	add_child(worker)
 	worker.setup_and_run_from_definition(_headers_to_use, request_definition)
 	
 	# connect signals
@@ -34,6 +44,9 @@ func _FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
 	worker.FEAGI_unresponsive.connect(_feagi_unresponsive)
 
 func _feagi_responsed_success(return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:
+	if !request_definition.follow_up_function.is_valid():
+		push_error("FEAGI NETWORK HTTP: Invalid follow up function defined for %s!" % request_definition.full_address)
+		return
 	request_definition.follow_up_function.call(return_body, request_definition)
 
 func _feagi_responsed_midpoll_success(return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:
