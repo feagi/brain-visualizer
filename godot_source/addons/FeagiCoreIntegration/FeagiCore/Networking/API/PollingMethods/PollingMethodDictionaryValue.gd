@@ -1,6 +1,6 @@
-extends PollingMethodInterface
+extends BasePollingMethod
 class_name PollingMethodDictionaryValue
-# Waits until a dictionary witha  specific key exisits witha  specific value
+# Waits until a dictionary witha  specific key exisits with a specific value
 
 var _searching_key: StringName
 var _searching_value: Variant  ## Be careful that this is of the same type that you expect out of a json

@@ -1,4 +1,4 @@
-extends PollingMethodInterface
+extends BasePollingMethod
 class_name PollingMethodNone
 ## Use to skip polling or keep polling forever
 

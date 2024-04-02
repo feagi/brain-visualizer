@@ -1,5 +1,5 @@
-extends Object
-class_name PollingMethodInterface
+extends RefCounted
+class_name BasePollingMethod
 ## More or less an interface for PollingMethod objects
 ## What do we need from the network call response body to confirm completion?
 
