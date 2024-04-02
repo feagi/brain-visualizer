@@ -1,24 +1,31 @@
 extends Node
-class_name HTTPAPI
+class_name FEAGIHTTPAPI
 # Holds all APIRequestWorkers as children and manages them.
 
 signal FEAGI_returned_error(error_identifier: StringName, errored_request_definition: APIRequestWorkerDefinition) # FEAGI responded with an error identifier (or 'UNDECODABLE' if unable to be decoded)
 signal FEAGI_unresponsive(unresponded_request_definition: APIRequestWorkerDefinition)
 
-
+var call_list: FEAGIHTTPCallList ## All the calls one can send to the FEAGI API, wrapped in an easy class
 
 var _API_request_worker_prefab: PackedScene = preload("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.tscn")
 var _headers_to_use: PackedStringArray
 
+## Used to setup (or reset) the HTTP API for a specific FEAGI instance
 func setup(feagi_root_web_address: StringName, headers: PackedStringArray) -> void:
-	endpoints = AddressList.new(feagi_root_web_address)
+	call_list = FEAGIHTTPCallList.new(feagi_root_web_address)
+	call_list.initiate_call_to_FEAGI.connect(_FEAGI_API_Request)
 	_headers_to_use = headers
-	kill_all_children()
+	kill_all_children() # in case of a reset, make sure any stranglers are gone
 
-## For sending out HTTP Requests
-func FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
+## Stop all HTTP Requests currently processing
+func kill_all_children() -> void:
+	for child: Node in get_children():
+		child.queue_free()
+
+## For sending out HTTP Requests, best not to call directly, use the function in call_list
+func _FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
 	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
-	worker.setup_and_run_from_definition(request_definition)
+	worker.setup_and_run_from_definition(_headers_to_use, request_definition)
 	
 	# connect signals
 	worker.FEAGI_responded_success.connect(_feagi_responsed_success)
@@ -26,17 +33,11 @@ func FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
 	worker.FEAGI_responded_error.connect(_feagi_responded_error)
 	worker.FEAGI_unresponsive.connect(_feagi_unresponsive)
 
-## Stop all HTTP Requests currently processing
-func kill_all_children() -> void:
-	for child: Node in get_children():
-		child.queue_free()
-
-
 func _feagi_responsed_success(return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:
-	request_definition.follow_up_function.call(return_body, request_definition.data_to_hold_for_follow_up_function)
+	request_definition.follow_up_function.call(return_body, request_definition)
 
 func _feagi_responsed_midpoll_success(return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:
-	request_definition.mid_poll_function.call(return_body, request_definition.data_to_hold_for_follow_up_function)
+	request_definition.mid_poll_function.call(return_body, request_definition)
 
 ## FEAGI responded but with an error
 func _feagi_responded_error(_http_status: int, return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:

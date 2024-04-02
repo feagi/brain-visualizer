@@ -1,5 +1,5 @@
 extends Object
-class_name AddressList
+class_name FEAGIHTTPAddressList
 ## Essentially a list of endpoints to FEAGI
 
 # Get Requests
