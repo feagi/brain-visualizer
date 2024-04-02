@@ -43,13 +43,18 @@ func _FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
 	worker.FEAGI_responded_error.connect(_feagi_responded_error)
 	worker.FEAGI_unresponsive.connect(_feagi_unresponsive)
 
+## Feagi responded with an HTTP 200
 func _feagi_responsed_success(return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:
 	if !request_definition.follow_up_function.is_valid():
 		push_error("FEAGI NETWORK HTTP: Invalid follow up function defined for %s!" % request_definition.full_address)
 		return
 	request_definition.follow_up_function.call(return_body, request_definition)
 
+## Feagi responded with an HTTP 200 but this is a midpoll call
 func _feagi_responsed_midpoll_success(return_body: PackedByteArray, request_definition: APIRequestWorkerDefinition) -> void:
+	if !request_definition.mid_poll_function.is_valid():
+		push_error("FEAGI NETWORK HTTP: Invalid mid poll function defined for %s!" % request_definition.full_address)
+		return
 	request_definition.mid_poll_function.call(return_body, request_definition)
 
 ## FEAGI responded but with an error
