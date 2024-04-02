@@ -42,11 +42,9 @@ func _enter_tree():
 	network = FEAGINetworking.new()
 	network.name = "FEAGINetworking"
 	add_child(network)
-	var http_node: FEAGIHTTPAPI = FEAGIHTTPAPI.new()
-	http_node.name = "FEAGIHTTPAPI"
-	network.add_child(http_node)
 
 	# TEST
+	feagi_settings = load("res://addons/FeagiCoreIntegration/FeagiCore/Config/feagi_default_settings.tres")
 	attempt_connection(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/network_local_default.tres"))
 	
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
