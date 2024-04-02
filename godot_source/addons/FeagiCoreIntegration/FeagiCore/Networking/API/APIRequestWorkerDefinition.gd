@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name APIRequestWorkerDefinition
 ## A set of instructions for [APIRequestWorker]
 

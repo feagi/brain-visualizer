@@ -10,9 +10,6 @@ func _init(searching_key: StringName, searching_value: Variant) -> void:
 	_searching_value = searching_value
 
 func confirm_complete(response_code: int, response_body: PackedByteArray) -> POLLING_CONFIRMATION:
-	if response_code != 200:
-		return POLLING_CONFIRMATION.ERROR
-
 	var dictionary: Dictionary = JSON.parse_string(response_body.get_string_from_utf8())
 	if _searching_key not in dictionary.keys(): 
 		return POLLING_CONFIRMATION.INCOMPLETE
