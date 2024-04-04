@@ -3,13 +3,22 @@ class_name FEAGINetworking
 ## Handles All Networking to and from FEAGI
 
 
-
-
-var http_API: FEAGIHTTPAPI = null # Responsible for HTTP requests, this var will be null until activate_http_API is called at least once
+var http_API: FEAGIHTTPAPI = null
 var websocket_API: FEAGIWebSocketAPI = null
 
-func _init():
-	set_process(false) # No point pingin websocket before we connected
+var _general_FEAGI_settings: FeagiGeneralSettings
+
+func _init(feagi_settings: FeagiGeneralSettings):
+	_general_FEAGI_settings = feagi_settings
+	
+	http_API = FEAGIHTTPAPI.new()
+	http_API.name = "FEAGIHTTPAPI"
+	add_child(http_API)
+
+	websocket_API = FEAGIWebSocketAPI.new()
+	websocket_API.name = "FEAGIWebSocketAPI"
+	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child(websocket_API)
 
 # Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify
 func check_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails):
@@ -17,15 +26,7 @@ func check_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails):
 	http_API.call_list.GET_healthCheck_FEAGI_VALIDATION()
 
 func activate_http_API(FEAGI_API_address: StringName, headers: PackedStringArray) -> void:
-	if http_API == null:
-		http_API = FEAGIHTTPAPI.new()
-		http_API.name = "FEAGIHTTPAPI"
-		add_child(http_API)
-	http_API.setup(FEAGI_API_address, headers)
+	http_API.setup(FEAGI_API_address, headers, _general_FEAGI_settings)
 
 func activate_websocket_APT(FEAGI_websocket_address: StringName) -> void:
-	if websocket_API == null:
-		websocket_API = FEAGIWebSocketAPI.new()
-		websocket_API.name = "FEAGIWebSocketAPI"
-		add_child(websocket_API)
 	websocket_API.setup(FEAGI_websocket_address)

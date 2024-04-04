@@ -59,7 +59,12 @@ func _process(delta: float):
 
 ## Initializes and attempts to concect the websocket
 func setup(feagi_socket_address: StringName) -> void:
-	_socket =  WebSocketPeer.new()
+	if _socket == null:
+		_socket =  WebSocketPeer.new()
+	_refresh_socket_state()
+	if _socket_prev_state != WebSocketPeer.STATE_CLOSED:
+		push_warning("FEAGI Websocket: Cannot initate a new connection when websocket is not closed!")
+		return
 	_socket.connect_to_url(feagi_socket_address)
 	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
 	set_process(true)
@@ -67,7 +72,7 @@ func setup(feagi_socket_address: StringName) -> void:
 ## attempts to send data over websocket
 func websocket_send(data: Variant) -> void:
 	if _socket_prev_state != WebSocketPeer.STATE_OPEN:
-		push_warning("Unable to send data to closed socket!")
+		push_warning("FEAGI Websocket: Unable to send data to closed socket!")
 		return
 	_socket.send((data.to_ascii_buffer()).compress(1)) # for some reason, using the enum instead of the number causes this break
 

@@ -12,24 +12,40 @@ signal FEAGI_http_health_changed(health: HTTP_HEALTH)
 signal FEAGI_returned_error(error_identifier: StringName, errored_request_definition: APIRequestWorkerDefinition) # FEAGI responded with an error identifier (or 'UNDECODABLE' if unable to be decoded)
 signal FEAGI_unresponsive(unresponded_request_definition: APIRequestWorkerDefinition)
 
-var http_health: HTTP_HEALTH = HTTP_HEALTH.NO_CONNECTION
+var http_health: HTTP_HEALTH:
+	get: 
+		return _http_health
+	set(v): 
+		# Always inform if the health changes, but repeatadly inform of no connection
+		if v == HTTP_HEALTH.NO_CONNECTION or v != _http_health:
+			_http_health = v
+			FEAGI_http_health_changed.emit(v)
 var call_list: FEAGIHTTPCallList ## All the calls one can send to the FEAGI API, wrapped in an easy class
 
 
 var _API_request_worker_prefab: PackedScene = preload("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.tscn")
 var _headers_to_use: PackedStringArray
+var _FEAGI_settings: FeagiGeneralSettings
+var _http_health: HTTP_HEALTH  = HTTP_HEALTH.NO_CONNECTION
 
 ## Used to setup (or reset) the HTTP API for a specific FEAGI instance
-func setup(feagi_root_web_address: StringName, headers: PackedStringArray) -> void:
+func setup(feagi_root_web_address: StringName, headers: PackedStringArray, feagi_settings: FeagiGeneralSettings) -> void:
+	_headers_to_use = headers
+	_FEAGI_settings = feagi_settings
+	
 	call_list = FEAGIHTTPCallList.new(feagi_root_web_address)
 	call_list.initiate_call_to_FEAGI.connect(_FEAGI_API_Request)
-	_headers_to_use = headers
+	
 	kill_all_children() # in case of a reset, make sure any stranglers are gone
 
 ## Stop all HTTP Requests currently processing
 func kill_all_children() -> void:
 	for child: Node in get_children():
 		child.queue_free()
+
+## Used by the special health check http call to control the state of this [FEAGIHTTPAPI]
+func FEAGI_healthcheck_responded(current_health: HTTP_HEALTH) -> void:
+	http_health = current_health
 
 ## For sending out HTTP Requests, best not to call directly, use the function in call_list
 func _FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> void:
@@ -69,3 +85,8 @@ func _feagi_responded_error(_http_status: int, return_body: PackedByteArray, req
 ## FEAGI didn't respond. likely crashed
 func _feagi_unresponsive(request_definition: APIRequestWorkerDefinition) -> void:
 	FEAGI_unresponsive.emit(request_definition)
+
+
+
+
+

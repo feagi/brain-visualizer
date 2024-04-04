@@ -1,6 +1,13 @@
 extends Resource
 class_name FeagiGeneralSettings
 
-@export var connect_even_if_no_genome: bool
-@export var any_timeout_means_disconnection: bool
-@export var websocket_dropping_means_disconnect: bool
+enum POLL_WEBSOCKET_BEHAVIOR {
+	NO_POLLING,
+	POLL_IF_GENOME_LOADED,
+	ALWAYS_POLL
+}
+
+@export var connect_even_if_no_genome: bool ## Continue connecting if healthcheck returns but genome is stated as not loaded
+@export var websocket_dropping_means_disconnect: bool ## If any websocket dropping should cause a disconnection
+@export var load_genome_on_connect_if_available: bool ## If genome should automatically be loaded into cache if genome is available
+@export var poll_websocket_connection_if_no_websocket: POLL_WEBSOCKET_BEHAVIOR ## In the case websocket is down, how / if we should try to reconnect

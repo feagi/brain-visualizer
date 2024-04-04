@@ -3,6 +3,7 @@ class_name FEAGIHTTPResponses
 ## The return functions for the callables in [FEAGIHTTPCallList]. 
 #Note: All callables must be STATIC
 
+
 #region SYSTEM
 
 
@@ -13,20 +14,18 @@ static func GET_healthCheck_FEAGI_VALIDATION(response_body: PackedByteArray, _ir
 	var health_data: Dictionary = FEAGIHTTPResponses.byte_array_to_dict(response_body)
 	if !FEAGIHTTPResponses.does_dict_contain_keys(health_data, ["genome_availability"]):
 		# if we are missing this key, something is wrong
-		FeagiCore.FEAGI_retrieve_connection_check_results(FeagiCore.CONNECTION_CHECK_RESULTS.UNKNOWN_RESPONSE)
+		FeagiCore.network.http_API.FEAGI_healthcheck_responded(FEAGIHTTPAPI.HTTP_HEALTH.ERROR)
 		return
-	if health_data["genome_availability"]:
-		FeagiCore.FEAGI_retrieve_connection_check_results(FeagiCore.CONNECTION_CHECK_RESULTS.HEALTHY)
-	else:
-		FeagiCore.FEAGI_retrieve_connection_check_results(FeagiCore.CONNECTION_CHECK_RESULTS.HEALTHY_BUT_NO_GENOME)
-
+	FeagiCore.genome_cache.update_health_from_FEAGI_dict(health_data) # Notably, will update here if genome is available or not
+	FeagiCore.network.http_API.FEAGI_healthcheck_responded(FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE)
+	
 ## FEAGI returned an HTTP error
 static func GET_healthCheck_FEAGI_VALIDATION_ERROR(_response_body: PackedByteArray, _request_definition: APIRequestWorkerDefinition):
-	FeagiCore.FEAGI_retrieve_connection_check_results(FeagiCore.CONNECTION_CHECK_RESULTS.UNKNOWN_RESPONSE)
+	FeagiCore.network.http_API.FEAGI_healthcheck_responded(FEAGIHTTPAPI.HTTP_HEALTH.ERROR)
 
 ## FEAGI doesnt seem to be running at all
 static func GET_healthCheck_FEAGI_VALIDATION_UNRESPONSIVE(_request_definition: APIRequestWorkerDefinition):
-	FeagiCore.FEAGI_retrieve_connection_check_results(FeagiCore.CONNECTION_CHECK_RESULTS.NO_RESPONSE)
+	FeagiCore.network.http_API.FEAGI_healthcheck_responded(FEAGIHTTPAPI.HTTP_HEALTH.NO_CONNECTION)
 	
 #endregion
 

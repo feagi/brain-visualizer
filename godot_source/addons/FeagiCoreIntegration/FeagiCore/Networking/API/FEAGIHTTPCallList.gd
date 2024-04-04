@@ -2,7 +2,7 @@ extends RefCounted
 class_name FEAGIHTTPCallList
 ## Callables from godot to make HTTP requests to FEAGI
 
-signal initiate_call_to_FEAGI(request_definition: APIRequestWorkerDefinition)
+signal initiate_call_to_FEAGI(request_definition: APIRequestWorkerDefinition) ## Connected to [FEAGIHTTPAPI], used to relay all requests to it
 
 var _address_list: FEAGIHTTPAddressList
 
