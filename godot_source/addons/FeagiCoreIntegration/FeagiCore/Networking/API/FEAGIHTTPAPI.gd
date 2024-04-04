@@ -25,19 +25,23 @@ var call_list: FEAGIHTTPCallList ## All the calls one can send to the FEAGI API,
 
 var _API_request_worker_prefab: PackedScene = preload("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.tscn")
 var _headers_to_use: PackedStringArray
-var _FEAGI_settings: FeagiGeneralSettings
 var _http_health: HTTP_HEALTH  = HTTP_HEALTH.NO_CONNECTION
 
 ## Used to setup (or reset) the HTTP API for a specific FEAGI instance
-func setup(feagi_root_web_address: StringName, headers: PackedStringArray, feagi_settings: FeagiGeneralSettings) -> void:
+func connect_http(feagi_root_web_address: StringName, headers: PackedStringArray) -> void:
 	_headers_to_use = headers
-	_FEAGI_settings = feagi_settings
 	
 	call_list = FEAGIHTTPCallList.new(feagi_root_web_address)
 	call_list.initiate_call_to_FEAGI.connect(_FEAGI_API_Request)
 	
 	kill_all_children() # in case of a reset, make sure any stranglers are gone
 
+## Disconnect all HTTP systems from FEAGI
+func disconnect_http() -> void:
+	kill_all_children()
+	call_list = null
+	http_health = HTTP_HEALTH.NO_CONNECTION
+	
 ## Stop all HTTP Requests currently processing
 func kill_all_children() -> void:
 	for child: Node in get_children():

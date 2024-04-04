@@ -5,7 +5,8 @@
 [resource]
 script = ExtResource("1_6xmmx")
 connect_even_if_no_genome = true
-any_http_timeout_means_disconnection = true
 websocket_dropping_means_disconnect = false
-load_genome_on_connect_if_available = true
+attempt_connect_websocket_on_launch = false
+load_genome_on_connect_if_available = false
 poll_websocket_connection_if_no_websocket = 1
+seconds_between_latency_pings = 5.0

@@ -10,19 +10,14 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 signal socket_state_changed(state: WebSocketPeer.State)
 signal feagi_return_ping()
 signal feagi_requesting_reset()
-#TODO: As we move more functionality here, we need a generic event signal
+#TODO: As we move more functionality here, we need a generic event signal, or an equivilant to [FEAGIHTTPResponses]
 
 var websocket_state: WebSocketPeer.State:
 	get: return _socket.get_ready_state()
 
-var _cache_websocket_data: PackedByteArray
+var _cache_websocket_data: PackedByteArray # outside to void reallocation penalties
 var _socket: WebSocketPeer
-var _ping_timer: Timer
-var _last_ping_time: int
 var _socket_prev_state: WebSocketPeer.State = WebSocketPeer.State.STATE_CLOSED
-
-func _init():
-	set_process(false)
 
 func _process(delta: float):
 	_socket.poll()
@@ -43,7 +38,10 @@ func _process(delta: float):
 				else:
 					# assume its visualization data
 					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
-					if temp ==  null: return
+					if temp ==  null:
+						return
+					# TODO send up data
+					
 					#FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
@@ -52,22 +50,30 @@ func _process(delta: float):
 			# Closed Connection to FEAGI
 			var close_code: int = _socket.get_close_code()
 			var close_reason: String = _socket.get_close_reason()
-			_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+			if  _socket.get_available_packet_count() > 0:
+				# There was some remenant data
+				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 			#TODO FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii())) # Add to erase neurons
 			push_warning("FEAGI Websocket: Closed with code: %d, reason %s. Clean: %s" % [close_code, close_reason, close_code != -1])
 			set_process(false)
 
 ## Initializes and attempts to concect the websocket
-func setup(feagi_socket_address: StringName) -> void:
+func connect_websocket(feagi_socket_address: StringName) -> void:
+	print("attempt connect")
 	if _socket == null:
 		_socket =  WebSocketPeer.new()
+		_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
 	_refresh_socket_state()
 	if _socket_prev_state != WebSocketPeer.STATE_CLOSED:
 		push_warning("FEAGI Websocket: Cannot initate a new connection when websocket is not closed!")
 		return
 	_socket.connect_to_url(feagi_socket_address)
-	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
-	set_process(true)
+
+## Force closes the socket. This does cause 'socket_state_changed' to fire
+func disconnect_websocket() -> void:
+	if _socket == null:
+		return
+	_socket.close()
 
 ## attempts to send data over websocket
 func websocket_send(data: Variant) -> void:
@@ -85,4 +91,5 @@ func _refresh_socket_state() -> void:
 		## no change, doesn't matter which we return
 		return
 	_socket_prev_state = _socket.get_ready_state()
+	print(_socket_prev_state)
 	socket_state_changed.emit(_socket_prev_state)
