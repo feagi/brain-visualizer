@@ -32,7 +32,7 @@ var feagi_settings: FeagiGeneralSettings:
 	get: return _feagi_settings # No setter
 var network: FEAGINetworking
 var genome_requests
-var genome_cache: FEAGIGenomeCache
+var feagi_local_cache: FEAGILocalCache
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _genome_load_state: GENOME_LOAD_STATE = GENOME_LOAD_STATE.UNKNOWN
@@ -46,7 +46,7 @@ func _enter_tree():
 		network = FEAGINetworking.new()
 		network.name = "FEAGINetworking"
 		add_child(network)
-	genome_cache = FEAGIGenomeCache.new()
+	feagi_local_cache = FEAGILocalCache.new()
 	
 	
 	# TEST
@@ -111,19 +111,20 @@ func load_genome_from_FEAGI() -> void:
 	if connection_state != CONNECTION_STATE.CONNECTED:
 		push_error("FEAGICORE: Cannot load genome when not connected to FEAGI!")
 		return
-	if !genome_cache.genome_availability:
+	if !feagi_local_cache.genome_availability:
 		push_error("FEAGICORE: Cannot load genome when FEAGI reports it as unavailable!")
+		return
+	if genome_load_state == GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
+		push_error("FEAGICORE: Cannot start a reload of the genome when it currently being loaded!")
 		return
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
 	genome_load_state_changed.emit(_genome_load_state)
-	
-	
 	#TODO
 	
 	#TODO remove these 2 lines from here
 	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
 	genome_load_state_changed.emit(_genome_load_state)
-	
+
 
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 	# Bit too much nesting imo, but this is cleaner than having external single use functions
@@ -159,14 +160,18 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 						#NOTE: An attempt to connect will be made, but not promised. You must keep an eye on the signals from here to update the UI accordingly
 						# This will immediately raise the connecting flag, then either the connected flag or disconnect flag
 					if feagi_settings.load_genome_on_connect_if_available:
-						if genome_cache.genome_availability == true:
+						if feagi_local_cache.genome_availability == true:
 							load_genome_from_FEAGI()
 						else:
+							print("FEAGICORE: No Genome detected in FEAGI!")
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
-							genome_load_state_changed.emit(_genome_load_state)
 					else:
-						print("FEAGICORE: Genome detected but configuration is set not to load it automatically. Skipping genome loading!")
-						_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+						if feagi_local_cache.genome_availability == true:
+							print("FEAGICORE: Genome detected but configuration is set not to load it automatically. Skipping genome loading!")
+							_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+						else:
+							print("FEAGICORE: No Genome detected in FEAGI!")
+							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
 						genome_load_state_changed.emit(_genome_load_state)
 					connection_state_changed.emit(CONNECTION_STATE.CONNECTED)
 					

@@ -16,7 +16,7 @@ static func GET_healthCheck_FEAGI_VALIDATION(response_body: PackedByteArray, _ir
 		# if we are missing this key, something is wrong
 		FeagiCore.network.http_API.FEAGI_healthcheck_responded(FEAGIHTTPAPI.HTTP_HEALTH.ERROR)
 		return
-	FeagiCore.genome_cache.update_health_from_FEAGI_dict(health_data) # Notably, will update here if genome is available or not
+	FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(health_data) # Notably, will update here if genome is available or not
 	FeagiCore.network.http_API.FEAGI_healthcheck_responded(FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE)
 	
 ## FEAGI returned an HTTP error

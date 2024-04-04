@@ -1,5 +1,5 @@
 extends RefCounted
-class_name FEAGIGenomeCache
+class_name FEAGILocalCache
 
 #region Health
 
