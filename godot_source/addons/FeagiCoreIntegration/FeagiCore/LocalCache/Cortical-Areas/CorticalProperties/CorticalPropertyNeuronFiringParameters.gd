@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name CorticalPropertyNeuronFiringParameters
 
 signal neuron_mp_charge_accumulation_updated(val: bool, this_cortical_area: CoreCorticalArea)

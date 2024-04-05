@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name BaseCorticalArea
 ## Holds details pertaining to a specific cortical area
 ## Should not be instantiated directly

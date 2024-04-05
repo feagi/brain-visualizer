@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name MappingProperty
 ## a SINGLE Mapping property between 2 cortical areas (there can be multiple, which is stored in [MappingProperties])
 ## Whenever [MappingProperties] updates to a new set of MappingPropertys, it completely deletes the old ones and replaces it with the new ones

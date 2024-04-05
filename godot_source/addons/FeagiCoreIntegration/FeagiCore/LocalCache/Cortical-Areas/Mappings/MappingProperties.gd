@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name MappingProperties
 ## Holds all [MappingProperty] objects / data relevant between a single source and a single destination cortical area
 

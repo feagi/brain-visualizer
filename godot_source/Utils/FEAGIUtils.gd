@@ -1,6 +1,7 @@
 extends Object
 class_name FEAGIUtils
 ## A set of functions that are useful around the program. Treat this class as static
+#TODO split up to better utils
 
 ## Converts untyped array to int array
 static func arr_to_int_arr(arr: Array) -> Array[int]:

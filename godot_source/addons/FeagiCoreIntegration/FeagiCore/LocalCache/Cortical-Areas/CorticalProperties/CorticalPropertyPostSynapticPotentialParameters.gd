@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name CorticalPropertyPostSynapticPotentialParameters
 
 signal neuron_psp_uniform_distribution_updated(new_val: bool, this_cortical_area: BaseCorticalArea)

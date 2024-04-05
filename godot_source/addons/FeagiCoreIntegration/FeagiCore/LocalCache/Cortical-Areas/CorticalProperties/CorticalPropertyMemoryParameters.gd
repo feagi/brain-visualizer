@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name CorticalPropertyMemoryParameters
 
 signal initial_neuron_lifespan_updated(val: int, this_cortical_area: MemoryCorticalArea)
