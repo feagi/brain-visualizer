@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name CorticalTemplates
 ## Holds all available templates for a specific cortical area type
 

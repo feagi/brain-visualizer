@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name CorticalAreasCache
 ## Stores all cortical areas available in the genome
 
