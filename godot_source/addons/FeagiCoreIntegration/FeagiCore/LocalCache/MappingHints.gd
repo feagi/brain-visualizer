@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name MappingHints
 ## Stores any hints or restrictions that may occur when mapping 2 cortical areas to each other
 
