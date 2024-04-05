@@ -51,7 +51,7 @@ func kill_all_children() -> void:
 func FEAGI_healthcheck_responded(current_health: HTTP_HEALTH) -> void:
 	http_health = current_health
 
-func FEAGI_API_Request(request_definition: APIRequestWorkerDefinition) -> APIRequestWorker: # v2
+func FEAGI_API_Request2(request_definition: APIRequestWorkerDefinition) -> APIRequestWorker: # v2
 	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
 	add_child(worker)
 	worker.setup_and_run_from_definition(_headers_to_use, request_definition)

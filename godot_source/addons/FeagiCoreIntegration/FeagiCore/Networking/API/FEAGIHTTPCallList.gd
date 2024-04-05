@@ -12,20 +12,20 @@ func _init(feagi_root_web_address: StringName):
 #region Cortical Areas
 
 ## Gets Summary information for all cortical areas in current genome, calls GET_CorticalMapDetailed upon success
-func GET_CorticalArea_Geometry():
+func GET_CorticalArea_Geometry() -> APIRequestWorkerDefinition:
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
 		_address_list.GET_corticalArea_corticalArea_geometry,
 		FEAGIHTTPResponses.GET_CorticalArea_Geometry
 	)
-	initiate_call_to_FEAGI.emit(request)
+	return request
 
 ## Gets summary information of how all cortical areas are mapped to each (including details of the morphology used)
-func GET_CorticalMapDetailed():
+func GET_CorticalMapDetailed() -> APIRequestWorkerDefinition:
 	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
 		_address_list.GET_corticalArea_corticalMapDetailed,
 		FEAGIHTTPResponses.GET_CorticalMapDetailed
 	)
-	initiate_call_to_FEAGI.emit(request)
+	return request
 
 #endregion
 

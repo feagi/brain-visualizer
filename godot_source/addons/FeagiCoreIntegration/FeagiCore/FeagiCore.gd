@@ -31,7 +31,7 @@ var genome_load_state: GENOME_LOAD_STATE:
 var feagi_settings: FeagiGeneralSettings:
 	get: return _feagi_settings # No setter
 var network: FEAGINetworking
-var genome_requests
+var requests: FEAGIRequests
 var feagi_local_cache: FEAGILocalCache
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
@@ -47,7 +47,7 @@ func _enter_tree():
 		network.name = "FEAGINetworking"
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
-	
+	requests = FEAGIRequests.new()
 	
 	# TEST
 	load_FEAGI_settings(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/feagi_default_settings.tres"))
@@ -120,8 +120,9 @@ func load_genome_from_FEAGI() -> void:
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
 	genome_load_state_changed.emit(_genome_load_state) # This would bea  good time to close any UIs
 	#TODO wipe current data
-	network.http_API.call_list.GET_CorticalArea_Geometry() # The end of this calls for morphology summary, which in turn is enough data to rebuild local cache
 	
+	#network.http_API.call_list.GET_CorticalArea_Geometry() # The end of this calls for morphology summary, which in turn is enough data to rebuild local cache
+	requests.reload_genome()
 
 
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
