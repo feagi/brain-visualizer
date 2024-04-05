@@ -12,9 +12,6 @@ signal feagi_return_ping()
 signal feagi_requesting_reset()
 #TODO: As we move more functionality here, we need a generic event signal, or an equivilant to [FEAGIHTTPResponses]
 
-var websocket_state: WebSocketPeer.State:
-	get: return _socket.get_ready_state()
-
 var _cache_websocket_data: PackedByteArray # outside to void reallocation penalties
 var _socket: WebSocketPeer
 var _socket_prev_state: WebSocketPeer.State = WebSocketPeer.State.STATE_CLOSED
@@ -85,6 +82,11 @@ func websocket_send(data: Variant) -> void:
 # attempts to send a ping over websocket
 func send_websocket_ping() -> void:
 	websocket_send(SOCKET_GENEOME_UPDATE_LATENCY)
+
+func get_websocket_state() -> WebSocketPeer.State:
+	if _socket != null:
+		return _socket.get_ready_state()
+	return WebSocketPeer.State.STATE_CLOSED # If socket isnt existing, then it must be closed
 
 func _refresh_socket_state() -> void:
 	if _socket_prev_state == _socket.get_ready_state():
