@@ -1,6 +1,6 @@
-extends Morphology
+extends BaseMorphology
 class_name PatternMorphology
-## Morphology of type Pattern
+## BaseMorphology of type Pattern
 
 var patterns: Array[PatternVector3Pairs]
 

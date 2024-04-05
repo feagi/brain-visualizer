@@ -7,7 +7,7 @@ const INT8_MAX: int = 2147483647 # This is likely the max supported int in vecto
 
 
 
-var morphology_used: Morphology:
+var morphology_used: BaseMorphology:
 	get: return _morphology_used
 var scalar: Vector3i:
 	get: return _scalar
@@ -25,7 +25,7 @@ var LTD_multiplier: float:
 var is_null_placeholder: bool:
 	get: return _is_null
 
-var _morphology_used: Morphology
+var _morphology_used: BaseMorphology
 var _scalar: Vector3i # must all be non-zero positive
 var _post_synaptic_current_multiplier: float
 var _plasticity_flag: bool
@@ -34,7 +34,7 @@ var _LTP_multiplier: float
 var _LTD_multiplier: float
 var _is_null: bool = false
 
-func _init(morphology: Morphology, positive_scalar: Vector3i, psp_multilpier: float, plasticity: bool, plasticity_constant_: float = 1.0, ltp_multiplier: float = 1.0, ltd_multiplier: float = 1.0, is_null: bool = false):
+func _init(morphology: BaseMorphology, positive_scalar: Vector3i, psp_multilpier: float, plasticity: bool, plasticity_constant_: float = 1.0, ltp_multiplier: float = 1.0, ltd_multiplier: float = 1.0, is_null: bool = false):
 	_morphology_used = morphology
 	_scalar = Vector3i(FEAGIUtils.bounds_int(positive_scalar.x, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.y, 1, INT8_MAX), FEAGIUtils.bounds_int(positive_scalar.z, 1, INT8_MAX))
 	_post_synaptic_current_multiplier = psp_multilpier
@@ -45,7 +45,7 @@ func _init(morphology: Morphology, positive_scalar: Vector3i, psp_multilpier: fl
 	_is_null = is_null
 
 ## Creates a mapping with default settings (given a morphology)
-static func create_default_mapping(morphology: Morphology) -> MappingProperty:
+static func create_default_mapping(morphology: BaseMorphology) -> MappingProperty:
 	return MappingProperty.new(morphology, Vector3i(1,1,1), 1.0, false)
 
 ## Creates a null placeholder mapping (used just to populate [MappingProperties] with the correct number of mappings before we know their details)
@@ -61,7 +61,7 @@ static func create_placeholder_mapping_array(size: int) -> Array[MappingProperty
 
 ## Given the dictionary from FEAGI directly creates a MappingProperty object
 static func from_dict(mapping_property: Dictionary) -> MappingProperty:
-	var morphology_cached: Morphology = FeagiCache.morphology_cache.available_morphologies[mapping_property["morphology_id"]]
+	var morphology_cached: BaseMorphology = FeagiCache.morphology_cache.available_morphologies[mapping_property["morphology_id"]]
 	var scalar_used: Vector3i = FEAGIUtils.array_to_vector3i(mapping_property["morphology_scalar"])
 	var psp_multiplier: float = mapping_property["postSynapticCurrent_multiplier"]
 	var plasticity: bool = mapping_property["plasticity_flag"]

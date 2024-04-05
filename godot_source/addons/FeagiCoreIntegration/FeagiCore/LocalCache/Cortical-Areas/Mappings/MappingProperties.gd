@@ -21,7 +21,7 @@ var number_mappings: int:
 	get: return len(_mappings)
 var max_axis_indexmapping_count_limit: int:
 	get: return _max_number_mappings_supported
-var morphologies_restricted_to: Array[Morphology]:
+var morphologies_restricted_to: Array[ BaseMorphology]:
 	get: return _morphologies_restricted_to
 var is_limit_on_mapping_count: bool:
 	get: return _max_number_mappings_supported != -1
@@ -32,7 +32,7 @@ var _src_cortical: BaseCorticalArea
 var _dst_cortical: BaseCorticalArea
 var _mappings: Array[MappingProperty]
 var _max_number_mappings_supported: int = -1
-var _morphologies_restricted_to: Array[Morphology] = []
+var _morphologies_restricted_to: Array[ BaseMorphology] = []
 
 func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings_between_them: Array[MappingProperty]) -> void:
 	_src_cortical = source_area
@@ -57,7 +57,7 @@ static func create_empty_mapping(source_area: BaseCorticalArea, destination_area
 	return MappingProperties.new(source_area, destination_area, empty_typed_array)
 
 ## Creates a default mapping object given a source, destination, and morphology to use. Default settings will be used
-static func create_default_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology_to_use: Morphology) -> MappingProperties:
+static func create_default_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology_to_use: Base BaseMorphology) -> MappingProperties:
 	var default_mapping: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology_to_use)]
 	return MappingProperties.new(source_area, destination_area, default_mapping)
 
@@ -72,8 +72,8 @@ static func mapping_properties_to_FEAGI_formated_array(input_mappings: Array[Map
 	return output
 
 ## Returns an array with no duplicates of all morphologies within an array of Mapping Propertys
-static func get_involved_morphologies_from_mapping_propertys(input_mappings: Array[MappingProperty]) -> Array[Morphology]:
-	var morphologies_involved: Array[Morphology] = []
+static func get_involved_morphologies_from_mapping_propertys(input_mappings: Array[MappingProperty]) -> Array[ BaseMorphology]:
+	var morphologies_involved: Array[ BaseMorphology] = []
 	for mapping: MappingProperty in input_mappings:
 		if !(mapping.morphology_used in morphologies_involved):
 			morphologies_involved.append(mapping.morphology_used)

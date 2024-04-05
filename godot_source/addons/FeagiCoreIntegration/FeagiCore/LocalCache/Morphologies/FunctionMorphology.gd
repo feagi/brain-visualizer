@@ -1,6 +1,6 @@
-extends Morphology
+extends BaseMorphology
 class_name FunctionMorphology
-## A "Custom" Morphology type
+## A "Custom" BaseMorphology type
 
 var parameters: Dictionary
 

@@ -1,6 +1,6 @@
-extends Morphology
+extends BaseMorphology
 class_name CompositeMorphology
-## Morphology of type Composite
+## BaseMorphology of type Composite
 
 var source_seed: Vector3i
 var source_pattern: Array[Vector2i]

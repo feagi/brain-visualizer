@@ -1,6 +1,6 @@
-extends Morphology
+extends BaseMorphology
 class_name VectorMorphology
-## Morphology of type Vector
+## BaseMorphology of type Vector
 
 var vectors: Array[Vector3i]
 # PackedVector3iArrays do not exist as per https://github.com/godotengine/godot/pull/66616
