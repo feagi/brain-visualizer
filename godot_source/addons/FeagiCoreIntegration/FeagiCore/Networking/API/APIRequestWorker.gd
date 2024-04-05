@@ -12,15 +12,16 @@ enum CALL_PROCESS_TYPE {
 	POLLING
 }
 
+signal worker_done()
 signal FEAGI_responded_success(body: PackedByteArray, request_definition: APIRequestWorkerDefinition) ## FEAGI responded without error. Note that for polling calls this also means polling is done
 signal FEAGI_responded_success_midpoll(body: PackedByteArray, request_definition: APIRequestWorkerDefinition) ## FEAGI responded without error ona  polling call, and the worker will continue polling
 signal FEAGI_responded_error(http_status: int, data: PackedByteArray, request_definition: APIRequestWorkerDefinition) ## FEAGI sent back an error code
 signal FEAGI_unresponsive(request_definition: APIRequestWorkerDefinition) # FEAGI didnt respond at all, it is likely down / crashed
 
 var _timer: Timer
-
 var _outgoing_headers: PackedStringArray # headers to make requests with
 var _request_definition: APIRequestWorkerDefinition
+var _output_response: APIRequestWorkerOutput
 
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(call_header: PackedStringArray, request_definition: APIRequestWorkerDefinition) -> void:
@@ -80,37 +81,56 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 
+func retrieve_output_and_close() -> APIRequestWorkerOutput:
+	if _output_response == null:
+		push_error("FEAGI NETWORK HTTP: Output retrieved before HTTP call was complete! Returning Empty Error Call. This will likely cause issues!")
+		_output_response = APIRequestWorkerOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+	queue_free()
+	return _output_response
+
 ## Called when FEAGI returns data from call (or HTTP call timed out)
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
 	
 	# Unresponsive FEAGI handling
 	if response_code == 0:
 		push_warning("FEAGI NETWORK HTTP: FEAGI did not respond on endpoint: %s" % _request_definition.full_address)
+		
+		_output_response = APIRequestWorkerOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+		worker_done.emit()
+		
 		if _request_definition.http_unresponsive_call.is_valid():
 			# A custom function has been defined, run that instead
 			_request_definition.http_unresponsive_call.call(_request_definition)
 		else:
 			FEAGI_unresponsive.emit(_request_definition)
-		queue_free()
+		#queue_free()
 		return
 	
 	# Generic FEAGI error handling
 	if response_code != 200:
 		push_warning("FEAGI NETWORK HTTP: FEAGI responded from endpoint: %s with HTTP error code: %s" % [_request_definition.full_address, response_code])
+		
+		_output_response = APIRequestWorkerOutput.response_error_response(body, _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+		worker_done.emit()
+		
 		if _request_definition.http_error_call.is_valid():
 			# A custom function has been defined, run that instead
 			_request_definition.http_error_call.call(_request_definition, body)
 		else:
 			FEAGI_responded_error.emit(response_code, body, _request_definition)
-		queue_free()
+		#queue_free()
 		return
+	
+	_output_response = APIRequestWorkerOutput.response_success(body, _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+	worker_done.emit()
 	
 	match(_request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# Default, no polling required
 			#_follow_up_function.call(response_code, body, _request_definition.data_to_hold_for_follow_up_function)
+			
 			FEAGI_responded_success.emit(body, _request_definition)
-			queue_free()
+			#queue_free()
 		CALL_PROCESS_TYPE.POLLING:
 			# we are polling
 			var polling_response: BasePollingMethod.POLLING_CONFIRMATION = _request_definition.polling_completion_check.confirm_complete(response_code, body)
@@ -118,7 +138,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 				BasePollingMethod.POLLING_CONFIRMATION.COMPLETE:
 					# We are done polling!
 					FEAGI_responded_success.emit(body, _request_definition)
-					queue_free()
+					#queue_free()
 					return
 				BasePollingMethod.POLLING_CONFIRMATION.INCOMPLETE:
 					# not done polling, keep going!
@@ -127,6 +147,6 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 					#n This actually shouldnt be possible. Report error and close
 					push_error("FEAGI NETWORK HTTP: Polling endpoint has failed! Halting!")
 					_timer.stop()
-					queue_free()
+					#queue_free()
 					return
 
