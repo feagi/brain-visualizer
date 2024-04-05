@@ -454,7 +454,7 @@ func get_efferent_connections_with_count() -> Dictionary:
 func _get_efferents() -> Array[BaseCorticalArea]:
 	var output: Array[BaseCorticalArea] = []
 	for efferent_ID: StringName in _efferent_mappings.keys():
-		output.append(FeagiCache.cortical_areas_cache.cortical_areas[efferent_ID])
+		output.append(FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_areas[efferent_ID])
 	return output
 	
 # The following functions are often overridden in child classes

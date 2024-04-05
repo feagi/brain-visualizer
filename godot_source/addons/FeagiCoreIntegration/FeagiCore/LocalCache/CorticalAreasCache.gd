@@ -17,7 +17,7 @@ func add_core_cortical_area(cortical_ID: StringName, cortical_name: StringName, 
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area of type custom by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -27,7 +27,7 @@ func add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area of type IPU by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -37,7 +37,7 @@ func add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area of type IPU (without a template) by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_input_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -47,7 +47,7 @@ func add_input_cortical_area_without_template(cortical_ID: StringName, cortical_
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area of type OPU by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplate, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -57,7 +57,7 @@ func add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplat
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area of type OPU (without a template) by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_output_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -67,7 +67,7 @@ func add_output_cortical_area_without_template(cortical_ID: StringName, cortical
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area of type memory by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -77,7 +77,7 @@ func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
 
 ## Adds a cortical area as per the FEAGI dictionary. Skips over any templates for IPU and OPU and directly creates the object
 func add_cortical_area_from_dict(feagi_dictionary: Dictionary, override_cortical_ID: StringName = "") -> void:
@@ -129,7 +129,7 @@ func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) ->
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
 	
 	_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
-	FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
+	#FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
@@ -137,7 +137,7 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 		push_error("Attempted to remove cortical area " + removed_cortical_ID + " when already non existant in cache")
 		return
 	_cortical_areas[removed_cortical_ID].FEAGI_delete_cortical_area()
-	FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
+	#FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
 	_cortical_areas.erase(removed_cortical_ID)
 #endregion
 

@@ -45,7 +45,7 @@ func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, ma
 static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
 	var new_mappings: Array[MappingProperty] = []
 	for raw_mappings in mapping_properties_from_FEAGI:
-		if raw_mappings["morphology_id"] not in FeagiCache.morphology_cache.available_morphologies.keys():
+		if raw_mappings["morphology_id"] not in  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies.keys():
 			push_error("Unable to add specific mapping due to missing morphology %s in the internal cache! Skipping!" % [raw_mappings["morphology_id"]])
 			continue
 		new_mappings.append(MappingProperty.from_dict(raw_mappings))
@@ -57,7 +57,7 @@ static func create_empty_mapping(source_area: BaseCorticalArea, destination_area
 	return MappingProperties.new(source_area, destination_area, empty_typed_array)
 
 ## Creates a default mapping object given a source, destination, and morphology to use. Default settings will be used
-static func create_default_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology_to_use: Base BaseMorphology) -> MappingProperties:
+static func create_default_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology_to_use: BaseMorphology) -> MappingProperties:
 	var default_mapping: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology_to_use)]
 	return MappingProperties.new(source_area, destination_area, default_mapping)
 

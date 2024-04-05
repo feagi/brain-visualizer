@@ -1,6 +1,14 @@
 extends RefCounted
 class_name FEAGILocalCache
 
+var cortical_areas_cache: CorticalAreasCache
+var morphology_cache: MorphologiesCache
+
+
+func _init():
+	cortical_areas_cache = CorticalAreasCache.new()
+	morphology_cache = MorphologiesCache.new()
+
 #region Health
 
 signal burst_engine_changed(new_val: bool)

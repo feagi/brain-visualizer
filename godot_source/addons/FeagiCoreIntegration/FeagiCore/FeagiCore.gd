@@ -118,12 +118,10 @@ func load_genome_from_FEAGI() -> void:
 		push_error("FEAGICORE: Cannot start a reload of the genome when it currently being loaded!")
 		return
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
-	genome_load_state_changed.emit(_genome_load_state)
-	#TODO
+	genome_load_state_changed.emit(_genome_load_state) # This would bea  good time to close any UIs
+	#TODO wipe current data
+	network.http_API.call_list.GET_CorticalArea_Geometry() # The end of this calls for morphology summary, which in turn is enough data to rebuild local cache
 	
-	#TODO remove these 2 lines from here
-	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
-	genome_load_state_changed.emit(_genome_load_state)
 
 
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
@@ -155,12 +153,14 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 					# We were likely probing and got a good response
 					print("FEAGICORE: Verified FEAGI running at endpoint")
 					_connection_state = CONNECTION_STATE.CONNECTED # Seperate the updating of this value and external signaling to make sure order of operations is safe!
+					print("FEAGICORE: Connected to FEAGI via HTTP API!")
 					if feagi_settings.attempt_connect_websocket_on_launch:
 						network.activate_websocket_APT(_in_use_endpoint_details.get_websocket_URL())
 						#NOTE: An attempt to connect will be made, but not promised. You must keep an eye on the signals from here to update the UI accordingly
 						# This will immediately raise the connecting flag, then either the connected flag or disconnect flag
 					if feagi_settings.load_genome_on_connect_if_available:
 						if feagi_local_cache.genome_availability == true:
+							print("FEAGICORE: Genome detected, loading automatically as per configuration!")
 							load_genome_from_FEAGI()
 						else:
 							print("FEAGICORE: No Genome detected in FEAGI!")

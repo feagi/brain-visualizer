@@ -59,11 +59,11 @@ const MAPPING_CORTICAL_TYPE_SPECIAL_CASES: Dictionary = {
 	}
 }
 ## The default suggested [Morphology] to append when creating a mapping
-var default_morphology: Morphology:
+var default_morphology: BaseMorphology:
 	get:
 		return _default_morphology
 ## The [Morphology]s restricted to when mapping 2 cortical areas. If empty then none exist
-var restricted_morphologies: Array[Morphology]:
+var restricted_morphologies: Array[BaseMorphology]:
 	get:
 		return _restricted_morphologies
 ## The maximum number of mappings to allow between 2 cortical areas. -1 means no limit
@@ -84,14 +84,14 @@ var is_number_mappings_restricted: bool:
 		return _max_number_mappings != -1
 
 
-var _default_morphology: Morphology
-var _restricted_morphologies: Array[Morphology]
+var _default_morphology: BaseMorphology
+var _restricted_morphologies: Array[BaseMorphology]
 var _max_number_mappings: int
 var _special_cases: Array[MAPPING_SPECIAL_CASES]
 
 ## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
 ## An empty array means there are no restrictions
-static func get_allowed_morphologies_to_map_toward(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea) -> Array[Morphology]:
+static func get_allowed_morphologies_to_map_toward(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea) -> Array[BaseMorphology]:
 	var source_type: BaseCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.group
 	var destination_type: BaseCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.group
 	var acceptable_morphologies_str: Array[StringName] = []
@@ -101,41 +101,41 @@ static func get_allowed_morphologies_to_map_toward(source_cortical_area: BaseCor
 		if destination_type in MORPHOLOGY_RESTRICTIONS[source_type]:
 			# restriction mapping for specific source found for specific destination
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][destination_type])
-			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+			return  FeagiCore.feagi_local_cache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN])
-			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+			return  FeagiCore.feagi_local_cache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 	else:
 		# Source type has no specific mapping
 		if destination_type in MORPHOLOGY_RESTRICTIONS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]:
 			# Destination does have a restriction
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
-			return FeagiCache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+			return  FeagiCore.feagi_local_cache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
 			# No mapping restriction found at all
-			var acceptable_morphologies: Array[Morphology] = []
+			var acceptable_morphologies: Array[BaseMorphology] = []
 			return acceptable_morphologies
 
 ## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
 ## An empty array means there are no restrictions
-static func get_default_morphology_to_map_with(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea) -> Morphology:
+static func get_default_morphology_to_map_with(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea) -> BaseMorphology:
 	var source_type: BaseCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.group
 	var destination_type: BaseCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.group
 	
 	if source_type in MORPHOLOGY_DEFAULTS.keys():
 		# Source type has specific mapping
 		if destination_type in MORPHOLOGY_DEFAULTS[source_type]:
-			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[source_type][destination_type]]
+			return  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[source_type][destination_type]]
 		else:
-			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[source_type][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]
+			return  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[source_type][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]
 	else:
 		# Source type has no specific mapping
 		if destination_type in MORPHOLOGY_RESTRICTIONS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]:
 			# Destination does have a restriction
-			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][destination_type]]
+			return  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][destination_type]]
 		else:
 			# No mapping restriction found at all
-			return FeagiCache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]
+			return  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies[MORPHOLOGY_DEFAULTS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]]
 
 ## Returns the number of mappings allowed to the destination cortical area
 ## Returns -1 is there is no limit
@@ -192,7 +192,7 @@ static func is_mapping_property_array_invalid_for_cortical_areas(source_cortical
 		if len(mapping_propertys) > limit_on_mapping_count:
 			return true
 	
-	var restriction_of_morphologies: Array[Morphology] = get_allowed_morphologies_to_map_toward(source_cortical_area, destination_cortical_area)
+	var restriction_of_morphologies: Array[BaseMorphology] = get_allowed_morphologies_to_map_toward(source_cortical_area, destination_cortical_area)
 	if len(restriction_of_morphologies) > 0:
 		for mapping: MappingProperty in mapping_propertys:
 			if mapping.morphology_used not in restriction_of_morphologies:

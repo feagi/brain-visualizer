@@ -3,6 +3,21 @@ class_name FEAGIHTTPResponses
 ## The return functions for the callables in [FEAGIHTTPCallList]. 
 #Note: All callables must be STATIC
 
+#region Cortical Areas
+
+## Gets Summary information for all cortical areas in current genome
+static func GET_CorticalArea_Geometry(response_body: PackedByteArray, _irrelevant_data: Variant):
+	var cortical_areas: Dictionary = FEAGIHTTPResponses.byte_array_to_dict(response_body)
+	FeagiCore.feagi_local_cache.cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_areas)
+	FeagiCore.network.http_API.call_list.GET_CorticalMapDetailed()
+
+## Gets summary information of how all cortical areas are mapped to each (including details of the morphology used)
+static func GET_CorticalMapDetailed(response_body: PackedByteArray, _irrelevant_data: Variant):
+	pass
+
+#endregion
+
+
 
 #region SYSTEM
 

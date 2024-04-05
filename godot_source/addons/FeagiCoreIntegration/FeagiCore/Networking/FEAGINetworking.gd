@@ -11,7 +11,7 @@ var websocket_API: FEAGIWebSocketAPI = null
 
 var _ping_timer: Timer = null
 var _healthcheck_timer: Timer = null #TODO
-var _ping_send_time_ms: int
+var _ping_send_time_ms: int ## record of when ping was sent, ping recieve time is subtracted from this to find ping
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
