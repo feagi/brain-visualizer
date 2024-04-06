@@ -119,11 +119,22 @@ func load_genome_from_FEAGI() -> void:
 		push_error("FEAGICORE: Cannot start a reload of the genome when it currently being loaded!")
 		return
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
-	genome_load_state_changed.emit(_genome_load_state) # This would bea  good time to close any UIs
+	genome_load_state_changed.emit(_genome_load_state) # This would be a good time to close any UIs
 	#TODO wipe current data
 	
-	#network.http_API.call_list.GET_CorticalArea_Geometry() # The end of this calls for morphology summary, which in turn is enough data to rebuild local cache
-	requests.reload_genome()
+
+	var is_loading_genome_succesful: bool = await requests.reload_genome()
+	if !is_loading_genome_succesful:
+		# The above function has done its own error handling, check if we disconnected from FEAGI
+		if connection_state != CONNECTION_STATE.DISCONNECTED:
+			_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+			genome_load_state_changed.emit(_genome_load_state)
+		# Assuming when we disconnected, the genome state was also cleared
+		return
+	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
+	genome_load_state_changed.emit(_genome_load_state)
+		
+	
 
 
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:

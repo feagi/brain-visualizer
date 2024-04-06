@@ -4,6 +4,17 @@ class_name FEAGIHTTPCallList
 
 #WARNING: Calling any function here when HTTP (and thus addres list) is not initialized will cause a crash!
 
+#region Neuron Morphologies
+static func GET_morphologies() -> APIRequestWorkerDefinition:
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
+		FeagiCore.network.http_API.address_list.GET_morphology_morphologies,
+	)
+	return request
+
+
+#endregion
+
+
 #region Cortical Areas
 
 ## Gets Summary information for all cortical areas in current genome, calls GET_CorticalMapDetailed upon success

@@ -64,10 +64,6 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, feagi_d
 	is_placeholder_data = is_using_placeholder_data
 	internal_class = feagi_defined_internal_class
 
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		about_to_be_deleted.emit(self) # Notify all others about deletion
-
 ## Spawns correct morphology type given dict from FEAGI and other details
 static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> BaseMorphology:
 	match morphology_type:
