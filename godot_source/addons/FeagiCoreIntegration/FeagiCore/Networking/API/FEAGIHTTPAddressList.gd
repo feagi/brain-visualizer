@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name FEAGIHTTPAddressList
 ## Essentially a list of endpoints to FEAGI
 

@@ -49,6 +49,8 @@ func _enter_tree():
 	feagi_local_cache = FEAGILocalCache.new()
 	requests = FEAGIRequests.new()
 	
+	network.http_API.FEAGI_http_health_changed.connect(_http_API_state_change_response)
+	
 	# TEST
 	load_FEAGI_settings(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/feagi_default_settings.tres"))
 	attempt_connection(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/network_local_default.tres"))
@@ -94,8 +96,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 	_connection_state = CONNECTION_STATE.CONNECTING
 	connection_state_changed.emit(CONNECTION_STATE.CONNECTING)
 	_in_use_endpoint_details = feagi_endpoint_details
-	network.check_connection_to_FEAGI(feagi_endpoint_details)
-	network.http_API.FEAGI_http_health_changed.connect(_http_API_state_change_response)
+	network.activate_and_verify_connection_to_FEAGI(feagi_endpoint_details)
 
 # Disconnect from FEAGI
 func disconnect_from_FEAGI() -> void:

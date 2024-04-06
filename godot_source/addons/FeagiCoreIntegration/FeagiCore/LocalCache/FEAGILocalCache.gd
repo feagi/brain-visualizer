@@ -1,13 +1,22 @@
 extends RefCounted
 class_name FEAGILocalCache
 
+#region main
 var cortical_areas_cache: CorticalAreasCache
 var morphology_cache: MorphologiesCache
-
 
 func _init():
 	cortical_areas_cache = CorticalAreasCache.new()
 	morphology_cache = MorphologiesCache.new()
+
+func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary) -> void:
+	cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
+	morphology_cache.update_morphology_cache_from_summary(morphologies_summary)
+	
+	pass
+
+
+#endregion
 
 #region Health
 
@@ -62,6 +71,14 @@ var brain_readiness: bool:
 			_brain_readiness = v
 			brain_readiness_changed.emit(v)
 
+var _burst_engine: bool
+var _influxdb_availability: bool
+var _neuron_count_max: int
+var _synapse_count_max: int
+var _genome_availability: bool
+var _genome_validity: bool
+var _brain_readiness: bool
+
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	if "burst_engine" in health: 
 		burst_engine = health["burst_engine"]
@@ -77,14 +94,6 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		genome_validity = health["genome_validity"]
 	if "burst_engine" in health: 
 		brain_readiness = health["brain_readiness"]
-
-var _burst_engine: bool
-var _influxdb_availability: bool
-var _neuron_count_max: int
-var _synapse_count_max: int
-var _genome_availability: bool
-var _genome_validity: bool
-var _brain_readiness: bool
 
 #endregion
 

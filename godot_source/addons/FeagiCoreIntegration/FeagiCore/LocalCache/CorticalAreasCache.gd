@@ -2,7 +2,7 @@ extends RefCounted
 class_name CorticalAreasCache
 ## Stores all cortical areas available in the genome
 
-## All stored cortical areas, key'd by ID
+## All stored cortical areas, key'd by ID string
 var cortical_areas: Dictionary:
 	get: return _cortical_areas
 
