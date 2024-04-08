@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=17 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" load_steps=20 format=3 uid="uid://cjrivk0518jvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rwapg"]
 bg_color = Color(0.152941, 0.192157, 0.254902, 1)
@@ -29,6 +29,15 @@ bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a2rtm"]
 bg_color = Color(0.152941, 0.192157, 0.254902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5fauo"]
+bg_color = Color(0.188235, 0.647059, 0.866667, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ixcsb"]
+bg_color = Color(0.701961, 0.141176, 0.172549, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_al8ae"]
+bg_color = Color(0.717647, 0.666667, 0.121569, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3bdj3"]
 content_margin_left = 0.0
@@ -66,6 +75,12 @@ CheckButton/styles/normal = SubResource("StyleBoxFlat_u1fsi")
 CheckButton/styles/pressed = SubResource("StyleBoxFlat_uk23p")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
 LineEdit/styles/read_only = SubResource("StyleBoxFlat_a2rtm")
+NotificationSystemNotification/base_type = &"PanelContainer"
+NotificationSystemNotification/styles/panel = SubResource("StyleBoxFlat_5fauo")
+NotificationSystemNotification_Error/base_type = &"NotificationSystemNotification"
+NotificationSystemNotification_Error/styles/panel = SubResource("StyleBoxFlat_ixcsb")
+NotificationSystemNotification_Warning/base_type = &"NotificationSystemNotification"
+NotificationSystemNotification_Warning/styles/panel = SubResource("StyleBoxFlat_al8ae")
 Panel/styles/panel = SubResource("StyleBoxFlat_3bdj3")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_2l4ko")
 PanelContainerButton/base_type = &"PanelContainer"

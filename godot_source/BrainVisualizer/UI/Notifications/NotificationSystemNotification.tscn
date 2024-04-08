@@ -1,0 +1,41 @@
+[gd_scene load_steps=6 format=3 uid="uid://yhp0vgqrk6ia"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Notifications/NotificationSystemNotification.gd" id="1_3jel5"]
+[ext_resource type="Texture2D" uid="uid://cndhorv7h6hh0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_S.png" id="1_7skoh"]
+[ext_resource type="Texture2D" uid="uid://c60uywps7rmai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_C.png" id="2_s5grv"]
+[ext_resource type="Texture2D" uid="uid://w50tv03btqd5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_H.png" id="3_43p67"]
+[ext_resource type="Texture2D" uid="uid://b0jdp1386q64q" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_D.png" id="4_l3jaq"]
+
+[node name="NotificationSystemNotification" type="PanelContainer"]
+offset_right = 97.0
+offset_bottom = 41.0
+size_flags_horizontal = 3
+script = ExtResource("1_3jel5")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="error_label" type="Label" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Text"
+
+[node name="TextureButton" type="TextureButton" parent="MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+texture_normal = ExtResource("1_7skoh")
+texture_pressed = ExtResource("2_s5grv")
+texture_hover = ExtResource("3_43p67")
+texture_disabled = ExtResource("4_l3jaq")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Timer" type="Timer" parent="."]
+
+[connection signal="mouse_entered" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_pause_timer_on_mouse_over"]
+[connection signal="mouse_exited" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_unpause_timer_on_mouse_off"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_on_timeout_or_button_close"]
+[connection signal="timeout" from="Timer" to="." method="_on_timeout_or_button_close"]
