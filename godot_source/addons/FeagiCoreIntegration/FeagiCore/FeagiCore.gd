@@ -22,7 +22,7 @@ enum GENOME_LOAD_STATE {
 #endregion
 
 signal connection_state_changed(new_state: CONNECTION_STATE, previous_state: CONNECTION_STATE)
-signal genome_load_state_changed(new_state: GENOME_LOAD_STATE)
+signal genome_load_state_changed(new_state: GENOME_LOAD_STATE, prev_state: GENOME_LOAD_STATE)
 
 var connection_state: CONNECTION_STATE: # This refers primarily to the http api right now
 	get: return _connection_state # No setter
@@ -95,12 +95,12 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 
 # Disconnect from FEAGI
 func disconnect_from_FEAGI() -> void:
-	_connection_state = CONNECTION_STATE.DISCONNECTED
 	network.disconnect_networking()
 	#TODO clear cache
-	genome_load_state_changed.emit(_genome_load_state)
-	connection_state_changed.emit(_connection_state, _genome_load_state)
+	genome_load_state_changed.emit(_genome_load_state,_genome_load_state)
 	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
+	connection_state_changed.emit(_connection_state, _connection_state)
+	_connection_state = CONNECTION_STATE.DISCONNECTED
 
 # (Re)loads genome from FEAGI
 func load_genome_from_FEAGI() -> void:

@@ -26,8 +26,8 @@
 [node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 862.0
-offset_bottom = 66.0
+offset_right = 1605.0
+offset_bottom = 86.0
 theme_override_constants/separation = 5
 script = ExtResource("1_f5hja")
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
