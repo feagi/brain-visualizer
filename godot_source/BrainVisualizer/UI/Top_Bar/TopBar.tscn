@@ -1,7 +1,7 @@
 [gd_scene load_steps=23 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_g5eva"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton.gd" id="2_o4dth"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
 [ext_resource type="Texture2D" uid="uid://b3go6kjen16je" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
 [ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
@@ -51,7 +51,7 @@ layout_mode = 2
 
 [node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 layout_mode = 2
-script = ExtResource("2_g5eva")
+script = ExtResource("2_o4dth")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList"]
 layout_mode = 2
@@ -86,7 +86,7 @@ layout_mode = 2
 
 [node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
 layout_mode = 2
-script = ExtResource("2_g5eva")
+script = ExtResource("2_o4dth")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList"]
 layout_mode = 2
