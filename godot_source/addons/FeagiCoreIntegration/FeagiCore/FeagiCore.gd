@@ -50,11 +50,6 @@ func _enter_tree():
 	requests = FEAGIRequests.new()
 	
 	network.http_API.FEAGI_http_health_changed.connect(_http_API_state_change_response)
-	
-	# TEST
-	load_FEAGI_settings(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/feagi_default_settings.tres"))
-	attempt_connection(load("res://addons/FeagiCoreIntegration/FeagiCore/Config/network_local_default.tres"))
-	
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
 #NOTE: This should be the first call you make
