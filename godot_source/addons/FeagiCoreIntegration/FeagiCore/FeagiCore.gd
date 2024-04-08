@@ -97,9 +97,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 func disconnect_from_FEAGI() -> void:
 	network.disconnect_networking()
 	#TODO clear cache
-	genome_load_state_changed.emit(_genome_load_state,_genome_load_state)
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,_genome_load_state)
 	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
-	connection_state_changed.emit(_connection_state, _connection_state)
+	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, _connection_state)
 	_connection_state = CONNECTION_STATE.DISCONNECTED
 
 # (Re)loads genome from FEAGI
@@ -113,8 +113,8 @@ func load_genome_from_FEAGI() -> void:
 	if genome_load_state == GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
 		push_error("FEAGICORE: Cannot start a reload of the genome when it currently being loaded!")
 		return
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI, _genome_load_state) # This would be a good time to close any UIs
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
-	genome_load_state_changed.emit(_genome_load_state) # This would be a good time to close any UIs
 	#TODO wipe current data
 	
 
@@ -122,13 +122,12 @@ func load_genome_from_FEAGI() -> void:
 	if !is_loading_genome_succesful:
 		# The above function has done its own error handling, check if we disconnected from FEAGI
 		if connection_state != CONNECTION_STATE.DISCONNECTED:
+			genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, _genome_load_state)
 			_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
-			genome_load_state_changed.emit(_genome_load_state)
 		# Assuming when we disconnected, the genome state was also cleared
 		return
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY, _genome_load_state)
 	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
-	genome_load_state_changed.emit(_genome_load_state)
-		
 	
 
 
@@ -160,6 +159,7 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 				CONNECTION_STATE.CONNECTING:
 					# We were likely probing and got a good response
 					print("FEAGICORE: Verified FEAGI running at endpoint")
+					connection_state_changed.emit(CONNECTION_STATE.CONNECTED, _connection_state)
 					_connection_state = CONNECTION_STATE.CONNECTED # Seperate the updating of this value and external signaling to make sure order of operations is safe!
 					print("FEAGICORE: Connected to FEAGI via HTTP API!")
 					if feagi_settings.attempt_connect_websocket_on_launch:
@@ -167,22 +167,22 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 						#NOTE: An attempt to connect will be made, but not promised. You must keep an eye on the signals from here to update the UI accordingly
 						# This will immediately raise the connecting flag, then either the connected flag or disconnect flag
 					if feagi_settings.load_genome_on_connect_if_available:
-						if feagi_local_cache.genome_availability == true:
+						if feagi_local_cache.genome_availability:
 							print("FEAGICORE: Genome detected, loading automatically as per configuration!")
 							load_genome_from_FEAGI()
 						else:
 							print("FEAGICORE: No Genome detected in FEAGI!")
+							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, _genome_load_state)
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
 					else:
-						if feagi_local_cache.genome_availability == true:
+						if feagi_local_cache.genome_availability:
 							print("FEAGICORE: Genome detected but configuration is set not to load it automatically. Skipping genome loading!")
+							genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, _genome_load_state)
 							_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
 						else:
 							print("FEAGICORE: No Genome detected in FEAGI!")
+							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, _genome_load_state)
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
-						genome_load_state_changed.emit(_genome_load_state)
-					connection_state_changed.emit(CONNECTION_STATE.CONNECTED, _connection_state )
-					_connection_state =CONNECTION_STATE.CONNECTED
 					return
 					
 				CONNECTION_STATE.CONNECTED:
