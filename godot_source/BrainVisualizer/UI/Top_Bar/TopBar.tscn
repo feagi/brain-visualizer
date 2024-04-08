@@ -68,7 +68,7 @@ expand_mode = 1
 layout_mode = 2
 text = "Cortical Areas"
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -103,7 +103,7 @@ expand_mode = 1
 layout_mode = 2
 text = "Connectivity Rules"
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
 custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -245,8 +245,8 @@ vertical_alignment = 1
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="9" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton" to="." method="_open_create_cortical"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 

@@ -26,16 +26,12 @@ func _gui_input(event: InputEvent) -> void:
 		
 		if mouse_event.pressed:
 			add_theme_stylebox_override("panel", _clicked)
-			print("press")
 			pressed.emit()
 		else:
 			add_theme_stylebox_override("panel", _hover)
-			print("hover")
 		
 func _mouse_entered() -> void:
 	add_theme_stylebox_override("panel", _hover)
-	print("hover")
 
 func _mouse_exited() -> void:
 	add_theme_stylebox_override("panel", _unpressed)
-	print("exit")
