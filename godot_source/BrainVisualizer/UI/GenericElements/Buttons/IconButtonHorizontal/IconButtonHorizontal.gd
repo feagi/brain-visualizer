@@ -7,7 +7,6 @@ var _box: BoxContainer
 var _texture_rect: TextureRect
 var _gap: Control
 var _text: Label
-var _default_font_size: int
 
 ## Paddings on the top, right, bottom, and right, in that order
 @export var top_right_bottom_left_paddings: Vector4i
@@ -34,7 +33,6 @@ func _ready() -> void:
 	_gap = $MarginContainer/BoxContainer/Gap
 	_text = $MarginContainer/BoxContainer/Label
 	
-	_default_font_size = _text.get_theme_font_size(&"font_size")
 	
 	_text.text = button_text
 	_text.horizontal_alignment = text_alignment
@@ -43,4 +41,5 @@ func _ready() -> void:
 	_texture_rect.texture = texture
 	
 	custom_minimum_size = _margin.custom_minimum_size
-
+	_texture_rect.custom_minimum_size = texture_size
+	_texture_rect.size = Vector2(0,0)

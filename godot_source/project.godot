@@ -36,10 +36,6 @@ export/convert_text_resources_to_binary=false
 
 enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg")
 
-[gui]
-
-theme/custom="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres"
-
 [input]
 
 shift={

@@ -1,9 +1,15 @@
-[gd_scene load_steps=9 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=15 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://BrainVisualizer/UI/GenericElements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
+[ext_resource type="Texture2D" uid="uid://b3go6kjen16je" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
+[ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
+[ext_resource type="Texture2D" uid="uid://b0flkhnupkfjk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_connectivity_rules.png" id="4_xxo28"]
+[ext_resource type="Texture2D" uid="uid://dryfi4tlhq5mq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
+[ext_resource type="Texture2D" uid="uid://ddg6hll5cu8vb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
+[ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="9_jcvuj"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
@@ -40,6 +46,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "View Brain Areas"
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
+texture = ExtResource("3_x3r8j")
 texture_size = Vector2i(48, 48)
 button_text = &"Cortical Areas"
 gap_between_text_and_texture = 5
@@ -50,6 +57,10 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Add Brain Area..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
@@ -62,6 +73,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "View Connectivity Rules"
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
+texture = ExtResource("4_xxo28")
 texture_size = Vector2i(50, 48)
 button_text = &"Connectivity Rules"
 gap_between_text_and_texture = 5
@@ -72,10 +84,15 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Add Connectivity Rule..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("6_fkuh3")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
 [node name="ChangeSize" type="PanelContainer" parent="."]
+visible = false
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="ChangeSize"]
@@ -107,6 +124,7 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [node name="DropDownPanel" type="PanelContainer" parent="."]
+visible = false
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="DropDownPanel"]
@@ -122,6 +140,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="DetailsPanel" type="PanelContainer" parent="."]
+visible = false
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="DetailsPanel"]
