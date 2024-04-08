@@ -1,7 +1,7 @@
 [gd_scene load_steps=15 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
-[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://BrainVisualizer/UI/GenericElements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_g5eva"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
 [ext_resource type="Texture2D" uid="uid://b3go6kjen16je" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
 [ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
@@ -40,18 +40,26 @@ theme_override_constants/separation = 14
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="BrainAreas" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
+[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_g5eva")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "View Brain Areas"
-top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("3_x3r8j")
-texture_size = Vector2i(48, 48)
-button_text = &"Cortical Areas"
-gap_between_text_and_texture = 5
+expand_mode = 1
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+layout_mode = 2
+text = "Cortical Areas"
+
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
 custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -64,28 +72,36 @@ texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2" instance=ExtResource("2_4d0u0")]
+[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
+layout_mode = 2
+script = ExtResource("2_g5eva")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "View Connectivity Rules"
-top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
 texture = ExtResource("4_xxo28")
-texture_size = Vector2i(50, 48)
-button_text = &"Connectivity Rules"
-gap_between_text_and_texture = 5
+expand_mode = 1
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
+layout_mode = 2
+text = "Connectivity Rules"
+
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
 custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Add Connectivity Rule..."
+tooltip_text = "Add Brain Area..."
 texture_normal = ExtResource("4_e2mvc")
-texture_pressed = ExtResource("6_fkuh3")
+texture_pressed = ExtResource("5_etpv8")
 texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
@@ -215,10 +231,8 @@ vertical_alignment = 1
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="9" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreas" to="." method="_open_cortical_areas"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/ConnectivityRules" to="." method="_open_neuron_morphologies"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/TextureButton" to="." method="_open_create_morpology"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 
