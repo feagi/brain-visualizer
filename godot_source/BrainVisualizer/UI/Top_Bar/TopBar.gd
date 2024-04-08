@@ -4,7 +4,9 @@ class_name TopBar
 @export var universal_padding: int = 15
 @export var possible_zoom_levels: Array[float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
 @export var starting_size_index: int = 2
+@export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
+var _theme_custom_scaler: ScaleThemeApplier = ScaleThemeApplier.new()
 var _refresh_rate_field: FloatInput
 var _latency_field: IntInput
 var _index_scale: int
@@ -15,6 +17,7 @@ var _synapse_count: TextInput
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
 var _default_seperation: float # Save as float to avoid rounding errors when multiplying
+
 
 func _ready():
 	# references
@@ -60,6 +63,7 @@ func _ready():
 	
 	#FeagiEvents.retrieved_latest_FEAGI_health.connect(_update_counts)
 	
+	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, load("res://BrainVisualizer/UI/Themes/1.0-dark.tres")) #TODO change way of getting current theme
 	
 
 func _set_scale(index_movement: int) -> void:
