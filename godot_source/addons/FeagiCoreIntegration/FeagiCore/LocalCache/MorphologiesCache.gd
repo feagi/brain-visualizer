@@ -3,8 +3,6 @@ class_name MorphologiesCache
 ## Stores all morphologies available in the genome
 
 signal morphology_added(morphology: BaseMorphology)
-signal morphology_about_to_be_removed(morphology: BaseMorphology)
-signal morphology_updated(morphology: BaseMorphology)
 
 ## A list of all available morphologies in the FEAGI genome by name
 var available_morphologies: Dictionary:
@@ -26,6 +24,7 @@ func add_morphology_by_dict(properties: Dictionary) -> void:
 		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
 		return
 	_available_morphologies[morphology_name] = BaseMorphology.create(morphology_name, morphology_type, morphology_internal_class, properties)
+	print("FEAGI CACHE: Added morphology %" % morphology_name)
 	morphology_added.emit(_available_morphologies[morphology_name])
 
 ##  Should only be called by FEAGI - Updates info of morphology
@@ -37,7 +36,6 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 	var updating_morphology: BaseMorphology = _available_morphologies[morphology_name]
 	var morphology_internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS[morphology_properties["class"].to_upper()]
 	updating_morphology.feagi_update(morphology_properties["parameters"], morphology_internal_class)
-	morphology_updated.emit(updating_morphology)
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:
@@ -45,9 +43,8 @@ func remove_morphology(morphology_Name: StringName) -> void:
 		push_error("Attemped to delete non-cached morphology %s, Skipping..." % [morphology_Name])
 		return
 	var deleting: BaseMorphology = _available_morphologies[morphology_Name]
-	morphology_about_to_be_removed.emit(deleting)
+	deleting.FEAGI_delete_morphology()
 	_available_morphologies.erase(morphology_Name)
-	deleting.queue_free()
 	
 ## Removes all morphologies from cache. Should only be called during a reset
 func hard_wipe_cached_morphologies():
@@ -59,7 +56,7 @@ func hard_wipe_cached_morphologies():
 
 ## To update morphology listing given a dict with details about all morphologies
 func update_morphology_cache_from_summary(all_morphology_details: Dictionary) -> void:
-	print("CACHE: Replacing morphology details cache...")
+	print("FEAGI CACHE: Replacing morphology details cache...")
 	
 	for current_morphology: StringName in _available_morphologies.keys():
 		if !(all_morphology_details.keys().has(current_morphology)):

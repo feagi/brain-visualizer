@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://xy35ep21wxy"]
+
+[ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://BrainVisualizer/UI/Top_Bar/TopBar.tscn" id="1_yk4pp"]
+
+[node name="BrainVisualizer" type="Node3D"]
+
+[node name="TopBar" parent="." instance=ExtResource("1_yk4pp")]

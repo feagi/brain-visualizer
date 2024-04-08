@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://byvcu1dqoe5uo"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.gd" id="1_0acba"]
-[ext_resource type="PackedScene" uid="uid://ch82fu6g530dm" path="res://Feagi-Godot-Interface/UI/Windows/Elements/BooleanIndicator/BooleanIndicator.tscn" id="2_otodu"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.gd" id="1_0acba"]
+[ext_resource type="PackedScene" uid="uid://ch82fu6g530dm" path="res://BrainVisualizer/UI/GenericElements/BooleanIndicator/BooleanIndicator.tscn" id="2_otodu"]
 
 [node name="StateInidicator" type="HBoxContainer"]
 offset_right = 176.0

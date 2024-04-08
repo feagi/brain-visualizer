@@ -2,6 +2,8 @@ extends RefCounted
 class_name CorticalAreasCache
 ## Stores all cortical areas available in the genome
 
+signal cortical_area_added(cortical_area: BaseCorticalArea)
+
 ## All stored cortical areas, key'd by ID string
 var cortical_areas: Dictionary:
 	get: return _cortical_areas
@@ -17,7 +19,8 @@ func add_core_cortical_area(cortical_ID: StringName, cortical_name: StringName, 
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added core cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type custom by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -27,7 +30,8 @@ func add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added custom cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -37,7 +41,8 @@ func add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added input cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU (without a template) by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_input_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -47,7 +52,8 @@ func add_input_cortical_area_without_template(cortical_ID: StringName, cortical_
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added input cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type OPU by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplate, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -57,7 +63,8 @@ func add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplat
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added output cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type OPU (without a template) by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_output_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -67,7 +74,8 @@ func add_output_cortical_area_without_template(cortical_ID: StringName, cortical
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added output cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type memory by ID and emits a signal that this was done. Should only be called from FEAGI!
 func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
@@ -77,7 +85,8 @@ func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_cortical_areas[cortical_ID] = new_area
-	#FeagiCacheEvents.cortical_area_added.emit(_cortical_areas[cortical_ID])
+	print("FEAGI CACHE: Added memory cortical area %s" % cortical_ID)
+	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area as per the FEAGI dictionary. Skips over any templates for IPU and OPU and directly creates the object
 func add_cortical_area_from_dict(feagi_dictionary: Dictionary, override_cortical_ID: StringName = "") -> void:
@@ -114,12 +123,12 @@ func add_cortical_area_from_dict(feagi_dictionary: Dictionary, override_cortical
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			add_memory_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, feagi_dictionary, visibility)
 		_:
-			push_error("CORE: Unable to spawn cortical area of unknown type! Skipping!")
+			push_error("FEAGI CACHE: Unable to spawn cortical area of unknown type! Skipping!")
 
 ## Updates a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
 	if "cortical_id" not in all_cortical_area_properties.keys():
-		push_error("No Cortical Area ID Defined to update! Skipping!")
+		push_error("No Cortical Area ID defined in input Dict to update! Skipping!")
 		return
 	
 	if all_cortical_area_properties["cortical_id"] not in _cortical_areas.keys():
@@ -129,7 +138,6 @@ func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) ->
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
 	
 	_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
-	#FeagiCacheEvents.cortical_area_updated.emit(_cortical_areas[changing_ID])
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
@@ -137,8 +145,9 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 		push_error("Attempted to remove cortical area " + removed_cortical_ID + " when already non existant in cache")
 		return
 	_cortical_areas[removed_cortical_ID].FEAGI_delete_cortical_area()
-	#FeagiCacheEvents.cortical_area_removed.emit(_cortical_areas[removed_cortical_ID])
+	print("FEAGI CACHE: Removing cortical area %s" % removed_cortical_ID)
 	_cortical_areas.erase(removed_cortical_ID)
+	
 #endregion
 
 #region filtering
@@ -171,7 +180,8 @@ func get_all_cortical_area_names() -> Array[StringName]:
 #region Mass Operations
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed. Should only be called from FEAGI
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
-
+	print("FEAGI CACHE: Replacing cortical areas cache...")
+	
 	# TODO: Possible optimizations used packedStringArrays and less duplications
 	var new_listing: Array[StringName] = []
 	new_listing.assign(_new_listing_with_summaries.keys())
@@ -192,7 +202,6 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 		continue
 	
 	# At this point, 'added' has all names of elements that need to be added, while 'removed' has all elements that need to be removed
-
 	# remove removed cortical areas
 	for remove: StringName in removed:
 		remove_cortical_area(remove)
@@ -205,6 +214,7 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 		new_area_summary = _new_listing_with_summaries[add]
 		new_area_summary["cortical_id"] = add
 		add_cortical_area_from_dict(new_area_summary)
+
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
 func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:

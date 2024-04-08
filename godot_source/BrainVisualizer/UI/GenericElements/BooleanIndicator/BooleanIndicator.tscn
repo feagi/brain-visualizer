@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://ch82fu6g530dm"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/BooleanIndicator/BooleanIndicator.gd" id="1_vvts3"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_j4ow8"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BooleanIndicator/BooleanIndicator.gd" id="1_vvts3"]
+
 
 [node name="BooleanIndicator" type="MarginContainer"]
 offset_right = 26.0
@@ -15,4 +15,3 @@ script = ExtResource("1_vvts3")
 [node name="ColorRect" type="ColorRect" parent="."]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
-script = ExtResource("2_j4ow8")

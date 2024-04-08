@@ -1,32 +1,13 @@
-[gd_scene load_steps=28 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=9 format=3 uid="uid://ceyo23uu67e8h"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/TopBar.gd" id="1_f5hja"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalarMarginContainer.gd" id="2_0ln6a"]
-[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/BoxSeperatorScalar.gd" id="2_pnhrs"]
-[ext_resource type="Texture2D" uid="uid://5nb0yf2u7q5f" path="res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_cortical_area.png" id="3_f73r0"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://c8kk6om0lc4fd" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_S.png" id="4_ot5te"]
-[ext_resource type="Texture2D" uid="uid://dr5seahroxeg4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/neuron.png" id="4_w1ybr"]
-[ext_resource type="Texture2D" uid="uid://dhnp5k27l8p5r" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_C.png" id="5_58ohp"]
-[ext_resource type="Texture2D" uid="uid://bjlc1lc7ctryc" path="res://Feagi-Godot-Interface/UI/Resources/Icons/tutorials.png" id="5_81ib4"]
-[ext_resource type="Texture2D" uid="uid://d1ja63xw63so0" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_H.png" id="6_h0c21"]
-[ext_resource type="Texture2D" uid="uid://d3ts7d266uamh" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Plus_D.png" id="7_wa0pf"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="9_jcvuj"]
-[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://Feagi-Godot-Interface/UI/Windows/Top_Bar/StateInidicator/StateInidicator.tscn" id="10_3567y"]
-[ext_resource type="Texture2D" uid="uid://cyvo2f332cp6h" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_S.png" id="11_jknrr"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="12_gx8rc"]
-[ext_resource type="Texture2D" uid="uid://vg2x5rvfansy" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_C.png" id="12_ot48k"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="12_q8vn7"]
-[ext_resource type="Texture2D" uid="uid://c8bfn8a5awwfm" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_H.png" id="13_u0vqk"]
-[ext_resource type="Texture2D" uid="uid://c5xw7oybgv2lt" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_out_D.png" id="14_8iire"]
-[ext_resource type="Texture2D" uid="uid://dwcx8rikdgeeo" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_S.png" id="15_45b5e"]
-[ext_resource type="Texture2D" uid="uid://dqgvmcem2svih" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_C.png" id="16_10002"]
-[ext_resource type="Texture2D" uid="uid://clgsqd63pp6g4" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_H.png" id="17_814js"]
-[ext_resource type="Texture2D" uid="uid://dqk41bwqlaxmq" path="res://Feagi-Godot-Interface/UI/Resources/Icons/zoom_in_D.png" id="18_wm2pd"]
-[ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
-[ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://Feagi-Godot-Interface/UI/Windows/Elements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="26_84r3k"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
+[ext_resource type="PackedScene" uid="uid://upps8mctgsdg" path="res://BrainVisualizer/UI/GenericElements/Buttons/IconButtonHorizontal/IconButtonHorizontal.tscn" id="2_4d0u0"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="9_jcvuj"]
+[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
+[ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
+[ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
 [node name="TopBar" type="HBoxContainer"]
 offset_left = 10.0
@@ -45,16 +26,13 @@ theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 0
-script = ExtResource("2_0ln6a")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
 layout_mode = 2
 theme_override_constants/separation = 14
-script = ExtResource("2_pnhrs")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
-script = ExtResource("2_pnhrs")
 
 [node name="BrainAreas" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
@@ -62,7 +40,6 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "View Brain Areas"
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
-texture = ExtResource("3_f73r0")
 texture_size = Vector2i(48, 48)
 button_text = &"Cortical Areas"
 gap_between_text_and_texture = 5
@@ -73,17 +50,11 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Add Brain Area..."
-texture_normal = ExtResource("4_ot5te")
-texture_pressed = ExtResource("5_58ohp")
-texture_hover = ExtResource("6_h0c21")
-texture_disabled = ExtResource("7_wa0pf")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("12_q8vn7")
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
-script = ExtResource("2_pnhrs")
 
 [node name="ConnectivityRules" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer2" instance=ExtResource("2_4d0u0")]
 layout_mode = 2
@@ -91,7 +62,6 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "View Connectivity Rules"
 top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
-texture = ExtResource("4_w1ybr")
 texture_size = Vector2i(50, 48)
 button_text = &"Connectivity Rules"
 gap_between_text_and_texture = 5
@@ -102,22 +72,8 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Add Connectivity Rule..."
-texture_normal = ExtResource("4_ot5te")
-texture_pressed = ExtResource("5_58ohp")
-texture_hover = ExtResource("6_h0c21")
-texture_disabled = ExtResource("7_wa0pf")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("12_q8vn7")
-
-[node name="Tutorials" parent="Buttons/MarginContainer/HBoxContainer" instance=ExtResource("2_4d0u0")]
-visible = false
-layout_mode = 2
-top_right_bottom_left_paddings = Vector4i(4, 4, 4, 4)
-texture = ExtResource("5_81ib4")
-texture_size = Vector2i(48, 48)
-button_text = &"Tutorials"
-gap_between_text_and_texture = 5
 
 [node name="ChangeSize" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -128,11 +84,9 @@ theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
-script = ExtResource("2_0ln6a")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
 layout_mode = 2
-script = ExtResource("2_pnhrs")
 
 [node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(52, 52)
@@ -140,13 +94,8 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Decrease UI Size"
-texture_normal = ExtResource("11_jknrr")
-texture_pressed = ExtResource("12_ot48k")
-texture_hover = ExtResource("13_u0vqk")
-texture_disabled = ExtResource("14_8iire")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("12_q8vn7")
 
 [node name="Bigger" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(52, 52)
@@ -154,13 +103,8 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Increase UI Size"
-texture_normal = ExtResource("15_45b5e")
-texture_pressed = ExtResource("16_10002")
-texture_hover = ExtResource("17_814js")
-texture_disabled = ExtResource("18_wm2pd")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("12_q8vn7")
 
 [node name="DropDownPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -171,7 +115,6 @@ theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
-script = ExtResource("2_0ln6a")
 
 [node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
 layout_mode = 2
@@ -187,7 +130,6 @@ theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
-script = ExtResource("2_0ln6a")
 
 [node name="Details" parent="DetailsPanel/MarginContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
 layout_mode = 2
@@ -195,14 +137,10 @@ size_flags_horizontal = 1
 size_flags_vertical = 1
 child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
 
-[node name="texture_button" parent="DetailsPanel/MarginContainer/Details" index="0"]
-script = ExtResource("12_q8vn7")
-
 [node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
 text = "Refresh Rate"
 vertical_alignment = 1
-script = ExtResource("12_gx8rc")
 
 [node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
 layout_mode = 2
@@ -216,7 +154,6 @@ min_value = 0.1
 layout_mode = 2
 text = "Latency"
 vertical_alignment = 1
-script = ExtResource("12_gx8rc")
 
 [node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
@@ -230,34 +167,31 @@ suffix = "ms"
 layout_mode = 2
 text = "Neurons"
 vertical_alignment = 1
-script = ExtResource("12_gx8rc")
 
 [node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
 layout_mode = 2
 tooltip_text = "The number of currently loaded neurons vs the total allowed"
 alignment = 1
 editable = false
-script = ExtResource("26_84r3k")
+script = ExtResource("7_g1qxj")
 
 [node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6"]
 layout_mode = 2
 text = "Synapses"
 vertical_alignment = 1
-script = ExtResource("12_gx8rc")
 
 [node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="7"]
 layout_mode = 2
 tooltip_text = "The number of currently loaded synapses vs the total allowed"
 alignment = 1
 editable = false
-script = ExtResource("26_84r3k")
+script = ExtResource("7_g1qxj")
 
 [node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="8"]
 layout_mode = 2
 tooltip_text = "The overall health of FEAGI"
 text = "System Health"
 vertical_alignment = 1
-script = ExtResource("12_gx8rc")
 
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="9" instance=ExtResource("10_3567y")]
 layout_mode = 2
@@ -266,7 +200,6 @@ layout_mode = 2
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/ConnectivityRules" to="." method="_open_neuron_morphologies"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer2/TextureButton" to="." method="_open_create_morpology"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/Tutorials" to="." method="_open_tutorials"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 

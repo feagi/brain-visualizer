@@ -9,7 +9,7 @@ signal retrieved_description(description: StringName, self_reference: BaseMorpho
 signal internal_class_updated(new_internal_class: MORPHOLOGY_INTERNAL_CLASS) # Mainly used when we go from placeholder data to real data
 signal editability_changed(editable: EDITABILITY)
 signal deletability_changed(deletable: DELETABILITY)
-signal about_to_be_deleted(self_reference: BaseMorphology)
+signal about_to_be_deleted()
 
 enum MORPHOLOGY_TYPE {
 	PATTERNS,
@@ -180,3 +180,8 @@ func feagi_update(_parameter_value: Dictionary, retrieved_internal_class: MORPHO
 		if editability != get_latest_known_editability():
 			editability_changed.emit(get_latest_known_editability())
 	numerical_properties_updated.emit(self)
+
+## Called from [MorphologiesCache] when morphology is being deleted
+func FEAGI_delete_morphology() -> void:
+	about_to_be_deleted.emit()
+	# [MorphologiesCache] then deletes this object

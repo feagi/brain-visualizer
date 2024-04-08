@@ -21,7 +21,7 @@ enum CORTICAL_FLAGS {
 	EACH_EFFERENT_CONNECTION_MAX_ONE_MAPPING
 }
 
-signal about_to_be_deleted(this_cortical_area: BaseCorticalArea)
+signal about_to_be_deleted()
 signal name_updated(cortical_name: StringName, this_cortical_area: BaseCorticalArea)
 signal dimensions_updated(dim: Vector3i, this_cortical_area: BaseCorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: BaseCorticalArea)
@@ -207,7 +207,7 @@ func BV_position() -> Vector3:
 ## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	remove_all_connections()
-	about_to_be_deleted.emit(self)
+	about_to_be_deleted.emit()
 	# [CorticalAreasCache] then deletes this object
 
 ## Applies every detail from the dictionary from FEAGI
@@ -384,7 +384,7 @@ func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings:
 		_efferent_mappings[destination_area.cortical_ID] = retrieved_mapping_properties
 		destination_area.add_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 		efferent_mapping_added.emit(_efferent_mappings[destination_area.cortical_ID])
-		print("CORE: Adding mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
+		print("FEAGI CACHE: Added mapping from %s to %s containing %s connections" % [cortical_ID, destination_area.cortical_ID, retrieved_mapping_properties.number_mappings]) 
 		return
 	
 	if len(mappings) == 0:
@@ -394,14 +394,14 @@ func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings:
 		_efferent_mappings[destination_area.cortical_ID].clear()
 		destination_area.remove_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 		_efferent_mappings.erase(destination_area.cortical_ID)
-		print("CORE: Removing mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
+		print("FEAGI CACHE: Removed mapping from %s to %s" % [cortical_ID, destination_area.cortical_ID]) 
 		return
 	
 	# A previously existing mapping now has new data, treat as an edit
 	_efferent_mappings[destination_area.cortical_ID].update_mappings(mappings)
 	destination_area.set_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
 	efferent_mapping_edited.emit(_efferent_mappings[destination_area.cortical_ID])
-	print("CORE: CORTICAL_AREA: Set Connection from %s to %s with %d mappings" % [cortical_ID, destination_area.cortical_ID, len(mappings)])
+	print("FEAGI CACHE: CORTICAL_AREA: Set Connection from %s to %s with %d mappings" % [cortical_ID, destination_area.cortical_ID, len(mappings)])
 
 ## ONLY TO BE CALLED FROM THE SOURCE AREA. A source area is connecting towards this area
 func add_afferent_area_from_efferent(mapping_properties: MappingProperties) -> void:
@@ -413,7 +413,7 @@ func remove_afferent_area_from_efferent(mapping_properties: MappingProperties) -
 	var index: int = _afferent_connections.find(mapping_properties.source_cortical_area)
 	if index == -1:
 		# Unable to find source area
-		push_warning("CORE: CORTICAL_AREA: Attempted to disconnect afferent cortical area %s from %s when it is already nonexistant in afferent cache!" % 
+		push_warning("FEAGI CACHE: CORTICAL_AREA: Attempted to disconnect afferent cortical area %s from %s when it is already nonexistant in afferent cache!" % 
 		[mapping_properties.source_cortical_area.cortical_ID, cortical_ID])
 		return
 	afferent_mapping_removed.emit(mapping_properties)
@@ -423,13 +423,14 @@ func set_afferent_area_from_efferent(mapping_properties: MappingProperties) -> v
 	var index: int = _afferent_connections.find(mapping_properties.source_cortical_area)
 	if index == -1:
 		# Unable to find source area
-		push_warning("CORE: CORTICAL_AREA: Attempted to edit afferent cortical area %s from %s when is nonexistant in afferent cache!" % 
+		push_warning("FEAGI CACHE: CORTICAL_AREA: Attempted to edit afferent cortical area %s from %s when is nonexistant in afferent cache!" % 
 		[mapping_properties.source_cortical_area.cortical_ID, cortical_ID])
 		return
 	afferent_mapping_edited.emit(mapping_properties)
 
 ## removes all efferent and afferent connections, typically called right before deletion. SHOULD ONLY BE CALLED BY CACHE
 func remove_all_connections() -> void:
+	print("FEAGI CACHE: Removing all connections to and from cortical area  %s" % cortical_ID)
 	var empty_mappings: Array[MappingProperty] = []
 	
 	while len(efferent_connections) > 0:

@@ -46,20 +46,19 @@ func _ready():
 	$DetailsPanel/MarginContainer.add_theme_constant_override("margin_right", universal_padding)
 	
 	# from FEAGI
-	FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
-	FeagiEvents.retrieved_latest_FEAGI_health.connect(state_indicator.set_feagi_states)
-	var interface: FEAGIInterface =  get_tree().current_scene.get_node(NodePath("FEAGIInterface"))
-	interface.FEAGI_websocket.socket_state_changed.connect(state_indicator.set_websocket_state)
-	FeagiEvents.retrieved_latest_latency.connect(_FEAGI_retireved_latency)
+	#FeagiCacheEvents.delay_between_bursts_updated.connect(_FEAGI_on_burst_delay_change)
+	#FeagiEvents.retrieved_latest_FEAGI_health.connect(state_indicator.set_feagi_states)
+	#var interface: FEAGIInterface =  get_tree().current_scene.get_node(NodePath("FEAGIInterface"))
+	#interface.FEAGI_websocket.socket_state_changed.connect(state_indicator.set_websocket_state)
+	#FeagiEvents.retrieved_latest_latency.connect(_FEAGI_retireved_latency)
 	# from user
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
 	details_section.toggled.connect(_details_section_toggle)
 	
 	_default_seperation = get_theme_constant(&"separation")
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+	#VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 	
-	FeagiEvents.retrieved_latest_FEAGI_health.connect(_update_counts)
+	#FeagiEvents.retrieved_latest_FEAGI_health.connect(_update_counts)
 	
 	
 
@@ -67,7 +66,6 @@ func _set_scale(index_movement: int) -> void:
 	_index_scale += index_movement
 	_index_scale = mini(_index_scale, len(possible_zoom_levels) - 1)
 	_index_scale = maxi(_index_scale, 0)
-	VisConfig.UI_manager.UI_scale = possible_zoom_levels[_index_scale]
 	_increase_scale_button.disabled =  _index_scale == len(possible_zoom_levels) - 1
 	_decrease_scale_button.disabled =  _index_scale == 0
 	
@@ -76,31 +74,40 @@ func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> vo
 	_refresh_rate_field.current_float =  1.0 / new_delay_between_bursts_seconds
 
 func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
-	FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
+	pass
+	#FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
 
-func _view_selected(new_state: TempSplit.STATES) -> void:
-	VisConfig.UI_manager.temp_get_temp_split().set_view(new_state)
+func _view_selected() -> void:
+#func _view_selected(new_state: TempSplit.STATES) -> void:
+	pass
+	#VisConfig.UI_manager.temp_get_temp_split().set_view(new_state)
 
 func _details_section_toggle(_irrelevant: bool) -> void:
 	size = Vector2(0,0) #force to smallest possible size
 
 func _open_cortical_areas() -> void:
-	VisConfig.UI_manager.window_manager.spawn_cortical_view()
+	pass
+	#VisConfig.UI_manager.window_manager.spawn_cortical_view()
 
 func _open_create_cortical() -> void:
-	VisConfig.UI_manager.window_manager.spawn_create_cortical()
+	pass
+	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
 func _open_neuron_morphologies() -> void:
-	VisConfig.UI_manager.window_manager.spawn_manager_morphology()
+	pass
+	#VisConfig.UI_manager.window_manager.spawn_manager_morphology()
 
 func _open_create_morpology() -> void:
-	VisConfig.UI_manager.window_manager.spawn_create_morphology()
+	pass
+	#VisConfig.UI_manager.window_manager.spawn_create_morphology()
 
 func _open_tutorials() -> void:
-	VisConfig.UI_manager.window_manager.spawn_tutorial()
+	pass
+	#VisConfig.UI_manager.window_manager.spawn_tutorial()
 
 func _open_options() -> void:
-	VisConfig.UI_manager.window_manager.spawn_user_options()
+	pass
+	#VisConfig.UI_manager.window_manager.spawn_user_options()
 
 func _FEAGI_retireved_latency(latency_ms: int) -> void:
 	_latency_field.current_int = latency_ms
@@ -125,8 +132,3 @@ func _shorten_number(num: float) -> String:
 		return str(a) + "K"
 	return str(a)
 
-
-func _update_size(multiplier: float) -> void:
-	var new_seperation: int = int(_default_seperation * multiplier)
-	add_theme_constant_override(&"seperation", new_seperation)
-	size = Vector2(0,0) #force to smallest possible size

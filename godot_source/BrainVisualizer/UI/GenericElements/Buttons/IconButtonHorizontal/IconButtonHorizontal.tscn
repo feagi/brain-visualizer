@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://upps8mctgsdg"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/IconButtonHorizontal/IconButtonHorizontal.gd" id="1_w4euk"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/IconButtonHorizontal/IconButtonHorizontal.gd" id="1_w4euk"]
 
 [node name="IconButton" type="Button"]
 anchors_preset = -1

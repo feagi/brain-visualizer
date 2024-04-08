@@ -1,6 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://mwx2wythpo1l"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/DropDown/ToggleImageDropdown/ToggleImageDropDown.gd" id="1_ghidh"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDowns/ToggleImageDropDown/ToggleImageDropDown.gd" id="1_ghidh"]
+
 
 [node name="ToggleImageDropDown" type="TextureButton"]
 ignore_texture_size = true

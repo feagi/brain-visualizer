@@ -1,8 +1,8 @@
 extends BoxContainer
 class_name MultiItemCollapsible
 
-@export var texture_open: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_right.png")
-@export var texture_closed: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/top_bar_toggle_left.png")
+@export var texture_open: Texture
+@export var texture_closed: Texture
 @export var setup_as_vertical: bool = false
 @export var child_nodes_to_run_toggle_collapse_on: Array[Control] = []
 @export var start_open: bool = false
