@@ -5,7 +5,7 @@ var _burst_engine: BooleanIndicator
 var _genome_availibility: BooleanIndicator
 var _genome_validity: BooleanIndicator
 var _brain_readiness: BooleanIndicator
-var _data: BooleanIndicator
+var _data: BooleanIndicator # websocket or real time data
 var _summary: BooleanIndicator
 
 func _ready():
@@ -15,13 +15,12 @@ func _ready():
 	_brain_readiness = $BrainReadiness
 	_data = $Data
 	_summary = $Summary
+	
+	FeagiCore.feagi_local_cache.burst_engine_changed.connect(_set_burst_engine)
+	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_set_genome_availibility)
+	FeagiCore.feagi_local_cache.genome_validity_changed.connect(_set_genome_validity)
+	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_set_brain_readiness)
 
-func set_feagi_states(burst_engine: bool, genome_availibility: bool, genome_validity: bool, brain_readiness: bool) -> void:
-	_burst_engine.boolean_state = burst_engine
-	_genome_availibility.boolean_state = genome_availibility
-	_genome_validity.boolean_state = genome_validity
-	_brain_readiness.boolean_state = brain_readiness
-	_refresh_summary()
 
 func set_websocket_state(state: WebSocketPeer.State) -> void:
 	var is_websocket_working: bool = state == WebSocketPeer.State.STATE_OPEN
@@ -36,6 +35,22 @@ func toggle_collapse(is_collapsed: bool) -> void:
 	_data.visible = !is_collapsed
 	_summary.visible = is_collapsed
 	size = Vector2(0,0) # force smallest possible size
+
+func _set_burst_engine(val: bool):
+	_burst_engine.boolean_state = val
+	_refresh_summary()
+
+func _set_genome_availibility(val: bool):
+	_genome_availibility.boolean_state = val
+	_refresh_summary()
+
+func _set_genome_validity(val: bool):
+	_genome_validity.boolean_state = val
+	_refresh_summary()
+
+func _set_brain_readiness(val: bool):
+	_brain_readiness.boolean_state = val
+	_refresh_summary()
 
 func _refresh_summary() -> void:
 	_summary.boolean_state = (
