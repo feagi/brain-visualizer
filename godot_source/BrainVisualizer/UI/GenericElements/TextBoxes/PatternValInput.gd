@@ -54,8 +54,6 @@ func _ready():
 	text_changed .connect(_user_attempt_change_value)
 	text_submitted.connect(_user_attempt_change_value)
 	_default_font_size = get_theme_font_size(&"font_size")
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func _focus_entered() -> void:
 	text = _previous_patternval.as_StringName

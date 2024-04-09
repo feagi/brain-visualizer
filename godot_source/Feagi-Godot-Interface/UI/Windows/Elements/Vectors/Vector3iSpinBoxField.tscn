@@ -1,10 +1,11 @@
 [gd_scene load_steps=6 format=3 uid="uid://ci8uvawjvxfax"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
-[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="2_57b1k"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_57b1k"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_417nr"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="4_7tci3"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntSpinBox.gd" id="5_4kv8p"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="5_4kv8p"]
+
 
 [node name="Vector3fField" type="BoxContainer"]
 script = ExtResource("1_2xsvd")

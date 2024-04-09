@@ -9,8 +9,6 @@ class_name ContainerShrinker
 
 
 func _ready() -> void:
-	if shrink_on_ui_scale_change:
-		VisConfig.UI_manager.UI_scale_changed.connect(recalculate_size.unbind(1))
 	if shrink_on_any_change:
 		for child: Control in get_children():
 			child.resized.connect(recalculate_size)

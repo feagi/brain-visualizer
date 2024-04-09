@@ -27,8 +27,6 @@ func _ready():
 	_default_font_size = get_theme_font_size(&"font_size")
 	if custom_minimum_size != Vector2(0,0):
 		_default_min_size = custom_minimum_size
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 	
 
 ## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes

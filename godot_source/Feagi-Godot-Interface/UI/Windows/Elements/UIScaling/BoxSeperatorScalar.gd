@@ -5,8 +5,6 @@ var _default_seperation: float # Save as float to avoid rounding errors when mul
 
 func _ready() -> void:
 	_default_seperation = get_theme_constant(&"separation")
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func _update_size(multiplier: float) -> void:
 	var new_seperation: int = int(_default_seperation * multiplier)

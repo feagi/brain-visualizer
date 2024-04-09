@@ -11,8 +11,6 @@ func _ready() -> void:
 	_bottom = get_theme_constant(&"margin_bottom")
 	_left = get_theme_constant(&"margin_left")
 	_right = get_theme_constant(&"margin_right")
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 
 func _update_size(multiplier: float) -> void:

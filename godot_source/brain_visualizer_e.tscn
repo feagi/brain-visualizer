@@ -1,7 +1,7 @@
 [gd_scene load_steps=15 format=3 uid="uid://bs8wwxnfeywd7"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/brain_visualizer_main_script.gd" id="1_55pku"]
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/BrainMonitor/Resources/RobotoCondensed-Bold.ttf" id="2_w22sa"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_w22sa"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://BrainVisualizer/UI/BrainMonitor/Resources/cortical_area.material" id="3_xhov8"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/cortical_area_box.gd" id="4_gx18s"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://BrainVisualizer/UI/BrainMonitor/Resources/red.material" id="5_3hkt8"]

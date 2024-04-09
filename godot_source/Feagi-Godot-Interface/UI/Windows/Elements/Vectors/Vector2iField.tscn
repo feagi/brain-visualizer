@@ -3,8 +3,9 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iField.gd" id="1_2rlsy"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_db7ir"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="3_ustxh"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/IntInput.gd" id="3_v6mub"]
-[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="3_xw845"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_v6mub"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_xw845"]
+
 
 [node name="Vector2iField" type="BoxContainer"]
 script = ExtResource("1_2rlsy")

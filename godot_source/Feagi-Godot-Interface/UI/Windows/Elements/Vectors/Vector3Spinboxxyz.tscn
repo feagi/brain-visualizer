@@ -1,8 +1,9 @@
 [gd_scene load_steps=4 format=3 uid="uid://cn63wh2rl81w2"]
 
-[ext_resource type="FontFile" uid="uid://cvqevxbr1ddv7" path="res://Feagi-Godot-Interface/UI/Resources/RobotoMono-VariableFont_wght.ttf" id="1_pd2t0"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_pd2t0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_uymaf"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="3_5e8rs"]
+
 
 [node name="Vector3Spinbox" type="BoxContainer"]
 
