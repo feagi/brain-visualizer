@@ -2,12 +2,12 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/brain_visualizer_main_script.gd" id="1_jof7u"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/BVCam.gd" id="2_tgd5b"]
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/BrainMonitor/Resources/RobotoCondensed-Bold.ttf" id="3_afw7a"]
+[ext_resource type="FontFile" uid="uid://c1fx31hqhsi64" path="res://BrainVisualizer/UI/BrainMonitor/Resources/RobotoCondensed-Bold.ttf" id="3_afw7a"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://BrainVisualizer/UI/BrainMonitor/Resources/cortical_area.material" id="4_qnrq4"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/cortical_area_box.gd" id="5_tbl53"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://BrainVisualizer/UI/BrainMonitor/Resources/red.material" id="6_cljop"]
+[ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://3d_indicator.tscn" id="8_xvar0"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/FullScreenControl.gd" id="7_p6uww"]
-[ext_resource type="PackedScene" path="res://3d_indicator.tscn" id="8_xvar0"]
 [ext_resource type="Script" path="res://3d_indicator.gd" id="9_xa15g"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_hqsij"]
@@ -28,7 +28,10 @@ mesh = SubResource("BoxMesh_edosx")
 script = ExtResource("1_jof7u")
 
 [node name="BVCam" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 60, 100)
 script = ExtResource("2_tgd5b")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="BVCam"]
 
 [node name="blank_textbox" type="Sprite3D" parent="."]
 process_mode = 1
