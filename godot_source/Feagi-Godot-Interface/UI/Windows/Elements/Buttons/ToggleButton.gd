@@ -1,10 +1,10 @@
 extends ScalingTextureButton
 class_name ToggleButton
 
-const TEX_DISABLED_ON: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_on_disabled.png")
-const TEX_DISABLED_OFF: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_disabled.png")
-const TEX_ENABLED_ON: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_on.png")
-const TEX_ENABLED_OFF: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/toggle_off.png")
+const TEX_DISABLED_ON: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png")
+const TEX_DISABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_disabled.png")
+const TEX_ENABLED_ON: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on.png")
+const TEX_ENABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

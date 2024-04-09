@@ -51,10 +51,9 @@ func _ready() -> void:
 		_gap1.custom_minimum_size.x = gap_1
 		_gap2.custom_minimum_size.x = gap_2
 	
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
-	
 
+	
+#TODO remove me!
 func _update_size(multiplier: float) -> void:
 	_main_text.add_theme_font_size_override(&"font_size", int(float(main_label_font_size) * multiplier))
 	

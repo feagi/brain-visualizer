@@ -1,5 +1,7 @@
 extends PanelContainer
 class_name BasePanelContainerButton
+#TODO replace all references to me with the new one
+
 
 signal pressed()
 

@@ -39,8 +39,9 @@ func _ready() -> void:
 	texture_icon.texture = texture
 	texture_icon.custom_minimum_size = texture_size
 	
-	top_container.resized.connect(_child_resized)
+#	top_container.resized.connect(_child_resized)
 
+#TODO remove me
 func _child_resized():
 	size = Vector2i(0,0)
 	custom_minimum_size = $VBoxContainer.size
