@@ -1,7 +1,8 @@
 [gd_scene load_steps=3 format=3 uid="uid://dukfme5u3e3fl"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/CorticalArea_List/CoritcalAreaScroll.gd" id="1_5qjq7"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="2_b8ril"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_b8ril"]
+
 
 [node name="CorticalAreaScroll" type="VBoxContainer"]
 script = ExtResource("1_5qjq7")

@@ -15,7 +15,6 @@ var _scroll_container: ScrollContainer
 var _scroll_holder: BoxContainer
 var _default: StyleBoxFlat
 var _selected: StyleBoxFlat
-var _default_min_size: Vector2
 
 func _ready() -> void:
 	_filter_text = $filter
@@ -30,9 +29,6 @@ func _ready() -> void:
 		_filter_text.text_changed.connect(filter_by_button_text)
 	
 	toggle_filter_text_box(enable_filter_box)
-	_default_min_size = custom_minimum_size
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 
 ## Adds single item to the list
@@ -127,6 +123,3 @@ func _deselect_others(child_index_to_not_deselect: int) -> void:
 			continue
 		_scroll_holder.get_child(child_index).user_deselected()
 
-func _update_size(multiplier: float) -> void:
-	custom_minimum_size = _default_min_size * multiplier
-	size = Vector2(0,0)

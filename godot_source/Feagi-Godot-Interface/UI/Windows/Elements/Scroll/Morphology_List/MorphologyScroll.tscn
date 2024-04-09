@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bxqu4fr885cv2"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/Morphology_List/MorphologyScroll.gd" id="1_pedaf"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="2_h76vw"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_h76vw"]
 
 [node name="MorphologyScroll" type="VBoxContainer"]
 offset_right = 250.0

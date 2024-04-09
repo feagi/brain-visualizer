@@ -8,9 +8,9 @@ signal cortical_area_selected(cortical_area: BaseCorticalArea)
 func _ready():
 	super()
 	item_selected.connect(_cortical_Area_button_pressed)
-	FeagiCacheEvents.cortical_area_removed.connect(_respond_to_deleted_cortical_area)
-	FeagiCacheEvents.cortical_area_added.connect(_respond_to_added_cortical_area)
-	FeagiCacheEvents.cortical_area_updated.connect(_respond_to_updated_cortical_area)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_removed.connect(_respond_to_deleted_cortical_area)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_respond_to_added_cortical_area)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_updated.connect(_respond_to_updated_cortical_area)
 	if load_cortical_areas_on_load:
 		repopulate_from_cache()
 
@@ -18,7 +18,7 @@ func _ready():
 ## Clears list, then loads morphology list from FeagiCache
 func repopulate_from_cache() -> void:
 	delete_all()
-	for cortical_area in FeagiCache.cortical_areas_cache.cortical_areas.values():
+	for cortical_area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
 		append_single_item(cortical_area, cortical_area.name)
 
 ## Manually set the selected cortical area through code. Causes the button to emit the selected signal

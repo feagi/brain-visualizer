@@ -4,6 +4,7 @@ class_name CorticalAreasCache
 
 signal cortical_area_added(cortical_area: BaseCorticalArea)
 signal cortical_area_about_to_be_removed(cortical_area: BaseCorticalArea) ## We need this generic signal since dropdown popups cannot do individual reference processing
+signal cortical_area_mass_updated(cortical_area: BaseCorticalArea)
 
 ## All stored cortical areas, key'd by ID string
 var available_cortical_areas: Dictionary:
@@ -139,6 +140,7 @@ func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) ->
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
 	
 	_available_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
+	cortical_area_mass_updated.emit(_available_cortical_areas[changing_ID])
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
@@ -183,7 +185,7 @@ func get_all_cortical_area_names() -> Array[StringName]:
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed. Should only be called from FEAGI
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
 	print("FEAGI CACHE: Replacing cortical areas cache...")
-	
+	#TODO edit cortical areas?
 	# TODO: Possible optimizations used packedStringArrays and less duplications
 	var new_listing: Array[StringName] = []
 	new_listing.assign(_new_listing_with_summaries.keys())
