@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://ci836c2xixpea"]
+[gd_scene load_steps=15 format=3 uid="uid://ci836c2xixpea"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/brain_visualizer_main_script.gd" id="1_jof7u"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/BVCam.gd" id="2_tgd5b"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/cortical_area_box.gd" id="5_tbl53"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://BrainVisualizer/UI/BrainMonitor/Resources/red.material" id="6_cljop"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://3d_indicator.tscn" id="8_xvar0"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/FullScreenControl.gd" id="7_p6uww"]
 [ext_resource type="Script" path="res://3d_indicator.gd" id="9_xa15g"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_hqsij"]
@@ -91,6 +92,7 @@ offset_right = 1152.0
 offset_bottom = 650.0
 focus_mode = 1
 mouse_filter = 1
+script = ExtResource("7_p6uww")
 metadata/_edit_use_anchors_ = true
 
 [node name="3d_indicator" parent="." instance=ExtResource("8_xvar0")]
