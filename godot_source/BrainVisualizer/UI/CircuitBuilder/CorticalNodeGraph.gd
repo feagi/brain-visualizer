@@ -16,7 +16,7 @@ var _move_timer: Timer
 var _moved_cortical_areas_buffer: Dictionary = {}
 
 func _ready():
-	FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_area_added.connect(feagi_spawn_single_cortical_node)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(feagi_spawn_single_cortical_node)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_change_state)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 

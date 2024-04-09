@@ -3,12 +3,13 @@ class_name CorticalAreasCache
 ## Stores all cortical areas available in the genome
 
 signal cortical_area_added(cortical_area: BaseCorticalArea)
+signal cortical_area_about_to_be_removed(cortical_area: BaseCorticalArea) ## We need this generic signal since dropdown popups cannot do individual reference processing
 
 ## All stored cortical areas, key'd by ID string
-var cortical_areas: Dictionary:
-	get: return _cortical_areas
+var available_cortical_areas: Dictionary:
+	get: return _available_cortical_areas
 
-var _cortical_areas: Dictionary = {}
+var _available_cortical_areas: Dictionary = {}
 
 #region Add, Remove, and Edit Single Cortical Areas
 ## Adds a cortical area of type core by ID and emits a signal that this was done. Should only be called from FEAGI!
@@ -18,7 +19,7 @@ func add_core_cortical_area(cortical_ID: StringName, cortical_name: StringName, 
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added core cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -29,7 +30,7 @@ func add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added custom cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -40,7 +41,7 @@ func add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added input cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -51,7 +52,7 @@ func add_input_cortical_area_without_template(cortical_ID: StringName, cortical_
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added input cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -62,7 +63,7 @@ func add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplat
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added output cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -73,7 +74,7 @@ func add_output_cortical_area_without_template(cortical_ID: StringName, cortical
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added output cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -84,7 +85,7 @@ func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName
 	if is_coordinate_2D_defined:
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
-	_cortical_areas[cortical_ID] = new_area
+	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added memory cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -131,40 +132,41 @@ func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) ->
 		push_error("No Cortical Area ID defined in input Dict to update! Skipping!")
 		return
 	
-	if all_cortical_area_properties["cortical_id"] not in _cortical_areas.keys():
+	if all_cortical_area_properties["cortical_id"] not in _available_cortical_areas.keys():
 		push_error("No Cortical Area by ID of %s to update! Skipping!" % all_cortical_area_properties["cortical_id"])
 		return
 	
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
 	
-	_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
+	_available_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
 
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
-	if removed_cortical_ID not in _cortical_areas.keys():
+	if removed_cortical_ID not in _available_cortical_areas.keys():
 		push_error("Attempted to remove cortical area " + removed_cortical_ID + " when already non existant in cache")
 		return
-	_cortical_areas[removed_cortical_ID].FEAGI_delete_cortical_area()
+	_available_cortical_areas[removed_cortical_ID].FEAGI_delete_cortical_area()
+	cortical_area_about_to_be_removed.emit(_available_cortical_areas[removed_cortical_ID])
 	print("FEAGI CACHE: Removing cortical area %s" % removed_cortical_ID)
-	_cortical_areas.erase(removed_cortical_ID)
+	_available_cortical_areas.erase(removed_cortical_ID)
 	
 #endregion
 
 #region filtering
 ## Returns an array of cortical areas whose name contains a given substring
 ## WARNING: Do NOT use this for backend data operations, this is better suited for UI name filtering operations
-func search_for_cortical_areas_by_name(search_term: StringName) -> Array[BaseCorticalArea]:
+func search_for_available_cortical_areas_by_name(search_term: StringName) -> Array[BaseCorticalArea]:
 	var lowercase_search: StringName = search_term.to_lower()
 	var output: Array[BaseCorticalArea] = []
-	for cortical_area in _cortical_areas.values():
+	for cortical_area in _available_cortical_areas.values():
 		if cortical_area.name.to_lower().contains(lowercase_search):
 			output.append(cortical_area)
 	return output
 
 ## Returns an array of cortical areas of given cortical type
-func search_for_cortical_areas_by_type(searching_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> Array[BaseCorticalArea]:
+func search_for_available_cortical_areas_by_type(searching_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> Array[BaseCorticalArea]:
 	var output: Array[BaseCorticalArea] = []
-	for cortical_area in _cortical_areas.values():
+	for cortical_area in _available_cortical_areas.values():
 		if cortical_area.group == searching_cortical_type:
 			output.append(cortical_area)
 	return output
@@ -172,7 +174,7 @@ func search_for_cortical_areas_by_type(searching_cortical_type: BaseCorticalArea
 ## Returns an array of all the names of the cortical areas
 func get_all_cortical_area_names() -> Array[StringName]:
 	var output: Array[StringName] = []
-	for cortical_area in _cortical_areas.values():
+	for cortical_area in _available_cortical_areas.values():
 		output.append(cortical_area.cortical_ID)
 	return output
 #endregion
@@ -186,7 +188,7 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 	var new_listing: Array[StringName] = []
 	new_listing.assign(_new_listing_with_summaries.keys())
 	var removed: Array[StringName] = []
-	removed.assign(_cortical_areas.keys().duplicate())
+	removed.assign(_available_cortical_areas.keys().duplicate())
 	var added: Array[StringName] = []
 	var search: int # init here to reduce GC
 
@@ -219,15 +221,15 @@ func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictio
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
 func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 	for cortical_ID in IDs_to_locations.keys():
-		if !(cortical_ID in _cortical_areas.keys()):
+		if !(cortical_ID in _available_cortical_areas.keys()):
 			push_error("Unable to update position of %s due to this cortical area missing in cache" % cortical_ID)
 			continue
-		_cortical_areas[cortical_ID].coordinates_2D = IDs_to_locations[cortical_ID]
+		_available_cortical_areas[cortical_ID].coordinates_2D = IDs_to_locations[cortical_ID]
 
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
-func hard_wipe_cortical_areas():
+func hard_wipe_available_cortical_areas():
 	print("CACHE: Wiping cortical areas and connections...")
-	var all_cortical_area_IDs: Array = _cortical_areas.keys()
+	var all_cortical_area_IDs: Array = _available_cortical_areas.keys()
 	for cortical_area_ID in all_cortical_area_IDs:
 		remove_cortical_area(cortical_area_ID)
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
@@ -236,7 +238,7 @@ func hard_wipe_cortical_areas():
 #region queries
 ## Returns true if a cortical area exists with a given name (NOT ID)
 func exist_cortical_area_of_name(searching_name: StringName) -> bool:
-	for cortical_area in _cortical_areas.values():
+	for cortical_area in _available_cortical_areas.values():
 		if cortical_area.name.to_lower().contains(searching_name.to_lower()):
 			return true
 	return false

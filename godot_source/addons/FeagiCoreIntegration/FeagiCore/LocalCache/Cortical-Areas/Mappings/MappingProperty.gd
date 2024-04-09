@@ -61,10 +61,10 @@ static func create_placeholder_mapping_array(size: int) -> Array[MappingProperty
 
 ## Given the dictionary from FEAGI directly creates a MappingProperty object
 static func from_dict(mapping_property: Dictionary) -> MappingProperty:
-	if !(mapping_property["morphology_id"] in FeagiCore.feagi_local_cache.morphology_cache.available_morphologies.keys()):
+	if !(mapping_property["morphology_id"] in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()):
 		push_error("Unable to find morphology %s in cache when creating MappingProperty!" % mapping_property["morphology_id"])
 		return create_placeholder_mapping()
-	var morphology_cached: BaseMorphology =  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies[mapping_property["morphology_id"]]
+	var morphology_cached: BaseMorphology =  FeagiCore.feagi_local_cache.morphologies.available_morphologies[mapping_property["morphology_id"]]
 	var scalar_used: Vector3i = FEAGIUtils.array_to_vector3i(mapping_property["morphology_scalar"])
 	var psp_multiplier: float = mapping_property["postSynapticCurrent_multiplier"]
 	var plasticity: bool = mapping_property["plasticity_flag"]

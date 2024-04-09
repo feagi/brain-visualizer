@@ -22,7 +22,7 @@ func _on_visible_on_screen_notifier_3d_screen_entered():
 func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	var name_fetch = get_name().rsplit("*")
 	if event is InputEventMouseButton and event.pressed:
-		_ui_manager.user_selected_single_cortical_area_independently(FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_areas[name_fetch[0]])
+		_ui_manager.user_selected_single_cortical_area_independently(FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]])
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
 			if get_surface_override_material(0) == global_material.selected:

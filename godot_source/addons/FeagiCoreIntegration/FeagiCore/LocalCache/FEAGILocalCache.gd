@@ -4,31 +4,31 @@ class_name FEAGILocalCache
 #region main
 signal genome_reloaded()
 
-var cortical_areas_cache: CorticalAreasCache
-var morphology_cache: MorphologiesCache
+var cortical_areas: CorticalAreasCache
+var morphologies: MorphologiesCache
 
 func _init():
-	cortical_areas_cache = CorticalAreasCache.new()
-	morphology_cache = MorphologiesCache.new()
+	cortical_areas = CorticalAreasCache.new()
+	morphologies = MorphologiesCache.new()
 
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary) -> void:
 	
 	print("\nFEAGI CACHE: Replacing the ENTIRE local cached genome!")
-	cortical_areas_cache.update_cortical_area_cache_from_summary(cortical_area_summary)
-	morphology_cache.update_morphology_cache_from_summary(morphologies_summary)
+	cortical_areas.update_cortical_area_cache_from_summary(cortical_area_summary)
+	morphologies.update_morphology_cache_from_summary(morphologies_summary)
 	for source_cortical_ID: StringName in mapping_summary.keys():
-		if !(source_cortical_ID in cortical_areas_cache.cortical_areas.keys()):
+		if !(source_cortical_ID in cortical_areas.available_cortical_areas.keys()):
 			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
 			continue
 			
 		var mapping_targets: Dictionary = mapping_summary[source_cortical_ID]
 		for destination_cortical_ID: StringName in mapping_targets.keys():
-			if !(destination_cortical_ID in cortical_areas_cache.cortical_areas.keys()):
+			if !(destination_cortical_ID in cortical_areas.available_cortical_areas.keys()):
 				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % destination_cortical_ID)
 				continue
 			#NOTE: Instead of verifying the morphology exists, we will allow [MappingProperty]'s  system handle it, as it has a fallback should it not be found
-			var source_area: BaseCorticalArea = cortical_areas_cache.cortical_areas[source_cortical_ID]
-			var destination_area: BaseCorticalArea = cortical_areas_cache.cortical_areas[destination_cortical_ID]
+			var source_area: BaseCorticalArea = cortical_areas.available_cortical_areas[source_cortical_ID]
+			var destination_area: BaseCorticalArea = cortical_areas.available_cortical_areas[destination_cortical_ID]
 			var mapping_dictionaries: Array[Dictionary] = [] # Why doesnt godot support type inference for arrays yet?
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			var mappings: Array[MappingProperty] = MappingProperty.from_array_of_dict(mapping_dictionaries)

@@ -3,6 +3,7 @@ class_name MorphologiesCache
 ## Stores all morphologies available in the genome
 
 signal morphology_added(morphology: BaseMorphology)
+signal morphology_about_to_be_removed(morphology: BaseMorphology) # Must have this since dropdown popups do not support independent processing
 
 ## A list of all available morphologies in the FEAGI genome by name
 var available_morphologies: Dictionary:
