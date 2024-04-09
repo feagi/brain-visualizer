@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://BrainVisualizer/UI/Top_Bar/TopBar.tscn" id="1_yk4pp"]
 [ext_resource type="Resource" uid="uid://bha88u45sahwc" path="res://BrainVisualizer/Configs/feagi_default_settings.tres" id="2_iu6jq"]
-[ext_resource type="Resource" uid="uid://bbmq3e8wtka4s" path="res://BrainVisualizer/Configs/network_local_default.tres" id="3_m3l25"]
+[ext_resource type="Resource" uid="uid://bbmq3e8wtka4s" path="res://BrainVisualizer/Configs/endpoint_settings.tres" id="3_m3l25"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/UIManager.gd" id="4_qdn3k"]
 [ext_resource type="PackedScene" uid="uid://ci836c2xixpea" path="res://BrainVisualizer/UI/BrainMonitor/BrainMonitor.tscn" id="6_8wmkm"]
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://BrainVisualizer/UI/CircuitBuilder/NodeGraph.tscn" id="6_aq1db"]
@@ -43,6 +43,7 @@ script = ExtResource("6_r3y8u")
 
 [node name="Control" type="Control" parent="UIManager/CB_Holder"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
