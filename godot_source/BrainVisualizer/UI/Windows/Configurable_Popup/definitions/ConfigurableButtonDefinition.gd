@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name ConfigurableButtonDefinition
 ## Used by [ConfigurablePopupDefinition] to add a button
 

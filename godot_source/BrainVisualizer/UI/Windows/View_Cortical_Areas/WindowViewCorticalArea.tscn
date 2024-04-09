@@ -1,9 +1,10 @@
 [gd_scene load_steps=5 format=3 uid="uid://cyt5xxp0wi6lf"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
 [ext_resource type="PackedScene" uid="uid://dukfme5u3e3fl" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Scroll/CorticalArea_List/CorticalAreaScroll.tscn" id="2_k7lg4"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="3_3awq0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="3_aex5g"]
+
 
 [node name="WindowViewCorticalArea" type="VBoxContainer"]
 offset_right = 250.0
