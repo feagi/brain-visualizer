@@ -5,13 +5,10 @@ class_name BaseDraggableWindow
 
 const MOUSE_BUTTONS_THAT_BRING_WINDOW_TO_TOP: Array = [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]
 
-signal close_window_requested(self_window_name) ## Connected to WindowManager, which closes this window
+signal close_window_requested(self_window_name: StringName) ## Connected to WindowManager, which closes this window
 signal close_window_requesed_no_arg() ## As above but passes no argument
+signal bring_window_to_top_request(self_window_name: StringName)
 
-@export var left_pixel_gap_default: int = 8
-@export var right_pixel_gap_default: int = 8
-@export var top_pixel_gap_default: int = 8
-@export var bottom_pixel_gap_default: int = 8
 @export var window_spawn_location: Vector2i = Vector2i(200,200)
 
 var _window_name: StringName # Internal name
@@ -27,18 +24,13 @@ func _ready() -> void:
 	_window_margin = $WindowPanel/WindowMargin
 	_window_internals = $WindowPanel/WindowMargin/WindowInternals
 	
-	_set_margins(top_pixel_gap_default, 
-		right_pixel_gap_default, 
-		bottom_pixel_gap_default, 
-		left_pixel_gap_default)
 	
-	VisConfig.UI_manager.UI_scale_changed.connect(shrink_window_delayed.unbind(1)) # Fix stupid bnug related to fractional scaling
 
 func _gui_input(event: InputEvent) -> void:
 	_bring_to_top_if_click(event)
 
 func bring_window_to_top():
-	VisConfig.UI_manager.window_manager.bring_window_to_top(self)
+	bring_window_to_top_request.emit(_window_name)
 
 ## Tells the window manager to close this window
 func close_window():
@@ -86,9 +78,3 @@ func _bring_to_top_if_click(event: InputEvent):
 	bring_window_to_top()
 
 
-func _set_margins(top: int, right: int, bottom: int, left: int) -> void:
-	_window_margin.add_theme_constant_override("margin_top", top)
-	_window_margin.add_theme_constant_override("margin_left", right)
-	_window_margin.add_theme_constant_override("margin_bottom", bottom)
-	_window_margin.add_theme_constant_override("margin_right", left)
-	
