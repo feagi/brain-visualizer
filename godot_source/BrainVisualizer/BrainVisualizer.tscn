@@ -46,7 +46,7 @@ layout_mode = 2
 
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
-scroll_offset = Vector2(-50, 0)
+scroll_offset = Vector2(-59, 0)
 
 [node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
 offset_left = -444.0
