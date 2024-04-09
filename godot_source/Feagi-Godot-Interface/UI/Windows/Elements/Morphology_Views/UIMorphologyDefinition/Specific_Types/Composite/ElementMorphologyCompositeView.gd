@@ -17,7 +17,7 @@ var patternZ: Vector2i:
 	get: return _patternZ.current_vector
 	set(v): _patternZ.current_vector = v
 
-var mapped_morphology: Morphology:
+var mapped_morphology: BaseMorphology:
 	get: return _mapped_morphology.get_selected_morphology()
 	set(v): _mapped_morphology.set_selected_morphology(v)
 
@@ -26,7 +26,7 @@ var _patternX: Vector2iField
 var _patternY: Vector2iField
 var _patternZ: Vector2iField
 var _mapped_morphology: MorphologyDropDown
-var _internal_class: Morphology.MORPHOLOGY_INTERNAL_CLASS = Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
+var _internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
 var _is_UI_editable: bool
 
 
@@ -68,13 +68,13 @@ func _set_editable(editable: bool) -> void:
 	_patternZ.editable = editable
 	_mapped_morphology.disabled = !editable
 	
-func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool:
+func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> bool:
 	if !_is_UI_editable:
 		return false
 	match editability:
-		Morphology.EDITABILITY.IS_EDITABLE:
+		BaseMorphology.EDITABILITY.IS_EDITABLE:
 			return true
-		Morphology.EDITABILITY.WARNING_EDITABLE_USED:
+		BaseMorphology.EDITABILITY.WARNING_EDITABLE_USED:
 			return true
 		_: # any thing else
 			return false

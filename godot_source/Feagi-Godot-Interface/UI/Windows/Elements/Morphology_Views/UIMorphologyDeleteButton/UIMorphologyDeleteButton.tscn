@@ -1,10 +1,11 @@
 [gd_scene load_steps=6 format=3 uid="uid://c0v1sjxbjdmgb"]
 
-[ext_resource type="Texture2D" uid="uid://lx5nndlrsglg" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_S.png" id="1_eli5q"]
-[ext_resource type="Texture2D" uid="uid://cp8026cf16cte" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_C.png" id="2_k5xd5"]
-[ext_resource type="Texture2D" uid="uid://wcrt5nk4neve" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_H.png" id="3_c2jyu"]
-[ext_resource type="Texture2D" uid="uid://t5wfu23syst3" path="res://Feagi-Godot-Interface/UI/Resources/Icons/Delete_D.png" id="4_cvhnd"]
+[ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_eli5q"]
+[ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_k5xd5"]
+[ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_c2jyu"]
+[ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_cvhnd"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDeleteButton/UIMorphologyDeleteButton.gd" id="5_qq287"]
+
 
 [node name="Delete" type="TextureButton"]
 custom_minimum_size = Vector2(64, 64)

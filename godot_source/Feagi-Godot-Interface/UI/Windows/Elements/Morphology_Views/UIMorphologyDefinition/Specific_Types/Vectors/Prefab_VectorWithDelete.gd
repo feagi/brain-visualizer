@@ -1,4 +1,5 @@
 extends HBoxContainer
+class_name Prefab_VectorWithDelete
 
 var current_vector: Vector3i:
 	get: return $Vector.current_vector

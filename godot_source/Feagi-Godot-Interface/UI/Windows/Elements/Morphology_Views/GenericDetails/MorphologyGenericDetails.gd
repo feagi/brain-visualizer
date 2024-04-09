@@ -17,7 +17,7 @@ var _morphology_mappings_view: TextEdit
 var _morphology_details_view: TextEdit
 var _morphology_texture_view: TextureRect
 var _texture_container: VBoxContainer
-var _shown_morphology: Morphology = NullMorphology.new()
+var _shown_morphology: BaseMorphology = NullMorphology.new()
 
 func _ready() -> void:
 	_morphology_mappings_view = $UsageAndImage/VBoxContainer/Usage
@@ -28,7 +28,7 @@ func _ready() -> void:
 	_morphology_details_view.editable = editable
 
 ## Update details window with the details of the given morphology
-func load_morphology(morphology: Morphology, update_FEAGI_cache: bool = false) -> void:
+func load_morphology(morphology: BaseMorphology, update_FEAGI_cache: bool = false) -> void:
 	
 	if _shown_morphology.retrieved_usage.is_connected(_retrieved_morphology_mappings_from_feagi):
 		_shown_morphology.retrieved_usage.disconnect(_retrieved_morphology_mappings_from_feagi)
@@ -65,7 +65,7 @@ func _update_image_with_morphology(morphology_name: StringName) -> void:
 	_texture_container.visible = true
 	_morphology_texture_view.texture = load(MORPHOLOGY_ICON_PATH + morphology_image_name)
 
-func _retrieved_morphology_mappings_from_feagi(usage: Array[PackedStringArray], _is_being_used: bool, _self_reference: Morphology):
+func _retrieved_morphology_mappings_from_feagi(usage: Array[PackedStringArray], _is_being_used: bool, _self_reference: BaseMorphology):
 	_morphology_mappings_view.text = _usage_array_to_string(usage)
 	
 ## Given usage array is for relevant morphology, formats out a string to show usage

@@ -24,7 +24,7 @@ func get_as_pattern_morphology(morphology_name: StringName, is_placeholder: bool
 		return PatternMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, _get_pattern_pair_array())
 	# In the case of creating new morphologies, we would have not loaded in one, spo we cannot use the class from a loaded one
 	# we can assume however, that any created morphology will always be of class Custom
-	return PatternMorphology.new(morphology_name, is_placeholder, Morphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, _get_pattern_pair_array())
+	return PatternMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, _get_pattern_pair_array())
 	
 ## Overwrite the current UI view with a [PatternMorphology] object
 func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:
@@ -53,19 +53,19 @@ func add_pattern_pair_row() -> void:
 func get_number_rows() -> int:
 	return _pattern_pair_scroll.get_number_of_children()
 
-func _editability_updated(new_editability: Morphology.EDITABILITY) -> void:
+func _editability_updated(new_editability: BaseMorphology.EDITABILITY) -> void:
 	#NOTE: Due to how this is used in signals, we cannot simplify the input to a bool
 	var can_edit: bool = _determine_boolean_editability(new_editability)
 	_add_pattern.disabled = !can_edit
 	editability_changed.emit(can_edit)
 
-func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool:
+func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> bool:
 	if !_allow_editing_if_morphology_editable:
 		return false
 	match editability:
-		Morphology.EDITABILITY.IS_EDITABLE:
+		BaseMorphology.EDITABILITY.IS_EDITABLE:
 			return true
-		Morphology.EDITABILITY.WARNING_EDITABLE_USED:
+		BaseMorphology.EDITABILITY.WARNING_EDITABLE_USED:
 			return true
 		_: # any thing else
 			return false

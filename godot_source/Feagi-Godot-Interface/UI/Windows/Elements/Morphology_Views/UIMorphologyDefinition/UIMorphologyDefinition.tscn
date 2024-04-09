@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.gd" id="1_y81lm"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="2_k4tyy"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_pijnt"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TextBoxes/TextInput.gd" id="3_38a6c"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_38a6c"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="3_vddmv"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="4_elcaa"]
 
@@ -61,6 +61,5 @@ size_flags_vertical = 3
 
 [node name="ElementMorphologyPatternView" parent="." instance=ExtResource("4_elcaa")]
 visible = false
-custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 size_flags_vertical = 3

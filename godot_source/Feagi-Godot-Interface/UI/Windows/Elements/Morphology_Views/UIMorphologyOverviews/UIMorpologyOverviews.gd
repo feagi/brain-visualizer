@@ -10,11 +10,11 @@ signal requested_updating_morphology(morphology_name: StringName)
 @export var enable_close_button: bool = true
 @export var morphology_properties_editable: bool = true
 
-var loaded_morphology: Morphology:
+var loaded_morphology: BaseMorphology:
 	get: return _loaded_morphology
 
 var _add_morphology_button: Button
-var _morphology_scroll: MorphologyScroll
+var _morphology_scroll: BaseMorphologyScroll
 var _morphology_name_label: Label
 var _UI_morphology_definition: UIMorphologyDefinition
 var _UI_morphology_image: UIMorphologyImage
@@ -25,7 +25,7 @@ var _close_button: Button
 var _update_morphology_button: Button
 
 var _no_name_text: StringName
-var _loaded_morphology: Morphology
+var _loaded_morphology: BaseMorphology
 
 func _ready() -> void:
 	# Get references
@@ -48,7 +48,7 @@ func _ready() -> void:
 	_no_name_text = _morphology_name_label.text
 	FeagiEvents.when_mappings_confirmed_updated.connect(feagi_updated_mappings)
 
-func load_morphology(morphology: Morphology, override_scroll_selection: bool = false) -> void:
+func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
 	if morphology is NullMorphology:
 		_morphology_name_label.text = "No Connectivity Rule Loaded!"
@@ -71,7 +71,7 @@ func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> v
 		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
-	var morphology_to_update: Morphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
+	var morphology_to_update: BaseMorphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
 	FeagiRequests.request_updating_morphology(morphology_to_update)
 	requested_updating_morphology.emit(morphology_to_update)
 
