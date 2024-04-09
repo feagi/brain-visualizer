@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=13 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" uid="uid://bbmq3e8wtka4s" path="res://addons/FeagiCoreIntegration/FeagiCore/Config/network_local_default.tres" id="3_m3l25"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/UIManager.gd" id="4_qdn3k"]
 [ext_resource type="PackedScene" uid="uid://ci836c2xixpea" path="res://BrainVisualizer/UI/BrainMonitor/BrainMonitor.tscn" id="6_8wmkm"]
+[ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://BrainVisualizer/UI/CircuitBuilder/NodeGraph.tscn" id="6_aq1db"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
@@ -31,6 +32,18 @@ default_FEAGI_network_settings = ExtResource("3_m3l25")
 script = ExtResource("4_qdn3k")
 
 [node name="BrainMonitor" parent="UIManager" instance=ExtResource("6_8wmkm")]
+
+[node name="CB_Holder" type="SplitContainer" parent="UIManager"]
+offset_right = 1280.0
+offset_bottom = 720.0
+split_offset = 50
+
+[node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
+layout_mode = 2
+scroll_offset = Vector2(0, -50)
+
+[node name="Control" type="Control" parent="UIManager/CB_Holder"]
+layout_mode = 2
 
 [node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
 offset_left = -444.0

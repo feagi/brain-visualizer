@@ -9,16 +9,15 @@ var connections: Dictionary = {} ## Connection lines key'd by their name functio
 @export var algorithm_cortical_area_spacing: Vector2i =  Vector2i(10,6)
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 
-var _cortical_node_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CortexNode.tscn")
-var intercortical_connection_prefab: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalConnection.tscn")
+var _cortical_node_prefab: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/CortexNode.tscn")
+var intercortical_connection_prefab: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/InterCorticalConnection.tscn")
 var _spawn_sorter: CorticalNodeSpawnSorter
 var _move_timer: Timer
 var _moved_cortical_areas_buffer: Dictionary = {}
 
 func _ready():
-	FeagiCacheEvents.cortical_area_added.connect(feagi_spawn_single_cortical_node)
-	FeagiCacheEvents.cortical_area_removed.connect(feagi_deleted_single_cortical_node)
-	FeagiEvents.genome_is_about_to_reset.connect(_on_genome_reset)
+	FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_area_added.connect(feagi_spawn_single_cortical_node)
+	FeagiCore.genome_load_state_changed.connect(_on_genome_change_state)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 
 	_move_timer = $Timer
@@ -51,7 +50,7 @@ func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> Cortic
 	if cortical_area.is_coordinates_2D_available:
 		offset = cortical_area.coordinates_2D
 	else:
-		if VisConfig.visualizer_state == VisConfig.STATES.LOADING_INITIAL:
+		if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
 			offset = _spawn_sorter.add_cortical_area_to_memory_and_return_position(cortical_area.group)
 		else:
 			offset = Vector2(0.0,0.0) # TODO use center of view instead
@@ -62,6 +61,7 @@ func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> Cortic
 	
 	return cortical_node
 
+### TODO connect from base
 ## Deletes a cortical Node, should only be called via FEAGI
 func feagi_deleted_single_cortical_node(cortical_area: BaseCorticalArea) -> void:
 	if cortical_area.cortical_ID not in cortical_nodes.keys():
@@ -81,14 +81,19 @@ func _cortical_node_moved(node: CorticalNode, new_position: Vector2i) -> void:
 ## When the move timer goes off, send all the buffered cortical areas with their new positions to feagi
 func _move_timer_finished():
 	print("Sending change of 2D positions for %d cortical area(s)" % len(_moved_cortical_areas_buffer.keys()))
-	FeagiRequests.request_mass_change_2D_positions(_moved_cortical_areas_buffer)
+	### TODO
+	#FeagiRequests.request_mass_change_2D_positions(_moved_cortical_areas_buffer)
 	_moved_cortical_areas_buffer = {}
 
 ## User requested a connection. Note that this function is going to be redone in the graph edit refactor
 func _user_request_connection(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
-	VisConfig.UI_manager.window_manager.spawn_edit_mappings(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID], true)
+	### TODO
+	#VisConfig.UI_manager.window_manager.spawn_edit_mappings(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID], true)
+	pass
 
-func _on_genome_reset():
+func _on_genome_change_state(new_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE):
+	if new_state != FeagiCore.GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
+		return
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 	_moved_cortical_areas_buffer = {}
 	_move_timer.stop()

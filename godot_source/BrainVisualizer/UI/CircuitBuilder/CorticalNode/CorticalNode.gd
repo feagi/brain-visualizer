@@ -7,9 +7,9 @@ const MEMORY_BOX_COLOR: Color = Color(0.5803921568627451, 0.06666666666666667, 0
 const OPU_BOX_COLOR: Color = Color(0.5803921568627451, 0.3215686274509804, 0)
 
 
-const INTERCORTICAL_CONNECTION_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalConnection.tscn")
-const INTERCORTICAL_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalNodeTerminal.tscn")
-const RECURSIVE_TERMINAL_PREFAB: PackedScene = preload("res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/RecursiveNodeTerminal.tscn")
+const INTERCORTICAL_CONNECTION_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/InterCorticalConnection.tscn")
+const INTERCORTICAL_TERMINAL_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/InterCorticalNodeTerminal.tscn")
+const RECURSIVE_TERMINAL_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/RecursiveNodeTerminal.tscn")
 
 signal moved(cortical_node: CorticalNode, new_location: Vector2i)
 
@@ -51,9 +51,9 @@ func _gui_input(event):
 	if mouse_event.is_pressed(): return
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
 	if _dragged: return
-	FeagiEvents.user_selected_cortical_area.emit(_cortical_area_ref)
+	get_node("/root/BrainVisualizer/UIManager").user_selected_single_cortical_area_independently(_cortical_area_ref)
 	#if !mouse_event.double_click: return
-	VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(_cortical_area_ref)
+	###VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(_cortical_area_ref)
 
 ## Since we cannot use _init for scenes, use this instead to initialize data
 func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
@@ -143,7 +143,7 @@ func _spawn_recursive_terminal(mapping: MappingProperties) -> RecursiveNodeTermi
 ## Request FEAGI for deletion of area
 func _user_request_delete_cortical_area() -> void:
 	print("GRAPH: User requesting deletion of cortical area " +  cortical_area_ID)
-	FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
+	###FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 ## Set the color depnding on cortical type
 func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:

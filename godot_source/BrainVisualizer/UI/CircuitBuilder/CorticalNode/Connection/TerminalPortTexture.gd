@@ -1,8 +1,8 @@
 extends TextureRect
 class_name TerminalPortTexture
 
-const TEX_PLASTIC: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port-plastic.png")
-const TEX_INPLASTIC: Texture = preload("res://Feagi-Godot-Interface/UI/Resources/Icons/cb-port-non-plastic.png")
+const TEX_PLASTIC: Texture = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Resources/cb-port-plastic.png")
+const TEX_INPLASTIC: Texture = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Resources/cb-port-non-plastic.png")
 
 signal terminal_moved()
 

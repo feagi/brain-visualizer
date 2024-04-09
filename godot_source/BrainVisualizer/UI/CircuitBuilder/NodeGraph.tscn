@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://1p2hhnitls41"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNodeGraph.gd" id="1_06pyj"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNodeGraph.gd" id="1_06pyj"]
 
 [node name="NodeGraph" type="GraphEdit"]
 anchors_preset = 15

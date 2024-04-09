@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://erv3s3clxk2t"]
+[gd_scene load_steps=4 format=3 uid="uid://bkxctwg5856qk"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/InterCorticalConnection.gd" id="1_esnl0"]
-[ext_resource type="Shader" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/Connection/CB_Line_Shader.gdshader" id="2_ecekl"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/InterCorticalConnection.gd" id="1_wvqts"]
+[ext_resource type="Shader" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/CB_Line_Shader.gdshader" id="2_oj3rc"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_tuauv"]
-shader = ExtResource("2_ecekl")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yq77r"]
+shader = ExtResource("2_oj3rc")
 shader_parameter/baseColor = Vector4(1, 1, 1, 1)
 shader_parameter/colorHighLight = Vector4(1, 1, 1, 1)
 shader_parameter/isOutlined = false
@@ -15,10 +15,11 @@ shader_parameter/linSlope = 0.0
 
 [node name="InterCorticalConnection" type="GraphElement"]
 selectable = false
-script = ExtResource("1_esnl0")
+script = ExtResource("1_wvqts")
 
 [node name="Line2D" type="Line2D" parent="."]
-material = SubResource("ShaderMaterial_tuauv")
+material = SubResource("ShaderMaterial_yq77r")
+points = PackedVector2Array(1128, 304)
 texture_mode = 2
 joint_mode = 2
 begin_cap_mode = 2

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://d0jn7l0vs7yor"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Graph/CorticalNode/CorticalNode.gd" id="1_4inyi"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/CorticalNode.gd" id="1"]
 
 [node name="CorticalNode" type="GraphNode"]
 custom_minimum_size = Vector2(250, 0)
@@ -17,7 +17,7 @@ slot/0/right_type = 0
 slot/0/right_color = Color(1, 1, 1, 1)
 slot/0/right_icon = null
 slot/0/draw_stylebox = true
-script = ExtResource("1_4inyi")
+script = ExtResource("1")
 
 [node name="Top_Connector" type="HBoxContainer" parent="."]
 layout_mode = 2
