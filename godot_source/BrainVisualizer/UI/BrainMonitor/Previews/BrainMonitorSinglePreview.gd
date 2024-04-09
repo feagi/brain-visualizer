@@ -11,7 +11,7 @@ const COLOR_PARAMETER_NAME: StringName = "albedo_color"
 var _material: StandardMaterial3D
 
 func _ready() -> void:
-	FeagiEvents.genome_is_about_to_reset.connect(delete_preview) # On genome reset, reuse the window close function to delete the preview
+##	FeagiEvents.genome_is_about_to_reset.connect(delete_preview) # On genome reset, reuse the window close function to delete the preview
 	_material = get_active_material(0)
 
 func setup(preview_dimensions: Vector3, preview_position: Vector3, color: Color = default_color, is_rendering: bool = true) -> void:

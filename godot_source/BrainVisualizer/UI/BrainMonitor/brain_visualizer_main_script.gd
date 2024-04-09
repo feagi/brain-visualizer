@@ -5,14 +5,15 @@ const camera_snap_offset: Vector3 = Vector3(0.0, 15.0, -25.0)
 var shader_material # Wait for shader 
 var global_name_list = {}
 
-var _prefab_single_preview: PackedScene = preload("res://Feagi-Godot-Interface/UI/Brain_Visualizer/Previews/BrainMonitorSinglePreview.tscn")
+var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/BrainMonitor/Previews/BrainMonitorSinglePreview.tscn")
 
 func _ready():
-	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
+##	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
-	FeagiEvents.retrieved_visualization_data.connect(test)
-	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
-	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
+##	FeagiEvents.retrieved_visualization_data.connect(test)
+##	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
+##	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
+	pass
 
 #TODO TEMP
 ## Generates and parents a preview and returns the object 
@@ -103,8 +104,8 @@ func _clear_node_name_list(node_name):
 	"""
 	clear all cortical area along with the library list/dict
 	"""
-	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
-		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+##	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
+##		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 	var list = node_name
 	if list.is_empty() != true:
 		var list_size = global_name_list.size()

@@ -45,11 +45,12 @@ var _initial_position: Vector3
 var _initial_euler_rotation: Vector3
 
 func _ready() -> void:
-	var bv_background: FullScreenControl = get_node("../BV_Background")
-	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
-	bv_background.pan_event.connect(_touch_pan_gesture)
-	_initial_position = position
-	_initial_euler_rotation = rotation_degrees
+##	var bv_background: FullScreenControl = get_node("../BV_Background")
+##	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
+##	bv_background.pan_event.connect(_touch_pan_gesture)
+##	_initial_position = position
+##	_initial_euler_rotation = rotation_degrees
+	pass
 
 # Guard Clauses!
 func _input(event: InputEvent):
@@ -145,13 +146,14 @@ func _scroll_movment_and_toggle_camera_focus(event: InputEventMouseButton):
 # The camera itself should probably not be the thing sending the websocket requests. TODO move to seperate once we have the free time
 func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 	if Input.is_action_just_pressed("spacebar"): 
-		$"../../../FEAGIInterface".FEAGI_websocket.websocket_send(str(Godot_list.godot_list))
-		print(Godot_list.godot_list)
+		pass
+##		$"../../../FEAGIInterface".FEAGI_websocket.websocket_send(str(Godot_list.godot_list))
+##		print(Godot_list.godot_list)
 		return
 	if Input.is_action_just_pressed("del"): 
-		for key in Godot_list.godot_list["data"]["direct_stimulation"]:
-			Godot_list.godot_list["data"]["direct_stimulation"][key] = []
-			print(Godot_list.godot_list)
+##		for key in Godot_list.godot_list["data"]["direct_stimulation"]:
+##			Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+##			print(Godot_list.godot_list)
 		return
 
 

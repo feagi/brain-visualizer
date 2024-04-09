@@ -1,10 +1,25 @@
-[gd_scene load_steps=6 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=11 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
 [ext_resource type="PackedScene" uid="uid://ceyo23uu67e8h" path="res://BrainVisualizer/UI/Top_Bar/TopBar.tscn" id="1_yk4pp"]
 [ext_resource type="Resource" uid="uid://bha88u45sahwc" path="res://addons/FeagiCoreIntegration/FeagiCore/Config/feagi_default_settings.tres" id="2_iu6jq"]
 [ext_resource type="Resource" uid="uid://bbmq3e8wtka4s" path="res://addons/FeagiCoreIntegration/FeagiCore/Config/network_local_default.tres" id="3_m3l25"]
+[ext_resource type="PackedScene" uid="uid://ci836c2xixpea" path="res://BrainVisualizer/UI/BrainMonitor/BrainMonitor.tscn" id="6_8wmkm"]
+[ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
+shader = ExtResource("7_wiv4s")
+shader_parameter/HorizonColor = Color(0, 0.098, 0.219, 1)
+shader_parameter/SkyColor = Color(0, 0.223, 0.447, 1)
+shader_parameter/Clamp = Vector3(0.2, 0.1, 0.5)
+
+[sub_resource type="Sky" id="Sky_btdg3"]
+sky_material = SubResource("ShaderMaterial_ouwte")
+
+[sub_resource type="Environment" id="Environment_rks2y"]
+background_mode = 2
+sky = SubResource("Sky_btdg3")
 
 [node name="BrainVisualizer" type="Node"]
 script = ExtResource("1_234dh")
@@ -16,3 +31,8 @@ offset_left = -444.0
 offset_bottom = 161.0
 
 [node name="TopBar" parent="." instance=ExtResource("1_yk4pp")]
+
+[node name="BrainMonitor" parent="." instance=ExtResource("6_8wmkm")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_rks2y")

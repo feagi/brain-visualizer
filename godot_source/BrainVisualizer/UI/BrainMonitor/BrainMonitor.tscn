@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://ci836c2xixpea"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/brain_visualizer_main_script.gd" id="1_jof7u"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/BVCam.gd" id="2_tgd5b"]
+
+[node name="BrainMonitor" type="Node3D"]
+script = ExtResource("1_jof7u")
+
+[node name="BVCam" type="Camera3D" parent="."]
+script = ExtResource("2_tgd5b")
