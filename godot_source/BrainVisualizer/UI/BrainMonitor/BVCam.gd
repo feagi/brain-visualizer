@@ -45,12 +45,11 @@ var _initial_position: Vector3
 var _initial_euler_rotation: Vector3
 
 func _ready() -> void:
-##	var bv_background: FullScreenControl = get_node("../BV_Background")
-##	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
-##	bv_background.pan_event.connect(_touch_pan_gesture)
-##	_initial_position = position
-##	_initial_euler_rotation = rotation_degrees
-	pass
+	var bv_background: FullScreenControl = get_node("../BV_Background")
+	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
+	bv_background.pan_event.connect(_touch_pan_gesture)
+	_initial_position = position
+	_initial_euler_rotation = rotation_degrees
 
 # Guard Clauses!
 func _input(event: InputEvent):
@@ -61,7 +60,7 @@ func _input(event: InputEvent):
 	# Feagi Interaction doesnt require camera control
 	if event is InputEventKey:
 		_FEAGI_data_interaction(event)
-
+	
 	if !_is_user_currently_focusing_camera:
 		return
 	
