@@ -8,7 +8,7 @@ var global_name_list = {}
 var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/BrainMonitor/Previews/BrainMonitorSinglePreview.tscn")
 
 func _ready():
-##	FeagiCacheEvents.cortical_area_added.connect(on_cortical_area_added)
+	FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 ##	FeagiEvents.retrieved_visualization_data.connect(test)
 ##	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
@@ -25,7 +25,7 @@ func generate_single_preview(initial_dimensions: Vector3, initial_position: Vect
 
 ## Snaps the camera to a cortical area
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
-	var camera: BVCam = $Camera3D
+	var camera: BVCam = $BVCam
 	var bv_location: Vector3 = cortical_area.BV_position()
 	camera.teleport_to_look_at_without_changing_angle(bv_location)
 
