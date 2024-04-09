@@ -30,13 +30,13 @@ default_FEAGI_network_settings = ExtResource("3_m3l25")
 [node name="UIManager" type="Node" parent="."]
 script = ExtResource("4_qdn3k")
 
+[node name="BrainMonitor" parent="UIManager" instance=ExtResource("6_8wmkm")]
+
 [node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
 offset_left = -444.0
 offset_bottom = 161.0
 
 [node name="TopBar" parent="UIManager" instance=ExtResource("1_yk4pp")]
-
-[node name="BrainMonitor" parent="UIManager" instance=ExtResource("6_8wmkm")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
 environment = SubResource("Environment_rks2y")

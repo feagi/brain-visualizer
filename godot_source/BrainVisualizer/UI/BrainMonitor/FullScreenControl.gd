@@ -10,7 +10,7 @@ func _ready() -> void:
 	size = get_node("/root/BrainVisualizer/UIManager").screen_size
 	get_node("/root/BrainVisualizer/UIManager").screen_size_changed.connect(_screen_size_changed)
 	gui_input.connect(_check_for_click_input)
-
+	_screen_size_changed(get_viewport().get_visible_rect().size)
 
 func _screen_size_changed(new_screen_size: Vector2) -> void:
 	size = new_screen_size

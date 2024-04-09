@@ -10,9 +10,9 @@ var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/Brai
 func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
-##	FeagiEvents.retrieved_visualization_data.connect(test)
-##	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
-##	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
+###	FeagiEvents.retrieved_visualization_data.connect(test)
+###	FeagiCacheEvents.cortical_area_removed.connect(delete_single_cortical)
+###	FeagiCacheEvents.cortical_area_updated.connect(check_cortical) # disabled due to being triggered every click
 	pass
 
 #TODO TEMP
