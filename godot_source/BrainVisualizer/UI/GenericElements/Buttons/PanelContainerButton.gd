@@ -13,10 +13,10 @@ func _ready() -> void:
 	mouse_exited.connect(_mouse_exited)
 
 ## Called externally from [ScaleThemeApplier]
-func update_theme(standard, hover, pressed) -> void:
+func update_theme(standard: StyleBoxFlat, hover: StyleBoxFlat, pressed_down: StyleBoxFlat) -> void:
 		_unpressed = standard
 		_hover = hover
-		_clicked = pressed
+		_clicked = pressed_down
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:

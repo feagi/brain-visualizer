@@ -5,6 +5,9 @@ class_name BrainVisualizer
 @export var FEAGI_configuration: FeagiGeneralSettings
 @export var default_FEAGI_network_settings: FeagiEndpointDetails
 
+var UI_manager: UIManager:
+	get: return _UI_manager
+
 var top_bar: TopBar:
 	get: return _top_bar
 var notification_system:
@@ -12,14 +15,15 @@ var notification_system:
 
 var _top_bar: TopBar
 var _notification_system: NotificationSystem
-
+var _UI_manager: UIManager
 
 func _ready() -> void:
 	# The BV Startup function
 	
 	# Zeroth step is just to collect references and make connections
-	_top_bar = $TopBar
-	_notification_system = $NotificationSystem
+	_UI_manager = $UIManager
+	_top_bar = $UIManager/TopBar
+	_notification_system = $UIManager/NotificationSystem
 	_top_bar.resized.connect(_top_bar_resized)
 	_top_bar_resized()
 	

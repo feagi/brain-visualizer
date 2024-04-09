@@ -2,8 +2,14 @@ extends MeshInstance3D
 var location = Vector3()
 var flagged = false
 
+var _ui_manager: UIManager
+
+func _ready() -> void:
+	_ui_manager = get_node("/root/BrainVisualizer/UIManager") as UIManager
+
 func _on_visible_on_screen_notifier_3d_screen_entered():
 	print(get_node("."), " entered!")
+
 
 
 # Comment this out for shader future to resume
@@ -16,7 +22,7 @@ func _on_visible_on_screen_notifier_3d_screen_entered():
 func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	var name_fetch = get_name().rsplit("*")
 	if event is InputEventMouseButton and event.pressed:
-		FeagiEvents.user_selected_cortical_area.emit(FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]])
+		_ui_manager.user_selected_single_cortical_area_independently(FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_areas_cache.cortical_areas[name_fetch[0]])
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
 			if get_surface_override_material(0) == global_material.selected:
@@ -43,9 +49,9 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 					Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]].append(location)
 			set_surface_override_material(0, global_material.selected)
 	elif event is InputEventMouseButton and event.pressed and event.button_index== MOUSE_BUTTON_LEFT:
-		var cortical_area: BaseCorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]]
-		VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(cortical_area)
-		
+		###var cortical_area: BaseCorticalArea = FeagiCache.cortical_areas_cache.cortical_areas[name_fetch[0]]
+		###VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(cortical_area)
+		pass
 		
 		
 
