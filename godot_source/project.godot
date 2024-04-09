@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 FeagiCore="*res://addons/FeagiCoreIntegration/FeagiCore/FeagiCore.gd"
+BV="*res://BrainVisualizer/BV.gd"
 global_material="*res://BrainVisualizer/UI/BrainMonitor/godot_material.gd"
 Godot_list="*res://BrainVisualizer/UI/BrainMonitor/godot_list.gd"
 

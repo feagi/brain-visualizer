@@ -6,6 +6,8 @@ class_name TopBar
 @export var starting_size_index: int = 2
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
+signal request_UI_mode(mode: TempSplit.STATES)
+
 var _theme_custom_scaler: ScaleThemeApplier = ScaleThemeApplier.new()
 var _refresh_rate_field: FloatInput
 var _latency_field: IntInput
@@ -81,10 +83,8 @@ func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> voi
 	pass
 	#FeagiRequests.set_delay_between_bursts(1.0 / new_delay_between_bursts_seconds)
 
-func _view_selected() -> void:
-#func _view_selected(new_state: TempSplit.STATES) -> void:
-	pass
-	#VisConfig.UI_manager.temp_get_temp_split().set_view(new_state)
+func _view_selected(new_state: TempSplit.STATES) -> void:
+	request_UI_mode.emit(new_state)
 
 func _details_section_toggle(_irrelevant: bool) -> void:
 	size = Vector2(0,0) #force to smallest possible size

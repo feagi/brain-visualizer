@@ -249,5 +249,6 @@ layout_mode = 2
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton" to="." method="_open_create_cortical"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
+[connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

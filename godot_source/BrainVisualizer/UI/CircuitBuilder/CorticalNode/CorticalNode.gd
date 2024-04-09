@@ -51,7 +51,7 @@ func _gui_input(event):
 	if mouse_event.is_pressed(): return
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
 	if _dragged: return
-	get_node("/root/BrainVisualizer/UIManager").user_selected_single_cortical_area_independently(_cortical_area_ref)
+	BV.UI.user_selected_single_cortical_area_independently(_cortical_area_ref)
 	#if !mouse_event.double_click: return
 	###VisConfig.UI_manager.window_manager.spawn_quick_cortical_menu(_cortical_area_ref)
 
