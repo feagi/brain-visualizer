@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name PatternVector3
 ## AN emulated Vector3 but using [PatternVal]
 

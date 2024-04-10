@@ -118,8 +118,8 @@ func load_genome_from_FEAGI() -> void:
 	#TODO wipe current data
 	
 
-	var is_loading_genome_succesful: bool = await requests.reload_genome()
-	if !is_loading_genome_succesful:
+	var genome_load_response: FeagiRequestOutput = await requests.reload_genome()
+	if !genome_load_response.success:
 		# The above function has done its own error handling, check if we disconnected from FEAGI
 		if connection_state != CONNECTION_STATE.DISCONNECTED:
 			genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, _genome_load_state)
@@ -128,8 +128,14 @@ func load_genome_from_FEAGI() -> void:
 		return
 	genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY, _genome_load_state)
 	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
-	
 
+## Returns true if we can safely interact with feagi (connected and genome loaded)
+func can_interact_with_feagi() -> bool:
+	if connection_state != CONNECTION_STATE.CONNECTED:
+		return false
+	if genome_load_state != GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return false
+	return true
 
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 	# Bit too much nesting imo, but this is cleaner than having external single use functions

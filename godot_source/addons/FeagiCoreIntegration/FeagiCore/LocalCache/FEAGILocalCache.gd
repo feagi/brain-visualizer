@@ -38,6 +38,54 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	genome_reloaded.emit()
 #endregion
 
+#region Templates
+
+signal templates_updated()
+
+var IPU_templates: Dictionary:
+	get: return _IPU_templates
+var OPU_templates: Dictionary:
+	get: return _OPU_templates
+
+var _IPU_templates: Dictionary = {}
+var _OPU_templates: Dictionary = {}
+
+# TODO corticaltemplates (s) may be deletable
+
+## Retrieved template updats from FEAGI
+func update_templates_from_FEAGI(dict: Dictionary) -> void:
+	var ipu_devices: Dictionary = dict["IPU"]["supported_devices"]
+	for ipu_ID: StringName in ipu_devices.keys():
+		var ipu_device: Dictionary = ipu_devices[ipu_ID]
+		var resolution: Array[int] = [] # Gotta love godot unable to infer types
+		resolution.assign(ipu_device["resolution"])
+		_IPU_templates[ipu_ID] = CorticalTemplate.new(
+			ipu_ID,
+			ipu_device["enabled"],
+			ipu_device["cortical_name"],
+			ipu_device["structure"],
+			resolution,
+			BaseCorticalArea.CORTICAL_AREA_TYPE.IPU
+		)
+	var opu_devices: Dictionary = dict["OPU"]["supported_devices"]
+	for opu_ID: StringName in opu_devices.keys():
+		var opu_device: Dictionary = opu_devices[opu_ID]
+		var resolution: Array[int] = [] # Gotta love godot unable to infer types
+		resolution.assign(opu_device["resolution"])
+		_OPU_templates[opu_ID] = CorticalTemplate.new(
+			opu_ID,
+			opu_device["enabled"],
+			opu_device["cortical_name"],
+			opu_device["structure"],
+			resolution,
+			BaseCorticalArea.CORTICAL_AREA_TYPE.OPU
+		)
+	
+	templates_updated.emit()
+
+#endregion
+
+
 #region Health
 
 signal burst_engine_changed(new_val: bool)

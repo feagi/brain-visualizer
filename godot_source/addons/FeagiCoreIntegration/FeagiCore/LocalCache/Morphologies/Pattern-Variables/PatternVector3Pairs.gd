@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name PatternVector3Pairs
 ## Organizes PatternVector3s into in/out pairs, which is used in [PatternMorphology]
 

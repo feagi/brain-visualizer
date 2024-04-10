@@ -1,4 +1,4 @@
-extends Object
+extends RefCounted
 class_name PatternVal
 ## PatternMorphology values can be ints, or "*" or "?". This can hold all of those
 

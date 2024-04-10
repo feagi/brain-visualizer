@@ -49,12 +49,12 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 ## Runs a health check call over HTTP, updates the cache with the results (notably genome availability), and informs core about connectability
 func run_HTTP_healthcheck() -> void:
 	#NOTE: Due to the more unique usecase, we are keeping this function here instead of [FEAGIRequests]
-	var health_check_request: APIRequestWorkerDefinition = FEAGIHTTPCallList.GET_healthCheck_FEAGI_VALIDATION()
+	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_healthCheck,)
 	var health_check_worker: APIRequestWorker = make_HTTP_call(health_check_request)
 	
 	await health_check_worker.worker_done
 	
-	var cortical_area_data: APIRequestWorkerOutput = health_check_worker.retrieve_output_and_close()
+	var cortical_area_data: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
 	if cortical_area_data.has_timed_out:
 		_http_health = HTTP_HEALTH.NO_CONNECTION
 		FEAGI_http_health_changed.emit(_http_health)

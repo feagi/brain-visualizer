@@ -4,10 +4,36 @@ class_name FEAGIHTTPCallList
 
 #WARNING: Calling any function here when HTTP (and thus addres list) is not initialized will cause a crash!
 
-#region Neuron Morphologies
-static func GET_morphologies() -> APIRequestWorkerDefinition:
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		FeagiCore.network.http_API.address_list.GET_morphology_morphologies,
+
+
+
+
+
+
+## Add custom cortical area (or memory, or copies an existing area), this really should be split up from feagis side
+static func POST_CustomCorticalArea(name: StringName, position_3d: Vector3i, dimensions: Vector3i, 
+	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false, 
+	cortical_ID_to_copy: StringName = "") -> APIRequestWorkerDefinition:
+		
+	var dict: Dictionary = 	{
+			"cortical_name": name,
+			"coordinates_3d": FEAGIUtils.vector3i_to_array(position_3d),
+			"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
+			"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+			"cortical_sub_group": "",
+			"coordinates_2d": [null, null]
+		}
+	if is_coordinate_2D_defined:
+		dict["coordinates_2d"] = coordinates_2D
+	if memory_type:
+		dict["sub_group_id"] = "MEMORY"
+	if cortical_ID_to_copy != "":
+		dict["copy_of"] = cortical_ID_to_copy
+	
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_call(
+		FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea,
+		HTTPClient.METHOD_POST,
+		dict
 	)
 	return request
 
@@ -15,35 +41,4 @@ static func GET_morphologies() -> APIRequestWorkerDefinition:
 #endregion
 
 
-#region Cortical Areas
-
-## Gets Summary information for all cortical areas in current genome, calls GET_CorticalMapDetailed upon success
-static func GET_CorticalArea_Geometry() -> APIRequestWorkerDefinition:
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry,
-	)
-	return request
-
-## Gets summary information of how all cortical areas are mapped to each (including details of the morphology used)
-static func GET_CorticalMapDetailed() -> APIRequestWorkerDefinition:
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed,
-	)
-	return request
-
-#endregion
-
-
-
-#region SYSTEM
-
-# A custom version of the GET_healthCheck, meant for validating if FEAGI is connectable and healthy on godot launch
-static func GET_healthCheck_FEAGI_VALIDATION() -> APIRequestWorkerDefinition:
-	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		FeagiCore.network.http_API.address_list.GET_system_healthCheck,
-	)
-	return request
-
-
-#endregion
 
