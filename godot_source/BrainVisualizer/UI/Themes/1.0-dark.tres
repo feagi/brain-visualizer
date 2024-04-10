@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=20 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" load_steps=21 format=3 uid="uid://cjrivk0518jvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rwapg"]
 bg_color = Color(0.152941, 0.192157, 0.254902, 1)
@@ -62,6 +62,9 @@ bg_color = Color(0.572549, 0.780392, 0.921569, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_242sy"]
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i4413"]
+bg_color = Color(0.0730495, 0.419393, 0.636878, 1)
+
 [resource]
 Button/colors/font_color = Color(0.968627, 0.980392, 0.992157, 1)
 Button/colors/font_disabled_color = Color(0.658824, 0.784314, 1, 0.556863)
@@ -90,3 +93,10 @@ PanelContainerButton/styles/panel_pressed = SubResource("StyleBoxFlat_fd0w3")
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
 TextureButton/constants/size_x = 48
 TextureButton/constants/size_y = 48
+TitleBarContainer/base_type = &"PanelContainer"
+TitleBarContainer/styles/panel = SubResource("StyleBoxFlat_i4413")
+WindowOuterMargin/base_type = &"MarginContainer"
+WindowOuterMargin/constants/margin_bottom = 8
+WindowOuterMargin/constants/margin_left = 8
+WindowOuterMargin/constants/margin_right = 8
+WindowOuterMargin/constants/margin_top = 8
