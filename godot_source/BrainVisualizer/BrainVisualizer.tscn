@@ -33,8 +33,6 @@ default_FEAGI_network_settings = ExtResource("3_m3l25")
 [node name="UIManager" type="Node" parent="."]
 script = ExtResource("4_qdn3k")
 
-[node name="BrainMonitor" parent="UIManager" instance=ExtResource("6_8wmkm")]
-
 [node name="CB_Holder" type="SplitContainer" parent="UIManager"]
 visible = false
 offset_right = 1280.0
@@ -49,6 +47,8 @@ mouse_filter = 2
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
 scroll_offset = Vector2(-59, 0)
+
+[node name="BrainMonitor" parent="UIManager" instance=ExtResource("6_8wmkm")]
 
 [node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
 offset_left = -444.0

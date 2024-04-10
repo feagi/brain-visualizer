@@ -18,7 +18,6 @@ var _synapse_count: TextInput
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
-var _default_seperation: float # Save as float to avoid rounding errors when multiplying
 
 
 func _ready():
@@ -60,8 +59,7 @@ func _ready():
 	_refresh_rate_field.float_confirmed.connect(_user_on_burst_delay_change)
 	details_section.toggled.connect(_details_section_toggle)
 	
-	_default_seperation = get_theme_constant(&"separation")
-	#VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
+
 	
 	#FeagiEvents.retrieved_latest_FEAGI_health.connect(_update_counts)
 	
