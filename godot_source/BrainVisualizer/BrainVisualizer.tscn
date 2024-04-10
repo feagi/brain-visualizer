@@ -40,7 +40,6 @@ visible = false
 offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
-split_offset = 50
 script = ExtResource("6_r3y8u")
 
 [node name="Control" type="Control" parent="UIManager/CB_Holder"]
@@ -49,7 +48,9 @@ mouse_filter = 2
 
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
-scroll_offset = Vector2(-59, 0)
+scroll_offset = Vector2(-9, 0)
+initial_position = Vector2(-115, -300)
+initial_zoom = 0.233
 
 [node name="WindowManager" type="Node" parent="UIManager"]
 script = ExtResource("9_eg4r6")
