@@ -18,10 +18,10 @@ func setup(allow_editing_if_morphology_editable: bool) -> void:
 ## Return current UI view as a [VectorMorphology] object
 func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool = false) -> VectorMorphology:
 	if _loaded_morphology != null:
-		return VectorMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, _get_vector_array())
+		return VectorMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, get_vector_array())
 	# In the case of creating new morphologies, we would have not loaded in one, spo we cannot use the class from a loaded one
 	# we can assume however, that any created morphology will always be of class Custom
-	return VectorMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, _get_vector_array())
+	return VectorMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, get_vector_array())
 	
 	
 ## Overwrite the current UI view with a [VectorMorphology] object
@@ -65,7 +65,7 @@ func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> 
 		_: # any thing else
 			return false
 
-func _get_vector_array() -> Array[Vector3i]:
+func get_vector_array() -> Array[Vector3i]:
 	var _vectors: Array[Vector3i] = []
 	for child in _vectors_scroll.get_children_as_list():
 		_vectors.append(child.current_vector)

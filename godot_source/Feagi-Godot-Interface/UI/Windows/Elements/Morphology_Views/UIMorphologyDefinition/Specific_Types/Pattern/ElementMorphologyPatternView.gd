@@ -21,10 +21,10 @@ func setup(allow_editing_if_morphology_editable: bool) -> void:
 ## Return current UI view as a [PatternMorphology] object
 func get_as_pattern_morphology(morphology_name: StringName, is_placeholder: bool = false) -> PatternMorphology:
 	if _loaded_morphology != null:
-		return PatternMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, _get_pattern_pair_array())
+		return PatternMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, get_pattern_pair_array())
 	# In the case of creating new morphologies, we would have not loaded in one, spo we cannot use the class from a loaded one
 	# we can assume however, that any created morphology will always be of class Custom
-	return PatternMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, _get_pattern_pair_array())
+	return PatternMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, get_pattern_pair_array())
 	
 ## Overwrite the current UI view with a [PatternMorphology] object
 func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:
@@ -70,7 +70,7 @@ func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> 
 		_: # any thing else
 			return false
 
-func _get_pattern_pair_array() -> Array[PatternVector3Pairs]:
+func get_pattern_pair_array() -> Array[PatternVector3Pairs]:
 	var pairs: Array[PatternVector3Pairs] = []
 	for child in _pattern_pair_scroll.get_children_as_list():
 		pairs.append(child.current_vector_pair)

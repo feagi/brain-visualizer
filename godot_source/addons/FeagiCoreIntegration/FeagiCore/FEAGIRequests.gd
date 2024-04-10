@@ -61,7 +61,7 @@ func reload_genome() -> FeagiRequestOutput:
 #NOTE: No way to request a core area, since we shouldn't be able to make those directly!
 
 ## Requests an update of a cortical area's properties a single time
-func refresh_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
+func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -345,7 +345,7 @@ func mass_move_cortical_areas_2D(cortical_IDs_mapped_to_vector2i_positions: Dict
 
 
 ## Refresh templates for IPU/OPU generation. Note that this is technically already done on genome load
-func refresh_cortical_templates() -> FeagiRequestOutput:
+func get_cortical_templates() -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -370,7 +370,7 @@ func refresh_cortical_templates() -> FeagiRequestOutput:
 #region Morphologies
 
 ## Refresh the information of a specific morphology
-func refresh_morphology(morphology_name: StringName) -> FeagiRequestOutput:
+func get_morphology(morphology_name: StringName) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -675,6 +675,118 @@ func delete_morphology(morphology: BaseMorphology) -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Successfully deleted morphology of name %s" % deleting_name)
 	FeagiCore.feagi_local_cache.morphologies.remove_morphology(deleting_name)
 	return FEAGI_response_data
+
+#endregion
+
+#region Connections
+
+## Get mappings between 2 cortical areas. Can also be used to get mappings froma  cortical area to itself
+func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, destination_cortical_ID: StringName) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !source_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to get mappings from uncached cortical area %s that is not found in cache!!" % source_cortical_ID)
+		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
+	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!!" % destination_cortical_ID)
+		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
+
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"src_cortical_area": source_cortical_ID,
+		"dst_cortical_area": destination_cortical_ID
+		}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_corticalMappings_mappingProperties, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		return FEAGI_response_data
+	# Unlikely not, but checking to make sure cortical areas still exist
+	if source_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys() or destination_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Retrieved cortical mapping refers to a cortical area no longer in the cache!")
+		return FeagiRequestOutput.requirement_fail("AREA_NO_LONGER_EXIST")
+	var response: Array = FEAGI_response_data.decode_response_as_array()
+	var source_area: BaseCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
+	var destination_area: BaseCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
+	var properties: Array[MappingProperty] = []
+	var raw_dicts: Array[Dictionary] = []
+	raw_dicts.assign(response)
+	properties = MappingProperty.from_array_of_dict(raw_dicts)
+	
+	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
+	source_area.set_mappings_to_efferent_area(destination_area, properties)
+	return FEAGI_response_data
+
+
+## Set (overwrite) the mappings between 2 areas
+func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  mappings: Array[MappingProperty]) -> FeagiRequestOutput:
+	var source_cortical_ID = source_area.cortical_ID
+	var destination_cortical_ID = destination_area.cortical_ID
+	
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !source_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to get mappings from uncached cortical area %s that is not found in cache!" % source_cortical_ID)
+		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
+	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!" % destination_cortical_ID)
+		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
+	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
+		push_error("FEAGI Requests: Given mappings are invalid for creating a mapping between %s towards %s!" % [source_cortical_ID, destination_cortical_ID])
+		return FeagiRequestOutput.requirement_fail("INVALID_MAPPING")
+	
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"src_cortical_area": source_cortical_ID,
+		"dst_cortical_area": destination_cortical_ID,
+		"mapping_string": MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
+		}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_GE_mappingProperties, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		return FEAGI_response_data
+	# Unlikely not, but checking to make sure cortical areas still exist
+	if source_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys() or destination_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Retrieved cortical mapping refers to a cortical area no longer in the cache!")
+		return FeagiRequestOutput.requirement_fail("AREA_NO_LONGER_EXIST")
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
+	source_area.set_mappings_to_efferent_area(destination_area, mappings)
+	return FEAGI_response_data
+
+
+## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
+func append_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:
+	var current_mappings: Array[MappingProperty] = source_area.get_mappings_to(destination_area).mappings
+	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, current_mappings)
+	return return_data
+
+
+## Append a default mapping betwseen 2 cortical areas, given the morphology to use. Assumes the current mapping information is up to date
+func append_default_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  morphology: BaseMorphology) -> FeagiRequestOutput:
+	var appending_mapping: MappingProperty = MappingProperty.create_default_mapping(morphology)
+	var return_data: FeagiRequestOutput = await append_mapping_between_corticals(source_area, destination_area, appending_mapping)
+	return return_data
+
+
+## delete the mappings between 2 areas
+func delete_mappings_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> FeagiRequestOutput:
+	var empty_mappings: Array[MappingProperty] = []
+	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, empty_mappings)
+	return return_data
+
+
 
 #endregion
 
