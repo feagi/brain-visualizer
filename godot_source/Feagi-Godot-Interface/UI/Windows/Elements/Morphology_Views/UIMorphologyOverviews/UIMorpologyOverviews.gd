@@ -14,7 +14,7 @@ var loaded_morphology: BaseMorphology:
 	get: return _loaded_morphology
 
 var _add_morphology_button: Button
-var _morphology_scroll: BaseMorphologyScroll
+var _morphology_scroll: MorphologyScroll
 var _morphology_name_label: Label
 var _UI_morphology_definition: UIMorphologyDefinition
 var _UI_morphology_image: UIMorphologyImage
@@ -46,7 +46,7 @@ func _ready() -> void:
 	_update_morphology_button.visible = enable_update_morphology_button
 	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
-	FeagiEvents.when_mappings_confirmed_updated.connect(feagi_updated_mappings)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mappings_changed.connect(feagi_updated_mappings)
 
 func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
@@ -71,12 +71,14 @@ func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> v
 		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
-	var morphology_to_update: BaseMorphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
-	FeagiRequests.request_updating_morphology(morphology_to_update)
-	requested_updating_morphology.emit(morphology_to_update)
+	pass
+	###var morphology_to_update: BaseMorphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
+	###FeagiRequests.request_updating_morphology(morphology_to_update)
+	###requested_updating_morphology.emit(morphology_to_update)
 
 func _user_request_create_morphology() -> void:
-	VisConfig.UI_manager.window_manager.spawn_create_morphology()
+	pass
+	###VisConfig.UI_manager.window_manager.spawn_create_morphology()
 
 func _user_requested_closing() -> void:
 	request_close.emit()
@@ -84,7 +86,7 @@ func _user_requested_closing() -> void:
 func _user_request_delete_morphology() -> void:
 	if _loaded_morphology == null:
 		return
-	FeagiRequests.request_delete_morphology(_loaded_morphology)
+	FeagiCore.requests.delete_morphology(_loaded_morphology)
 
 func _user_selected_morphology_from_scroll(morphology) -> void:
 	load_morphology(morphology)

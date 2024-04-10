@@ -8,7 +8,7 @@ var _cortical_reference: BaseCorticalArea
 func _ready() -> void:
 	membrane_toggle = $HBoxContainer/Membrane
 	post_synaptic_toggle = $HBoxContainer2/PostSynaptic
-	if !VisConfig.is_premium:
+	if !FeagiCore.feagi_local_cache.influxdb_availability:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true
 
@@ -27,8 +27,10 @@ func _FEAGI_set_synaptic_toggle(state: bool) -> void:
 	post_synaptic_toggle.set_toggle_no_signal(state)
 
 func _user_request_change_membrane_monitoring_status(new_state:bool) -> void:
-	FeagiRequests.request_change_membrane_monitoring_status(_cortical_reference, new_state)
+	pass
+	###FeagiRequests.request_change_membrane_monitoring_status(_cortical_reference, new_state)
 
 func _user_request_change_synaptic_monitoring_status(new_state:bool) -> void:
-	FeagiRequests.request_change_synaptic_monitoring_status(_cortical_reference, new_state)
+	pass
+	###FeagiRequests.request_change_synaptic_monitoring_status(_cortical_reference, new_state)
 

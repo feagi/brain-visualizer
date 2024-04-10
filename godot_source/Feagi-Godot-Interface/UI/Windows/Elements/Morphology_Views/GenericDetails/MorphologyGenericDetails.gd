@@ -28,17 +28,15 @@ func _ready() -> void:
 	_morphology_details_view.editable = editable
 
 ## Update details window with the details of the given morphology
-func load_morphology(morphology: BaseMorphology, update_FEAGI_cache: bool = false) -> void:
+func load_morphology(morphology: BaseMorphology) -> void:
 	
 	if _shown_morphology.retrieved_usage.is_connected(_retrieved_morphology_mappings_from_feagi):
 		_shown_morphology.retrieved_usage.disconnect(_retrieved_morphology_mappings_from_feagi)
 	_shown_morphology = morphology
 	_update_image_with_morphology(morphology.name)
 	morphology.retrieved_usage.connect(_retrieved_morphology_mappings_from_feagi)
-	FeagiRequests.get_morphology_usage(morphology.name)
+	FeagiCore.requests.get_morphology_usage(morphology.name)
 	_morphology_details_view.text = morphology.description
-	if update_FEAGI_cache:
-		FeagiRequests.refresh_morphology_properties(morphology.name)
 
 ## Wipes everything such that it is blank
 func clear_UI() -> void:
@@ -79,14 +77,15 @@ func _print_since_usage_mapping(mapping: Array) -> String:
 	# each element is an ID
 	var output: String = ""
 
-	if mapping[0] in FeagiCache.cortical_areas_cache.cortical_areas.keys():
-		output = FeagiCache.cortical_areas_cache.cortical_areas[mapping[0]].name + " -> "
+	
+	if mapping[0] in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		output = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[mapping[0]].name + " -> "
 	else:
 		push_error("Unable to locate cortical area of ID %s in cache!" % mapping[0])
 		output = "UNKNOWN -> "
 	
-	if mapping[1] in FeagiCache.cortical_areas_cache.cortical_areas.keys():
-		output = output + FeagiCache.cortical_areas_cache.cortical_areas[mapping[1]].name
+	if mapping[1] in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		output = output + FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[mapping[1]].name
 	else:
 		push_error("Unable to locate cortical area of ID %s in cache!" % mapping[1])
 		output = output + "UNKNOWN"

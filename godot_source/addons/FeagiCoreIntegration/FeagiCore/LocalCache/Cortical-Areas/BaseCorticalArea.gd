@@ -357,6 +357,8 @@ signal efferent_mapping_removed(mapping_properties: MappingProperties)
 signal afferent_mapping_added(mapping_properties: MappingProperties)
 signal afferent_mapping_edited(mapping_properties: MappingProperties)
 signal afferent_mapping_removed(mapping_properties: MappingProperties)
+signal refreshed_mapping_to_destination(destination: BaseCorticalArea) ## mappings to a destination has changed
+signal refreshed_mapping_from_source(source: BaseCorticalArea) ## mappings from a source has changed
 
 var _afferent_connections: Array[BaseCorticalArea]
 var _efferent_mappings: Dictionary = {} ## Key'd by cortical ID
@@ -373,7 +375,6 @@ func is_cortical_area_efferent_to_this_area(possibly_efferent_cortical_area: Bas
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	
 	var retrieved_mapping_properties = MappingProperties.new(self, destination_area, mappings)
-	efferent_mapping_retrieved_from_feagi.emit(retrieved_mapping_properties)
 
 	if !(destination_area.cortical_ID in _efferent_mappings.keys()):
 		# we dont have the mappings in the system
@@ -400,7 +401,10 @@ func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings:
 	# A previously existing mapping now has new data, treat as an edit
 	_efferent_mappings[destination_area.cortical_ID].update_mappings(mappings)
 	destination_area.set_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
+	efferent_mapping_retrieved_from_feagi.emit(retrieved_mapping_properties)
 	efferent_mapping_edited.emit(_efferent_mappings[destination_area.cortical_ID])
+	refreshed_mapping_to_destination.emit(destination_area)
+	destination_area.refreshed_mapping_from_source.emit(self)
 	print("FEAGI CACHE: CORTICAL_AREA: Set Connection from %s to %s with %d mappings" % [cortical_ID, destination_area.cortical_ID, len(mappings)])
 
 ## ONLY TO BE CALLED FROM THE SOURCE AREA. A source area is connecting towards this area

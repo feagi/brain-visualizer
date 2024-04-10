@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=15 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://BrainVisualizer/UI/CircuitBuilder/NodeGraph.tscn" id="6_aq1db"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/TempSplit.gd" id="6_r3y8u"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/WindowManager.gd" id="9_eg4r6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
 shader = ExtResource("7_wiv4s")
@@ -53,6 +54,9 @@ scroll_offset = Vector2(-59, 0)
 offset_left = -444.0
 offset_bottom = 161.0
 mouse_filter = 2
+
+[node name="WindowManager" type="Node" parent="UIManager"]
+script = ExtResource("9_eg4r6")
 
 [node name="TopBar" parent="UIManager" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search") instance=ExtResource("1_yk4pp")]
 mouse_filter = 2

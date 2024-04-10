@@ -19,3 +19,6 @@ var CB: CorticalNodeGraph: #TODO update class name
 
 var NOTIF: NotificationSystem:
 	get: return get_node("/root/BrainVisualizer/NotificationSystem")
+
+var WM: WindowManager:
+	get: return get_node("/root/BrainVisualizer/WindowManager")

@@ -5,6 +5,7 @@ class_name CorticalAreasCache
 signal cortical_area_added(cortical_area: BaseCorticalArea)
 signal cortical_area_about_to_be_removed(cortical_area: BaseCorticalArea) ## We need this generic signal since dropdown popups cannot do individual reference processing
 signal cortical_area_mass_updated(cortical_area: BaseCorticalArea)
+signal cortical_area_mappings_changed(source: BaseCorticalArea, destination: BaseCorticalArea)
 
 ## All stored cortical areas, key'd by ID string
 var available_cortical_areas: Dictionary:
@@ -21,6 +22,7 @@ func add_core_cortical_area(cortical_ID: StringName, cortical_name: StringName, 
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added core cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -32,6 +34,7 @@ func add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added custom cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -43,6 +46,7 @@ func add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added input cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -54,6 +58,7 @@ func add_input_cortical_area_without_template(cortical_ID: StringName, cortical_
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added input cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -65,6 +70,7 @@ func add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplat
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added output cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -76,6 +82,7 @@ func add_output_cortical_area_without_template(cortical_ID: StringName, cortical
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added output cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -87,6 +94,7 @@ func add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName
 		new_area.coordinates_2D = coordinates_2D
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
+	new_area.efferent_mapping_retrieved_from_feagi.connect(_mapping_updated)
 	print("FEAGI CACHE: Added memory cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
@@ -244,3 +252,14 @@ func exist_cortical_area_of_name(searching_name: StringName) -> bool:
 		if cortical_area.name.to_lower().contains(searching_name.to_lower()):
 			return true
 	return false
+#endregion
+
+#region Internal
+
+func _mapping_updated(mapping_properties: MappingProperties) -> void:
+	cortical_area_mappings_changed.emit(mapping_properties.source_cortical_area, mapping_properties.destination_cortical_area)
+
+
+
+#endregion
+
