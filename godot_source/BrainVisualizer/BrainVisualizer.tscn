@@ -49,7 +49,7 @@ mouse_filter = 2
 
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
-scroll_offset = Vector2(-50, 0)
+scroll_offset = Vector2(-59, 0)
 
 [node name="WindowManager" type="Node" parent="UIManager"]
 script = ExtResource("9_eg4r6")

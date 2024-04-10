@@ -8,9 +8,9 @@ signal cortical_area_selected(cortical_area: BaseCorticalArea)
 func _ready():
 	super()
 	item_selected.connect(_cortical_Area_button_pressed)
-	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_removed.connect(_respond_to_deleted_cortical_area)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_respond_to_deleted_cortical_area)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_respond_to_added_cortical_area)
-	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_updated.connect(_respond_to_updated_cortical_area)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(_respond_to_updated_cortical_area)
 	if load_cortical_areas_on_load:
 		repopulate_from_cache()
 

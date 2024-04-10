@@ -2,8 +2,9 @@ extends RefCounted
 class_name CorticalAreasCache
 ## Stores all cortical areas available in the genome
 
+## We need some generic signals since dropdown popups (and some others) cannot do individual reference processing
 signal cortical_area_added(cortical_area: BaseCorticalArea)
-signal cortical_area_about_to_be_removed(cortical_area: BaseCorticalArea) ## We need this generic signal since dropdown popups cannot do individual reference processing
+signal cortical_area_about_to_be_removed(cortical_area: BaseCorticalArea)
 signal cortical_area_mass_updated(cortical_area: BaseCorticalArea)
 signal cortical_area_mappings_changed(source: BaseCorticalArea, destination: BaseCorticalArea)
 

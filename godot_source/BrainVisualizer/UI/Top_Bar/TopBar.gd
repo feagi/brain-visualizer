@@ -75,7 +75,7 @@ func _view_selected(new_state: TempSplit.STATES) -> void:
 	request_UI_mode.emit(new_state)
 
 func _open_cortical_areas() -> void:
-	pass
+	BV.WM.spawn_cortical_view()
 	#VisConfig.UI_manager.window_manager.spawn_cortical_view()
 
 func _open_create_cortical() -> void:
