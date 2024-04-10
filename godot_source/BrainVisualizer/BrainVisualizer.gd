@@ -8,13 +8,6 @@ class_name BrainVisualizer
 var UI_manager: UIManager:
 	get: return _UI_manager
 
-var top_bar: TopBar:
-	get: return _top_bar
-var notification_system:
-	get: return _notification_system
-
-var _top_bar: TopBar
-var _notification_system: NotificationSystem
 var _UI_manager: UIManager
 
 func _ready() -> void:
@@ -22,10 +15,7 @@ func _ready() -> void:
 	
 	# Zeroth step is just to collect references and make connections
 	_UI_manager = $UIManager
-	_top_bar = $UIManager/TopBar
-	_notification_system = $UIManager/NotificationSystem
-	_top_bar.resized.connect(_top_bar_resized)
-	_top_bar_resized()
+	FeagiCore.connection_state_changed.connect(_on_connection_state_change)
 	
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
@@ -33,9 +23,10 @@ func _ready() -> void:
 	# Define the network endpoint settings
 	# NOTE: Right now we are loading a static file, we need to switch this to something more dynamic later
 	FeagiCore.attempt_connection(default_FEAGI_network_settings)
+	
 
-
-
-## Used to reposition notifications so they dont intersect with top bar
-func _top_bar_resized() -> void:
-	_notification_system.position.y = _top_bar.size.y + _top_bar.position.y
+func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, _prev_state: FeagiCore.CONNECTION_STATE) -> void:
+	match(current_state):
+		FeagiCore.CONNECTION_STATE.CONNECTED:
+			# We are connected, get other important info
+			FeagiCore.requests.get_burst_delay()

@@ -94,8 +94,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 		push_error("FEAGICORE: Connection parameters marked as invalid!")
 		return
 	
-	connection_state_changed.emit(CONNECTION_STATE.CONNECTING, _connection_state)
+	var cache_state: CONNECTION_STATE = _connection_state
 	_connection_state = CONNECTION_STATE.CONNECTING
+	connection_state_changed.emit(CONNECTION_STATE.CONNECTING, cache_state)
 	_in_use_endpoint_details = feagi_endpoint_details
 	network.activate_and_verify_connection_to_FEAGI(feagi_endpoint_details)
 
@@ -103,10 +104,13 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 func disconnect_from_FEAGI() -> void:
 	network.disconnect_networking()
 	#TODO clear cache
-	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,_genome_load_state)
+	var cache_state: CONNECTION_STATE = _connection_state
+	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
-	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, _connection_state)
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,cache_genome_state)
 	_connection_state = CONNECTION_STATE.DISCONNECTED
+	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, cache_state)
+	
 
 # (Re)loads genome from FEAGI
 func load_genome_from_FEAGI() -> void:
@@ -119,8 +123,9 @@ func load_genome_from_FEAGI() -> void:
 	if genome_load_state == GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
 		push_error("FEAGICORE: Cannot start a reload of the genome when it currently being loaded!")
 		return
-	genome_load_state_changed.emit(GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI, _genome_load_state) # This would be a good time to close any UIs
+	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI, cache_genome_state) # This would be a good time to close any UIs
 	#TODO wipe current data
 	
 
@@ -128,12 +133,16 @@ func load_genome_from_FEAGI() -> void:
 	if !genome_load_response.success:
 		# The above function has done its own error handling, check if we disconnected from FEAGI
 		if connection_state != CONNECTION_STATE.DISCONNECTED:
-			genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, _genome_load_state)
+			cache_genome_state = _genome_load_state
 			_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+			genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, cache_genome_state)
 		# Assuming when we disconnected, the genome state was also cleared
+		
 		return
-	genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY, _genome_load_state)
+	cache_genome_state = _genome_load_state
 	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY, cache_genome_state)
+	
 
 ## Returns true if we can safely interact with feagi (connected and genome loaded)
 func can_interact_with_feagi() -> bool:
@@ -161,8 +170,9 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 				CONNECTION_STATE.CONNECTING:
 					# We were likely probing and no response
 					push_warning("FEAGICORE: Failed to verify FEAGI was running at specified endpoint!")
-					connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, _connection_state)
+					var cache_connection: CONNECTION_STATE = _connection_state
 					_connection_state = CONNECTION_STATE.DISCONNECTED
+					connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, cache_connection)
 				CONNECTION_STATE.CONNECTED:
 					# We were connected, but then feagi stopped responding
 					push_warning("FEAGICORE: FEAGI Appears Unresponsive!")
@@ -178,8 +188,9 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 				CONNECTION_STATE.CONNECTING:
 					# We were likely probing and got a good response
 					print("FEAGICORE: Verified FEAGI running at endpoint")
-					connection_state_changed.emit(CONNECTION_STATE.CONNECTED, _connection_state)
+					var cache_connection: CONNECTION_STATE = _connection_state
 					_connection_state = CONNECTION_STATE.CONNECTED # Seperate the updating of this value and external signaling to make sure order of operations is safe!
+					connection_state_changed.emit(CONNECTION_STATE.CONNECTED, cache_connection)
 					print("FEAGICORE: Connected to FEAGI via HTTP API!")
 					if feagi_settings.attempt_connect_websocket_on_launch:
 						network.activate_websocket_APT(_in_use_endpoint_details.get_websocket_URL())
@@ -191,17 +202,20 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 							load_genome_from_FEAGI()
 						else:
 							print("FEAGICORE: No Genome detected in FEAGI!")
-							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, _genome_load_state)
+							var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
+							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, cache_genome_state)
 					else:
 						if feagi_local_cache.genome_availability:
 							print("FEAGICORE: Genome detected but configuration is set not to load it automatically. Skipping genome loading!")
-							genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, _genome_load_state)
+							var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 							_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+							genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, cache_genome_state)
 						else:
 							print("FEAGICORE: No Genome detected in FEAGI!")
-							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, _genome_load_state)
+							var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
+							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, cache_genome_state)
 					return
 					
 				CONNECTION_STATE.CONNECTED:
@@ -219,8 +233,9 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 				CONNECTION_STATE.CONNECTING:
 					# We were likely probing and no response
 					push_warning("FEAGICORE: FEAGI has returned an error!")
-					connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, _connection_state)
+					var cache_connection: CONNECTION_STATE = _connection_state
 					_connection_state = CONNECTION_STATE.DISCONNECTED
+					connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, cache_connection)
 				CONNECTION_STATE.CONNECTED:
 					# We were connected, but then feagi stopped responding
 					push_warning("FEAGICORE: FEAGI has returned an error!")

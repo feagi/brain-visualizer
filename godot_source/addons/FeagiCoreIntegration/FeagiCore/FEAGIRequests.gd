@@ -51,15 +51,17 @@ func reload_genome() -> FeagiRequestOutput:
 	var raw_templates: Dictionary = template_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
 	
-	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
+	# Other stuff (asyncronous)
 
+	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
+	
 
 ## Retrieves FEAGIs Burst Rate
 func get_burst_delay() -> FeagiRequestOutput:
 	# Requirement checking
-	if !FeagiCore.can_interact_with_feagi():
-		push_error("FEAGI Requests: Not ready for requests!")
-		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
+		push_error("FEAGI Requests: Not connected to FEAGI!")
+		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting delay between bursts")
 	
 	# Define Request

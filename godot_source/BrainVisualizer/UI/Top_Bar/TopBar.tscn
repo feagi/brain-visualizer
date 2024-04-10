@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=22 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton.gd" id="2_o4dth"]
@@ -11,7 +11,6 @@
 [ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
 [ext_resource type="Texture2D" uid="uid://c55giqp6h0ohy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
 [ext_resource type="Texture2D" uid="uid://5dvxcj5hquup" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="9_jcvuj"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="Texture2D" uid="uid://dkd1hregsccpc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
 [ext_resource type="Texture2D" uid="uid://cs0y40ahiirdw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
@@ -23,14 +22,13 @@
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
-[node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
+[node name="TopBar" type="HBoxContainer"]
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 1605.0
 offset_bottom = 86.0
 theme_override_constants/separation = 5
 script = ExtResource("1_f5hja")
-theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
 [node name="Buttons" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -199,50 +197,37 @@ script = ExtResource("3_v82xb")
 suffix = " Hz"
 min_value = 0.1
 
-[node name="Ping_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
-layout_mode = 2
-text = "Latency"
-vertical_alignment = 1
-
-[node name="ping" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
-layout_mode = 2
-tooltip_text = "Latency between FEAGI and you"
-alignment = 1
-editable = false
-script = ExtResource("9_jcvuj")
-suffix = "ms"
-
-[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
 text = "Neurons"
 vertical_alignment = 1
 
-[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
+[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
 tooltip_text = "The number of currently loaded neurons vs the total allowed"
 alignment = 1
 editable = false
 script = ExtResource("7_g1qxj")
 
-[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6"]
+[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
 layout_mode = 2
 text = "Synapses"
 vertical_alignment = 1
 
-[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="7"]
+[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
 layout_mode = 2
 tooltip_text = "The number of currently loaded synapses vs the total allowed"
 alignment = 1
 editable = false
 script = ExtResource("7_g1qxj")
 
-[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="8"]
+[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6"]
 layout_mode = 2
 tooltip_text = "The overall health of FEAGI"
 text = "System Health"
 vertical_alignment = 1
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="9" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="7" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]

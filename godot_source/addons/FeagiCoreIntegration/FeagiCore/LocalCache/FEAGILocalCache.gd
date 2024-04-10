@@ -92,6 +92,8 @@ signal burst_engine_changed(new_val: bool)
 signal influxdb_availability_changed(new_val: bool)
 signal neuron_count_max_changed(new_val: bool)
 signal synapse_count_max_changed(new_val: int)
+signal neuron_count_current_changed(new_val: bool)
+signal synapse_count_current_changed(new_val: int)
 signal genome_availability_changed(new_val: int)
 signal genome_validity_changed(new_val: bool)
 signal brain_readiness_changed(new_val: bool)
@@ -120,6 +122,18 @@ var synapse_count_max: int:
 		if v != _synapse_count_max:
 			_synapse_count_max = v
 			synapse_count_max_changed.emit(v)
+var neuron_count_current: int:
+	get: return _neuron_count_current
+	set(v): 
+		if v != _neuron_count_current:
+			_neuron_count_current = v
+			neuron_count_current_changed.emit(v)
+var synapse_count_current: int:
+	get: return _synapse_count_current
+	set(v): 
+		if v != _synapse_count_current:
+			_synapse_count_current = v
+			synapse_count_current_changed.emit(v)
 var genome_availability: bool:
 	get: return _genome_availability
 	set(v): 
@@ -143,6 +157,8 @@ var _burst_engine: bool
 var _influxdb_availability: bool
 var _neuron_count_max: int
 var _synapse_count_max: int
+var _neuron_count_current: int
+var _synapse_count_current: int
 var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
@@ -156,6 +172,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		neuron_count_max = int(health["neuron_count_max"])
 	if "synapse_count_max" in health: 
 		synapse_count_max = int(health["synapse_count_max"])
+	if "neuron_count_current" in health: 
+		neuron_count_current = int(health["neuron_count_current"])
+	if "synapse_count_current" in health: 
+		synapse_count_current = int(health["synapse_countcurrentx"])
 	if "genome_availability" in health: 
 		genome_availability = health["genome_availability"]
 	if "genome_validity" in health: 
