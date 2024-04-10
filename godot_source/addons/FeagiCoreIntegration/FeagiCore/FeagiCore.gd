@@ -23,6 +23,7 @@ enum GENOME_LOAD_STATE {
 
 signal connection_state_changed(new_state: CONNECTION_STATE, previous_state: CONNECTION_STATE)
 signal genome_load_state_changed(new_state: GENOME_LOAD_STATE, prev_state: GENOME_LOAD_STATE)
+signal delay_between_bursts_updated(new_delay: float)
 
 var connection_state: CONNECTION_STATE: # This refers primarily to the http api right now
 	get: return _connection_state # No setter
@@ -30,6 +31,9 @@ var genome_load_state: GENOME_LOAD_STATE:
 	get: return _genome_load_state # No setter
 var feagi_settings: FeagiGeneralSettings:
 	get: return _feagi_settings # No setter
+var delay_between_bursts: float:
+	get: return _delay_between_bursts
+
 var network: FEAGINetworking
 var requests: FEAGIRequests
 var feagi_local_cache: FEAGILocalCache
@@ -39,6 +43,8 @@ var _genome_load_state: GENOME_LOAD_STATE = GENOME_LOAD_STATE.UNKNOWN
 
 var _in_use_endpoint_details: FeagiEndpointDetails = null
 var _feagi_settings: FeagiGeneralSettings = null
+
+var _delay_between_bursts: float = 0
 
 # Zeroth Stage loading. FEAGICore initialization starts here
 func _enter_tree():
@@ -137,6 +143,13 @@ func can_interact_with_feagi() -> bool:
 		return false
 	return true
 
+#region Internal
+
+func feagi_retrieved_burst_rate(delay_bursts_apart: float) -> void:
+	_delay_between_bursts = delay_bursts_apart
+	delay_between_bursts_updated.emit(delay_bursts_apart)
+
+## Respond to changing HTTP health
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 	# Bit too much nesting imo, but this is cleaner than having external single use functions
 	# Godot, pls add nested function support!
@@ -217,4 +230,5 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 					push_warning("FEAGICORE: FEAGI has returned an error!")
 					disconnect_from_FEAGI() #?
 
-	
+
+#endregion

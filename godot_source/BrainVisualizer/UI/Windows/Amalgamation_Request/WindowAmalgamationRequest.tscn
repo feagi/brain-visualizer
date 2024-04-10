@@ -9,7 +9,6 @@
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="6_73b4d"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="8_gn5it"]
 
-
 [node name="WindowAmalgamationRequest" type="Panel"]
 offset_top = 40.0
 offset_bottom = 40.0

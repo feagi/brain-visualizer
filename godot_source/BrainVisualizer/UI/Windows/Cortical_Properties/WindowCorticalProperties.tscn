@@ -1,15 +1,16 @@
 [gd_scene load_steps=12 format=3 uid="uid://5gbqaf1gqn30"]
 
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/WindowCorticalProperties.gd" id="1_1jbcd"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/WindowCorticalProperties.gd" id="1_1jbcd"]
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
-[ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalParameters.tscn" id="5_2tr5n"]
-[ext_resource type="PackedScene" uid="uid://rvvhpq3y0on7" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.tscn" id="6_k1df6"]
-[ext_resource type="PackedScene" uid="uid://dm68mg7exp1ca" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesMemoryParameters.tscn" id="7_l4w3m"]
-[ext_resource type="PackedScene" uid="uid://de7cguh4dnbxg" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesPostSynapticPotentialParameters.tscn" id="8_a5fj2"]
-[ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.tscn" id="9_li0sx"]
-[ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesConnections.tscn" id="10_1oexy"]
-[ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://Feagi-Godot-Interface/UI/Windows/Draggable_Windows/Cortical_Properties/Parts/CorticalPropertiesDangerZone.tscn" id="11_ekmr0"]
+[ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalParameters.tscn" id="5_2tr5n"]
+[ext_resource type="PackedScene" uid="uid://rvvhpq3y0on7" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.tscn" id="6_k1df6"]
+[ext_resource type="PackedScene" uid="uid://dm68mg7exp1ca" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesMemoryParameters.tscn" id="7_l4w3m"]
+[ext_resource type="PackedScene" uid="uid://de7cguh4dnbxg" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesPostSynapticPotentialParameters.tscn" id="8_a5fj2"]
+[ext_resource type="PackedScene" uid="uid://ckkgl10utu0i8" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.tscn" id="9_li0sx"]
+[ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesConnections.tscn" id="10_1oexy"]
+[ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesDangerZone.tscn" id="11_ekmr0"]
+
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8nka"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
