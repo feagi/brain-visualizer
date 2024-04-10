@@ -23,15 +23,29 @@ func _gui_input(event: InputEvent) -> void:
 		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
+		if !get_global_rect().has_point(get_global_mouse_position()): # check if mouse is in button. WARNING: Does not check if control is on top, so in that case this fails!
+			return
 		
 		if mouse_event.pressed:
-			add_theme_stylebox_override("panel", _clicked)
+			if has_theme_stylebox("panel_pressed", "PanelContainerButton"):
+				add_theme_stylebox_override("panel", get_theme_stylebox("panel_pressed", "PanelContainerButton"))
+			else:
+				push_error("Missing panel_pressed for PanelContainerButton")
 			pressed.emit()
 		else:
-			add_theme_stylebox_override("panel", _hover)
+			if has_theme_stylebox("panel_hover", "PanelContainerButton"):
+				add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "PanelContainerButton"))
+			else:
+				push_error("Missing panel_hover for PanelContainerButton")
 		
 func _mouse_entered() -> void:
-	add_theme_stylebox_override("panel", _hover)
+	if has_theme_stylebox("panel_hover", "PanelContainerButton"):
+		add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "PanelContainerButton"))
+	else:
+		push_error("Missing panel_hover for PanelContainerButton")
 
 func _mouse_exited() -> void:
-	add_theme_stylebox_override("panel", _unpressed)
+	if has_theme_stylebox("panel", "PanelContainerButton"):
+		add_theme_stylebox_override("panel", get_theme_stylebox("panel", "PanelContainerButton"))
+	else:
+		push_error("Missing panel for PanelContainerButton")

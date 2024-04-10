@@ -10,7 +10,6 @@ func setup() -> void:
 	_setup_base_window("view_cortical")
 
 func _press_add_cortical_area() -> void:
-	pass
-	###VisConfig.UI_manager.window_manager.spawn_create_cortical()
+	BV.WM.spawn_create_cortical()
 	close_window()
  

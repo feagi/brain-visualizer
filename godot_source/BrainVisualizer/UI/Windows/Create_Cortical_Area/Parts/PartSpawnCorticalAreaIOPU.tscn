@@ -8,7 +8,6 @@
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="7_bf7bt"]
 
-
 [node name="Definition_IOPU" type="VBoxContainer"]
 offset_right = 471.0
 offset_bottom = 186.0

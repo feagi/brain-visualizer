@@ -48,7 +48,6 @@ mouse_filter = 2
 
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
-scroll_offset = Vector2(-9, 0)
 initial_position = Vector2(-115, -300)
 initial_zoom = 0.233
 
@@ -60,9 +59,10 @@ offset_left = -444.0
 offset_bottom = 161.0
 mouse_filter = 2
 
-[node name="TopBar" parent="UIManager" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search") instance=ExtResource("1_yk4pp")]
+[node name="TopBar" parent="UIManager" instance=ExtResource("1_yk4pp")]
 mouse_filter = 2
-theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
+possible_zoom_levels = Array[float]([0.5, 0.75, 1.0, 1.25, 1.5, 2.0])
+starting_size_index = 2
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
 environment = SubResource("Environment_rks2y")

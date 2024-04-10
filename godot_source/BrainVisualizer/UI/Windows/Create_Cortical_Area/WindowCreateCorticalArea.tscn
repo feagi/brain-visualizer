@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://ctyho04m7lek6"]
+[gd_scene load_steps=14 format=3 uid="uid://ctyho04m7lek6"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
@@ -11,10 +11,8 @@
 [ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
 [ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
 [ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="12_1cajn"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="13_oqeoe"]
-
 
 [node name="WindowSpawnCorticalArea" type="VBoxContainer"]
 offset_right = 396.0
@@ -33,6 +31,7 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
+theme_type_variation = &"WindowOuterMargin"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
@@ -116,7 +115,6 @@ layout_mode = 2
 [node name="Button_Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
-script = ExtResource("13_oqeoe")
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -126,24 +124,20 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Back"
-script = ExtResource("12_1cajn")
 
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("13_oqeoe")
 
 [node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Cancel"
-script = ExtResource("12_1cajn")
 
 [node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 text = "Add"
-script = ExtResource("12_1cajn")
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_input_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_output_pressed"]

@@ -20,12 +20,21 @@ func _ready() -> void:
 func load_cortical_type_options(type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	clear()
 	_stored_template_references = []
-	for template in FeagiCore.feagi_local_cache.cortical_templates[BaseCorticalArea.cortical_type_to_str(type)].templates.values():
-		
-		if !template.is_enabled:
-			continue
-		_stored_template_references.append(template)
-		add_item(template.cortical_name)
+	match(type):
+		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			for template: CorticalTemplate in FeagiCore.feagi_local_cache.IPU_templates.values():
+				if !template.is_enabled:
+					continue
+				_stored_template_references.append(template)
+				add_item(template.cortical_name)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			for template: CorticalTemplate in FeagiCore.feagi_local_cache.OPU_templates.values():
+				if !template.is_enabled:
+					continue
+				_stored_template_references.append(template)
+				add_item(template.cortical_name)
+		_:
+			push_error("Unknown cortical area type for Template Drop Down!")
 
 func get_selected_template() -> CorticalTemplate:
 	return _stored_template_references[selected]

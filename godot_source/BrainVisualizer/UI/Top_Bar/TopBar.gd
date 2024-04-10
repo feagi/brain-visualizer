@@ -79,7 +79,7 @@ func _open_cortical_areas() -> void:
 	#VisConfig.UI_manager.window_manager.spawn_cortical_view()
 
 func _open_create_cortical() -> void:
-	pass
+	BV.WM.spawn_create_cortical()
 	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
 func _open_neuron_morphologies() -> void:
