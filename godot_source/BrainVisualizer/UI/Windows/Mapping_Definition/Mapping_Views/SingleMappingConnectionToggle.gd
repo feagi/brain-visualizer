@@ -3,7 +3,7 @@ class_name SingleMappingConnectionToggle
 
 var _unique_case_text: Label
 var _connection_toggle: CheckButton
-var _allowed_morphologies: Array[Morphology]
+var _allowed_morphologies: Array[BaseMorphology]
 
 func _ready() -> void:
 	_unique_case_text = $UniqueCase
@@ -28,5 +28,5 @@ func generate_mapping_properties() -> Array[MappingProperty]:
 func _set_unique_case_text(mapping_properties: MappingProperties) -> void:
 	var source_area_type: StringName = mapping_properties.source_cortical_area.type_as_string
 	var destination_area_type: StringName = mapping_properties.destination_cortical_area.type_as_string
-	var allowed_morphologies: Array[StringName] = Morphology.morphology_array_to_string_array_of_names(mapping_properties.source_cortical_area.get_allowed_morphologies_to_map_toward(mapping_properties.destination_cortical_area))
+	var allowed_morphologies: Array[StringName] = BaseMorphology.morphology_array_to_string_array_of_names(mapping_properties.source_cortical_area.get_allowed_morphologies_to_map_toward(mapping_properties.destination_cortical_area))
 	_unique_case_text.text = "When connecting a cortical area of type %s toward a cortical area of type %s, you can only enable a single mapping using one of the following morphologies: $s" % [source_area_type, destination_area_type, FEAGIUtils.string_name_array_to_CSV(allowed_morphologies)]

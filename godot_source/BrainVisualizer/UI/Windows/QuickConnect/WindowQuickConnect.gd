@@ -38,7 +38,7 @@ var _finished_selecting: bool = false
 
 var _source: BaseCorticalArea = null
 var _destination: BaseCorticalArea = null
-var _selected_morphology: Morphology = null
+var _selected_morphology: BaseMorphology = null
 
 func _ready() -> void:
 	super()
@@ -57,7 +57,7 @@ func _ready() -> void:
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
 	
-	FeagiEvents.user_selected_cortical_area.connect(on_user_select_cortical_area)
+	BV.UI.user_selected_single_cortical_area.connect(on_user_select_cortical_area)
 	
 	_step1_panel.add_theme_stylebox_override("panel", style_incomplete)
 	_step2_panel.add_theme_stylebox_override("panel", style_incomplete)
@@ -82,7 +82,7 @@ func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
 
 	# Make sure the cache has the current mapping state of the cortical to source area to append to
-	FeagiRequests.request_add_default_mapping_between_corticals(_source, _destination, _selected_morphology)
+	FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
 	close_window()
 
@@ -154,7 +154,7 @@ func _set_destination(cortical_area: BaseCorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = "Selected Destination Area: [" + cortical_area.name + "]"
 	_step2_panel.add_theme_stylebox_override("panel", style_complete)
-	FeagiRequests.get_mapping_properties_between_two_areas(_source, _destination)
+	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:
 		_step3_panel.visible = true
 		current_state = POSSIBLE_STATES.MORPHOLOGY
@@ -163,7 +163,7 @@ func _set_destination(cortical_area: BaseCorticalArea) -> void:
 		current_state = POSSIBLE_STATES.IDLE
 
 
-func _set_morphology(morphology: Morphology) -> void:
+func _set_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
 	_step3_label.text = "Selected Morphology: " + morphology.name
 	_step3_panel.add_theme_stylebox_override("panel", style_complete)

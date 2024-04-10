@@ -12,7 +12,6 @@ var _plasticity_constant: FloatInput
 var _LTP_multiplier: FloatInput
 var _LTD_multiplier: FloatInput
 var _edit: TextureButton
-var _default_seperation: float # Save as float to avoid rounding errors when multiplying
 
 
 func _ready() -> void:
@@ -26,9 +25,6 @@ func _ready() -> void:
 	_LTD_multiplier = $LTD_Multiplier
 	_edit = $edit
 	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
-	_default_seperation = get_theme_constant(&"separation")
-	_update_size(VisConfig.UI_manager.UI_scale)
-	VisConfig.UI_manager.UI_scale_changed.connect(_update_size)
 
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]
@@ -50,7 +46,7 @@ func setup(data: Dictionary, _main_window) -> void:
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:
-	var morphology_used: Morphology = _morphologies.get_selected_morphology()
+	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
 	var scalar: Vector3i = _scalar.current_vector
 	var PSP: float = _PSP.current_float
 	if _inhibitory.button_pressed:
@@ -61,7 +57,7 @@ func generate_mapping_property() -> MappingProperty:
 	var LTD_multiplier: float = _LTD_multiplier.current_float
 	return MappingProperty.new(morphology_used, scalar, PSP, is_plastic, plasticity_constant, LTP_multiplier, LTD_multiplier)
 
-func _on_user_change_morphology(morphology: Morphology) -> void:
+func _on_user_change_morphology(morphology: BaseMorphology) -> void:
 	_on_user_toggle_plasticity(_plasticity.button_pressed and _determine_boolean_editability(morphology.get_latest_known_editability())) #reuse this function
 
 func _toggle_show_full_editing(full_editing: bool) -> void:
@@ -84,21 +80,17 @@ func _on_delete_pressed() -> void:
 	queue_free()
 
 func _on_info_pressed() -> void:
-	var morphology_used: Morphology = _morphologies.get_selected_morphology()
+	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
 	if morphology_used is NullMorphology:
 		#TODO
 		return
-	VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)
+	###VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)
 
-func _determine_boolean_editability(editability: Morphology.EDITABILITY) -> bool:
+func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> bool:
 	match editability:
-		Morphology.EDITABILITY.IS_EDITABLE:
+		BaseMorphology.EDITABILITY.IS_EDITABLE:
 			return true
-		Morphology.EDITABILITY.WARNING_EDITABLE_USED:
+		BaseMorphology.EDITABILITY.WARNING_EDITABLE_USED:
 			return true
 		_: # any thing else
 			return false
-
-func _update_size(multiplier: float) -> void:
-	var new_seperation: int = int(_default_seperation * multiplier)
-	add_theme_constant_override(&"seperation", new_seperation)

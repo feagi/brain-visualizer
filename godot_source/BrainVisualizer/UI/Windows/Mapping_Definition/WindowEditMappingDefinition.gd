@@ -41,14 +41,14 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 	if !_are_cortical_areas_valid():
 		return
 	
-	VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(source, destination, true)
+	BV.CB.set_outlining_state_of_connection(source, destination, true)
 	
 	_request_mappings_from_feagi()
 
 ## Overridden!
 func close_window():
 	if _source_area != null && _destination_area != null:
-		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	super()
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
@@ -65,14 +65,14 @@ func _request_mappings_from_feagi() -> void:
 		return
 	_general_mapping_details.visible = true
 	print("Window Edit Mappings is requesting FEAGI for the mapping information of %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
-	FeagiRequests.get_mapping_properties_between_two_areas(_source_area, _destination_area)
+	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source_area.cortical_ID, _destination_area.cortical_ID)
 
 func _request_apply_mappings_to_FEAGI():
 	if !_are_cortical_areas_valid():
 		push_warning("User attempted to request applying mappings to undefined cortical areas. Skipping!")
 	print("Window Edit Mappings is requesting FEAGI to apply new mappings to %s to %s" % [_source_area.cortical_ID, _destination_area.cortical_ID])
 	var mapping_properties: Array[MappingProperty] = _general_mapping_details.generate_mapping_propertys()
-	FeagiRequests.request_set_mapping_between_corticals(_source_area, _destination_area, mapping_properties)
+	FeagiCore.requests.set_mappings_between_corticals(_source_area.cortical_ID, _destination_area.cortical_ID, mapping_properties)
 	close_window()
 
 ## Returns true only if the source and destination areas selected are valid
@@ -85,13 +85,13 @@ func _source_changed(new_source: BaseCorticalArea) -> void:
 	if _source_area != null:
 		if _source_area.efferent_mapping_retrieved_from_feagi.is_connected(_retrieved_feagi_mapping_data):
 			_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
-		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_source_area = new_source
 	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
 func _destination_changed(new_destination: BaseCorticalArea) -> void:
 	if _destination_area != null:
-		VisConfig.UI_manager.circuit_builder.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
 	_destination_area = new_destination
 	_selected_cortical_areas_changed(_source_area, _destination_area)

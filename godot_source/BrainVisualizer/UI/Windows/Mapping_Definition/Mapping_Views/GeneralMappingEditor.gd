@@ -103,7 +103,7 @@ func _toggle_enable_mapping_button_automatically() -> void:
 
 # connected in WindowMappingDetails.tscn
 func _add_mapping_pressed() -> void:
-	if len(FeagiCache.morphology_cache.available_morphologies.keys()) == 0:
+	if len(FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()) == 0:
 		print("Unable to spawn a connection when no morphologies exist!")
 		## TODO a user error may go well here
 		return
