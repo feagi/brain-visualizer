@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3 uid="uid://dtoic0bf8v2f2"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3Labels.gd" id="1_joewg"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_lk01u"]
+
+[node name="Vector3Labels" type="BoxContainer"]
+script = ExtResource("1_joewg")
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
+
+[node name="LabelX" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_lk01u")
+text = "X"
+horizontal_alignment = 1
+
+[node name="LabelY" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_lk01u")
+text = "Y"
+horizontal_alignment = 1
+
+[node name="LabelZ" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_lk01u")
+text = "Z
+"
+horizontal_alignment = 1

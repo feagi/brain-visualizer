@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_dlnla"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="3_dlnla"]
 [ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://BrainVisualizer/UI/GenericElements/Buttons/DetailedPanelContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
 [ext_resource type="Texture2D" uid="uid://cxpq7dara6ufm" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="4_5utqj"]
 [ext_resource type="Texture2D" uid="uid://ghmssmcp5gnf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="5_ffsab"]
@@ -11,8 +11,8 @@
 [ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
 [ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
 [ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="13_oqeoe"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingControl.gd" id="13_oqeoe"]
 
 [node name="WindowSpawnCorticalArea" type="VBoxContainer"]
 offset_right = 396.0

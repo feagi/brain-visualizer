@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=3 uid="uid://pm1dhvl8b7h7"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Developer_Options/WindowDeveloperOptions.gd" id="1_ifhbl"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_55gg2"]
-[ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_62jap"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_55gg2"]
+[ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsible.tscn" id="2_62jap"]
 [ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="3_136gr"]
 
 

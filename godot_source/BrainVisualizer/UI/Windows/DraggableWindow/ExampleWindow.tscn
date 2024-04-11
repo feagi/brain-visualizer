@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://uovm7phb0uio"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/DraggableWindow/BaseDraggableWindow.gd" id="1_rc4ci"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
+
+[node name="ExampleWindow" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_rc4ci")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_m61t8")]
+layout_mode = 2
+title = "EXAMPLE WINDOW"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2

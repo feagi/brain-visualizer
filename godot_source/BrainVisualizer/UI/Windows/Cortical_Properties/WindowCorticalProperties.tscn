@@ -1,8 +1,8 @@
 [gd_scene load_steps=12 format=3 uid="uid://5gbqaf1gqn30"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/WindowCorticalProperties.gd" id="1_1jbcd"]
-[ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
+[ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsible.tscn" id="2_wrcar"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="4_pwsxt"]
 [ext_resource type="PackedScene" uid="uid://506fv2gitw7k" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalParameters.tscn" id="5_2tr5n"]
 [ext_resource type="PackedScene" uid="uid://rvvhpq3y0on7" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.tscn" id="6_k1df6"]
 [ext_resource type="PackedScene" uid="uid://dm68mg7exp1ca" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesMemoryParameters.tscn" id="7_l4w3m"]

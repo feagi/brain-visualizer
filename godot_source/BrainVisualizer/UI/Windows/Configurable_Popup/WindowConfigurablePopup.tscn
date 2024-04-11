@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://pg6obfpceakc"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Configurable_Popup/WindowConfigurablePopup.gd" id="1_7ua63"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_1dl3f"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_bjxy3"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_uk0kv"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1dl3f"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingControl.gd" id="2_bjxy3"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_uk0kv"]
 
 [node name="ConfigurablePopup" type="VBoxContainer"]
 offset_right = 126.0

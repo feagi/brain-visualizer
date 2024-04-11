@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://cdymw36o30rp1"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Morphology_Manager/WindowMorphologyManager.gd" id="1_11gqg"]
-[ext_resource type="PackedScene" uid="uid://dojgkcnlpiq4v" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyOverviews/UIMorphologyOverviews.tscn" id="3_08frl"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
+[ext_resource type="PackedScene" uid="uid://dojgkcnlpiq4v" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyOverviews/UIMorphologyOverviews.tscn" id="3_08frl"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
 [node name="MorphologyManager" type="VBoxContainer"]
 offset_right = 126.0

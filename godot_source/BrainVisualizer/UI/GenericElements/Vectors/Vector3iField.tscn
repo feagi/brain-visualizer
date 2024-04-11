@@ -1,0 +1,39 @@
+[gd_scene load_steps=4 format=3 uid="uid://boj8wsv76jqlm"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.gd" id="1_hv1wd"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_ul7t1"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_vm86m"]
+
+[node name="Vector3fField" type="BoxContainer"]
+script = ExtResource("1_hv1wd")
+
+[node name="LabelX" type="Label" parent="."]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ul7t1")
+text = "X"
+
+[node name="IntX" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_vm86m")
+
+[node name="LabelY" type="Label" parent="."]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ul7t1")
+text = "Y"
+
+[node name="IntY" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_vm86m")
+
+[node name="LabelZ" type="Label" parent="."]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ul7t1")
+text = "Z
+"
+
+[node name="IntZ" type="LineEdit" parent="."]
+layout_mode = 2
+alignment = 1
+script = ExtResource("3_vm86m")

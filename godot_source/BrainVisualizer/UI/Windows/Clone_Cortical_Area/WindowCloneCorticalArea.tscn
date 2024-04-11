@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Clone_Cortical_Area/WindowCloneCorticalArea.gd" id="2_8fxof"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="5_6v723"]
-[ext_resource type="PackedScene" uid="uid://brwx50pyfywb7" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iSpinBoxField.tscn" id="6_sl08t"]
-[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="6_t2gp1"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextButton.gd" id="7_flsw2"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="10_smykg"]
+[ext_resource type="PackedScene" uid="uid://brwx50pyfywb7" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinBoxField.tscn" id="6_sl08t"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_t2gp1"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextButton.gd" id="7_flsw2"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="10_smykg"]
 
 [node name="WindowCloneCorticalArea" type="VBoxContainer"]
 offset_right = 126.0

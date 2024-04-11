@@ -1,7 +1,7 @@
 [gd_scene load_steps=19 format=3 uid="uid://c4nh5ikljookn"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Quick_Cortical_Menu/QuickCorticalMenu.gd" id="1_8td17"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="2_iacyx"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_iacyx"]
 [ext_resource type="Texture2D" uid="uid://behvlm3mogmhp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_properties_S.png" id="3_25iwn"]
 [ext_resource type="Texture2D" uid="uid://xefmqrl742ka" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_properties_H.png" id="5_ir57i"]
 [ext_resource type="Texture2D" uid="uid://bdc3xicyhqvos" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_properties_D.png" id="6_sfa5v"]

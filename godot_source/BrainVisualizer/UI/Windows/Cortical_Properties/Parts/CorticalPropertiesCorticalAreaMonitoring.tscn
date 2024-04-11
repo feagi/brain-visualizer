@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://ckkgl10utu0i8"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.gd" id="1_ofec4"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_w3lfj"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_w3lfj"]
 [ext_resource type="Texture2D" uid="uid://m0g8f4fqi1wb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="3_008v8"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/ToggleButton.gd" id="4_gi7tw"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="4_gi7tw"]
 
 
 [node name="CorticalPropertiesCorticalMonitoring" type="VBoxContainer"]

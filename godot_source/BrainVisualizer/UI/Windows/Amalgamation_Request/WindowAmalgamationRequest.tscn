@@ -3,8 +3,8 @@
 [ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://BrainVisualizer/UI/Themes/1.0-dark.tres" id="1_i42xn"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Amalgamation_Request/WindowAmalgamationRequest.gd" id="2_wg6iy"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_1iehj"]
-[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="5_2iifs"]
-[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="8_gn5it"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="5_2iifs"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="8_gn5it"]
 
 [node name="WindowAmalgamationRequest" type="Panel"]
 offset_top = 40.0

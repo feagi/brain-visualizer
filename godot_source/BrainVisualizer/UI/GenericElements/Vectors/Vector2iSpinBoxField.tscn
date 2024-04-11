@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://brwx50pyfywb7"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_depso"]
+
+[node name="Vector2iSpingBoxField" type="BoxContainer"]
+script = ExtResource("1_ppcmy")
+
+[node name="LabelX" type="Label" parent="."]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_depso")
+text = "X"
+
+[node name="IntX" type="SpinBox" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="LabelY" type="Label" parent="."]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_depso")
+text = "Y"
+
+[node name="IntY" type="SpinBox" parent="."]
+layout_mode = 2
+alignment = 1
