@@ -10,3 +10,4 @@ attempt_connect_websocket_on_launch = true
 load_genome_on_connect_if_available = true
 poll_websocket_connection_if_no_websocket = 1
 seconds_between_latency_pings = 5.0
+enable_HTTP_healthcheck = true

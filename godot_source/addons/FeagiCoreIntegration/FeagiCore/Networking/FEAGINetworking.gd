@@ -27,20 +27,27 @@ func _init():
 	
 	add_child(websocket_API)
 
-# Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify
+## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify
 func activate_and_verify_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails):
 	#NOTE: Due to the more unique usecase, we are keeping this function here instead of [FEAGIRequests]
 	activate_http_API(feagi_endpoint_details.get_api_URL(), feagi_endpoint_details.header)
 	http_API.run_HTTP_healthcheck()
 
-# Sets up (or resets) the HTTP API with required information
+## Sets up (or resets) the HTTP API with required information
 func activate_http_API(FEAGI_API_address: StringName, headers: PackedStringArray) -> void:
 	http_API.connect_http(FEAGI_API_address, headers)
 
-# Sets up (or resets) the Websocket API with required information
+## Sets up (or resets) the Websocket API with required information
 func activate_websocket_APT(FEAGI_websocket_address: StringName) -> void:
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 	websocket_API.connect_websocket(FEAGI_websocket_address)
+
+## Sets up a healthcheck in HTTP (or restarts it if its already running)
+func establish_HTTP_healthcheck() -> void:
+	if http_API.http_health != http_API.HTTP_HEALTH.CONNECTABLE:
+		push_error("FEAGICORE NETWORKING: Cannot Start polling HTTP healthcheck if HTTP API has not confirmed its connected!")
+		return
+	http_API.poll_HTTP_health()
 
 ## Completely disconnect all networking systems from FEAGI
 func disconnect_networking() -> void:

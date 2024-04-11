@@ -172,10 +172,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		neuron_count_max = int(health["neuron_count_max"])
 	if "synapse_count_max" in health: 
 		synapse_count_max = int(health["synapse_count_max"])
-	if "neuron_count_current" in health: 
-		neuron_count_current = int(health["neuron_count_current"])
-	if "synapse_count_current" in health: 
-		synapse_count_current = int(health["synapse_countcurrentx"])
+	if "neuron_count" in health: 
+		neuron_count_current = int(health["neuron_count"])
+	if "synapse_count" in health: 
+		synapse_count_current = int(health["synapse_count"])
 	if "genome_availability" in health: 
 		genome_availability = health["genome_availability"]
 	if "genome_validity" in health: 

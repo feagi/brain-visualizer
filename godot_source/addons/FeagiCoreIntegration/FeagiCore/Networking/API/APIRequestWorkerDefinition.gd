@@ -63,5 +63,5 @@ static func define_polling_call(
 		output.data_to_send_to_FEAGI = define_data_to_send_to_FEAGI
 		output.polling_completion_check = define_polling_completion_check
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.POLLING
-		output.seconds_between_polls
+		output.seconds_between_polls = define_seconds_beteen_polls
 		return output

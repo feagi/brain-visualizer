@@ -24,7 +24,7 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	if !_cortical_area.user_can_clone_this_cortical_area:
 		clone_button.disabled = true
 		clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
-	grab_focus()
+	#grab_focus()
 
 	#NOTE: Removed left bar spawn reference from here. Handle that in WindowManager directly instead please!
 

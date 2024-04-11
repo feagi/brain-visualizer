@@ -13,7 +13,7 @@ enum CALL_PROCESS_TYPE {
 }
 
 signal worker_done() ## Emitted when a worker is done including done polling)
-signal worker_retrieved_latest_poll()  ## Emitted when a worker has recieved the data for its latest poll, but is still polling
+signal worker_retrieved_latest_poll(output_response: FeagiRequestOutput)  ## Emitted when a worker has recieved the data for its latest poll, but is still polling
 
 var _timer: Timer
 var _outgoing_headers: PackedStringArray # headers to make requests with
@@ -74,12 +74,25 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
 
+## Returns whatever the worker got from FEAGI (or didn't if timed out), then deletes the worker
 func retrieve_output_and_close() -> FeagiRequestOutput:
 	if _output_response == null:
 		push_error("FEAGI NETWORK HTTP: Output retrieved before HTTP call was complete! Returning Empty Error Call. This will likely cause issues!")
 		_output_response = FeagiRequestOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
 	queue_free()
 	return _output_response
+
+## Returns the most recent output got from FEAGI (or didn't if timed out), but doesn't delete the worker. Best used for Polling
+func retrieve_output_and_continue() -> FeagiRequestOutput:
+	if _output_response == null:
+		push_error("FEAGI NETWORK HTTP: Output retrieved before any HTTP call was complete! Returning Empty Error Call. This will likely cause issues!")
+		return FeagiRequestOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+	return _output_response
+
+## Kills the worker early
+func kill_worker() -> void:
+	cancel_request()
+	queue_free()
 
 ## Called when FEAGI returns data from call (or HTTP call timed out)
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
@@ -118,7 +131,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 				BasePollingMethod.POLLING_CONFIRMATION.INCOMPLETE:
 					# not done polling, keep going!
 					_output_response = FeagiRequestOutput.response_success(body, true)
-					worker_retrieved_latest_poll.emit()
+					worker_retrieved_latest_poll.emit(_output_response)
 					return
 				BasePollingMethod.POLLING_CONFIRMATION.ERROR:
 					#n This actually shouldnt be possible. Report error and close

@@ -218,6 +218,8 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 							var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
 							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, cache_genome_state)
+					if feagi_settings.enable_HTTP_healthcheck:
+						network.establish_HTTP_healthcheck()
 					return
 					
 				CONNECTION_STATE.CONNECTED:
