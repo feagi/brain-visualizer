@@ -61,8 +61,6 @@ mouse_filter = 2
 
 [node name="TopBar" parent="UIManager" instance=ExtResource("1_yk4pp")]
 mouse_filter = 2
-possible_zoom_levels = Array[float]([0.5, 0.75, 1.0, 1.25, 1.5, 2.0])
-starting_size_index = 2
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
 environment = SubResource("Environment_rks2y")

@@ -1,5 +1,5 @@
 extends PanelContainer
-class_name PanelContainerButton
+class_name BasePanelContainerButton
 
 signal pressed()
 
@@ -27,25 +27,25 @@ func _gui_input(event: InputEvent) -> void:
 			return
 		
 		if mouse_event.pressed:
-			if has_theme_stylebox("panel_pressed", "PanelContainerButton"):
-				add_theme_stylebox_override("panel", get_theme_stylebox("panel_pressed", "PanelContainerButton"))
+			if has_theme_stylebox("panel_pressed", "BasePanelContainerButton"):
+				add_theme_stylebox_override("panel", get_theme_stylebox("panel_pressed", "BasePanelContainerButton"))
 			else:
-				push_error("Missing panel_pressed for PanelContainerButton")
+				push_error("Missing panel_pressed for BasePanelContainerButton")
 			pressed.emit()
 		else:
-			if has_theme_stylebox("panel_hover", "PanelContainerButton"):
-				add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "PanelContainerButton"))
+			if has_theme_stylebox("panel_hover", "BasePanelContainerButton"):
+				add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "BasePanelContainerButton"))
 			else:
-				push_error("Missing panel_hover for PanelContainerButton")
+				push_error("Missing panel_hover for BasePanelContainerButton")
 		
 func _mouse_entered() -> void:
-	if has_theme_stylebox("panel_hover", "PanelContainerButton"):
-		add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "PanelContainerButton"))
+	if has_theme_stylebox("panel_hover", "BasePanelContainerButton"):
+		add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "BasePanelContainerButton"))
 	else:
 		push_error("Missing panel_hover for PanelContainerButton")
 
 func _mouse_exited() -> void:
-	if has_theme_stylebox("panel", "PanelContainerButton"):
-		add_theme_stylebox_override("panel", get_theme_stylebox("panel", "PanelContainerButton"))
+	if has_theme_stylebox("panel", "BasePanelContainerButton"):
+		add_theme_stylebox_override("panel", get_theme_stylebox("panel", "BasePanelContainerButton"))
 	else:
-		push_error("Missing panel for PanelContainerButton")
+		push_error("Missing panel for BasePanelContainerButton")

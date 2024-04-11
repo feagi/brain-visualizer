@@ -4,7 +4,7 @@ class_name ScaleThemeApplier
 
 var _nodes_to_not_include_or_search: Array[Node] ## when searching and this node is encountered, stop. We may have custom things here instead
 var _texture_buttons: Array[TextureButton] = []
-var _PanelContainerButtons: Array[PanelContainerButton] = []
+#var _detailed_container_buttons: Array[DetailedPanelContainerButton] = []
 
 ## Call this when all children were added to the tree so the reference arrays can be built
 func setup(starting_node: Node, nodes_to_not_include_or_search: Array[Node], current_loaded_theme: Theme) -> void:
@@ -22,8 +22,9 @@ func search_for_matching_children(starting_node: Node) -> void:
 		if child is TextureButton:
 			_texture_buttons.append(child)
 		
-		elif child is PanelContainerButton:
-			_PanelContainerButtons.append(child)
+		#if child is DetailedPanelContainerButton:
+		#	_detailed_container_buttons.append(child)
+		
 		
 		search_for_matching_children(child) # Recusrion!
 
@@ -46,15 +47,6 @@ func update_theme_customs(updated_theme: Theme) -> void:
 	else:
 		push_error("THEME: Loaded theme file is missing size_x and/or size_y for TextureButton. There will be sizing issues!")
 	
-	# PanelContainerButton
-	if updated_theme.has_stylebox("panel", "PanelContainerButton") and updated_theme.has_stylebox("panel_hover", "PanelContainerButton") and updated_theme.has_stylebox("panel_pressed", "PanelContainerButton"):
-		box_normal = updated_theme.get_stylebox("panel", "PanelContainerButton")
-		box_hover = updated_theme.get_stylebox("panel_hover", "PanelContainerButton")
-		box_pressed = updated_theme.get_stylebox("panel_pressed", "PanelContainerButton")
-		for container_button: PanelContainerButton in _PanelContainerButtons:
-			if container_button == null:
-				continue
-			container_button.update_theme(box_normal, box_hover, box_pressed)
-	else:
-		push_error("THEME: Loaded theme file is missing styleboxes for PanelContainerButton. There will be coloring issues!")
-
+	##DetailedPanelContainerButton (has a script on its own so we can let that handle it.
+	#for panel: DetailedPanelContainerButton in _detailed_container_buttons:
+	#	panel.external_update_theme_params()

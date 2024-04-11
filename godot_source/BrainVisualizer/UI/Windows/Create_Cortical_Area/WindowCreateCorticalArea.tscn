@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_dlnla"]
-[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
+[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://BrainVisualizer/UI/GenericElements/Buttons/DetailedPanelContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
 [ext_resource type="Texture2D" uid="uid://cxpq7dara6ufm" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="4_5utqj"]
 [ext_resource type="Texture2D" uid="uid://ghmssmcp5gnf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="5_ffsab"]
 [ext_resource type="Texture2D" uid="uid://b25s06vc3o8ca" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="7_hbdve"]
@@ -65,40 +65,28 @@ layout_mode = 2
 icon = ExtResource("4_5utqj")
 icon_size = Vector2i(96, 96)
 main_label = &"Input"
-right_padding = 32
-left_padding = 32
 is_vertical = true
-gap_1 = 4
 
 [node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("5_ffsab")
 icon_size = Vector2i(96, 96)
 main_label = &"Output"
-right_padding = 32
-left_padding = 32
 is_vertical = true
-gap_1 = 4
 
 [node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("7_hbdve")
 icon_size = Vector2i(96, 96)
 main_label = &"Interconnect"
-right_padding = 24
-left_padding = 24
 is_vertical = true
-gap_1 = 4
 
 [node name="Memory" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("8_miahu")
 icon_size = Vector2i(96, 96)
 main_label = &"Memory"
-right_padding = 32
-left_padding = 32
 is_vertical = true
-gap_1 = 4
 
 [node name="Definition_IOPU" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("9_54gus")]
 visible = false

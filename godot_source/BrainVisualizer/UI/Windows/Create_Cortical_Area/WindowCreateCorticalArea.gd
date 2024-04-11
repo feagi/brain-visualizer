@@ -71,16 +71,16 @@ func _set_header(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	match(cortical_type):
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			label.text = "Adding input Cortical Area"
-			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/input.png")
+			icon.texture = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png")
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			label.text = "Adding output Cortical Area"
-			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/output.png")
+			icon.texture = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png")
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			label.text = "Adding interconnect Cortical Area"
-			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/interconnected.png")
+			icon.texture = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png")
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			label.text = "Adding memory Cortical Area"
-			icon.texture = load("res://Feagi-Godot-Interface/UI/Resources/Icons/memory-game.png")
+			icon.texture = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png")
 		
 func _back_pressed() -> void:
 	_step_1_pick_type()

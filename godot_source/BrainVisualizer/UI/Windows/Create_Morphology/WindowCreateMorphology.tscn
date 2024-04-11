@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Morphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_6i23i"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_pjj1q"]
-[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Buttons/DetailedContainerButton/DetailedContainerButton.tscn" id="3_twh1n"]
+[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://BrainVisualizer/UI/GenericElements/Buttons/DetailedPanelContainerButton/DetailedContainerButton.tscn" id="3_twh1n"]
 [ext_resource type="Texture2D" uid="uid://c4r2s8wm7tu2n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="4_0ajep"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="5_6juqf"]
 [ext_resource type="Texture2D" uid="uid://v0jrtceot6kw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/patterns.png" id="5_63qii"]
