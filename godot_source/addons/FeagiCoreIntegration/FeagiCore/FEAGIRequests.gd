@@ -92,7 +92,7 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	
 	# Define Request
 	var dict_to_send: Dictionary = 	{ "burst_duration": new_delay_between_bursts}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_FE_burstEngine, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_feagi_burstEngine, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
