@@ -4,6 +4,7 @@ extends Node3D
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	FeagiCore.network.websocket_API.socket_state_changed.connect(toggle_between_states)
+	draw_disconnected() # lol
 
 func toggle_between_states(connection_state: WebSocketPeer.State) -> void:
 	match(connection_state):
