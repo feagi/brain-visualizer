@@ -12,4 +12,5 @@ theme_override_constants/margin_bottom = 1
 script = ExtResource("1_vvts3")
 
 [node name="ColorRect" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(15, 0)
 layout_mode = 2
