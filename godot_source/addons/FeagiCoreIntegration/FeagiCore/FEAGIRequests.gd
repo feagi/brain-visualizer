@@ -242,7 +242,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 	}
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = coordinates_2D
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, dict_to_send)
 
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -252,9 +252,9 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	if IOPU_template.cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
-		FeagiCore.feagi_local_cache.cortical_areas.add_input_cortical_area(response["cortical_id"], IOPU_template, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
+		FeagiCore.feagi_local_cache.cortical_areas.add_input_cortical_area(IOPU_template.ID, IOPU_template, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	else: #OPU
-		FeagiCore.feagi_local_cache.cortical_areas.add_output_cortical_area(response["cortical_id"], IOPU_template, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
+		FeagiCore.feagi_local_cache.cortical_areas.add_output_cortical_area(IOPU_template.ID, IOPU_template, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	
 	print("FEAGI REQUEST: Successfully created custom cortical area by name %s with ID %s" % [IOPU_template.cortical_name, response["cortical_id"]])
 	return FEAGI_response_data
