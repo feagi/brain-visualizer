@@ -12,7 +12,13 @@ func _ready():
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiCore.network.websocket_API.feagi_return_other.connect(test)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(delete_single_cortical)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(move_when_changed)
 	pass
+
+## Stupid
+func move_when_changed(changed: BaseCorticalArea):
+	check_cortical(changed)
+
 
 #TODO TEMP
 ## Generates and parents a preview and returns the object 
@@ -155,6 +161,8 @@ func delete_example():
 	for i in name_list:
 		global_name_list.erase(i)
 
+
+#why
 func check_cortical(cortical_area_data : BaseCorticalArea):
 	var flag = false
 	for i in global_name_list:

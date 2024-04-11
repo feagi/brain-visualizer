@@ -319,7 +319,7 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	
 	# Define Request
 	properties["cortical_id"] = editing_ID  # ensure
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea, properties)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -327,9 +327,8 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	FeagiCore.feagi_local_cache.cortical_areas.update_cortical_area_from_dict(response)
-	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ response["cortical_id"]])
+	FeagiCore.feagi_local_cache.cortical_areas.update_cortical_area_from_dict(properties)
+	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 
 

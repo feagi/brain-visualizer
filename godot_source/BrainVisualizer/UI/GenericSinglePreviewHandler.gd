@@ -18,5 +18,6 @@ func connect_BM_preview(coordinates_3D_changed: Signal, dimensions_changed: Sign
 		close_signal.connect(delete_preview)
 
 func delete_preview(_irrelevant: Variant = null) -> void:
-	if _BM_preview != null:
-		_BM_preview.delete_preview()
+	pass # fix later
+	#if _BM_preview != null:
+	#	_BM_preview.delete_preview()
