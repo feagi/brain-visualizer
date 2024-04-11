@@ -137,7 +137,7 @@ func _user_requesing_creation() -> void:
 				return
 			
 			#Create
-			FeagiCore.requests.add_memory_cortical_area(
+			FeagiCore.requests.add_custom_memory_cortical_area(
 				_memory_definition.cortical_name.text,
 				_memory_definition.location.current_vector,
 				Vector3i(1,1,1),
