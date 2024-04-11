@@ -4,7 +4,6 @@
 [ext_resource type="PackedScene" uid="uid://dojgkcnlpiq4v" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyOverviews/UIMorphologyOverviews.tscn" id="3_08frl"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://Feagi-Godot-Interface/UI/Windows/Elements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
-
 [node name="MorphologyManager" type="VBoxContainer"]
 offset_right = 126.0
 offset_bottom = 40.0
@@ -22,9 +21,12 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
+theme_type_variation = &"WindowOuterMargin"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 
 [node name="UIMorphologyOverviews" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_08frl")]
 layout_mode = 2
+
+[connection signal="request_close" from="WindowPanel/WindowMargin/WindowInternals/UIMorphologyOverviews" to="." method="close_window"]

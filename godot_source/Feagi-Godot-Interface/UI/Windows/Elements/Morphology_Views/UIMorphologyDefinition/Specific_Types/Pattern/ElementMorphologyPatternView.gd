@@ -17,14 +17,12 @@ func _ready() -> void:
 
 func setup(allow_editing_if_morphology_editable: bool) -> void:
 	_allow_editing_if_morphology_editable = allow_editing_if_morphology_editable
+	
+func request_feag_to_set_morphology(morphology_name: StringName) -> void:
+	FeagiCore.requests.update_pattern_morphology(morphology_name, get_pattern_pair_array())
 
-## Return current UI view as a [PatternMorphology] object
-func get_as_pattern_morphology(morphology_name: StringName, is_placeholder: bool = false) -> PatternMorphology:
-	if _loaded_morphology != null:
-		return PatternMorphology.new(morphology_name, is_placeholder, _loaded_morphology.internal_class, get_pattern_pair_array())
-	# In the case of creating new morphologies, we would have not loaded in one, spo we cannot use the class from a loaded one
-	# we can assume however, that any created morphology will always be of class Custom
-	return PatternMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, get_pattern_pair_array())
+func request_feag_to_create_morphology(morphology_name: StringName) -> void:
+	FeagiCore.requests.add_pattern_morphology(morphology_name, get_pattern_pair_array())
 	
 ## Overwrite the current UI view with a [PatternMorphology] object
 func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:

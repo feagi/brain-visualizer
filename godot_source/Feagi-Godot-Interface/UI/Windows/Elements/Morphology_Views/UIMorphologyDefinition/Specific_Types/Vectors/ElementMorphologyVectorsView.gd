@@ -22,7 +22,12 @@ func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool 
 	# In the case of creating new morphologies, we would have not loaded in one, spo we cannot use the class from a loaded one
 	# we can assume however, that any created morphology will always be of class Custom
 	return VectorMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, get_vector_array())
-	
+
+func request_feag_to_set_morphology(morphology_name: StringName) -> void:
+	FeagiCore.requests.update_vector_morphology(morphology_name, get_vector_array())
+
+func request_feag_to_create_morphology(morphology_name: StringName) -> void:
+	FeagiCore.requests.add_vector_morphology(morphology_name, get_vector_array())
 	
 ## Overwrite the current UI view with a [VectorMorphology] object
 func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:

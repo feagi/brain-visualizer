@@ -45,11 +45,5 @@ func _emit_if_text_changed() -> void:
 	_previous_text = text
 	text_confirmed.emit(text)
 
-func _update_size(multiplier: float) -> void:
-	add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
-	if _default_min_size != Vector2(0,0):
-		custom_minimum_size = _default_min_size * multiplier
-	size = Vector2(0,0)
-
 func _on_interaction(_irrelevant_text: String) -> void:
 	user_interacted.emit()

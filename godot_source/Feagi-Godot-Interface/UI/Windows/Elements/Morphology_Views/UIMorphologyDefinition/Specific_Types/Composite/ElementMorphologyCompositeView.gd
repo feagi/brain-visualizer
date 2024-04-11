@@ -40,10 +40,13 @@ func _ready() -> void:
 func setup(allow_editing_if_morphology_editable: bool) -> void:
 	_is_UI_editable = allow_editing_if_morphology_editable
 
-## Return current UI view as a [CompositeMorphology] object
-func get_as_composite_morphology(morphology_name: StringName, is_placeholder: bool = false) -> CompositeMorphology:
-	var XYZ: Array[Vector2i] = [patternX, patternY, patternZ]
-	return CompositeMorphology.new(morphology_name, is_placeholder, _internal_class, composite_seed, XYZ, mapped_morphology.name)
+func request_feag_to_set_morphology(morphology_name: StringName) -> void:
+	var vector_field: Array[Vector2i] = [_patternX.current_vector, _patternY.current_vector, _patternZ.current_vector]
+	FeagiCore.requests.update_composite_morphology(morphology_name, _seed.current_vector, vector_field, _mapped_morphology.get_selected_morphology_name())
+
+func request_feag_to_create_morphology(morphology_name: StringName) -> void:
+	var vector_field: Array[Vector2i] = [_patternX.current_vector, _patternY.current_vector, _patternZ.current_vector]
+	FeagiCore.requests.add_composite_morphology(morphology_name, _seed.current_vector, vector_field, _mapped_morphology.get_selected_morphology_name())
 
 ## Overwrite the current UI view with a [CompositeMorphology] object
 func set_from_composite_morphology(composite: CompositeMorphology) -> void:

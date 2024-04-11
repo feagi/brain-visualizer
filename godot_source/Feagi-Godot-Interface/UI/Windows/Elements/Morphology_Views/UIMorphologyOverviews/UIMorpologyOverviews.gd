@@ -71,14 +71,11 @@ func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> v
 		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
-	pass
-	###var morphology_to_update: BaseMorphology = _UI_morphology_definition.retrieve_morphology(_loaded_morphology.name, _loaded_morphology.description)
-	###FeagiRequests.request_updating_morphology(morphology_to_update)
-	###requested_updating_morphology.emit(morphology_to_update)
+	BV.NOTIF.add_notification("Requesting FEAGI to update morphology %s" % _loaded_morphology.name)
+	_UI_morphology_definition.request_feagi_apply_morphology_settings(_loaded_morphology.name)
 
 func _user_request_create_morphology() -> void:
-	pass
-	###VisConfig.UI_manager.window_manager.spawn_create_morphology()
+	BV.WM.spawn_create_morphology()
 
 func _user_requested_closing() -> void:
 	request_close.emit()

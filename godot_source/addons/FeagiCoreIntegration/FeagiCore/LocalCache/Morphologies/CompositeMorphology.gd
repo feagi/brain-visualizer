@@ -24,6 +24,12 @@ func feagi_update(parameter_value: Dictionary, retrieved_internal_class: MORPHOL
 	mapper_morphology_name = parameter_value["mapper_morphology"]
 	super(parameter_value , retrieved_internal_class )
 
+## Used when we update values and Feagi confirms it
+func feagi_confirmed_value_update(new_seed: Vector3i, new_pattern: Array[Vector2i]) -> void:
+	source_seed = new_seed
+	source_pattern = new_pattern
+	numerical_properties_updated.emit(self)
+
 func to_dictionary() -> Dictionary:
 	return {
 		"src_seed": FEAGIUtils.vector3i_to_array(source_seed),

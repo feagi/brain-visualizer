@@ -22,13 +22,14 @@
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
-[node name="TopBar" type="HBoxContainer"]
+[node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 1605.0
 offset_bottom = 86.0
 theme_override_constants/separation = 5
 script = ExtResource("1_f5hja")
+theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
 [node name="Buttons" type="PanelContainer" parent="."]
 layout_mode = 2

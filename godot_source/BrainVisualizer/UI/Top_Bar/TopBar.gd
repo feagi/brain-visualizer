@@ -83,20 +83,11 @@ func _open_create_cortical() -> void:
 	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
 func _open_neuron_morphologies() -> void:
-	pass
-	#VisConfig.UI_manager.window_manager.spawn_manager_morphology()
+	BV.WM.spawn_manager_morphology()
 
 func _open_create_morpology() -> void:
-	pass
-	#VisConfig.UI_manager.window_manager.spawn_create_morphology()
+	BV.WM.spawn_create_morphology()
 
-func _open_tutorials() -> void:
-	pass
-	#VisConfig.UI_manager.window_manager.spawn_tutorial()
-
-func _open_options() -> void:
-	pass
-	#VisConfig.UI_manager.window_manager.spawn_user_options()
 
 #func _FEAGI_retireved_latency(latency_ms: int) -> void:
 #	_latency_field.current_int = latency_ms

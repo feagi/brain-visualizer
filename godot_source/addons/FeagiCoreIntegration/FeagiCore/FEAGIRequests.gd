@@ -614,9 +614,8 @@ func update_vector_morphology(morphology_name: StringName, vectors: Array[Vector
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully updated morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_morphology_by_dict(response)
+	print("FEAGI REQUEST: Successfully updated vector morphology of name %s" % morphology_name)
+	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(vectors)
 	return FEAGI_response_data
 	
 	
@@ -649,9 +648,8 @@ func update_pattern_morphology(morphology_name: StringName, patterns: Array[Patt
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully updated morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_morphology_by_dict(response)
+	print("FEAGI REQUEST: Successfully updated pattern morphology of name %s" % morphology_name)
+	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(patterns)
 	return FEAGI_response_data
 
 
@@ -691,9 +689,8 @@ func update_composite_morphology(morphology_name: StringName, source_seed: Vecto
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully updated morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_morphology_by_dict(response)
+	print("FEAGI REQUEST: Successfully updated composite morphology of name %s" % morphology_name)
+	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(source_seed, source_pattern)
 	return FEAGI_response_data
 
 

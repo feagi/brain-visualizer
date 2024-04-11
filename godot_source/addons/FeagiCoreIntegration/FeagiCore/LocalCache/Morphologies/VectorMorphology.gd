@@ -18,6 +18,11 @@ func feagi_update(parameter_value: Dictionary, retrieved_internal_class: MORPHOL
 	vectors = FEAGIUtils.array_of_arrays_to_vector3i_array(raw_vector3_array)
 	super(parameter_value , retrieved_internal_class )
 
+## Used when we update values and Feagi confirms it
+func feagi_confirmed_value_update(new_vectors: Array[Vector3i]) -> void:
+	vectors = new_vectors
+	numerical_properties_updated.emit(self)
+
 func to_dictionary() -> Dictionary:
 	return {
 		"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)

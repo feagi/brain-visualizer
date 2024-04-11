@@ -1,4 +1,4 @@
-extends RefCounted
+extends Object #TODO WARNING ERROR This is a MEMORY LEAK! FIX!
 class_name GenericSinglePreviewHandler
 ## Responsible for handling single previews across various UI Elements
 #TODO: Clean this up, CB integration?

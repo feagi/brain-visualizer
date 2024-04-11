@@ -94,20 +94,18 @@ func load_blank_morphology(morphology_type: BaseMorphology.MORPHOLOGY_TYPE, morp
 			load_morphology(PatternMorphology.new("NO_NAME", true, morphology_internal_class, patterns))
 		_:
 			load_morphology(NullMorphology.new())
-	
-## Retrieves the current UI view as a morphology of its type
-func retrieve_morphology(morphology_name: StringName, _morphology_details: StringName) -> BaseMorphology:
-	## TODO make use of morphology details - Requires FEAGI support first
+
+func request_feagi_apply_morphology_settings(morphology_name: StringName) -> void:
 	match _morphology_loaded.type:
 		BaseMorphology.MORPHOLOGY_TYPE.COMPOSITE:
-			return composite_view.get_as_composite_morphology(morphology_name)
+			return composite_view.request_feag_to_set_morphology(morphology_name)
 		BaseMorphology.MORPHOLOGY_TYPE.VECTORS:
-			return vectors_view.get_as_vector_morphology(morphology_name)
+			return vectors_view.request_feag_to_set_morphology(morphology_name)
 		BaseMorphology.MORPHOLOGY_TYPE.PATTERNS:
-			return patterns_view.get_as_pattern_morphology(morphology_name)
+			return patterns_view.request_feag_to_set_morphology(morphology_name)
 		_:
-			push_error("Unable to retrieve null or unknown type morphology. Return Null Morphology Instead...")
-			return NullMorphology.new()
+			push_error("Unable to send null or unknown type morphology!")
+
 
 func _morphology_updated(_self_morphology: BaseMorphology) -> void:
 	load_morphology(_morphology_loaded)
