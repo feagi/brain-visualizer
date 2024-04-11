@@ -64,6 +64,18 @@ func load_new_theme(theme: Theme) -> void:
 	_loaded_theme = theme
 	theme_changed.emit(theme)
 
+## Starts a preview cort a cortical area
+func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
+	position_signals: Array[Signal], dimensions_signals: Array[Signal], close_signals: Array[Signal],
+ 	color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> void:
+	
+	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
+	add_child(preview_handler)
+	preview_handler.start_BM_preview(initial_dimensions, initial_position, color, is_rendering)
+	preview_handler.connect_BM_preview(position_signals, dimensions_signals, close_signals)
+	# when moving this to BM, add a signal here to closing all handlers and append that signal to the above close array!
+	
+
 ## Called from above when we are about to reset genome, may want to clear some things...
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)

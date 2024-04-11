@@ -119,7 +119,8 @@ func _append_to_growing_update(key: StringName, value: Variant) -> void:
 	_update_button.disabled = false
 
 func _enable_3D_preview():
+		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
+		var resize_signals: Array[Signal] = [_vector_dimensions.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_update_button.pressed, top_panel.close_window_requested, top_panel.tree_exiting]
-		_preview_handler = GenericSinglePreviewHandler.new()
-		_preview_handler.start_BM_preview(_vector_dimensions.current_vector, _vector_position.current_vector)
-		_preview_handler.connect_BM_preview(_vector_position.user_updated_vector, _vector_dimensions.user_updated_vector, preview_close_signals)
+		BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions.current_vector, move_signals, resize_signals, preview_close_signals)
+

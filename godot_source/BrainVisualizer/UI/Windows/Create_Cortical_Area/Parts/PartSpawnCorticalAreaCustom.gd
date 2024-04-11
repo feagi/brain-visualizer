@@ -14,6 +14,6 @@ func _ready() -> void:
 	dimensions = $dimensions/dimensions
 
 func cortical_type_selected(_cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal]) -> void:
-	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
-	preview_handler.start_BM_preview(dimensions.current_vector, location.current_vector)
-	preview_handler.connect_BM_preview(location.user_updated_vector, dimensions.user_updated_vector, preview_close_signals)
+	var move_signals: Array[Signal] = [location.user_updated_vector]
+	var resize_signals: Array[Signal] = [dimensions.user_updated_vector]
+	BV.UI.start_cortical_area_preview(location.current_vector, dimensions.current_vector, move_signals, resize_signals, preview_close_signals)

@@ -28,8 +28,10 @@ func setup(cloning_cortical_area: BaseCorticalArea) -> void:
 	_field_2d_location.current_vector = cloning_cortical_area.coordinates_2D + OFFSET_2D
 	
 	var closing_signals: Array[Signal] = [close_window_requested]
-	_preview_holder.start_BM_preview(_cloning_cortical_area.dimensions, _field_3d_location.current_vector)
-	_preview_holder.connect_BM_preview(_field_3d_location.user_updated_vector, null_dimensions_signal,closing_signals)
+	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
+	var resize_signals: Array[Signal] = [null_dimensions_signal]
+	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _cloning_cortical_area.current_vector, move_signals, resize_signals, closing_signals)
+
 
 func _clone_pressed():
 	#TODO check for conflicting name and alert user

@@ -21,9 +21,13 @@ func setup_window(amalgamation_ID: StringName, genome_title: StringName, circuit
 	_amalgamation_ID = amalgamation_ID
 	_circuit_size = circuit_size
 	_field_title.text = genome_title
-	_preview_holder.start_BM_preview(_circuit_size, _field_3d_location.current_vector)
 	var closed_signals: Array[Signal] = [close_window_requested]
-	_preview_holder.connect_BM_preview(_field_3d_location.user_updated_vector, null_dimchange_signal, closed_signals)
+	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
+	var resize_signals: Array[Signal] = [null_dimchange_signal]
+	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
+
+	
+	
 	_setup_base_window("import_amalgamation")
 	
 func _cancel_pressed():
