@@ -7,8 +7,8 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/cortical_area_box.gd" id="5_tbl53"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://BrainVisualizer/UI/BrainMonitor/Resources/red.material" id="6_cljop"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/FullScreenControl.gd" id="7_p6uww"]
-[ext_resource type="PackedScene" path="res://3d_indicator.tscn" id="8_xvar0"]
-[ext_resource type="Script" path="res://3d_indicator.gd" id="9_xa15g"]
+[ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://BrainVisualizer/UI/BrainMonitor/3d_indicator.tscn" id="8_xvar0"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/3d_indicator.gd" id="9_xa15g"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_hqsij"]
 
