@@ -104,4 +104,11 @@ func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_c
 		new_window.import_window_details(_window_memory_states[window_name])
 	new_window.position = _window_memory_states[window_name]["position"]
 	bring_window_to_top(new_window)
+	new_window.bring_window_to_top_request.connect(_bring_window_to_top_str)
 	return new_window
+
+func _bring_window_to_top_str(window_name: StringName) -> void:
+	if !(window_name in loaded_windows):
+		push_error("WindowManager: Unknown window %s!" % window_name)
+		return
+	bring_window_to_top(loaded_windows[window_name])
