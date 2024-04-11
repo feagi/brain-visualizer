@@ -25,6 +25,9 @@ var _screen_size: Vector2
 var _selected_cortical_areas: Array[BaseCorticalArea] = []
 var _loaded_theme: Theme
 var _top_bar: TopBar
+var _circuit_builder: CorticalNodeGraph
+var _brain_monitor: Node # lol
+var _window_manager: WindowManager
 var _notification_system: NotificationSystem
 
 func _enter_tree():
@@ -35,6 +38,9 @@ func _enter_tree():
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
+	_circuit_builder = $CB_Holder/CircuitBuilder
+	_brain_monitor = $BrainMonitor
+	_window_manager = $WindowManager
 	
 	_top_bar.resized.connect(_top_bar_resized)
 	_top_bar_resized()
@@ -57,6 +63,11 @@ func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 func load_new_theme(theme: Theme) -> void:
 	_loaded_theme = theme
 	theme_changed.emit(theme)
+
+## Called from above when we are about to reset genome, may want to clear some things...
+func FEAGI_about_to_reset_genome() -> void:
+	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
+	_window_manager.force_close_all_windows()
 
 ## Updates the screensize 
 func _update_screen_size():

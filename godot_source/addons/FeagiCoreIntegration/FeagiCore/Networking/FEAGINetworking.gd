@@ -5,6 +5,7 @@ class_name FEAGINetworking
 # NOTE: For most signals, get them from http_API and websocket_API directly, no need for duplicates
 
 signal ping_recieved(time_sent_ms: int, time_recieved_ms: int)
+signal genome_reset_request_recieved()
 
 var http_API: FEAGIHTTPAPI = null
 var websocket_API: FEAGIWebSocketAPI = null
@@ -22,6 +23,8 @@ func _init():
 	websocket_API.name = "FEAGIWebSocketAPI"
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
 	websocket_API.feagi_return_ping.connect(_on_return_ping)
+	websocket_API.feagi_requesting_reset.connect(_on_recieve_genome_reset_request)
+	
 	add_child(websocket_API)
 
 # Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify
@@ -72,3 +75,6 @@ func _on_ping_timer():
 
 func _on_return_ping():
 	ping_recieved.emit(_ping_send_time_ms, Time.get_ticks_msec())
+
+func _on_recieve_genome_reset_request():
+	genome_reset_request_recieved.emit()

@@ -16,6 +16,7 @@ func _ready() -> void:
 	# Zeroth step is just to collect references and make connections
 	_UI_manager = $UIManager
 	FeagiCore.connection_state_changed.connect(_on_connection_state_change)
+	FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 	
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
@@ -30,3 +31,6 @@ func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, _pre
 		FeagiCore.CONNECTION_STATE.CONNECTED:
 			# We are connected, get other important info
 			FeagiCore.requests.get_burst_delay()
+
+func _on_genome_reloading() -> void:
+	_UI_manager.FEAGI_about_to_reset_genome

@@ -24,6 +24,7 @@ enum GENOME_LOAD_STATE {
 signal connection_state_changed(new_state: CONNECTION_STATE, previous_state: CONNECTION_STATE)
 signal genome_load_state_changed(new_state: GENOME_LOAD_STATE, prev_state: GENOME_LOAD_STATE)
 signal delay_between_bursts_updated(new_delay: float)
+signal about_to_reload_genome()
 
 var connection_state: CONNECTION_STATE: # This refers primarily to the http api right now
 	get: return _connection_state # No setter
@@ -51,6 +52,7 @@ func _enter_tree():
 	if network ==  null:
 		network = FEAGINetworking.new()
 		network.name = "FEAGINetworking"
+		network.genome_reset_request_recieved.connect(_recieve_genome_reset_request)
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
 	requests = FEAGIRequests.new()
@@ -245,5 +247,8 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 					push_warning("FEAGICORE: FEAGI has returned an error!")
 					disconnect_from_FEAGI() #?
 
+func _recieve_genome_reset_request():
+	about_to_reload_genome.emit()
+	requests.reload_genome()
 
 #endregion

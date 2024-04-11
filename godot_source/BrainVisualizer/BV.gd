@@ -22,3 +22,4 @@ var NOTIF: NotificationSystem:
 
 var WM: WindowManager:
 	get: return get_node("/root/BrainVisualizer/UIManager/WindowManager") as WindowManager
+
