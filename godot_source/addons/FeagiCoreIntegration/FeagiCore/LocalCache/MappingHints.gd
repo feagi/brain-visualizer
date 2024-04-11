@@ -101,16 +101,16 @@ static func get_allowed_morphologies_to_map_toward(source_cortical_area: BaseCor
 		if destination_type in MORPHOLOGY_RESTRICTIONS[source_type]:
 			# restriction mapping for specific source found for specific destination
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][destination_type])
-			return  FeagiCore.feagi_local_cache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+			return  FeagiCore.feagi_local_cache.morphologies.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[source_type][BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN])
-			return  FeagiCore.feagi_local_cache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+			return  FeagiCore.feagi_local_cache.morphologies.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 	else:
 		# Source type has no specific mapping
 		if destination_type in MORPHOLOGY_RESTRICTIONS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN]:
 			# Destination does have a restriction
 			acceptable_morphologies_str.assign(MORPHOLOGY_RESTRICTIONS[BaseCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN][destination_type])
-			return  FeagiCore.feagi_local_cache.morphology_cache.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
+			return  FeagiCore.feagi_local_cache.morphologies.attempt_to_get_morphology_arr_from_string_name_arr(acceptable_morphologies_str)
 		else:
 			# No mapping restriction found at all
 			var acceptable_morphologies: Array[BaseMorphology] = []
