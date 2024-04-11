@@ -5,11 +5,6 @@ class_name FEAGIRequests
 
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:
-	
-	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
-		push_error("FEAGI Requests: Please reload the genome from core, not from here directly, to avoid issues")
-		return FeagiRequestOutput.requirement_fail("INCORRECT_LOAD")
-	
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
