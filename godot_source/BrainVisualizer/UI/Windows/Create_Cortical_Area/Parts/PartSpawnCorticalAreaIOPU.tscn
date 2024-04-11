@@ -1,10 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://craawda1yun5y"]
+[gd_scene load_steps=5 format=3 uid="uid://craawda1yun5y"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_5oy5r"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_y0ej3"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingControl.gd" id="5_b3mfs"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
@@ -19,7 +17,6 @@ layout_mode = 2
 [node name="Label" type="Label" parent="input_output_type"]
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("2_5oy5r")
 
 [node name="TemplateDropDown" type="OptionButton" parent="input_output_type"]
 custom_minimum_size = Vector2(310, 0)
@@ -34,7 +31,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Choose a location:"
-script = ExtResource("2_5oy5r")
 
 [node name="location" parent="location" instance=ExtResource("6_yjcxe")]
 layout_mode = 2
@@ -43,13 +39,11 @@ initial_vector = Vector3i(40, 0, 0)
 [node name="Gap" type="Control" parent="."]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
-script = ExtResource("5_b3mfs")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 2
 text = "Advanced"
 horizontal_alignment = 1
-script = ExtResource("2_5oy5r")
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -65,7 +59,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Custom Name:"
-script = ExtResource("2_5oy5r")
 
 [node name="name" type="LineEdit" parent="PanelContainer/VBoxContainer/name"]
 custom_minimum_size = Vector2(310, 0)
@@ -79,7 +72,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Set Channel Count:"
-script = ExtResource("2_5oy5r")
 
 [node name="channel_count" type="SpinBox" parent="PanelContainer/VBoxContainer/channel_count"]
 custom_minimum_size = Vector2(310, 0)
@@ -96,7 +88,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Choose Dimensions:"
-script = ExtResource("2_5oy5r")
 
 [node name="dimensions" parent="PanelContainer/VBoxContainer/dimensions" instance=ExtResource("6_yjcxe")]
 layout_mode = 2

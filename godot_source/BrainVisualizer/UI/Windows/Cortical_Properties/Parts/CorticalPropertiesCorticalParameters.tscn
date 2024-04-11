@@ -1,13 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://506fv2gitw7k"]
+[gd_scene load_steps=5 format=3 uid="uid://506fv2gitw7k"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalParameters.gd" id="1_cw12e"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_2t536"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_possm"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_yn385"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_8p7n5"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextButton.gd" id="5_58ops"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingControl.gd" id="6_22gr1"]
-
 
 [node name="CorticalPropertiesCorticalParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -28,7 +24,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cortical Name"
-script = ExtResource("2_possm")
 
 [node name="Cortical_Name" type="LineEdit" parent="Row_Cortical_Name"]
 custom_minimum_size = Vector2(150, 0)
@@ -42,7 +37,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cortical ID"
-script = ExtResource("2_possm")
 
 [node name="Cortical_ID" type="LineEdit" parent="Row_Cortical_ID"]
 custom_minimum_size = Vector2(150, 0)
@@ -58,7 +52,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cortical Type"
-script = ExtResource("2_possm")
 
 [node name="Cortical_Type" type="LineEdit" parent="Row_Cortical_Type"]
 custom_minimum_size = Vector2(150, 0)
@@ -75,7 +68,6 @@ tooltip_text = "Number of neurons within each voxel"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Voxel Neuron Density"
-script = ExtResource("2_possm")
 
 [node name="Voxel_Neuron_Density" type="LineEdit" parent="Row_Voxel_Neuron_Density"]
 custom_minimum_size = Vector2(150, 0)
@@ -91,7 +83,6 @@ tooltip_text = "The rate of success in accepting incoming synapses"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Synaptic Attractivity"
-script = ExtResource("2_possm")
 
 [node name="Synaptic_Attractivity" type="LineEdit" parent="Synaptic_Attractivity"]
 custom_minimum_size = Vector2(150, 0)
@@ -102,7 +93,6 @@ script = ExtResource("3_yn385")
 [node name="Label_Dimensions" type="Label" parent="."]
 layout_mode = 2
 text = "Dimension"
-script = ExtResource("2_possm")
 
 [node name="Cortical_Size" parent="." instance=ExtResource("4_8p7n5")]
 layout_mode = 2
@@ -116,7 +106,6 @@ int_z_min = 1
 [node name="Label_Position" type="Label" parent="."]
 layout_mode = 2
 text = "Position"
-script = ExtResource("2_possm")
 
 [node name="Cortical_Position" parent="." instance=ExtResource("4_8p7n5")]
 layout_mode = 2
@@ -124,16 +113,9 @@ layout_mode = 2
 [node name="gap" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
-script = ExtResource("6_22gr1")
 
 [node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
-script = ExtResource("5_58ops")
-
-[node name="gap2" type="Control" parent="."]
-custom_minimum_size = Vector2(0, 5)
-layout_mode = 2
-script = ExtResource("6_22gr1")

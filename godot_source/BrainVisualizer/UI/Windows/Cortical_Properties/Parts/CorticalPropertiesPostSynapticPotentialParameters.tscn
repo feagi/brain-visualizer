@@ -1,14 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://de7cguh4dnbxg"]
+[gd_scene load_steps=6 format=3 uid="uid://de7cguh4dnbxg"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesPostSynapticPotentialParameters.gd" id="1_srbdr"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_hlih5"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="2_r401c"]
 [ext_resource type="Texture2D" uid="uid://m0g8f4fqi1wb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="3_6cukn"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_mgt73"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextButton.gd" id="4_fef38"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="4_uoy01"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingControl.gd" id="5_x55f0"]
-
 
 [node name="CorticalPropertiesPostSynapticPotentialParameters" type="VBoxContainer"]
 anchors_preset = 15
@@ -30,7 +26,6 @@ tooltip_text = "The amount of PSP that a neuron synapse will degrade every time 
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PSP Uniformity"
-script = ExtResource("2_hlih5")
 
 [node name="PSP_Uniformity" type="TextureButton" parent="PSP_Uniformity"]
 custom_minimum_size = Vector2(60, 0)
@@ -48,7 +43,6 @@ tooltip_text = "Overwrites the Post Synaptic Potential (PSP) of the cortical are
 layout_mode = 2
 size_flags_horizontal = 3
 text = "MP Driven PSP"
-script = ExtResource("2_hlih5")
 
 [node name="MP_Driven_PSP" type="TextureButton" parent="MP_Driven_PSP"]
 custom_minimum_size = Vector2(60, 0)
@@ -66,7 +60,6 @@ tooltip_text = "The mount of membrane potential increase each neuron can have on
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Post-Synaptic Potential (PSP)"
-script = ExtResource("2_hlih5")
 
 [node name="Post_Synaptic_Potential" type="LineEdit" parent="Post_Synaptic_Potential"]
 layout_mode = 2
@@ -81,7 +74,6 @@ tooltip_text = "The max value the Post Synaptic Potential can grow to"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PSP Max"
-script = ExtResource("2_hlih5")
 
 [node name="PSP_Max" type="LineEdit" parent="PSP_Max"]
 layout_mode = 2
@@ -96,7 +88,6 @@ tooltip_text = "The number of burst where the neuron cannot fire after the Conse
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Degeneracy Constant"
-script = ExtResource("2_hlih5")
 
 [node name="Degeneracy_Constant" type="LineEdit" parent="Degeneracy_Constant"]
 layout_mode = 2
@@ -106,19 +97,12 @@ script = ExtResource("2_r401c")
 [node name="GAP" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
-script = ExtResource("5_x55f0")
 
 [node name="Update_Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
-script = ExtResource("4_fef38")
-
-[node name="GAP2" type="Control" parent="."]
-custom_minimum_size = Vector2(0, 5)
-layout_mode = 2
-script = ExtResource("5_x55f0")
 
 [connection signal="pressed" from="PSP_Uniformity/PSP_Uniformity" to="." method="_enable_update_button"]
 [connection signal="toggled" from="PSP_Uniformity/PSP_Uniformity" to="." method="user_request_PSP_Uniforimity"]

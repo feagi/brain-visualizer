@@ -1,12 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://cya0u5xbn7bro"]
+[gd_scene load_steps=6 format=3 uid="uid://cya0u5xbn7bro"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsable.gd" id="1_sojnc"]
 [ext_resource type="Texture2D" uid="uid://ccyrqv02uu5qv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="2_3wwet"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_6wdfc"]
 [ext_resource type="Texture2D" uid="uid://c28mn3dtl5dxu" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png" id="3_vtgcq"]
 [ext_resource type="Texture2D" uid="uid://c8cpoingyiyfi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png" id="4_owng8"]
 [ext_resource type="Texture2D" uid="uid://c2es3pc78utla" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_D.png" id="5_c7usd"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextureButton.gd" id="7_valx5"]
 
 [node name="Section" type="PanelContainer"]
 offset_right = 111.0
@@ -27,7 +25,6 @@ size_flags_vertical = 0
 layout_mode = 2
 size_flags_horizontal = 3
 text = "SECTION"
-script = ExtResource("2_6wdfc")
 
 [node name="Collapsible_Toggle" type="TextureButton" parent="VerticalCollapsible/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -40,7 +37,6 @@ texture_hover = ExtResource("4_owng8")
 texture_disabled = ExtResource("5_c7usd")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("7_valx5")
 
 [node name="PanelContainer" type="PanelContainer" parent="VerticalCollapsible"]
 layout_mode = 2

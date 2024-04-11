@@ -1,19 +1,14 @@
-[gd_scene load_steps=14 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" uid="uid://cas8w6tbsvf0l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_ad4rt"]
 [ext_resource type="Texture2D" uid="uid://c7titv7o7iu41" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://BrainVisualizer/UI/GenericElements/Scroll/Morphology_List/MorphologyScroll.tscn" id="3_ftgka"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="3_s3yxb"]
 [ext_resource type="Texture2D" uid="uid://bs4u3x8y64aic" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="4_d1vcp"]
-[ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="4_xe1wk"]
-[ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="5_lixjw"]
 [ext_resource type="Texture2D" uid="uid://b32s4sgq2hx1v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextureButton.gd" id="8_tf1s3"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingControl.gd" id="9_a7815"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextButton.gd" id="13_8e7di"]
-
+[ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="8_i85u6"]
+[ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="9_fi7li"]
 
 [node name="WindowQuickConnect" type="VBoxContainer"]
 offset_right = 126.0
@@ -47,7 +42,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "1. Please Select A Source Area..."
-script = ExtResource("3_s3yxb")
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 visible = false
@@ -61,12 +55,10 @@ texture_hover = ExtResource("4_d1vcp")
 texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("8_tf1s3")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
-script = ExtResource("9_a7815")
 
 [node name="step2" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
@@ -80,7 +72,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "2. Please Select A Destination Area..."
-script = ExtResource("3_s3yxb")
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 visible = false
@@ -94,12 +85,10 @@ texture_hover = ExtResource("4_d1vcp")
 texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("8_tf1s3")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
-script = ExtResource("9_a7815")
 
 [node name="step3" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
@@ -113,7 +102,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3. Please Select A Morphology..."
-script = ExtResource("3_s3yxb")
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 visible = false
@@ -127,12 +115,10 @@ texture_hover = ExtResource("4_d1vcp")
 texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("8_tf1s3")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
-script = ExtResource("9_a7815")
 
 [node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
@@ -145,23 +131,21 @@ layout_mode = 2
 custom_minimum_size = Vector2(250, 300)
 layout_mode = 2
 
-[node name="SmartMorphologyView" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("4_xe1wk")]
+[node name="SmartMorphologyView" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("8_i85u6")]
 layout_mode = 2
 editing_allowed_from_this_window = false
 
-[node name="MorphologyGenericDetails" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("5_lixjw")]
+[node name="MorphologyGenericDetails" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("9_fi7li")]
 layout_mode = 2
 
 [node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
-script = ExtResource("9_a7815")
 
 [node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 disabled = true
 text = "Establish the Connection"
-script = ExtResource("13_8e7di")
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]

@@ -1,10 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://vm8thgnbjojc"]
+[gd_scene load_steps=4 format=3 uid="uid://vm8thgnbjojc"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.gd" id="1_ita8s"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_k6lwm"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_rybub"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_wwnb4"]
-
 
 [node name="Definition_Custom" type="VBoxContainer"]
 offset_right = 466.0
@@ -19,7 +17,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Select a name:"
-script = ExtResource("2_rybub")
 
 [node name="name" type="LineEdit" parent="name"]
 custom_minimum_size = Vector2(310, 0)
@@ -33,7 +30,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Select  dimensions: "
-script = ExtResource("2_rybub")
 
 [node name="dimensions" parent="dimensions" instance=ExtResource("3_wwnb4")]
 layout_mode = 2
@@ -52,7 +48,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Choose a location:"
-script = ExtResource("2_rybub")
 
 [node name="location" parent="location" instance=ExtResource("3_wwnb4")]
 layout_mode = 2

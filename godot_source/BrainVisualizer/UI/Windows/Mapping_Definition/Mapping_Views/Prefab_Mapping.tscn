@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://2mmvclyd2pve"]
+[gd_scene load_steps=13 format=3 uid="uid://2mmvclyd2pve"]
 
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="1_1uw6c"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.gd" id="1_tf7sq"]
@@ -9,13 +9,9 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_e7x6h"]
 [ext_resource type="Texture2D" uid="uid://c7titv7o7iu41" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="6_wetbg"]
 [ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="7_6bygk"]
-[ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="7_qk6mv"]
 [ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="8_bshfw"]
-[ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="8_qc3sj"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingTextureButton.gd" id="9_c4488"]
 [ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="9_civpw"]
 [ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="10_yquya"]
-
 
 [node name="Prefab_Mapping" type="HBoxContainer"]
 offset_right = 1150.0
@@ -87,11 +83,10 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 texture_normal = ExtResource("5_dnfxt")
 texture_pressed = ExtResource("6_wetbg")
-texture_hover = ExtResource("7_qk6mv")
-texture_disabled = ExtResource("8_qc3sj")
+texture_hover = ExtResource("9_civpw")
+texture_disabled = ExtResource("10_yquya")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("9_c4488")
 
 [node name="remove" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
@@ -102,7 +97,6 @@ texture_hover = ExtResource("9_civpw")
 texture_disabled = ExtResource("10_yquya")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("9_c4488")
 
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]

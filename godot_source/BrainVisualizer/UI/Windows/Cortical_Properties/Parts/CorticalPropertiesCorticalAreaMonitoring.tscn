@@ -1,10 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://ckkgl10utu0i8"]
+[gd_scene load_steps=4 format=3 uid="uid://ckkgl10utu0i8"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesCorticalAreaMonitoring.gd" id="1_ofec4"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/UIScaling/ScalingLabel.gd" id="2_w3lfj"]
 [ext_resource type="Texture2D" uid="uid://m0g8f4fqi1wb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="3_008v8"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="4_gi7tw"]
-
 
 [node name="CorticalPropertiesCorticalMonitoring" type="VBoxContainer"]
 anchors_preset = 15
@@ -21,7 +19,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Membrane Monitoring"
-script = ExtResource("2_w3lfj")
 
 [node name="Membrane" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(60, 0)
@@ -38,7 +35,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Post-Synaptic  Monitoring"
-script = ExtResource("2_w3lfj")
 
 [node name="PostSynaptic" type="TextureButton" parent="HBoxContainer2"]
 custom_minimum_size = Vector2(60, 0)

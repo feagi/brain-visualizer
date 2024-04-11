@@ -1,4 +1,4 @@
-extends ScalingTextureButton
+extends TextureButton
 class_name ToggleButton
 
 const TEX_DISABLED_ON: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png")
@@ -8,7 +8,6 @@ const TEX_ENABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResour
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	super()
 	toggle_mode = true
 	toggled.connect(_set_enable_toggle)
 	_set_enable_toggle(button_pressed)
