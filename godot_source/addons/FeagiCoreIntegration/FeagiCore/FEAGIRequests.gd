@@ -122,8 +122,11 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to delete cortical area %s that is not found in cache!" % checking_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
 	
+	print()
+	
 	# Define Request
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_GE_corticalArea)
+	var dict_to_send: Dictionary = {"cortical_id": checking_cortical_ID}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_corticalArea_corticalAreaProperties, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -382,7 +385,7 @@ func mass_move_cortical_areas_2D(cortical_IDs_mapped_to_vector2i_positions: Dict
 	var dict_to_send: Dictionary = {}
 	for move_ID in cortical_IDs_mapped_to_vector2i_positions.keys():
 		dict_to_send[move_ID] = FEAGIUtils.vector2i_to_array(cortical_IDs_mapped_to_vector2i_positions[move_ID])
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_GE_coord2D, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_coord2d, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -391,8 +394,8 @@ func mass_move_cortical_areas_2D(cortical_IDs_mapped_to_vector2i_positions: Dict
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully moved %d cortical areas!" % len(response))
-	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_mass_update_2D_positions(response)
+	print("FEAGI REQUEST: Successfully moved %d cortical areas!" % len(cortical_IDs_mapped_to_vector2i_positions))
+	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_mass_update_2D_positions(cortical_IDs_mapped_to_vector2i_positions)
 	return FEAGI_response_data
 
 
@@ -459,7 +462,7 @@ func get_morphology_usage(morphology_name: StringName) -> FeagiRequestOutput:
 	
 	# Define Request
 	var dict_to_send: Dictionary = {"morphology_name": morphology_name}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.GET_GE_morphologyUsage, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_morphology_morphologyUsage, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -469,7 +472,9 @@ func get_morphology_usage(morphology_name: StringName) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	var response: Array = FEAGI_response_data.decode_response_as_array()
 	print("FEAGI REQUEST: Successfully retrieved morphology usage of %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_update_usage(response)
+	var output: Array[Array] = [] # Why can't godot figure out these types?
+	output.assign(response)
+	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_update_usage(output)
 	return FEAGI_response_data
 
 
@@ -494,7 +499,7 @@ func add_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]
 			"vectors": FEAGIUtils.vector3i_array_to_array_of_arrays(vectors)
 		}
 	}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_GE_morphology, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_morphology, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -502,9 +507,8 @@ func add_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_morphology_by_dict(response)
+	FeagiCore.feagi_local_cache.morphologies.add_defined_vector_morphology(morphology_name, vectors)
 	return FEAGI_response_data
 	
 	
@@ -524,12 +528,12 @@ func add_pattern_morphology(morphology_name: StringName, patterns: Array[Pattern
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"morphology_name": morphology_name,
-		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.VECTORS),
+		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.PATTERNS),
 		"morphology_parameters": {
 			"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
 		}
 	}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_GE_morphology, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_morphology, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -537,9 +541,8 @@ func add_pattern_morphology(morphology_name: StringName, patterns: Array[Pattern
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_morphology_by_dict(response)
+	FeagiCore.feagi_local_cache.morphologies.add_defined_pattern_morphology(morphology_name, patterns)
 	return FEAGI_response_data
 
 
@@ -562,7 +565,7 @@ func add_composite_morphology(morphology_name: StringName, source_seed: Vector3i
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"morphology_name": morphology_name,
-		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.VECTORS),
+		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.COMPOSITE),
 		"morphology_parameters": {
 			"composite": {
 				"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
@@ -571,7 +574,7 @@ func add_composite_morphology(morphology_name: StringName, source_seed: Vector3i
 			}
 		}
 	}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_GE_morphology, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_morphology, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -579,9 +582,8 @@ func add_composite_morphology(morphology_name: StringName, source_seed: Vector3i
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_morphology_by_dict(response)
+	print("FEAGI REQUEST: Successfully added composite morphology of name %s" % morphology_name)
+	FeagiCore.feagi_local_cache.morphologies.add_defined_composite_morphology(morphology_name, source_seed, source_pattern, mapped_morphology_name)
 	return FEAGI_response_data
 
 
@@ -797,7 +799,7 @@ func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_a
 		"dst_cortical_area": destination_cortical_ID,
 		"mapping_string": MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
 		}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_GE_mappingProperties, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_mappingProperties, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -818,6 +820,7 @@ func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_a
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
 func append_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:
 	var current_mappings: Array[MappingProperty] = source_area.get_mappings_to(destination_area).mappings
+	current_mappings.append(mapping)
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, current_mappings)
 	return return_data
 

@@ -1,9 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://cn63wh2rl81w2"]
+[gd_scene load_steps=2 format=3 uid="uid://cn63wh2rl81w2"]
 
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_pd2t0"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_uymaf"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="3_5e8rs"]
-
 
 [node name="Vector3Spinbox" type="BoxContainer"]
 
@@ -11,11 +8,6 @@
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_pd2t0")
 text = "X "
-script = ExtResource("2_uymaf")
-
-[node name="SpacerX" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("3_5e8rs")
 
 [node name="IntX" type="SpinBox" parent="."]
 layout_mode = 2
@@ -27,11 +19,6 @@ alignment = 1
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_pd2t0")
 text = "Y "
-script = ExtResource("2_uymaf")
-
-[node name="SpacerY" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("3_5e8rs")
 
 [node name="IntY" type="SpinBox" parent="."]
 layout_mode = 2
@@ -43,11 +30,6 @@ alignment = 1
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_pd2t0")
 text = "Z "
-script = ExtResource("2_uymaf")
-
-[node name="SpacerZ" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("3_5e8rs")
 
 [node name="IntZ" type="SpinBox" parent="."]
 layout_mode = 2

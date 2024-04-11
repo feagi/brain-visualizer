@@ -10,6 +10,7 @@ var _mapping_properties: MappingProperties
 func _ready() -> void:
 	_button = $Button
 	_parent_node = get_parent()
+	_button.pressed.connect(_on_press)
 
 func setup(mapping_properties: MappingProperties) -> void:
 	_mapping_properties = mapping_properties
@@ -23,3 +24,5 @@ func _mapping_update(mapping_properties: MappingProperties) -> void:
 	# currently nothing to change if mapping is merely edited
 	pass
 
+func _on_press() -> void:
+	BV.WM.spawn_edit_mappings(_parent_node.cortical_area_ref, _parent_node.cortical_area_ref)

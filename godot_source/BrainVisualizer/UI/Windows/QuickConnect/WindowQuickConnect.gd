@@ -9,9 +9,9 @@ enum POSSIBLE_STATES {
 	IDLE
 }
 
-@export var style_incomplete: StyleBoxFlat
-@export var style_waiting: StyleBoxFlat
-@export var style_complete: StyleBoxFlat
+#@export var style_incomplete: StyleBoxFlat
+#@export var style_waiting: StyleBoxFlat
+#@export var style_complete: StyleBoxFlat
 
 var current_state: POSSIBLE_STATES:
 	get: return _current_state
@@ -59,9 +59,9 @@ func _ready() -> void:
 	
 	BV.UI.user_selected_single_cortical_area.connect(on_user_select_cortical_area)
 	
-	_step1_panel.add_theme_stylebox_override("panel", style_incomplete)
-	_step2_panel.add_theme_stylebox_override("panel", style_incomplete)
-	_step3_panel.add_theme_stylebox_override("panel", style_incomplete)
+	_step1_panel.theme_type_variation = "PanelContainer_QC_incomplete"
+	_step2_panel.theme_type_variation = "PanelContainer_QC_incomplete"
+	_step3_panel.theme_type_variation = "PanelContainer_QC_incomplete"
 	current_state = POSSIBLE_STATES.SOURCE
 
 func setup(cortical_source_if_picked: BaseCorticalArea) -> void:
@@ -120,20 +120,20 @@ func _setting_source() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Source Area...")
 	_source = null
 	_step1_label.text = "Please Select A Source Area..."
-	_step1_panel.add_theme_stylebox_override("panel", style_waiting)
+	_step1_panel.theme_type_variation = "PanelContainer_QC_waiting"
 
 func _setting_destination() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Destination Area...")
 	_destination = null
 	_step2_label.text = "Please Select A Destination Area..."
-	_step2_panel.add_theme_stylebox_override("panel", style_waiting)
+	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Morphology...")
 	var mapping_hint: MappingHints = MappingHints.new(_source, _destination)
 	_selected_morphology = null
 	_step3_label.text = "Please Select A Morphology..."
-	_step3_panel.add_theme_stylebox_override("panel", style_waiting)
+	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	if mapping_hint.is_morphologies_restricted:
 		_step3_scroll.set_morphologies(mapping_hint.restricted_morphologies)
 	_step3_scroll.select_morphology(mapping_hint.default_morphology)
@@ -142,7 +142,7 @@ func _setting_morphology() -> void:
 func _set_source(cortical_area: BaseCorticalArea) -> void:
 	_source = cortical_area
 	_step1_label.text = "Selected Source Area: [" + cortical_area.name + "]"
-	_step1_panel.add_theme_stylebox_override("panel", style_complete)
+	_step1_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	if !_finished_selecting:
 		_step2_panel.visible = true
 		current_state = POSSIBLE_STATES.DESTINATION
@@ -153,7 +153,7 @@ func _set_source(cortical_area: BaseCorticalArea) -> void:
 func _set_destination(cortical_area: BaseCorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = "Selected Destination Area: [" + cortical_area.name + "]"
-	_step2_panel.add_theme_stylebox_override("panel", style_complete)
+	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:
 		_step3_panel.visible = true
@@ -166,7 +166,7 @@ func _set_destination(cortical_area: BaseCorticalArea) -> void:
 func _set_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
 	_step3_label.text = "Selected Morphology: " + morphology.name
-	_step3_panel.add_theme_stylebox_override("panel", style_complete)
+	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	_step3_morphology_view.load_morphology(morphology)
 	_step3_morphology_details.load_morphology(morphology)
 	_finished_selecting = true

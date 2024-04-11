@@ -66,6 +66,8 @@ func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
 	# cortical area was selected, make sure its selected in both sides
 	if "quick_connect" in loaded_windows:
 		return # dont open this window if quick connect is open!
+	if "left_bar" in loaded_windows:
+		spawn_cortical_properties(cortical_area) # if cortical properties is open, refresh it
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
 	quick_cortical_menu.setup(cortical_area)
 	

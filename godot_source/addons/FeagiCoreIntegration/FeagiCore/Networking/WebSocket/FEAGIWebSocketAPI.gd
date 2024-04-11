@@ -10,6 +10,7 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping"
 signal socket_state_changed(state: WebSocketPeer.State)
 signal feagi_return_ping()
 signal feagi_requesting_reset()
+signal feagi_return_other(data: Variant)
 #TODO: As we move more functionality here, we need a generic event signal, or an equivilant to [FEAGIHTTPResponses]
 
 var _cache_websocket_data: PackedByteArray # outside to void reallocation penalties
@@ -35,11 +36,11 @@ func _process(delta: float):
 				else:
 					# assume its visualization data
 					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
-					if temp ==  null:
-						return
-					# TODO send up data
+					#if temp ==  null:
+					#	return
+					feagi_return_other.emit(temp)
 					
-					#FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii()))
+
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
 			pass

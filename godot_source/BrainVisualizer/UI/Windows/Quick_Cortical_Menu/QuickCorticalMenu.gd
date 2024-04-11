@@ -31,34 +31,34 @@ func setup(cortical_area: BaseCorticalArea) -> void:
 	
 
 func _button_details() -> void:
-	###VisConfig.UI_manager.window_manager.spawn_cortical_properties(_cortical_area)
+	BV.WM.spawn_cortical_properties(_cortical_area)
 	close_window()
 
 func _button_quick_connect() -> void:
-	###VisConfig.UI_manager.window_manager.spawn_quick_connect(_cortical_area)
+	BV.WM.spawn_quick_connect(_cortical_area)
 	close_window()
 
 func _button_clone() -> void:
-	###VisConfig.UI_manager.window_manager.spawn_clone_cortical(_cortical_area)
+	BV.WM.spawn_clone_cortical(_cortical_area)
 	close_window()
 
 func _button_delete() -> void:
-###	var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
-###		"No"
-###		)
-###	var yes_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_custom_button_definition(
-###		"Yes",
-###		FeagiRequests.delete_cortical_area,
-###		[_cortical_area.cortical_ID]
-###	)
-###	var button_array: Array[ConfigurableButtonDefinition] = [no_button, yes_button]
-###
-###	var delete_confirmation: ConfigurablePopupDefinition = ConfigurablePopupDefinition.new(
-###		"Confirm Deletion", 
-###		"Are you sure you wish to delete cortical area %s?" % _cortical_area.name,
-###		button_array
-###		)
-###	VisConfig.UI_manager.window_manager.spawn_popup(delete_confirmation)
+	var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
+		"No"
+		)
+	var yes_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_custom_button_definition(
+		"Yes",
+		FeagiCore.requests.delete_cortical_area,
+		[_cortical_area.cortical_ID]
+	)
+	var button_array: Array[ConfigurableButtonDefinition] = [no_button, yes_button]
+
+	var delete_confirmation: ConfigurablePopupDefinition = ConfigurablePopupDefinition.new(
+		"Confirm Deletion", 
+		"Are you sure you wish to delete cortical area %s?" % _cortical_area.name,
+		button_array
+		)
+	BV.WM.spawn_popup(delete_confirmation)
 
 
 	

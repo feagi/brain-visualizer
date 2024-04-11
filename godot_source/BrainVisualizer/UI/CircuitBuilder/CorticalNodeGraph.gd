@@ -20,6 +20,7 @@ var _moved_cortical_areas_buffer: Dictionary = {}
 
 func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(feagi_spawn_single_cortical_node)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(feagi_deleted_single_cortical_node)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_change_state)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 
@@ -43,7 +44,8 @@ func set_outlining_state_of_connection(source_area: BaseCorticalArea, destinatio
 	
 	var line_name: StringName = InterCorticalConnection.generate_name(source_area.cortical_ID, destination_area.cortical_ID)
 	if !(line_name in connections.keys()):
-		push_warning("Unable to find connection line to set outlining! Skipping!")
+		if source_area.cortical_ID != destination_area.cortical_ID: # If the source and destination are the same, then its a recursive connection (IE no line), so this is expected
+			push_warning("Unable to find connection line to set outlining! Skipping!")
 		return
 	var line: InterCorticalConnection = connections[line_name]
 	line.toggle_outlining(highlighting)
@@ -66,7 +68,6 @@ func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> Cortic
 	
 	return cortical_node
 
-### TODO connect from base
 ## Deletes a cortical Node, should only be called via FEAGI
 func feagi_deleted_single_cortical_node(cortical_area: BaseCorticalArea) -> void:
 	if cortical_area.cortical_ID not in cortical_nodes.keys():
@@ -86,15 +87,12 @@ func _cortical_node_moved(node: CorticalNode, new_position: Vector2i) -> void:
 ## When the move timer goes off, send all the buffered cortical areas with their new positions to feagi
 func _move_timer_finished():
 	print("Sending change of 2D positions for %d cortical area(s)" % len(_moved_cortical_areas_buffer.keys()))
-	### TODO
-	#FeagiRequests.request_mass_change_2D_positions(_moved_cortical_areas_buffer)
+	FeagiCore.requests.mass_move_cortical_areas_2D(_moved_cortical_areas_buffer)
 	_moved_cortical_areas_buffer = {}
 
 ## User requested a connection. Note that this function is going to be redone in the graph edit refactor
 func _user_request_connection(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
-	### TODO
-	#VisConfig.UI_manager.window_manager.spawn_edit_mappings(FeagiCache.cortical_areas_cache.cortical_areas[from_cortical_ID], FeagiCache.cortical_areas_cache.cortical_areas[to_cortical_ID], true)
-	pass
+	BV.WM.spawn_edit_mappings(FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_cortical_ID], FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_cortical_ID], false) #TODO talk to nadji, this being true makes no sense
 
 func _on_genome_change_state(new_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE):
 	if new_state != FeagiCore.GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:

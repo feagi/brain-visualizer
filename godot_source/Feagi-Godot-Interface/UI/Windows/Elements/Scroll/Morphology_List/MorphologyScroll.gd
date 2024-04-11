@@ -5,6 +5,7 @@ class_name MorphologyScroll
 signal morphology_selected(morphology:BaseMorphology) # Mostly  proxy of item_selected, but also will emit NullMorphology when no morphology is selected
 
 @export var load_morphologies_on_load: bool = true
+@export var refresh_morphology_from_FEAGI_on_select = true
 
 var selected_morphology:BaseMorphology:
 	get: return _selected_morphology
@@ -32,15 +33,19 @@ func set_morphologies(morphologies: Array[BaseMorphology]) -> void:
 		append_single_item(morphology, morphology.name)
 
 ## Manually set the selected morphology through code. Causes the button to emit the selected signal
-func select_morphology(morphology:BaseMorphology) -> void:
+func select_morphology(morphology: BaseMorphology) -> void:
 	# This is essentially a pointless proxy, only existing for convinient naming purposes
 	set_selected(morphology)
 	_selected_morphology = morphology
+	if refresh_morphology_from_FEAGI_on_select:
+		FeagiCore.requests.get_morphology(morphology.name)
 
 ## User selected morpholgy from the list
 func _morphology_button_pressed(morphology_selection:BaseMorphology) -> void:
 	_selected_morphology = morphology_selection
 	morphology_selected.emit(morphology_selection)
+	if refresh_morphology_from_FEAGI_on_select:
+		FeagiCore.requests.get_morphology(morphology_selection.name)
 
 func _respond_to_deleted_morphology(morphology:BaseMorphology) -> void:
 	remove_by_ID(morphology)
@@ -50,4 +55,5 @@ func _respond_to_deleted_morphology(morphology:BaseMorphology) -> void:
 
 func _respond_to_added_morphology(morphology:BaseMorphology) -> void:
 	append_single_item(morphology, morphology.name)
+
 

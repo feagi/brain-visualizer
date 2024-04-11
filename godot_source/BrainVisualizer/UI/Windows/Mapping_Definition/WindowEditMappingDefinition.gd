@@ -7,7 +7,7 @@ var _destination_area: BaseCorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
 var _general_mapping_details: GeneralMappingEditor
-var _spawn_default_mapping_if_applicable_on_spawn
+var _spawn_default_mapping_if_applicable_on_spawn: bool
 
 func _ready() -> void:
 	super()

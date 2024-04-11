@@ -3,8 +3,7 @@ extends Node3D
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	###FeagiRequests.feagi_interface.FEAGI_websocket.socket_state_changed.connect(toggle_between_states)
-	pass
+	FeagiCore.network.websocket_API.socket_state_changed.connect(toggle_between_states)
 
 func toggle_between_states(connection_state: WebSocketPeer.State) -> void:
 	match(connection_state):

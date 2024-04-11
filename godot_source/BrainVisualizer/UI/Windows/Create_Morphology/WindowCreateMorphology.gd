@@ -93,12 +93,12 @@ func _on_create_morphology_pressed():
 
 	if _morphology_name.text == "":
 		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("Missing Name", "Please define a name for your morphology!")
-		###VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+		BV.WM.spawn_popup(popup_definition)
 		return
 	
 	if _morphology_name.text in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
 		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("Existing Name", "A morphology with this name already exists!!")
-		###VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+		BV.WM.spawn_popup(popup_definition)
 		return
 	
 
@@ -106,13 +106,13 @@ func _on_create_morphology_pressed():
 		BaseMorphology.MORPHOLOGY_TYPE.VECTORS:
 			if _vectors.get_number_rows() == 0:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Vectors", "Please define at least one vector for your morphology!")
-				###VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				BV.WM.spawn_popup(popup_definition)
 				return
 			FeagiCore.requests.add_vector_morphology(_morphology_name.text, _vectors.get_vector_array())
 		BaseMorphology.MORPHOLOGY_TYPE.PATTERNS:
 			if _patterns.get_number_rows() == 0:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Patterns", "Please define at least one pattern for your morphology!")
-				###VisConfig.UI_manager.window_manager.spawn_popup(popup_definition)
+				BV.WM.spawn_popup(popup_definition)
 				return
 			FeagiCore.requests.add_pattern_morphology(_morphology_name.text, _patterns.get_pattern_pair_array())
 	

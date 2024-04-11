@@ -1,18 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://b63y4prhuagv7"]
-
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="1_sbm4d"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_h1r4m"]
+[gd_scene format=3 uid="uid://b63y4prhuagv7"]
 
 [node name="Vector3Spinbox" type="BoxContainer"]
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 text = "W"
-script = ExtResource("1_sbm4d")
-
-[node name="SpacerX" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("2_h1r4m")
 
 [node name="W" type="SpinBox" parent="."]
 layout_mode = 2
@@ -24,11 +16,6 @@ alignment = 1
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
 text = "H"
-script = ExtResource("1_sbm4d")
-
-[node name="SpacerY" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("2_h1r4m")
 
 [node name="H" type="SpinBox" parent="."]
 layout_mode = 2
@@ -40,11 +27,6 @@ alignment = 1
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
 text = "D"
-script = ExtResource("1_sbm4d")
-
-[node name="SpacerZ" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("2_h1r4m")
 
 [node name="D" type="SpinBox" parent="."]
 layout_mode = 2

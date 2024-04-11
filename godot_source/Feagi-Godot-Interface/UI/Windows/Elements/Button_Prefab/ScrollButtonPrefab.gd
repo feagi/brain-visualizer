@@ -8,7 +8,7 @@ signal prefab_pressed(prefab_reference: ScrollButtonPrefab)
 func _ready():
 	pressed.connect(_on_pressed)
 
-# All prefabs are required to have a setup funciton to take in a dictionary
+# All prefabs are required to have a setup function to take in a dictionary
 # when spawning, and the reference to the main window this is a part of
 
 ## Uses the "name" key from the input dictionary to set the name of the node

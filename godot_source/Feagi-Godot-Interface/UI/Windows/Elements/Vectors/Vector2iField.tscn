@@ -1,11 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://bua3t8kprcx3n"]
+[gd_scene load_steps=4 format=3 uid="uid://bua3t8kprcx3n"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iField.gd" id="1_2rlsy"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_db7ir"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="3_ustxh"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_v6mub"]
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_xw845"]
-
 
 [node name="Vector2iField" type="BoxContainer"]
 script = ExtResource("1_2rlsy")
@@ -13,11 +10,9 @@ script = ExtResource("1_2rlsy")
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 text = "X"
-script = ExtResource("2_db7ir")
 
 [node name="SpacerX" type="Control" parent="."]
 layout_mode = 2
-script = ExtResource("3_ustxh")
 
 [node name="IntX" type="LineEdit" parent="."]
 layout_mode = 2
@@ -29,11 +24,6 @@ script = ExtResource("3_v6mub")
 layout_mode = 2
 theme_override_fonts/font = ExtResource("3_xw845")
 text = "Y"
-script = ExtResource("2_db7ir")
-
-[node name="SpacerY" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("3_ustxh")
 
 [node name="IntY" type="LineEdit" parent="."]
 layout_mode = 2

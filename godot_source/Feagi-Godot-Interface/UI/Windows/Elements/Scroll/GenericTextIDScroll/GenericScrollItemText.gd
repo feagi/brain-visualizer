@@ -3,6 +3,8 @@ class_name GenericScrollItemText
 
 signal selected(ID: Variant, child_index: int)
 
+#TODO move to new theming system
+
 var ID: Variant
 
 var _default: StyleBoxFlat

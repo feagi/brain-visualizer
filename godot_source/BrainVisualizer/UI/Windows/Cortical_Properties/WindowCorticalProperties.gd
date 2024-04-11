@@ -82,7 +82,7 @@ func setup(cortical_area_reference: BaseCorticalArea) -> void:
 	
 
 	# Odds are we don't have the latest data from FEAGI, lets call in a refresh
-	FeagiCore.requests.refresh_cortical_area(cortical_area_reference.cortical_ID)
+	FeagiCore.requests.get_cortical_area(cortical_area_reference.cortical_ID)
 
 ## OVERRIDDEN from Window manager, to save previous position and collapsible states
 func export_window_details() -> Dictionary:

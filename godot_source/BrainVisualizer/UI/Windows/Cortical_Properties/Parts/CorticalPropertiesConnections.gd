@@ -64,9 +64,7 @@ func _remove_afferent_connection(afferent_area: BaseCorticalArea):
 	_scroll_afferent.remove_child_by_name(afferent_area.cortical_ID)
 
 func _user_pressed_add_afferent_button() -> void:
-	pass
-	###VisConfig.UI_manager.window_manager.spawn_edit_mappings(null, _cortical_area_ref)
+	BV.WM.spawn_edit_mappings(null, _cortical_area_ref)
 
 func _user_pressed_add_efferent_button() -> void:
-	pass
-	###VisConfig.UI_manager.window_manager.spawn_edit_mappings(_cortical_area_ref, null)
+	BV.WM.spawn_edit_mappings(_cortical_area_ref, null)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://craawda1yun5y"]
+[gd_scene load_steps=7 format=3 uid="uid://craawda1yun5y"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="2_5oy5r"]
@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_y0ej3"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="5_b3mfs"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="7_bf7bt"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
 offset_right = 471.0
@@ -89,7 +88,6 @@ min_value = 1.0
 max_value = 1e+10
 value = 1.0
 alignment = 1
-script = ExtResource("7_bf7bt")
 
 [node name="dimensions" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2

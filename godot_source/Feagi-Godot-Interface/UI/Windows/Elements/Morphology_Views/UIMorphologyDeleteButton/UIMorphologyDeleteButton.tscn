@@ -6,7 +6,6 @@
 [ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_cvhnd"]
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDeleteButton/UIMorphologyDeleteButton.gd" id="5_qq287"]
 
-
 [node name="Delete" type="TextureButton"]
 custom_minimum_size = Vector2(64, 64)
 size_flags_horizontal = 4

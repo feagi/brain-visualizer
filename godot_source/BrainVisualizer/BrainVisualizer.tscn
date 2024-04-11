@@ -52,16 +52,17 @@ scroll_offset = Vector2(-9, 0)
 initial_position = Vector2(-115, -300)
 initial_zoom = 0.233
 
-[node name="WindowManager" type="Node" parent="UIManager"]
-script = ExtResource("9_eg4r6")
-
 [node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
 offset_left = -444.0
 offset_bottom = 161.0
 mouse_filter = 2
 
-[node name="TopBar" parent="UIManager" instance=ExtResource("1_yk4pp")]
+[node name="TopBar" parent="UIManager" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search") instance=ExtResource("1_yk4pp")]
 mouse_filter = 2
+theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
+
+[node name="WindowManager" type="Node" parent="UIManager"]
+script = ExtResource("9_eg4r6")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
 environment = SubResource("Environment_rks2y")

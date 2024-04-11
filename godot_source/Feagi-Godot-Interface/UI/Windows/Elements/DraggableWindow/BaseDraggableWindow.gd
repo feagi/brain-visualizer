@@ -53,10 +53,6 @@ func export_default_window_details() -> Dictionary:
 func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 
-#WARNING: BAD, GET RID OF ME ASAP
-func shrink_window_delayed() -> void:
-	call_deferred("shrink_window")
-
 func shrink_window() -> void:
 	size = Vector2i(0,0) # look into await() - checkw ith web export
 

@@ -1,10 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://dtoic0bf8v2f2"]
+[gd_scene load_steps=3 format=3 uid="uid://dtoic0bf8v2f2"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector3Labels.gd" id="1_joewg"]
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_lk01u"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_4ulby"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="4_qt37d"]
-
 
 [node name="Vector3Labels" type="BoxContainer"]
 script = ExtResource("1_joewg")
@@ -18,11 +15,6 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("2_lk01u")
 text = "X"
 horizontal_alignment = 1
-script = ExtResource("3_4ulby")
-
-[node name="SpacerX" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("4_qt37d")
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
@@ -30,11 +22,6 @@ size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("2_lk01u")
 text = "Y"
 horizontal_alignment = 1
-script = ExtResource("3_4ulby")
-
-[node name="SpacerY" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("4_qt37d")
 
 [node name="LabelZ" type="Label" parent="."]
 layout_mode = 2
@@ -43,8 +30,3 @@ theme_override_fonts/font = ExtResource("2_lk01u")
 text = "Z
 "
 horizontal_alignment = 1
-script = ExtResource("3_4ulby")
-
-[node name="SpacerZ" type="Control" parent="."]
-layout_mode = 2
-script = ExtResource("4_qt37d")

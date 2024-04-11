@@ -1,53 +1,25 @@
-[gd_scene load_steps=6 format=3 uid="uid://brwx50pyfywb7"]
+[gd_scene load_steps=3 format=3 uid="uid://brwx50pyfywb7"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_depso"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="2_je05h"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="4_oi7eg"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="5_61jyl"]
-
 
 [node name="Vector2iSpingBoxField" type="BoxContainer"]
 script = ExtResource("1_ppcmy")
-
-[node name="SpacerX" type="Control" parent="."]
-custom_minimum_size = Vector2(3, 0)
-layout_mode = 2
-script = ExtResource("2_je05h")
 
 [node name="LabelX" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_depso")
 text = "X"
-script = ExtResource("4_oi7eg")
 
 [node name="IntX" type="SpinBox" parent="."]
 layout_mode = 2
 alignment = 1
-script = ExtResource("5_61jyl")
-
-[node name="SpacerX2" type="Control" parent="."]
-custom_minimum_size = Vector2(3, 0)
-layout_mode = 2
-script = ExtResource("2_je05h")
-
-[node name="SpacerY" type="Control" parent="."]
-custom_minimum_size = Vector2(3, 0)
-layout_mode = 2
-script = ExtResource("2_je05h")
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_depso")
 text = "Y"
-script = ExtResource("4_oi7eg")
 
 [node name="IntY" type="SpinBox" parent="."]
 layout_mode = 2
 alignment = 1
-script = ExtResource("5_61jyl")
-
-[node name="SpacerY2" type="Control" parent="."]
-custom_minimum_size = Vector2(3, 0)
-layout_mode = 2
-script = ExtResource("2_je05h")

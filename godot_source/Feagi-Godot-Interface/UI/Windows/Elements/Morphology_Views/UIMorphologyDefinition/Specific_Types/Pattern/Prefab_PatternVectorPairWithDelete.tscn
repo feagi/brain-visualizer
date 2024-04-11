@@ -1,14 +1,12 @@
-[gd_scene load_steps=10 format=3 uid="uid://dsf0flbf8igka"]
+[gd_scene load_steps=8 format=3 uid="uid://dsf0flbf8igka"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.gd" id="1_2vxwp"]
 [ext_resource type="PackedScene" uid="uid://cmxa7e3wifiy2" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.tscn" id="2_mjcu5"]
 [ext_resource type="Texture2D" uid="uid://c7ewdn04rapbx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="3_bamig"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingControl.gd" id="4_gbg8l"]
 [ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="5_34f6o"]
 [ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="6_dnub2"]
 [ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="7_dtmaw"]
 [ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="8_xd8ej"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingTextureButton.gd" id="9_k1bn1"]
 
 [node name="Prefab_PatternVectorPairWithDelete" type="HBoxContainer"]
 offset_right = 562.0
@@ -25,7 +23,6 @@ custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 texture = ExtResource("3_bamig")
 expand_mode = 1
-script = ExtResource("4_gbg8l")
 
 [node name="PV2" parent="." instance=ExtResource("2_mjcu5")]
 layout_mode = 2
@@ -39,6 +36,5 @@ texture_hover = ExtResource("7_dtmaw")
 texture_disabled = ExtResource("8_xd8ej")
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("9_k1bn1")
 
 [connection signal="pressed" from="DeleteButton" to="." method="_on_delete_button_pressed"]

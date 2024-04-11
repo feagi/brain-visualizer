@@ -46,7 +46,34 @@ func remove_morphology(morphology_Name: StringName) -> void:
 	var deleting: BaseMorphology = _available_morphologies[morphology_Name]
 	deleting.FEAGI_delete_morphology()
 	_available_morphologies.erase(morphology_Name)
-	
+
+## Adds a Composite Morphology by definition
+func add_defined_composite_morphology(morphology_name: StringName, src_seed: Vector3i, src_pattern: Array[Vector2i], mapper_morphology: StringName, feagi_defined_internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.UNKNOWN) -> void:
+	if morphology_name in _available_morphologies.keys():
+		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
+		return
+	var composite: CompositeMorphology = CompositeMorphology.new(morphology_name, false, feagi_defined_internal_class, src_seed, src_pattern, mapper_morphology)
+	_available_morphologies[morphology_name] = composite
+	morphology_added.emit(composite)
+
+## Adds a Vector Morphology by definition
+func add_defined_vector_morphology(morphology_name: StringName, morphology_vectors: Array[Vector3i], feagi_defined_internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.UNKNOWN) -> void:
+	if morphology_name in _available_morphologies.keys():
+		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
+		return
+	var vector: VectorMorphology = VectorMorphology.new(morphology_name, false, feagi_defined_internal_class, morphology_vectors)
+	_available_morphologies[morphology_name] = vector
+	morphology_added.emit(vector)
+
+## Adds a Pattern Morphology by definition
+func add_defined_pattern_morphology(morphology_name: StringName, morphology_patterns: Array[PatternVector3Pairs], feagi_defined_internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.UNKNOWN) -> void:
+	if morphology_name in _available_morphologies.keys():
+		push_error("Attempted to create already cached morphology " + morphology_name + ", Skipping!")
+		return
+	var pattern: PatternMorphology = PatternMorphology.new(morphology_name, false, feagi_defined_internal_class, morphology_patterns)
+	_available_morphologies[morphology_name] = pattern
+	morphology_added.emit(pattern)
+
 ## Removes all morphologies from cache. Should only be called during a reset
 func hard_wipe_cached_morphologies():
 	print("CACHE: Wiping morphologies...")

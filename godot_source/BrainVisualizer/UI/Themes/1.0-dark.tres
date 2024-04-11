@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=21 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" load_steps=24 format=3 uid="uid://cjrivk0518jvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -59,6 +59,15 @@ anti_aliasing = false
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2l4ko"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1l48k"]
+bg_color = Color(0.426769, 0.664237, 0.50052, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sr4l8"]
+bg_color = Color(0.742136, 0.556807, 0.405145, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vsflv"]
+bg_color = Color(0.365696, 0.62655, 0.838457, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_242sy"]
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
@@ -98,6 +107,12 @@ NotificationSystemNotification_Warning/base_type = &"NotificationSystemNotificat
 NotificationSystemNotification_Warning/styles/panel = SubResource("StyleBoxFlat_al8ae")
 Panel/styles/panel = SubResource("StyleBoxFlat_3bdj3")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_2l4ko")
+PanelContainer_QC_Complete/base_type = &"PanelContainer"
+PanelContainer_QC_Complete/styles/panel = SubResource("StyleBoxFlat_1l48k")
+PanelContainer_QC_incomplete/base_type = &"PanelContainer"
+PanelContainer_QC_incomplete/styles/panel = SubResource("StyleBoxFlat_sr4l8")
+PanelContainer_QC_waiting/base_type = &"PanelContainer"
+PanelContainer_QC_waiting/styles/panel = SubResource("StyleBoxFlat_vsflv")
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
 TextureButton/constants/size_x = 48
 TextureButton/constants/size_y = 48

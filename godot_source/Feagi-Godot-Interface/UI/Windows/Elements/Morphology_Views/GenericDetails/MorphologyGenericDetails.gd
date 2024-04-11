@@ -5,7 +5,7 @@ class_name MorphologyGenericDetails
 ## TODO if someone edits connecitons with this window open, we should update mapping view!
 ## TODO add a signal if someone edits the description so we know somehting has been edited
 
-const MORPHOLOGY_ICON_PATH: StringName = &"res://Feagi-Godot-Interface/UI/Resources/morphology_icons/"
+const MORPHOLOGY_ICON_PATH: StringName = &"res://BrainVisualizer/UI/GenericResources/MorphologyIcons/"
 
 @export var editable: bool = false
 

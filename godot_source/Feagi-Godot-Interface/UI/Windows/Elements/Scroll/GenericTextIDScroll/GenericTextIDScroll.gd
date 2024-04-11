@@ -59,7 +59,7 @@ func set_selected(ID_to_select: Variant) -> void:
 	if index_to_select != -1:
 		_scroll_holder.get_child(index_to_select).user_selected()
 	else:
-		deselect_all() # if ID doesnt exist, deselect everything
+		return # if ID doesnt exist, keep all deselected
 
 func get_button_by_ID(ID_to_select: Variant) -> GenericScrollItemText:
 	var index_to_select: int = _find_child_index_with_ID(ID_to_select)

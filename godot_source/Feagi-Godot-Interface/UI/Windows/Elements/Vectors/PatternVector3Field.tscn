@@ -1,10 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://cmxa7e3wifiy2"]
+[gd_scene load_steps=4 format=3 uid="uid://cmxa7e3wifiy2"]
 
 [ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Vectors/PatternVector3Field.gd" id="1_00dhb"]
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_cknjl"]
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/UIScaling/ScalingLabel.gd" id="3_0by6c"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/PatternValInput.gd" id="3_3o6p7"]
-
 
 [node name="PatternVector3Field" type="BoxContainer"]
 script = ExtResource("1_00dhb")
@@ -16,7 +14,6 @@ label_z_text = &""
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_cknjl")
 text = "X"
-script = ExtResource("3_0by6c")
 
 [node name="PVX" type="LineEdit" parent="."]
 layout_mode = 2
@@ -27,7 +24,6 @@ script = ExtResource("3_3o6p7")
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Y"
-script = ExtResource("3_0by6c")
 
 [node name="PVY" type="LineEdit" parent="."]
 layout_mode = 2
@@ -39,7 +35,6 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("2_cknjl")
 text = "Z
 "
-script = ExtResource("3_0by6c")
 
 [node name="PVZ" type="LineEdit" parent="."]
 layout_mode = 2

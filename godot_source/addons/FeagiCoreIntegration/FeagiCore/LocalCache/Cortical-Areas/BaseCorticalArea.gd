@@ -375,7 +375,7 @@ func is_cortical_area_efferent_to_this_area(possibly_efferent_cortical_area: Bas
 func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings: Array[MappingProperty]) -> void:
 	
 	var retrieved_mapping_properties = MappingProperties.new(self, destination_area, mappings)
-
+	efferent_mapping_retrieved_from_feagi.emit(retrieved_mapping_properties)
 	if !(destination_area.cortical_ID in _efferent_mappings.keys()):
 		# we dont have the mappings in the system
 		if len(mappings) == 0:
@@ -401,7 +401,6 @@ func set_mappings_to_efferent_area(destination_area: BaseCorticalArea, mappings:
 	# A previously existing mapping now has new data, treat as an edit
 	_efferent_mappings[destination_area.cortical_ID].update_mappings(mappings)
 	destination_area.set_afferent_area_from_efferent(_efferent_mappings[destination_area.cortical_ID])
-	efferent_mapping_retrieved_from_feagi.emit(retrieved_mapping_properties)
 	efferent_mapping_edited.emit(_efferent_mappings[destination_area.cortical_ID])
 	refreshed_mapping_to_destination.emit(destination_area)
 	destination_area.refreshed_mapping_from_source.emit(self)
@@ -459,7 +458,7 @@ func get_efferent_connections_with_count() -> Dictionary:
 func _get_efferents() -> Array[BaseCorticalArea]:
 	var output: Array[BaseCorticalArea] = []
 	for efferent_ID: StringName in _efferent_mappings.keys():
-		output.append(FeagiCore.feagi_local_cache.cortical_areas_cache.cortical_areas[efferent_ID])
+		output.append(FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[efferent_ID])
 	return output
 	
 # The following functions are often overridden in child classes

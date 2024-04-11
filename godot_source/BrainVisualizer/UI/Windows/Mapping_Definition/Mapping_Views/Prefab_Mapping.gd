@@ -84,7 +84,7 @@ func _on_info_pressed() -> void:
 	if morphology_used is NullMorphology:
 		#TODO
 		return
-	###VisConfig.UI_manager.window_manager.spawn_manager_morphology(morphology_used)
+	BV.WM.spawn_manager_morphology(morphology_used)
 
 func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> bool:
 	match editability:

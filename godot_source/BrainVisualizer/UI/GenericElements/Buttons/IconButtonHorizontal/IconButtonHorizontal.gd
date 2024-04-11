@@ -8,8 +8,6 @@ var _texture_rect: TextureRect
 var _gap: Control
 var _text: Label
 
-## Paddings on the top, right, bottom, and right, in that order
-@export var top_right_bottom_left_paddings: Vector4i
 
 @export var texture: Texture2D
 
@@ -42,4 +40,3 @@ func _ready() -> void:
 	
 	custom_minimum_size = _margin.custom_minimum_size
 	_texture_rect.custom_minimum_size = texture_size
-	_texture_rect.size = Vector2(0,0)

@@ -73,10 +73,6 @@ func _user_attempt_change_value(input_text: String) -> void:
 	patternval_changed.emit(_previous_patternval)
 	user_interacted.emit()
 
-func _update_size(multiplier: float) -> void:
-	add_theme_font_size_override(&"font_size", int(float(_default_font_size) * multiplier))
-	size = Vector2(0,0)
-
 func _set_value_UI(new_value: PatternVal) -> void:
 	text = prefix + new_value.as_StringName + suffix
 
