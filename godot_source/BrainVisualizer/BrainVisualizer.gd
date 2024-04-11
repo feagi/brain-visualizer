@@ -33,4 +33,4 @@ func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, _pre
 			FeagiCore.requests.get_burst_delay()
 
 func _on_genome_reloading() -> void:
-	_UI_manager.FEAGI_about_to_reset_genome
+	_UI_manager.FEAGI_about_to_reset_genome()

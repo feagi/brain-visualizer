@@ -147,6 +147,7 @@ func update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) ->
 		return
 	
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
+	print("FEAGI CACHE: Updating cortical area %s" % changing_ID)
 	
 	_available_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
 	cortical_area_mass_updated.emit(_available_cortical_areas[changing_ID])
@@ -194,39 +195,34 @@ func get_all_cortical_area_names() -> Array[StringName]:
 ## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed. Should only be called from FEAGI
 func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
 	print("FEAGI CACHE: Replacing cortical areas cache...")
-	#TODO edit cortical areas?
-	# TODO: Possible optimizations used packedStringArrays and less duplications
-	var new_listing: Array[StringName] = []
-	new_listing.assign(_new_listing_with_summaries.keys())
-	var removed: Array[StringName] = []
-	removed.assign(_available_cortical_areas.keys().duplicate())
-	var added: Array[StringName] = []
-	var search: int # init here to reduce GC
-
-	# Build arrays of areas that need removal and what needs adding
-	for new: StringName in new_listing:
-		search = removed.find(new)
-		if search != -1:
-			# item was found
-			removed.remove_at(search)
-			continue
-		# new item
-		added.append(new)
-		continue
 	
-	# At this point, 'added' has all names of elements that need to be added, while 'removed' has all elements that need to be removed
+	var current_cached_IDs: Array[StringName] = []
+	current_cached_IDs.assign(available_cortical_areas.keys())
+	var incoming_IDs: Array[StringName] = []
+	incoming_IDs.assign(_new_listing_with_summaries.keys())
+	var cached_IDs_to_remove: Array[StringName] = current_cached_IDs.filter(func(cached_ID): return !(cached_ID in incoming_IDs))
+	var cached_IDs_to_update: Array[StringName] = current_cached_IDs.filter(func(cached_ID): return (cached_ID in incoming_IDs))
+	var IDs_to_add: Array[StringName] = incoming_IDs.filter(func(incoming_ID): return !(incoming_ID in current_cached_IDs))
+	
+
 	# remove removed cortical areas
-	for remove: StringName in removed:
+	for remove: StringName in cached_IDs_to_remove:
 		remove_cortical_area(remove)
 	
-	# note: not preallocating here certain things due to reference shenanigans, attempt later when system is stable
 	# add added cortical areas
-	var new_area_summary: Dictionary
-	for add in added:
+	var _area_summary: Dictionary
+	for add in IDs_to_add:
 		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
-		new_area_summary = _new_listing_with_summaries[add]
-		new_area_summary["cortical_id"] = add
-		add_cortical_area_from_dict(new_area_summary)
+		_area_summary = _new_listing_with_summaries[add]
+		_area_summary["cortical_id"] = add
+		add_cortical_area_from_dict(_area_summary)
+	
+	# Update updated cortical areas
+	for update in cached_IDs_to_update:
+		_area_summary = _new_listing_with_summaries[update]
+		_area_summary["cortical_id"] = update
+		update_cortical_area_from_dict(_area_summary)
+
 
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI

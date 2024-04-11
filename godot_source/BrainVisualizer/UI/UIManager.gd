@@ -26,7 +26,7 @@ var _selected_cortical_areas: Array[BaseCorticalArea] = []
 var _loaded_theme: Theme
 var _top_bar: TopBar
 var _circuit_builder: CorticalNodeGraph
-var _brain_monitor: Node # lol
+var _brain_monitor # lol
 var _window_manager: WindowManager
 var _notification_system: NotificationSystem
 
