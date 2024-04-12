@@ -105,7 +105,7 @@ func _user_edit_synaptic_attractivity(new_val: int) -> void:
 	_append_to_growing_update("cortical_synaptic_attractivity", new_val)
 
 func _user_edit_3D_position(new_position: Vector3i) -> void:
-	_append_to_growing_update("cortical_coordinates", FEAGIUtils.vector3i_to_array(new_position))
+	_append_to_growing_update("coordinates_3d", FEAGIUtils.vector3i_to_array(new_position))
 	if !is_instance_valid(_preview_handler):
 		_enable_3D_preview()
 

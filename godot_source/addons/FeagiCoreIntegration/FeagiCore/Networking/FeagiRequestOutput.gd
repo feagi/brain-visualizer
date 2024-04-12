@@ -8,9 +8,9 @@ var has_errored: bool = false ## Did feagi return an error (HTTP 400)
 var is_mid_poll: bool = false ## Is this a polling call output that isnt finished?
 var response_body: PackedByteArray = [] # The raw data FEAGI returned to us
 var failed_requirement: bool: ## If a requirement was failed in [FEAGIRequests]
-	get: return failed_requirement_key == ""
+	get: return failed_requirement_key != ""
 var success: bool: ## If everything went ok
-	get: return !(has_timed_out and has_errored and failed_requirement)
+	get: return !(has_timed_out or has_errored or failed_requirement)
 
 func _init(timed_out: bool, errored: bool, mid_poll: bool, data: PackedByteArray, reason_failed: StringName = ""):
 	has_timed_out = timed_out

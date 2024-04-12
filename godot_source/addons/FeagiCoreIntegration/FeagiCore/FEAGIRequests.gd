@@ -15,6 +15,7 @@ func reload_genome() -> FeagiRequestOutput:
 	await cortical_worker.worker_done
 	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(cortical_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI cortical summary data!")
 		return cortical_data
 
 	# Get Morphologies
@@ -22,6 +23,7 @@ func reload_genome() -> FeagiRequestOutput:
 	await morphologies_worker.worker_done
 	var morphologies_data: FeagiRequestOutput = morphologies_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(morphologies_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI morphology summary data!")
 		return morphologies_data
 
 	# Get Mapping Data
@@ -29,6 +31,7 @@ func reload_genome() -> FeagiRequestOutput:
 	await mapping_worker.worker_done
 	var mapping_data: FeagiRequestOutput = mapping_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(mapping_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI mapping summary data!")
 		return mapping_data
 	
 	FeagiCore.feagi_local_cache.replace_whole_genome(
@@ -42,6 +45,7 @@ func reload_genome() -> FeagiRequestOutput:
 	await template_worker.worker_done
 	var template_data: FeagiRequestOutput = template_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(template_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI template summary data!")
 		return template_data
 	var raw_templates: Dictionary = template_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
@@ -67,6 +71,7 @@ func get_burst_delay() -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI Burst rate delay!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
 	print("FEAGI REQUEST: Successfully retrieved delay between bursts as %d" % response.to_float())
@@ -94,6 +99,7 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update FEAGI burst rate delay!")
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully updated delay between bursts to %d" % new_delay_between_bursts)
 	FeagiCore.feagi_retrieved_burst_rate(new_delay_between_bursts)
@@ -128,6 +134,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab cortical area details of %s!" % checking_cortical_ID)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully retrieved details of cortical area %s" % checking_cortical_ID)
@@ -157,7 +164,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"coordinates_2d": [null, null]
 	}
 	if is_coordinate_2D_defined:
-		dict_to_send["coordinates_2d"] = coordinates_2D
+		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea, dict_to_send)
 
 	# Send request and await results
@@ -165,6 +172,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create custom cortical area by the name of %s!" % cortical_name)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.cortical_areas.add_custom_cortical_area( response["cortical_id"], cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
@@ -194,7 +202,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		"sub_group_id": "MEMORY"
 	}
 	if is_coordinate_2D_defined:
-		dict_to_send["coordinates_2d"] = coordinates_2D
+		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea, dict_to_send)
 
 	# Send request and await results
@@ -202,6 +210,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create memory cortical area by the name of %s!" % cortical_name)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.cortical_areas.add_memory_cortical_area( response["cortical_id"], cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D)
@@ -236,7 +245,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 		"coordinates_2d": [null, null]
 	}
 	if is_coordinate_2D_defined:
-		dict_to_send["coordinates_2d"] = coordinates_2D
+		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, dict_to_send)
 
 	# Send request and await results
@@ -244,6 +253,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create IPU/OPU cortical area!")
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	if IOPU_template.cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
@@ -268,42 +278,26 @@ func clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, n
 		push_error("FEAGI Requests: Unable to clone cortical area %s as it is of type %s!" % [cloning_area.cortical_ID, cloning_area.type_as_string])
 		return FeagiRequestOutput.requirement_fail("CLONE_NOT_ALLOWED")
 	print("User requested cloning cortical area " + cloning_area.cortical_ID)
-	var is_cloning_source_memory_type: bool = cloning_area.group == BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	
-	print("FEAGI REQUEST: Request copying cortical area %s as new area with name name %s" % [cloning_area.cortical_ID, new_name])
-	# Define Request
-	var dict_to_send: Dictionary = 	{
-		"cortical_name": cloning_area.name,
-		"coordinates_3d": FEAGIUtils.vector3i_to_array(new_position_3D),
-		"cortical_dimensions": FEAGIUtils.vector3i_to_array(cloning_area.dimensions),
-		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
-		"cortical_sub_group": "",
-		"coordinates_2d": new_position_2D
-	}
-	if is_cloning_source_memory_type:
-		dict_to_send["sub_group_id"] = "MEMORY"
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea, dict_to_send)
+	var FEAGI_response_data: FeagiRequestOutput
 	
-	# Cache this data seperately, in the edge case that the source area becomes deleted while we await the copy
-	var copying_dimensions: Vector3i = cloning_area.dimensions
-	var copying_3d_position: Vector3i = cloning_area.coordinates_3D
-	var copying_2d_position: Vector2i = cloning_area.coordinates_2D
-	var copying_ID: StringName = cloning_area.cortical_ID
-	var copying_name: StringName = cloning_area.name
+	match(cloning_area.group):
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			print("FEAGI REQUEST: Request copying memory cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
+			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions, true, new_position_2D)
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			print("FEAGI REQUEST: Request copying custom cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
+			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions, true, new_position_2D)
+		_:
+			push_error("FEAGI Requests: No procedure for cloning a cortical area of type %s" % cloning_area.type_as_string)
+			return FeagiRequestOutput.requirement_fail("TYPE_NOT_ALLOWED")
 	
-	# Send request and await results
-	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	await HTTP_FEAGI_request_worker.worker_done
-	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+	if !FEAGI_response_data.success:
+		print("FEAGI REQUEST: Unable to clone cortical area %s" % [cloning_area.cortical_ID])
 		return FEAGI_response_data
+	
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	if is_cloning_source_memory_type:
-		FeagiCore.feagi_local_cache.cortical_areas.add_memory_cortical_area(response["cortical_id"], new_name, copying_dimensions, copying_3d_position, true, copying_2d_position)
-	else:
-		# custom
-		FeagiCore.feagi_local_cache.cortical_areas.add_custom_cortical_area(response["cortical_id"], new_name, copying_dimensions, copying_3d_position, true, copying_2d_position)
-	print("FEAGI REQUEST: Successfully cloned  cortical area %s to new area %s" % [copying_ID, response["cortical_id"]])
+	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, response["cortical_id"]])
 	return FEAGI_response_data
 
 
@@ -326,6 +320,7 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update cortical area of ID %s!" % editing_ID)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.cortical_areas.update_cortical_area_from_dict(properties)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
@@ -351,6 +346,7 @@ func delete_cortical_area(deleting_ID: StringName) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete cortical area of ID %s!" % deleting_ID)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_ID)
@@ -386,9 +382,10 @@ func mass_move_cortical_areas_2D(cortical_IDs_mapped_to_vector2i_positions: Dict
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to 2D move %d cortical areas!" % len(cortical_IDs_mapped_to_vector2i_positions))
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully moved %d cortical areas!" % len(cortical_IDs_mapped_to_vector2i_positions))
+	print("FEAGI REQUEST: Successfully 2D moved %d cortical areas!" % len(cortical_IDs_mapped_to_vector2i_positions))
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_mass_update_2D_positions(cortical_IDs_mapped_to_vector2i_positions)
 	return FEAGI_response_data
 
@@ -408,6 +405,7 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to get cortical templates!")
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully retrieved cortical template data!")
@@ -437,6 +435,7 @@ func get_morphology(morphology_name: StringName) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to get morphology details of name %s!" % morphology_name)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully retrieved morphology properties of %s" % morphology_name)
@@ -463,6 +462,7 @@ func get_morphology_usage(morphology_name: StringName) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to get morphology usage of name %s!" % morphology_name)
 		return FEAGI_response_data
 	var response: Array = FEAGI_response_data.decode_response_as_array()
 	print("FEAGI REQUEST: Successfully retrieved morphology usage of %s" % morphology_name)
@@ -500,6 +500,7 @@ func add_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create vector morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.add_defined_vector_morphology(morphology_name, vectors)
@@ -534,6 +535,7 @@ func add_pattern_morphology(morphology_name: StringName, patterns: Array[Pattern
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create pattern morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.add_defined_pattern_morphology(morphology_name, patterns)
@@ -575,6 +577,7 @@ func add_composite_morphology(morphology_name: StringName, source_seed: Vector3i
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create composite morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully added composite morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.add_defined_composite_morphology(morphology_name, source_seed, source_pattern, mapped_morphology_name)
@@ -609,6 +612,7 @@ func update_vector_morphology(morphology_name: StringName, vectors: Array[Vector
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update vector morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully updated vector morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(vectors)
@@ -643,6 +647,7 @@ func update_pattern_morphology(morphology_name: StringName, patterns: Array[Patt
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update pattern morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully updated pattern morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(patterns)
@@ -684,6 +689,7 @@ func update_composite_morphology(morphology_name: StringName, source_seed: Vecto
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update composite morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully updated composite morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(source_seed, source_pattern)
@@ -715,6 +721,7 @@ func delete_morphology(morphology: BaseMorphology) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete morphology of name %s!" % morphology.name)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully deleted morphology of name %s" % deleting_name)
@@ -750,6 +757,7 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to retrieve mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 		return FEAGI_response_data
 	# Unlikely not, but checking to make sure cortical areas still exist
 	if source_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys() or destination_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
@@ -800,6 +808,7 @@ func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_a
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to set mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 		return FEAGI_response_data
 	# Unlikely not, but checking to make sure cortical areas still exist
 	if source_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys() or destination_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():

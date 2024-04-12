@@ -228,17 +228,17 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 	if "cortical_dimensions" in data.keys():
 		dimensions = FEAGIUtils.array_to_vector3i(data["cortical_dimensions"])
 	
-	if "cortical_coordinates_2d" in data.keys():
-		if data["cortical_coordinates_2d"][0] == null:
+	if "coordinates_2d" in data.keys():
+		if data["coordinates_2d"][0] == null:
 			_coordinates_2D_available = false
 		else:
-			coordinates_2D = FEAGIUtils.array_to_vector2i(data["cortical_coordinates_2d"])
+			coordinates_2D = FEAGIUtils.array_to_vector2i(data["coordinates_2d"])
 
-	if "cortical_coordinates" in data.keys():
-		if data["cortical_coordinates"] == null:
+	if "coordinates_3d" in data.keys():
+		if data["coordinates_3d"] == null:
 			_coordinates_3D_available = false
 		else:
-			coordinates_3D = FEAGIUtils.array_to_vector3i(data["cortical_coordinates"])
+			coordinates_3D = FEAGIUtils.array_to_vector3i(data["coordinates_3d"])
 
 	FEAGI_apply_detail_dictionary(data)
 
