@@ -50,8 +50,7 @@ func set_user_selected_cortical_areas(selected: Array[BaseCorticalArea]) -> void
 
 func user_selected_single_cortical_area_independently(area: BaseCorticalArea) -> void:
 	user_selected_single_cortical_area.emit(area)
-	
-	pass
+	_window_manager.spawn_quick_cortical_menu(area)
 
 func user_selected_single_cortical_area_appending(area: BaseCorticalArea) -> void:
 	pass

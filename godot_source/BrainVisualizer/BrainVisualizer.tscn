@@ -48,6 +48,7 @@ mouse_filter = 2
 
 [node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
 layout_mode = 2
+mouse_force_pass_scroll_events = false
 scroll_offset = Vector2(-9, 0)
 initial_position = Vector2(-115, -300)
 initial_zoom = 0.233
