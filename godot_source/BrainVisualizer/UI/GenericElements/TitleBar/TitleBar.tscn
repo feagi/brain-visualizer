@@ -7,7 +7,6 @@
 [ext_resource type="Texture2D" uid="uid://b0jdp1386q64q" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_D.png" id="6_crhnf"]
 
 [node name="TitleBar" type="PanelContainer"]
-custom_minimum_size = Vector2(0, 40)
 offset_right = 92.0
 offset_bottom = 40.0
 theme_type_variation = &"TitleBarContainer"
@@ -17,20 +16,21 @@ script = ExtResource("1_dpkpa")
 layout_mode = 2
 
 [node name="gap" type="Control" parent="HBoxContainer"]
-custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 mouse_filter = 1
+metadata/_edit_group_ = true
 
 [node name="Title_Text" type="Label" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Title"
 text = "TEXT"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Close_Button" type="TextureButton" parent="HBoxContainer"]
-custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+theme_type_variation = &"TextureButton_WindowClose"
 texture_normal = ExtResource("3_b7bry")
 texture_pressed = ExtResource("4_aacjk")
 texture_hover = ExtResource("5_uuesj")

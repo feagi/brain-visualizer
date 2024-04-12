@@ -1,8 +1,6 @@
 extends PanelContainer
 class_name TitleBar
 
-const CLOSE_BUTTON_DEFAULT_SIZE: Vector2 = Vector2(40,40) # as a float for more accurate scaling
-
 signal drag_started(current_window_position: Vector2, current_mouse_position: Vector2)
 signal drag_finished(current_window_position: Vector2, current_mouse_position: Vector2)
 signal clicked()
@@ -44,6 +42,8 @@ func _ready() -> void:
 	_title = $HBoxContainer/Title_Text
 	_tex_button = $HBoxContainer/Close_Button
 	_left_gap = $HBoxContainer/gap
+	_on_theme_change()
+	BV.UI.theme_changed.connect(_on_theme_change)
 	
 
 func _gui_input(event: InputEvent) -> void:
@@ -60,6 +60,8 @@ func _gui_input(event: InputEvent) -> void:
 			return # If we arent dragging (as decided by _process_mouse_click_event), then dont process this is a drag
 		_process_mouse_drag_event(event as InputEventMouseMotion)
 
+
+
 ## The parent window object calls this to finish setting up this child. Technically not best practice
 func setup_from_window(window: BaseDraggableWindow) -> void:
 	_window_parent = window
@@ -70,10 +72,16 @@ func is_titlebar_within_view_bounds() -> bool:
 	var screen_rect: Rect2 = Rect2(Vector2(0,0), BV.UI.screen_size) # Get Screen Rect
 	return screen_rect.encloses(self_rect)
 
-func get_minimum_width(multiplier: float) -> int:
-	var minimum_width: int = 2 * int(CLOSE_BUTTON_DEFAULT_SIZE.y * multiplier) # size of the close button and left gap
+func get_minimum_width() -> int:
+	var minimum_width: int = 2 * int(_tex_button.size_x ) # size of the close button and left gap
 	minimum_width += _title.get_theme_font(&"font").get_string_size(_title.text, HORIZONTAL_ALIGNMENT_CENTER, -1, _title.get_theme_font_size(&"font_size")).x
 	return minimum_width
+
+func _on_theme_change(_new_theme: Theme = null) -> void:
+	var min_size: Vector2i = BV.UI.get_minimum_size_from_loaded_theme("TextureButton_WindowClose")
+	_tex_button.custom_minimum_size = min_size
+	_left_gap.custom_minimum_size = min_size
+
 
 ## Processes Mouse clicks on the title bar
 func _process_mouse_click_event(mouse_event: InputEventMouseButton) -> void:
@@ -103,4 +111,4 @@ func _close_window_from_close_button() -> void:
 func set_in_bounds_with_window_size_change() -> void:
 	if !is_titlebar_within_view_bounds():
 		_window_parent.position = _window_parent.window_spawn_location
-	
+

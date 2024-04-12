@@ -33,7 +33,7 @@ var _notification_system: NotificationSystem
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
-	load_new_theme(load("res://BrainVisualizer/UI/Themes/1.0-dark.tres")) #TODO temporary!
+	load_new_theme(load("res://BrainVisualizer/UI/Themes/dark.tres")) #TODO temporary!
 
 func _ready():
 	_notification_system = $NotificationSystem
@@ -79,6 +79,21 @@ func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: 
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
+
+## Given the name of the element, try to grab the minimum size defined by the currently loaded theme. If element doesnt exist, return 32x32
+func get_minimum_size_from_loaded_theme(element: StringName) -> Vector2i:
+	var output: Vector2i = Vector2i(32,32)
+	
+	if loaded_theme.has_constant("size_x", element):
+		output.x = loaded_theme.get_constant("size_x", element)
+	else:
+		push_error("THEME: Loaded theme file is missing size_x for element %s. There will be sizing issues!" % element)
+	if BV.UI.loaded_theme.has_constant("size_y", element):
+		output.y = loaded_theme.get_constant("size_y", element)
+	else:
+		push_error("THEME: Loaded theme file is missing size_y for element %s. There will be sizing issues!" % element)
+	return output
+	
 
 ## Updates the screensize 
 func _update_screen_size():

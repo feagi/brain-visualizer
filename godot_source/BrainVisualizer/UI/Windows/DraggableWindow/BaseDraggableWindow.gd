@@ -10,12 +10,14 @@ signal close_window_requesed_no_arg() ## As above but passes no argument
 signal bring_window_to_top_request(self_window_name: StringName)
 
 @export var window_spawn_location: Vector2i = Vector2i(200,200)
+@export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
 var _window_name: StringName # Internal name
 var _titlebar: TitleBar
 var _window_panel: PanelContainer
 var _window_margin: MarginContainer
 var _window_internals: VBoxContainer # the internals the most every window will be caring about
+var _theme_custom_scaler: ScaleThemeApplier = ScaleThemeApplier.new()
 
 func _ready() -> void:
 	# Set References
@@ -23,7 +25,7 @@ func _ready() -> void:
 	_window_panel = $WindowPanel
 	_window_margin = $WindowPanel/WindowMargin
 	_window_internals = $WindowPanel/WindowMargin/WindowInternals
-	
+	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	
 
 func _gui_input(event: InputEvent) -> void:

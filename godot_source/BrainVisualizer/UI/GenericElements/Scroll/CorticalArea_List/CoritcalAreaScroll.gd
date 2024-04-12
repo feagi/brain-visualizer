@@ -14,7 +14,6 @@ func _ready():
 	if load_cortical_areas_on_load:
 		repopulate_from_cache()
 
-
 ## Clears list, then loads morphology list from FeagiCache
 func repopulate_from_cache() -> void:
 	delete_all()

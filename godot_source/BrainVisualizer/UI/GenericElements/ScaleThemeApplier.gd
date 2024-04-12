@@ -5,6 +5,7 @@ class_name ScaleThemeApplier
 
 var _nodes_to_not_include_or_search: Array[Node] ## when searching and this node is encountered, stop. We may have custom things here instead
 var _texture_buttons: Array[TextureButton] = []
+var _text_buttons: Array[Button] = []
 var _texture_rects: Array[TextureRect] = []
 var _line_edits: Array[LineEdit] # applies for [FloatInput], [IntInput], and the other custom input types
 #var _detailed_container_buttons: Array[DetailedPanelContainerButton] = []
@@ -23,16 +24,22 @@ func search_for_matching_children(starting_node: Node) -> void:
 		if child in _nodes_to_not_include_or_search:
 			continue #skip
 		
+		if child is TitleBar:
+			continue # Has its own sizing system
+		
 		if child is BooleanIndicator:
 			continue # Has its own sizing system
 		
-		if child is TextureButton:
+		elif child is TextureButton:
 			_texture_buttons.append(child)
 		
-		if child is TextureRect:
+		elif child is Button:
+			_text_buttons.append(child)
+		
+		elif child is TextureRect:
 			_texture_rects.append(child)
 		
-		if child is LineEdit:
+		elif child is LineEdit:
 			_line_edits.append(child)
 
 		
@@ -41,11 +48,12 @@ func search_for_matching_children(starting_node: Node) -> void:
 
 ## Applies custom data changes from new theme to all cached references
 func update_theme_customs(updated_theme: Theme) -> void:
-	
 	# TextureButton
 	for tb: TextureButton in _texture_buttons:
 		update_minimum_size(tb)
 	
+	for but: Button in _text_buttons:
+		update_minimum_size(but)
 
 ## Uses size_x and size_y 
 func update_minimum_size(control: Control) -> void:

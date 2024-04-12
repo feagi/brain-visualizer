@@ -45,7 +45,7 @@ func _ready():
 
 	#NOTE: State Indeicator handles updates from FEAGI independently, no need to do it here
 	
-	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme) #TODO change way of getting current theme
+	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	
 	
 

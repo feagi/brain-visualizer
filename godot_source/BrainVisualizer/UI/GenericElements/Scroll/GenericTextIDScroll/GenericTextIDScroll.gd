@@ -29,7 +29,7 @@ func _ready() -> void:
 		_filter_text.text_changed.connect(filter_by_button_text)
 	
 	toggle_filter_text_box(enable_filter_box)
-
+	BV.UI.theme_changed.connect(_on_theme_change)
 
 ## Adds single item to the list
 func append_single_item(ID: Variant, text: StringName) -> void:
@@ -37,6 +37,8 @@ func append_single_item(ID: Variant, text: StringName) -> void:
 	_scroll_holder.add_child(new_button)
 	new_button.setup(ID, text, _default, _selected, minimum_height_for_buttons)
 	new_button.selected.connect(_selection_proxy)
+	new_button.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme("Button_List")
+	
 
 ## Adds from an array of names and IDs. Array lengths MUST match
 func append_from_arrays(IDs: Array, names: PackedStringArray) -> void:
@@ -123,3 +125,8 @@ func _deselect_others(child_index_to_not_deselect: int) -> void:
 			continue
 		_scroll_holder.get_child(child_index).user_deselected()
 
+func _on_theme_change(_new_theme: Theme) -> void:
+	var min_size: Vector2i = BV.UI.get_minimum_size_from_loaded_theme("Button_List")
+	for child in _scroll_holder.get_children():
+		child.custom_minimum_size = min_size
+	
