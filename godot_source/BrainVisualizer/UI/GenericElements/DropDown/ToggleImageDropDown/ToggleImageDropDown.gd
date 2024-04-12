@@ -61,7 +61,7 @@ func _toggle_menu(show_menu: bool) -> void:
 	_panel.visible = show_menu
 	var child_button: TextureButton
 	if show_menu:
-		_panel.position = Vector2(0,0)
+		_panel.position = Vector2(0,size.y)
 		for child in _button_holder.get_children():
 			if !(child is TextureButton):
 				push_error("Non-TextureButton found in ToggleImageDropDown! Skipping!")

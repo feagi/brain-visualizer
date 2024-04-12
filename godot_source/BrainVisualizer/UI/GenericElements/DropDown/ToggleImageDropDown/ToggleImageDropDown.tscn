@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.gd" id="1_ghidh"]
 
-
 [node name="ToggleImageDropDown" type="TextureButton"]
 ignore_texture_size = true
 stretch_mode = 0
