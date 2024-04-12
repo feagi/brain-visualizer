@@ -5,12 +5,10 @@
 [node name="BooleanIndicator" type="MarginContainer"]
 offset_right = 26.0
 offset_bottom = 27.0
-theme_override_constants/margin_left = 3
-theme_override_constants/margin_top = 1
-theme_override_constants/margin_right = 3
-theme_override_constants/margin_bottom = 1
+theme_type_variation = &"MarginContainer_TopBarIndicator"
 script = ExtResource("1_vvts3")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 custom_minimum_size = Vector2(15, 0)
 layout_mode = 2
+theme_type_variation = &"ColorRect_TopBarIndicator"

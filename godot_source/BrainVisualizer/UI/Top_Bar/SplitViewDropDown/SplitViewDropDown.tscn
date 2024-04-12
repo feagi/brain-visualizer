@@ -23,37 +23,37 @@
 script = ExtResource("1_henmy")
 
 [node name="ToggleImageDropDown" parent="." instance=ExtResource("1_4pks6")]
-custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
 initial_index = 1
 
 [node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
-custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("3_667mu")
 texture_pressed = ExtResource("4_jrywm")
 texture_hover = ExtResource("5_uivfl")
 texture_disabled = ExtResource("6_hj26w")
 
 [node name="Brain Monitor" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
-custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("7_7a8kb")
 texture_pressed = ExtResource("8_xcbkx")
 texture_hover = ExtResource("9_hdmos")
 texture_disabled = ExtResource("10_wf58x")
 
 [node name="Split Vertical" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
-custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("11_g57ge")
 texture_pressed = ExtResource("12_1otf1")
 texture_hover = ExtResource("13_sih8b")
 texture_disabled = ExtResource("14_sn7dj")
 
 [node name="Split Horizontal" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
-custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("15_raxn5")
 texture_pressed = ExtResource("16_f4pb0")
 texture_hover = ExtResource("17_uvwvj")

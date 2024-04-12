@@ -39,9 +39,17 @@ export/convert_text_resources_to_binary=false
 
 enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg")
 
+[file_customization]
+
+folder_colors={
+"res://addons/FeagiCoreIntegration/": "red",
+"res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/": "yellow",
+"res://addons/FeagiCoreIntegration/FeagiCore/Networking/": "teal"
+}
+
 [gui]
 
-theme/custom="res://BrainVisualizer/UI/Themes/1.0-dark.tres"
+theme/custom="res://BrainVisualizer/UI/Themes/dark.tres"
 
 [input]
 

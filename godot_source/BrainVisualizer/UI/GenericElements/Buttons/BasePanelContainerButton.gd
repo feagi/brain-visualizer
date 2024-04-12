@@ -3,27 +3,17 @@ class_name BasePanelContainerButton
 
 signal pressed()
 
-var _unpressed: StyleBoxFlat = StyleBoxFlat.new()
-var _hover: StyleBoxFlat = StyleBoxFlat.new()
-var _clicked: StyleBoxFlat = StyleBoxFlat.new()
-
-
 func _ready() -> void:
 	mouse_entered.connect(_mouse_entered)
 	mouse_exited.connect(_mouse_exited)
 
-## Called externally from [ScaleThemeApplier]
-func update_theme(standard: StyleBoxFlat, hover: StyleBoxFlat, pressed_down: StyleBoxFlat) -> void:
-		_unpressed = standard
-		_hover = hover
-		_clicked = pressed_down
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if !get_global_rect().has_point(get_global_mouse_position()): # check if mouse is in button. WARNING: Does not check if control is on top, so in that case this fails!
+		if !get_global_rect().has_point(get_global_mouse_position()): # check if mouse is in button. FIXME: Does not check if control is on top, so in that case this fails!
 			return
 		
 		if mouse_event.pressed:

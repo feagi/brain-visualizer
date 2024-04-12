@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="FeagiGeneralSettings" load_steps=2 format=3 uid="uid://bha88u45sahwc"]
 
-[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/Config/ConfigScripts/FeagiGeneralSettings.gd" id="1_6xmmx"]
+[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/FeagiGeneralSettings.gd" id="1_6xmmx"]
 
 [resource]
 script = ExtResource("1_6xmmx")

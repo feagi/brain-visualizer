@@ -27,7 +27,7 @@ offset_left = 10.0
 offset_top = 10.0
 offset_right = 1605.0
 offset_bottom = 86.0
-theme_override_constants/separation = 5
+theme_type_variation = &"HBoxContainer_far"
 script = ExtResource("1_f5hja")
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
@@ -36,14 +36,11 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Buttons"]
 layout_mode = 2
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 0
+theme_type_variation = &"MarginContainer_far"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_type_variation = &"HBoxContainer_farther"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
@@ -65,10 +62,11 @@ expand_mode = 1
 
 [node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Cortical Areas"
 
 [node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(52, 52)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -100,10 +98,11 @@ expand_mode = 1
 
 [node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Connectivity Rules"
 
 [node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
-custom_minimum_size = Vector2(52, 52)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -120,20 +119,19 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="ChangeSize"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_type_variation = &"MarginContainer_far"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
 layout_mode = 2
+theme_type_variation = &"HBoxContainer_farther"
 
 [node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(52, 52)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Decrease UI Size"
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("9_5f4b8")
 texture_pressed = ExtResource("10_k4lex")
 texture_hover = ExtResource("11_0uis6")
@@ -142,11 +140,12 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [node name="Bigger" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(52, 52)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Increase UI Size"
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("13_3kcdr")
 texture_pressed = ExtResource("14_ww002")
 texture_hover = ExtResource("15_585hi")
@@ -159,10 +158,7 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="DropDownPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 4
+theme_type_variation = &"MarginContainer_far"
 
 [node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
 layout_mode = 2
@@ -174,61 +170,77 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="DetailsPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_type_variation = &"MarginContainer_far"
 
 [node name="Details" parent="DetailsPanel/MarginContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
 layout_mode = 2
 size_flags_horizontal = 1
 size_flags_vertical = 1
-child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
+child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/HBoxContainer4/StateIndicator")]
 
-[node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
+[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
+
+[node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Refresh Rate"
 vertical_alignment = 1
 
-[node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
+[node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
 layout_mode = 2
 tooltip_text = "The frequency FEAGI runs at"
+theme_type_variation = &"LineEdit_TopBar"
 alignment = 1
 script = ExtResource("3_v82xb")
 suffix = " Hz"
 min_value = 0.1
 
-[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
 layout_mode = 2
+
+[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Neurons"
 vertical_alignment = 1
 
-[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "The number of currently loaded neurons vs the total allowed"
+theme_type_variation = &"LineEdit_TopBar"
 alignment = 1
 editable = false
 script = ExtResource("7_g1qxj")
 
-[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
+
+[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Synapses"
 vertical_alignment = 1
 
-[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5"]
+[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
 layout_mode = 2
 tooltip_text = "The number of currently loaded synapses vs the total allowed"
+theme_type_variation = &"LineEdit_TopBar"
 alignment = 1
 editable = false
 script = ExtResource("7_g1qxj")
 
-[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="6"]
+[node name="HBoxContainer4" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+layout_mode = 2
+
+[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer4"]
 layout_mode = 2
 tooltip_text = "The overall health of FEAGI"
+theme_type_variation = &"Label_Header"
 text = "System Health"
 vertical_alignment = 1
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="7" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer4" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]

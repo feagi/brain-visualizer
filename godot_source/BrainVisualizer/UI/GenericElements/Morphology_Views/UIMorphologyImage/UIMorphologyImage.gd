@@ -2,7 +2,7 @@ extends TextureRect
 class_name UIMorphologyImage
 
 #TODO add morphology images
-const MORPHOLOGY_ICON_PATH: StringName = &"res://Feagi-Godot-Interface/UI/Resources/morphology_icons/"
+const MORPHOLOGY_ICON_PATH: StringName = &"res://BrainVisualizer/UI/GenericResources/MorphologyIcons/"
 
 var _loaded_morphology: BaseMorphology
 var _available_morphology_images: PackedStringArray
