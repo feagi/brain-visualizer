@@ -1,7 +1,6 @@
 extends HBoxContainer
 class_name TopBar
 
-@export var possible_zoom_levels: Array[float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
 @export var starting_size_index: int = 2
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
@@ -46,15 +45,19 @@ func _ready():
 	#NOTE: State Indeicator handles updates from FEAGI independently, no need to do it here
 	
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
-	
+	BV.UI.theme_changed.connect(_theme_updated)
+	_theme_updated(BV.UI.loaded_theme)
 	
 
 func _set_scale(index_movement: int) -> void:
 	_index_scale += index_movement
-	_index_scale = mini(_index_scale, len(possible_zoom_levels) - 1)
+	_index_scale = mini(_index_scale, len(BV.UI.possible_UI_scales) - 1)
 	_index_scale = maxi(_index_scale, 0)
-	_increase_scale_button.disabled =  _index_scale == len(possible_zoom_levels) - 1
+	_increase_scale_button.disabled =  _index_scale == len(BV.UI.possible_UI_scales) - 1
 	_decrease_scale_button.disabled =  _index_scale == 0
+	print("Topbar requesting scale change to " + str(BV.UI.possible_UI_scales[_index_scale]))
+	BV.UI.request_switch_to_theme(BV.UI.possible_UI_scales[_index_scale], UIManager.THEME_COLORS.DARK)
+	
 	
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
@@ -98,6 +101,9 @@ func _smaller_scale() -> void:
 func _bigger_scale() -> void:
 	_set_scale(1)
 
+func _theme_updated(new_theme: Theme) -> void:
+	theme = new_theme
+
 func _update_neuron_count_max(val: int) -> void:
 	_neuron_count.text = _shorten_number(FeagiCore.feagi_local_cache.neuron_count_current) + "/" + _shorten_number(val)
 	
@@ -119,4 +125,5 @@ func _shorten_number(num: float) -> String:
 		a = roundi(num / 1000.0)
 		return str(a) + "K"
 	return str(a)
+
 

@@ -84,6 +84,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Mapping"
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_4ncc7")
 texture_pressed = ExtResource("3_cyihy")
 texture_hover = ExtResource("4_khglo")

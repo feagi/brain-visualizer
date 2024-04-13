@@ -78,6 +78,7 @@ layout_mode = 2
 
 [node name="Clone_button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Clone Cortical Area"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Clone_button" to="." method="_clone_pressed"]

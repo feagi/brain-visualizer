@@ -30,6 +30,7 @@ text = "MP Accumulation"
 [node name="MP_Accumulation" type="TextureButton" parent="MP_Accumulation"]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("3_73v2w")
 ignore_texture_size = true
 stretch_mode = 0

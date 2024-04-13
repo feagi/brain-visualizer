@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="6_bv1kt"]
 
 [node name="CorticalPropertiesBottomMappingPrefab" type="HBoxContainer"]
+theme_type_variation = &"HBoxContainer_far"
 script = ExtResource("1_1eg3c")
 
 [node name="Cortical_ID" type="Button" parent="."]
@@ -14,8 +15,9 @@ layout_mode = 2
 text = "NAME GO HERE"
 
 [node name="Delete_Button" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("3_wmdqc")
 texture_pressed = ExtResource("4_m58hk")
 texture_hover = ExtResource("5_shpep")

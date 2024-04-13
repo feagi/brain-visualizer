@@ -107,6 +107,7 @@ theme_override_constants/separation = 4
 [node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Back"
 
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
@@ -116,11 +117,13 @@ size_flags_horizontal = 3
 [node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Cancel"
 
 [node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Add"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_input_pressed"]

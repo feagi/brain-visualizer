@@ -21,6 +21,7 @@ theme_override_constants/separation = 4
 [node name="AddMorphology" type="Button" parent="Listings"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Define New Connectivity Rule"
 
 [node name="MorphologyScroll" parent="Listings" instance=ExtResource("1_saprm")]
@@ -100,11 +101,13 @@ size_flags_horizontal = 3
 [node name="Close" type="Button" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Close"
 
 [node name="Update" type="Button" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Update
 "
 

@@ -83,11 +83,13 @@ alignment = 2
 [node name="cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BottomButtons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Cancel"
 
 [node name="update" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BottomButtons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+theme_type_variation = &"Button_big"
 text = "Update"
 
 [connection signal="user_selected_cortical_area" from="WindowPanel/WindowMargin/WindowInternals/SourceAndDestination/src_box/src_dropdown" to="." method="_source_changed"]

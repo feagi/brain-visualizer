@@ -26,6 +26,8 @@ func _ready() -> void:
 	_window_margin = $WindowPanel/WindowMargin
 	_window_internals = $WindowPanel/WindowMargin/WindowInternals
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
+	BV.UI.theme_changed.connect(_theme_updated)
+	_theme_updated(BV.UI.loaded_theme)
 	
 
 func _gui_input(event: InputEvent) -> void:
@@ -75,4 +77,5 @@ func _bring_to_top_if_click(event: InputEvent):
 		return
 	bring_window_to_top()
 
-
+func _theme_updated(new_theme: Theme) -> void:
+	theme = new_theme

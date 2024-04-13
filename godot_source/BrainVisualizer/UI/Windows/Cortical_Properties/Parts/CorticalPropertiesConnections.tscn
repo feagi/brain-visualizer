@@ -22,6 +22,7 @@ text = "Afferent (inputs)"
 [node name="Add" type="TextureButton" parent="L_A"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_6cgqo")
 texture_pressed = ExtResource("3_8k7yo")
 texture_hover = ExtResource("4_kwhmv")
@@ -45,6 +46,7 @@ text = "Efferent (outputs)"
 [node name="Add" type="TextureButton" parent="L_E"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_6cgqo")
 texture_pressed = ExtResource("3_8k7yo")
 texture_hover = ExtResource("4_kwhmv")

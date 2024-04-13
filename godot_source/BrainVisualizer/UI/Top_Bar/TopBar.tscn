@@ -29,6 +29,7 @@ offset_right = 1605.0
 offset_bottom = 86.0
 theme_type_variation = &"HBoxContainer_far"
 script = ExtResource("1_f5hja")
+starting_size_index = null
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
 [node name="Buttons" type="PanelContainer" parent="."]

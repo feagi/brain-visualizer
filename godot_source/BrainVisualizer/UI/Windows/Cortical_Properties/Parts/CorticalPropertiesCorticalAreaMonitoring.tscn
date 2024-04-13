@@ -21,7 +21,7 @@ size_flags_horizontal = 3
 text = "Membrane Monitoring"
 
 [node name="Membrane" type="TextureButton" parent="HBoxContainer"]
-custom_minimum_size = Vector2(60, 0)
+custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true
@@ -37,7 +37,7 @@ size_flags_horizontal = 3
 text = "Post-Synaptic  Monitoring"
 
 [node name="PostSynaptic" type="TextureButton" parent="HBoxContainer2"]
-custom_minimum_size = Vector2(60, 0)
+custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true

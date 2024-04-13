@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=24 format=3 uid="uid://bgjqaffunk5cw"]
+[gd_resource type="Theme" load_steps=24 format=3 uid="uid://bknhose0oao4t"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -40,7 +40,7 @@ bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 bg_color = Color(0.152941, 0.192157, 0.254902, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5fauo"]
-bg_color = Color(0.188235, 0.647059, 0.866667, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ixcsb"]
 bg_color = Color(0.701961, 0.141176, 0.172549, 1)
@@ -98,6 +98,9 @@ Button_List/constants/size_y = 16
 Button_Tall/base_type = &"Button"
 Button_Tall/constants/size_x = 32
 Button_Tall/constants/size_y = 32
+Button_big/base_type = &"Button"
+Button_big/constants/size_x = 64
+Button_big/constants/size_y = 32
 CheckButton/styles/hover = SubResource("StyleBoxFlat_bimsq")
 CheckButton/styles/hover_pressed = SubResource("StyleBoxFlat_x416a")
 CheckButton/styles/normal = SubResource("StyleBoxFlat_u1fsi")
@@ -112,26 +115,26 @@ DetailedPanelContainerButton/constants/gap_1 = 4
 DetailedPanelContainerButton/constants/gap_2 = 4
 DetailedPanelContainerButton/constants/scale_times_16 = 16
 DetailedPanelContainerButton_DescriptionFont/base_type = &"RichTextLabel"
-DetailedPanelContainerButton_DescriptionFont/font_sizes/font_size = 12
+DetailedPanelContainerButton_DescriptionFont/font_sizes/font_size = 6
 DetailedPanelContainerButton_MainText/base_type = &"Label"
-DetailedPanelContainerButton_MainText/font_sizes/font_size = 16
+DetailedPanelContainerButton_MainText/font_sizes/font_size = 8
 HBoxContainer/constants/separation = 4
 HBoxContainer_far/base_type = &"HBoxContainer"
-HBoxContainer_far/constants/separation = 8
+HBoxContainer_far/constants/separation = 12
 HBoxContainer_farther/base_type = &"HBoxContainer"
-HBoxContainer_farther/constants/separation = 16
-Label/font_sizes/font_size = 16
+HBoxContainer_farther/constants/separation = 24
+Label/font_sizes/font_size = 8
 Label_Header/base_type = &"Label"
-Label_Header/font_sizes/font_size = 20
+Label_Header/font_sizes/font_size = 10
 Label_Title/base_type = &"Label"
-Label_Title/font_sizes/font_size = 20
+Label_Title/font_sizes/font_size = 10
 LineEdit/constants/size_x = 0
-LineEdit/font_sizes/font_size = 16
+LineEdit/font_sizes/font_size = 8
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
 LineEdit/styles/read_only = SubResource("StyleBoxFlat_a2rtm")
 LineEdit_TopBar/base_type = &"LineEdit"
 LineEdit_TopBar/constants/size_x = 50
-LineEdit_TopBar/font_sizes/font_size = 20
+LineEdit_TopBar/font_sizes/font_size = 10
 MarginContainer/constants/margin_bottom = 4
 MarginContainer/constants/margin_left = 4
 MarginContainer/constants/margin_right = 4
@@ -174,5 +177,11 @@ TextureButton_TopBar/constants/size_y = 32
 TextureButton_WindowClose/base_type = &"TextureButton"
 TextureButton_WindowClose/constants/size_x = 24
 TextureButton_WindowClose/constants/size_y = 24
+TextureButton_icon/base_type = &"TextureButton"
+TextureButton_icon/constants/size_x = 16
+TextureButton_icon/constants/size_y = 16
 TitleBarContainer/base_type = &"PanelContainer"
 TitleBarContainer/styles/panel = SubResource("StyleBoxFlat_i4413")
+ToggleButton/base_type = &"TextureButton"
+ToggleButton/constants/size_x = 32
+ToggleButton/constants/size_y = 16

@@ -49,7 +49,7 @@ folder_colors={
 
 [gui]
 
-theme/custom="res://BrainVisualizer/UI/Themes/source_themes/dark.tres"
+theme/custom="res://BrainVisualizer/UI/Themes/source_themes/source_dark.tres"
 
 [input]
 

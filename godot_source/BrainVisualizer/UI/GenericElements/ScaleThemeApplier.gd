@@ -15,6 +15,7 @@ func setup(starting_node: Node, nodes_to_not_include_or_search: Array[Node], cur
 	_nodes_to_not_include_or_search = nodes_to_not_include_or_search
 	search_for_matching_children(starting_node)
 	update_theme_customs(current_loaded_theme)
+	BV.UI.theme_changed.connect(update_theme_customs)
 
 ## Recursive search to find all supported types and add them to arrays. ONLY call externally if structure changes, as this isnt efficient to keep rerunning
 func search_for_matching_children(starting_node: Node) -> void:
@@ -47,27 +48,11 @@ func search_for_matching_children(starting_node: Node) -> void:
 		search_for_matching_children(child) # Recursion!
 
 ## Applies custom data changes from new theme to all cached references
-func update_theme_customs(updated_theme: Theme) -> void:
+func update_theme_customs(_updated_theme: Theme) -> void:
+	
 	# TextureButton
 	for tb: TextureButton in _texture_buttons:
-		update_minimum_size(tb)
+		tb.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tb, "TextureButton")
 	
 	for but: Button in _text_buttons:
-		update_minimum_size(but)
-
-## Uses size_x and size_y 
-func update_minimum_size(control: Control) -> void:
-	var size_x: int = 32 # default texture size
-	var size_y: int = 32
-	
-	if control.has_theme_constant("size_x"):
-		size_x = control.get_theme_constant("size_x")
-	else:
-		push_error("THEME: Loaded theme file is missing size_x for %s. There will be sizing issues!" % control.name)
-	if control.has_theme_constant("size_y"):
-		size_y = control.get_theme_constant("size_y")
-	else:
-		push_error("THEME: Loaded theme file is missing size_y for %s. There will be sizing issues!" % control.name)
-	
-	control.custom_minimum_size = Vector2i(size_x, size_y)
-	
+		but.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(but, "Button")
