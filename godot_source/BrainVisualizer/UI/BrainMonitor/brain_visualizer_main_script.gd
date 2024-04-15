@@ -17,7 +17,7 @@ func _ready():
 
 ## Stupid
 func move_when_changed(changed: BaseCorticalArea):
-	check_cortical(changed, true) # This is dum
+	check_cortical(changed) # This is dum
 
 
 #TODO TEMP
@@ -163,7 +163,8 @@ func delete_example():
 
 
 #why
-func check_cortical(cortical_area_data : BaseCorticalArea, flag: bool = false):
+func check_cortical(cortical_area_data : BaseCorticalArea):
+	var flag: bool = false
 	for i in global_name_list:
 		if "_textbox" in i:
 			continue
