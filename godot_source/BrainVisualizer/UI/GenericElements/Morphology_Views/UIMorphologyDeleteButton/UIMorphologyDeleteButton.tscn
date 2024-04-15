@@ -10,6 +10,7 @@
 custom_minimum_size = Vector2(64, 64)
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("1_eli5q")
 texture_pressed = ExtResource("2_k5xd5")
 texture_hover = ExtResource("3_c2jyu")
