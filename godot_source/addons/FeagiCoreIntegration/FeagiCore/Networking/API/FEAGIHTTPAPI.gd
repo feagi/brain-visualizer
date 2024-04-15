@@ -11,6 +11,7 @@ enum HTTP_HEALTH {
 signal FEAGI_http_health_changed(health: HTTP_HEALTH)
 signal FEAGI_returned_error(error_identifier_and_friendly_description: PackedStringArray, request_definition: APIRequestWorkerDefinition) # FEAGI responded with an error identifier (or 'UNDECODABLE' if unable to be decoded)
 signal FEAGI_unresponsive(request_definition: APIRequestWorkerDefinition)
+signal FEAGI_returned_healthcheck_poll()
 
 var address_list: FEAGIHTTPAddressList = null
 var http_health: HTTP_HEALTH:
@@ -118,7 +119,7 @@ func _retrieved_poll_from_HTTP_health(response_data: FeagiRequestOutput) -> void
 	
 	var health_data: Dictionary = response_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(health_data)
-
+	FEAGI_returned_healthcheck_poll.emit()
 
 
 

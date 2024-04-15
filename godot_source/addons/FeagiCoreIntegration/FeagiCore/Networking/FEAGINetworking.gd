@@ -4,6 +4,7 @@ class_name FEAGINetworking
 
 # NOTE: For most signals, get them from http_API and websocket_API directly, no need for duplicates
 
+signal recieved_healthcheck_poll()
 signal ping_recieved(time_sent_ms: int, time_recieved_ms: int)
 signal genome_reset_request_recieved()
 
@@ -17,6 +18,7 @@ var _ping_send_time_ms: int ## record of when ping was sent, ping recieve time i
 func _init():
 	http_API = FEAGIHTTPAPI.new()
 	http_API.name = "FEAGIHTTPAPI"
+	http_API.FEAGI_returned_healthcheck_poll.connect(_on_recieve_healthcheck_poll)
 	add_child(http_API)
 
 	websocket_API = FEAGIWebSocketAPI.new()
@@ -24,6 +26,7 @@ func _init():
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
 	websocket_API.feagi_return_ping.connect(_on_return_ping)
 	websocket_API.feagi_requesting_reset.connect(_on_recieve_genome_reset_request)
+
 	
 	add_child(websocket_API)
 
@@ -85,3 +88,6 @@ func _on_return_ping():
 
 func _on_recieve_genome_reset_request():
 	genome_reset_request_recieved.emit()
+
+func _on_recieve_healthcheck_poll():
+	recieved_healthcheck_poll.emit()

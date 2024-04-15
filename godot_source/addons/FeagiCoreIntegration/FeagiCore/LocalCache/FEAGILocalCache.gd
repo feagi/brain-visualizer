@@ -38,6 +38,17 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	genome_reloaded.emit()
 #endregion
 
+## Deletes the genome from cache (safely). NOTE: this triggers the genome_reloaded signal too
+func clear_whole_genome() -> void:
+	print("\nFEAGI CACHE: REMOVING the ENTIRE local cached genome!")
+	cortical_areas.update_cortical_area_cache_from_summary({})
+	morphologies.update_morphology_cache_from_summary({})
+	clear_templates()
+	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
+	genome_reloaded.emit()
+	
+
+
 #region Templates
 
 signal templates_updated()
@@ -81,6 +92,11 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			BaseCorticalArea.CORTICAL_AREA_TYPE.OPU
 		)
 	
+	templates_updated.emit()
+
+func clear_templates() -> void:
+	_IPU_templates = {}
+	_OPU_templates = {}
 	templates_updated.emit()
 
 #endregion

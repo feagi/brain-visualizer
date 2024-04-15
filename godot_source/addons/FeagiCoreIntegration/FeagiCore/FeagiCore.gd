@@ -53,6 +53,7 @@ func _enter_tree():
 		network = FEAGINetworking.new()
 		network.name = "FEAGINetworking"
 		network.genome_reset_request_recieved.connect(_recieve_genome_reset_request)
+		network.recieved_healthcheck_poll.connect(_on_healthcheck_poll)
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
 	requests = FEAGIRequests.new()
@@ -104,12 +105,10 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 
 # Disconnect from FEAGI
 func disconnect_from_FEAGI() -> void:
+	unload_genome()
 	network.disconnect_networking()
 	#TODO clear cache
 	var cache_state: CONNECTION_STATE = _connection_state
-	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
-	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
-	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,cache_genome_state)
 	_connection_state = CONNECTION_STATE.DISCONNECTED
 	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, cache_state)
 	
@@ -128,8 +127,6 @@ func load_genome_from_FEAGI() -> void:
 	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
 	genome_load_state_changed.emit(GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI, cache_genome_state) # This would be a good time to close any UIs
-	#TODO wipe current data
-	
 
 	var genome_load_response: FeagiRequestOutput = await requests.reload_genome()
 	if !genome_load_response.success:
@@ -145,6 +142,17 @@ func load_genome_from_FEAGI() -> void:
 	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
 	genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY, cache_genome_state)
 	
+## Unload the genome from the local cahce. Does not by itself disconnect from FEAGI
+func unload_genome() -> void:
+	if genome_load_state == GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
+		push_error("FEAGICORE: Genome is in the middle of being reloaded! Unable to wipe cache!")
+		return
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED:
+		push_error("FEAGICORE: Unable to wipe local genome since it is not loaded!")
+		return
+	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
+	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,cache_genome_state)
 
 ## Returns true if we can safely interact with feagi (connected and genome loaded)
 func can_interact_with_feagi() -> bool:
@@ -154,13 +162,16 @@ func can_interact_with_feagi() -> bool:
 		return false
 	return true
 
+
+
 #region Internal
 
 func feagi_retrieved_burst_rate(delay_bursts_apart: float) -> void:
 	_delay_between_bursts = delay_bursts_apart
 	delay_between_bursts_updated.emit(delay_bursts_apart)
 
-## Respond to changing HTTP health
+
+## Respond to changing HTTP health during start procedure (not used in general healthcheck polling when already active)
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 	# Bit too much nesting imo, but this is cleaner than having external single use functions
 	# Godot, pls add nested function support!
@@ -183,8 +194,7 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 					# Not sure how we can land here, but regardless feagi is unresponsive
 					push_warning("FEAGICORE: FEAGI Appears Unresponsive!")
 					disconnect_from_FEAGI() #?
-			
-			
+				
 		FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE:
 			match(connection_state):
 				CONNECTION_STATE.CONNECTING:
@@ -219,16 +229,15 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 							_genome_load_state = GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI
 							genome_load_state_changed.emit(GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI, cache_genome_state)
 					if feagi_settings.enable_HTTP_healthcheck:
+						print("FEAGICORE: Establishing polling HTTP healthcheck as per configuration!")
 						network.establish_HTTP_healthcheck()
 					return
 					
 				CONNECTION_STATE.CONNECTED:
-					#TODO health updated while connected (cache already updated). do other stuff
 					pass
 				_:
 					#This shouldnt be possible
 					push_error("FEAGICORE: Somehow ended up getting a connectable healthcheck while not connecting to feagi...")
-		
 		
 		FEAGIHTTPAPI.HTTP_HEALTH.ERROR:
 			# We have an error from FEAGI
@@ -248,6 +257,27 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 					# Not sure how we can land here, but regardless feagi is erroring
 					push_warning("FEAGICORE: FEAGI has returned an error!")
 					disconnect_from_FEAGI() #?
+
+
+## Respond to health check polling
+func _on_healthcheck_poll() -> void:
+	if _genome_load_state == GENOME_LOAD_STATE.NO_GENOME_IN_FEAGI && feagi_local_cache.genome_availability:
+		# There was no genome in FEAGI but now there is.
+		if _feagi_settings.late_load_genome_if_not_immediately_available:
+			print("FEAGICORE: Genome is now detected in FEAGI! Loading as per configuration!")
+			load_genome_from_FEAGI()
+		else:
+			print("FEAGICORE: Genome is now detected in FEAGI! NOT Loading as per configuration!")
+			var prev_state: GENOME_LOAD_STATE = _genome_load_state
+			_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+			genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, prev_state)
+
+	if !feagi_local_cache.genome_availability && _genome_load_state == GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		# we lost the genome, unload
+		print("FEAGICORE: Genome is no longer detected in FEAGI! Unloading the local cached genome!")
+		unload_genome()
+		return
+
 
 func _recieve_genome_reset_request():
 	about_to_reload_genome.emit()
