@@ -91,6 +91,10 @@ func get_minimum_size_from_loaded_theme_variant_given_control(control: Control, 
 func get_minimum_size_from_loaded_theme(element: StringName) -> Vector2i:
 	var output: Vector2i = Vector2i(32,32)
 	
+	if loaded_theme == null:
+		push_error("THEME: Theme has not been loaded correctly, a LOT of UI elements will be broken!")
+		return output
+	
 	if loaded_theme.has_constant("size_x", element):
 		output.x = loaded_theme.get_constant("size_x", element)
 	else:
