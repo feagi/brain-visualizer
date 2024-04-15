@@ -635,7 +635,7 @@ func update_pattern_morphology(morphology_name: StringName, patterns: Array[Patt
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"morphology_name": morphology_name,
-		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.VECTORS),
+		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.PATTERNS),
 		"morphology_parameters": {
 			"patterns": FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(patterns)
 		}
@@ -673,7 +673,7 @@ func update_composite_morphology(morphology_name: StringName, source_seed: Vecto
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"morphology_name": morphology_name,
-		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.VECTORS),
+		"morphology_type": BaseMorphology.morphology_type_to_string(BaseMorphology.MORPHOLOGY_TYPE.COMPOSITE),
 		"morphology_parameters": {
 			"composite": {
 				"src_seed": FEAGIUtils.vector3i_to_array(source_seed),
