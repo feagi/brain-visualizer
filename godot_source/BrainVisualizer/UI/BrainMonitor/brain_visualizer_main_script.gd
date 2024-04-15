@@ -18,6 +18,7 @@ func _ready():
 ## Stupid
 func move_when_changed(changed: BaseCorticalArea):
 	check_cortical(changed) # This is dum
+	
 
 
 #TODO TEMP
@@ -165,10 +166,16 @@ func delete_example():
 #why
 func check_cortical(cortical_area_data : BaseCorticalArea):
 	var flag: bool = false
+	
+	# TODO: This is dumb
+	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label")
+	label.text = cortical_area_data.name
+	
 	for i in global_name_list:
 		if "_textbox" in i:
 			continue
 		if cortical_area_data.cortical_ID in i:
+			# the yd dev experience
 			for x in range(1, 6):
 				if x == 1:
 					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[0]:
@@ -188,6 +195,7 @@ func check_cortical(cortical_area_data : BaseCorticalArea):
 				elif x == 6:
 					if not global_name_list[i][0][x] == cortical_area_data.dimensions[1]:
 						flag = true
+				
 	if flag:
 		delete_single_cortical(cortical_area_data)
 		for i in global_name_list:
