@@ -165,40 +165,20 @@ func delete_example():
 
 #why
 func check_cortical(cortical_area_data : BaseCorticalArea):
-	var flag: bool = false
-	
 	# TODO: This is dumb
 	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label")
-	label.text = cortical_area_data.name
-	
-	for i in global_name_list:
-		if "_textbox" in i:
-			continue
-		if cortical_area_data.cortical_ID in i:
-			# the yd dev experience
-			for x in range(1, 6):
-				if x == 1:
-					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[0]:
-						flag = true
-				elif x == 2:
-					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[1]:
-						flag = true
-				elif x == 3:
-					if not global_name_list[i][0][x] == cortical_area_data.coordinates_3D[2]:
-						flag = true
-				elif x == 4:
-					if not global_name_list[i][0][x] == cortical_area_data.dimensions[0]:
-						flag = true
-				elif x == 5:
-					if not global_name_list[i][0][x] == cortical_area_data.dimensions[2]:
-						flag = true
-				elif x == 6:
-					if not global_name_list[i][0][x] == cortical_area_data.dimensions[1]:
-						flag = true
-				
-	if flag:
-		delete_single_cortical(cortical_area_data)
-		for i in global_name_list:
-			if cortical_area_data.cortical_ID in i:
-				print(global_name_list[i])
-		generate_cortical_area(cortical_area_data)
+	label.text = cortical_area_data.name # What is this even doing here? 
+	if global_name_list: # Pretty sure this is already exist in cache. We need to replace this with current list.
+		var coordinate_3D = global_name_list[cortical_area_data.cortical_ID][0].slice(1, 4)
+		var dimension = global_name_list[cortical_area_data.cortical_ID][0].slice(4, 8)
+		var dimension_updated = Vector3i(dimension[0], dimension[2], dimension[1]) # Okay.
+		var coordinate_3D_updated = Vector3i(coordinate_3D[0], coordinate_3D[1], coordinate_3D[2])  #Cool. We are doing vector3i instead. all right
+		if (coordinate_3D_updated != cortical_area_data.coordinates_3D) or (dimension_updated != cortical_area_data.dimensions):
+			delete_single_cortical(cortical_area_data) # Not going to bother to try and improve this. 
+			for i in global_name_list:
+				if cortical_area_data.cortical_ID in i:
+					print(global_name_list[i])
+			generate_cortical_area(cortical_area_data)
+			# Actual fix here
+			Godot_list.godot_list["data"]["direct_stimulation"][cortical_area_data.cortical_ID] = [] # Now this is something I wrote. 
+			
