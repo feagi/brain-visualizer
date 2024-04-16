@@ -21,6 +21,7 @@ var _popup: PopupMenu
 var _default_width: float
 
 func _ready():
+	_default_width = custom_minimum_size.x
 	_popup = get_popup()
 	if load_available_morphologies_on_start:
 		reload_available_morphologies()

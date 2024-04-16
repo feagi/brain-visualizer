@@ -51,9 +51,6 @@ func _ready():
 	section_neuron_firing.user_requested_update.connect(_user_requested_update)
 	section_post_synaptic_potential.user_requested_update.connect(_user_requested_update)
 	section_memory.user_requested_update.connect(_user_requested_update)
-	
-	if !(FeagiCore.feagi_local_cache.influxdb_availability):
-		collapsible_cortical_monitoring.section_title = "(PREMIUM) Cortical Area Monitoring"
 
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_reference: BaseCorticalArea) -> void:
