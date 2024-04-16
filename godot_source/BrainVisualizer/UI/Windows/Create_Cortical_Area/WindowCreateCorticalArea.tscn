@@ -59,28 +59,28 @@ script = ExtResource("2_xy23b")
 [node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("4_5utqj")
-icon_size = Vector2i(96, 96)
+icon_size = Vector2i(128, 128)
 main_label = &"Input"
 is_vertical = true
 
 [node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("5_ffsab")
-icon_size = Vector2i(96, 96)
+icon_size = Vector2i(128, 128)
 main_label = &"Output"
 is_vertical = true
 
 [node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("7_hbdve")
-icon_size = Vector2i(96, 96)
+icon_size = Vector2i(128, 128)
 main_label = &"Interconnect"
 is_vertical = true
 
 [node name="Memory" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
 layout_mode = 2
 icon = ExtResource("8_miahu")
-icon_size = Vector2i(96, 96)
+icon_size = Vector2i(128, 128)
 main_label = &"Memory"
 is_vertical = true
 

@@ -14,6 +14,7 @@ text = "X"
 [node name="IntX" type="SpinBox" parent="."]
 layout_mode = 2
 alignment = 1
+custom_arrow_step = 1.0
 
 [node name="LabelY" type="Label" parent="."]
 layout_mode = 2
@@ -23,3 +24,4 @@ text = "Y"
 [node name="IntY" type="SpinBox" parent="."]
 layout_mode = 2
 alignment = 1
+custom_arrow_step = 1.0

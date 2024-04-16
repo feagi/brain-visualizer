@@ -51,7 +51,6 @@ func setup(left_offset: int = leftward_offset):
 	var hbox: HBoxContainer = $VerticalCollapsible/HBoxContainer
 	hbox.get_node("Section_Title").text = section_text
 	_collapsing_button_toggle = hbox.get_node("Collapsible_Toggle")
-	var _top_gap: Control = $VerticalCollapsible/TopGap
 	var _panel_container: PanelContainer = $VerticalCollapsible/PanelContainer
 	_margin_container = $VerticalCollapsible/PanelContainer/MarginContainer
 	
@@ -61,7 +60,6 @@ func setup(left_offset: int = leftward_offset):
 	_margin_container.add_theme_constant_override("margin_right", rightward_offset)
 	if panel_stylebox != null:
 		_panel_container.add_theme_stylebox_override("panel", panel_stylebox)
-	_top_gap.custom_minimum_size.y = section_top_gap
 	
 	_collapsing_node = prefab_to_spawn.instantiate()
 	_margin_container.add_child(_collapsing_node)
