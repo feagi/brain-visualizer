@@ -29,7 +29,6 @@ offset_right = 1605.0
 offset_bottom = 86.0
 theme_type_variation = &"HBoxContainer_far"
 script = ExtResource("1_f5hja")
-starting_size_index = null
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
 [node name="Buttons" type="PanelContainer" parent="."]
@@ -124,7 +123,7 @@ theme_type_variation = &"MarginContainer_far"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_farther"
+theme_type_variation = &"HBoxContainer_far"
 
 [node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(64, 64)
@@ -177,7 +176,7 @@ theme_type_variation = &"MarginContainer_far"
 layout_mode = 2
 size_flags_horizontal = 1
 size_flags_vertical = 1
-child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/HBoxContainer4/StateIndicator")]
+child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
 
 [node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
@@ -231,17 +230,7 @@ alignment = 1
 editable = false
 script = ExtResource("7_g1qxj")
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
-layout_mode = 2
-
-[node name="state_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer4"]
-layout_mode = 2
-tooltip_text = "The overall health of FEAGI"
-theme_type_variation = &"Label_Header"
-text = "System Health"
-vertical_alignment = 1
-
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer4" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]

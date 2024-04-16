@@ -11,11 +11,11 @@ script = ExtResource("1_55acr")
 texture_closed = ExtResource("2_h8720")
 
 [node name="texture_button" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(16, 56)
+custom_minimum_size = Vector2(16, 64)
 layout_mode = 2
 texture_normal = ExtResource("2_h8720")
 ignore_texture_size = true
-stretch_mode = 4
+stretch_mode = 0
 
 [node name="Place_child_nodes_here" type="BoxContainer" parent="."]
 layout_mode = 2

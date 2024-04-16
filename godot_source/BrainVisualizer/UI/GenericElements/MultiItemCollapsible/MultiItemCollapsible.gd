@@ -12,13 +12,15 @@ var all_togglable_children: Array[Control]:
 	get: return _children
 var opened: bool:
 	get: return _opened
-
+	
+var _close_button_default_scale: Vector2i
 var _texture_button: TextureButton
 var _children: Array[Control] = []
 var _opened: bool
 
 func _ready() -> void:
 	_texture_button = $texture_button
+	_close_button_default_scale = _texture_button.custom_minimum_size
 	for child: Control in ($Place_child_nodes_here).get_children():
 		_children.append(child)
 		_texture_button.texture_normal = texture_closed
@@ -28,6 +30,8 @@ func _ready() -> void:
 	vertical = setup_as_vertical
 	($Place_child_nodes_here).vertical = setup_as_vertical
 	_opened = start_open
+	_theme_updated()
+	BV.UI.theme_changed.connect(_theme_updated)
 
 ## toggles whether the UI is open or not
 func toggle_open_state(is_open: bool, repress_signal: bool = false) -> void:
@@ -46,4 +50,5 @@ func toggle_open_state(is_open: bool, repress_signal: bool = false) -> void:
 func toggle() -> void:
 	toggle_open_state(!_opened)
 
-
+func _theme_updated(_theme = null) -> void:
+	_texture_button.custom_minimum_size = BV.UI.loaded_theme_scale.x * _close_button_default_scale

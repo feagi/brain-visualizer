@@ -7,14 +7,16 @@ var _genome_validity: BooleanIndicator
 var _brain_readiness: BooleanIndicator
 var _data: BooleanIndicator # websocket or real time data
 var _summary: BooleanIndicator
+var _label: Label
 
 func _ready():
-	_burst_engine = $BurstEngine
-	_genome_availibility = $GenomeAvailability
-	_genome_validity = $GenomeValidity
-	_brain_readiness = $BrainReadiness
-	_data = $Data
-	_summary = $Summary
+	_burst_engine = $HBoxContainer/BurstEngine
+	_genome_availibility = $HBoxContainer/GenomeAvailability
+	_genome_validity = $HBoxContainer/GenomeValidity
+	_brain_readiness = $HBoxContainer/BrainReadiness
+	_data = $HBoxContainer/Data
+	_summary = $HBoxContainer/Summary
+	_label = $state_label
 	
 	FeagiCore.feagi_local_cache.burst_engine_changed.connect(_set_burst_engine)
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_set_genome_availibility)
@@ -33,6 +35,7 @@ func toggle_collapse(is_collapsed: bool) -> void:
 	_genome_validity.visible = !is_collapsed
 	_brain_readiness.visible = !is_collapsed
 	_data.visible = !is_collapsed
+	_label.visible = !is_collapsed
 	_summary.visible = is_collapsed
 	size = Vector2(0,0) # force smallest possible size
 

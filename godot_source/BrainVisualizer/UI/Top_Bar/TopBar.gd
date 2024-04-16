@@ -20,7 +20,7 @@ var _decrease_scale_button: TextureButton
 func _ready():
 	# references
 	_refresh_rate_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer/RR_Float
-	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer4/StateIndicator
+	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
 	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	_index_scale = starting_size_index
 	
@@ -37,8 +37,6 @@ func _ready():
 	_FEAGI_on_burst_delay_change(FeagiCore.delay_between_bursts)
 	
 	## Count Limits
-	FeagiCore.feagi_local_cache.neuron_count_max_changed.connect(_update_neuron_count_max)
-	FeagiCore.feagi_local_cache.synapse_count_max_changed.connect(_update_synapse_count_max)
 	FeagiCore.feagi_local_cache.neuron_count_current_changed.connect(_update_neuron_count_current)
 	FeagiCore.feagi_local_cache.synapse_count_current_changed.connect(_update_synapse_count_current)
 
@@ -104,18 +102,14 @@ func _bigger_scale() -> void:
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 
-func _update_neuron_count_max(val: int) -> void:
-	_neuron_count.text = _shorten_number(FeagiCore.feagi_local_cache.neuron_count_current) + "/" + _shorten_number(val)
 	
 func _update_neuron_count_current(val: int) -> void:
-	_neuron_count.text = _shorten_number(val) + "/" + _shorten_number(FeagiCore.feagi_local_cache.neuron_count_current)
-
-func _update_synapse_count_max(val: int) -> void:
-	_synapse_count.text = _shorten_number(FeagiCore.feagi_local_cache.synapse_count_current) + "/" + _shorten_number(val)
+	_neuron_count.text = _format_int(val) 
 	
 func _update_synapse_count_current(val: int) -> void:
-	_synapse_count.text = _shorten_number(val) + "/" + _shorten_number(FeagiCore.feagi_local_cache.synapse_count_max)
+	_synapse_count.text = _format_int(val)
 
+#TODO remove this?
 func _shorten_number(num: float) -> String:
 	var a: int
 	if num > 1000000:
@@ -125,5 +119,17 @@ func _shorten_number(num: float) -> String:
 		a = roundi(num / 1000.0)
 		return str(a) + "K"
 	return str(a)
+
+func _format_int(number: int) -> String:
+	var number_str: String = str(number)
+	var formatted_str: String = "" 
+	var digit_count: int = 0
+
+	for i in range(number_str.length() - 1, -1, -1):
+		formatted_str = number_str[i] + formatted_str
+		digit_count += 1
+		if digit_count % 3 == 0 and i != 0:
+			formatted_str = "," + formatted_str
+	return formatted_str
 
 
