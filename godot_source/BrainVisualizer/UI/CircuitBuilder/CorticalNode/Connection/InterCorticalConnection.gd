@@ -56,6 +56,8 @@ func _ready():
 	var mat: Material = _line.material #TODO Change away from duplicate materials ASAP!
 	var unique_line_material: Material = mat.duplicate()
 	_line.material = unique_line_material
+	_theme_changed(BV.UI.loaded_theme)
+	BV.UI.theme_changed.connect(_theme_changed)
 	for i in NUM_POINTS_PER_CURVE: # TODO optimize! This should be static in TSCN
 		_line.add_point(Vector2(0,0))
 
@@ -171,8 +173,6 @@ func _update_line_shader_with_mapping_changes(_updated_mapping_data: MappingProp
 		_line.material.set_shader_parameter(&"isDashed", _updated_mapping_data.is_any_mapping_plastic())
 
 
-
-
 ## Cubic bezier curve approximation, where t is between 0 and 1
 func _cubic_bezier(t: float, p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2) -> Vector2:
 	return (pow(1.0 - t, 3.0) * p1) + (3.0 * t * pow(1.0 - t, 2.0) * p2) + (3.0 * pow(t, 2.0) * (1.0 - t) * p3) + (pow(t,3.0) * p4)
@@ -186,3 +186,7 @@ func _generate_cubic_bezier_points(start_point: Vector2, end_point: Vector2) -> 
 	for i:int in NUM_POINTS_PER_CURVE:
 		output[i] = _cubic_bezier((float(i) * x_space), start_point, start_offset, output_offset, end_point)
 	return output
+
+
+func _theme_changed(new_theme: Theme) -> void:
+	theme = new_theme

@@ -7,7 +7,7 @@
 offset_right = 231.0
 offset_bottom = 23.0
 size_flags_horizontal = 3
-theme_type_variation = &"BoxContainer_far"
+theme_type_variation = &"BoxContainer_farther"
 script = ExtResource("1_com4y")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]

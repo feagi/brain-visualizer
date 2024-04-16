@@ -53,7 +53,7 @@ layout_mode = 2
 
 [node name="options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_type_variation = &"HBoxContainer_farther"
 script = ExtResource("2_xy23b")
 
 [node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]

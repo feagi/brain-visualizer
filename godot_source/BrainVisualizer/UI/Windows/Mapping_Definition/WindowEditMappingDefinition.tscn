@@ -50,6 +50,7 @@ script = ExtResource("2_ds7ss")
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 size_flags_horizontal = 4
+theme_type_variation = &"TextureRect_wide"
 texture = ExtResource("4_q8idl")
 expand_mode = 1
 
