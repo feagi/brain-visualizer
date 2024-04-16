@@ -17,8 +17,10 @@ signal user_selected_cortical_area(cortical_area_reference: BaseCorticalArea)
 
 var _listed_areas: Array[BaseCorticalArea] = []
 var _popup: PopupMenu
+var _default_width: float
 
 func _ready():
+	_default_width = custom_minimum_size.x
 	_popup = get_popup()
 	if sync_removed_cortical_areas:
 		FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_cortical_area_was_deleted_from_cache)
@@ -27,6 +29,8 @@ func _ready():
 	if sync_all_areas_on_load:
 		list_all_cached_areas()
 	item_selected.connect(_user_selected_option)
+	BV.UI.theme_changed.connect(_on_theme_change)
+	_on_theme_change()
 
 ## Clears all listed cortical areas
 func clear_all_cortical_areas() -> void:
@@ -96,3 +100,5 @@ func _cortical_area_was_added_to_cache(added_cortical: BaseCorticalArea) -> void
 	if added_cortical not in _listed_areas:
 		add_cortical_area(added_cortical)
 
+func _on_theme_change(_new_theme: Theme = null) -> void:
+	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x

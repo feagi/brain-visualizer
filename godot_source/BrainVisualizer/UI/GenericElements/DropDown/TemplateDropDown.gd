@@ -12,10 +12,14 @@ var template_type: BaseCorticalArea.CORTICAL_AREA_TYPE:
 		load_cortical_type_options(v)
 
 var _stored_template_references: Array[CorticalTemplate] = []
+var _default_width: float
 
 func _ready() -> void:
+	_default_width = custom_minimum_size.x
 	load_cortical_type_options(_template_type)
 	item_selected.connect(_on_user_pick)
+	BV.UI.theme_changed.connect(_on_theme_change)
+	_on_theme_change()
 
 func load_cortical_type_options(type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	clear()
@@ -42,4 +46,5 @@ func get_selected_template() -> CorticalTemplate:
 func _on_user_pick(index: int) -> void:
 	template_picked.emit(_stored_template_references[index])
 
-
+func _on_theme_change(_new_theme: Theme = null) -> void:
+	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x

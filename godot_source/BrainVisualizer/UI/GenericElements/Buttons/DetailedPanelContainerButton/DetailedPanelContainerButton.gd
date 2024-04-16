@@ -8,11 +8,6 @@ class_name DetailedPanelContainerButton
 @export var is_vertical: bool
 
 
-
-func _notification(what):
-	if what == NOTIFICATION_THEME_CHANGED:
-		external_update_theme_params()
-
 func _ready() -> void:
 	super()
 	var box: BoxContainer = $MarginContainer/BoxContainer
@@ -23,24 +18,20 @@ func _ready() -> void:
 	main_text.text = main_label
 	second_text.text = description_label #NOTE: Not queuing free if empty due to gap in boxcontainer
 	box.vertical = is_vertical
-	external_update_theme_params()
-
-func external_update_theme_params():
-	if !(has_theme_constant("gap_1", "DetailedPanelContainerButton") and has_theme_constant("gap_2", "DetailedPanelContainerButton") and 
-	has_theme_constant("scale_times_16", "DetailedPanelContainerButton")):
-		push_error("Theme is missing properties for DetailedPanelContainerButton!")
-		return
+	update_theme_params()
+	BV.UI.theme_changed.connect(update_theme_params)
 	
+
+func update_theme_params(_new_theme = null):
 	var texture_rect: TextureRect = $MarginContainer/BoxContainer/TextureRect
 	var gap1: Control = $MarginContainer/BoxContainer/g1
 	var gap2: Control = $MarginContainer/BoxContainer/g2
 	
-	texture_rect.custom_minimum_size = icon_size * (float(get_theme_constant("scale_times_16", "DetailedPanelContainerButton")) / 16.0)
-	
+	texture_rect.custom_minimum_size = icon_size * BV.UI.loaded_theme_scale.x
 	if is_vertical:
-		gap1.custom_minimum_size.y = get_theme_constant("gap_1", "DetailedPanelContainerButton")
-		gap2.custom_minimum_size.y = get_theme_constant("gap_2", "DetailedPanelContainerButton")
+		gap1.custom_minimum_size.y = BV.UI.get_minimum_size_from_loaded_theme("Gap_medium").y
+		gap2.custom_minimum_size.y = BV.UI.get_minimum_size_from_loaded_theme("Gap_medium").y
 	else:
-		gap1.custom_minimum_size.x = get_theme_constant("gap_1", "DetailedPanelContainerButton")
-		gap2.custom_minimum_size.x = get_theme_constant("gap_2", "DetailedPanelContainerButton")
-
+		gap1.custom_minimum_size.x = BV.UI.get_minimum_size_from_loaded_theme("Gap_medium").x
+		gap2.custom_minimum_size.x = BV.UI.get_minimum_size_from_loaded_theme("Gap_medium").x
+	

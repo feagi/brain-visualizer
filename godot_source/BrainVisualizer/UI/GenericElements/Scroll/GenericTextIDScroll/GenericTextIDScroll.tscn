@@ -8,7 +8,6 @@ offset_bottom = 23.0
 script = ExtResource("1_niuke")
 
 [node name="filter" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="GenericTextIDScroll" type="ScrollContainer" parent="."]

@@ -29,8 +29,24 @@ func _run():
 				export_theme.set_constant("size_y", type, int( float(export_theme.get_constant("size_y", type)) * scalar))
 			if export_theme.has_font_size("font_size", type):
 				export_theme.set_font_size("font_size", type, int( float(export_theme.get_font_size("font_size", type)) * scalar))
-		
-		
+			if export_theme.has_font_size("bold_font_size", type):
+				export_theme.set_font_size("bold_font_size", type, int( float(export_theme.get_font_size("bold_font_size", type)) * scalar))
+			if export_theme.has_font_size("bold_italics_font_size", type):
+				export_theme.set_font_size("bold_italics_font_size", type, int( float(export_theme.get_font_size("bold_italics_font_size", type)) * scalar))
+			if export_theme.has_font_size("italics_font_size", type):
+				export_theme.set_font_size("italics_font_size", type, int( float(export_theme.get_font_size("italics_font_size", type)) * scalar))
+			if export_theme.has_font_size("mono_font_size", type):
+				export_theme.set_font_size("mono_font_size", type, int( float(export_theme.get_font_size("mono_font_size", type)) * scalar))
+			if export_theme.has_font_size("normal_font_size", type):
+				export_theme.set_font_size("normal_font_size", type, int( float(export_theme.get_font_size("normal_font_size", type)) * scalar))
+			if export_theme.has_font_size("margin_bottom", type):
+				export_theme.set_font_size("margin_bottom", type, int( float(export_theme.get_font_size("margin_bottom", type)) * scalar))
+			if export_theme.has_font_size("margin_left", type):
+				export_theme.set_font_size("margin_left", type, int( float(export_theme.get_font_size("margin_left", type)) * scalar))
+			if export_theme.has_font_size("margin_right", type):
+				export_theme.set_font_size("margin_right", type, int( float(export_theme.get_font_size("margin_right", type)) * scalar))
+			if export_theme.has_font_size("margin_top", type):
+				export_theme.set_font_size("margin_top", type, int( float(export_theme.get_font_size("margin_top", type)) * scalar))
 		var name_prefix: StringName = str(scalar) + "-"
 		var err = ResourceSaver.save(export_theme, THEME_EXPORT_FOLDER + name_prefix + THEME_BASE_NAME + ".tres")
 	

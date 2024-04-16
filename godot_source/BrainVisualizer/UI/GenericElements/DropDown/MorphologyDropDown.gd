@@ -18,6 +18,7 @@ signal user_selected_morphology(morphology_reference: BaseMorphology)
 
 var _listed_morphologies: Array[BaseMorphology] = []
 var _popup: PopupMenu
+var _default_width: float
 
 func _ready():
 	_popup = get_popup()
@@ -28,6 +29,8 @@ func _ready():
 		FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_morphology_was_deleted_from_cache)
 	if sync_added_morphologies:
 		FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_morphology_was_added_to_cache)
+	BV.UI.theme_changed.connect(_on_theme_change)
+	_on_theme_change()
 
 func reload_available_morphologies() -> void:
 	var morphologies: Array[BaseMorphology] = []
@@ -105,3 +108,5 @@ func _morphology_was_added_to_cache(added_morphology: BaseMorphology) -> void:
 	if added_morphology not in _listed_morphologies:
 		add_morphology(added_morphology)
 
+func _on_theme_change(_new_theme: Theme = null) -> void:
+	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x

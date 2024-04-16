@@ -17,8 +17,12 @@ var options: Array:
 	set(v): 
 		_set_dropdown_via_array(v)
 
+var _default_width: float
+
 func _ready():
 	options = initial_items
+	BV.UI.theme_changed.connect(_on_theme_change)
+	_on_theme_change()
 
 func add_option(option: StringName) -> void:
 	if option in _DropDownItems:
@@ -59,3 +63,5 @@ func _set_dropdown_via_array(input_array: Array) -> void:
 func _user_selected_item(index: int) -> void:
 	option_changed.emit(index, _DropDownItems[index])
 
+func _on_theme_change(_new_theme: Theme = null) -> void:
+	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x

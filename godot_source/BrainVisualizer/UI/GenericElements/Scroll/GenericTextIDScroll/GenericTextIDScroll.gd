@@ -15,8 +15,10 @@ var _scroll_container: ScrollContainer
 var _scroll_holder: BoxContainer
 var _default: StyleBoxFlat
 var _selected: StyleBoxFlat
+var _cached_minimum_size: Vector2i
 
 func _ready() -> void:
+	_cached_minimum_size = custom_minimum_size
 	_filter_text = $filter
 	_scroll_container = get_child(1)
 	_scroll_holder = _scroll_container.get_child(0)
@@ -29,7 +31,9 @@ func _ready() -> void:
 		_filter_text.text_changed.connect(filter_by_button_text)
 	
 	toggle_filter_text_box(enable_filter_box)
+	_on_theme_change()
 	BV.UI.theme_changed.connect(_on_theme_change)
+
 
 ## Adds single item to the list
 func append_single_item(ID: Variant, text: StringName) -> void:
@@ -125,8 +129,8 @@ func _deselect_others(child_index_to_not_deselect: int) -> void:
 			continue
 		_scroll_holder.get_child(child_index).user_deselected()
 
-func _on_theme_change(_new_theme: Theme) -> void:
+func _on_theme_change(_new_theme: Theme = null) -> void:
 	var min_size: Vector2i = BV.UI.get_minimum_size_from_loaded_theme("Button_List")
 	for child in _scroll_holder.get_children():
 		child.custom_minimum_size = min_size
-	
+	custom_minimum_size = _cached_minimum_size * BV.UI.loaded_theme_scale.x

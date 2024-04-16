@@ -31,6 +31,9 @@ func search_for_matching_children(starting_node: Node) -> void:
 		if child is BooleanIndicator:
 			continue # Has its own sizing system
 		
+		if child is OptionButton:
+			continue # Has its own sizing system
+		
 		elif child is TextureButton:
 			_texture_buttons.append(child)
 		
@@ -56,3 +59,6 @@ func update_theme_customs(_updated_theme: Theme) -> void:
 	
 	for but: Button in _text_buttons:
 		but.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(but, "Button")
+		
+	for te: TextureRect in _texture_rects:
+		te.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(te, "TextureRect")

@@ -10,7 +10,7 @@ enum THEME_COLORS { # SO MANY COLORS
 }
 
 signal screen_size_changed(new_screen_size: Vector2)
-signal theme_changed(theme: Theme)
+signal theme_changed(theme: Theme) ## New theme (likely with vustom scale changes) applied
 signal toggle_keyboard_controls(enable_controls: bool) ## True if keyboard controls (such as for camera) should be enabled. False in cases such as user typing #TODO is needed?
 signal user_selected_single_cortical_area(area: BaseCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
@@ -28,10 +28,13 @@ var notification_system: NotificationSystem:
 	get: return _notification_system
 var possible_UI_scales: Array[float]:
 	get: return _possible_UI_scales
+var loaded_theme_scale: Vector2:
+	get: return _loaded_theme_scale
 
 var _screen_size: Vector2
 var _selected_cortical_areas: Array[BaseCorticalArea] = []
 var _loaded_theme: Theme
+var _loaded_theme_scale: Vector2 = Vector2(1.0, 1.0)
 var _top_bar: TopBar
 var _possible_UI_scales: Array[float] = []
 var _circuit_builder: CorticalNodeGraph
@@ -139,7 +142,19 @@ func _top_bar_resized() -> void:
 	_notification_system.position.y = _top_bar.size.y + _top_bar.position.y
 
 func _load_new_theme(theme: Theme) -> void:
+	var scalar: Vector2 = Vector2(1,1)
+	
 	_loaded_theme = theme
+	if _loaded_theme.has_constant("size_x", "generic_scale"):
+		scalar.x = float(_loaded_theme.get_constant("size_x", "generic_scale")) / 4.0
+	else:
+		push_error("UI: Unable to find size_x under the generic_scale type of the newely loaded theme! There will be scaling issues!")
+	if _loaded_theme.has_constant("size_y", "generic_scale"):
+		scalar.y = float(_loaded_theme.get_constant("size_y", "generic_scale")) / 4.0
+	else:
+		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")
+	
+	_loaded_theme_scale = scalar
 	theme_changed.emit(theme)
 
 

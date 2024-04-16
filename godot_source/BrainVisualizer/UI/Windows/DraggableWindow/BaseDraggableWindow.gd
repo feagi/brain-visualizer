@@ -79,3 +79,4 @@ func _bring_to_top_if_click(event: InputEvent):
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
+	shrink_window()
