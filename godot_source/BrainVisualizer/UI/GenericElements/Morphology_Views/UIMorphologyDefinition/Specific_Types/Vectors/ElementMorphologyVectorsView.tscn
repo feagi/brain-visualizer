@@ -25,6 +25,7 @@ text = "Vector Definition:"
 [node name="add_vector" type="TextureButton" parent="header"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_iw5kc")
 texture_pressed = ExtResource("3_li0mh")
 texture_hover = ExtResource("4_qk7tm")

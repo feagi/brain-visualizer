@@ -25,6 +25,7 @@ text = "Patterns"
 [node name="add_vector" type="TextureButton" parent="header"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_ftdb2")
 texture_pressed = ExtResource("3_tay1s")
 texture_hover = ExtResource("4_q8f6c")

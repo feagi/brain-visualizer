@@ -41,7 +41,6 @@ layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
@@ -49,7 +48,7 @@ custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "View Cortical Area Details"
 focus_mode = 0
-theme_type_variation = &"TextureButton_icon"
+theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("3_25iwn")
 texture_pressed = ExtResource("8_dpqta")
 texture_hover = ExtResource("5_ir57i")
@@ -62,7 +61,7 @@ custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Connect Cortical Area Towards..."
 focus_mode = 0
-theme_type_variation = &"TextureButton_icon"
+theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("7_aaec5")
 texture_pressed = ExtResource("10_apr2r")
 texture_hover = ExtResource("9_8220t")
@@ -76,7 +75,7 @@ custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Clone Cortical Area..."
 focus_mode = 0
-theme_type_variation = &"TextureButton_icon"
+theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("11_hl6lb")
 texture_pressed = ExtResource("12_daddx")
 texture_hover = ExtResource("13_2u3te")
@@ -89,7 +88,7 @@ custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Delete this Cortical Area..."
 focus_mode = 0
-theme_type_variation = &"TextureButton_icon"
+theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("15_e2qrx")
 texture_pressed = ExtResource("16_alv5k")
 texture_hover = ExtResource("17_l48r7")
