@@ -4,9 +4,6 @@ class_name PatternVector3Field
 signal user_updated_vector(new_vector3: PatternVector3)
 signal user_interacted()
 
-@export var label_x_text: StringName = &"X"
-@export var label_y_text: StringName = &"Y"
-@export var label_z_text: StringName = &"Z"
 @export var int_x_prefix: StringName
 @export var int_y_prefix: StringName
 @export var int_z_prefix: StringName
@@ -38,9 +35,6 @@ var _field_z: PatternValInput
 var _editable: bool = true
 
 func _ready():
-	get_node("LabelX").text = label_x_text
-	get_node("LabelY").text = label_y_text
-	get_node("LabelZ").text = label_z_text
 
 	_field_x = get_node("PVX")
 	_field_y = get_node("PVY")

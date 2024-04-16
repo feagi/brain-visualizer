@@ -1,27 +1,39 @@
-[gd_scene load_steps=3 format=3 uid="uid://brwx50pyfywb7"]
+[gd_scene load_steps=2 format=3 uid="uid://brwx50pyfywb7"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_depso"]
 
 [node name="Vector2iSpingBoxField" type="BoxContainer"]
+offset_right = 184.0
+offset_bottom = 23.0
+theme_type_variation = &"BoxContainer_far"
 script = ExtResource("1_ppcmy")
 
-[node name="LabelX" type="Label" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_depso")
+size_flags_horizontal = 3
+
+[node name="LabelX" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "X"
 
-[node name="IntX" type="SpinBox" parent="."]
+[node name="IntX" type="SpinBox" parent="HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 alignment = 1
 custom_arrow_step = 1.0
 
-[node name="LabelY" type="Label" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_depso")
+size_flags_horizontal = 3
+
+[node name="LabelY" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 
-[node name="IntY" type="SpinBox" parent="."]
+[node name="IntY" type="SpinBox" parent="HBoxContainer2"]
 layout_mode = 2
+size_flags_horizontal = 3
 alignment = 1
 custom_arrow_step = 1.0

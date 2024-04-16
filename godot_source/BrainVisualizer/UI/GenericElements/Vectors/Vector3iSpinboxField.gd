@@ -44,13 +44,13 @@ var _editable: bool = true
 
 
 func _ready():
-	get_node("LabelX").text = label_x_text
-	get_node("LabelY").text = label_y_text
-	get_node("LabelZ").text = label_z_text
+	$HBoxContainer/LabelX.text = label_x_text
+	$HBoxContainer2/LabelY.text = label_y_text
+	$HBoxContainer3/LabelZ.text = label_z_text
 
-	_field_x = get_node("IntX")
-	_field_y = get_node("IntY")
-	_field_z = get_node("IntZ")
+	_field_x = $HBoxContainer/IntX
+	_field_y = $HBoxContainer2/IntY
+	_field_z = $HBoxContainer3/IntZ
 
 	_field_x.prefix = int_x_prefix
 	_field_x.suffix = int_x_suffix

@@ -1,44 +1,60 @@
-[gd_scene load_steps=4 format=3 uid="uid://do28ox8hb6e08"]
+[gd_scene load_steps=3 format=3 uid="uid://do28ox8hb6e08"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3fField.gd" id="1_com4y"]
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="2_tlcnq"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_uer0m"]
 
 [node name="Vector3fField" type="BoxContainer"]
-offset_right = 256.0
-offset_bottom = 26.0
+offset_right = 231.0
+offset_bottom = 23.0
+size_flags_horizontal = 3
+theme_type_variation = &"BoxContainer_far"
 script = ExtResource("1_com4y")
 
-[node name="LabelX" type="Label" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_tlcnq")
+size_flags_horizontal = 3
+
+[node name="LabelX" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "X"
 horizontal_alignment = 2
 
-[node name="FloatX" type="LineEdit" parent="."]
+[node name="FloatX" type="LineEdit" parent="HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 alignment = 1
 script = ExtResource("3_uer0m")
 
-[node name="LabelY" type="Label" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_tlcnq")
+size_flags_horizontal = 3
+
+[node name="LabelY" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 
-[node name="FloatY" type="LineEdit" parent="."]
+[node name="FloatY" type="LineEdit" parent="HBoxContainer2"]
 layout_mode = 2
+size_flags_horizontal = 3
 alignment = 1
 script = ExtResource("3_uer0m")
 
-[node name="LabelZ" type="Label" parent="."]
+[node name="HBoxContainer3" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_tlcnq")
+size_flags_horizontal = 3
+
+[node name="LabelZ" type="Label" parent="HBoxContainer3"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "Z
 "
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="FloatZ" type="LineEdit" parent="."]
+[node name="FloatZ" type="LineEdit" parent="HBoxContainer3"]
 layout_mode = 2
+size_flags_horizontal = 3
 alignment = 1
 script = ExtResource("3_uer0m")

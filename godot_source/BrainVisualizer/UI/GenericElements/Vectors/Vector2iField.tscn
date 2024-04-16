@@ -5,27 +5,36 @@
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_xw845"]
 
 [node name="Vector2iField" type="BoxContainer"]
+offset_right = 126.0
+offset_bottom = 22.0
+theme_type_variation = &"BoxContainer_far"
 script = ExtResource("1_2rlsy")
 
-[node name="LabelX" type="Label" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelX" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "X"
 
-[node name="SpacerX" type="Control" parent="."]
-layout_mode = 2
-
-[node name="IntX" type="LineEdit" parent="."]
+[node name="IntX" type="LineEdit" parent="HBoxContainer"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("3_xw845")
 alignment = 1
 script = ExtResource("3_v6mub")
 
-[node name="LabelY" type="Label" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("3_xw845")
+size_flags_horizontal = 3
+
+[node name="LabelY" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 
-[node name="IntY" type="LineEdit" parent="."]
+[node name="IntY" type="LineEdit" parent="HBoxContainer2"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("3_xw845")
 alignment = 1
