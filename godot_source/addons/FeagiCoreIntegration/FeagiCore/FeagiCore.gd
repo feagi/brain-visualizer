@@ -69,19 +69,33 @@ func load_FEAGI_settings(settings: FeagiGeneralSettings) -> void:
 		return
 	_feagi_settings = settings
 
+## Returns if it is possible to retrieve connection details from the javascript on the page (returns false otherwise or if no javascript)
+func is_javascript_connection_defined() -> bool:
+	var endpoint_details: FeagiEndpointDetails = JavaScriptIntegrations.grab_feagi_endpoint_details()
+	return !endpoint_details.is_invalid()
+	
 
-## Use this to attempt connecting to FEAGI using details from the javascript. Returns true if javascript retireved valid info (DOES NOT MEAN CONNECTION WORKED)
-func attempt_connection_via_javascript_details() -> bool:
+## Use this to attempt connecting to FEAGI using details from the javascript
+func attempt_connection_via_javascript_details(fallback_manual_endpoint_details: FeagiEndpointDetails = null) -> void:
 	if feagi_settings == null:
-		push_error("FEAGICORE: Cannot connect if no FEAGI settings have been set!")
-		return false
+		print("FEAGICORE: Cannot connect if no FEAGI settings have been set! Halting attempted connection to FEAGI!") # Do both print and push warning to make things easier to put together in logs
+		push_error("FEAGICORE: Cannot connect if no FEAGI settings have been set! Halting attempted connection to FEAGI!")
+		return
 	
 	var endpoint_details: FeagiEndpointDetails = JavaScriptIntegrations.grab_feagi_endpoint_details()
 	if endpoint_details.is_invalid():
+		print("FEAGICORE: Unable to acquire connection details from javascript!")
 		push_warning("FEAGICORE: Unable to acquire connection details from javascript!")
-		return false
+		if fallback_manual_endpoint_details == null:
+			print("FEAGICORE: No fallback connection endpoint defined! Halting attempted connection to FEAGI!")
+			push_warning("FEAGICORE: No fallback connection endpoint defined! Halting attempted connection to FEAGI!")
+			return
+		print("FEAGICORE: Attempting to use the defined fallback endpoint instead to connect to FEAGI...")
+		attempt_connection(fallback_manual_endpoint_details)
+		return
+		
 	attempt_connection(endpoint_details)
-	return true
+	return
 
 ## Use this to attempt connecting given explicit endpoint details
 func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:

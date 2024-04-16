@@ -21,9 +21,8 @@ func _ready() -> void:
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
 	
-	# Define the network endpoint settings
-	# NOTE: Right now we are loading a static file, we need to switch this to something more dynamic later
-	FeagiCore.attempt_connection(default_FEAGI_network_settings)
+	# Try to grab the network settings from javascript, but manually define the network settings to use as fallback if the javascript fails
+	FeagiCore.attempt_connection_via_javascript_details(default_FEAGI_network_settings)
 	
 
 func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, _prev_state: FeagiCore.CONNECTION_STATE) -> void:
