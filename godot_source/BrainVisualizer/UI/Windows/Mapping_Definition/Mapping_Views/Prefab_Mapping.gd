@@ -24,7 +24,6 @@ func _ready() -> void:
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
 	_edit = $edit
-	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
 
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]
@@ -35,14 +34,15 @@ func setup(data: Dictionary, _main_window) -> void:
 	_plasticity_constant.current_float = _mapping_ref.plasticity_constant
 	_LTP_multiplier.current_float = _mapping_ref.LTP_multiplier
 	_LTD_multiplier.current_float = _mapping_ref.LTD_multiplier
-	_on_user_toggle_plasticity(_plasticity.button_pressed)
 	_on_user_change_morphology(_mapping_ref.morphology_used)
+	_on_user_toggle_plasticity(_mapping_ref.is_plastic)
 	_edit.disabled = !_determine_boolean_editability(_mapping_ref.morphology_used.get_latest_known_editability())
 	if "simple" in data.keys():
 		_toggle_show_full_editing(false)
 	if "allowed_morphologies" in data.keys():
 		_morphologies.overwrite_morphologies(data["allowed_morphologies"])
 	_morphologies.set_selected_morphology(_mapping_ref.morphology_used)
+	_morphologies.user_selected_morphology.connect(_on_user_change_morphology)
 
 ## Generate a [MappingProperty] from the given data in this scene
 func generate_mapping_property() -> MappingProperty:

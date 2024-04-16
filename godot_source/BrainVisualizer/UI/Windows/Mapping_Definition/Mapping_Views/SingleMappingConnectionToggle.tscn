@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/SingleMappingConnectionToggle.gd" id="1_rxmq5"]
 
-
 [node name="SingleMappingConnectionToggle" type="VBoxContainer"]
 script = ExtResource("1_rxmq5")
 
