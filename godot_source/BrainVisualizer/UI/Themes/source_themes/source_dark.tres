@@ -62,7 +62,7 @@ anti_aliasing = false
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1l48k"]
-bg_color = Color(0.426769, 0.664237, 0.50052, 1)
+bg_color = Color(0.152941, 0.192157, 0.254902, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sr4l8"]
 bg_color = Color(0.742136, 0.556807, 0.405145, 1)

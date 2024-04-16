@@ -1,4 +1,6 @@
-[gd_resource type="Theme" load_steps=24 format=3 uid="uid://e4w3qtf2gyyi"]
+[gd_resource type="Theme" load_steps=25 format=3 uid="uid://e4w3qtf2gyyi"]
+
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_cgdmx"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -60,7 +62,7 @@ anti_aliasing = false
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1l48k"]
-bg_color = Color(0.426769, 0.664237, 0.50052, 1)
+bg_color = Color(0.152941, 0.192157, 0.254902, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sr4l8"]
 bg_color = Color(0.742136, 0.556807, 0.405145, 1)
@@ -122,6 +124,8 @@ Gap_medium/constants/size_y = 10
 Gap_small/constants/size_x = 5
 Gap_small/constants/size_y = 5
 HBoxContainer/constants/separation = 4
+HBoxContainer_adjacent/base_type = &"HBoxContainer"
+HBoxContainer_adjacent/constants/separation = 0
 HBoxContainer_far/base_type = &"HBoxContainer"
 HBoxContainer_far/constants/separation = 12
 HBoxContainer_farther/base_type = &"HBoxContainer"
@@ -131,6 +135,9 @@ Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 25
 Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 25
+Label_UniformWidth/base_type = &"Label"
+Label_UniformWidth/font_sizes/font_size = 20
+Label_UniformWidth/fonts/font = ExtResource("1_cgdmx")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 20
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
@@ -199,5 +206,12 @@ TitleBarContainer/styles/panel = SubResource("StyleBoxFlat_i4413")
 ToggleButton/base_type = &"TextureButton"
 ToggleButton/constants/size_x = 80
 ToggleButton/constants/size_y = 40
+VBoxContainer/constants/separation = 4
+VBoxContainer_adjacent/base_type = &"VBoxContainer"
+VBoxContainer_adjacent/constants/separation = 0
+VBoxContainer_far/base_type = &"VBoxContainer"
+VBoxContainer_far/constants/separation = 8
+VBoxContainer_farther/base_type = &"VBoxContainer"
+VBoxContainer_farther/constants/separation = 24
 generic_scale/constants/size_x = 5
 generic_scale/constants/size_y = 5
