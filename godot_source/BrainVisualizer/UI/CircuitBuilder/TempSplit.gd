@@ -13,7 +13,7 @@ var _current_state: STATES = STATES.CB_CLOSED
 func _ready() -> void:
 	split_offset = BV.UI.screen_size.x * .6
 	BV.UI.screen_size_changed.connect(_screen_size_change)
-
+	_screen_size_change(BV.UI.screen_size)
 
 func set_view(state: STATES) -> void:
 	_current_state = state
