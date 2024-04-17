@@ -43,6 +43,3 @@ func get_websocket_URL() -> StringName:
 		return "wss://" + websocket_tld + ":" + str(websocket_port)
 	return "ws://" + websocket_tld + ":" + str(websocket_port)
 
-## If a value was left at default, this object is likely will not provide a valid connection
-func is_invalid() -> bool:
-	return API_tld == "" or API_port == 0 or websocket_tld == "" or websocket_port == 0

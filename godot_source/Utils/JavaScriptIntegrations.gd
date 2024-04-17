@@ -14,13 +14,16 @@ extends Object
 class_name JavaScriptIntegrations
 ## Static functions for getting data from javascript on the page, if this project is web exported
 
-## Try to get the connection details from feagi to the webpage
-static func grab_feagi_endpoint_details() -> FeagiEndpointDetails:
+## Try to get the connection details from feagi to the webpage. Start with fallback details, and overwrite with any retrieved variabled
+static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpointDetails) -> FeagiEndpointDetails:
 	
-	#TODO: This is very messy, we may need to clean up the javascript details and this to make it more clear whats going on
-	#TODO: Double check this carefully in NRS
-	var websocket_port: int = 9050
-	var http_port: int =  8000
+	#TODO: Double check this carefully in NRS WHOOPS
+	var websocket_port: int = fallback_details.websocket_port
+	var websocket_address: StringName = fallback_details.websocket_tld
+	var http_port: int =  fallback_details.API_port
+	var address_API: StringName = fallback_details.API_tld
+	var is_encrypted: bool = fallback_details.is_encrypted
+	
 	
 	var tld_result = JavaScriptBridge.eval(""" 
 		function getIPAddress() {
@@ -63,20 +66,21 @@ static func grab_feagi_endpoint_details() -> FeagiEndpointDetails:
 		get_port();
 		""")
 	
-	if http_type_str == null or tld_result == null or is_using_standard_port == null or websocket_tld == null:
-		# Something didnt return correctly. Return empty FeagiEndpointDetails
-		return FeagiEndpointDetails.create_from("", 0, "", 0, false)
+	if websocket_tld != null:
+		websocket_address = websocket_tld
+	if http_type_str != null:
+		is_encrypted = str(http_type_str).to_lower() == "https://"
+	if tld_result != null:
+		address_API = tld_result
+	if is_using_standard_port != null:
+		if str(is_using_standard_port).to_lower() == "true":
+			if is_encrypted:
+				http_port = 443
+				websocket_port = 443
+			else:
+				http_port = 80
+				websocket_port = 80
 	
-	
-	var is_encrypted: bool = str(http_type_str).to_lower() == "https://"
-	if str(is_using_standard_port).to_lower() == "true":
-		# We are using a standard port
-		# In the case of standard ports, NRS sets up routing
-		if is_encrypted:
-			http_port = 443
-			websocket_port = 443
-		else:
-			http_port = 80
-			websocket_port = 80
-	
-	return FeagiEndpointDetails.create_from(str(tld_result), http_port, str(websocket_tld), websocket_port, is_encrypted)
+	var output: FeagiEndpointDetails = FeagiEndpointDetails.create_from(address_API, http_port, websocket_address, websocket_port, is_encrypted)
+	print("The retrieved connection details following javascript data gathering:\nhttp_address: %s\nhttp_port: %d\nwebsocket_address: %s\nwebsocket_port: %d\nis_encrypted: %s\n" % [address_API, http_port, websocket_address, websocket_port, is_encrypted])
+	return output
