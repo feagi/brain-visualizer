@@ -80,7 +80,14 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 			else:
 				http_port = 80
 				websocket_port = 80
-	
+
+	if address_API.contains(":"):
+		http_port = (address_API.split(":", true)[1]).to_int()
+		address_API = address_API.split(":", true)[0]
+	if websocket_address.contains(":"):
+		websocket_port = (websocket_address.split(":", true)[1]).to_int()
+		websocket_address = websocket_address.split(":", true)[0]
+		
 	var output: FeagiEndpointDetails = FeagiEndpointDetails.create_from(address_API, http_port, websocket_address, websocket_port, is_encrypted)
 	print("The retrieved connection details following javascript data gathering:\nhttp_address: %s\nhttp_port: %d\nwebsocket_address: %s\nwebsocket_port: %d\nis_encrypted: %s\n" % [address_API, http_port, websocket_address, websocket_port, is_encrypted])
 	return output
