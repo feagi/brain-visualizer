@@ -1,0 +1,187 @@
+[gd_scene load_steps=6 format=3 uid="uid://rvvhpq3y0on7"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesNeuronFiringParameters.gd" id="1_ko350"]
+[ext_resource type="Texture2D" uid="uid://m0g8f4fqi1wb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="3_73v2w"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_ermgo"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="4_kamkc"]
+[ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3fField.tscn" id="5_7rehv"]
+
+[node name="CorticalPropertiesNeuronFiringParameters" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.5
+offset_top = 1.5
+offset_right = -860.5
+offset_bottom = -70.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ko350")
+
+[node name="MP_Accumulation" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "If True, the neuron will hold on to its level of membrane potential across bursts. If False, the level of membrane potential will reset with the passing of each burst"
+
+[node name="Label" type="Label" parent="MP_Accumulation"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MP Accumulation"
+
+[node name="MP_Accumulation" type="TextureButton" parent="MP_Accumulation"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_type_variation = &"ToggleButton"
+texture_normal = ExtResource("3_73v2w")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("4_kamkc")
+
+[node name="Leak_Constant" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The amount of membrane potential a neuron will loose with the passing of a single burst duration"
+
+[node name="Label" type="Label" parent="Leak_Constant"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Leak Constant"
+
+[node name="Leak_Constant" type="LineEdit" parent="Leak_Constant"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Leak_Variability" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The percentage of inconsistency that each neuron can have in their leak constant value"
+
+[node name="Label" type="Label" parent="Leak_Variability"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Leak Variability"
+
+[node name="Leak_Variability" type="LineEdit" parent="Leak_Variability"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Refactory_Period" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The number of bursts where neuron cannot fire after it has already fired"
+
+[node name="Label" type="Label" parent="Refactory_Period"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Refactory Period"
+
+[node name="Refactory_Period" type="LineEdit" parent="Refactory_Period"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Consecutive_Fire_Count" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The max number of consecutive firing a neuron can have at a time"
+
+[node name="Label" type="Label" parent="Consecutive_Fire_Count"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Consecutive Fire Count"
+
+[node name="Consecutive_Fire_Count" type="LineEdit" parent="Consecutive_Fire_Count"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Snooze_Period" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The number of burst where the neuron cannot fire after the Consecutive Fire Count has reached"
+
+[node name="Label" type="Label" parent="Snooze_Period"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Snooze Period"
+
+[node name="Snooze_Period" type="LineEdit" parent="Snooze_Period"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Fire_Threshold" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The level of membrane potential each neuron has to reach that would lead to neuron firing"
+
+[node name="Label" type="Label" parent="Fire_Threshold"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fire Threshold"
+
+[node name="Fire_Threshold" type="LineEdit" parent="Fire_Threshold"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Threshold_Limit" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The max level of membrane potential value that can trigger a neuron firing. Membrane potentials beyond this limit will not lead to neuron firing"
+
+[node name="Label" type="Label" parent="Threshold_Limit"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fire Threshold Limit"
+
+[node name="Threshold_Limit" type="LineEdit" parent="Threshold_Limit"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+
+[node name="Neuron_Excitability" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "Chance of neuron becoming excited"
+
+[node name="Label" type="Label" parent="Neuron_Excitability"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Neuron Excitability"
+
+[node name="Neuron_Excitability" type="LineEdit" parent="Neuron_Excitability"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("3_ermgo")
+max_value = 100
+min_value = 0
+
+[node name="Fire_Threshold_Label" type="Label" parent="."]
+layout_mode = 2
+tooltip_text = "Defined the level of Fire Threshold Increase in X, Y, Z directions of a cortical area"
+mouse_filter = 1
+text = "Fire Threshold Increment"
+
+[node name="Fire_Threshold_Increment" parent="." instance=ExtResource("5_7rehv")]
+layout_mode = 2
+alignment = 1
+label_x_text = &"X"
+label_y_text = &"Y"
+label_z_text = &"Z"
+
+[node name="GAP" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="Update_Button" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply Update"
+
+[connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
+[connection signal="toggled" from="MP_Accumulation/MP_Accumulation" to="." method="user_request_MP_Accumumulation"]
+[connection signal="user_interacted" from="Leak_Constant/Leak_Constant" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Leak_Variability/Leak_Variability" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Refactory_Period/Refactory_Period" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Consecutive_Fire_Count/Consecutive_Fire_Count" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Snooze_Period/Snooze_Period" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Fire_Threshold/Fire_Threshold" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Threshold_Limit/Threshold_Limit" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Neuron_Excitability/Neuron_Excitability" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="Fire_Threshold_Increment" to="." method="_enable_update_button"]
+[connection signal="pressed" from="Update_Button" to="." method="_user_requests_update"]

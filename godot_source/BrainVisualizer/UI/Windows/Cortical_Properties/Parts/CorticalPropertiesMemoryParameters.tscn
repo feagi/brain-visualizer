@@ -1,0 +1,73 @@
+[gd_scene load_steps=3 format=3 uid="uid://dm68mg7exp1ca"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Cortical_Properties/Parts/CorticalPropertiesMemoryParameters.gd" id="1_dvgya"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="2_6ygxt"]
+
+[node name="CorticalPropertiesMemoryParameters" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.5
+offset_top = 1.5
+offset_right = -860.5
+offset_bottom = -70.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dvgya")
+
+[node name="initial_neuron_lifespan" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "Number of neurons within each voxel"
+
+[node name="Label" type="Label" parent="initial_neuron_lifespan"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Initial Neuron Lifespan"
+
+[node name="initial_neuron_lifespan" type="LineEdit" parent="initial_neuron_lifespan"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("2_6ygxt")
+
+[node name="lifespan_growth_rate" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The rate of success in accepting incoming synapses"
+
+[node name="Label" type="Label" parent="lifespan_growth_rate"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Lifespan Growth Rate"
+
+[node name="lifespan_growth_rate" type="LineEdit" parent="lifespan_growth_rate"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("2_6ygxt")
+
+[node name="longterm_memory_threshold" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
+
+[node name="Label" type="Label" parent="longterm_memory_threshold"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Longterm Memory Threshold"
+
+[node name="longterm_memory_threshold" type="LineEdit" parent="longterm_memory_threshold"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("2_6ygxt")
+
+[node name="GAP" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="Update_Button" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply Update"
+
+[connection signal="user_interacted" from="initial_neuron_lifespan/initial_neuron_lifespan" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="lifespan_growth_rate/lifespan_growth_rate" to="." method="_enable_update_button"]
+[connection signal="user_interacted" from="longterm_memory_threshold/longterm_memory_threshold" to="." method="_enable_update_button"]
+[connection signal="pressed" from="Update_Button" to="." method="_user_requests_update"]

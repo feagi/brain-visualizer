@@ -1,0 +1,157 @@
+[gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
+[ext_resource type="Texture2D" uid="uid://cas8w6tbsvf0l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_ad4rt"]
+[ext_resource type="Texture2D" uid="uid://c7titv7o7iu41" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
+[ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://BrainVisualizer/UI/GenericElements/Scroll/Morphology_List/MorphologyScroll.tscn" id="3_ftgka"]
+[ext_resource type="Texture2D" uid="uid://bs4u3x8y64aic" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="4_d1vcp"]
+[ext_resource type="Texture2D" uid="uid://b32s4sgq2hx1v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
+[ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="8_i85u6"]
+[ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="9_fi7li"]
+
+[node name="WindowQuickConnect" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_pefds")
+
+[node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
+layout_mode = 2
+title = "Quick Connect"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="step1" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step1"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1. Please Select A Source Area..."
+
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
+visible = false
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("2_3u6kv")
+texture_pressed = ExtResource("3_atlgv")
+texture_hover = ExtResource("4_d1vcp")
+texture_disabled = ExtResource("5_udoep")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
+custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
+
+[node name="step2" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step2"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "2. Please Select A Destination Area..."
+
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
+visible = false
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("2_3u6kv")
+texture_pressed = ExtResource("3_atlgv")
+texture_hover = ExtResource("4_d1vcp")
+texture_disabled = ExtResource("5_udoep")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
+custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
+
+[node name="step3" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step3"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3. Please Select A Morphology..."
+
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
+visible = false
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("2_3u6kv")
+texture_pressed = ExtResource("3_atlgv")
+texture_hover = ExtResource("4_d1vcp")
+texture_disabled = ExtResource("5_udoep")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
+custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
+
+[node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+
+[node name="MorphologyInfo" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer"]
+layout_mode = 2
+
+[node name="MorphologyScroll" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("3_ftgka")]
+custom_minimum_size = Vector2(250, 300)
+layout_mode = 2
+
+[node name="SmartMorphologyView" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("8_i85u6")]
+layout_mode = 2
+editing_allowed_from_this_window = false
+
+[node name="MorphologyGenericDetails" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("9_fi7li")]
+layout_mode = 2
+
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+disabled = true
+text = "Establish the Connection"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step3/step3/TextureButton" to="." method="_update_current_state" binds= [3]]
+[connection signal="morphology_selected" from="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="establish_connection_button"]

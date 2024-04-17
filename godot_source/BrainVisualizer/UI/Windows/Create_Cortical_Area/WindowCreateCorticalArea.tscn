@@ -1,0 +1,135 @@
+[gd_scene load_steps=12 format=3 uid="uid://ctyho04m7lek6"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/WindowCreateCorticalArea.gd" id="1_0kirv"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
+[ext_resource type="PackedScene" uid="uid://bsn2d8qggug2w" path="res://BrainVisualizer/UI/GenericElements/Buttons/DetailedPanelContainerButton/DetailedContainerButton.tscn" id="3_juefr"]
+[ext_resource type="Texture2D" uid="uid://cxpq7dara6ufm" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="4_5utqj"]
+[ext_resource type="Texture2D" uid="uid://ghmssmcp5gnf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="5_ffsab"]
+[ext_resource type="Texture2D" uid="uid://b25s06vc3o8ca" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="7_hbdve"]
+[ext_resource type="Texture2D" uid="uid://1hed8ue2u1gk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="8_miahu"]
+[ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
+[ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
+[ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
+
+[node name="WindowSpawnCorticalArea" type="VBoxContainer"]
+offset_right = 396.0
+offset_bottom = 223.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_0kirv")
+
+[node name="TitleBar" parent="." instance=ExtResource("12_qi3gl")]
+layout_mode = 2
+title = "Add Cortical Area"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"WindowOuterMargin"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="header" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="icon" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/header"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+expand_mode = 1
+
+[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection"]
+layout_mode = 2
+theme_type_variation = &"HBoxContainer_farther"
+script = ExtResource("2_xy23b")
+
+[node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
+layout_mode = 2
+icon = ExtResource("4_5utqj")
+icon_size = Vector2i(128, 128)
+main_label = &"Input"
+is_vertical = true
+
+[node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
+layout_mode = 2
+icon = ExtResource("5_ffsab")
+icon_size = Vector2i(128, 128)
+main_label = &"Output"
+is_vertical = true
+
+[node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
+layout_mode = 2
+icon = ExtResource("7_hbdve")
+icon_size = Vector2i(128, 128)
+main_label = &"Interconnect"
+is_vertical = true
+
+[node name="Memory" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
+layout_mode = 2
+icon = ExtResource("8_miahu")
+icon_size = Vector2i(128, 128)
+main_label = &"Memory"
+is_vertical = true
+
+[node name="Definition_IOPU" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("9_54gus")]
+visible = false
+layout_mode = 2
+
+[node name="Definition_Custom" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("10_vsdc8")]
+visible = false
+layout_mode = 2
+
+[node name="Definition_Memory" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("11_leunr")]
+visible = false
+layout_mode = 2
+
+[node name="Button_Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Back"
+
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Add"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_input_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_output_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_interconnect_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory" to="WindowPanel/WindowMargin/WindowInternals/Selection/options" method="_on_memory_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Back" to="." method="_back_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="_user_requesting_exit"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Add" to="." method="_user_requesing_creation"]

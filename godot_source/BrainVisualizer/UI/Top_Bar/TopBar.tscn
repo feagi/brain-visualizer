@@ -1,0 +1,244 @@
+[gd_scene load_steps=22 format=3 uid="uid://ceyo23uu67e8h"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
+[ext_resource type="Texture2D" uid="uid://b3go6kjen16je" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
+[ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
+[ext_resource type="Texture2D" uid="uid://dryfi4tlhq5mq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
+[ext_resource type="Texture2D" uid="uid://ddg6hll5cu8vb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
+[ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
+[ext_resource type="Texture2D" uid="uid://c55giqp6h0ohy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
+[ext_resource type="Texture2D" uid="uid://5dvxcj5hquup" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
+[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
+[ext_resource type="Texture2D" uid="uid://dkd1hregsccpc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
+[ext_resource type="Texture2D" uid="uid://cs0y40ahiirdw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
+[ext_resource type="Texture2D" uid="uid://uvecoubr0yfw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
+[ext_resource type="Texture2D" uid="uid://m640tgojnce0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
+[ext_resource type="Texture2D" uid="uid://by5n2dhvru2uh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
+[ext_resource type="Texture2D" uid="uid://dgvfuc5hcn0mh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
+[ext_resource type="Texture2D" uid="uid://ci87jmke7m1wh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
+[ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
+[ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
+
+[node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 1605.0
+offset_bottom = 86.0
+theme_type_variation = &"HBoxContainer_far"
+script = ExtResource("1_f5hja")
+theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
+
+[node name="Buttons" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Buttons"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
+layout_mode = 2
+theme_type_variation = &"HBoxContainer_farther"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_o4dth")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("3_x3r8j")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Cortical Areas"
+
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Add Brain Area..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
+layout_mode = 2
+script = ExtResource("2_o4dth")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("8_cdeim")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Connectivity Rules"
+
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Add Brain Area..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="ChangeSize" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ChangeSize"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
+layout_mode = 2
+theme_type_variation = &"HBoxContainer_far"
+
+[node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Decrease UI Size"
+theme_type_variation = &"TextureButton_TopBar"
+texture_normal = ExtResource("9_5f4b8")
+texture_pressed = ExtResource("10_k4lex")
+texture_hover = ExtResource("11_0uis6")
+texture_disabled = ExtResource("12_2iype")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Bigger" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Increase UI Size"
+theme_type_variation = &"TextureButton_TopBar"
+texture_normal = ExtResource("13_3kcdr")
+texture_pressed = ExtResource("14_ww002")
+texture_hover = ExtResource("15_585hi")
+texture_disabled = ExtResource("16_48dar")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="DropDownPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="DropDownPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="DetailsPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="DetailsPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="Details" parent="DetailsPanel/MarginContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 1
+child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
+
+[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
+layout_mode = 2
+
+[node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Refresh Rate"
+vertical_alignment = 1
+
+[node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
+layout_mode = 2
+tooltip_text = "The frequency FEAGI runs at"
+theme_type_variation = &"LineEdit_TopBar"
+alignment = 1
+script = ExtResource("3_v82xb")
+suffix = " Hz"
+min_value = 0.1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
+layout_mode = 2
+
+[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Neurons"
+vertical_alignment = 1
+
+[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
+layout_mode = 2
+tooltip_text = "The number of currently loaded neurons vs the total allowed"
+theme_type_variation = &"LineEdit_TopBar"
+alignment = 1
+editable = false
+script = ExtResource("7_g1qxj")
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+layout_mode = 2
+
+[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Synapses"
+vertical_alignment = 1
+
+[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
+layout_mode = 2
+tooltip_text = "The number of currently loaded synapses vs the total allowed"
+theme_type_variation = &"LineEdit_TopBar"
+alignment = 1
+editable = false
+script = ExtResource("7_g1qxj")
+
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3" instance=ExtResource("10_3567y")]
+layout_mode = 2
+
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList" to="." method="_open_neuron_morphologies"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton" to="." method="_open_create_morpology"]
+[connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
+[connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
+[connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
+
+[editable path="DetailsPanel/MarginContainer/Details"]

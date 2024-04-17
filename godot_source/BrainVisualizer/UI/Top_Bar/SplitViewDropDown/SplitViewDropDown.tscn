@@ -1,0 +1,64 @@
+[gd_scene load_steps=19 format=3 uid="uid://0pa5al454wse"]
+
+[ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.tscn" id="1_4pks6"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.gd" id="1_henmy"]
+[ext_resource type="Texture2D" uid="uid://cdt163dh02jr4" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png" id="3_667mu"]
+[ext_resource type="Texture2D" uid="uid://byw0putaa1prq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_C.png" id="4_jrywm"]
+[ext_resource type="Texture2D" uid="uid://dvwbqopvm3yee" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_H.png" id="5_uivfl"]
+[ext_resource type="Texture2D" uid="uid://d1sd8dkdblgto" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_D.png" id="6_hj26w"]
+[ext_resource type="Texture2D" uid="uid://bfka7286min24" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png" id="7_7a8kb"]
+[ext_resource type="Texture2D" uid="uid://bschkx4sr11vd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png" id="8_xcbkx"]
+[ext_resource type="Texture2D" uid="uid://bfnllm0sjq6cx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_H.png" id="9_hdmos"]
+[ext_resource type="Texture2D" uid="uid://c7dmw5om6g6v8" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_D.png" id="10_wf58x"]
+[ext_resource type="Texture2D" uid="uid://xjwn7lt8fs4v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_S.png" id="11_g57ge"]
+[ext_resource type="Texture2D" uid="uid://c0ruq0v1ald5e" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_C.png" id="12_1otf1"]
+[ext_resource type="Texture2D" uid="uid://c85r6ke1dngg6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_H.png" id="13_sih8b"]
+[ext_resource type="Texture2D" uid="uid://d0cgk5esk123f" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_D.png" id="14_sn7dj"]
+[ext_resource type="Texture2D" uid="uid://ed00w64dlqq1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_S.png" id="15_raxn5"]
+[ext_resource type="Texture2D" uid="uid://38duivrjwfi3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_C.png" id="16_f4pb0"]
+[ext_resource type="Texture2D" uid="uid://c0v5enwxienf1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_H.png" id="17_uvwvj"]
+[ext_resource type="Texture2D" uid="uid://b32xn231rm8bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_D.png" id="18_37mbk"]
+
+[node name="SplitViewDropDown" type="BoxContainer"]
+script = ExtResource("1_henmy")
+
+[node name="ToggleImageDropDown" parent="." instance=ExtResource("1_4pks6")]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+initial_index = 1
+
+[node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+texture_normal = ExtResource("3_667mu")
+texture_pressed = ExtResource("4_jrywm")
+texture_hover = ExtResource("5_uivfl")
+texture_disabled = ExtResource("6_hj26w")
+
+[node name="Brain Monitor" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+texture_normal = ExtResource("7_7a8kb")
+texture_pressed = ExtResource("8_xcbkx")
+texture_hover = ExtResource("9_hdmos")
+texture_disabled = ExtResource("10_wf58x")
+
+[node name="Split Vertical" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+texture_normal = ExtResource("11_g57ge")
+texture_pressed = ExtResource("12_1otf1")
+texture_hover = ExtResource("13_sih8b")
+texture_disabled = ExtResource("14_sn7dj")
+
+[node name="Split Horizontal" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+texture_normal = ExtResource("15_raxn5")
+texture_pressed = ExtResource("16_f4pb0")
+texture_hover = ExtResource("17_uvwvj")
+texture_disabled = ExtResource("18_37mbk")
+
+[connection signal="user_change_option" from="ToggleImageDropDown" to="." method="_user_request_view"]
+
+[editable path="ToggleImageDropDown"]

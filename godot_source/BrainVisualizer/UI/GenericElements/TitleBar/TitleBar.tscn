@@ -1,0 +1,39 @@
+[gd_scene load_steps=6 format=3 uid="uid://c10sw6pgpfy48"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.gd" id="1_dpkpa"]
+[ext_resource type="Texture2D" uid="uid://cndhorv7h6hh0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_S.png" id="3_b7bry"]
+[ext_resource type="Texture2D" uid="uid://c60uywps7rmai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_C.png" id="4_aacjk"]
+[ext_resource type="Texture2D" uid="uid://w50tv03btqd5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_H.png" id="5_uuesj"]
+[ext_resource type="Texture2D" uid="uid://b0jdp1386q64q" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_D.png" id="6_crhnf"]
+
+[node name="TitleBar" type="PanelContainer"]
+offset_right = 92.0
+offset_bottom = 40.0
+theme_type_variation = &"TitleBarContainer"
+script = ExtResource("1_dpkpa")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="gap" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+metadata/_edit_group_ = true
+
+[node name="Title_Text" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Label_Title"
+text = "TEXT"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Close_Button" type="TextureButton" parent="HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_WindowClose"
+texture_normal = ExtResource("3_b7bry")
+texture_pressed = ExtResource("4_aacjk")
+texture_hover = ExtResource("5_uuesj")
+texture_disabled = ExtResource("6_crhnf")
+ignore_texture_size = true
+stretch_mode = 0

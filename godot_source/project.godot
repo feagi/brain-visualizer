@@ -11,20 +11,16 @@ config_version=5
 [application]
 
 config/name="FEAGI-Godot-Interface"
-run/main_scene="res://Feagi-Godot-Interface/FeagiRoot.tscn"
+run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
-FeagiCacheEvents="*res://Feagi-Godot-Interface/Core/FEAGICacheEvents.gd"
-FeagiRequests="*res://Feagi-Godot-Interface/Core/FEAGIRequests.gd"
-FeagiCache="*res://Feagi-Godot-Interface/Core/FEAGICache.gd"
-VisConfig="*res://Feagi-Godot-Interface/Core/VisConfig.gd"
-FeagiEvents="*res://Feagi-Godot-Interface/Core/FEAGIEvents.gd"
-Godot_list="*res://Feagi-Godot-Interface/UI/Resources/Shared_components/godot_list.gd"
-global_material="*res://Feagi-Godot-Interface/UI/Resources/Shared_components/godot_material.gd"
-SignalDebugHelper="*res://Feagi-Godot-Interface/Core/SignalDebugHelper.gd"
+FeagiCore="*res://addons/FeagiCoreIntegration/FeagiCore/FeagiCore.gd"
+BV="*res://BrainVisualizer/BV.gd"
+global_material="*res://BrainVisualizer/UI/BrainMonitor/godot_material.gd"
+Godot_list="*res://BrainVisualizer/UI/BrainMonitor/godot_list.gd"
 
 [debug]
 
@@ -39,9 +35,21 @@ window/size/viewport_height=720
 
 export/convert_text_resources_to_binary=false
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg")
+
+[file_customization]
+
+folder_colors={
+"res://addons/FeagiCoreIntegration/": "red",
+"res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/": "yellow",
+"res://addons/FeagiCoreIntegration/FeagiCore/Networking/": "teal"
+}
+
 [gui]
 
-theme/custom="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres"
+theme/custom="res://BrainVisualizer/UI/Themes/source_themes/source_dark.tres"
 
 [input]
 

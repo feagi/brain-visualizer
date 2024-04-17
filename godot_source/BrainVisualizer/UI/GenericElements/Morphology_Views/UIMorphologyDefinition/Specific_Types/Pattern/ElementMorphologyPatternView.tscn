@@ -1,0 +1,77 @@
+[gd_scene load_steps=8 format=3 uid="uid://ddn8pt45rca4n"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.gd" id="1_q5gkp"]
+[ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://BrainVisualizer/UI/GenericElements/Scroll/Scroll_Vertical.tscn" id="2_cj4db"]
+[ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_ftdb2"]
+[ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="3_k6hof"]
+[ext_resource type="Texture2D" uid="uid://dryfi4tlhq5mq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_tay1s"]
+[ext_resource type="Texture2D" uid="uid://ddg6hll5cu8vb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_q8f6c"]
+[ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_c7fbl"]
+
+[node name="ElementMorphologyPatternView" type="VBoxContainer"]
+offset_right = 630.0
+offset_bottom = 275.0
+size_flags_horizontal = 3
+script = ExtResource("1_q5gkp")
+
+[node name="header" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Patterns"
+
+[node name="add_vector" type="TextureButton" parent="header"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("2_ftdb2")
+texture_pressed = ExtResource("3_tay1s")
+texture_hover = ExtResource("4_q8f6c")
+texture_disabled = ExtResource("5_c7fbl")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="subheader" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="initial_gap" type="Control" parent="subheader"]
+layout_mode = 2
+
+[node name="source_label" type="Label" parent="subheader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Source [X, Y, Z]"
+horizontal_alignment = 1
+
+[node name="arrow_gap" type="Control" parent="subheader"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="source_label2" type="Label" parent="subheader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Destination [X, Y, Z]"
+horizontal_alignment = 1
+
+[node name="delete_gap" type="Control" parent="subheader"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="end_gap" type="Control" parent="subheader"]
+layout_mode = 2
+
+[node name="Patterns" parent="." instance=ExtResource("2_cj4db")]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+prefab_to_spawn = ExtResource("3_k6hof")
+enable_button_notice_when_list_is_empty = true
+button_notice_text = &"   Add a pattern pair   "
+minimum_width_to_avoid_scroll = 570
+
+[connection signal="pressed" from="header/add_vector" to="." method="add_pattern_pair_row"]
+[connection signal="internal_add_button_pressed" from="Patterns" to="." method="add_pattern_pair_row"]

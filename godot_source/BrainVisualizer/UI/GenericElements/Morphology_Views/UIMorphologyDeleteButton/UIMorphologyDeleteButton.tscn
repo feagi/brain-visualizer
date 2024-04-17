@@ -1,0 +1,20 @@
+[gd_scene load_steps=6 format=3 uid="uid://c0v1sjxbjdmgb"]
+
+[ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_eli5q"]
+[ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_k5xd5"]
+[ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_c2jyu"]
+[ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_cvhnd"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDeleteButton/UIMorphologyDeleteButton.gd" id="5_qq287"]
+
+[node name="Delete" type="TextureButton"]
+custom_minimum_size = Vector2(64, 64)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("1_eli5q")
+texture_pressed = ExtResource("2_k5xd5")
+texture_hover = ExtResource("3_c2jyu")
+texture_disabled = ExtResource("4_cvhnd")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("5_qq287")

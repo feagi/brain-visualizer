@@ -1,0 +1,54 @@
+[gd_scene load_steps=4 format=3 uid="uid://vm8thgnbjojc"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Cortical_Area/Parts/PartSpawnCorticalAreaCustom.gd" id="1_ita8s"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_k6lwm"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_wwnb4"]
+
+[node name="Definition_Custom" type="VBoxContainer"]
+offset_right = 466.0
+offset_bottom = 85.0
+theme_override_constants/separation = 8
+script = ExtResource("1_ita8s")
+
+[node name="name" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="name"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Select a name:"
+
+[node name="name" type="LineEdit" parent="name"]
+custom_minimum_size = Vector2(310, 0)
+layout_mode = 2
+script = ExtResource("2_k6lwm")
+
+[node name="dimensions" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="dimensions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Select  dimensions: "
+
+[node name="dimensions" parent="dimensions" instance=ExtResource("3_wwnb4")]
+layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
+int_x_min = 1
+int_y_min = 1
+int_z_min = 1
+initial_vector = Vector3i(1, 1, 1)
+
+[node name="location" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="location"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Choose a location:"
+
+[node name="location" parent="location" instance=ExtResource("3_wwnb4")]
+layout_mode = 2
+initial_vector = Vector3i(40, 0, 0)
