@@ -33,12 +33,16 @@ static func create_from(address_API: StringName, port_web: int, address_websocke
 
 ## Assemble the full API url for HTTP requests
 func get_api_URL() -> StringName:
+	if API_tld.contains("http"):
+		return API_tld + str(API_port)
 	if is_encrypted:
 		return "https://" + API_tld + ":" + str(API_port)
 	return "http://" + API_tld + ":" + str(API_port)
 
 ## Assemble the full Websocker URL
 func get_websocket_URL() -> StringName:
+	if API_tld.contains("ws"):
+		return websocket_tld + str(websocket_port)
 	if is_encrypted:
 		return "wss://" + websocket_tld + ":" + str(websocket_port)
 	return "ws://" + websocket_tld + ":" + str(websocket_port)
