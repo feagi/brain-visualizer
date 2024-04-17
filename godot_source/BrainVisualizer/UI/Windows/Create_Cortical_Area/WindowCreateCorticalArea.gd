@@ -91,6 +91,11 @@ func _user_requesting_exit() -> void:
 func _user_requesing_creation() -> void:
 	match(_type_selected):
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			# checks
+			if _IOPU_definition.dropdown.get_selected_template().ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "An input cortical area of type %s already exists!" % _IOPU_definition.dropdown.get_selected_template().cortical_name, "OK")
+				BV.WM.spawn_popup(popup_definition)
+				return
 			FeagiCore.requests.add_IOPU_cortical_area(
 				_IOPU_definition.dropdown.get_selected_template(),
 				int(_IOPU_definition.channel_count.value),
@@ -98,6 +103,11 @@ func _user_requesing_creation() -> void:
 				false
 			)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			# checks
+			if _IOPU_definition.dropdown.get_selected_template().ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "An output cortical area of type %s already exists!" % _IOPU_definition.dropdown.get_selected_template().cortical_name, "OK")
+				BV.WM.spawn_popup(popup_definition)
+				return
 			FeagiCore.requests.add_IOPU_cortical_area(
 				_IOPU_definition.dropdown.get_selected_template(),
 				int(_IOPU_definition.channel_count.value),
