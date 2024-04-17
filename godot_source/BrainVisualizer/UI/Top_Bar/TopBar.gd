@@ -45,6 +45,7 @@ func _ready():
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_theme_updated)
 	_theme_updated(BV.UI.loaded_theme)
+	FeagiCore.about_to_reload_genome.connect(_on_genome_about_to_reload)
 	
 
 func _set_scale(index_movement: int) -> void:
@@ -108,6 +109,10 @@ func _update_neuron_count_current(val: int) -> void:
 	
 func _update_synapse_count_current(val: int) -> void:
 	_synapse_count.text = _format_int(val)
+
+func _on_genome_about_to_reload() -> void:
+	_neuron_count.text = ""
+	_synapse_count.text = ""
 
 #TODO remove this?
 func _shorten_number(num: float) -> String:

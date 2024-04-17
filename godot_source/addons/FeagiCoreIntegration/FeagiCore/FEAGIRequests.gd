@@ -51,7 +51,8 @@ func reload_genome() -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
 	
 	# Other stuff (asyncronous)
-
+	get_burst_delay()
+	
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	
 
@@ -74,7 +75,7 @@ func get_burst_delay() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI Burst rate delay!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
-	print("FEAGI REQUEST: Successfully retrieved delay between bursts as %d" % response.to_float())
+	print("FEAGI REQUEST: Successfully retrieved delay between bursts as %f" % response.to_float())
 	FeagiCore.feagi_retrieved_burst_rate(response.to_float())
 	return FEAGI_response_data
 
