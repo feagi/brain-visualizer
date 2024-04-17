@@ -225,10 +225,9 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	# TODO check this
-	#if IOPU_template.cortical_name in FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names():
-	#	push_error("FEAGI Requests: Cannot create custom cortical area of name %s when a cortical area of this name already exists!" % cortical_name)
-	#	return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
+	if IOPU_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: I/OPU area of ID %s already exists!!" % IOPU_template.ID)
+		return FeagiRequestOutput.requirement_fail("ID_EXISTS")
 	if channel_count < 1:
 		push_error("FEAGI Requests: Channel count is too low!")
 		return FeagiRequestOutput.requirement_fail("CHANNEL_TOO_LOW")

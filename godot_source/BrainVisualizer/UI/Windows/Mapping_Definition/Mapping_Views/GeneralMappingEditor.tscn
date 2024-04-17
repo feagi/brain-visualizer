@@ -16,21 +16,19 @@ script = ExtResource("1_qb704")
 
 [node name="labels_box" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_type_variation = &"HBoxContainer_far"
 
 [node name="Label" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Mapping Definition"
 horizontal_alignment = 1
-clip_text = true
 
 [node name="Label2" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(264, 0)
 layout_mode = 2
 text = "Overwrite Scalar [X, Y, Z]"
 horizontal_alignment = 1
-clip_text = true
 
 [node name="Label3" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
@@ -45,14 +43,12 @@ custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Inhibitory"
 horizontal_alignment = 1
-clip_text = true
 
 [node name="Label4" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Plasticity"
 horizontal_alignment = 1
-clip_text = true
 
 [node name="Label5" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
