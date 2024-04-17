@@ -32,7 +32,7 @@ static func grab_feagi_endpoint_details() -> FeagiEndpointDetails:
 		}
 		getIPAddress();
 		""")
-	var is_using_nonstandard_port = JavaScriptBridge.eval(""" 
+	var is_using_standard_port = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
@@ -63,13 +63,13 @@ static func grab_feagi_endpoint_details() -> FeagiEndpointDetails:
 		get_port();
 		""")
 	
-	if http_type_str == null or tld_result == null or is_using_nonstandard_port == null or websocket_tld == null:
+	if http_type_str == null or tld_result == null or is_using_standard_port == null or websocket_tld == null:
 		# Something didnt return correctly. Return empty FeagiEndpointDetails
 		return FeagiEndpointDetails.create_from("", 0, "", 0, false)
 	
 	
 	var is_encrypted: bool = str(http_type_str).to_lower() == "https://"
-	if str(is_using_nonstandard_port).to_lower() != "true":
+	if str(is_using_standard_port).to_lower() == "true":
 		# We are using a standard port
 		# In the case of standard ports, NRS sets up routing
 		if is_encrypted:
