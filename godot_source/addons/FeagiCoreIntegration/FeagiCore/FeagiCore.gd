@@ -68,32 +68,17 @@ func load_FEAGI_settings(settings: FeagiGeneralSettings) -> void:
 		push_error("FEAGICORE: Cannot change FEAGI settings if currently connected!")
 		return
 	_feagi_settings = settings
-
-## Returns if it is possible to retrieve connection details from the javascript on the page (returns false otherwise or if no javascript)
-func is_javascript_connection_defined() -> bool:
-	var endpoint_details: FeagiEndpointDetails = JavaScriptIntegrations.grab_feagi_endpoint_details()
-	return !endpoint_details.is_invalid()
 	
 
-## Use this to attempt connecting to FEAGI using details from the javascript
-func attempt_connection_via_javascript_details(fallback_manual_endpoint_details: FeagiEndpointDetails = null) -> void:
+## Use this to attempt connecting to FEAGI using details from the javascript, with fall back values from provided endpoint details
+func attempt_connection_via_javascript_details(fallback_manual_endpoint_details: FeagiEndpointDetails) -> void:
 	if feagi_settings == null:
 		print("FEAGICORE: Cannot connect if no FEAGI settings have been set! Halting attempted connection to FEAGI!") # Do both print and push warning to make things easier to put together in logs
 		push_error("FEAGICORE: Cannot connect if no FEAGI settings have been set! Halting attempted connection to FEAGI!")
 		return
 	
-	var endpoint_details: FeagiEndpointDetails = JavaScriptIntegrations.grab_feagi_endpoint_details()
-	if endpoint_details.is_invalid():
-		print("FEAGICORE: Unable to acquire connection details from javascript!")
-		push_warning("FEAGICORE: Unable to acquire connection details from javascript!")
-		if fallback_manual_endpoint_details == null:
-			print("FEAGICORE: No fallback connection endpoint defined! Halting attempted connection to FEAGI!")
-			push_warning("FEAGICORE: No fallback connection endpoint defined! Halting attempted connection to FEAGI!")
-			return
-		print("FEAGICORE: Attempting to use the defined fallback endpoint instead to connect to FEAGI...")
-		attempt_connection(fallback_manual_endpoint_details)
-		return
-		
+	var endpoint_details: FeagiEndpointDetails = JavaScriptIntegrations.overwrite_with_details_from_address_bar(fallback_manual_endpoint_details)
+
 	attempt_connection(endpoint_details)
 	return
 
@@ -105,10 +90,6 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 		
 	if connection_state != CONNECTION_STATE.DISCONNECTED:
 		push_error("FEAGICORE: Cannot initiate a new connection when one is already active!")
-		return
-	
-	if feagi_endpoint_details.is_invalid():
-		push_error("FEAGICORE: Connection parameters marked as invalid!")
 		return
 	
 	var cache_state: CONNECTION_STATE = _connection_state

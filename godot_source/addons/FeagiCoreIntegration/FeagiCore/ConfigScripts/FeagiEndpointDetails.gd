@@ -30,19 +30,21 @@ static func create_from(address_API: StringName, port_web: int, address_websocke
 	output.websocket_port = port_websocket
 	output.is_encrypted = is_using_encrypted
 	return output
+	
 
 ## Assemble the full API url for HTTP requests
 func get_api_URL() -> StringName:
+	if API_tld.contains("http"):
+		return API_tld + ":" + str(API_port)
 	if is_encrypted:
 		return "https://" + API_tld + ":" + str(API_port)
 	return "http://" + API_tld + ":" + str(API_port)
 
 ## Assemble the full Websocker URL
 func get_websocket_URL() -> StringName:
+	if websocket_tld.contains("ws"):
+		return websocket_tld + ":" + str(websocket_port)
 	if is_encrypted:
 		return "wss://" + websocket_tld + ":" + str(websocket_port)
 	return "ws://" + websocket_tld + ":" + str(websocket_port)
 
-## If a value was left at default, this object is likely will not provide a valid connection
-func is_invalid() -> bool:
-	return API_tld == "" or API_port == 0 or websocket_tld == "" or websocket_port == 0
