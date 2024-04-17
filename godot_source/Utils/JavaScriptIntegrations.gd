@@ -80,7 +80,10 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 			else:
 				http_port = 80
 				websocket_port = 80
-
+	
+	address_API = "127.0.0.1:8000"
+	websocket_address = "ws://127.0.0.1:9050"
+	
 	var address_arr: PackedStringArray = address_API.rsplit(":", true, 1)
 	var websocket_arr: PackedStringArray = websocket_address.rsplit(":", true, 1)
 	
