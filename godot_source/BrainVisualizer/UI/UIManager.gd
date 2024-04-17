@@ -45,6 +45,7 @@ var _circuit_builder: CorticalNodeGraph
 var _brain_monitor # lol
 var _window_manager: WindowManager
 var _notification_system: NotificationSystem
+var _version_label: Label
 
 
 func _enter_tree():
@@ -59,9 +60,12 @@ func _ready():
 	_circuit_builder = $CB_Holder/CircuitBuilder
 	_brain_monitor = $BrainMonitor
 	_window_manager = $WindowManager
+	_version_label = $VersionLabel
 	
+	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
 	_top_bar_resized()
+	
 
 func set_user_selected_cortical_areas(selected: Array[BaseCorticalArea]) -> void:
 	pass
@@ -172,6 +176,8 @@ func _load_new_theme(theme: Theme) -> void:
 		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")
 	
 	_loaded_theme_scale = scalar
+	
+	$VersionLabel.theme = theme
 	theme_changed.emit(theme)
 
 
