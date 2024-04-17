@@ -46,6 +46,21 @@ func _ready():
 	BV.UI.theme_changed.connect(_theme_updated)
 	_theme_updated(BV.UI.loaded_theme)
 	FeagiCore.about_to_reload_genome.connect(_on_genome_about_to_reload)
+	toggle_buttons_interactability(false)
+
+
+## Toggle button interactability of top bar (ignoring those that are not relevant to FEAGI directly)
+func toggle_buttons_interactability(pressable: bool) -> void:
+	if _refresh_rate_field == null:
+		push_error("Too early to call for toggle_buttons_interactability! Skipping!")
+		return
+	print("TOPBAR: Setting pressability to %s" % pressable)
+	_refresh_rate_field.editable = pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton.disabled = !pressable
+	
 	
 
 func _set_scale(index_movement: int) -> void:
@@ -56,8 +71,8 @@ func _set_scale(index_movement: int) -> void:
 	_decrease_scale_button.disabled =  _index_scale == 0
 	print("Topbar requesting scale change to " + str(BV.UI.possible_UI_scales[_index_scale]))
 	BV.UI.request_switch_to_theme(BV.UI.possible_UI_scales[_index_scale], UIManager.THEME_COLORS.DARK)
-	
-	
+
+
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
 	_refresh_rate_field.editable = new_delay_between_bursts_seconds != 0.0

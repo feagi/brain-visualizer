@@ -14,6 +14,12 @@ signal theme_changed(theme: Theme) ## New theme (likely with vustom scale change
 signal toggle_keyboard_controls(enable_controls: bool) ## True if keyboard controls (such as for camera) should be enabled. False in cases such as user typing #TODO is needed?
 signal user_selected_single_cortical_area(area: BaseCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
+var window_manager: WindowManager:
+	get: return _window_manager
+var circuit_builder: CorticalNodeGraph:
+	get: return _circuit_builder
+var notification_system: NotificationSystem:
+	get: return _notification_system
 var screen_size: Vector2:  # keep as float for easy division
 	get: return _screen_size
 var screen_center: Vector2:
@@ -24,8 +30,6 @@ var loaded_theme: Theme:
 	get: return _loaded_theme
 var top_bar: TopBar:
 	get: return _top_bar
-var notification_system: NotificationSystem:
-	get: return _notification_system
 var possible_UI_scales: Array[float]:
 	get: return _possible_UI_scales
 var loaded_theme_scale: Vector2:
@@ -128,6 +132,19 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
+
+
+## Called from above when we have no genome, disable UI elements that connect to it
+func FEAGI_no_genome() -> void:
+	print("UI: Disabling FEAGI UI elements due to no genome")
+	window_manager.force_close_all_windows()
+	top_bar.toggle_buttons_interactability(false)
+
+
+## Called from above when we confirmed genome to feagi, enable UI elements that connect to it
+func FEAGI_confirmed_genome() -> void:
+	print("UI: Enabling FEAGI UI elements now that genome is confirmed")
+	top_bar.toggle_buttons_interactability(true)
 
 
 ## Updates the screensize 

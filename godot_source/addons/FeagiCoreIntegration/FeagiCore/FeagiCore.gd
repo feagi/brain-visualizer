@@ -119,9 +119,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> void:
 
 # Disconnect from FEAGI
 func disconnect_from_FEAGI() -> void:
+	print("FEAGICORE: Disconnecting from FEAGI!")
 	unload_genome()
 	network.disconnect_networking()
-	#TODO clear cache
 	var cache_state: CONNECTION_STATE = _connection_state
 	_connection_state = CONNECTION_STATE.DISCONNECTED
 	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, cache_state)
@@ -164,6 +164,7 @@ func unload_genome() -> void:
 	if genome_load_state == GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED:
 		push_error("FEAGICORE: Unable to wipe local genome since it is not loaded!")
 		return
+	feagi_local_cache.clear_whole_genome()
 	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
 	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,cache_genome_state)
@@ -203,10 +204,12 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 				CONNECTION_STATE.CONNECTED:
 					# We were connected, but then feagi stopped responding
 					push_warning("FEAGICORE: FEAGI Appears Unresponsive!")
+					print("FEAGICORE: Disconnecting from FEAGI due to lack of connection!")
 					disconnect_from_FEAGI()
 				_:
 					# Not sure how we can land here, but regardless feagi is unresponsive
 					push_warning("FEAGICORE: FEAGI Appears Unresponsive!")
+					print("FEAGICORE: Disconnecting from FEAGI due to lack of connection!")
 					disconnect_from_FEAGI() #?
 				
 		FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE:

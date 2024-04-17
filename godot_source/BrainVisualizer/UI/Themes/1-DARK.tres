@@ -1,8 +1,11 @@
-[gd_resource type="Theme" load_steps=25 format=3 uid="uid://6y65a2i8u51h"]
+[gd_resource type="Theme" load_steps=26 format=3 uid="uid://6y65a2i8u51h"]
 
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_wlwgm"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_e7msy"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
+bg_color = Color(0.117647, 0.14902, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fesjy"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smhee"]
@@ -79,6 +82,7 @@ bg_color = Color(0.0730495, 0.419393, 0.636878, 1)
 [resource]
 BasePanelContainerButton/base_type = &"PanelContainer"
 BasePanelContainerButton/styles/panel = SubResource("StyleBoxFlat_8j6la")
+BasePanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_fesjy")
 BasePanelContainerButton/styles/panel_hover = SubResource("StyleBoxFlat_smhee")
 BasePanelContainerButton/styles/panel_pressed = SubResource("StyleBoxFlat_a1i6g")
 BoxContainer/constants/separation = 4
@@ -140,7 +144,7 @@ Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 20
 Label_UniformWidth/base_type = &"Label"
 Label_UniformWidth/font_sizes/font_size = 16
-Label_UniformWidth/fonts/font = ExtResource("1_wlwgm")
+Label_UniformWidth/fonts/font = ExtResource("1_e7msy")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 16
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")

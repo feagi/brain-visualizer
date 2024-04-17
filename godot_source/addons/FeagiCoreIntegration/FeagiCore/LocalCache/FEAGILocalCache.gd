@@ -44,6 +44,7 @@ func clear_whole_genome() -> void:
 	cortical_areas.update_cortical_area_cache_from_summary({})
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
+	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
 	genome_reloaded.emit()
 	
@@ -179,6 +180,7 @@ var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
 
+## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	if "burst_engine" in health: 
 		burst_engine = health["burst_engine"]
@@ -196,9 +198,21 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		genome_availability = health["genome_availability"]
 	if "genome_validity" in health: 
 		genome_validity = health["genome_validity"]
-	if "burst_engine" in health: 
+	if "brain_readiness" in health: 
 		brain_readiness = health["brain_readiness"]
 
+## Useful when communicaiton with feagi is lost, mark all cached health data as dead
+func set_health_dead() -> void:
+	burst_engine = false
+	influxdb_availability = false
+	neuron_count_max = 0
+	synapse_count_max = 0
+	neuron_count_current = 0
+	synapse_count_current = 0
+	genome_availability = false
+	genome_validity = false
+	brain_readiness = false
+	
 #endregion
 
 

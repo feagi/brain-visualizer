@@ -1,8 +1,11 @@
-[gd_resource type="Theme" load_steps=25 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" load_steps=26 format=3 uid="uid://cjrivk0518jvv"]
 
 [ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_nbs6y"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
+bg_color = Color(0.117647, 0.14902, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fesjy"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smhee"]
@@ -79,6 +82,7 @@ bg_color = Color(0.0730495, 0.419393, 0.636878, 1)
 [resource]
 BasePanelContainerButton/base_type = &"PanelContainer"
 BasePanelContainerButton/styles/panel = SubResource("StyleBoxFlat_8j6la")
+BasePanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_fesjy")
 BasePanelContainerButton/styles/panel_hover = SubResource("StyleBoxFlat_smhee")
 BasePanelContainerButton/styles/panel_pressed = SubResource("StyleBoxFlat_a1i6g")
 BoxContainer/constants/separation = 4

@@ -32,8 +32,9 @@ func connect_http(feagi_root_web_address: StringName, headers: PackedStringArray
 ## Disconnect all HTTP systems from FEAGI
 func disconnect_http() -> void:
 	kill_all_children()
-	_http_health = HTTP_HEALTH.NO_CONNECTION
-	FEAGI_http_health_changed.emit(_http_health)
+	if _http_health != HTTP_HEALTH.NO_CONNECTION:
+		_http_health = HTTP_HEALTH.NO_CONNECTION
+		# Do not emit in this case, if we are requesting to kill HTTP dont signal up again about it
 	address_list = null
 	
 ## Stop all HTTP Requests currently processing
@@ -97,6 +98,19 @@ func poll_HTTP_health() -> void:
 	_polling_health_worker.worker_retrieved_latest_poll.connect(_retrieved_poll_from_HTTP_health)
 	
 	await _polling_health_worker.worker_done # This only happens when the health dies
+	
+	var health_data: FeagiRequestOutput = _polling_health_worker.retrieve_output_and_close()
+	
+	if health_data.has_timed_out:
+		_http_health = HTTP_HEALTH.NO_CONNECTION
+		FEAGI_http_health_changed.emit(_http_health)
+		return
+	if health_data.has_errored:
+		_http_health = HTTP_HEALTH.ERROR
+		FEAGI_http_health_changed.emit(HTTP_HEALTH.ERROR)
+		#TODO do something with the error code?
+		return
+	
 
 ## Kills the polling health worker if its running
 func attempt_kill_poll_health_worker() -> void:
