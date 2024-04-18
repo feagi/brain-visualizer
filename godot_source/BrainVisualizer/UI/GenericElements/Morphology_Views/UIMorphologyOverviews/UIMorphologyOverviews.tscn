@@ -11,8 +11,9 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vxism"]
 bg_color = Color(0.2, 0.223529, 0.270588, 1)
 
-[node name="UIMorphologyOverviews" type="HBoxContainer"]
+[node name="UIMorphologyOverviews" type="HBoxContainer" node_paths=PackedStringArray("controls_to_scale_by_min_size")]
 script = ExtResource("1_7f4of")
+controls_to_scale_by_min_size = [NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/SmartMorphologyView"), NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage"), NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage"), NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription")]
 
 [node name="Listings" type="VBoxContainer" parent="."]
 layout_mode = 2

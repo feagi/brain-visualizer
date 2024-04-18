@@ -9,6 +9,7 @@ signal requested_updating_morphology(morphology_name: StringName)
 @export var enable_delete_morphology_button: bool = true
 @export var enable_close_button: bool = true
 @export var morphology_properties_editable: bool = true
+@export var controls_to_scale_by_min_size: Array[Control]
 
 var loaded_morphology: BaseMorphology:
 	get: return _loaded_morphology
@@ -23,6 +24,7 @@ var _UI_morphology_description: UIMorphologyDescription
 var _UI_morphology_delete_button: UIMorphologyDeleteButton
 var _close_button: Button
 var _update_morphology_button: Button
+var _custom_minimum_size_scalar: ScalingCustomMinimumSize
 
 var _no_name_text: StringName
 var _loaded_morphology: BaseMorphology
@@ -47,7 +49,10 @@ func _ready() -> void:
 	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mappings_changed.connect(feagi_updated_mappings)
-
+	_custom_minimum_size_scalar = ScalingCustomMinimumSize.new(controls_to_scale_by_min_size)
+	_custom_minimum_size_scalar.theme_updated(BV.UI.loaded_theme)
+	BV.UI.theme_changed.connect(_custom_minimum_size_scalar.theme_updated)
+	
 func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
 	if morphology is NullMorphology:
