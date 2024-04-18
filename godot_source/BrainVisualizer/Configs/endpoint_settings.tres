@@ -5,8 +5,5 @@
 [resource]
 script = ExtResource("1_mipp4")
 header = ["Content-Type: application/json"]
-API_tld = &"127.0.0.1"
-API_port = 8000
-websocket_tld = &"127.0.0.1"
-websocket_port = 9050
-is_encrypted = false
+full_http_address = &"http://127.0.0.1:8000"
+full_websocket_address = &"ws://127.0.0.1:9050"

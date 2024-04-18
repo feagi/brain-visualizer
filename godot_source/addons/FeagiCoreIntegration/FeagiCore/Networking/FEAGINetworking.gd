@@ -33,7 +33,7 @@ func _init():
 ## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify
 func activate_and_verify_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails):
 	#NOTE: Due to the more unique usecase, we are keeping this function here instead of [FEAGIRequests]
-	activate_http_API(feagi_endpoint_details.get_api_URL(), feagi_endpoint_details.header)
+	activate_http_API(feagi_endpoint_details.full_http_address, feagi_endpoint_details.header)
 	http_API.run_HTTP_healthcheck()
 
 ## Sets up (or resets) the HTTP API with required information
