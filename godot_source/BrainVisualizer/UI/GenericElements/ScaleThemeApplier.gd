@@ -37,6 +37,9 @@ func search_for_matching_children(starting_node: Node) -> void:
 		if child is DetailedPanelContainerButton:
 			continue # Has its own sizing system
 		
+		if child is ToggleButton:
+			continue # Has its own sizing system
+		
 		elif child is TextureButton:
 			_texture_buttons.append(child)
 		

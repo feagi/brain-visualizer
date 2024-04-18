@@ -19,8 +19,8 @@ func _ready() -> void:
 	_mappings_scroll = $Mappings
 	_add_mapping = $labels_box/add_button
 	_custom_minimum_size_scalar = ScalingCustomMinimumSize.new(elements_to_scale)
-	_on_theme_change(BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_on_theme_change)
+	_on_theme_change(BV.UI.loaded_theme)
 
 func update_displayed_mapping_properties(mappings_copy: MappingProperties, mapping_hints: MappingHints) -> void:
 	_mapping_hints = mapping_hints

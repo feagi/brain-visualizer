@@ -3,7 +3,8 @@ class_name Prefab_Mapping
 
 signal mapping_to_be_deleted()
 
-@export var elements_to_scale: Array[Control]
+@export var elements_to_scale_by_custom_size: Array[Control]
+@export var nodes_not_to_scale_by_property: Array[Node]
 
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
@@ -27,11 +28,12 @@ func _ready() -> void:
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
 	_edit = $edit
-	var nodes_not_to_auto_scale: Array[Node] = []
-	nodes_not_to_auto_scale.assign(elements_to_scale)
-	_theme_custom_scaler.setup(self, nodes_not_to_auto_scale, BV.UI.loaded_theme)
-	_custom_minimum_size_scalar = ScalingCustomMinimumSize.new(elements_to_scale)
+
+	_theme_custom_scaler.setup(self, nodes_not_to_scale_by_property, BV.UI.loaded_theme)
+	_custom_minimum_size_scalar = ScalingCustomMinimumSize.new(elements_to_scale_by_custom_size)
+	_custom_minimum_size_scalar.theme_updated(BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_custom_minimum_size_scalar.theme_updated)
+	_theme_custom_scaler.update_theme_customs(BV.UI.loaded_theme)
 
 func setup(data: Dictionary, _main_window) -> void:
 	var _mapping_ref: MappingProperty = data["mapping"]

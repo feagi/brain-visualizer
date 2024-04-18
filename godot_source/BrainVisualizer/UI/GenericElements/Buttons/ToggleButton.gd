@@ -6,15 +6,18 @@ const TEX_DISABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResou
 const TEX_ENABLED_ON: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on.png")
 const TEX_ENABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png")
 
+@export var enable_autoscaling_with_theme: bool = true
+
 var _cached_size: Vector2i
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	_cached_size = custom_minimum_size
 	toggle_mode = true
 	toggled.connect(_set_enable_toggle)
 	_set_enable_toggle(button_pressed)
-	_theme_changed()
-	BV.UI.theme_changed.connect(_theme_changed)
+	if enable_autoscaling_with_theme:
+		_cached_size = custom_minimum_size
+		_theme_changed()
+		BV.UI.theme_changed.connect(_theme_changed)
 
 
 ## USE THIS INSTEAD OF SET_PRESSED_NO_SIGNAL! If only I could actually override this shit
