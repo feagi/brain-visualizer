@@ -3,6 +3,7 @@ class_name FEAGILocalCache
 
 #region main
 signal genome_reloaded()
+signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called repeatedly any time an amalgamation is pending
 
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
@@ -200,6 +201,25 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		genome_validity = health["genome_validity"]
 	if "brain_readiness" in health: 
 		brain_readiness = health["brain_readiness"]
+	
+	#TEMP amalgamation
+	if "amalgamation_pending" in health:
+		var dict: Dictionary = health["amalgamation_pending"]
+		if "amalgamation_id" not in dict:
+			push_error("FEAGI HEALTHCHECK: Pending amalgmation missing amalgamation_id")
+			return
+		if "genome_title" not in dict:
+			push_error("FEAGI HEALTHCHECK: Pending amalgmation missing genome_title")
+			return
+		if "circuit_size" not in dict:
+			push_error("FEAGI HEALTHCHECK: Pending amalgmation missing amalgamation_id")
+			return
+		
+		var amal_ID: StringName = dict["amalgamation_id"]
+		var amal_name: StringName = dict["genome_title"]
+		var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(dict["circuit_size"])
+		amalgamation_pending.emit(amal_ID, amal_name, dimensions)
+		
 
 ## Useful when communicaiton with feagi is lost, mark all cached health data as dead
 func set_health_dead() -> void:
