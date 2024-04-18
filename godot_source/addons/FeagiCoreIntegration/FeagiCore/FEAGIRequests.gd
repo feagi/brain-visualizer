@@ -108,6 +108,52 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	
 
 #endregion
+## Confirm the import of a pending amalgamation at a specific coordinate
+func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	print("FEAGI REQUEST: Request confirming amalgamation of ID %s" % amalgamation_ID)
+	
+	# Define Request #TODO why are the parameters in the URL
+	var dict_to_send: Dictionary = 	{}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
+		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID
+		, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully set amalgamation %s" % amalgamation_ID)
+	return FEAGI_response_data
+
+
+## Cancel the import of a specific amalgamation
+func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	print("FEAGI REQUEST: Request deletion of amalgamation of ID %s" % amalgamation_ID)
+	
+	# Define Request #TODO why are the parameters in the URL
+	var dict_to_send: Dictionary = 	{}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
+		FeagiCore.network.http_API.address_list.DELETE_GE_amalgamationCancellation + "?amalgamation_id=" + amalgamation_ID
+		, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete amalgamation %s!" % amalgamation_ID)
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully deleted amalgamation %s" % amalgamation_ID)
+	return FEAGI_response_data
 
 
 #region Cortical Areas
@@ -840,6 +886,14 @@ func delete_mappings_between_corticals(source_area: BaseCorticalArea, destinatio
 	var empty_mappings: Array[MappingProperty] = []
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, empty_mappings)
 	return return_data
+
+
+
+#endregion
+
+#region Amalgamation
+
+
 
 
 
