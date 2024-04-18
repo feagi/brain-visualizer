@@ -203,7 +203,7 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 					connection_state_changed.emit(CONNECTION_STATE.CONNECTED, cache_connection)
 					print("FEAGICORE: Connected to FEAGI via HTTP API!")
 					if feagi_settings.attempt_connect_websocket_on_launch:
-						network.activate_websocket_APT(_in_use_endpoint_details.get_websocket_URL())
+						network.activate_websocket_APT(_in_use_endpoint_details.full_websocket_address)
 						#NOTE: An attempt to connect will be made, but not promised. You must keep an eye on the signals from here to update the UI accordingly
 						# This will immediately raise the connecting flag, then either the connected flag or disconnect flag
 					if feagi_settings.load_genome_on_connect_if_available:

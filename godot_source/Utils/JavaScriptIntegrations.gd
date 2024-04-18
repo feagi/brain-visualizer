@@ -16,16 +16,27 @@ class_name JavaScriptIntegrations
 
 ## Try to get the connection details from feagi to the webpage. Start with fallback details, and overwrite with any retrieved variabled
 static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpointDetails) -> FeagiEndpointDetails:
+
+	var backup_http_full_address: StringName = fallback_details.full_http_address
+	var backup_websocket_full_address: StringName = fallback_details.full_websocket_address
 	
-	#TODO: Double check this carefully in NRS WHOOPS
-	var websocket_port: int = fallback_details.websocket_port
-	var websocket_address: StringName = fallback_details.websocket_tld
-	var http_port: int =  fallback_details.API_port
-	var address_API: StringName = fallback_details.API_tld
-	var is_encrypted: bool = fallback_details.is_encrypted
+	#TODO instead of of using below constants, parse from above
+	
+	var websocket_port: int = 9050
+	var http_port: int =  8000
+	var feagi_web_port: int
+	var feagi_socket_port: int
+	var feagi_TLD: StringName
+	var feagi_SSL: StringName
+	var feagi_socket_SSL: StringName
+	var feagi_root_web_address: StringName
+	var feagi_root_websocket_address: StringName
+	var feagi_socket_address: StringName
+	var DEF_FEAGI_TLD: StringName = "127.0.0.1" # Default localhost
+	var DEF_FEAGI_SSL: StringName = "http://" # Default localhost
 	
 	
-	var tld_result = JavaScriptBridge.eval(""" 
+	var ip_address_to_connect = JavaScriptBridge.eval(""" 
 		function getIPAddress() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
@@ -35,7 +46,7 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 		}
 		getIPAddress();
 		""")
-	var is_using_standard_port = JavaScriptBridge.eval(""" 
+	var without_port = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
@@ -45,7 +56,7 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 		}
 		get_port();
 		""")
-	var websocket_tld = JavaScriptBridge.eval(""" 
+	var full_dns_of_websocket = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
@@ -55,7 +66,7 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 		}
 		get_port();
 		""")
-	var http_type_str = JavaScriptBridge.eval(""" 
+	var SSL_type = JavaScriptBridge.eval(""" 
 		function get_port() {
 			var url_string = window.location.href;
 			var url = new URL(url_string);
@@ -66,31 +77,31 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 		get_port();
 		""")
 	
-	if websocket_tld != null:
-		websocket_address = websocket_tld
-	if http_type_str != null:
-		is_encrypted = str(http_type_str).to_lower() == "https://"
-	if tld_result != null:
-		address_API = tld_result
-	if is_using_standard_port != null:
-		if str(is_using_standard_port).to_lower() == "true":
-			if is_encrypted:
-				http_port = 443
-				websocket_port = 443
-			else:
-				http_port = 80
-				websocket_port = 80
-
-	var address_arr: PackedStringArray = address_API.rsplit(":", true, 1)
-	var websocket_arr: PackedStringArray = websocket_address.rsplit(":", true, 1)
-	
-	if address_API.contains(":"):
-		http_port = (address_arr[1]).to_int()
-		address_API = address_arr[0]
-	if websocket_address.contains(":"):
-		websocket_port = websocket_arr[1].to_int()
-		websocket_address = websocket_arr[0]
+	feagi_web_port = http_port
+	feagi_socket_port = websocket_port
+	if SSL_type != null:
+		feagi_SSL = SSL_type
+	else:
+		feagi_SSL= DEF_FEAGI_SSL
+	if ip_address_to_connect != null:
+		feagi_TLD = ip_address_to_connect
+	else:
+		feagi_TLD = DEF_FEAGI_TLD
+	if without_port != null:
+		if without_port.to_lower() == "true":
+			feagi_root_web_address = feagi_SSL + feagi_TLD
+		else:
+				feagi_root_web_address = feagi_SSL + feagi_TLD + ":" + str(feagi_web_port)
+	else:
+		feagi_root_web_address = feagi_SSL + feagi_TLD + ":" + str(feagi_web_port)
+		# init WebSocket
+	if full_dns_of_websocket != null:
+		feagi_socket_address = full_dns_of_websocket
+	else:
+		feagi_socket_address = feagi_socket_SSL + feagi_TLD + ":" + str(feagi_socket_port)
 		
-	var output: FeagiEndpointDetails = FeagiEndpointDetails.create_from(address_API, http_port, websocket_address, websocket_port, is_encrypted)
-	print("The retrieved connection details following javascript data gathering:\nhttp_address: %s\nhttp_port: %d\nwebsocket_address: %s\nwebsocket_port: %d\nis_encrypted: %s\n" % [address_API, http_port, websocket_address, websocket_port, is_encrypted])
+	print("websocket: ", feagi_socket_address, " and api: ", feagi_root_web_address)
+		
+	var output: FeagiEndpointDetails = FeagiEndpointDetails.create_from(feagi_root_web_address, feagi_socket_address)
+	
 	return output
