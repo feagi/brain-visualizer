@@ -8,31 +8,38 @@
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://BrainVisualizer/UI/GenericElements/Scroll/Scroll_Vertical.tscn" id="7_qe6x5"]
 [ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.tscn" id="8_3thsv"]
 
-[node name="Mapping_Details" type="VBoxContainer"]
+[node name="Mapping_Details" type="VBoxContainer" node_paths=PackedStringArray("elements_to_scale")]
 offset_right = 1150.0
 offset_bottom = 236.0
-alignment = 1
+size_flags_horizontal = 0
+size_flags_vertical = 0
 script = ExtResource("1_qb704")
+elements_to_scale = [NodePath("labels_box/Label"), NodePath("labels_box/Label2"), NodePath("labels_box/Label3"), NodePath("labels_box/Label8"), NodePath("labels_box/Label4"), NodePath("labels_box/Label5"), NodePath("labels_box/Label6"), NodePath("labels_box/Label7"), NodePath("labels_box/edit_placeholder")]
 
 [node name="labels_box" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_far"
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_type_variation = &"HBoxContainer_farther"
 
 [node name="Label" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 text = "Mapping Definition"
 horizontal_alignment = 1
 
 [node name="Label2" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(264, 0)
+custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 text = "Overwrite Scalar [X, Y, Z]"
 horizontal_alignment = 1
 
 [node name="Label3" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 tooltip_text = "Plasticity Multiplier"
 mouse_filter = 1
 text = "PSP Multi."
@@ -41,18 +48,21 @@ horizontal_alignment = 1
 [node name="Label8" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 text = "Inhibitory"
 horizontal_alignment = 1
 
 [node name="Label4" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 text = "Plasticity"
 horizontal_alignment = 1
 
 [node name="Label5" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
 text = "Plast. Const."
@@ -61,6 +71,7 @@ horizontal_alignment = 1
 [node name="Label6" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 tooltip_text = "LTP Multiplier"
 mouse_filter = 1
 text = "LTP Multi."
@@ -69,16 +80,19 @@ horizontal_alignment = 1
 [node name="Label7" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 text = "LTD Multi."
 horizontal_alignment = 1
 
 [node name="edit_placeholder" type="Control" parent="labels_box"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="add_button" type="TextureButton" parent="labels_box"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
 tooltip_text = "Add Mapping"
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_4ncc7")
@@ -89,8 +103,9 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [node name="Mappings" parent="." instance=ExtResource("7_qe6x5")]
-custom_minimum_size = Vector2(1060, 200)
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
+size_flags_vertical = 0
 prefab_to_spawn = ExtResource("8_3thsv")
 enable_button_notice_when_list_is_empty = true
 button_notice_text = &"   No mapping detected for the selected cortical areas. Click here to add one!   "

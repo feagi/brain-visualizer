@@ -15,11 +15,12 @@
 [ext_resource type="Texture2D" uid="uid://b32s4sgq2hx1v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="10_trxtw"]
 [ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="10_yquya"]
 
-[node name="Prefab_Mapping" type="HBoxContainer"]
+[node name="Prefab_Mapping" type="HBoxContainer" node_paths=PackedStringArray("elements_to_scale")]
 offset_right = 1150.0
 offset_bottom = 32.0
-theme_type_variation = &"HBoxContainer_far"
+theme_type_variation = &"HBoxContainer_farther"
 script = ExtResource("1_tf7sq")
+elements_to_scale = [NodePath("Morphology_List"), NodePath("Scalar"), NodePath("PSP"), NodePath("Inhibitory"), NodePath("Plasticity"), NodePath("Plasticity_Constant"), NodePath("LTP_Multiplier"), NodePath("LTD_Multiplier")]
 
 [node name="Morphology_List" type="OptionButton" parent="."]
 custom_minimum_size = Vector2(150, 0)
@@ -29,7 +30,7 @@ fit_to_longest_item = false
 script = ExtResource("2_4r0x5")
 
 [node name="Scalar" parent="." instance=ExtResource("1_1uw6c")]
-custom_minimum_size = Vector2(264, 0)
+custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
 alignment = 1
 label_x_text = &""

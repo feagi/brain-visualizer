@@ -7,15 +7,20 @@ const SPECIAL_CASES_NEEDING_SIMPLE_MODE: Array[MappingHints.MAPPING_SPECIAL_CASE
 	MappingHints.MAPPING_SPECIAL_CASES.MEMORY_TO_MEMORY,
 ]
 
+@export var elements_to_scale: Array[Control]
+
 var _mappings_scroll: BaseScroll
 var _mapping_hints: MappingHints
 var _add_mapping: TextureButton
 var _is_simple_mode: bool
+var _custom_minimum_size_scalar: ScalingCustomMinimumSize
 
 func _ready() -> void:
 	_mappings_scroll = $Mappings
 	_add_mapping = $labels_box/add_button
-
+	_custom_minimum_size_scalar = ScalingCustomMinimumSize.new(elements_to_scale)
+	_on_theme_change(BV.UI.loaded_theme)
+	BV.UI.theme_changed.connect(_on_theme_change)
 
 func update_displayed_mapping_properties(mappings_copy: MappingProperties, mapping_hints: MappingHints) -> void:
 	_mapping_hints = mapping_hints
@@ -109,3 +114,6 @@ func _add_mapping_pressed() -> void:
 		return
 	add_default_mapping_if_applicable(true)
 
+func _on_theme_change(new_theme: Theme):
+	$labels_box/add_button.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control($labels_box/add_button, "TextureButton")
+	_custom_minimum_size_scalar.theme_updated(new_theme)
