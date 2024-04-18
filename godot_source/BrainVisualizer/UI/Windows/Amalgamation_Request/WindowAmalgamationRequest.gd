@@ -12,12 +12,14 @@ var _preview_holder: GenericSinglePreviewHandler
 
 
 func _ready() -> void:
-	_field_title = $Container/HBoxContainer/AmalgamationTitle
-	_field_3d_location = $Container/HBoxContainer2/Coordinates_3D
-	_preview_holder = GenericSinglePreviewHandler.new()
+	super()
+	_field_title = _window_internals.get_node('HBoxContainer/AmalgamationTitle')
+	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
+
 	
 
-func setup_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+	_setup_base_window("import_amalgamation")
 	_amalgamation_ID = amalgamation_ID
 	_circuit_size = circuit_size
 	_field_title.text = genome_title
@@ -26,20 +28,13 @@ func setup_window(amalgamation_ID: StringName, genome_title: StringName, circuit
 	var resize_signals: Array[Signal] = [null_dimchange_signal]
 	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
 
-	
-	
-	_setup_base_window("import_amalgamation")
-	
-func _cancel_pressed():
-	close_window()
 
 func _import_pressed():
-	###FeagiRequests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID)
+	FeagiCore.requests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID)
 	close_window(false)
 
 #OVERRIDE
 func close_window(request_cancel: bool = true) -> void:
 	if request_cancel:
-		###FeagiRequests.request_cancel_amalgamation(_amalgamation_ID)
-		pass
+		FeagiCore.requests.cancel_pending_amalgamation(_amalgamation_ID)
 	super()

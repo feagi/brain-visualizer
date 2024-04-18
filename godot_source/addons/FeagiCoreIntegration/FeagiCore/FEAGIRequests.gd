@@ -128,7 +128,8 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
 		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully set amalgamation %s" % amalgamation_ID)
+	print("FEAGI REQUEST: Successfully confirmed amalgamation %s" % amalgamation_ID)
+	reload_genome()
 	return FEAGI_response_data
 
 
@@ -137,11 +138,11 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	print("FEAGI REQUEST: Request deletion of amalgamation of ID %s" % amalgamation_ID)
+	print("FEAGI REQUEST: Request deletion of amalgamation request of ID %s" % amalgamation_ID)
 	
 	# Define Request #TODO why are the parameters in the URL
 	var dict_to_send: Dictionary = 	{}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(
 		FeagiCore.network.http_API.address_list.DELETE_GE_amalgamationCancellation + "?amalgamation_id=" + amalgamation_ID
 		, dict_to_send)
 	
@@ -150,9 +151,9 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to delete amalgamation %s!" % amalgamation_ID)
+		push_error("FEAGI Requests: Unable to delete amalgamation request %s!" % amalgamation_ID)
 		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully deleted amalgamation %s" % amalgamation_ID)
+	print("FEAGI REQUEST: Successfully deleted amalgamation request %s" % amalgamation_ID)
 	return FEAGI_response_data
 
 

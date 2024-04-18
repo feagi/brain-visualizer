@@ -52,7 +52,7 @@ var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var DELETE_GE_morphology: StringName = "/v1/morphology/morphology"
-var DELETE_GE_amalgamationCancellation = "/v1/genome/amalgamation_cancellation"
+var DELETE_GE_amalgamationCancellation: StringName = "/v1/genome/amalgamation_cancellation"
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	# Preappend the FEAGIFullAddress to each string above

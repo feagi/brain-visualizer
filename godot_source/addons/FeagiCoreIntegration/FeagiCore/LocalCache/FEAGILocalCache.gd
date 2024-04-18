@@ -218,6 +218,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var amal_ID: StringName = dict["amalgamation_id"]
 		var amal_name: StringName = dict["genome_title"]
 		var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(dict["circuit_size"])
+		print("FEAGI Cache: Detected Amalgamation request %s from healthcheck!" % amal_ID)
 		amalgamation_pending.emit(amal_ID, amal_name, dimensions)
 		
 
