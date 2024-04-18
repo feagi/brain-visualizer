@@ -89,7 +89,12 @@ static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE
 ## Creates a morphology as per the template from feagi
 static func create_from_FEAGI_template(morphology_name: StringName, template_from_FEAGI_summary_call: Dictionary) -> BaseMorphology:
 	var type: MORPHOLOGY_TYPE = BaseMorphology.morphology_type_str_to_type(template_from_FEAGI_summary_call["type"])
-	var morphology_class: MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.morphology_class_str_to_class(template_from_FEAGI_summary_call["class"])
+	var morphology_class: MORPHOLOGY_INTERNAL_CLASS
+	if "class" in template_from_FEAGI_summary_call.keys():
+		morphology_class = BaseMorphology.morphology_class_str_to_class(template_from_FEAGI_summary_call["class"])
+	else:
+		push_error("MORPHOLOGY: Unknown / Unspecified morphology class for %s! Assigning UNKNOWN for the class! This is likely due to the use of outdated or broken genomes!" % morphology_name)
+		morphology_class = MORPHOLOGY_INTERNAL_CLASS.UNKNOWN
 	var parameters: Dictionary = template_from_FEAGI_summary_call["parameters"]
 	return BaseMorphology.create(morphology_name, type, morphology_class, parameters)
 

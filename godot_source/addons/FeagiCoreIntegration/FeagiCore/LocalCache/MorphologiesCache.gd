@@ -35,7 +35,12 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 		push_error("Attemped to update non-cached morphology %s, Skipping..." % [morphology_properties["morphology_name"]])
 		return
 	var updating_morphology: BaseMorphology = _available_morphologies[morphology_name]
-	var morphology_internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS[morphology_properties["class"].to_upper()]
+	var morphology_internal_class: BaseMorphology.MORPHOLOGY_INTERNAL_CLASS
+	if "class" in morphology_properties.keys():
+		morphology_internal_class = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS[morphology_properties["class"].to_upper()]
+	else:
+		push_error("MORPHOLOGY: Unknown / Unspecified morphology class for %s! Assigning UNKNOWN for the class! This is likely due to the use of outdated or broken genomes!" % morphology_name)
+		morphology_internal_class = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.UNKNOWN
 	updating_morphology.feagi_update(morphology_properties["parameters"], morphology_internal_class)
 
 ## Should only be called by FEAGI - removes a morphology by name
