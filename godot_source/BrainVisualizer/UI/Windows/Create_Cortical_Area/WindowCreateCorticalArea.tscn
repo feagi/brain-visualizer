@@ -29,10 +29,11 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
-theme_type_variation = &"WindowOuterMargin"
+theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
+theme_override_constants/separation = 0
 
 [node name="header" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -53,7 +54,7 @@ layout_mode = 2
 
 [node name="options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection"]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_farther"
+theme_type_variation = &"HBoxContainer_fatherest"
 script = ExtResource("2_xy23b")
 
 [node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("3_juefr")]
