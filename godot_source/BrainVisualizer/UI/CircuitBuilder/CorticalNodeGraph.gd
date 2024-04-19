@@ -10,6 +10,7 @@ var connections: Dictionary = {} ## Connection lines key'd by their name functio
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 @export var initial_position: Vector2
 @export var initial_zoom: float
+@export var keyboard_movement_speed: Vector2 = Vector2(1,1)
 
 
 var _cortical_node_prefab: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/CortexNode.tscn")
@@ -33,6 +34,16 @@ func _ready():
 	scroll_offset = initial_position
 	zoom = initial_zoom
 
+func _gui_input(event):
+	if !(event is InputEventKey):
+		return
+	
+	var keyboard_event: InputEventKey = event as InputEventKey
+	if !keyboard_event.is_pressed():
+		return
+
+	
+	
 
 func set_outlining_state_of_connection(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, highlighting: bool) -> void:
 	if source_area == null:
