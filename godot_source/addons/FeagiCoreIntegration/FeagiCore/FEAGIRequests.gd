@@ -129,7 +129,6 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s" % amalgamation_ID)
-	reload_genome()
 	return FEAGI_response_data
 
 
