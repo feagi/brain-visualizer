@@ -207,10 +207,11 @@ vertical_alignment = 1
 
 [node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
 layout_mode = 2
-tooltip_text = "The number of currently loaded neurons vs the total allowed"
+tooltip_text = "The number of current neurons"
 theme_type_variation = &"LineEdit_TopBar"
 alignment = 1
 editable = false
+expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
