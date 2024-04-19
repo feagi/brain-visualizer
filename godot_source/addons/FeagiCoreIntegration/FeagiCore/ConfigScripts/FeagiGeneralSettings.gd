@@ -14,4 +14,5 @@ enum POLL_WEBSOCKET_BEHAVIOR {
 @export var late_load_genome_if_not_immediately_available: bool ## If genome is not loaded on startup, but loads at a later healthcheck ping, load the genome then
 @export var poll_websocket_connection_if_no_websocket: POLL_WEBSOCKET_BEHAVIOR ## In the case websocket is down, how / if we should try to reconnect
 @export var seconds_between_latency_pings: float ## The number of seconds between ping attempts to calculate latency
+@export var seconds_between_healthcheck_pings: float = 5 ## The number of seconds to wait between healthcheck pings
 @export var enable_HTTP_healthcheck: bool ## if we should occasionally ping the FEAGI health endpoint

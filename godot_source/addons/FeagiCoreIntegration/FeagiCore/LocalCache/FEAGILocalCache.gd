@@ -3,7 +3,8 @@ class_name FEAGILocalCache
 
 #region main
 signal genome_reloaded()
-signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called repeatedly any time an amalgamation is pending
+signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
+signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
@@ -181,6 +182,8 @@ var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
 
+var _pending_amalgamation: StringName = ""
+
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	if "burst_engine" in health: 
@@ -203,6 +206,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		brain_readiness = health["brain_readiness"]
 	
 	#TEMP amalgamation
+	#TODO FEAGI really shouldnt be doing this here
 	if "amalgamation_pending" in health:
 		var dict: Dictionary = health["amalgamation_pending"]
 		if "amalgamation_id" not in dict:
@@ -214,13 +218,25 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		if "circuit_size" not in dict:
 			push_error("FEAGI HEALTHCHECK: Pending amalgmation missing amalgamation_id")
 			return
-		
+
 		var amal_ID: StringName = dict["amalgamation_id"]
 		var amal_name: StringName = dict["genome_title"]
 		var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(dict["circuit_size"])
-		print("FEAGI Cache: Detected Amalgamation request %s from healthcheck!" % amal_ID)
-		amalgamation_pending.emit(amal_ID, amal_name, dimensions)
 		
+		if _pending_amalgamation == amal_ID:
+			# we already know about this amalgamation, ignore
+			return
+		if _pending_amalgamation == "":
+			print("FEAGI Cache: Detected Amalgamation request %s from healthcheck!" % amal_ID)
+			amalgamation_pending.emit(amal_ID, amal_name, dimensions)
+			_pending_amalgamation = amal_ID
+	else:
+		if _pending_amalgamation != "":
+			# An amalgamation was pending, now its not (either due to confirmation OR deletion
+			amalgamation_no_longer_pending.emit(_pending_amalgamation)
+			_pending_amalgamation = ""
+			
+	
 
 ## Useful when communicaiton with feagi is lost, mark all cached health data as dead
 func set_health_dead() -> void:
