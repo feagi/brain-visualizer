@@ -10,7 +10,7 @@ var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/Brai
 func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
-	FeagiCore.network.websocket_API.feagi_return_other.connect(test)
+	FeagiCore.network.websocket_API.feagi_return_other.connect(display_red_voxels)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(delete_single_cortical)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(move_when_changed)
 	pass
@@ -93,7 +93,7 @@ func generate_model(name_input, x_input, y_input, z_input, width_input, depth_in
 					new.transform.origin = Vector3(x_gain+int(x_input), y_gain+int(y_input), -1 * (z_gain+int(z_input)))
 					counter += 1
 
-func test(stored_value):
+func display_red_voxels(stored_value):
 	if stored_value == null: # Checks if it's null. When it is, it clear red voxels
 		$red_voxel.multimesh.instance_count = 0
 		$red_voxel.multimesh.visible_instance_count = 0
@@ -131,7 +131,7 @@ func delete_single_cortical(cortical_area_data : BaseCorticalArea):
 	var cortical_text = cortical_area_data.cortical_ID + "_textbox"
 	for i in global_name_list:
 		if cortical_area_data.cortical_ID in i or cortical_text in i:
-			for x in len(global_name_list[i]):
+			for x in len(global_name_list[i]): # Ah, global list has the name of node. We need to add it in cache somewhat
 				remove_child(global_name_list[i][x][0])
 				global_name_list[i][x][0].queue_free()
 			name_list.append(i)
@@ -168,16 +168,14 @@ func check_cortical(cortical_area_data : BaseCorticalArea):
 	# TODO: This is dumb
 	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label")
 	label.text = cortical_area_data.name # What is this even doing here? 
-	if global_name_list: # Pretty sure this is already exist in cache. We need to replace this with current list.
+	var list_of_cortical_names_with_id = FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names()
+	if list_of_cortical_names_with_id: # Pretty sure this is already exist in cache. We need to replace this with current list.
 		var coordinate_3D = global_name_list[cortical_area_data.cortical_ID][0].slice(1, 4)
 		var dimension = global_name_list[cortical_area_data.cortical_ID][0].slice(4, 8)
 		var dimension_updated = Vector3i(dimension[0], dimension[2], dimension[1]) # Okay.
 		var coordinate_3D_updated = Vector3i(coordinate_3D[0], coordinate_3D[1], coordinate_3D[2])  #Cool. We are doing vector3i instead. all right
 		if (coordinate_3D_updated != cortical_area_data.coordinates_3D) or (dimension_updated != cortical_area_data.dimensions):
 			delete_single_cortical(cortical_area_data) # Not going to bother to try and improve this. 
-			for i in global_name_list:
-				if cortical_area_data.cortical_ID in i:
-					print(global_name_list[i])
 			generate_cortical_area(cortical_area_data)
 			# Actual fix here
 			Godot_list.godot_list["data"]["direct_stimulation"][cortical_area_data.cortical_ID] = [] # Now this is something I wrote. 
