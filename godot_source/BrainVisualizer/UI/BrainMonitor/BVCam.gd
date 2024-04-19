@@ -48,6 +48,7 @@ func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
 	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
 	bv_background.pan_event.connect(_touch_pan_gesture)
+	bv_background.keyboard_event.connect(_keyboard_camera_movement)
 	_initial_position = position
 	_initial_euler_rotation = rotation_degrees
 
