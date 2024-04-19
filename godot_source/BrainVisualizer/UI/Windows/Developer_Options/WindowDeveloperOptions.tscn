@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsible.tscn" id="2_62jap"]
 [ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="3_136gr"]
 
-
 [node name="WindowDeveloperOptions" type="VBoxContainer"]
 offset_right = 126.0
 offset_bottom = 40.0
@@ -23,6 +22,7 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2

@@ -128,9 +128,12 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
 		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully confirmed amalgamation %s" % amalgamation_ID)
+	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
+	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
+	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
+	reload_genome()
 	return FEAGI_response_data
-
+	
 
 ## Cancel the import of a specific amalgamation
 func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOutput:
