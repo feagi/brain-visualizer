@@ -14,4 +14,4 @@ seconds_between_latency_pings = 5.0
 seconds_between_healthcheck_pings = 5.0
 enable_HTTP_healthcheck = true
 allow_developer_menu = true
-developer_menu_hotkey = 96
+developer_menu_hotkey = 47
