@@ -71,6 +71,13 @@ func select_single_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	var cortical_node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
 	set_selected(cortical_node)
 
+func center_on_cortical_area(cortical_area: BaseCorticalArea) -> void:
+	if !(cortical_area.cortical_ID in cortical_nodes.keys()):
+		push_error("CB: Unable to find cortical area as a node to focus!")
+		return
+	var cortical_node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
+	scroll_offset = cortical_node.position_offset - (size / 2.0)
+
 ## Spawns a cortical Node, should only be called via FEAGI
 func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()

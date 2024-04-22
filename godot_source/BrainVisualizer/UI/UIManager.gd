@@ -79,7 +79,9 @@ func user_selected_single_cortical_area_appending(area: BaseCorticalArea) -> voi
 
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
-	$Brain_Visualizer.snap_camera_to_cortical_area(cortical_area)
+	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
+	_circuit_builder.center_on_cortical_area(cortical_area)
+	
 
 ## Starts a preview cort a cortical area
 func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
