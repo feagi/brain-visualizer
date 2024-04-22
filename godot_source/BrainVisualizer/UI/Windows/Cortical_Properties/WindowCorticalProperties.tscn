@@ -35,6 +35,7 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
+theme_type_variation = &"VBoxContainer_adjacent"
 
 [node name="Cortical" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("2_wrcar")]
 layout_mode = 2

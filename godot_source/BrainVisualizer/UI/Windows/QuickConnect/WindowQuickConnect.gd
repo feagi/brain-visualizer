@@ -119,20 +119,20 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 func _setting_source() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Source Area...")
 	_source = null
-	_step1_label.text = "Please Select A Source Area..."
+	_step1_label.text = " Please Select A Source Area..."
 	_step1_panel.theme_type_variation = "PanelContainer_QC_waiting"
 
 func _setting_destination() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Destination Area...")
 	_destination = null
-	_step2_label.text = "Please Select A Destination Area..."
+	_step2_label.text = " Please Select A Destination Area..."
 	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	var mapping_hint: MappingHints = MappingHints.new(_source, _destination)
 	_selected_morphology = null
-	_step3_label.text = "Please Select A Morphology..."
+	_step3_label.text = " Please Select A Morphology..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	if mapping_hint.is_morphologies_restricted:
 		_step3_scroll.set_morphologies(mapping_hint.restricted_morphologies)
@@ -141,7 +141,7 @@ func _setting_morphology() -> void:
 
 func _set_source(cortical_area: BaseCorticalArea) -> void:
 	_source = cortical_area
-	_step1_label.text = "Selected Source Area: [" + cortical_area.name + "]"
+	_step1_label.text = " Selected Source Area: [" + cortical_area.name + "]"
 	_step1_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	if !_finished_selecting:
 		_step2_panel.visible = true
@@ -152,7 +152,7 @@ func _set_source(cortical_area: BaseCorticalArea) -> void:
 
 func _set_destination(cortical_area: BaseCorticalArea) -> void:
 	_destination = cortical_area
-	_step2_label.text = "Selected Destination Area: [" + cortical_area.name + "]"
+	_step2_label.text = " Selected Destination Area: [" + cortical_area.name + "]"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:
@@ -165,7 +165,7 @@ func _set_destination(cortical_area: BaseCorticalArea) -> void:
 
 func _set_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
-	_step3_label.text = "Selected Connectivity Rule: " + morphology.name
+	_step3_label.text = " Selected Connectivity Rule: " + morphology.name
 	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	_step3_morphology_view.load_morphology(morphology)
 	_step3_morphology_details.load_morphology(morphology)
