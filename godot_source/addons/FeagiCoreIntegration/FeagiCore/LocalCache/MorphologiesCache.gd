@@ -49,6 +49,7 @@ func remove_morphology(morphology_Name: StringName) -> void:
 		push_error("Attemped to delete non-cached morphology %s, Skipping..." % [morphology_Name])
 		return
 	var deleting: BaseMorphology = _available_morphologies[morphology_Name]
+	morphology_about_to_be_removed.emit(deleting)
 	deleting.FEAGI_delete_morphology()
 	_available_morphologies.erase(morphology_Name)
 
