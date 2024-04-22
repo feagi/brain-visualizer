@@ -15,7 +15,7 @@ script = ExtResource("1_ifhbl")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_55gg2")]
 layout_mode = 2
-title = "DEVELOPER OPTIONS"
+title = "ADVANCED OPTIONS"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
