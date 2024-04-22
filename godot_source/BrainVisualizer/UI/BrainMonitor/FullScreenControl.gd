@@ -26,7 +26,6 @@ func _check_for_click_input(event: InputEvent):
 		pan_event.emit(event)
 	
 	if event is InputEventKey:
-		print("a")
 		keyboard_event.emit(event)
 		
 	

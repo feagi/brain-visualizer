@@ -34,8 +34,9 @@ func _input(event):
 		return
 	
 	if event is InputEventKey:
-		if (event as InputEventKey).keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
-			if !(event as InputEventKey).pressed:
+		var keyboard_event: InputEventKey = event as InputEventKey
+		if keyboard_event.keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
+			if !keyboard_event.pressed:
 				return
 			if !FeagiCore.feagi_settings.allow_developer_menu:
 				return

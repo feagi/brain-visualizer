@@ -60,7 +60,8 @@ func _input(event: InputEvent):
 	
 	# Feagi Interaction doesnt require camera control
 	if event is InputEventKey:
-		_FEAGI_data_interaction(event)
+		if get_node("../BV_Background").has_focus():
+			_FEAGI_data_interaction(event)
 	
 	if !_is_user_currently_focusing_camera:
 		return
@@ -153,7 +154,9 @@ func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 		for key in Godot_list.godot_list["data"]["direct_stimulation"]:
 			Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 		return
-
+	if Input.is_action_just_pressed("reset_camera"):
+		
+		reset_camera()
 
 
 
