@@ -67,6 +67,8 @@ func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool
 	if override_scroll_selection:
 		_morphology_scroll.select_morphology(morphology)
 	
+	# Scroll already requests a property refresh on selection, but since we use usages, lets also refresh usage information
+	FeagiCore.requests.get_morphology_usage(morphology.name)
 	size = Vector2i(0,0) # Force shrink to minimum possible size
 
 ## Only called when feagi updated a mapping. This is a hacky work around to have morphology refresh if any mapping changes
