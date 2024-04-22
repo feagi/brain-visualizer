@@ -167,21 +167,13 @@ func _keyboard_camera_movement(_keyboard_event: InputEventKey) -> void:
 	if Input.is_key_pressed(KEY_R):
 		reset_camera()
 		return
-	if Input.is_key_pressed(KEY_W):
+	if Input.is_action_pressed("forward"):
 		dir += Vector3(0,0,-1)
-	if Input.is_key_pressed(KEY_S):
+	if Input.is_action_pressed("backward"):
 		dir += Vector3(0,0,1)
-	if Input.is_key_pressed(KEY_A):
+	if Input.is_action_pressed("left"):
 		dir += Vector3(-1,0,0)
-	if Input.is_key_pressed(KEY_D):
-		dir += Vector3(1,0,0)
-	if Input.is_key_pressed(KEY_UP):
-		dir += Vector3(0,0,-1)
-	if Input.is_key_pressed(KEY_DOWN):
-		dir += Vector3(0,0,1)
-	if Input.is_key_pressed(KEY_LEFT):
-		dir += Vector3(-1,0,0)
-	if Input.is_key_pressed(KEY_RIGHT):
+	if Input.is_action_pressed("right"):
 		dir += Vector3(1,0,0)
 	
 	var speed: float = camera_movement_speed

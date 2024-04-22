@@ -11,6 +11,7 @@ var connections: Dictionary = {} ## Connection lines key'd by their name functio
 @export var initial_position: Vector2
 @export var initial_zoom: float
 @export var keyboard_movement_speed: Vector2 = Vector2(1,1)
+@export var keyboard_move_speed: float = 50.0
 
 
 var _cortical_node_prefab: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/CortexNode.tscn")
@@ -39,10 +40,25 @@ func _gui_input(event):
 	if !(event is InputEventKey):
 		return
 	
+	if !has_focus():
+		return
+	
 	var keyboard_event: InputEventKey = event as InputEventKey
 	if !keyboard_event.is_pressed():
 		return
+	
+	var dir: Vector2 = Vector2(0,0)
 
+	if Input.is_action_pressed("forward"):
+		dir += Vector2(0,-1)
+	if Input.is_action_pressed("backward"):
+		dir += Vector2(0,1)
+	if Input.is_action_pressed("left"):
+		dir += Vector2(-1,0)
+	if Input.is_action_pressed("right"):
+		dir += Vector2(1,0)
+	
+	scroll_offset += dir * zoom * keyboard_move_speed
 	
 	
 
