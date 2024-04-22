@@ -7,7 +7,7 @@ var _stored_rotations: Array[Quaternion] = []
 var _stored_times: Array[float] = []
 
 func _ready() -> void:
-	_camera = get_node("/root/FeagiRoot/UI/Brain_Visualizer/Camera3D")
+	_camera = BV.BM.get_node("BVCam")
 
 func clear_stored_data() -> void:
 	var counter: IntInput = $HBoxContainer/num_animation_points
