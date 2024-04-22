@@ -17,4 +17,4 @@ func theme_updated(new_theme: Theme) -> void:
 	for i in range(0, len(_nodes_to_scale)):
 		var node: Node = _nodes_to_scale[i]
 		
-		node.custom_minimum_size = Vector2i(float(_default_sizes[i].x) * scaling_factor, float(_default_sizes[i].y) * scaling_factor)
+		node.custom_minimum_size = Vector2i(int(float(_default_sizes[i].x) * scaling_factor), int(float(_default_sizes[i].y) * scaling_factor))

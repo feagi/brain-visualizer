@@ -14,9 +14,17 @@ script = ExtResource("1_3jel5")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"MarginContainer_Notification"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
+
+[node name="icon" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureRect_Icon"
+expand_mode = 1
 
 [node name="error_label" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2

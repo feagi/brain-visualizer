@@ -1,6 +1,6 @@
 [gd_resource type="Theme" load_steps=26 format=3 uid="uid://6y65a2i8u51h"]
 
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_63hda"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_st7ro"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -48,10 +48,10 @@ bg_color = Color(0.152941, 0.192157, 0.254902, 1)
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ixcsb"]
-bg_color = Color(0.701961, 0.141176, 0.172549, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_al8ae"]
-bg_color = Color(0.717647, 0.666667, 0.121569, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3bdj3"]
 content_margin_left = 0.0
@@ -146,7 +146,7 @@ Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 20
 Label_UniformWidth/base_type = &"Label"
 Label_UniformWidth/font_sizes/font_size = 16
-Label_UniformWidth/fonts/font = ExtResource("1_63hda")
+Label_UniformWidth/fonts/font = ExtResource("1_st7ro")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 16
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
@@ -158,6 +158,11 @@ MarginContainer/constants/margin_bottom = 4
 MarginContainer/constants/margin_left = 4
 MarginContainer/constants/margin_right = 4
 MarginContainer/constants/margin_top = 4
+MarginContainer_Notification/base_type = &"MarginContainer"
+MarginContainer_Notification/constants/margin_bottom = 8
+MarginContainer_Notification/constants/margin_left = 8
+MarginContainer_Notification/constants/margin_right = 8
+MarginContainer_Notification/constants/margin_top = 8
 MarginContainer_TopBarIndicator/base_type = &"MarginContainer"
 MarginContainer_TopBarIndicator/constants/margin_bottom = 2
 MarginContainer_TopBarIndicator/constants/margin_left = 4
@@ -210,6 +215,9 @@ TextureButton_icon/constants/size_x = 32
 TextureButton_icon/constants/size_y = 32
 TextureRect/constants/size_x = 64
 TextureRect/constants/size_y = 64
+TextureRect_Icon/base_type = &"TextureRect"
+TextureRect_Icon/constants/size_x = 32
+TextureRect_Icon/constants/size_y = 32
 TextureRect_wide/base_type = &"TextureRect"
 TextureRect_wide/constants/size_x = 64
 TextureRect_wide/constants/size_y = 32
