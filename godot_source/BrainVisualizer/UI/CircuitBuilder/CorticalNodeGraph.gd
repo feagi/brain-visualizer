@@ -24,6 +24,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(feagi_deleted_single_cortical_node)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_change_state)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
+	BV.UI.user_selected_single_cortical_area.connect(select_single_cortical_area)
 
 	_move_timer = $Timer
 	_move_timer.wait_time = move_time_delay_before_update_FEAGI
@@ -60,6 +61,15 @@ func set_outlining_state_of_connection(source_area: BaseCorticalArea, destinatio
 		return
 	var line: InterCorticalConnection = connections[line_name]
 	line.toggle_outlining(highlighting)
+
+
+## highlights / selects a cortical area in CB
+func select_single_cortical_area(cortical_area: BaseCorticalArea) -> void:
+	if !(cortical_area.cortical_ID in cortical_nodes.keys()):
+		push_error("CB: Unable to find cortical area as a node to select!")
+		return
+	var cortical_node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
+	set_selected(cortical_node)
 
 ## Spawns a cortical Node, should only be called via FEAGI
 func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> CorticalNode:
@@ -111,5 +121,5 @@ func _on_genome_change_state(new_state: FeagiCore.GENOME_LOAD_STATE, _prev_state
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 	_moved_cortical_areas_buffer = {}
 	_move_timer.stop()
-
+	
 

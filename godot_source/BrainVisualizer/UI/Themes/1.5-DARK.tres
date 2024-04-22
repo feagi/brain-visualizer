@@ -192,6 +192,7 @@ PanelContainer_QC_incomplete/base_type = &"PanelContainer"
 PanelContainer_QC_incomplete/styles/panel = SubResource("StyleBoxFlat_sr4l8")
 PanelContainer_QC_waiting/base_type = &"PanelContainer"
 PanelContainer_QC_waiting/styles/panel = SubResource("StyleBoxFlat_vsflv")
+PopupMenu/font_sizes/font_size = 24
 RichTextLabel/font_sizes/bold_font_size = 24
 RichTextLabel/font_sizes/bold_italics_font_size = 24
 RichTextLabel/font_sizes/italics_font_size = 24

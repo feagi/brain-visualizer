@@ -104,7 +104,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "3. Please Select A Morphology..."
+text = "3. Please Select A Connectivity Rule..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 visible = false
@@ -148,6 +148,7 @@ layout_mode = 2
 
 [node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+theme_type_variation = &"Button_Tall"
 disabled = true
 text = "Establish the Connection"
 
