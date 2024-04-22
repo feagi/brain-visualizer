@@ -108,55 +108,6 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	
 
 #endregion
-## Confirm the import of a pending amalgamation at a specific coordinate
-func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName) -> FeagiRequestOutput:
-	if !FeagiCore.can_interact_with_feagi():
-		push_error("FEAGI Requests: Not ready for requests!")
-		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	print("FEAGI REQUEST: Request confirming amalgamation of ID %s" % amalgamation_ID)
-	
-	# Define Request #TODO why are the parameters in the URL
-	var dict_to_send: Dictionary = 	{}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
-		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID
-		, dict_to_send)
-	
-	# Send request and await results
-	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	await HTTP_FEAGI_request_worker.worker_done
-	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
-		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
-	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
-	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	reload_genome()
-	return FEAGI_response_data
-	
-
-## Cancel the import of a specific amalgamation
-func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOutput:
-	if !FeagiCore.can_interact_with_feagi():
-		push_error("FEAGI Requests: Not ready for requests!")
-		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	print("FEAGI REQUEST: Request deletion of amalgamation request of ID %s" % amalgamation_ID)
-	
-	# Define Request #TODO why are the parameters in the URL
-	var dict_to_send: Dictionary = 	{}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(
-		FeagiCore.network.http_API.address_list.DELETE_GE_amalgamationCancellation + "?amalgamation_id=" + amalgamation_ID
-		, dict_to_send)
-	
-	# Send request and await results
-	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	await HTTP_FEAGI_request_worker.worker_done
-	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to delete amalgamation request %s!" % amalgamation_ID)
-		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully deleted amalgamation request %s" % amalgamation_ID)
-	return FEAGI_response_data
 
 
 #region Cortical Areas
@@ -461,6 +412,72 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(response)
 	return FEAGI_response_data
 
+
+## Toggle is the synaptic activity of a cortical area should be monitored
+func toggle_synaptic_monitoring(cortical_area_ID: StringName, should_monitor: bool) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !cortical_area_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to find cortical area %s that is not found in cache!!" % cortical_area_ID)
+		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
+	if !FeagiCore.feagi_local_cache.influxdb_availability:
+		push_error("FEAGI Requests: InfluxDB is not available for toggling synaptic monitoring!")
+		return FeagiRequestOutput.requirement_fail("NO_INFLUXDB")
+	
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"ID": cortical_area_ID,
+		"state": should_monitor}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_MON_neuron_membranePotential, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to set synaptic monitoring on cortical area %s!" % cortical_area_ID)
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully set synaptic monitoring on cortical area %s!" % cortical_area_ID)
+	var cortical_area: BaseCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
+	cortical_area.is_monitoring_synaptic_potential = should_monitor
+	return FEAGI_response_data
+
+
+## Toggle is the membrane activity of a cortical area should be monitored
+func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bool) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !cortical_area_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to find cortical area %s that is not found in cache!!" % cortical_area_ID)
+		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
+	if !FeagiCore.feagi_local_cache.influxdb_availability:
+		push_error("FEAGI Requests: InfluxDB is not available for toggling membrane monitoring!")
+		return FeagiRequestOutput.requirement_fail("NO_INFLUXDB")
+	
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"ID": cortical_area_ID,
+		"state": should_monitor}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_monitoring_neuron_membranePotential_set, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to set membrane monitoring on cortical area %s!" % cortical_area_ID)
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully set membrane monitoring on cortical area %s!" % cortical_area_ID)
+	var cortical_area: BaseCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
+	cortical_area.is_monitoring_membrane_potential = should_monitor
+	return FEAGI_response_data
+
 #endregion
 
 #region Morphologies
@@ -754,7 +771,7 @@ func delete_morphology(morphology: BaseMorphology) -> FeagiRequestOutput:
 	if !morphology.name in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
 		push_error("FEAGI Requests: Morphology of name %s doesn't exist to delete!" % morphology.name)
 		return FeagiRequestOutput.requirement_fail("MORPHOLOGY_MISSING")
-	if !morphology.get_latest_known_deletability() in [BaseMorphology.DELETABILITY.NOT_DELETABLE_USED, BaseMorphology.DELETABILITY.NOT_DELETABLE_UNKNOWN]:
+	if morphology.get_latest_known_deletability() in [BaseMorphology.DELETABILITY.NOT_DELETABLE_USED, BaseMorphology.DELETABILITY.NOT_DELETABLE_UNKNOWN]:
 		push_error("FEAGI Requests: Unable to delete morphology %s that is not allowed for deletion!" % morphology.name)
 		return FeagiRequestOutput.requirement_fail("DELETE_DISALLOWED")
 	
@@ -895,8 +912,55 @@ func delete_mappings_between_corticals(source_area: BaseCorticalArea, destinatio
 #endregion
 
 #region Amalgamation
+## Confirm the import of a pending amalgamation at a specific coordinate
+func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	print("FEAGI REQUEST: Request confirming amalgamation of ID %s" % amalgamation_ID)
+	
+	# Define Request #TODO why are the parameters in the URL
+	var dict_to_send: Dictionary = 	{}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
+		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID
+		, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
+	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
+	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
+	reload_genome()
+	return FEAGI_response_data
+	
 
-
+## Cancel the import of a specific amalgamation
+func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	print("FEAGI REQUEST: Request deletion of amalgamation request of ID %s" % amalgamation_ID)
+	
+	# Define Request #TODO why are the parameters in the URL
+	var dict_to_send: Dictionary = 	{}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(
+		FeagiCore.network.http_API.address_list.DELETE_GE_amalgamationCancellation + "?amalgamation_id=" + amalgamation_ID
+		, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete amalgamation request %s!" % amalgamation_ID)
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully deleted amalgamation request %s" % amalgamation_ID)
+	return FEAGI_response_data
 
 
 
