@@ -132,6 +132,10 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 	_load_new_theme(theme_file)
 
 
+## Open the developer menu
+func show_developer_menu():
+	_window_manager.spawn_developer_options()
+
 ## Called from above when we are about to reset genome, may want to clear some things...
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)

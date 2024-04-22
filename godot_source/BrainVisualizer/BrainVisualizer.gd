@@ -29,6 +29,19 @@ func _ready() -> void:
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
 		
 
+func _input(event):
+	if FeagiCore.feagi_settings == null:
+		return
+	
+	if event is InputEventKey:
+		if (event as InputEventKey).keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
+			if !(event as InputEventKey).pressed:
+				return
+			if !FeagiCore.feagi_settings.allow_developer_menu:
+				return
+			_UI_manager.show_developer_menu()
+			
+
 func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, prev_state: FeagiCore.CONNECTION_STATE) -> void:
 	match(current_state):
 		FeagiCore.CONNECTION_STATE.CONNECTED:
@@ -54,3 +67,4 @@ func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_st
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:
 	_UI_manager.window_manager.spawn_amalgamation_window(amalgamation_id, genome_title, dimensions)
+
