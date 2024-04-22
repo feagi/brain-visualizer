@@ -11,11 +11,14 @@ enum NOTIFICATION_TYPE {
 
 var _label: Label
 var _timer: Timer
+var _theme_sclar: ScaleThemeApplier
 
 func _ready():
 	_label = $MarginContainer/HBoxContainer/error_label
 	_timer = $Timer
 	_timer.autostart = false
+	_theme_sclar = ScaleThemeApplier.new()
+	_theme_sclar.setup(self, [], BV.UI.loaded_theme)
 
 ## Define what the notification should be
 func set_notification(message: StringName, notification_type: NOTIFICATION_TYPE, time_seconds: float = DEFAULT_TIME) -> void:

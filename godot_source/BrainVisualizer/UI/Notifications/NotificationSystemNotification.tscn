@@ -35,7 +35,7 @@ stretch_mode = 0
 
 [node name="Timer" type="Timer" parent="."]
 
-[connection signal="mouse_entered" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_pause_timer_on_mouse_over"]
-[connection signal="mouse_exited" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_unpause_timer_on_mouse_off"]
+[connection signal="mouse_entered" from="." to="." method="_pause_timer_on_mouse_over"]
+[connection signal="mouse_exited" from="." to="." method="_unpause_timer_on_mouse_off"]
 [connection signal="pressed" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_on_timeout_or_button_close"]
 [connection signal="timeout" from="Timer" to="." method="_on_timeout_or_button_close"]
