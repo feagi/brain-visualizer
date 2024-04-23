@@ -174,10 +174,10 @@ var brain_readiness: bool:
 
 var _burst_engine: bool
 var _influxdb_availability: bool
-var _neuron_count_max: int
-var _synapse_count_max: int
-var _neuron_count_current: int
-var _synapse_count_current: int
+var _neuron_count_max: int = -1
+var _synapse_count_max: int = -1
+var _neuron_count_current: int = -1
+var _synapse_count_current: int = -1
 var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
