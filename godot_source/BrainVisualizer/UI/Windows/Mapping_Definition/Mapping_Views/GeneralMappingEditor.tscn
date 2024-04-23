@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://2mmvclyd2pve" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/Prefab_Mapping.tscn" id="8_3thsv"]
 
 [node name="Mapping_Details" type="VBoxContainer" node_paths=PackedStringArray("elements_to_scale")]
-offset_right = 1150.0
+offset_right = 1300.0
 offset_bottom = 236.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
@@ -25,9 +25,8 @@ theme_type_variation = &"HBoxContainer_farther"
 [node name="Label" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
 text = "Mapping Definition"
-horizontal_alignment = 1
 
 [node name="Label2" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(270, 0)

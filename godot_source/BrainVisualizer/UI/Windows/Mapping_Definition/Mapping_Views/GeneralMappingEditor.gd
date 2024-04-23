@@ -72,6 +72,7 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 	$labels_box/Label5.visible = full_editing
 	$labels_box/Label6.visible = full_editing
 	$labels_box/Label7.visible = full_editing
+	$labels_box/Label8.visible = full_editing
 
 func _spawn_full_mappings(mappings: MappingProperties, mapping_hints: MappingHints) -> void:
 	for mapping: MappingProperty in mappings.mappings:

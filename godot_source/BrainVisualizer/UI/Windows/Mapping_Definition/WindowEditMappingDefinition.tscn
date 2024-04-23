@@ -1,11 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://q5xkg5bg8wnk"]
+[gd_scene load_steps=6 format=3 uid="uid://q5xkg5bg8wnk"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/WindowEditMappingDefinition.gd" id="1_1yhba"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="1_ev3y5"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="2_ds7ss"]
 [ext_resource type="Texture2D" uid="uid://c7ewdn04rapbx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="4_q8idl"]
 [ext_resource type="PackedScene" uid="uid://c4hu4bdxc8gu3" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/GeneralMappingEditor.tscn" id="6_miy2l"]
-[ext_resource type="PackedScene" uid="uid://cbu2hexbc7qqg" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/SingleMappingConnectionToggle.tscn" id="7_k31fw"]
 
 [node name="WindowEditMappingDefinition" type="VBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_right = 126.0
@@ -29,7 +28,6 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
-size_flags_horizontal = 0
 size_flags_vertical = 0
 
 [node name="SourceAndDestination" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
@@ -77,12 +75,7 @@ layout_mode = 2
 
 [node name="Mapping_Details" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_miy2l")]
 layout_mode = 2
-
-[node name="SingleMappingConnectionToggle" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("7_k31fw")]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 4
+size_flags_horizontal = 1
 
 [node name="BottomButtons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

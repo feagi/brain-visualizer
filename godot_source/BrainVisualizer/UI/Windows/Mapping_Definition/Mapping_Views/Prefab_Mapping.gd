@@ -77,6 +77,7 @@ func _toggle_show_full_editing(full_editing: bool) -> void:
 	_plasticity_constant.visible = full_editing
 	_LTP_multiplier.visible = full_editing
 	_LTD_multiplier.visible = full_editing
+	_inhibitory.visible = full_editing
 	size = Vector2(0,0)
 
 func _on_user_toggle_plasticity(toggle_state: bool) -> void:

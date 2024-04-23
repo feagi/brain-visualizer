@@ -18,7 +18,7 @@
 [node name="Prefab_Mapping" type="HBoxContainer" node_paths=PackedStringArray("elements_to_scale_by_custom_size", "nodes_not_to_scale_by_property")]
 offset_right = 1300.0
 offset_bottom = 32.0
-size_flags_horizontal = 0
+size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
 script = ExtResource("1_tf7sq")
 elements_to_scale_by_custom_size = [NodePath("Scalar"), NodePath("PSP"), NodePath("Inhibitory"), NodePath("Plasticity"), NodePath("Plasticity_Constant"), NodePath("LTP_Multiplier"), NodePath("LTD_Multiplier")]
