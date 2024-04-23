@@ -29,7 +29,7 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
-theme_type_variation = &"WindowOuterMargin"
+theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
@@ -70,7 +70,7 @@ text = "TEX"
 [node name="Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
-placeholder_text = "Type Rule Name Here..."
+placeholder_text = " Type Rule Name Here..."
 script = ExtResource("3_6i23i")
 
 [node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_c1klg")]
@@ -94,7 +94,7 @@ text = "Description"
 visible = false
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
-placeholder_text = "Type your custom description here..."
+placeholder_text = " Type your custom description here..."
 script = ExtResource("12_koy8n")
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]

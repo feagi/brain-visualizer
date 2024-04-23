@@ -57,7 +57,7 @@ func _gui_input(event):
 func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
 	position_offset = node_position
-	title = _cortical_area_ref.name
+	title = "  " + _cortical_area_ref.name #TODO HACK FOR SPACING
 	name = _cortical_area_ref.cortical_ID
 	_cortical_area_ref.name_updated.connect(_update_cortical_name)
 	_cortical_area_ref.efferent_mapping_added.connect(FEAGI_create_mapping_from_efferent)

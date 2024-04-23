@@ -14,9 +14,17 @@ script = ExtResource("1_3jel5")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"MarginContainer_Notification"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
+
+[node name="icon" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureRect_Icon"
+expand_mode = 1
 
 [node name="error_label" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
@@ -35,7 +43,7 @@ stretch_mode = 0
 
 [node name="Timer" type="Timer" parent="."]
 
-[connection signal="mouse_entered" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_pause_timer_on_mouse_over"]
-[connection signal="mouse_exited" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_unpause_timer_on_mouse_off"]
+[connection signal="mouse_entered" from="." to="." method="_pause_timer_on_mouse_over"]
+[connection signal="mouse_exited" from="." to="." method="_unpause_timer_on_mouse_off"]
 [connection signal="pressed" from="MarginContainer/HBoxContainer/TextureButton" to="." method="_on_timeout_or_button_close"]
 [connection signal="timeout" from="Timer" to="." method="_on_timeout_or_button_close"]

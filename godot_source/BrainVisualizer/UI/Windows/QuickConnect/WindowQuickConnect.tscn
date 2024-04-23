@@ -27,6 +27,7 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
@@ -41,7 +42,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "1. Please Select A Source Area..."
+text = " 1. Please Select A Source Area..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 visible = false
@@ -72,7 +73,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "2. Please Select A Destination Area..."
+text = " 2. Please Select A Destination Area..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 visible = false
@@ -103,7 +104,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "3. Please Select A Morphology..."
+text = " 3. Please Select A Connectivity Rule..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 visible = false
@@ -147,6 +148,7 @@ layout_mode = 2
 
 [node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+theme_type_variation = &"Button_Tall"
 disabled = true
 text = "Establish the Connection"
 

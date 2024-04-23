@@ -79,7 +79,9 @@ func user_selected_single_cortical_area_appending(area: BaseCorticalArea) -> voi
 
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
-	$Brain_Visualizer.snap_camera_to_cortical_area(cortical_area)
+	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
+	_circuit_builder.center_on_cortical_area(cortical_area)
+	
 
 ## Starts a preview cort a cortical area
 func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
@@ -131,6 +133,10 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 	print("THEME: Loading theme %s..." % guessing_file)
 	_load_new_theme(theme_file)
 
+
+## Open the developer menu
+func show_developer_menu():
+	_window_manager.spawn_developer_options()
 
 ## Called from above when we are about to reset genome, may want to clear some things...
 func FEAGI_about_to_reset_genome() -> void:

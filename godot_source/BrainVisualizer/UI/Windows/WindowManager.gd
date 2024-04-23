@@ -72,6 +72,8 @@ func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
 	quick_cortical_menu.setup(cortical_area)
 	
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+	if "import_amalgamation" in loaded_windows:
+		return # no need to keep opening this window
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_prefab_import_amalgamation, "import_amalgamation") as WindowAmalgamationRequest
 	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size)
 

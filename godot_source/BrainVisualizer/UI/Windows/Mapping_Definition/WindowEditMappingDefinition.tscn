@@ -7,13 +7,14 @@
 [ext_resource type="PackedScene" uid="uid://c4hu4bdxc8gu3" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/GeneralMappingEditor.tscn" id="6_miy2l"]
 [ext_resource type="PackedScene" uid="uid://cbu2hexbc7qqg" path="res://BrainVisualizer/UI/Windows/Mapping_Definition/Mapping_Views/SingleMappingConnectionToggle.tscn" id="7_k31fw"]
 
-[node name="WindowEditMappingDefinition" type="VBoxContainer"]
+[node name="WindowEditMappingDefinition" type="VBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_1yhba")
+theme_scalar_nodes_to_not_include_or_search = [NodePath("WindowPanel/WindowMargin/WindowInternals")]
 
 [node name="TitleBar" parent="." instance=ExtResource("1_ev3y5")]
 layout_mode = 2
@@ -24,13 +25,17 @@ layout_mode = 2
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
-theme_type_variation = &"WindowOuterMargin"
+theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
 
 [node name="SourceAndDestination" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 alignment = 1
 
 [node name="src_box" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SourceAndDestination"]
@@ -76,9 +81,13 @@ layout_mode = 2
 [node name="SingleMappingConnectionToggle" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("7_k31fw")]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
 
 [node name="BottomButtons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
 alignment = 2
 
 [node name="cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BottomButtons"]

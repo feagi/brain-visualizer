@@ -58,7 +58,7 @@ func import_window_details(previous_data: Dictionary) -> void:
 	position = previous_data["position"]
 
 func shrink_window() -> void:
-	size = Vector2i(0,0) # look into await() - checkw ith web export
+	size = Vector2i(0,0)
 
 ## Call to initialize window
 func _setup_base_window(window_name: StringName) -> void:
@@ -79,4 +79,8 @@ func _bring_to_top_if_click(event: InputEvent):
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
-	shrink_window()
+	call_deferred("_delay_shrink_window")
+
+func _delay_shrink_window():
+	size = Vector2i(0,0)
+

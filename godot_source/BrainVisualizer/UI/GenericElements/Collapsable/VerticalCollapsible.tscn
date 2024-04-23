@@ -19,6 +19,9 @@ theme_type_variation = &"VBoxContainer_adjacent"
 layout_mode = 2
 size_flags_vertical = 0
 
+[node name="gap" type="Control" parent="VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+
 [node name="Section_Title" type="Label" parent="VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3

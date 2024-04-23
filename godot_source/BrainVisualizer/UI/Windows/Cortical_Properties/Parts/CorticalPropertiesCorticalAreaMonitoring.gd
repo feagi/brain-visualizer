@@ -11,6 +11,9 @@ func _ready() -> void:
 	if !FeagiCore.feagi_local_cache.influxdb_availability:
 		membrane_toggle.disabled = true
 		post_synaptic_toggle.disabled = true
+		membrane_toggle.tooltip_text = "Feature is unavailable"
+		post_synaptic_toggle.tooltip_text = "Feature is unavailable"
+		
 
 
 func display_cortical_properties(cortical_reference: BaseCorticalArea) -> void:
@@ -28,9 +31,9 @@ func _FEAGI_set_synaptic_toggle(state: bool) -> void:
 
 func _user_request_change_membrane_monitoring_status(new_state:bool) -> void:
 	pass
-	###FeagiRequests.request_change_membrane_monitoring_status(_cortical_reference, new_state)
+	FeagiCore.requests.toggle_membrane_monitoring(_cortical_reference.cortical_ID, new_state)
 
 func _user_request_change_synaptic_monitoring_status(new_state:bool) -> void:
 	pass
-	###FeagiRequests.request_change_synaptic_monitoring_status(_cortical_reference, new_state)
+	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_reference.cortical_ID, new_state)
 

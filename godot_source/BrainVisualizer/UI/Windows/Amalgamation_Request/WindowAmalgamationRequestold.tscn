@@ -1,0 +1,81 @@
+[gd_scene load_steps=6 format=3 uid="uid://b4ksbionxkwg"]
+
+[ext_resource type="Theme" uid="uid://cjrivk0518jvv" path="res://BrainVisualizer/UI/Themes/source_themes/source_dark.tres" id="1_25ftl"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Amalgamation_Request/WindowAmalgamationRequest.gd" id="2_fedgv"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_1n1o6"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_3qvv7"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="5_hlvw7"]
+
+[node name="WindowAmalgamationRequest" type="Panel"]
+offset_top = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+theme = ExtResource("1_25ftl")
+script = ExtResource("2_fedgv")
+
+[node name="Container" type="BoxContainer" parent="."]
+layout_mode = 0
+offset_right = 440.0
+offset_bottom = 127.0
+vertical = true
+
+[node name="gap1" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Title"
+
+[node name="AmalgamationTitle" type="LineEdit" parent="Container/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_length = 16
+editable = false
+script = ExtResource("3_1n1o6")
+
+[node name="gap2" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3D Coordinates"
+
+[node name="Coordinates_3D" parent="Container/HBoxContainer2" instance=ExtResource("4_3qvv7")]
+layout_mode = 2
+
+[node name="gap" type="Control" parent="Container"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="cancel" type="Button" parent="Container/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="import" type="Button" parent="Container/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Import"
+
+[node name="TitleBar" parent="." instance=ExtResource("5_hlvw7")]
+layout_mode = 0
+offset_top = -40.0
+offset_right = 391.0
+offset_bottom = 0.0
+title = "Import Amalgamation"
+
+[connection signal="pressed" from="Container/HBoxContainer3/cancel" to="." method="_cancel_pressed"]
+[connection signal="pressed" from="Container/HBoxContainer3/import" to="." method="_import_pressed"]

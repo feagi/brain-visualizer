@@ -5,6 +5,7 @@
 [node name="Scroll_Vertical" type="ScrollContainer"]
 offset_right = 298.0
 offset_bottom = 51.0
+horizontal_scroll_mode = 0
 script = ExtResource("1_mgl7a")
 button_notice_text = &"ADD ITEM"
 

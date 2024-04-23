@@ -48,6 +48,7 @@ func _ready() -> void:
 	var bv_background: FullScreenControl = get_node("../BV_Background")
 	bv_background.click_event.connect(_scroll_movment_and_toggle_camera_focus)
 	bv_background.pan_event.connect(_touch_pan_gesture)
+	bv_background.keyboard_event.connect(_keyboard_camera_movement)
 	_initial_position = position
 	_initial_euler_rotation = rotation_degrees
 
@@ -59,7 +60,8 @@ func _input(event: InputEvent):
 	
 	# Feagi Interaction doesnt require camera control
 	if event is InputEventKey:
-		_FEAGI_data_interaction(event)
+		if get_node("../BV_Background").has_focus():
+			_FEAGI_data_interaction(event)
 	
 	if !_is_user_currently_focusing_camera:
 		return
@@ -152,7 +154,9 @@ func _FEAGI_data_interaction(_keyboard_event: InputEventKey) -> void:
 		for key in Godot_list.godot_list["data"]["direct_stimulation"]:
 			Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 		return
-
+	if Input.is_action_just_pressed("reset_camera"):
+		
+		reset_camera()
 
 
 
@@ -163,21 +167,13 @@ func _keyboard_camera_movement(_keyboard_event: InputEventKey) -> void:
 	if Input.is_key_pressed(KEY_R):
 		reset_camera()
 		return
-	if Input.is_key_pressed(KEY_W):
+	if Input.is_action_pressed("forward"):
 		dir += Vector3(0,0,-1)
-	if Input.is_key_pressed(KEY_S):
+	if Input.is_action_pressed("backward"):
 		dir += Vector3(0,0,1)
-	if Input.is_key_pressed(KEY_A):
+	if Input.is_action_pressed("left"):
 		dir += Vector3(-1,0,0)
-	if Input.is_key_pressed(KEY_D):
-		dir += Vector3(1,0,0)
-	if Input.is_key_pressed(KEY_UP):
-		dir += Vector3(0,0,-1)
-	if Input.is_key_pressed(KEY_DOWN):
-		dir += Vector3(0,0,1)
-	if Input.is_key_pressed(KEY_LEFT):
-		dir += Vector3(-1,0,0)
-	if Input.is_key_pressed(KEY_RIGHT):
+	if Input.is_action_pressed("right"):
 		dir += Vector3(1,0,0)
 	
 	var speed: float = camera_movement_speed

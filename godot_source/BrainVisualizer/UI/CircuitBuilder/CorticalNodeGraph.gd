@@ -10,6 +10,8 @@ var connections: Dictionary = {} ## Connection lines key'd by their name functio
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 @export var initial_position: Vector2
 @export var initial_zoom: float
+@export var keyboard_movement_speed: Vector2 = Vector2(1,1)
+@export var keyboard_move_speed: float = 50.0
 
 
 var _cortical_node_prefab: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/CortexNode.tscn")
@@ -23,6 +25,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(feagi_deleted_single_cortical_node)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_change_state)
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
+	BV.UI.user_selected_single_cortical_area.connect(select_single_cortical_area)
 
 	_move_timer = $Timer
 	_move_timer.wait_time = move_time_delay_before_update_FEAGI
@@ -33,6 +36,31 @@ func _ready():
 	scroll_offset = initial_position
 	zoom = initial_zoom
 
+func _gui_input(event):
+	if !(event is InputEventKey):
+		return
+	
+	if !has_focus():
+		return
+	
+	var keyboard_event: InputEventKey = event as InputEventKey
+	if !keyboard_event.is_pressed():
+		return
+	
+	var dir: Vector2 = Vector2(0,0)
+
+	if Input.is_action_pressed("forward"):
+		dir += Vector2(0,-1)
+	if Input.is_action_pressed("backward"):
+		dir += Vector2(0,1)
+	if Input.is_action_pressed("left"):
+		dir += Vector2(-1,0)
+	if Input.is_action_pressed("right"):
+		dir += Vector2(1,0)
+	
+	scroll_offset += dir * zoom * keyboard_move_speed
+	
+	
 
 func set_outlining_state_of_connection(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, highlighting: bool) -> void:
 	if source_area == null:
@@ -49,6 +77,22 @@ func set_outlining_state_of_connection(source_area: BaseCorticalArea, destinatio
 		return
 	var line: InterCorticalConnection = connections[line_name]
 	line.toggle_outlining(highlighting)
+
+
+## highlights / selects a cortical area in CB
+func select_single_cortical_area(cortical_area: BaseCorticalArea) -> void:
+	if !(cortical_area.cortical_ID in cortical_nodes.keys()):
+		push_error("CB: Unable to find cortical area as a node to select!")
+		return
+	var cortical_node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
+	set_selected(cortical_node)
+
+func center_on_cortical_area(cortical_area: BaseCorticalArea) -> void:
+	if !(cortical_area.cortical_ID in cortical_nodes.keys()):
+		push_error("CB: Unable to find cortical area as a node to focus!")
+		return
+	var cortical_node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
+	scroll_offset = cortical_node.position_offset - (size / 2.0)
 
 ## Spawns a cortical Node, should only be called via FEAGI
 func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> CorticalNode:
@@ -100,5 +144,5 @@ func _on_genome_change_state(new_state: FeagiCore.GENOME_LOAD_STATE, _prev_state
 	_spawn_sorter = CorticalNodeSpawnSorter.new(algorithm_cortical_area_spacing, NODE_SIZE)
 	_moved_cortical_areas_buffer = {}
 	_move_timer.stop()
-
+	
 

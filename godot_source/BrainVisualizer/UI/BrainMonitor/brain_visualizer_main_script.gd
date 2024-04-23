@@ -13,12 +13,16 @@ func _ready():
 	FeagiCore.network.websocket_API.feagi_return_other.connect(test)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(delete_single_cortical)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(move_when_changed)
+	FeagiCore.about_to_reload_genome.connect(clear_all_selections)
 	pass
 
 ## Stupid
 func move_when_changed(changed: BaseCorticalArea):
 	check_cortical(changed) # This is dum
-	
+
+func clear_all_selections() -> void:
+	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
+		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
 
 
 #TODO TEMP

@@ -89,7 +89,7 @@ func poll_HTTP_health() -> void:
 		FeagiCore.network.http_API.address_list.GET_system_healthCheck,
 		HTTPClient.METHOD_GET,
 		null,
-		5.0,
+		FeagiCore.feagi_settings.seconds_between_healthcheck_pings,
 	)
 	
 	attempt_kill_poll_health_worker() # Kill current worker if its running

@@ -6,6 +6,7 @@ var _notification_prefab: PackedScene = preload("res://BrainVisualizer/UI/Notifi
 func _ready() -> void:
 	FeagiCore.connection_state_changed.connect(_connection_state_change)
 	FeagiCore.genome_load_state_changed.connect(_genome_state_change)
+	BV.UI.theme_changed.connect(update_theme)
 
 func add_notification(message: StringName, notification_type: NotificationSystemNotification.NOTIFICATION_TYPE = NotificationSystemNotification.NOTIFICATION_TYPE.INFO, time_seconds: float = NotificationSystemNotification.DEFAULT_TIME):
 	var new_message: NotificationSystemNotification = _notification_prefab.instantiate()

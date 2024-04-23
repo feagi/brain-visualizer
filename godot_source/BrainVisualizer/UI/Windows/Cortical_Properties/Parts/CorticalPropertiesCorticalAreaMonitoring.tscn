@@ -23,6 +23,7 @@ text = "Membrane Monitoring"
 [node name="Membrane" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
+tooltip_text = "If the membrane potentials should be recorded and monitored"
 texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true
 stretch_mode = 0
@@ -39,6 +40,7 @@ text = "Post-Synaptic  Monitoring"
 [node name="PostSynaptic" type="TextureButton" parent="HBoxContainer2"]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
+tooltip_text = "If the synaptic potentials should be recorded and monitored"
 texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true
 stretch_mode = 0

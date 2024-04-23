@@ -4,6 +4,7 @@ class_name FullScreenControl
 
 signal click_event(event: InputEventMouseButton)
 signal pan_event(event: InputEventPanGesture)
+signal keyboard_event(event: InputEventKey)
 
 func _ready() -> void:
 	#TODO clean up this
@@ -23,6 +24,9 @@ func _check_for_click_input(event: InputEvent):
 	if event is InputEventPanGesture:
 		#print("UI: Background %s recieved a pan event" % name) # commented out since this often results in log spam
 		pan_event.emit(event)
-
+	
+	if event is InputEventKey:
+		keyboard_event.emit(event)
+		
 	
 

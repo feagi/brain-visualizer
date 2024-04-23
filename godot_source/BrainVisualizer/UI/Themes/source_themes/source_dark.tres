@@ -48,10 +48,10 @@ bg_color = Color(0.152941, 0.192157, 0.254902, 1)
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ixcsb"]
-bg_color = Color(0.701961, 0.141176, 0.172549, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_al8ae"]
-bg_color = Color(0.717647, 0.666667, 0.121569, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3bdj3"]
 content_margin_left = 0.0
@@ -65,7 +65,7 @@ anti_aliasing = false
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1l48k"]
-bg_color = Color(0.427451, 0.662745, 0.501961, 1)
+bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sr4l8"]
 bg_color = Color(0.742136, 0.556807, 0.405145, 1)
@@ -137,6 +137,8 @@ HBoxContainer_far/base_type = &"HBoxContainer"
 HBoxContainer_far/constants/separation = 12
 HBoxContainer_farther/base_type = &"HBoxContainer"
 HBoxContainer_farther/constants/separation = 24
+HBoxContainer_fatherest/base_type = &"HBoxContainer"
+HBoxContainer_fatherest/constants/separation = 32
 Label/font_sizes/font_size = 16
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 20
@@ -156,21 +158,26 @@ MarginContainer/constants/margin_bottom = 4
 MarginContainer/constants/margin_left = 4
 MarginContainer/constants/margin_right = 4
 MarginContainer/constants/margin_top = 4
+MarginContainer_Notification/base_type = &"MarginContainer"
+MarginContainer_Notification/constants/margin_bottom = 8
+MarginContainer_Notification/constants/margin_left = 8
+MarginContainer_Notification/constants/margin_right = 8
+MarginContainer_Notification/constants/margin_top = 8
 MarginContainer_TopBarIndicator/base_type = &"MarginContainer"
 MarginContainer_TopBarIndicator/constants/margin_bottom = 2
 MarginContainer_TopBarIndicator/constants/margin_left = 4
 MarginContainer_TopBarIndicator/constants/margin_right = 4
 MarginContainer_TopBarIndicator/constants/margin_top = 2
 MarginContainer_WindowBorder/base_type = &"MarginContainer"
-MarginContainer_WindowBorder/constants/margin_bottom = 8
-MarginContainer_WindowBorder/constants/margin_left = 8
-MarginContainer_WindowBorder/constants/margin_right = 8
-MarginContainer_WindowBorder/constants/margin_top = 8
+MarginContainer_WindowBorder/constants/margin_bottom = 16
+MarginContainer_WindowBorder/constants/margin_left = 16
+MarginContainer_WindowBorder/constants/margin_right = 16
+MarginContainer_WindowBorder/constants/margin_top = 16
 MarginContainer_far/base_type = &"MarginContainer"
-MarginContainer_far/constants/margin_bottom = 8
-MarginContainer_far/constants/margin_left = 8
-MarginContainer_far/constants/margin_right = 8
-MarginContainer_far/constants/margin_top = 8
+MarginContainer_far/constants/margin_bottom = 12
+MarginContainer_far/constants/margin_left = 12
+MarginContainer_far/constants/margin_right = 12
+MarginContainer_far/constants/margin_top = 12
 NotificationSystemNotification/base_type = &"PanelContainer"
 NotificationSystemNotification/styles/panel = SubResource("StyleBoxFlat_5fauo")
 NotificationSystemNotification_Error/base_type = &"NotificationSystemNotification"
@@ -185,6 +192,7 @@ PanelContainer_QC_incomplete/base_type = &"PanelContainer"
 PanelContainer_QC_incomplete/styles/panel = SubResource("StyleBoxFlat_sr4l8")
 PanelContainer_QC_waiting/base_type = &"PanelContainer"
 PanelContainer_QC_waiting/styles/panel = SubResource("StyleBoxFlat_vsflv")
+PopupMenu/font_sizes/font_size = 16
 RichTextLabel/font_sizes/bold_font_size = 16
 RichTextLabel/font_sizes/bold_italics_font_size = 16
 RichTextLabel/font_sizes/italics_font_size = 16
@@ -208,6 +216,9 @@ TextureButton_icon/constants/size_x = 32
 TextureButton_icon/constants/size_y = 32
 TextureRect/constants/size_x = 64
 TextureRect/constants/size_y = 64
+TextureRect_Icon/base_type = &"TextureRect"
+TextureRect_Icon/constants/size_x = 32
+TextureRect_Icon/constants/size_y = 32
 TextureRect_wide/base_type = &"TextureRect"
 TextureRect_wide/constants/size_x = 64
 TextureRect_wide/constants/size_y = 32
