@@ -10,7 +10,7 @@
 [node name="Prefab_VectorWithDelete" type="HBoxContainer"]
 offset_right = 287.0
 offset_bottom = 31.0
-size_flags_horizontal = 3
+size_flags_horizontal = 4
 alignment = 1
 script = ExtResource("1_mh6r8")
 
