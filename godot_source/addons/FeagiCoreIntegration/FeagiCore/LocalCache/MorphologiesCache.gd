@@ -4,6 +4,7 @@ class_name MorphologiesCache
 
 signal morphology_added(morphology: BaseMorphology)
 signal morphology_about_to_be_removed(morphology: BaseMorphology) # Must have this since dropdown popups do not support independent processing
+signal morphology_updated(morphology: BaseMorphology)
 
 ## A list of all available morphologies in the FEAGI genome by name
 var available_morphologies: Dictionary:
@@ -42,6 +43,7 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 		push_error("MORPHOLOGY: Unknown / Unspecified morphology class for %s! Assigning UNKNOWN for the class! This is likely due to the use of outdated or broken genomes!" % morphology_name)
 		morphology_internal_class = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.UNKNOWN
 	updating_morphology.feagi_update(morphology_properties["parameters"], morphology_internal_class)
+	morphology_updated.emit(updating_morphology)
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:
