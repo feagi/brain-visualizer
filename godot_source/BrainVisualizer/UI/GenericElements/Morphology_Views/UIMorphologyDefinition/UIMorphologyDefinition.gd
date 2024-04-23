@@ -71,7 +71,6 @@ func load_morphology(morphology: BaseMorphology) -> void:
 			composite_view.visible = false
 			vectors_view.visible = false
 			patterns_view.visible = false
-			BV.NOTIF.add_notification("Function morphology editing is not supported at this time!", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 		_:
 			composite_view.visible = false
 			vectors_view.visible = false
