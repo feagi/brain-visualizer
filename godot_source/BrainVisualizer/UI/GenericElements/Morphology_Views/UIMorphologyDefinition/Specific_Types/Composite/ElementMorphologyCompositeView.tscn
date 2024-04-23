@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="5_1jdcn"]
 
 [node name="ElementMorphologyCompositeView" type="VBoxContainer"]
+size_flags_horizontal = 4
 script = ExtResource("1_nh6j0")
 
 [node name="Seed" type="HBoxContainer" parent="."]

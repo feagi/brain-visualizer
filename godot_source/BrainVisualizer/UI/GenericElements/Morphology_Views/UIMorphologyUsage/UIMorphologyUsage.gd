@@ -18,7 +18,7 @@ func clear_morphology() -> void:
 
 func _usage_updated(usage_mappings: Array[PackedStringArray], is_being_used: bool, _self_reference: BaseMorphology) -> void:
 	if !is_being_used:
-		text = "Morphology not in use!"
+		text = "Connectivity rule not in use!"
 		return
 	text = _usage_array_to_string(usage_mappings)
 

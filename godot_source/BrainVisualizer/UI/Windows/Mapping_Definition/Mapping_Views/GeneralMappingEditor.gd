@@ -55,7 +55,7 @@ func add_default_mapping_if_applicable(override_child_check: bool = false) -> vo
 		return
 	
 	if _mapping_hints.default_morphology == null:
-		push_error("Unable to spawn default mapping without default morphology defined")
+		push_error("Unable to spawn default mapping without default connectivity rule defined")
 		return
 	var mapping: MappingProperty = MappingProperty.create_default_mapping(_mapping_hints.default_morphology)
 	

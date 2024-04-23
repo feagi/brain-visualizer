@@ -78,7 +78,7 @@ func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> v
 		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
-	BV.NOTIF.add_notification("Requesting FEAGI to update morphology %s" % _loaded_morphology.name)
+	BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % _loaded_morphology.name)
 	_UI_morphology_definition.request_feagi_apply_morphology_settings(_loaded_morphology.name)
 
 func _user_request_create_morphology() -> void:

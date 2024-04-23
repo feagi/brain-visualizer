@@ -66,6 +66,15 @@ func _ready():
 	_top_bar.resized.connect(_top_bar_resized)
 	_top_bar_resized()
 	
+	#TODO updated is commented out due to these signals being called when we merely retrieve the data but dont update anything, causing it to be spammed. We may wish to address this
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_proxy_notification_cortical_area_added)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_proxy_notification_cortical_area_removed)
+	#FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(_proxy_notification_cortical_area_updated)
+	#FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mappings_changed.connect(_proxy_notification_mappings_updated)
+	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
+	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
+	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
+	
 
 func set_user_selected_cortical_areas(selected: Array[BaseCorticalArea]) -> void:
 	pass
@@ -193,3 +202,50 @@ func _find_possible_scales() -> void:
 		var first_part: StringName = file.get_slice("-", 0)
 		if first_part.is_valid_float():
 			_possible_UI_scales.append(first_part.to_float())
+
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_cortical_area_added(cortical_area: BaseCorticalArea) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed addition of cortical area %s!" % cortical_area.name)
+	
+	
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_cortical_area_updated(cortical_area: BaseCorticalArea) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed update of cortical area %s!" % cortical_area.name)
+	
+	
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_cortical_area_removed(cortical_area: BaseCorticalArea) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed removal of cortical area %s!" % cortical_area.name)
+	
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_mappings_updated(source: BaseCorticalArea, destination: BaseCorticalArea) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed updated mapping information from %s to %s!" % [source.name, destination.name])
+
+
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_morphology_added(morphology: BaseMorphology) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed addition of connectivity rule %s!" % morphology.name)
+
+
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_morphology_updated(morphology: BaseMorphology) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed update of connectivity rule %s!" % morphology.name)
+
+
+## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+func _proxy_notification_morphology_removed(morphology: BaseMorphology) -> void:
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		return
+	_notification_system.add_notification("Confirmed removal of connectivity rule %s!" % morphology.name)
