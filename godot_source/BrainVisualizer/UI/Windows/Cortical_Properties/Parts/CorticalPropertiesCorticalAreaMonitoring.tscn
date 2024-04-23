@@ -18,12 +18,13 @@ layout_mode = 2
 [node name="Label" type="Label" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+tooltip_text = "If the membrane potentials should be recorded and monitored"
+mouse_filter = 1
 text = "Membrane Monitoring"
 
 [node name="Membrane" type="TextureButton" parent="HBoxContainer"]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
-tooltip_text = "If the membrane potentials should be recorded and monitored"
 texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true
 stretch_mode = 0
@@ -35,12 +36,13 @@ layout_mode = 2
 [node name="Label2" type="Label" parent="HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
+tooltip_text = "If the synaptic potentials should be recorded and monitored"
+mouse_filter = 1
 text = "Post-Synaptic  Monitoring"
 
 [node name="PostSynaptic" type="TextureButton" parent="HBoxContainer2"]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
-tooltip_text = "If the synaptic potentials should be recorded and monitored"
 texture_normal = ExtResource("3_008v8")
 ignore_texture_size = true
 stretch_mode = 0

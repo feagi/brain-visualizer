@@ -15,3 +15,6 @@ seconds_between_healthcheck_pings = 5.0
 enable_HTTP_healthcheck = true
 allow_developer_menu = true
 developer_menu_hotkey = 47
+seconds_info_notification = 5.0
+seconds_warning_notification = 15.0
+seconds_error_notification = 15.0

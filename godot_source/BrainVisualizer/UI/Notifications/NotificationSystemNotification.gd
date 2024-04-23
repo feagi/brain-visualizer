@@ -1,8 +1,6 @@
 extends PanelContainer
 class_name NotificationSystemNotification
 
-const DEFAULT_TIME: float = 5.0 #TODO move to config
-
 const ERROR_ICON_PATH: StringName = "res://BrainVisualizer/UI/GenericResources/NotificationIcons/error.png"
 const WARNING_ICON_PATH: StringName = "res://BrainVisualizer/UI/GenericResources/NotificationIcons/warning.png"
 const INFO_ICON_PATH: StringName = "res://BrainVisualizer/UI/GenericResources/NotificationIcons/info.png"
@@ -28,26 +26,28 @@ func _ready():
 	_theme_sclar.setup(self, [], BV.UI.loaded_theme)
 
 ## Define what the notification should be
-func set_notification(message: StringName, notification_type: NOTIFICATION_TYPE, time_seconds: float = DEFAULT_TIME) -> void:
+func set_notification(message: StringName, notification_type: NOTIFICATION_TYPE) -> void:
 	_label.text = message
-	_timer.start(time_seconds)
 	match(notification_type):
 		NOTIFICATION_TYPE.INFO:
 			if has_theme_stylebox("panel", "NotificationSystemNotification"):
 				theme_type_variation = "NotificationSystemNotification"
 				_icon.texture = load(INFO_ICON_PATH)
+				_timer.start(FeagiCore.feagi_settings.seconds_info_notification)
 			else:
 				push_error("Unable to locate theme variation 'NotificationSystemNotification'! Notification colors may be wrong!")
 		NOTIFICATION_TYPE.WARNING:
 			if has_theme_stylebox("panel", "NotificationSystemNotification_Warning"):
 				theme_type_variation = "NotificationSystemNotification_Warning"
 				_icon.texture = load(WARNING_ICON_PATH)
+				_timer.start(FeagiCore.feagi_settings.seconds_warning_notification)
 			else:
 				push_error("Unable to locate theme variation 'NotificationSystemNotification_Warning'! Notification colors may be wrong!")
 		NOTIFICATION_TYPE.ERROR:
 			if has_theme_stylebox("panel", "NotificationSystemNotification_ERROR"):
 				theme_type_variation = "NotificationSystemNotification_ERROR"
 				_icon.texture = load(ERROR_ICON_PATH)
+				_timer.start(FeagiCore.feagi_settings.seconds_error_notification)
 			else:
 				push_error("Unable to locate theme variation 'NotificationSystemNotification_ERROR'! Notification colors may be wrong!")
 
