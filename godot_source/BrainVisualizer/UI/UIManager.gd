@@ -95,13 +95,15 @@ func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 ## Starts a preview cort a cortical area
 func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
 	position_signals: Array[Signal], dimensions_signals: Array[Signal], close_signals: Array[Signal],
- 	color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> void:
+ 	color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> GenericSinglePreviewHandler:
 	
 	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
 	add_child(preview_handler)
 	preview_handler.start_BM_preview(initial_dimensions, initial_position, color, is_rendering)
 	preview_handler.connect_BM_preview(position_signals, dimensions_signals, close_signals)
+	return preview_handler
 	# when moving this to BM, add a signal here to closing all handlers and append that signal to the above close array!
+	
 
 ## Given the element node, uses the theme_variant property to retrieve the minimum size of the current theme. If there is no theme variant, fall back onto the given default option
 func get_minimum_size_from_loaded_theme_variant_given_control(control: Control, fallback_type: StringName) -> Vector2i:
