@@ -483,3 +483,22 @@ var post_synaptic_potential_paramamters: CorticalPropertyPostSynapticPotentialPa
 var is_monitoring_membrane_potential: bool
 var is_monitoring_synaptic_potential: bool
 #endregion
+
+#region Region information
+
+signal parent_region_changed(old_region: BrainRegion, new_region: BrainRegion)
+
+#TODO get region on init
+var current_region: BrainRegion:
+	get: return _current_region
+
+var _current_region: BrainRegion
+
+## The parent region of this cortical area was updated
+func FEAGI_changed_parent_region(new_region: BrainRegion):
+	var old_cache: BrainRegion = _current_region # yes this method uses more memory but avoids potential shenanigans
+	_current_region = new_region
+	parent_region_changed.emit(old_cache, new_region)
+
+
+#endregion
