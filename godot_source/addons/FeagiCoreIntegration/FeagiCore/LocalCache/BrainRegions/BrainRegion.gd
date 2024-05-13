@@ -139,3 +139,16 @@ func is_cortical_area_in_region(cortical_area: BaseCorticalArea) -> bool:
 		if region.is_cortical_area_in_region(cortical_area):
 			return true
 	return false
+
+## Returns the path of this region, starting with the root region and ending with this region
+func get_path() -> Array[BrainRegion]:
+	var searching_region: BrainRegion = self
+	var path: Array[BrainRegion] = []
+	while !searching_region.is_root_region():
+		path.append(searching_region)
+		searching_region = searching_region.parent_region
+	path.append(searching_region)
+	path.reverse()
+	return path
+	
+	

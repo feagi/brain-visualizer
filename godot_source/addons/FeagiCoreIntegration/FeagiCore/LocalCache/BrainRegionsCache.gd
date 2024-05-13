@@ -44,23 +44,16 @@ func get_path_to_cortical_area(cortical_area: BaseCorticalArea) -> Array[BrainRe
 	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
 		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
 		return []
-	var searching_region: BrainRegion = cortical_area.current_region
-	var path: Array[BrainRegion] = []
-	while !searching_region.is_root_region():
-		searching_region = searching_region.parent_region
-		path.append(searching_region)
-	path.append(return_root_region())
-	path.reverse()
-	return path
+	return cortical_area.current_region.get_path()
 
-## Gets the path of regions that holds the common demoninator path between 2 cortical areas
-## Example: if cortical area X is in region path [a,b,e] and area Y is in path [a,b,c,d], this will return [a,b]
-func get_path_to_lowest_region_containing_both_cortical_areas(A: BaseCorticalArea, B: BaseCorticalArea) -> Array[BrainRegion]:
-	var path_A: Array[BrainRegion] = get_path_to_cortical_area(A)
-	var path_B: Array[BrainRegion] = get_path_to_cortical_area(B)
+## Gets the path of regions that holds the common demoninator path between 2 regions
+## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
+func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> Array[BrainRegion]:
+	var path_A: Array[BrainRegion] = A.get_path()
+	var path_B: Array[BrainRegion] = B.get_path()
 	
 	if len(path_A) == 0 or len(path_B) == 0:
-		push_error("CORE CACHE: Unable to calculate lowest similar region path!")
+		push_error("CORE CACHE: Unable to calculate lowest similar region path between %s and %s!" % [A.ID, B.ID])
 		return []
 	
 	var search_depth: int
@@ -78,3 +71,21 @@ func get_path_to_lowest_region_containing_both_cortical_areas(A: BaseCorticalAre
 	
 	# no further to go, return the path
 	return path
+
+## Defines the directional path with 2 arrays (upward then downward) of the regions to transverse to get from the source to the destination
+## Example given region layout {R{a,b{c,d{e}},f{g{h}}}, going from d -> g will return [[d,b,R],[R,f,g]]
+func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
+	var lowest_common_region: BrainRegion = get_common_path_containing_both_regions(source, destination).back()
+	if len(lowest_common_region) == 0:
+		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.ID, destination.ID])
+	
+	var source_path_reversed: Array[BrainRegion] = source.get_path()
+	source_path_reversed.reverse()
+	var index: int = source_path_reversed.find(lowest_common_region)
+	var upward_path: Array[BrainRegion] = source_path_reversed.slice(0, index)
+	
+	var destination_path: Array[BrainRegion] = destination.get_path()
+	index = destination_path.find(lowest_common_region)
+	var downward_path: Array[BrainRegion]  = destination_path.slice(0, index)
+	
+	return [upward_path, downward_path]
