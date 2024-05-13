@@ -8,10 +8,12 @@ signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur f
 
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
+var brain_regions: BrainRegionsCache
 
 func _init():
 	cortical_areas = CorticalAreasCache.new()
 	morphologies = MorphologiesCache.new()
+	brain_regions = BrainRegionsCache.new()
 
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary) -> void:
 	

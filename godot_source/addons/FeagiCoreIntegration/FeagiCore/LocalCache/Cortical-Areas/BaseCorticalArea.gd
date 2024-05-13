@@ -500,5 +500,8 @@ func FEAGI_changed_parent_region(new_region: BrainRegion):
 	_current_region = new_region
 	parent_region_changed.emit(old_cache, new_region)
 
+## Returns the path to this cortical area as a path
+func get_region_path() -> Array[BrainRegion]:
+	return FeagiCore.feagi_local_cache.brain_regions.get_path_to_cortical_area(self)
 
 #endregion

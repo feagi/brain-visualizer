@@ -31,4 +31,25 @@ func FEAGI_remove_region(region_ID: StringName) -> void:
 	region_about_to_be_removed.emit(region)
 	_available_brain_regions.erase(region_ID)
 
+## Attempts to return the root [BrainRegion]. If it fails, this logs and error and returns null
+func return_root_region() -> BrainRegion:
+	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
+		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
+		return null
+	return _available_brain_regions[BrainRegion.ROOT_REGION_ID]
+
+## Returns an array of regions in order of the path to the given cortical area.
+## Example: Cortical Area A in region X (under ROOT) would return [ROOT, X]
+func get_path_to_cortical_area(cortical_area: BaseCorticalArea) -> Array[BrainRegion]:
+	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
+		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
+		return []
+	var searching_region: BrainRegion = cortical_area.current_region
+	var path: Array[BrainRegion] = []
+	while !searching_region.is_root_region():
+		searching_region = searching_region.parent_region
+		path.append(searching_region)
+	path.append(return_root_region())
+	path.reverse()
+	return path
 

@@ -74,8 +74,9 @@ func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, c
 	_outputs = region_outputs
 
 ## during Genome loading ONLY, after we created the general objects, now we can 
-func init_contained_regions(containing_regions: Array[BrainRegion]) -> void:
+func init_region_relationships(containing_regions: Array[BrainRegion], parent_region: BrainRegion) -> void:
 	_contained_regions = containing_regions
+	_parent_region = parent_region
 
 ## FEAGI confirmed a cortical area was added
 func FEAGI_add_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
@@ -138,5 +139,3 @@ func is_cortical_area_in_region(cortical_area: BaseCorticalArea) -> bool:
 		if region.is_cortical_area_in_region(cortical_area):
 			return true
 	return false
-
-
