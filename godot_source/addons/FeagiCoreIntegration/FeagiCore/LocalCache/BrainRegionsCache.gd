@@ -10,8 +10,24 @@ var available_brain_regions: Dictionary:
 
 var _available_brain_regions: Dictionary = {}
 
-func FEAGI_add_regions_from_new_genome(data: Dictionary) -> void:
-	pass
+func FEAGI_add_regions_from_new_genome(source_data: Dictionary) -> void:
+	for region_ID: StringName in source_data.keys():
+		var dict: Dictionary = source_data[region_ID]
+		var is_root = region_ID == BrainRegion.ROOT_REGION_ID
+		var coord_2D: Vector2i = FEAGIUtils.array_to_vector2i(dict["coordinate_2d"])
+		var coord_3D: Vector3i = FEAGIUtils.array_to_vector3i(dict["coordinate_3d"])
+		var untyped_IDs: Array = dict["areas"]
+		var typed_IDs: Array[StringName] = []
+		typed_IDs.assign(untyped_IDs)
+		var cortical_areas: Array[BaseCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.arr_of_IDs_to_arr_of_area(typed_IDs)
+		# hold onto regions till next step
+		#inputs: hold on
+		#outputs: hold on
+		var inputs: Array[MappingProperty]
+		var output: Array[MappingProperty]
+
+		
+		
 
 func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, 
 	dim_3D: Vector3i, contained_areas: Array[BaseCorticalArea], region_inputs: Dictionary, 

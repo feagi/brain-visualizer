@@ -251,6 +251,16 @@ func exist_cortical_area_of_name(searching_name: StringName) -> bool:
 	return false
 #endregion
 
+## Given an array of IDs, return the array of [BaseCorticalArea] objects
+func arr_of_IDs_to_arr_of_area(IDs: Array[StringName]) -> Array[BaseCorticalArea]:
+	var output: Array[BaseCorticalArea] = []
+	for ID in IDs:
+		if !(ID in _available_cortical_areas.keys()):
+			push_error("CORE CACHE: Unable to find cortical of ID %s! Skipping!" % ID)
+			continue
+		output.append(_available_cortical_areas[ID])
+	return output
+
 #region Internal
 
 func _mapping_updated(mapping_properties: MappingProperties) -> void:
