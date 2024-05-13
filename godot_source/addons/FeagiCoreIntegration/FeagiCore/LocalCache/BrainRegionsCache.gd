@@ -53,3 +53,28 @@ func get_path_to_cortical_area(cortical_area: BaseCorticalArea) -> Array[BrainRe
 	path.reverse()
 	return path
 
+## Gets the path of regions that holds the common demoninator path between 2 cortical areas
+## Example: if cortical area X is in region path [a,b,e] and area Y is in path [a,b,c,d], this will return [a,b]
+func get_path_to_lowest_region_containing_both_cortical_areas(A: BaseCorticalArea, B: BaseCorticalArea) -> Array[BrainRegion]:
+	var path_A: Array[BrainRegion] = get_path_to_cortical_area(A)
+	var path_B: Array[BrainRegion] = get_path_to_cortical_area(B)
+	
+	if len(path_A) == 0 or len(path_B) == 0:
+		push_error("CORE CACHE: Unable to calculate lowest similar region path!")
+		return []
+	
+	var search_depth: int
+	var path: Array[BrainRegion] = []
+	# Stop at shorter path distance
+	if len(path_A) > len(path_B):
+		search_depth = len(path_B)
+	else:
+		search_depth = len(path_A)
+	
+	for i in search_depth:
+		if path_A[i].ID != path_B[i].ID:
+			return path
+		path.append(path_A[i])
+	
+	# no further to go, return the path
+	return path
