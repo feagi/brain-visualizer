@@ -10,24 +10,66 @@ var available_brain_regions: Dictionary:
 
 var _available_brain_regions: Dictionary = {}
 
-func FEAGI_add_regions_from_new_genome(source_data: Dictionary) -> void:
-	for region_ID: StringName in source_data.keys():
-		var dict: Dictionary = source_data[region_ID]
-		var is_root = region_ID == BrainRegion.ROOT_REGION_ID
-		var coord_2D: Vector2i = FEAGIUtils.array_to_vector2i(dict["coordinate_2d"])
-		var coord_3D: Vector3i = FEAGIUtils.array_to_vector3i(dict["coordinate_3d"])
-		var untyped_IDs: Array = dict["areas"]
-		var typed_IDs: Array[StringName] = []
-		typed_IDs.assign(untyped_IDs)
-		var cortical_areas: Array[BaseCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.arr_of_IDs_to_arr_of_area(typed_IDs)
-		# hold onto regions till next step
-		#inputs: hold on
-		#outputs: hold on
-		var inputs: Array[MappingProperty]
-		var output: Array[MappingProperty]
+## Gets the path of regions that holds the common demoninator path between 2 regions
+## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
+static func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> Array[BrainRegion]:
+	var path_A: Array[BrainRegion] = A.get_path()
+	var path_B: Array[BrainRegion] = B.get_path()
+	
+	if len(path_A) == 0 or len(path_B) == 0:
+		push_error("CORE CACHE: Unable to calculate lowest similar region path between %s and %s!" % [A.ID, B.ID])
+		return []
+	
+	var search_depth: int
+	var path: Array[BrainRegion] = []
+	# Stop at shorter path distance
+	if len(path_A) > len(path_B):
+		search_depth = len(path_B)
+	else:
+		search_depth = len(path_A)
+	
+	for i in search_depth:
+		if path_A[i].ID != path_B[i].ID:
+			return path
+		path.append(path_A[i])
+	
+	# no further to go, return the path
+	return path
 
+## Defines the directional path with 2 arrays (upward then downward) of the regions to transverse to get from the source to the destination
+## Example given region layout {R{a,b{c,d{e}},f{g{h}}}, going from d -> g will return [[d,b,R],[R,f,g]]
+static func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
+	var lowest_common_region: BrainRegion = get_common_path_containing_both_regions(source, destination).back()
+	if len(lowest_common_region) == 0:
+		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.ID, destination.ID])
+	
+	var source_path_reversed: Array[BrainRegion] = source.get_path()
+	source_path_reversed.reverse()
+	var index: int = source_path_reversed.find(lowest_common_region)
+	var upward_path: Array[BrainRegion] = source_path_reversed.slice(0, index)
+	
+	var destination_path: Array[BrainRegion] = destination.get_path()
+	index = destination_path.find(lowest_common_region)
+	var downward_path: Array[BrainRegion]  = destination_path.slice(0, index)
+	
+	return [upward_path, downward_path]
+
+## Reload all regions from new genome
+func FEAGI_set_regions_from_new_genome(source_data: Dictionary) -> void:
+	
+	# TODO clear existing regions
+	
+	# First pass is to generate all the region objects
+	for region_ID: StringName in source_data.keys():
+		_available_brain_regions[region_ID] = BrainRegion.from_FEAGI_JSON(source_data[region_ID], region_ID)
+	# Second pass is to link all the objects
+	for region_ID: StringName in source_data.keys():
+		var region_IDs: Array[StringName] = []
+		region_IDs.assign(source_data[region_ID]["regions"])
+		_available_brain_regions[region_ID].init_region_relationships(region_IDs, _available_brain_regions[region_ID].parent_region)
+	
 		
-		
+
 
 func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, 
 	dim_3D: Vector3i, contained_areas: Array[BaseCorticalArea], region_inputs: Dictionary, 
@@ -54,54 +96,12 @@ func return_root_region() -> BrainRegion:
 		return null
 	return _available_brain_regions[BrainRegion.ROOT_REGION_ID]
 
-## Returns an array of regions in order of the path to the given cortical area.
-## Example: Cortical Area A in region X (under ROOT) would return [ROOT, X]
-func get_path_to_cortical_area(cortical_area: BaseCorticalArea) -> Array[BrainRegion]:
-	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
-		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
-		return []
-	return cortical_area.current_region.get_path()
-
-## Gets the path of regions that holds the common demoninator path between 2 regions
-## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
-func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> Array[BrainRegion]:
-	var path_A: Array[BrainRegion] = A.get_path()
-	var path_B: Array[BrainRegion] = B.get_path()
-	
-	if len(path_A) == 0 or len(path_B) == 0:
-		push_error("CORE CACHE: Unable to calculate lowest similar region path between %s and %s!" % [A.ID, B.ID])
-		return []
-	
-	var search_depth: int
-	var path: Array[BrainRegion] = []
-	# Stop at shorter path distance
-	if len(path_A) > len(path_B):
-		search_depth = len(path_B)
-	else:
-		search_depth = len(path_A)
-	
-	for i in search_depth:
-		if path_A[i].ID != path_B[i].ID:
-			return path
-		path.append(path_A[i])
-	
-	# no further to go, return the path
-	return path
-
-## Defines the directional path with 2 arrays (upward then downward) of the regions to transverse to get from the source to the destination
-## Example given region layout {R{a,b{c,d{e}},f{g{h}}}, going from d -> g will return [[d,b,R],[R,f,g]]
-func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
-	var lowest_common_region: BrainRegion = get_common_path_containing_both_regions(source, destination).back()
-	if len(lowest_common_region) == 0:
-		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.ID, destination.ID])
-	
-	var source_path_reversed: Array[BrainRegion] = source.get_path()
-	source_path_reversed.reverse()
-	var index: int = source_path_reversed.find(lowest_common_region)
-	var upward_path: Array[BrainRegion] = source_path_reversed.slice(0, index)
-	
-	var destination_path: Array[BrainRegion] = destination.get_path()
-	index = destination_path.find(lowest_common_region)
-	var downward_path: Array[BrainRegion]  = destination_path.slice(0, index)
-	
-	return [upward_path, downward_path]
+## Convert an array of region IDs to an array of [BrainRegion] from cache
+func arr_of_region_IDs_to_arr_of_Regions(IDs: Array[StringName]) -> Array[BrainRegion]:
+	var output: Array[BrainRegion] = []
+	for ID in IDs:
+		if !(ID in _available_brain_regions.keys()):
+			push_error("CORE CACHE: Unable to find region %s! Skipping!" % ID)
+			continue
+		output.append(_available_brain_regions[ID])
+	return output

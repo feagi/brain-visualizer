@@ -68,12 +68,13 @@ static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
 	var inputs_raw: Dictionary = dict["inputs"]
 	var outputs_raw: Dictionary = dict["outputs"]
 	
+	#TODO segregate cortical and region ports
 	var inputs: Dictionary = {}
 	for target_cortical_ID in inputs_raw.keys():
-		inputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(inputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.DIRECTION.INPUT)
+		inputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(inputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.INPUT)
 	var outputs: Dictionary = {}
 	for target_cortical_ID in outputs_raw.keys():
-		outputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(outputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.DIRECTION.OUTPUT)
+		outputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(outputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.OUTPUT)
 	
 	return BrainRegion.new(
 		ID,
