@@ -10,6 +10,7 @@ enum SIGNAL_TYPE{
 
 signal mappings_changed(self_mappings: MappingProperties)
 signal mappings_about_to_be_deleted()
+signal region_path_between_cortical_areas_changed()
 
 var source_cortical_area: BaseCorticalArea:
 	get: return _src_cortical
@@ -40,6 +41,8 @@ func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, ma
 	_mappings = mappings_between_them
 	_max_number_mappings_supported = MappingHints.get_allowed_mapping_count(source_area, destination_area)
 	_morphologies_restricted_to = MappingHints.get_allowed_morphologies_to_map_toward(source_area, destination_area)
+	source_area.parent_region_changed.connect(_proxy_region_change)
+	destination_area.parent_region_changed.connect(_proxy_region_change)
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
 static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
@@ -169,4 +172,7 @@ func is_mapping_valid() -> bool:
 
 ## Get Ascending then descending Brain Region Path, ends inclusive of start / stop locations
 func get_paths_through_regions() -> Array[Array]:
-	
+	return FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(_src_cortical.current_region, _dst_cortical.current_region)
+
+func _proxy_region_change(_irrelevant1, _irrelevant2):
+	region_path_between_cortical_areas_changed.emit()
