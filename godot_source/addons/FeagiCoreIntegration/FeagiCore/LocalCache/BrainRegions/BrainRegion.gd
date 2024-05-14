@@ -59,6 +59,33 @@ var _inputs: Dictionary = {}
 var _outputs: Dictionary = {}
 var _parent_region: BrainRegion
 
+## Spawns a [BrainRegion] from the JSON details from FEAGI. Remember to run "init_region_relationships" seperately afterwards!
+static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
+	var arr_IDs: Array[StringName] = []
+	arr_IDs.assign(dict["areas"])
+	var contained_areas: Array[BaseCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.arr_of_IDs_to_arr_of_area(arr_IDs)
+	
+	var inputs_raw: Dictionary = dict["inputs"]
+	var outputs_raw: Dictionary = dict["outputs"]
+	
+	var inputs: Dictionary = {}
+	for target_cortical_ID in inputs_raw.keys():
+		inputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(inputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.DIRECTION.INPUT)
+	var outputs: Dictionary = {}
+	for target_cortical_ID in outputs_raw.keys():
+		outputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(outputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.DIRECTION.OUTPUT)
+	
+	return BrainRegion.new(
+		ID,
+		dict["title"],
+		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
+		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
+		Vector3i(10,10,10), #TODO
+		contained_areas,
+		inputs,
+		outputs
+	)
+	
 
 #NOTE: Specifically not initing regions since we need to set up all objects FIRST
 func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, dim_3D: Vector3i,
