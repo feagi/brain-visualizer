@@ -107,20 +107,25 @@ func _user_edit_synaptic_attractivity(new_val: int) -> void:
 func _user_edit_3D_position(new_position: Vector3i) -> void:
 	_append_to_growing_update("coordinates_3d", FEAGIUtils.vector3i_to_array(new_position))
 	if !is_instance_valid(_preview_handler):
-		_enable_3D_preview()
+		_preview_handler = _enable_3D_preview()
+		_preview_handler.tree_exiting.connect(_disabling_3d_preview)
 
 func _user_edit_dimension(new_dimension: Vector3i) -> void:
 	_append_to_growing_update("cortical_dimensions", FEAGIUtils.vector3i_to_array(new_dimension))
 	if !is_instance_valid(_preview_handler):
-		_enable_3D_preview()
+		_preview_handler = _enable_3D_preview()
+		_preview_handler.tree_exiting.connect(_disabling_3d_preview)
 
 func _append_to_growing_update(key: StringName, value: Variant) -> void:
 	_growing_cortical_update[key] = value
 	_update_button.disabled = false
 
-func _enable_3D_preview():
+func _enable_3D_preview() -> GenericSinglePreviewHandler:
 		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
 		var resize_signals: Array[Signal] = [_vector_dimensions.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_update_button.pressed, top_panel.close_window_requested, top_panel.tree_exiting]
-		BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions.current_vector, move_signals, resize_signals, preview_close_signals)
+		var preview: GenericSinglePreviewHandler = BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions.current_vector, move_signals, resize_signals, preview_close_signals)
+		return preview
 
+func _disabling_3d_preview():
+	_preview_handler = null
