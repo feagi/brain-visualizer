@@ -32,6 +32,7 @@ var POST_insight_neurons_membranePotentialStatus: StringName = '/v1/insight/neur
 var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuron/synaptic_potential_status'
 var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 var GET_morphology_morphologies: StringName = '/v1/morphology/morphologies'
+var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"

@@ -166,3 +166,7 @@ func update_mappings_to_empty() -> void:
 ## Does mapping follow mapping count and morphology restrictions from cortical areas?
 func is_mapping_valid() -> bool:
 	return MappingHints.is_mapping_property_array_invalid_for_cortical_areas(_src_cortical, _dst_cortical, _mappings)
+
+## Get Ascending then descending Brain Region Path, ends inclusive of start / stop locations
+func get_paths_through_regions() -> Array[Array]:
+	

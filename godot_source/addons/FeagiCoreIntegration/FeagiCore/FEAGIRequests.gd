@@ -9,6 +9,7 @@ func reload_genome() -> FeagiRequestOutput:
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
+	var region_request:APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_region_regionsMembers)
 	var templates_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalTypes)
 	
 	# Get Cortical Area Data
@@ -35,10 +36,19 @@ func reload_genome() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI mapping summary data!")
 		return mapping_data
 	
+	# Get Region Data
+	var region_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(region_request)
+	await region_worker.worker_done
+	var region_data: FeagiRequestOutput = region_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(region_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI region data!")
+		return region_data
+	
 	FeagiCore.feagi_local_cache.replace_whole_genome(
 		cortical_data.decode_response_as_dict(),
 		morphologies_data.decode_response_as_dict(),
-		mapping_data.decode_response_as_dict()
+		mapping_data.decode_response_as_dict(),
+		region_data.decode_response_as_dict()
 	)
 	
 	# Get Template Data

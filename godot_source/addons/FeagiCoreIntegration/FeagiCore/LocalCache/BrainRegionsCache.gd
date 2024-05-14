@@ -55,7 +55,7 @@ static func get_directional_path_between_regions(source: BrainRegion, destinatio
 	return [upward_path, downward_path]
 
 ## Reload all regions from new genome
-func FEAGI_set_regions_from_new_genome(source_data: Dictionary) -> void:
+func update_region_cache_from_summary(source_data: Dictionary) -> void:
 	
 	# TODO clear existing regions
 	
@@ -67,8 +67,6 @@ func FEAGI_set_regions_from_new_genome(source_data: Dictionary) -> void:
 		var region_IDs: Array[StringName] = []
 		region_IDs.assign(source_data[region_ID]["regions"])
 		_available_brain_regions[region_ID].init_region_relationships(region_IDs, _available_brain_regions[region_ID].parent_region)
-	
-		
 
 
 func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, 

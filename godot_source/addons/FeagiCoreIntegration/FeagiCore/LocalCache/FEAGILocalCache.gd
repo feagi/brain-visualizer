@@ -15,11 +15,12 @@ func _init():
 	morphologies = MorphologiesCache.new()
 	brain_regions = BrainRegionsCache.new()
 
-func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary) -> void:
+func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
 	
 	print("\nFEAGI CACHE: Replacing the ENTIRE local cached genome!")
 	cortical_areas.update_cortical_area_cache_from_summary(cortical_area_summary)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
+	# Mappings
 	for source_cortical_ID: StringName in mapping_summary.keys():
 		if !(source_cortical_ID in cortical_areas.available_cortical_areas.keys()):
 			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
@@ -37,6 +38,9 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			var mappings: Array[MappingProperty] = MappingProperty.from_array_of_dict(mapping_dictionaries)
 			source_area.set_mappings_to_efferent_area(destination_area, mappings)
+	
+	# Regions
+	brain_regions.update_region_cache_from_summary(regions_summary)
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
 	genome_reloaded.emit()
