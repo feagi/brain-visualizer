@@ -69,18 +69,20 @@ static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
 	var outputs_raw: Dictionary = dict["outputs"]
 	
 	#TODO segregate cortical and region ports
+	#TODO ask about IOPUS causing issues
 	var inputs: Dictionary = {}
-	for target_cortical_ID in inputs_raw.keys():
-		inputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(inputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.INPUT)
+	#for target_cortical_ID in inputs_raw.keys():
+	#	inputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(inputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.INPUT)
 	var outputs: Dictionary = {}
-	for target_cortical_ID in outputs_raw.keys():
-		outputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(outputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.OUTPUT)
+	#for target_cortical_ID in outputs_raw.keys():
+	#	outputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(outputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.OUTPUT)
 	
 	return BrainRegion.new(
 		ID,
 		dict["title"],
 		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
-		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
+		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
+		Vector3i(10,10,10), #TODO
 		Vector3i(10,10,10), #TODO
 		contained_areas,
 		inputs,
