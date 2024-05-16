@@ -6,13 +6,17 @@ const ROOT_REGION_ID: StringName = "root" ## This is the ID that is unique to th
 
 signal about_to_be_deleted()
 signal internals_changed()
-signal inputs_changed()
-signal outputs_changed()
 signal name_changed(new_name: StringName)
 signal position_2D_changed(new_position: Vector2i)
 signal position_3D_changed(new_position: Vector3i)
 signal dimensions_3D_changed(new_dimension: Vector3i)
 signal parent_region_changed(old_parent_region: BrainRegion, new_parent_region: BrainRegion)
+signal input_link_added(link: ConnectionChainLink)
+signal output_link_added(link: ConnectionChainLink)
+signal bridge_link_added(link: ConnectionChainLink)
+signal input_link_removed(link: ConnectionChainLink)
+signal output_link_removed(link: ConnectionChainLink)
+signal bridge_link_removed(link: ConnectionChainLink)
 
 
 var ID: StringName:
@@ -41,12 +45,14 @@ var contained_cortical_areas: Array[BaseCorticalArea]:
 	get: return _contained_cortical_areas
 var contained_regions: Array[BrainRegion]:
 	get: return _contained_regions
-var inputs: Dictionary: 
-	get: return _inputs # key'd by name stringname, data is [RegionMappingSuggestion]
-var outputs: Dictionary: 
-	get: return _outputs # key'd by name stringname, data is [RegionMappingSuggestion]
 var parent_region: BrainRegion:
 	get: return _parent_region
+var input_chain_links: Array[ConnectionChainLink]:
+	get: return _input_chain_links
+var output_chain_links: Array[ConnectionChainLink]:
+	get: return _output_chain_links
+var bridge_chain_links: Array[ConnectionChainLink]:
+	get: return _bridge_chain_links
 
 var _ID: StringName
 var _name: StringName
@@ -55,27 +61,16 @@ var _coordinates_2d: Vector2i
 var _dimensions_3d: Vector3i
 var _contained_cortical_areas: Array[BaseCorticalArea]
 var _contained_regions: Array[BrainRegion]
-var _inputs: Dictionary = {}
-var _outputs: Dictionary = {}
 var _parent_region: BrainRegion
+var _input_chain_links: Array[ConnectionChainLink]
+var _output_chain_links: Array[ConnectionChainLink]
+var _bridge_chain_links: Array[ConnectionChainLink]
 
 ## Spawns a [BrainRegion] from the JSON details from FEAGI. Remember to run "init_region_relationships" seperately afterwards!
 static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
 	var arr_IDs: Array[StringName] = []
 	arr_IDs.assign(dict["areas"])
 	var contained_areas: Array[BaseCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.arr_of_IDs_to_arr_of_area(arr_IDs)
-	
-	var inputs_raw: Dictionary = dict["inputs"]
-	var outputs_raw: Dictionary = dict["outputs"]
-	
-	#TODO segregate cortical and region ports
-	#TODO ask about IOPUS causing issues
-	var inputs: Dictionary = {}
-	#for target_cortical_ID in inputs_raw.keys():
-	#	inputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(inputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.INPUT)
-	var outputs: Dictionary = {}
-	#for target_cortical_ID in outputs_raw.keys():
-	#	outputs[target_cortical_ID] = RegionMappingSuggestion.from_FEAGI_JSON(outputs_raw[target_cortical_ID], target_cortical_ID, RegionMappingSuggestion.TARGET_TYPE.CORTICAL_AREA, RegionMappingSuggestion.DIRECTION.OUTPUT)
 	
 	return BrainRegion.new(
 		ID,
@@ -85,14 +80,34 @@ static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
 		Vector3i(10,10,10), #TODO
 		Vector3i(10,10,10), #TODO
 		contained_areas,
-		inputs,
-		outputs
 	)
-	
+
+
+## Checks if the given object can be within a region (IE if the object is a [BaseCorticalArea] or [BrainRegion])
+static func is_object_able_to_be_within_region(A: Variant) -> bool:
+	if A is BaseCorticalArea:
+		return true
+	if A is BrainRegion:
+		return true
+	return false
+
+
+## Gets the parent region of the object (if it is capable of having one)
+static func get_parent_region_of_object(A: Variant) -> BrainRegion:
+	if A is BaseCorticalArea:
+		return (A as BaseCorticalArea).current_region
+	if A is BrainRegion:
+		if (A as BrainRegion).is_root_region():
+			push_error("CORE CACHE: Unable to get parent region of the root region!")
+			return null
+		return (A as BrainRegion).parent_region
+	push_error("CORE CACHE: Unable to get parent region of an object that cannot be in a region!")
+	return null
+
 
 #NOTE: Specifically not initing regions since we need to set up all objects FIRST
 func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, dim_3D: Vector3i,
-	contained_areas: Array[BaseCorticalArea], region_inputs: Dictionary, region_outputs: Dictionary):
+	contained_areas: Array[BaseCorticalArea]):
 	
 	_ID = region_ID
 	_name = region_name
@@ -100,8 +115,6 @@ func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, c
 	_coordinates_2d = coord_2D
 	_dimensions_3d = dim_3D
 	_contained_cortical_areas = contained_areas
-	_inputs = region_inputs
-	_outputs = region_outputs
 
 ## during Genome loading ONLY, after we created the general objects, now we can 
 func init_region_relationships(containing_regions: Array[BrainRegion], parent_region: BrainRegion) -> void:
@@ -130,7 +143,7 @@ func FEAGI_add_a_region(region: BrainRegion) -> void:
 		return
 	_contained_regions.append(region)
 
-## FEAGI confirmed a region was removed
+## FEAGI confirmed a contained region was removed
 func FEAGI_remove_a_region(region: BrainRegion) -> void:
 	var index: int = _contained_regions.find(region)
 	if index == -1:
@@ -152,6 +165,57 @@ func FEAGI_delete_this_region() -> void:
 		push_error("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_ID])
 	about_to_be_deleted.emit()
 	# This function should be called by [BrainRegionsCache], which will then free this object
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func input_add_link(link: ConnectionChainLink) -> void:
+	if link in _input_chain_links:
+		push_error("CORE CACHE: Unable to add input link to region %s when it already exists!" % name)
+		return
+	_input_chain_links.append(link)
+	input_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func output_add_link(link: ConnectionChainLink) -> void:
+	if link in _output_chain_links:
+		push_error("CORE CACHE: Unable to add output link to region %s when it already exists!" % name)
+		return
+	_output_chain_links.append(link)
+	output_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func bridge_add_link(link: ConnectionChainLink) -> void:
+	if link in _bridge_chain_links:
+		push_error("CORE CACHE: Unable to add bridge link to region %s when it already exists!" % name)
+		return
+	_bridge_chain_links.append(link)
+	bridge_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func input_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _input_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
+		return
+	_input_chain_links.remove_at(index)
+	input_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func output_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _output_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
+		return
+	_output_chain_links.remove_at(index)
+	output_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func bridge_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _bridge_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
+		return
+	_bridge_chain_links.remove_at(index)
+	bridge_link_removed.emit(link)
 
 ## Returns if this region is the root region or not
 func is_root_region() -> bool:

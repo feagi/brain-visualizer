@@ -186,7 +186,7 @@ static func get_special_cases_for_mapping_to_destination(source_cortical_area: B
 			return output
 
 ## Is an array of [MappingProperty] valid given a destination area from this source area?
-static func is_mapping_property_array_invalid_for_cortical_areas(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea, mapping_propertys: Array[MappingProperty]) -> bool:
+static func is_mapping_property_array_invalid_for_cortical_areas(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea, mapping_properties: Array[MappingProperty]) -> bool:
 	var limit_on_mapping_count: int = get_allowed_mapping_count(source_cortical_area, destination_cortical_area)
 	if limit_on_mapping_count != -1:
 		if len(mapping_propertys) > limit_on_mapping_count:

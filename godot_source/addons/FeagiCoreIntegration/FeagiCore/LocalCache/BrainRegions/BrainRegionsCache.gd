@@ -104,3 +104,41 @@ func arr_of_region_IDs_to_arr_of_Regions(IDs: Array[StringName]) -> Array[BrainR
 			continue
 		output.append(_available_brain_regions[ID])
 	return output
+
+## Checks if given objects are within the same parent region
+func is_objects_within_same_region(A: Variant, B: Variant) -> bool:
+	var parent_A: BrainRegion = BrainRegion.get_parent_region_of_object(A)
+	var parent_B: BrainRegion = BrainRegion.get_parent_region_of_object(B)
+	
+	if (parent_A == null) or (parent_B == null):
+		push_error("CORE CACHE: Unable to get parent regions to compare if objects are within same parent region!")
+		return false
+	return parent_A.ID == parent_B.ID
+
+## As a single flat array, get the end inclusive path from the starting region / cortical area, to the end cortical area / region
+func get_total_path_between_objects(starting_point: Variant, stoppping_point: Variant) -> Array:
+	# Get start / stop points
+	var is_start_cortical_area: bool = starting_point is BaseCorticalArea
+	var is_end_cortical_area: bool = stoppping_point is BaseCorticalArea
+	
+	var start_region: BrainRegion
+	if is_start_cortical_area:
+		start_region = (starting_point as BaseCorticalArea).current_region
+	else:
+		start_region = starting_point
+	var end_region: BrainRegion
+	if is_end_cortical_area:
+		end_region = (stoppping_point as BaseCorticalArea).current_region
+	else:
+		end_region = stoppping_point
+	
+	# Generate total path
+	var region_path: Array[Array] = FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(start_region, end_region)
+	var total_chain_path: Array = []
+	if is_start_cortical_area:
+		total_chain_path.append(starting_point)
+	total_chain_path.append_array(region_path[0])  # ascending
+	total_chain_path.append_array(region_path[1])  # decending
+	if is_end_cortical_area:
+		total_chain_path.append(stoppping_point)
+	return total_chain_path
