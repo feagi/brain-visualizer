@@ -2,6 +2,7 @@ extends RefCounted
 class_name ConnectionChain
 ## Stores information about the path connections / conneciton hints take through regions
 
+signal about_to_be_deleted()
 
 var source: Variant: ## Can be [BrainRegion] or [BaseCorticalArea]
 	get: return _source
@@ -53,4 +54,8 @@ func _init(starting_point: Variant, stoppping_point: Variant):
 		
 		_chain_links.append(ConnectionChainLink.new(parent_region, total_chain_path[i], total_chain_path[i + 1], self))
 
-
+func prepare_to_delete() -> void:
+	for chain_link in _chain_links:
+		chain_link.prepare_to_delete()
+	about_to_be_deleted.emit()
+	_chain_links = []

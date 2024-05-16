@@ -487,18 +487,62 @@ var is_monitoring_synaptic_potential: bool
 #region Region information
 
 signal parent_region_changed(old_region: BrainRegion, new_region: BrainRegion)
+signal input_link_added(link: ConnectionChainLink)
+signal output_link_added(link: ConnectionChainLink)
+signal input_link_removed(link: ConnectionChainLink)
+signal output_link_removed(link: ConnectionChainLink)
 
-#TODO get region on init
 var current_region: BrainRegion:
 	get: return _current_region
+var input_chain_links: Array[ConnectionChainLink]:
+	get: return _input_chain_links
+var output_chain_links: Array[ConnectionChainLink]:
+	get: return _output_chain_links
 
 var _current_region: BrainRegion
+var _input_chain_links: Array[ConnectionChainLink]
+var _output_chain_links: Array[ConnectionChainLink]
 
 ## The parent region of this cortical area was updated
 func FEAGI_changed_parent_region(new_region: BrainRegion):
 	var old_cache: BrainRegion = _current_region # yes this method uses more memory but avoids potential shenanigans
 	_current_region = new_region
 	parent_region_changed.emit(old_cache, new_region)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func input_add_link(link: ConnectionChainLink) -> void:
+	if link in _input_chain_links:
+		push_error("CORE CACHE: Unable to add input link to region %s when it already exists!" % name)
+		return
+	_input_chain_links.append(link)
+	input_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func output_add_link(link: ConnectionChainLink) -> void:
+	if link in _output_chain_links:
+		push_error("CORE CACHE: Unable to add output link to region %s when it already exists!" % name)
+		return
+	_output_chain_links.append(link)
+	output_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func input_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _input_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
+		return
+	_input_chain_links.remove_at(index)
+	input_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func output_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _output_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
+		return
+	_output_chain_links.remove_at(index)
+	output_link_removed.emit(link)
+
 
 ## Returns the path to this cortical area as a path
 func get_region_path() -> Array[BrainRegion]:
