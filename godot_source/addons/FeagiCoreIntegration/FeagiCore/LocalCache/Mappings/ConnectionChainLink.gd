@@ -5,9 +5,9 @@ class_name ConnectionChainLink
 
 var parent_region: BrainRegion:
 	get: return _parent_region
-var source: Variant: ## Can be [BrainRegion] or [BaseCorticalArea]
+var source: GenomeObject: ## Can be [BrainRegion] or [BaseCorticalArea]
 	get: return _source
-var destination: Variant: ## Can be [BrainRegion] or [BaseCorticalArea]
+var destination: GenomeObject: ## Can be [BrainRegion] or [BaseCorticalArea]
 	get: return _destination
 var parent_chain: ConnectionChain:
 	get: return _parent_chain
@@ -15,28 +15,20 @@ var is_bridge: bool: # If this chain is a bridge (if it connects to elements int
 	get: return _is_bridge
 
 var _parent_region: BrainRegion
-var _source: Variant = null ## Can be [BrainRegion] or [BaseCorticalArea]
-var _destination: Variant = null ## Can be [BrainRegion] or [BaseCorticalArea]
+var _source: GenomeObject = null
+var _destination: GenomeObject = null
 var _parent_chain: ConnectionChain
 var _is_bridge: bool
 var _is_input_in_source: bool = false
 var _is_input_in_destination: bool = false
 
 
-func _init(region_parent: BrainRegion, coming_from: Variant, going_to: Variant, total_chain: ConnectionChain):
+func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: GenomeObject, total_chain: ConnectionChain):
 	var errored: bool = false
 	_parent_region = region_parent
 	_parent_chain = total_chain
-	if !BrainRegion.is_object_able_to_be_within_region(coming_from):
-		push_error("CORE CACHE: Cannot create ConnectionChainLink with source type that isnt BrainRegion or BaseCorticalArea!")
-		errored = true
-	else:
-		_source = coming_from
-	if !BrainRegion.is_object_able_to_be_within_region(going_to):
-		push_error("CORE CACHE: Cannot create ConnectionChainLink with destination type that isnt BrainRegion or BaseCorticalArea!")
-		errored = true
-	else:
-		_destination = going_to
+	_source = coming_from
+	_destination = going_to
 	
 	if errored:
 		return # Don't bother signaling if we have null endpoints!

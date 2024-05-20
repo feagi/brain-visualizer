@@ -16,7 +16,7 @@ signal user_selected_single_cortical_area(area: BaseCorticalArea) ## User select
 
 var window_manager: WindowManager:
 	get: return _window_manager
-var circuit_builder: CorticalNodeGraph:
+var circuit_builder: CircuitBuilder:
 	get: return _circuit_builder
 var notification_system: NotificationSystem:
 	get: return _notification_system
@@ -41,7 +41,7 @@ var _loaded_theme: Theme
 var _loaded_theme_scale: Vector2 = Vector2(1.0, 1.0)
 var _top_bar: TopBar
 var _possible_UI_scales: Array[float] = []
-var _circuit_builder: CorticalNodeGraph
+var _circuit_builder: CircuitBuilder
 var _brain_monitor # lol
 var _window_manager: WindowManager
 var _notification_system: NotificationSystem

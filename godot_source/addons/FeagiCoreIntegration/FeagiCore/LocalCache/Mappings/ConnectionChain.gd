@@ -4,9 +4,9 @@ class_name ConnectionChain
 
 signal about_to_be_deleted()
 
-var source: Variant: ## Can be [BrainRegion] or [BaseCorticalArea]
+var source: GenomeObject:
 	get: return _source
-var destination: Variant: ## Can be [BrainRegion] or [BaseCorticalArea]
+var destination: GenomeObject:
 	get: return _destination
 var chain_links: Array[ConnectionChainLink]:
 	get: return _chain_links
@@ -15,28 +15,17 @@ var total_chain_path: Array:
 var is_both_ends_cortical_areas: bool: ## If this happens, this is an established connectome mapping
 	get: return _is_both_ends_cortical_areas
 
-var _source: Variant = null ## Can be [BrainRegion] or [BaseCorticalArea]
-var _destination: Variant = null ## Can be [BrainRegion] or [BaseCorticalArea]
+var _source: GenomeObject = null
+var _destination: GenomeObject = null
 var _chain_links: Array[ConnectionChainLink] = []
 var _total_chain_path: Array
 var _is_both_ends_cortical_areas: bool
 
 
-func _init(starting_point: Variant, stoppping_point: Variant):
-	var errored: bool = false
-	if !BrainRegion.is_object_able_to_be_within_region(starting_point):
-		push_error("CORE CACHE: Cannot create ConnectionChain with source type that isnt BrainRegion or BaseCorticalArea!")
-		errored = true
-	else:
-		_source = starting_point
-	if !BrainRegion.is_object_able_to_be_within_region(stoppping_point):
-		push_error("CORE CACHE: Cannot create ConnectionChain with destination type that isnt BrainRegion or BaseCorticalArea!")
-		errored = true
-	else:
-		_destination = stoppping_point
+func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
+	_source = starting_point
+	_destination = stoppping_point
 
-	if errored:
-		return  ## No point generating anything if our stop / endpoints arent valid
 	
 	_is_both_ends_cortical_areas = (starting_point is BaseCorticalArea) and (stoppping_point is BaseCorticalArea)
 	
