@@ -1,4 +1,4 @@
-extends RefCounted
+extends GenomeObject
 class_name BaseCorticalArea
 ## Holds details pertaining to a specific cortical area
 ## Should not be instantiated directly

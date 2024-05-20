@@ -31,7 +31,7 @@ func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: 
 	region_outputs: Dictionary, containing_regions: Array[BrainRegion]):
 	
 	var region: BrainRegion = BrainRegion.new(region_ID, region_name, coord_2D, coord_3D, 
-		dim_3D, contained_areas, region_inputs, region_outputs)
+		dim_3D, contained_areas)
 	region.init_contained_regions(containing_regions)
 	_available_brain_regions[region_ID] = region
 	region_added.emit(region)
@@ -105,8 +105,8 @@ func arr_of_region_IDs_to_arr_of_Regions(IDs: Array[StringName]) -> Array[BrainR
 		output.append(_available_brain_regions[ID])
 	return output
 
-## Checks if given objects are within the same parent region
-func is_objects_within_same_region(A: Variant, B: Variant) -> bool:
+## Checks if given [GenomeObject]s are within the same parent region
+func is_objects_within_same_region(A: GenomeObject, B: GenomeObject) -> bool:
 	var parent_A: BrainRegion = BrainRegion.get_parent_region_of_object(A)
 	var parent_B: BrainRegion = BrainRegion.get_parent_region_of_object(B)
 	
@@ -115,8 +115,8 @@ func is_objects_within_same_region(A: Variant, B: Variant) -> bool:
 		return false
 	return parent_A.ID == parent_B.ID
 
-## As a single flat array, get the end inclusive path from the starting region / cortical area, to the end cortical area / region
-func get_total_path_between_objects(starting_point: Variant, stoppping_point: Variant) -> Array:
+## As a single flat array, get the end inclusive path from the starting [GenomeObject], to the end [GenomeObject]
+func get_total_path_between_objects(starting_point: GenomeObject, stoppping_point: GenomeObject) -> Array:
 	# Get start / stop points
 	var is_start_cortical_area: bool = starting_point is BaseCorticalArea
 	var is_end_cortical_area: bool = stoppping_point is BaseCorticalArea

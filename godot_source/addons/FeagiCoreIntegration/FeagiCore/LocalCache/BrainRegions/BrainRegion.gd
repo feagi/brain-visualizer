@@ -1,4 +1,4 @@
-extends RefCounted
+extends GenomeObject
 class_name BrainRegion
 ## Defines an area enclosing various [BaseCorticalArea]s
 
@@ -83,17 +83,8 @@ static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
 	)
 
 
-## Checks if the given object can be within a region (IE if the object is a [BaseCorticalArea] or [BrainRegion])
-static func is_object_able_to_be_within_region(A: Variant) -> bool:
-	if A is BaseCorticalArea:
-		return true
-	if A is BrainRegion:
-		return true
-	return false
-
-
 ## Gets the parent region of the object (if it is capable of having one)
-static func get_parent_region_of_object(A: Variant) -> BrainRegion:
+static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 	if A is BaseCorticalArea:
 		return (A as BaseCorticalArea).current_region
 	if A is BrainRegion:
@@ -101,7 +92,7 @@ static func get_parent_region_of_object(A: Variant) -> BrainRegion:
 			push_error("CORE CACHE: Unable to get parent region of the root region!")
 			return null
 		return (A as BrainRegion).parent_region
-	push_error("CORE CACHE: Unable to get parent region of an object that cannot be in a region!")
+	push_error("CORE CACHE: Unable to get parent region of an object of unknown type!")
 	return null
 
 
