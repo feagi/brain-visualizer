@@ -7,8 +7,8 @@
 [ext_resource type="Resource" uid="uid://bbmq3e8wtka4s" path="res://BrainVisualizer/Configs/endpoint_settings.tres" id="3_m3l25"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/UIManager.gd" id="4_qdn3k"]
 [ext_resource type="PackedScene" uid="uid://ci836c2xixpea" path="res://BrainVisualizer/UI/BrainMonitor/BrainMonitor.tscn" id="6_8wmkm"]
-[ext_resource type="PackedScene" uid="uid://1p2hhnitls41" path="res://BrainVisualizer/UI/CircuitBuilder/NodeGraph.tscn" id="6_aq1db"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/TempSplit.gd" id="6_r3y8u"]
+[ext_resource type="PackedScene" uid="uid://cmfh6gb04wy3i" path="res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn" id="7_qhnpe"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/WindowManager.gd" id="9_eg4r6"]
 
@@ -46,12 +46,8 @@ script = ExtResource("6_r3y8u")
 layout_mode = 2
 mouse_filter = 2
 
-[node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("6_aq1db")]
+[node name="CircuitBuilder" parent="UIManager/CB_Holder" instance=ExtResource("7_qhnpe")]
 layout_mode = 2
-mouse_force_pass_scroll_events = false
-scroll_offset = Vector2(-9, 0)
-initial_position = Vector2(-115, -300)
-initial_zoom = 0.233
 
 [node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
 offset_left = -444.0

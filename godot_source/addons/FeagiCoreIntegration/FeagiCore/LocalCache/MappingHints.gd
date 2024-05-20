@@ -189,12 +189,12 @@ static func get_special_cases_for_mapping_to_destination(source_cortical_area: B
 static func is_mapping_property_array_invalid_for_cortical_areas(source_cortical_area: BaseCorticalArea, destination_cortical_area: BaseCorticalArea, mapping_properties: Array[MappingProperty]) -> bool:
 	var limit_on_mapping_count: int = get_allowed_mapping_count(source_cortical_area, destination_cortical_area)
 	if limit_on_mapping_count != -1:
-		if len(mapping_propertys) > limit_on_mapping_count:
+		if len(mapping_properties) > limit_on_mapping_count:
 			return true
 	
 	var restriction_of_morphologies: Array[BaseMorphology] = get_allowed_morphologies_to_map_toward(source_cortical_area, destination_cortical_area)
 	if len(restriction_of_morphologies) > 0:
-		for mapping: MappingProperty in mapping_propertys:
+		for mapping: MappingProperty in mapping_properties:
 			if mapping.morphology_used not in restriction_of_morphologies:
 				return true
 	return false
