@@ -121,7 +121,7 @@ func _user_requesing_creation() -> void:
 				BV.WM.spawn_popup(popup_definition)
 				return
 			
-			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(_custom_definition.cortical_name.text):
+			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_with_exact_name(_custom_definition.cortical_name.text):
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
@@ -141,7 +141,7 @@ func _user_requesing_creation() -> void:
 				BV.WM.spawn_popup(popup_definition)
 				return
 			
-			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(_memory_definition.cortical_name.text):
+			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_with_exact_name(_memory_definition.cortical_name.text):
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
