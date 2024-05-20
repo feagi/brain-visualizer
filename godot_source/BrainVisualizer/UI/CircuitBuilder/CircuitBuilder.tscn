@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://cmfh6gb04wy3i"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.gd" id="1_75y4c"]
+
+[node name="CircuitBuilder" type="GraphEdit"]
+custom_minimum_size = Vector2(64, 64)
+offset_right = 644.0
+offset_bottom = 460.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+scroll_offset = Vector2(-64, -64)
+show_grid_buttons = false
+show_minimap_button = false
+show_arrange_button = false
+script = ExtResource("1_75y4c")
