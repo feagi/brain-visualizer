@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://b6t2rmyefnd11"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/TabbedView/MultiTabView.gd" id="1_kei6r"]
+
+[node name="MultiTabView" type="PanelContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_kei6r")
+
+[node name="SplitContainer" type="SplitContainer" parent="."]
+layout_mode = 2
+collapsed = true
+dragger_visibility = 2
+vertical = true
+
+[node name="Secondary" type="MarginContainer" parent="SplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TabContainer" type="TabContainer" parent="SplitContainer/Secondary"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+
+[node name="Primary" type="MarginContainer" parent="SplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TabContainer" type="TabContainer" parent="SplitContainer/Primary"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
