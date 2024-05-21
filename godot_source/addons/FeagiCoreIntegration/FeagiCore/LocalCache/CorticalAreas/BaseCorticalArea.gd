@@ -46,7 +46,7 @@ var name: StringName:
 		_set_name(v)
 
 ## The base type of cortical area as understood by FEAGI
-var group: CORTICAL_AREA_TYPE:
+var group: CORTICAL_AREA_TYPE: #TODO rename me to type or something
 	get: 
 		return _get_group()
 

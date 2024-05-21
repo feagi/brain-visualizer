@@ -1,7 +1,6 @@
 extends GraphNode
 class_name CBNodeCorticalArea
 
-
 var representing_cortical_area: BaseCorticalArea:
 	get: return _representing_cortical_area
 
@@ -18,6 +17,7 @@ func _ready():
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: BaseCorticalArea) -> void:
 	_representing_cortical_area = cortical_area_ref
+	_setup_node_color(cortical_area_ref.group)
 	CACHE_updated_cortical_area_name(_representing_cortical_area.name)
 	CACHE_updated_2D_position(_representing_cortical_area.coordinates_2D)
 	
@@ -46,5 +46,33 @@ func CB_add_recursive_connection_port() -> void:
 ## Called by [CircuitBuilder], add an external connection
 func CB_add_external_connection_port(is_input: bool) -> void:
 	pass
+
+#endregion
+
+#region Internal logic
+
+const IPU_BOX_COLOR: Color = Color(0.25882352941176473, 0.25882352941176473, 0.25882352941176473)
+const CUSTOM_BOX_COLOR: Color = Color(0, 0.32941176470588235, 0.5764705882352941)
+const MEMORY_BOX_COLOR: Color = Color(0.5803921568627451, 0.06666666666666667, 0)
+const OPU_BOX_COLOR: Color = Color(0.5803921568627451, 0.3215686274509804, 0)
+
+## Set the color depnding on cortical type
+func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+	var style_box: StyleBoxFlat = StyleBoxFlat.new()
+	match(cortical_type):
+		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			style_box.bg_color = IPU_BOX_COLOR
+		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			style_box.bg_color = MEMORY_BOX_COLOR
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			style_box.bg_color = CUSTOM_BOX_COLOR
+		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			style_box.bg_color = OPU_BOX_COLOR
+		BaseCorticalArea.CORTICAL_AREA_TYPE.CORE:
+			pass #TODO Define an actual color here at some point!
+		_:
+			push_error("Cortical Node loaded unknown or invalid cortical area type!")
+			pass
+	add_theme_stylebox_override("titlebar", style_box)
 
 #endregion

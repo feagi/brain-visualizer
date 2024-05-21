@@ -36,7 +36,8 @@ func setup(region: BrainRegion) -> void:
 	region.name_changed.connect(CACHE_this_region_name_update)
 	region.cortical_area_added_to_region.connect(CACHE_add_cortical_area)
 	region.cortical_area_removed_from_region.connect(CACHE_remove_cortical_area)
-	region.
+	region.subregion_added_to_region.connect(CACHE_add_subregion)
+	region.subregion_removed_from_region.connect(CACHE_remove_subregion)
 
 #region Responses to Cache Signals
 
