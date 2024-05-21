@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b6t2rmyefnd11"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/TabbedView/MultiTabView.gd" id="1_kei6r"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/MultiTabbedView/MultiTabView.gd" id="1_kei6r"]
 
 [node name="MultiTabView" type="PanelContainer"]
 size_flags_horizontal = 3
