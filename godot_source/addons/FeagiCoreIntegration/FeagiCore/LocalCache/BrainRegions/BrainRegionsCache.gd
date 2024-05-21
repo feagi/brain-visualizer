@@ -10,9 +10,11 @@ var available_brain_regions: Dictionary:
 
 var _available_brain_regions: Dictionary = {}
 
+## Calls from FEAGI to update the cache
+#region FEAGI Interactions
+
 ## Reload all regions from new genome
-func update_region_cache_from_summary(source_data: Dictionary) -> void:
-	
+func FEAGI_update_region_cache_from_summary(source_data: Dictionary) -> void:
 	# TODO clear existing regions
 	
 	# First pass is to generate all the region objects
@@ -25,6 +27,10 @@ func update_region_cache_from_summary(source_data: Dictionary) -> void:
 		var regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(region_IDs)
 		_available_brain_regions[region_ID].init_region_relationships(regions, _available_brain_regions[region_ID].parent_region)
 
+## Clears all regions from the cache
+func FEAGI_clear_all_regions() -> void:
+	for region_ID: StringName in _available_brain_regions.keys():
+		FEAGI_remove_region(region_ID)
 
 func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, 
 	dim_3D: Vector3i, contained_areas: Array[BaseCorticalArea], region_inputs: Dictionary, 
@@ -43,6 +49,16 @@ func FEAGI_remove_region(region_ID: StringName) -> void:
 	region.FEAGI_delete_this_region()
 	region_about_to_be_removed.emit(region)
 	_available_brain_regions.erase(region_ID)
+	
+#endregion
+
+
+## Get information about the cache state
+#region Queries
+
+## Returns True if the root region is in the cache
+func is_root_available() -> bool:
+	return BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()
 
 ## Attempts to return the root [BrainRegion]. If it fails, this logs and error and returns null
 func return_root_region() -> BrainRegion:
@@ -142,3 +158,7 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	if is_end_cortical_area:
 		total_chain_path.append(stoppping_point)
 	return total_chain_path
+
+#endregion
+
+

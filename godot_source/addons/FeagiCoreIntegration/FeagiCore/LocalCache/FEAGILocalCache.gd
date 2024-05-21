@@ -2,7 +2,8 @@ extends RefCounted
 class_name FEAGILocalCache
 
 #region main
-signal genome_reloaded()
+signal cache_about_to_reload()
+signal cache_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
@@ -18,6 +19,7 @@ func _init():
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
 	
 	print("\nFEAGI CACHE: Replacing the ENTIRE local cached genome!")
+	cache_about_to_reload.emit()
 	cortical_areas.update_cortical_area_cache_from_summary(cortical_area_summary)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
 	# Mappings
@@ -40,13 +42,13 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 			source_area.set_mappings_to_efferent_area(destination_area, mappings)
 	
 	# Regions
-	brain_regions.update_region_cache_from_summary(regions_summary)
+	brain_regions.FEAGI_update_region_cache_from_summary(regions_summary)
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
-	genome_reloaded.emit()
+	cache_reloaded.emit()
 #endregion
 
-## Deletes the genome from cache (safely). NOTE: this triggers the genome_reloaded signal too
+## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
 	print("\nFEAGI CACHE: REMOVING the ENTIRE local cached genome!")
 	cortical_areas.update_cortical_area_cache_from_summary({})
@@ -54,7 +56,7 @@ func clear_whole_genome() -> void:
 	clear_templates()
 	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
-	genome_reloaded.emit()
+	cache_reloaded.emit()
 	
 
 

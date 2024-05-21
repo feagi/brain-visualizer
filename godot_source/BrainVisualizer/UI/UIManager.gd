@@ -1,52 +1,29 @@
 extends Node
 class_name UIManager
+## Manages UI aspects of BV as a whole
 
 # TODO dev menu - build_settings_object
 
-const THEME_FOLDER: StringName = "res://BrainVisualizer/UI/Themes/"
-
-enum THEME_COLORS { # SO MANY COLORS
-	DARK
-}
-
-signal screen_size_changed(new_screen_size: Vector2)
-signal theme_changed(theme: Theme) ## New theme (likely with vustom scale changes) applied
-signal toggle_keyboard_controls(enable_controls: bool) ## True if keyboard controls (such as for camera) should be enabled. False in cases such as user typing #TODO is needed?
-signal user_selected_single_cortical_area(area: BaseCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
+## public var references and init for this object
+#region References and Init
+const PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
 
 var window_manager: WindowManager:
 	get: return _window_manager
-var circuit_builder: CircuitBuilder:
-	get: return _circuit_builder
 var notification_system: NotificationSystem:
 	get: return _notification_system
-var screen_size: Vector2:  # keep as float for easy division
-	get: return _screen_size
-var screen_center: Vector2:
-	get: return _screen_size / 2.0
-var selected_cortical_areas: Array[BaseCorticalArea]:
-	get: return _selected_cortical_areas
-var loaded_theme: Theme:
-	get: return _loaded_theme
 var top_bar: TopBar:
 	get: return _top_bar
-var possible_UI_scales: Array[float]:
-	get: return _possible_UI_scales
-var loaded_theme_scale: Vector2:
-	get: return _loaded_theme_scale
+var root_multi_tab_view: RootMultiTabView:
+	get: return _root_multi_tab_view
 
-var _screen_size: Vector2
-var _selected_cortical_areas: Array[BaseCorticalArea] = []
-var _loaded_theme: Theme
-var _loaded_theme_scale: Vector2 = Vector2(1.0, 1.0)
+
 var _top_bar: TopBar
-var _possible_UI_scales: Array[float] = []
-var _circuit_builder: CircuitBuilder
 var _brain_monitor # lol
 var _window_manager: WindowManager
+var _root_multi_tab_view: RootMultiTabView
 var _notification_system: NotificationSystem
 var _version_label: Label
-
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -57,10 +34,10 @@ func _enter_tree():
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
-	_circuit_builder = $CB_Holder/CircuitBuilder
 	_brain_monitor = $BrainMonitor
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
+	_root_multi_tab_view = $CB_Holder/RootMultiTabView
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -74,7 +51,66 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
+
+
 	
+
+#endregion
+
+
+## Interactions with FEAGICORE
+#region FEAGI Interactions
+## Called from above when we are about to reset genome, may want to clear some things...
+func FEAGI_about_to_reset_genome() -> void:
+	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
+	_window_manager.force_close_all_windows()
+
+
+## Called from above when we have no genome, disable UI elements that connect to it
+func FEAGI_no_genome() -> void:
+	print("UI: Disabling FEAGI UI elements due to no genome")
+	window_manager.force_close_all_windows()
+	top_bar.toggle_buttons_interactability(false)
+
+
+## Called from above when we confirmed genome to feagi, enable UI elements that connect to it
+func FEAGI_confirmed_genome() -> void:
+	print("UI: Enabling FEAGI UI elements now that genome is confirmed")
+	top_bar.toggle_buttons_interactability(true)
+	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
+		push_error("UI: Unable to init root region for CB and BM since no root region was detected!")
+		return
+	
+	var root_CB: CircuitBuilder = PREFAB_CIRCUITBUILDER.instantiate()
+	root_CB.setup(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
+	var arr: Array[Control] = [root_CB]
+	_root_multi_tab_view.setup_with_1_control_set(arr)
+	
+
+#endregion
+
+
+#region User Interactions
+signal user_selected_single_cortical_area(area: BaseCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
+
+func _input(event):
+	if FeagiCore.feagi_settings == null:
+		return
+	
+	if event is InputEventKey:
+		var keyboard_event: InputEventKey = event as InputEventKey
+		if keyboard_event.keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
+			if !keyboard_event.pressed:
+				return
+			if !FeagiCore.feagi_settings.allow_developer_menu:
+				return
+			show_developer_menu()
+
+var selected_cortical_areas: Array[BaseCorticalArea]:
+	get: return _selected_cortical_areas
+
+var _selected_cortical_areas: Array[BaseCorticalArea] = []
+
 
 func set_user_selected_cortical_areas(selected: Array[BaseCorticalArea]) -> void:
 	pass
@@ -89,8 +125,7 @@ func user_selected_single_cortical_area_appending(area: BaseCorticalArea) -> voi
 func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
-	_circuit_builder.center_on_cortical_area(cortical_area)
-	
+
 
 ## Starts a preview cort a cortical area
 func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
@@ -102,6 +137,41 @@ func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: 
 	preview_handler.start_BM_preview(initial_dimensions, initial_position, color, is_rendering)
 	preview_handler.connect_BM_preview(position_signals, dimensions_signals, close_signals)
 	# when moving this to BM, add a signal here to closing all handlers and append that signal to the above close array!
+
+## Open the developer menu
+func show_developer_menu():
+	_window_manager.spawn_developer_options()
+
+#endregion
+
+
+## Functionality related to screen size, theming, and scaling of all elements
+#region Theming and Scaling
+const THEME_FOLDER: StringName = "res://BrainVisualizer/UI/Themes/"
+
+enum THEME_COLORS { # SO MANY COLORS
+	DARK
+}
+
+signal screen_size_changed(new_screen_size: Vector2)
+signal theme_changed(theme: Theme) ## New theme (likely with vustom scale changes) applied
+
+var screen_size: Vector2:  # keep as float for easy division
+	get: return _screen_size
+var screen_center: Vector2:
+	get: return _screen_size / 2.0
+var loaded_theme: Theme:
+	get: return _loaded_theme
+var possible_UI_scales: Array[float]:
+	get: return _possible_UI_scales
+var loaded_theme_scale: Vector2:
+	get: return _loaded_theme_scale
+
+var _screen_size: Vector2
+var _loaded_theme: Theme
+var _loaded_theme_scale: Vector2 = Vector2(1.0, 1.0)
+var _possible_UI_scales: Array[float] = []
+
 
 ## Given the element node, uses the theme_variant property to retrieve the minimum size of the current theme. If there is no theme variant, fall back onto the given default option
 func get_minimum_size_from_loaded_theme_variant_given_control(control: Control, fallback_type: StringName) -> Vector2i:
@@ -127,7 +197,6 @@ func get_minimum_size_from_loaded_theme(element: StringName) -> Vector2i:
 		push_error("THEME: Loaded theme file is missing size_y for element %s. There will be sizing issues!" % element)
 	return output
 
-
 ## Attempts to switch toa  theme file with the given scale and color. If it doesnt exist, will do nothing
 func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> void:
 	var file_list: PackedStringArray = DirAccess.get_files_at(THEME_FOLDER)
@@ -143,35 +212,11 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 	_load_new_theme(theme_file)
 
 
-## Open the developer menu
-func show_developer_menu():
-	_window_manager.spawn_developer_options()
-
-## Called from above when we are about to reset genome, may want to clear some things...
-func FEAGI_about_to_reset_genome() -> void:
-	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
-	_window_manager.force_close_all_windows()
-
-
-## Called from above when we have no genome, disable UI elements that connect to it
-func FEAGI_no_genome() -> void:
-	print("UI: Disabling FEAGI UI elements due to no genome")
-	window_manager.force_close_all_windows()
-	top_bar.toggle_buttons_interactability(false)
-
-
-## Called from above when we confirmed genome to feagi, enable UI elements that connect to it
-func FEAGI_confirmed_genome() -> void:
-	print("UI: Enabling FEAGI UI elements now that genome is confirmed")
-	top_bar.toggle_buttons_interactability(true)
-
-
 ## Updates the screensize 
 func _update_screen_size():
 	_screen_size = get_viewport().get_visible_rect().size
 	screen_size_changed.emit(screen_size)
-	if OS.is_debug_build():
-		print("UI: Window Size Change Detected!")
+	print("UI: Window Size Change Detected!")
 
 ## Used to reposition notifications so they dont intersect with top bar
 func _top_bar_resized() -> void:
@@ -202,6 +247,12 @@ func _find_possible_scales() -> void:
 		var first_part: StringName = file.get_slice("-", 0)
 		if first_part.is_valid_float():
 			_possible_UI_scales.append(first_part.to_float())
+
+#endregion
+
+
+## To prevent spam, some signals are first validated to ensure they aren't being spammed
+#region Notification Filtering Proxies
 
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
 func _proxy_notification_cortical_area_added(cortical_area: BaseCorticalArea) -> void:
@@ -249,3 +300,5 @@ func _proxy_notification_morphology_removed(morphology: BaseMorphology) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
 	_notification_system.add_notification("Confirmed removal of connectivity rule %s!" % morphology.name)
+
+#endregion

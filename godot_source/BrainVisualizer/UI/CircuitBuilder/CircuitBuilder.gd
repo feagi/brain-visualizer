@@ -24,21 +24,28 @@ func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	
 	for area: BaseCorticalArea in _representing_region.contained_cortical_areas:
-		FEAGI_add_cortical_area(area)
+		CACHE_add_cortical_area(area)
 	
 	for subregion: BrainRegion in _representing_region.contained_regions:
-		FEAGI_add_subregion(subregion)
+		CACHE_add_subregion(subregion)
 	
+	name = region.name
+	
+	region.name_changed.connect(CACHE_region_name_update)
 
-func FEAGI_add_cortical_area(area: BaseCorticalArea) -> void:
+#region Responses to Cache Signals
+
+func CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
 	print("adding " + area.cortical_ID)
-	
 
-func FEAGI_remove_cortical_area(area: BaseCorticalArea) -> void:
+func CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	pass
 
-func FEAGI_add_subregion(subregion: BrainRegion) -> void:
+func CACHE_add_subregion(subregion: BrainRegion) -> void:
 	print("adding " + subregion.ID)
 
-func FEAGI_remove_subregion(subregion: BrainRegion) -> void:
+func CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	pass
+
+func CACHE_region_name_update(new_name: StringName) -> void:
+	name = new_name
