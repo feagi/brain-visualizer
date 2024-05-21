@@ -2,8 +2,8 @@ extends PanelContainer
 class_name MultiTabView
 ## Holds a split container that can show 2 sets of [TabContainer]s. Secondary window starts disabled
 
-var primary_tabs: TabContainer
-var secondary_tabs: TabContainer
+var primary_tabs: RegionTabController
+var secondary_tabs: RegionTabController
 
 var _split_container: SplitContainer
 
@@ -14,10 +14,8 @@ func _ready():
 	secondary_tabs = $SplitContainer/Secondary/TabContainer
 
 func setup_with_1_control_set(primary_control_set: Array[Control]) -> void:
-	for control in primary_control_set:
-		primary_tabs.add_child(control)
-		if control is CircuitBuilder:
-			BV.UI.root_multi_tab_view.CB_register(control as CircuitBuilder)
+	for existing_view in primary_control_set:
+		primary_tabs.add_existing_tab(existing_view)
 	
 	$SplitContainer/Secondary.visible = false
 

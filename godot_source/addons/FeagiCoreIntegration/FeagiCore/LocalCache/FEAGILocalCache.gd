@@ -16,12 +16,16 @@ func _init():
 	morphologies = MorphologiesCache.new()
 	brain_regions = BrainRegionsCache.new()
 
+
+
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
 	
 	print("\nFEAGI CACHE: Replacing the ENTIRE local cached genome!")
 	cache_about_to_reload.emit()
 	cortical_areas.update_cortical_area_cache_from_summary(cortical_area_summary)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
+	brain_regions.FEAGI_update_region_cache_from_summary(regions_summary)
+	
 	# Mappings
 	for source_cortical_ID: StringName in mapping_summary.keys():
 		if !(source_cortical_ID in cortical_areas.available_cortical_areas.keys()):
@@ -41,8 +45,7 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 			var mappings: Array[MappingProperty] = MappingProperty.from_array_of_dict(mapping_dictionaries)
 			source_area.set_mappings_to_efferent_area(destination_area, mappings)
 	
-	# Regions
-	brain_regions.FEAGI_update_region_cache_from_summary(regions_summary)
+
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()

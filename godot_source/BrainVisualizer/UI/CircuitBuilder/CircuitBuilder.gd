@@ -33,7 +33,7 @@ func setup(region: BrainRegion) -> void:
 	
 	name = region.name
 	
-	region.name_changed.connect(CACHE_this_region_name_update)
+	region.name_updated.connect(CACHE_this_region_name_update)
 	region.cortical_area_added_to_region.connect(CACHE_add_cortical_area)
 	region.cortical_area_removed_from_region.connect(CACHE_remove_cortical_area)
 	region.subregion_added_to_region.connect(CACHE_add_subregion)
@@ -67,6 +67,7 @@ func CACHE_add_subregion(subregion: BrainRegion) -> void:
 	subregion_nodes[subregion.ID] = region_node
 	add_child(region_node)
 	region_node.setup(subregion)
+	region_node.double_clicked.connect(_user_double_clicked_region)
 
 func CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.ID in subregion_nodes.keys()):
@@ -79,3 +80,14 @@ func CACHE_remove_subregion(subregion: BrainRegion) -> void:
 ## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too
 func CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
+
+#endregion
+
+
+#region User Interactions
+signal user_request_viewing_subregion(region: BrainRegion)
+
+func _user_double_clicked_region(region: BrainRegion) -> void:
+	user_request_viewing_subregion.emit(region)
+
+#endregion

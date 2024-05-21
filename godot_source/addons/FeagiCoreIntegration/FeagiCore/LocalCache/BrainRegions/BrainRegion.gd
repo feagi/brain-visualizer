@@ -5,9 +5,9 @@ class_name BrainRegion
 const ROOT_REGION_ID: StringName = "root" ## This is the ID that is unique to the root region
 
 signal about_to_be_deleted()
-signal name_changed(new_name: StringName)
-signal position_2D_changed(new_position: Vector2i)
-signal position_3D_changed(new_position: Vector3i)
+signal name_updated(new_name: StringName)
+signal coordinates_2D_updated(new_position: Vector2i)
+signal coordinates_3D_updated(new_position: Vector3i)
 signal dimensions_3D_changed(new_dimension: Vector3i)
 signal parent_region_changed(old_parent_region: BrainRegion, new_parent_region: BrainRegion)
 signal cortical_area_added_to_region(area: BaseCorticalArea)
@@ -28,17 +28,17 @@ var name: StringName:
 	get: return _name
 	set(v):
 		_name = v
-		name_changed.emit(v)
+		name_updated.emit(v)
 var coordinates_3d: Vector3i:
 	get: return _coordinates_3d
 	set(v):
 		_coordinates_3d = v
-		position_3D_changed.emit(v)
+		coordinates_3D_updated.emit(v)
 var coordinates_2d: Vector2i:
 	get: return _coordinates_2d
 	set(v):
 		_coordinates_2d = v
-		position_2D_changed.emit(v)
+		coordinates_2D_updated.emit(v)
 var dimensions_3d: Vector3i:
 	get: return _dimensions_3d
 	set(v):

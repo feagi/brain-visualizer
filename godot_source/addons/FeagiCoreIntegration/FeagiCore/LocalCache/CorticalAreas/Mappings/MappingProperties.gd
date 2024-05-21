@@ -95,11 +95,6 @@ func remove_mapping(index: int) -> void:
 		return
 	_mappings.remove_at(index)
 
-## Deletes all mappings
-func clear() -> void:
-	var empty: Array[MappingProperty] = []
-	_mappings = empty # casting shenanigans
-	mappings_changed.emit(self)
 
 func duplicate() -> MappingProperties:
 	return MappingProperties.new(_src_cortical, _dst_cortical, _mappings)

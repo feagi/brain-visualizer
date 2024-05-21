@@ -21,8 +21,6 @@ func setup(region_ref: BrainRegion) -> void:
 	_representing_region.name_updated.connect(CACHE_updated_region_name)
 	_representing_region.coordinates_2D_updated.connect(CACHE_updated_2D_position)
 
-
-
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
 #region CACHE Events and responses
 
@@ -41,5 +39,22 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 ## Called by [CircuitBuilder], add an external connection
 func CB_add_external_connection_port(is_input: bool) -> void:
 	pass
+
+#endregion
+
+#region User Interactions
+
+signal double_clicked(self_ref: CBNodeRegion) ## Node was double clicked
+
+func _gui_input(event):
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if !mouse_event.double_click:
+			return
+		double_clicked.emit(self)
+
+
 
 #endregion

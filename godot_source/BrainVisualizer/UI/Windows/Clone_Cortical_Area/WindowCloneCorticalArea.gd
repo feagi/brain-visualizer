@@ -35,6 +35,6 @@ func setup(cloning_cortical_area: BaseCorticalArea) -> void:
 
 func _clone_pressed():
 	#TODO check for conflicting name and alert user
-	FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector)
+	FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, BrainRegion.ROOT_REGION_ID) #TODO remove root region
 	close_window()
 

@@ -6,7 +6,6 @@ class_name UIManager
 
 ## public var references and init for this object
 #region References and Init
-const PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
 
 var window_manager: WindowManager:
 	get: return _window_manager
@@ -80,11 +79,8 @@ func FEAGI_confirmed_genome() -> void:
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		push_error("UI: Unable to init root region for CB and BM since no root region was detected!")
 		return
-	
-	var root_CB: CircuitBuilder = PREFAB_CIRCUITBUILDER.instantiate()
-	root_CB.setup(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
-	var arr: Array[Control] = [root_CB]
-	_root_multi_tab_view.setup_with_1_control_set(arr)
+
+	_root_multi_tab_view.setup_with_root_regions()
 	
 
 #endregion

@@ -131,6 +131,7 @@ func _user_requesing_creation() -> void:
 				_custom_definition.cortical_name.text,
 				_custom_definition.location.current_vector,
 				_custom_definition.dimensions.current_vector,
+				BrainRegion.ROOT_REGION_ID, #TODO TEMP
 				false
 				)
 				

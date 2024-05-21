@@ -7,6 +7,15 @@ var circuit_builder_instances: Dictionary: ## Key'd by ID String
 
 var _circuit_builder_instances: Dictionary = {}
 
+## Called by [UIManager] upon the loading of a genome, sets up the views of the root region
+func setup_with_root_regions() -> void:
+	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
+		push_error("UI: Unable to add views of root region as the region does not exist!")
+		return
+	primary_tabs.add_CB_tab(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
+	$SplitContainer/Secondary.visible = false
+	
+
 ## Called by [MultiTabView] during their instantiation to be registered to this object
 func CB_register(circuit_builder_ref: CircuitBuilder) -> void:
 	if circuit_builder_ref.representing_region.ID in _circuit_builder_instances.keys():

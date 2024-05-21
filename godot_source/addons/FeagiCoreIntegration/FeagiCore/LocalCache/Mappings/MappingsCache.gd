@@ -2,7 +2,7 @@ extends RefCounted
 class_name MappingsCache
 
 
-var established_mappings: Dictionary: # Mappings Established in the FEAGI Connectom, key;d by source_cortical_ID -> destination_cortical_ID -> [MappingProperties]
+var established_mappings: Dictionary: # Mappings Established in the FEAGI Connectom, key'd by source_cortical_ID -> destination_cortical_ID -> [MappingProperties]
 	get: return _established_mappings
 
 
@@ -12,7 +12,10 @@ var _connection_chains: Dictionary
 
 
 func FEAGI_established_mapping(source: BaseCorticalArea, destination: BaseCorticalArea, mappings: Array[MappingProperty]):
-	pass
+	var retrieved_mapping_properties = MappingProperties.new(source, destination, mappings)
+	
+	
+	
 
 func get_mappings_from_source_cortical_area(source: BaseCorticalArea):
 	pass

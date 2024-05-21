@@ -155,7 +155,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 
 
 ## Adds a custom cortical area
-func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
+func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, parent_region_ID: StringName, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -163,6 +163,9 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	if cortical_name in FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names():
 		push_error("FEAGI Requests: Cannot create custom cortical area of name %s when a cortical area of this name already exists!" % cortical_name)
 		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
+	if !(parent_region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
+		push_error("FEAGI Requests: Cannot create custom cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region_ID])
+		return FeagiRequestOutput.requirement_fail("REGION_NOT_EXISTS")
 	
 	print("FEAGI REQUEST: Request creating custom cortical area by name %s" % cortical_name)
 	
@@ -172,6 +175,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
 		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"sub_group_id": parent_region_ID,
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
 	}
@@ -277,7 +281,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 
 
 ## Clone a given cortical area
-func clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i) -> FeagiRequestOutput:
+func clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i, new_region_ID: StringName) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -298,7 +302,7 @@ func clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, n
 			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions, true, new_position_2D)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			print("FEAGI REQUEST: Request copying custom cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions, true, new_position_2D)
+			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions, new_region_ID, true, new_position_2D)
 		_:
 			push_error("FEAGI Requests: No procedure for cloning a cortical area of type %s" % cloning_area.type_as_string)
 			return FeagiRequestOutput.requirement_fail("TYPE_NOT_ALLOWED")
