@@ -5,12 +5,15 @@ class_name BrainRegion
 const ROOT_REGION_ID: StringName = "root" ## This is the ID that is unique to the root region
 
 signal about_to_be_deleted()
-signal internals_changed()
 signal name_changed(new_name: StringName)
 signal position_2D_changed(new_position: Vector2i)
 signal position_3D_changed(new_position: Vector3i)
 signal dimensions_3D_changed(new_dimension: Vector3i)
 signal parent_region_changed(old_parent_region: BrainRegion, new_parent_region: BrainRegion)
+signal cortical_area_added_to_region(area: BaseCorticalArea)
+signal cortical_area_removed_from_region(area: BaseCorticalArea)
+signal subregion_added_to_region(subregion: BrainRegion)
+signal subregion_removed_from_region(subregion: BrainRegion)
 signal input_link_added(link: ConnectionChainLink)
 signal output_link_added(link: ConnectionChainLink)
 signal bridge_link_added(link: ConnectionChainLink)
@@ -47,11 +50,11 @@ var contained_regions: Array[BrainRegion]:
 	get: return _contained_regions
 var parent_region: BrainRegion:
 	get: return _parent_region
-var input_chain_links: Array[ConnectionChainLink]:
+var input_chain_links: Array[ConnectionChainLink]: ## Input links are connect to the input side of a region
 	get: return _input_chain_links
-var output_chain_links: Array[ConnectionChainLink]:
+var output_chain_links: Array[ConnectionChainLink]: ## Output links are connect to the output side of a region
 	get: return _output_chain_links
-var bridge_chain_links: Array[ConnectionChainLink]:
+var bridge_chain_links: Array[ConnectionChainLink]: ## Bridge links connect 2 internal members together, they do not connect to the input / output of the region
 	get: return _bridge_chain_links
 
 var _ID: StringName
@@ -112,12 +115,16 @@ func init_region_relationships(containing_regions: Array[BrainRegion], parent_re
 	_contained_regions = containing_regions
 	_parent_region = parent_region
 
+## Updates from FEAGI updating this cache object
+#region FEAGI Interactions
+
 ## FEAGI confirmed a cortical area was added
 func FEAGI_add_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	if cortical_area in _contained_cortical_areas:
 		push_error("CORE CACHE: Cannot add cortical area %s to region %s that already contains it! Skipping!" % [cortical_area.cortical_ID, _ID])
 		return
 	_contained_cortical_areas.append(cortical_area)
+	cortical_area_added_to_region.emit(cortical_area)
 
 ## FEAGI confirmed a cortical area was removed
 func FEAGI_remove_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
@@ -133,6 +140,7 @@ func FEAGI_add_a_region(region: BrainRegion) -> void:
 		push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.ID, _ID])
 		return
 	_contained_regions.append(region)
+	subregion_added_to_region.emit(region)
 
 ## FEAGI confirmed a contained region was removed
 func FEAGI_remove_a_region(region: BrainRegion) -> void:
@@ -141,6 +149,7 @@ func FEAGI_remove_a_region(region: BrainRegion) -> void:
 		push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.ID, _ID])
 		return
 	_contained_regions.remove_at(index)
+	subregion_removed_from_region.emit(region)
 
 ## FEAGI confirmed that this region was moved and now has another parent region
 func FEAGI_change_parent_region(new_region: BrainRegion) -> void:
@@ -156,6 +165,12 @@ func FEAGI_delete_this_region() -> void:
 		push_error("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_ID])
 	about_to_be_deleted.emit()
 	# This function should be called by [BrainRegionsCache], which will then free this object
+
+#endregion
+
+
+## [ConnectionChain] Interactions, as the result of mapping updates or hint updates
+#region ConnectionChainLink changes
 
 ## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
 func input_add_link(link: ConnectionChainLink) -> void:
@@ -208,6 +223,12 @@ func bridge_remove_link(link: ConnectionChainLink) -> void:
 	_bridge_chain_links.remove_at(index)
 	bridge_link_removed.emit(link)
 
+#endregion
+
+
+## Queries that can be made from the UI layer to ascern specific properties
+#region Queries
+
 ## Returns if this region is the root region or not
 func is_root_region() -> bool:
 	return _ID == ROOT_REGION_ID
@@ -235,5 +256,8 @@ func get_path() -> Array[BrainRegion]:
 	path.append(searching_region)
 	path.reverse()
 	return path
-	
-	
+
+func is_safe_to_add_child_region(possible_child: BrainRegion) -> bool:
+	return !(possible_child in get_path())
+
+#endregion

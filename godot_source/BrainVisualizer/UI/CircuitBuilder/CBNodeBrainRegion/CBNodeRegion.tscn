@@ -1,9 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://c3ashc408js2c"]
+[gd_scene load_steps=3 format=3 uid="uid://c3ashc408js2c"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/CorticalNode.gd" id="1_ksojj"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.gd" id="1_yxq37"]
+[ext_resource type="Texture2D" uid="uid://c2omybf3650ma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="2_oj6qo"]
 
 [node name="CBNodeBrainRegion" type="GraphNode"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(350, 50)
 offset_right = 250.0
 offset_bottom = 78.0
 scale = Vector2(0.995621, 1.01454)
@@ -27,7 +28,16 @@ slot/1/right_type = 0
 slot/1/right_color = Color(1, 1, 1, 1)
 slot/1/right_icon = null
 slot/1/draw_stylebox = true
-script = ExtResource("1_ksojj")
+slot/2/left_enabled = false
+slot/2/left_type = 0
+slot/2/left_color = Color(1, 1, 1, 1)
+slot/2/left_icon = null
+slot/2/right_enabled = false
+slot/2/right_type = 0
+slot/2/right_color = Color(1, 1, 1, 1)
+slot/2/right_icon = null
+slot/2/draw_stylebox = true
+script = ExtResource("1_yxq37")
 
 [node name="Top_Connector" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -36,21 +46,21 @@ layout_mode = 2
 layout_mode = 2
 text = "Add Input"
 
-[node name="Control" type="Control" parent="Top_Connector"]
-custom_minimum_size = Vector2(20, 0)
+[node name="Temp_region_Icon" type="TextureRect" parent="Top_Connector"]
 layout_mode = 2
 size_flags_horizontal = 3
+texture = ExtResource("2_oj6qo")
+expand_mode = 2
+stretch_mode = 5
 
 [node name="Label2" type="Label" parent="Top_Connector"]
 layout_mode = 2
 text = "Add Output"
 horizontal_alignment = 2
 
-[node name="Regionlabel" type="BoxContainer" parent="."]
+[node name="Inputs" type="VBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Regionlabel"]
+[node name="Outputs" type="VBoxContainer" parent="."]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Region"
-horizontal_alignment = 1
+alignment = 2

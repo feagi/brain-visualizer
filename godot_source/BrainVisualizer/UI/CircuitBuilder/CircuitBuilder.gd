@@ -9,6 +9,7 @@ class_name CircuitBuilder
 @export var keyboard_move_speed: float = 50.0
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
+const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -32,23 +33,48 @@ func setup(region: BrainRegion) -> void:
 	
 	name = region.name
 	
-	region.name_changed.connect(CACHE_region_name_update)
+	region.name_changed.connect(CACHE_this_region_name_update)
+	region.cortical_area_added_to_region.connect(CACHE_add_cortical_area)
+	region.cortical_area_removed_from_region.connect(CACHE_remove_cortical_area)
+	region.
 
 #region Responses to Cache Signals
 
 func CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
+	if (area.cortical_ID in cortical_nodes.keys()):
+		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
+		return
 	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
+	cortical_nodes[area.cortical_ID] = cortical_node
 	add_child(cortical_node)
 	cortical_node.setup(area)
 
 func CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
-	pass
+	if !(area.cortical_ID in cortical_nodes.keys()):
+		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
+		return
+	#NOTE: We assume that all connections to / from this area have already been called to be removed by the cache FIRST
+	cortical_nodes[area.cortical_ID].queue_free()
+	cortical_nodes.erase(area.cortical_ID)
+	
 
 func CACHE_add_subregion(subregion: BrainRegion) -> void:
-	print("adding " + subregion.ID)
+	if (subregion.ID in subregion_nodes.keys()):
+		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.ID)
+		return
+	var region_node: CBNodeRegion = PREFAB_NODE_BRAINREGION.instantiate()
+	subregion_nodes[subregion.ID] = region_node
+	add_child(region_node)
+	region_node.setup(subregion)
 
 func CACHE_remove_subregion(subregion: BrainRegion) -> void:
-	pass
+	if !(subregion.ID in subregion_nodes.keys()):
+		push_error("UI CB: Unable to find region %s to remove node of!" % subregion.ID)
+		return
+	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
+	subregion_nodes[subregion.ID].queue_free()
+	subregion_nodes.erase(subregion.ID)
 
-func CACHE_region_name_update(new_name: StringName) -> void:
+## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too
+func CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
