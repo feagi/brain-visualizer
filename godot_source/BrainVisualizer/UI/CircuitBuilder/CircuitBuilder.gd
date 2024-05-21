@@ -8,6 +8,7 @@ class_name CircuitBuilder
 @export var keyboard_movement_speed: Vector2 = Vector2(1,1)
 @export var keyboard_move_speed: float = 50.0
 
+const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -36,7 +37,9 @@ func setup(region: BrainRegion) -> void:
 #region Responses to Cache Signals
 
 func CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
-	print("adding " + area.cortical_ID)
+	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
+	add_child(cortical_node)
+	cortical_node.setup(area)
 
 func CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	pass
