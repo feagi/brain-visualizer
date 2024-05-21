@@ -35,3 +35,6 @@ func get_root_CB() -> CircuitBuilder:
 	if BrainRegion.ROOT_REGION_ID in _circuit_builder_instances.keys():
 		return _circuit_builder_instances[BrainRegion.ROOT_REGION_ID]
 	return null
+
+func is_existing_CB_of_region(region: BrainRegion) -> bool:
+	return region.ID in circuit_builder_instances.keys()

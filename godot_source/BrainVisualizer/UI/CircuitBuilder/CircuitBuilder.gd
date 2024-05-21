@@ -87,7 +87,7 @@ func CACHE_this_region_name_update(new_name: StringName) -> void:
 #region User Interactions
 signal user_request_viewing_subregion(region: BrainRegion)
 
-func _user_double_clicked_region(region: BrainRegion) -> void:
-	user_request_viewing_subregion.emit(region)
+func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
+	user_request_viewing_subregion.emit(region_node.representing_region)
 
 #endregion

@@ -15,15 +15,11 @@ func _ready():
 func add_CB_tab(region: BrainRegion) -> void:
 	var new_CB: CircuitBuilder = PREFAB_CIRCUITBUILDER.instantiate()
 	new_CB.setup(region)
-	add_child(new_CB)
-	set_tab_icon(get_tab_idx_from_control(new_CB) , ICON_CB)
-	BV.UI.root_multi_tab_view.CB_register(new_CB as CircuitBuilder)
+	_add_existing_circuit_builder_as_tab(new_CB)
 
 func add_existing_tab(view: Control) -> void:
 	if view is CircuitBuilder:
-		add_child(view)
-		set_tab_icon(get_tab_idx_from_control(view) , ICON_CB)
-		BV.UI.root_multi_tab_view.CB_register(view as CircuitBuilder)
+		_add_existing_circuit_builder_as_tab(view as CircuitBuilder)
 		return
 	push_error("UI: Unknown Control attempted to be added to tab! Skipping!")
 
@@ -46,3 +42,17 @@ func _on_top_tab_change(_tab_index: int) -> void:
 	else:
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
 
+func _add_existing_circuit_builder_as_tab(cb: CircuitBuilder) -> void:
+	add_child(cb)
+	var tab_idx: int = get_tab_idx_from_control(cb)
+	set_tab_icon(tab_idx , ICON_CB)
+	BV.UI.root_multi_tab_view.CB_register(cb)
+	cb.user_request_viewing_subregion.connect(_user_request_create_circuit_builder_tab)
+	current_tab = tab_idx
+
+func _user_request_create_circuit_builder_tab(region: BrainRegion) -> void:
+	if BV.UI.root_multi_tab_view.is_existing_CB_of_region(region):
+		# A CB already exists with this region, bring it up
+		#TODO bring up tab in whatever CB to view
+		return
+	add_CB_tab(region)
