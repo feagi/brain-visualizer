@@ -3,11 +3,8 @@ class_name CoreCorticalArea
 ## Cannot be edited or removed
 
 #region Base Functionality
-func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, visiblity: bool = true):
-	_cortical_ID = ID
-	_name = cortical_name
-	_dimensions = cortical_dimensions
-	_cortical_visiblity = visiblity
+func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
+	super(ID, cortical_name, cortical_dimensions, parent_region, visiblity) # This abstraction is useless right now! Too Bad!
 
 ## Updates all cortical details in here from a dict from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
