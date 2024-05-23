@@ -13,19 +13,34 @@ var _available_brain_regions: Dictionary = {}
 ## Calls from FEAGI to update the cache
 #region FEAGI Interactions
 
-## Reload all regions from new genome
-func FEAGI_update_region_cache_from_summary(source_data: Dictionary) -> void:
-	# TODO clear existing regions
+## Called by [FEAGILocalCache] on genome load. Loads in all regions from FEAGI summary data to cache. Also creates a mapping table to add cortical areas in a later step of genome loading
+func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(region_summary_data: Dictionary) -> Dictionary: # This function name clearly isn't long enough
 	
-	# First pass is to generate all the region objects
-	for region_ID: StringName in source_data.keys():
-		_available_brain_regions[region_ID] = BrainRegion.from_FEAGI_JSON(source_data[region_ID], region_ID)
-	# Second pass is to link all the objects
-	for region_ID: StringName in source_data.keys():
-		var region_IDs: Array[StringName] = []
-		region_IDs.assign(source_data[region_ID]["regions"])
-		var regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(region_IDs)
-		_available_brain_regions[region_ID].init_region_relationships(regions, _available_brain_regions[region_ID].parent_region)
+	# First pass is to generate all the region objects without any children
+	for region_ID: StringName in region_summary_data.keys():
+		_available_brain_regions[region_ID] = BrainRegion.from_FEAGI_JSON_ignore_children(region_summary_data[region_ID], region_ID)
+	
+	var cortical_area_mapping: Dictionary = {}
+	# Second pass is to link all child region to a given parent region, and to calculate mappings for cortical IDs to their correct parent region
+	for parent_region_ID: StringName in region_summary_data.keys():
+		# link child regions
+		var child_region_IDs: Array[StringName] = []
+		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
+		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
+		_available_brain_regions[parent_region_ID].init_region_relationships(child_regions, _available_brain_regions[parent_region_ID].parent_region)
+		
+		# Create cortical ID mapping
+		var cortical_IDs: Array[StringName] = []
+		cortical_IDs.assign(region_summary_data[parent_region_ID]["areas"])
+		for cortical_ID in cortical_IDs:
+			if cortical_ID in cortical_area_mapping.keys():
+				push_error("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s! Something is wrong with the genome! Keeping the original region!" % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
+				continue
+			cortical_area_mapping[cortical_ID] = parent_region_ID
+	
+	return cortical_area_mapping
+		
+
 
 ## Clears all regions from the cache
 func FEAGI_clear_all_regions() -> void:

@@ -85,6 +85,19 @@ static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
 		contained_areas,
 	)
 
+## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas. Main use is when loading genomes when we dont have objects to reference yet
+static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) -> BrainRegion:
+	var contained_areas: Array[BaseCorticalArea] = []
+	return BrainRegion.new(
+		ID,
+		dict["title"],
+		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
+		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
+		Vector3i(10,10,10), #TODO
+		Vector3i(10,10,10), #TODO
+		contained_areas,
+	)
+
 
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
@@ -118,7 +131,7 @@ func init_region_relationships(containing_regions: Array[BrainRegion], parent_re
 ## Updates from FEAGI updating this cache object
 #region FEAGI Interactions
 
-## FEAGI confirmed a cortical area was added
+## FEAGI confirmed a cortical area was added, called by [BaseCorticalArea] as they register themselves
 func FEAGI_add_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	if cortical_area in _contained_cortical_areas:
 		push_error("CORE CACHE: Cannot add cortical area %s to region %s that already contains it! Skipping!" % [cortical_area.cortical_ID, _ID])
@@ -126,7 +139,7 @@ func FEAGI_add_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	_contained_cortical_areas.append(cortical_area)
 	cortical_area_added_to_region.emit(cortical_area)
 
-## FEAGI confirmed a cortical area was removed
+## FEAGI confirmed a cortical area was removed, called by [BaseCorticalArea] as they deregister themselves
 func FEAGI_remove_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	var index: int = _contained_cortical_areas.find(cortical_area)
 	if index == -1:

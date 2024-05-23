@@ -5,7 +5,6 @@ class_name FEAGIRequests
 
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:
-	FeagiCore.feagi_local_cache.clear_whole_genome()
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
@@ -150,7 +149,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully retrieved details of cortical area %s" % checking_cortical_ID)
-	FeagiCore.feagi_local_cache.cortical_areas.update_cortical_area_from_dict(response)
+	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
 	return FEAGI_response_data
 
 
@@ -337,7 +336,7 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to update cortical area of ID %s!" % editing_ID)
 		return FEAGI_response_data
-	FeagiCore.feagi_local_cache.cortical_areas.update_cortical_area_from_dict(properties)
+	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 

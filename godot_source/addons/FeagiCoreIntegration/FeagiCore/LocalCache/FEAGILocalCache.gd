@@ -17,14 +17,25 @@ func _init():
 	brain_regions = BrainRegionsCache.new()
 
 
-
+## Given several summary datas from FEAGI, we can build the entire cache at once
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
 	
 	print("\nFEAGI CACHE: Replacing the ENTIRE local cached genome!")
 	cache_about_to_reload.emit()
-	cortical_areas.update_cortical_area_cache_from_summary(cortical_area_summary)
+	clear_whole_genome()
+	
+	# Methdology:
+	# Add Regions first, followed by establishing relations with child regions to parent regions
+	# 	Given input data structure, we calculate a dict of corticalIDs mapped to a target region ID
+	# Create cortical area objects, using the above dict to retrieve the parent region in an efficient manner
+	# Create morphology objects
+	# Create mapping objects
+	# Creeate connection hint objects
+	
+	var cortical_area_IDs_mapped_to_parent_regions_IDs = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary) 
+	cortical_areas.FEAGI_load_all_cortical_areas(cortical_area_summary, cortical_area_IDs_mapped_to_parent_regions_IDs)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
-	brain_regions.FEAGI_update_region_cache_from_summary(regions_summary)
+	
 	
 	# Mappings
 	for source_cortical_ID: StringName in mapping_summary.keys():
@@ -53,13 +64,17 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 
 ## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
+	#TODO
+	cache_reloaded.emit()
+	return
+	
 	print("\nFEAGI CACHE: REMOVING the ENTIRE local cached genome!")
 	cortical_areas.update_cortical_area_cache_from_summary({})
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
 	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
-	cache_reloaded.emit()
+	#cache_reloaded.emit()
 	
 
 
