@@ -131,7 +131,7 @@ func _user_requesing_creation() -> void:
 				_custom_definition.cortical_name.text,
 				_custom_definition.location.current_vector,
 				_custom_definition.dimensions.current_vector,
-				BrainRegion.ROOT_REGION_ID, #TODO TEMP
+				FeagiCore.feagi_local_cache.brain_regions.return_root_region(), #TODO TEMP
 				false
 				)
 				
@@ -152,6 +152,7 @@ func _user_requesing_creation() -> void:
 				_memory_definition.cortical_name.text,
 				_memory_definition.location.current_vector,
 				Vector3i(1,1,1),
+				FeagiCore.feagi_local_cache.brain_regions.return_root_region(), #TODO temp!
 				false
 			)
 	

@@ -40,8 +40,8 @@ func FEAGI_add_custom_cortical_area(cortical_ID: StringName, cortical_name: Stri
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU by ID and emits a signal that this was done. Should only be called from FEAGI!
-func FEAGI_add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, brain_region: BrainRegion, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: IPUCorticalArea = IPUCorticalArea.create_from_template(cortical_ID, template, channel_count, brain_region, is_visible)
+func FEAGI_add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: IPUCorticalArea = IPUCorticalArea.create_from_template(cortical_ID, template, channel_count, is_visible)
 	new_area.FEAGI_set_3D_coordinates(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_set_2D_coordinates(coordinates_2D)
@@ -52,8 +52,8 @@ func FEAGI_add_input_cortical_area(cortical_ID: StringName, template: CorticalTe
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU (without a template) by ID and emits a signal that this was done. Should only be called from FEAGI!
-func FEAGI_add_input_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, brain_region: BrainRegion, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: IPUCorticalArea = IPUCorticalArea.new(cortical_ID, cortical_name, dimensions, brain_region, is_visible)
+func FEAGI_add_input_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: IPUCorticalArea = IPUCorticalArea.new(cortical_ID, cortical_name, dimensions, is_visible)
 	new_area.FEAGI_set_3D_coordinates(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_set_2D_coordinates(coordinates_2D)
@@ -64,8 +64,8 @@ func FEAGI_add_input_cortical_area_without_template(cortical_ID: StringName, cor
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type OPU by ID and emits a signal that this was done. Should only be called from FEAGI!
-func FEAGI_add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, brain_region: BrainRegion, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: OPUCorticalArea = OPUCorticalArea.create_from_template(cortical_ID, template, channel_count, brain_region, is_visible)
+func FEAGI_add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: OPUCorticalArea = OPUCorticalArea.create_from_template(cortical_ID, template, channel_count, is_visible)
 	new_area.FEAGI_set_3D_coordinates(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_set_2D_coordinates(coordinates_2D)
@@ -76,8 +76,8 @@ func FEAGI_add_output_cortical_area(cortical_ID: StringName, template: CorticalT
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type OPU (without a template) by ID and emits a signal that this was done. Should only be called from FEAGI!
-func FEAGI_add_output_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, brain_region: BrainRegion, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: OPUCorticalArea = OPUCorticalArea.new(cortical_ID, cortical_name, dimensions, brain_region, is_visible)
+func FEAGI_add_output_cortical_area_without_template(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: OPUCorticalArea = OPUCorticalArea.new(cortical_ID, cortical_name, dimensions, is_visible)
 	new_area.FEAGI_set_3D_coordinates(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_set_2D_coordinates(coordinates_2D)
@@ -128,9 +128,13 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			FEAGI_add_custom_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			FEAGI_add_input_cortical_area_without_template(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
+			if !brain_region.is_root_region():
+				push_warning("FEAGI CACHE: Cannot create an IPU in a non root region! This will be ignored and location be set as the root region!")
+			FEAGI_add_input_cortical_area_without_template(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, feagi_dictionary, visibility)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			FEAGI_add_output_cortical_area_without_template(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
+			if !brain_region.is_root_region():
+				push_warning("FEAGI CACHE: Cannot create an OPU in a non root region! This will be ignored and location be set as the root region!")
+			FEAGI_add_output_cortical_area_without_template(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, feagi_dictionary, visibility)
 		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			FEAGI_add_memory_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		_:

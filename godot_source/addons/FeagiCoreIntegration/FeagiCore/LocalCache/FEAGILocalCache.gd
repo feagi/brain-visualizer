@@ -37,6 +37,9 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
 	
 	
+	
+	
+	
 	# Mappings
 	for source_cortical_ID: StringName in mapping_summary.keys():
 		if !(source_cortical_ID in cortical_areas.available_cortical_areas.keys()):

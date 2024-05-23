@@ -3,11 +3,16 @@ class_name IPUCorticalArea
 ## Cortical area for processing inputs
 
 
-func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
-	super(ID, cortical_name, cortical_dimensions, parent_region, visiblity) # This abstraction is useless right now! Too Bad!
+func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, visiblity: bool = true):
+	var parent_region: BrainRegion = null
+	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
+		push_error("FEAGI CORE CACHE: Unable to define root region for OPU %s as the root region isnt loaded!" % ID)
+	else:
+		parent_region = FeagiCore.feagi_local_cache.brain_regions.return_root_region()
+	super(ID, cortical_name, cortical_dimensions, parent_region, visiblity) 
 
-static func create_from_template(ID: StringName, template: CorticalTemplate, new_channel_count: int, parent_region: BrainRegion, visiblity: bool = true) -> IPUCorticalArea:
-	return IPUCorticalArea.new(ID, template.cortical_name, template.calculate_IOPU_dimension(new_channel_count), parent_region, visiblity)
+static func create_from_template(ID: StringName, template: CorticalTemplate, new_channel_count: int, visiblity: bool = true) -> IPUCorticalArea:
+	return IPUCorticalArea.new(ID, template.cortical_name, template.calculate_IOPU_dimension(new_channel_count), visiblity)
 
 ## Updates all cortical details in here from a dict from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:

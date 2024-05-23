@@ -148,7 +148,7 @@ func FEAGI_remove_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	_contained_cortical_areas.remove_at(index)
 
 ## FEAGI confirmed a region was added
-func FEAGI_add_a_region(region: BrainRegion) -> void:
+func FEAGI_add_a_subregion(region: BrainRegion) -> void:
 	if region in _contained_regions:
 		push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.ID, _ID])
 		return
@@ -156,7 +156,7 @@ func FEAGI_add_a_region(region: BrainRegion) -> void:
 	subregion_added_to_region.emit(region)
 
 ## FEAGI confirmed a contained region was removed
-func FEAGI_remove_a_region(region: BrainRegion) -> void:
+func FEAGI_remove_a_subregion(region: BrainRegion) -> void:
 	var index: int = _contained_regions.find(region)
 	if index == -1:
 		push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.ID, _ID])
@@ -170,12 +170,13 @@ func FEAGI_change_parent_region(new_region: BrainRegion) -> void:
 	_parent_region = new_region
 	parent_region_changed.emit(old_cache, new_region)
 
+#TODO make better deletion with proper checks
 ## FEAGI confirmed this region is deleted
 func FEAGI_delete_this_region() -> void:
 	if len(_contained_regions) != 0:
 		push_error("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_ID])
 	if len(_contained_cortical_areas) != 0:
-		push_error("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_ID])
+		push_error("CORE CACHE: Cannot remove region %s as it still contains cortical areas! Skipping!" % [_ID])
 	about_to_be_deleted.emit()
 	# This function should be called by [BrainRegionsCache], which will then free this object
 
