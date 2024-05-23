@@ -3,6 +3,16 @@ class_name ConnectionChainLink
 ## Stores a single connection between 2 elements directly within a region
 ## NOTE: Is read only following creation
 
+signal about_to_be_removed()
+
+enum LINK_TYPE {
+	BRIDGE, ## The chain link connects 2 internal members of a region
+	PARENTS_OUTPUT, ## The Chain link connects an internal member of a region toward that regions output
+	PARENTS_INPUT, ## The Chain link connects the regions input toward an internal member of that region
+	INVALID ## Can only occur if the pathing makes no sense. Error state!
+}
+
+
 var parent_region: BrainRegion:
 	get: return _parent_region
 var source: GenomeObject: ## Can be [BrainRegion] or [BaseCorticalArea]
@@ -11,134 +21,127 @@ var destination: GenomeObject: ## Can be [BrainRegion] or [BaseCorticalArea]
 	get: return _destination
 var parent_chain: ConnectionChain:
 	get: return _parent_chain
-var is_bridge: bool: # If this chain is a bridge (if it connects to elements internal to the parent together, and not with the parent)
-	get: return _is_bridge
+var link_type: LINK_TYPE:
+	get: return _link_type
 
 var _parent_region: BrainRegion
 var _source: GenomeObject = null
 var _destination: GenomeObject = null
 var _parent_chain: ConnectionChain
-var _is_bridge: bool
-var _is_input_in_source: bool = false
-var _is_input_in_destination: bool = false
+var _link_type: LINK_TYPE
+
+## Given 2 objects, what kind of connection link would be formed?
+static func determine_link_type(start: GenomeObject, end: GenomeObject) -> LINK_TYPE:
+	if start is BaseCorticalArea:
+		if end is BaseCorticalArea:
+			return LINK_TYPE.BRIDGE
+		return LINK_TYPE.PARENTS_OUTPUT
+	if end is BaseCorticalArea:
+		return LINK_TYPE.PARENTS_INPUT
+	# Both are regions
+	if (start as BrainRegion).parent_region.ID == (end as BrainRegion).parent_region.ID:
+		return LINK_TYPE.BRIDGE # If the start and end have the same parent, then they must be siblings within it
+	if (start as BrainRegion).ID == (end as BrainRegion).parent_region.ID:
+		return LINK_TYPE.PARENTS_INPUT
+	if (start as BrainRegion).parent_region.ID == (end as BrainRegion).ID:
+		return LINK_TYPE.PARENTS_OUTPUT # If the start and end have the same parent, then they must be siblings within it
+	return LINK_TYPE.INVALID # This can only happen if the 2 objects are not directly next to each other
+	
 
 
-func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: GenomeObject, total_chain: ConnectionChain):
-	var errored: bool = false
+func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: GenomeObject, total_chain: ConnectionChain, link_type_: LINK_TYPE):
 	_parent_region = region_parent
 	_parent_chain = total_chain
 	_source = coming_from
 	_destination = going_to
+	_link_type = link_type_
 	
-	if errored:
-		return # Don't bother signaling if we have null endpoints!
-	
-	# We need to determine if this chain is a bridge(connecting 2 internal elements of the parent element), and/ or
-	# input (connecting the parent region to an internal), or an output ((connecting an internal to the parent region) to each other involved connections
-
-	if coming_from is BaseCorticalArea:
-		(coming_from as BaseCorticalArea).output_add_link(self) # NOTE: the input of this chain is the output of the cortical area
-		_is_input_in_source = false
-		if going_to is BaseCorticalArea:
-			# bridge between 2 internal cortical areas, this must be a bridge
-			(going_to as BaseCorticalArea).input_add_link(self)
-			_is_input_in_destination = true
-			_parent_region.bridge_add_link(self)
-			_is_bridge = true
+	match(_link_type):
+		LINK_TYPE.INVALID:
+			var ID1: StringName
+			if coming_from is BaseCorticalArea:
+				ID1 = coming_from.cortical_ID
+			else:
+				ID1 = (coming_from as BrainRegion).ID
+			var ID2: StringName
+			if going_to is BaseCorticalArea:
+				ID2 = going_to.cortical_ID
+			else:
+				ID2 = (going_to as BrainRegion).ID
+			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [ID1, ID2])
 			return
-		else:
-			# going_to is a region
-			if (going_to as BrainRegion).ID == _parent_region.ID:
-				# We are going to the parent, this isnt a bridge
-				(going_to as BrainRegion).output_add_link(self) # if we are going to parent from the inside, then this must be an output in perspective of the region
-				_is_input_in_destination = false
-				return
-			else:
-				# We are going to another internal member, this is a bridge
-				(going_to as BrainRegion).input_add_link(self) # if we are going to the input of a region, from that regions perspective this is an input
-				_is_input_in_destination = true
-				_parent_region.bridge_add_link(self)
-				_is_bridge = true
-				return
-	else:
-		# coming_from is a region
-		if going_to is BaseCorticalArea:
-			(going_to as BaseCorticalArea).input_add_link(self)
-			_is_input_in_destination = true
-			if (coming_from as BrainRegion).ID == _parent_region.ID:
-				# Not a bridge, coming_from is the parent
-				(coming_from as BrainRegion).input_add_link(self) # If we are coming from a region when we are inside of it, this must be an input to said region
-				_is_input_in_source = true
-				return
-			else:
-				# is a bridge
-				(coming_from as BrainRegion).output_add_link(self) # If we are coming from a region from an outside perspective, this must be an output of that region
-				_is_input_in_source = false
-				_parent_region.bridge_add_link(self)
-				_is_bridge = true
-				return
-				
-		else:
-			# going_to is a region (both are regions)
-			if (coming_from as BrainRegion).ID == _parent_region.ID and (going_to as BrainRegion).ID == _parent_region.ID:
-				# This can only occur during recursions, which isn't allowed
-				push_error("CORE CACHE: Cannot finish init of ConnectionChainLink with the source and destination being the same region!")
-				return
 			
-			if (coming_from as BrainRegion).ID == _parent_region.ID:
-				(coming_from as BrainRegion).input_add_link(self) # If we are coming from a region when we are inside of it, this must be an input to said region
-				_is_input_in_source = true
+		LINK_TYPE.BRIDGE:
+			if coming_from is BaseCorticalArea:
+				(coming_from as BaseCorticalArea).output_add_link(self)
+			else:
+				(coming_from as BrainRegion).output_add_link(self)
+			if going_to is BaseCorticalArea:
+				(going_to as BaseCorticalArea).input_add_link(self)
+			else:
 				(going_to as BrainRegion).input_add_link(self)
-				_is_input_in_destination = true
-				return
-			
-			if (going_to as BrainRegion).ID == _parent_region.ID:
-				(coming_from as BrainRegion).output_add_link(self) # If we are going to a region when we are inside of it, this must be an output to said region
-				_is_input_in_source = false
-				(going_to as BrainRegion).output_add_link(self)
-				_is_input_in_destination = false
-				return
-			
-			# This is a bridge, connecting 2 internal regions
-			(coming_from as BrainRegion).output_add_link(self)
-			_is_input_in_source = false
-			(going_to as BrainRegion).input_add_link(self)
-			_is_input_in_destination = true
 			_parent_region.bridge_add_link(self)
-			_is_bridge = true
+		
+		LINK_TYPE.PARENTS_OUTPUT:
+			if coming_from is BaseCorticalArea:
+				(coming_from as BaseCorticalArea).output_add_link(self)
+			else:
+				(coming_from as BrainRegion).output_add_link(self)
+			if going_to is BaseCorticalArea:
+				(going_to as BaseCorticalArea).output_add_link(self)
+			else:
+				(going_to as BrainRegion).output_add_link(self)
+		
+		LINK_TYPE.PARENTS_INPUT:
+			if coming_from is BaseCorticalArea:
+				(coming_from as BaseCorticalArea).input_add_link(self)
+			else:
+				(coming_from as BrainRegion).input_add_link(self)
+			if going_to is BaseCorticalArea:
+				(going_to as BaseCorticalArea).input_add_link(self)
+			else:
+				(going_to as BrainRegion).input_add_link(self)
 
 
 ## Called by [ConnectionChain] when this object is about to be deleted
 func prepare_to_delete() -> void:
-	# source
-	if _source is BaseCorticalArea:
-		if _is_input_in_source:
-			(_source as BaseCorticalArea).input_remove_link(self)
-		else:
-			(_source as BaseCorticalArea).output_remove_link(self)
-	else:
-		if _is_input_in_source:
-			(_source as BrainRegion).input_remove_link(self)
-		else:
-			(_source as BrainRegion).output_remove_link(self)
-	
-	# destination
-	if _destination is BaseCorticalArea:
-		if _is_input_in_destination:
-			(_destination as BaseCorticalArea).input_remove_link(self)
-		else:
-			(_destination as BaseCorticalArea).output_remove_link(self)
-	else:
-		if _is_input_in_destination:
-			(_destination as BrainRegion).input_remove_link(self)
-		else:
-			(_destination as BrainRegion).output_remove_link(self)
-	
-	# bridge if applicable
-	if _is_bridge:
-		# can only be parent
-		_parent_region.bridge_remove_link(self)
+	about_to_be_removed.emit()
+	match(_link_type):
+		LINK_TYPE.INVALID:
+			# We didnt register with anything, nothing to remove
+			pass
+			
+		LINK_TYPE.BRIDGE:
+			if _source is BaseCorticalArea:
+				(_source as BaseCorticalArea).output_remove_link(self)
+			else:
+				(_source as BrainRegion).output_remove_link(self)
+			if _destination is BaseCorticalArea:
+				(_destination as BaseCorticalArea).input_remove_link(self)
+			else:
+				(_destination as BrainRegion).input_remove_link(self)
+			_parent_region.bridge_remove_link(self)
+		
+		LINK_TYPE.PARENTS_OUTPUT:
+			if _source is BaseCorticalArea:
+				(_source as BaseCorticalArea).output_remove_link(self)
+			else:
+				(_source as BrainRegion).output_remove_link(self)
+			if _destination is BaseCorticalArea:
+				(_destination as BaseCorticalArea).output_remove_link(self)
+			else:
+				(_destination as BrainRegion).output_remove_link(self)
 
+		LINK_TYPE.PARENTS_INPUT:
+			if _source is BaseCorticalArea:
+				(_source as BaseCorticalArea).input_remove_link(self)
+			else:
+				(_source as BrainRegion).input_remove_link(self)
+			if _destination is BaseCorticalArea:
+				(_destination as BaseCorticalArea).input_remove_link(self)
+			else:
+				(_destination as BrainRegion).input_remove_link(self)
+	
 	
 
 
