@@ -38,6 +38,8 @@ func setup(region: BrainRegion) -> void:
 	region.cortical_area_removed_from_region.connect(CACHE_remove_cortical_area)
 	region.subregion_added_to_region.connect(CACHE_add_subregion)
 	region.subregion_removed_from_region.connect(CACHE_remove_subregion)
+	
+	region.bridge_link_added.connect(CACHE_link_bridge_added)
 
 #region Responses to Cache Signals
 
@@ -81,6 +83,20 @@ func CACHE_remove_subregion(subregion: BrainRegion) -> void:
 func CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
 
+func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
+	var node_start: Variant
+	if link.source is BaseCorticalArea:
+		node_start = _cortical_nodes[link.source.cortical_ID]
+		(node_start as CBNodeCorticalArea).CB_add_external_connection_port(false, "blank")
+		
+	var node_end: Variant
+	if link.destination is BaseCorticalArea:
+		node_end = _cortical_nodes[link.destination.cortical_ID]
+		(node_end as CBNodeCorticalArea).CB_add_external_connection_port(true, "blank")
+	
+	
+	
+	
 #endregion
 
 

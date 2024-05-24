@@ -9,6 +9,8 @@ var _recursives: VBoxContainer
 var _inputs: VBoxContainer
 var _outputs: VBoxContainer
 
+const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")
+
 func _ready():
 	_recursives = $Recursive
 	_inputs = $Inputs
@@ -44,8 +46,14 @@ func CB_add_recursive_connection_port() -> void:
 	pass
 
 ## Called by [CircuitBuilder], add an external connection
-func CB_add_external_connection_port(is_input: bool) -> void:
-	pass
+func CB_add_external_connection_port(is_input: bool, text: StringName) -> void:
+	var port: CBNodeTerminal = PREFAB_NODE_TERMINAL.instantiate()
+	if is_input:
+		port.setup(CBNodeTerminal.TYPE.INPUT, text)
+		_inputs.add_child(port)
+	else:
+		port.setup(CBNodeTerminal.TYPE.OUTPUT, text)
+		_outputs.add_child(port)
 
 #endregion
 
