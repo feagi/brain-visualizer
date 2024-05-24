@@ -1,23 +1,22 @@
-extends GraphNode
+extends CGNodeConnectableBase
 class_name CBNodeCorticalArea
 
 var representing_cortical_area: BaseCorticalArea:
 	get: return _representing_cortical_area
 
 var _representing_cortical_area: BaseCorticalArea
-var _recursives: VBoxContainer
-var _inputs: VBoxContainer
-var _outputs: VBoxContainer
 
-const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")
 
-func _ready():
-	_recursives = $Recursive
-	_inputs = $Inputs
-	_outputs = $Outputs
+
+
 
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: BaseCorticalArea) -> void:
+	var input_path: NodePath = NodePath("Inputs")
+	var output_path: NodePath = NodePath("Outputs")
+	var recursive_path: NodePath = NodePath("Recursive")
+	setup_base(recursive_path, input_path, output_path)
+	
 	_representing_cortical_area = cortical_area_ref
 	_setup_node_color(cortical_area_ref.group)
 	CACHE_updated_cortical_area_name(_representing_cortical_area.name)
@@ -39,23 +38,7 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 
 #endregion
 
-#region CB and Line Interactions
 
-## Called by [CircuitBuilder], add a recursive connection
-func CB_add_recursive_connection_port() -> void:
-	pass
-
-## Called by [CircuitBuilder], add an external connection
-func CB_add_external_connection_port(is_input: bool, text: StringName) -> void:
-	var port: CBNodeTerminal = PREFAB_NODE_TERMINAL.instantiate()
-	if is_input:
-		port.setup(CBNodeTerminal.TYPE.INPUT, text)
-		_inputs.add_child(port)
-	else:
-		port.setup(CBNodeTerminal.TYPE.OUTPUT, text)
-		_outputs.add_child(port)
-
-#endregion
 
 #region Internal logic
 

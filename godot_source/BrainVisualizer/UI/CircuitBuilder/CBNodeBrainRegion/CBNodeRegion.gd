@@ -1,19 +1,19 @@
-extends GraphNode
+extends CGNodeConnectableBase
 class_name CBNodeRegion
 
 var representing_region: BrainRegion:
 	get: return _representing_region
 
 var _representing_region: BrainRegion
-var _inputs: VBoxContainer
-var _outputs: VBoxContainer
 
-func _ready():
-	_inputs = $Inputs
-	_outputs = $Outputs
 
 ## Called by CB right after instantiation
 func setup(region_ref: BrainRegion) -> void:
+	var input_path: NodePath = NodePath("Inputs")
+	var output_path: NodePath = NodePath("Outputs")
+	var recursive_path: NodePath = NodePath("") # Regions dont have recursives
+	setup_base(recursive_path, input_path, output_path)
+	
 	_representing_region = region_ref
 	CACHE_updated_region_name(region_ref.name)
 	CACHE_updated_2D_position(region_ref.coordinates_2d)
@@ -36,9 +36,6 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 
 #region CB and Line Interactions
 
-## Called by [CircuitBuilder], add an external connection
-func CB_add_external_connection_port(is_input: bool) -> void:
-	pass
 
 #endregion
 

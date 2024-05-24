@@ -162,6 +162,8 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	var end_region: BrainRegion
 	if is_end_cortical_area:
 		end_region = (stoppping_point as BaseCorticalArea).current_region
+		if (stoppping_point as BaseCorticalArea).cortical_ID == "CJWM3_":
+			print("A")
 	else:
 		end_region = stoppping_point
 	

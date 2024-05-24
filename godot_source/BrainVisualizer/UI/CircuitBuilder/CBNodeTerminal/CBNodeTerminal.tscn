@@ -19,7 +19,7 @@ texture = ExtResource("2_cjkde")
 expand_mode = 3
 script = ExtResource("3_4j7d3")
 
-[node name="Label" type="Button" parent="."]
+[node name="Button" type="Button" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "NOT SET"

@@ -10,6 +10,7 @@ class_name CircuitBuilder
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
+const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -31,6 +32,9 @@ func setup(region: BrainRegion) -> void:
 	for subregion: BrainRegion in _representing_region.contained_regions:
 		CACHE_add_subregion(subregion)
 	
+	for bridge_link: ConnectionChainLink in _representing_region.bridge_chain_links:
+		CACHE_link_bridge_added(bridge_link)
+	
 	name = region.name
 	
 	region.name_updated.connect(CACHE_this_region_name_update)
@@ -38,7 +42,6 @@ func setup(region: BrainRegion) -> void:
 	region.cortical_area_removed_from_region.connect(CACHE_remove_cortical_area)
 	region.subregion_added_to_region.connect(CACHE_add_subregion)
 	region.subregion_removed_from_region.connect(CACHE_remove_subregion)
-	
 	region.bridge_link_added.connect(CACHE_link_bridge_added)
 
 #region Responses to Cache Signals
@@ -84,19 +87,19 @@ func CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
 
 func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
-	var node_start: Variant
-	if link.source is BaseCorticalArea:
-		node_start = _cortical_nodes[link.source.cortical_ID]
-		(node_start as CBNodeCorticalArea).CB_add_external_connection_port(false, "blank")
-		
-	var node_end: Variant
-	if link.destination is BaseCorticalArea:
-		node_end = _cortical_nodes[link.destination.cortical_ID]
-		(node_end as CBNodeCorticalArea).CB_add_external_connection_port(true, "blank")
-	
-	
-	
-	
+	var source_node: CGNodeConnectableBase =  _get_associated_connectable_graph_node(link.source)
+	var destination_node: CGNodeConnectableBase =  _get_associated_connectable_graph_node(link.destination)
+	if (source_node == null) or (destination_node == null):
+		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
+		return
+
+	if source_node == destination_node:
+		#This is a recursive connection
+		source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.RECURSIVE, source_node.title, PREFAB_NODE_TERMINAL)
+		return
+	source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
+	destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, source_node.title, PREFAB_NODE_TERMINAL)
+
 #endregion
 
 
@@ -107,3 +110,21 @@ func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
 #endregion
+
+#region Internals
+
+## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
+func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CGNodeConnectableBase:
+	if genome_object is BaseCorticalArea:
+		if !((genome_object as BaseCorticalArea).cortical_ID in _cortical_nodes.keys()):
+			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as BaseCorticalArea).cortical_ID, _representing_region.ID])
+			return null
+		return _cortical_nodes[(genome_object as BaseCorticalArea).cortical_ID]
+	else:
+		#brain region
+		if !((genome_object as BrainRegion).ID in _subregion_nodes.keys()):
+			push_error("UI CB: Unable to find region %s node in CB for region %s" % [(genome_object as BrainRegion).ID, _representing_region.ID])
+			return null
+		return _subregion_nodes[(genome_object as BrainRegion).ID]
+#endregion
+

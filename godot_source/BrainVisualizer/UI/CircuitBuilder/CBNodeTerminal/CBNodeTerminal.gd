@@ -20,13 +20,12 @@ var _tex_recursive: TextureRect
 var _button: Button
 
 
-func _ready():
+func setup(terminal_type_: TYPE, terminal_text: StringName):
 	_tex_input = $input
 	_tex_output = $output
 	_tex_recursive = $recurse
 	_button = $Button
-
-func setup(terminal_type_: TYPE, terminal_text: StringName):
+	
 	_terminal_type = terminal_type_
 	update_text(terminal_text)
 	match(_terminal_type):
