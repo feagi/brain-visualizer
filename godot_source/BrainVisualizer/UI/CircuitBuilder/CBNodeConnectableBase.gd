@@ -69,5 +69,4 @@ func _apply_local_offset_to_terminal_container(container: BoxContainer, new_loca
 	for terminal: CBNodeTerminal in container.get_children():
 		terminal.node_offset_has_changed(new_local_offset)
 		terminal.terminal_has_moved()
-	
 

@@ -2,6 +2,7 @@ extends TextureRect
 class_name CBNodePort
 
 signal node_moved()
+signal deletion_requested()
 
 ## The position this port is relative to the root [CBNodeConnectableBase]
 var CB_node_offset: Vector2:
@@ -19,3 +20,7 @@ func node_has_moved() -> void:
 
 func get_center_port_position() -> Vector2:
 	return _CB_node_offset + position + (size / 2.0)
+
+## Called by the associated [CBLineInterTerminal] when its [ConnectionChainLink] reports its about to be deleted
+func request_deletion() -> void:
+	deletion_requested.emit()

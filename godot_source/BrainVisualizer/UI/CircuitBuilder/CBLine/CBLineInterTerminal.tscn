@@ -13,7 +13,7 @@ shader_parameter/numDivisions = 100.0
 shader_parameter/linConstant = 0.0
 shader_parameter/linSlope = 0.0
 
-[node name="CBLineInterTerminal" type="Node2D"]
+[node name="CBLineInterTerminal" type="GraphElement"]
 script = ExtResource("1_ettob")
 
 [node name="Line2D" type="Line2D" parent="."]
@@ -26,5 +26,7 @@ end_cap_mode = 2
 antialiased = true
 
 [node name="Button" type="Button" parent="."]
+visible = false
+layout_mode = 2
 size_flags_horizontal = 4
 text = "0"

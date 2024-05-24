@@ -11,6 +11,7 @@ class_name CircuitBuilder
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
 const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")
+const PREFAB_NODE_PORT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.tscn")
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -97,8 +98,12 @@ func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 		#This is a recursive connection
 		source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.RECURSIVE, source_node.title, PREFAB_NODE_TERMINAL)
 		return
-	source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
-	destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	
+	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
+	add_child(line)
+	line.setup(source_terminal.get_active_port(), destination_terminal.get_active_port(), link)
 
 #endregion
 
@@ -127,4 +132,3 @@ func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNo
 			return null
 		return _subregion_nodes[(genome_object as BrainRegion).ID]
 #endregion
-

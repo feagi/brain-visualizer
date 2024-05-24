@@ -1,7 +1,8 @@
 extends HBoxContainer
 class_name CBNodeTerminal
 
-signal terminal_moved()
+
+signal terminal_about_to_be_deleted() 
 
 enum TYPE {
 	INPUT,
@@ -43,7 +44,7 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 		TYPE.OUTPUT:
 			_tex_output.visible = true
 
-func get_active_terminal() -> TextureRect:
+func get_active_port() -> CBNodePort:
 	match(_terminal_type):
 		TYPE.INPUT:
 			return _tex_input
@@ -62,6 +63,9 @@ func node_offset_has_changed(higher_offset: Vector2) -> void:
 
 ## Called by the root [CBNodeConnectableBase] when this terminal moves either as a response to this objects relative position (called after node_offset_has_changed) or if the whole node is moved in the GraphEdit
 func terminal_has_moved() -> void:
-	get_active_terminal().node_has_moved()
+	get_active_port().node_has_moved()
 
+func _port_reporting_deletion() -> void:
+	terminal_about_to_be_deleted.emit()
+	queue_free()
 

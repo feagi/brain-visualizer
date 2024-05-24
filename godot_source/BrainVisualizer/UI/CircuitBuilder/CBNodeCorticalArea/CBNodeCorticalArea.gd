@@ -21,10 +21,11 @@ func setup(cortical_area_ref: BaseCorticalArea) -> void:
 	_setup_node_color(cortical_area_ref.group)
 	CACHE_updated_cortical_area_name(_representing_cortical_area.name)
 	CACHE_updated_2D_position(_representing_cortical_area.coordinates_2D)
+	name = cortical_area_ref.cortical_ID
 	
 	_representing_cortical_area.name_updated.connect(CACHE_updated_cortical_area_name)
 	_representing_cortical_area.coordinates_2D_updated.connect(CACHE_updated_2D_position)
-
+	
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
 #region CACHE Events and responses
 
