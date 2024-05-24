@@ -1,4 +1,4 @@
-extends CGNodeConnectableBase
+extends CBNodeConnectableBase
 class_name CBNodeCorticalArea
 
 var representing_cortical_area: BaseCorticalArea:
@@ -39,6 +39,18 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 #endregion
 
 
+#region CB events and responses
+
+## For CB to add a terminal. We extend this function here since we need to update terminal positions, and we know where the container is in this level
+func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:
+	var terminal: CBNodeTerminal =  super(connection_type, text, port_prefab)
+	
+	
+	
+	return terminal
+
+
+#endregion
 
 #region Internal logic
 

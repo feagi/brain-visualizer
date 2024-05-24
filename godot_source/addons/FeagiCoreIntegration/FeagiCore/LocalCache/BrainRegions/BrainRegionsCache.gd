@@ -124,7 +124,7 @@ func get_directional_path_between_regions(source: BrainRegion, destination: Brai
 	
 	var destination_path: Array[BrainRegion] = destination.get_path()
 	index = destination_path.find(lowest_common_region)
-	var downward_path: Array[BrainRegion]  = destination_path.slice(0, index)
+	var downward_path: Array[BrainRegion]  = destination_path.slice(index + 1, len(destination_path))
 	
 	return [upward_path, downward_path]
 

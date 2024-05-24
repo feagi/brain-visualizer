@@ -1,4 +1,4 @@
-extends CGNodeConnectableBase
+extends CBNodeConnectableBase
 class_name CBNodeRegion
 
 var representing_region: BrainRegion:

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.gd" id="1_rgycm"]
 [ext_resource type="Texture2D" uid="uid://dbibcfvmx0lyl" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Resources/cb-port.png" id="2_cjkde"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/TerminalPortTexture.gd" id="3_4j7d3"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodePort.gd" id="3_t8yws"]
 [ext_resource type="Texture2D" uid="uid://dabud18kgwx4c" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Resources/cb-port-plastic.png" id="4_cuk3b"]
 
 [node name="CbNodeTerminal" type="HBoxContainer"]
@@ -17,7 +17,7 @@ size_flags_horizontal = 5
 size_flags_vertical = 5
 texture = ExtResource("2_cjkde")
 expand_mode = 3
-script = ExtResource("3_4j7d3")
+script = ExtResource("3_t8yws")
 
 [node name="Button" type="Button" parent="."]
 layout_mode = 2
@@ -32,7 +32,7 @@ size_flags_horizontal = 5
 size_flags_vertical = 5
 texture = ExtResource("2_cjkde")
 expand_mode = 3
-script = ExtResource("3_4j7d3")
+script = ExtResource("3_t8yws")
 
 [node name="recurse" type="TextureRect" parent="."]
 visible = false
@@ -42,4 +42,4 @@ size_flags_horizontal = 5
 size_flags_vertical = 5
 texture = ExtResource("4_cuk3b")
 expand_mode = 3
-script = ExtResource("3_4j7d3")
+script = ExtResource("3_t8yws")

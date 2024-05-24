@@ -87,8 +87,8 @@ func CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
 
 func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
-	var source_node: CGNodeConnectableBase =  _get_associated_connectable_graph_node(link.source)
-	var destination_node: CGNodeConnectableBase =  _get_associated_connectable_graph_node(link.destination)
+	var source_node: CBNodeConnectableBase =  _get_associated_connectable_graph_node(link.source)
+	var destination_node: CBNodeConnectableBase =  _get_associated_connectable_graph_node(link.destination)
 	if (source_node == null) or (destination_node == null):
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
 		return
@@ -98,7 +98,7 @@ func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 		source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.RECURSIVE, source_node.title, PREFAB_NODE_TERMINAL)
 		return
 	source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
-	destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
 
 #endregion
 
@@ -114,7 +114,7 @@ func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 #region Internals
 
 ## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
-func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CGNodeConnectableBase:
+func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:
 	if genome_object is BaseCorticalArea:
 		if !((genome_object as BaseCorticalArea).cortical_ID in _cortical_nodes.keys()):
 			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as BaseCorticalArea).cortical_ID, _representing_region.ID])
