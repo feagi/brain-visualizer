@@ -7,14 +7,16 @@ signal cache_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
+var brain_regions: BrainRegionsCache
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
-var brain_regions: BrainRegionsCache
+var mapping_data: MappingsCache
 
 func _init():
 	cortical_areas = CorticalAreasCache.new()
 	morphologies = MorphologiesCache.new()
 	brain_regions = BrainRegionsCache.new()
+	mapping_data = MappingsCache.new()
 
 
 ## Given several summary datas from FEAGI, we can build the entire cache at once
@@ -35,30 +37,7 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	var cortical_area_IDs_mapped_to_parent_regions_IDs = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary) 
 	cortical_areas.FEAGI_load_all_cortical_areas(cortical_area_summary, cortical_area_IDs_mapped_to_parent_regions_IDs)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
-	
-	
-	
-	
-	
-	# Mappings
-	for source_cortical_ID: StringName in mapping_summary.keys():
-		if !(source_cortical_ID in cortical_areas.available_cortical_areas.keys()):
-			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
-			continue
-			
-		var mapping_targets: Dictionary = mapping_summary[source_cortical_ID]
-		for destination_cortical_ID: StringName in mapping_targets.keys():
-			if !(destination_cortical_ID in cortical_areas.available_cortical_areas.keys()):
-				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % destination_cortical_ID)
-				continue
-			#NOTE: Instead of verifying the morphology exists, we will allow [MappingProperty]'s  system handle it, as it has a fallback should it not be found
-			var source_area: BaseCorticalArea = cortical_areas.available_cortical_areas[source_cortical_ID]
-			var destination_area: BaseCorticalArea = cortical_areas.available_cortical_areas[destination_cortical_ID]
-			var mapping_dictionaries: Array[Dictionary] = [] # Why doesnt godot support type inference for arrays yet?
-			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
-			var mappings: Array[MappingProperty] = MappingProperty.from_array_of_dict(mapping_dictionaries)
-			source_area.set_mappings_to_efferent_area(destination_area, mappings)
-	
+	mapping_data.FEAGI_load_all_mappings(mapping_summary)
 
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")

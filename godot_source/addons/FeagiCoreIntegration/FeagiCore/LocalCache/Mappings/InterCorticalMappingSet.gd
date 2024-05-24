@@ -1,13 +1,7 @@
 extends RefCounted
 class_name InterCorticalMappingSet
 ## A set of properties decribing the mapping connection between 2 cortical areas
-## NOTE: Is essentially relegated to be created in the cache, not elsewhere
-
-enum SIGNAL_TYPE{
-	EXCITATORY,
-	INHIBITORY,
-	MIXED
-}
+## NOTE: This is essentially relegated to be created in the cache, not elsewhere
 
 signal mappings_changed(self_mappings: InterCorticalMappingSet)
 signal mappings_about_to_be_deleted()
@@ -18,6 +12,8 @@ var destination_cortical_area: BaseCorticalArea:
 	get: return _dst_cortical
 var mappings: Array[SingleMappingDefinition]:
 	get: return _mappings
+var connection_chain: ConnectionChain:
+	get: return _connection_chain
 var number_mappings: int:
 	get: return len(_mappings)
 var max_number_mappings_supported: int:
@@ -34,6 +30,7 @@ var _dst_cortical: BaseCorticalArea
 var _mappings: Array[SingleMappingDefinition]
 var _max_number_mappings_supported: int = -1
 var _morphologies_restricted_to: Array[BaseMorphology] = []
+var _connection_chain: ConnectionChain
 
 ## Create Object
 func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings_between_them: Array[SingleMappingDefinition]) -> void:
@@ -42,8 +39,7 @@ func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, ma
 	_mappings = mappings_between_them
 	_max_number_mappings_supported = MappingHints.get_allowed_mapping_count(source_area, destination_area)
 	_morphologies_restricted_to = MappingHints.get_allowed_morphologies_to_map_toward(source_area, destination_area)
-	#source_area.parent_region_changed.connect(_proxy_region_change)
-	#destination_area.parent_region_changed.connect(_proxy_region_change)
+	_connection_chain = ConnectionChain.from_established_FEAGI_mapping(self)
 
 ## Create object from FEAGI JSON data
 static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> InterCorticalMappingSet:
@@ -54,6 +50,7 @@ static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], so
 func FEAGI_updated_mappings(FEAGI_mappings_JSON: Array[Dictionary]) -> void:
 	_mappings = SingleMappingDefinition.from_FEAGI_JSON_array(FEAGI_mappings_JSON)
 	mappings_changed.emit(self)
+	_connection_chain.FEAGI_updated_associated_mapping_set()
 
 ## Returns true if any other internal mappings are plastic
 func is_any_mapping_plastic() -> bool:
@@ -79,13 +76,13 @@ func is_any_PSP_multiplier_negative() -> bool:
 func is_PSP_multiplers_mixed_sign() -> bool:
 	return is_any_PSP_multiplier_negative() and is_any_PSP_multiplier_positive()
 
-func get_PSP_signal_type() -> SIGNAL_TYPE:
+func get_PSP_signal_type() -> MappingsCache.SIGNAL_TYPE:
 	if is_any_PSP_multiplier_negative():
 		if is_any_PSP_multiplier_positive():
-			return SIGNAL_TYPE.MIXED
+			return MappingsCache.SIGNAL_TYPE.MIXED
 		else:
-			return SIGNAL_TYPE.INHIBITORY
-	return SIGNAL_TYPE.EXCITATORY
+			return MappingsCache.SIGNAL_TYPE.INHIBITORY
+	return MappingsCache.SIGNAL_TYPE.EXCITATORY
 
 ## Returns true if the connection maps a cortical area toward itself
 func is_recursive() -> bool:
@@ -95,7 +92,4 @@ func is_recursive() -> bool:
 func is_empty() -> bool:
 	return len(_mappings) == 0
 
-## Get Ascending then descending Brain Region Path, ends inclusive of start / stop locations
-func get_paths_through_regions() -> Array[Array]:
-	return FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(_src_cortical.current_region, _dst_cortical.current_region)
 

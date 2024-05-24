@@ -3,6 +3,7 @@ class_name ConnectionChainLink
 ## Stores a single connection between 2 elements directly within a region
 ## NOTE: Is read only following creation
 
+signal associated_mapping_set_updated()
 signal about_to_be_removed()
 
 enum LINK_TYPE {
@@ -101,6 +102,10 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 				(going_to as BaseCorticalArea).input_add_link(self)
 			else:
 				(going_to as BrainRegion).input_add_link(self)
+
+## Called from [ConnectionChain] when the associated mapping set gets updated
+func FEAGI_updated_associated_mapping_set() -> void:
+	associated_mapping_set_updated.emit()
 
 
 ## Called by [ConnectionChain] when this object is about to be deleted

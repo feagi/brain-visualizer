@@ -2,6 +2,7 @@ extends RefCounted
 class_name ConnectionChain
 ## Stores information about the path connections / connection hints take through regions
 
+signal associated_mapping_set_updated()
 signal about_to_be_deleted()
 
 var source: GenomeObject:
@@ -96,3 +97,8 @@ func FEAGI_prepare_to_delete() -> void:
 	about_to_be_deleted.emit()
 	_chain_links = []
 
+## Called by [InterCorticalMappingSert] when it gets updated gets updated
+func FEAGI_updated_associated_mapping_set() -> void:
+	associated_mapping_set_updated.emit()
+	for chain_link in _chain_links:
+		chain_link.FEAGI_updated_associated_mapping_set()

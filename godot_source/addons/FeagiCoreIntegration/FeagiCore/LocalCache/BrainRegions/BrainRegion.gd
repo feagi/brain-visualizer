@@ -124,9 +124,11 @@ func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, c
 	_contained_cortical_areas = contained_areas
 
 ## during Genome loading ONLY, after we created the general objects, now we can 
-func init_region_relationships(containing_regions: Array[BrainRegion], parent_region: BrainRegion) -> void:
+func init_region_relationships(containing_regions: Array[BrainRegion]) -> void:
 	_contained_regions = containing_regions
 	_parent_region = parent_region
+	for region in _contained_regions:
+		region.FEAGI_change_parent_region(self)
 
 ## Updates from FEAGI updating this cache object
 #region FEAGI Interactions

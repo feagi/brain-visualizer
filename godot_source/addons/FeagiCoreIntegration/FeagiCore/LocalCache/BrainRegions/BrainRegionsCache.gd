@@ -27,7 +27,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		var child_region_IDs: Array[StringName] = []
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
-		_available_brain_regions[parent_region_ID].init_region_relationships(child_regions, _available_brain_regions[parent_region_ID].parent_region)
+		_available_brain_regions[parent_region_ID].init_region_relationships(child_regions)
 		
 		# Create cortical ID mapping
 		var cortical_IDs: Array[StringName] = []
@@ -111,9 +111,11 @@ func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> 
 ## Defines the directional path with 2 arrays (upward then downward) of the regions to transverse to get from the source to the destination
 ## Example given region layout {R{a,b{c,d{e}},f{g{h}}}, going from d -> g will return [[d,b,R],[R,f,g]]
 func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
-	var lowest_common_region: BrainRegion = get_common_path_containing_both_regions(source, destination).back()
-	if len(lowest_common_region) == 0:
+	var common_path: Array[BrainRegion] = get_common_path_containing_both_regions(source, destination)
+	if len(common_path) == 0:
 		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.ID, destination.ID])
+	var lowest_common_region: BrainRegion = common_path.back()
+
 	
 	var source_path_reversed: Array[BrainRegion] = source.get_path()
 	source_path_reversed.reverse()
