@@ -13,6 +13,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_74usq")
 scroll_offset = Vector2(-64, -64)
+snapping_enabled = false
 show_grid_buttons = false
 show_minimap_button = false
 show_arrange_button = false

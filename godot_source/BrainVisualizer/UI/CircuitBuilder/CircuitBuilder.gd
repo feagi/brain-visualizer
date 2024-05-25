@@ -103,7 +103,7 @@ func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
-	line.setup(source_terminal.get_active_port(), destination_terminal.get_active_port(), link)
+	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
 
 #endregion
 

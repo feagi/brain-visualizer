@@ -1,7 +1,6 @@
 extends HBoxContainer
 class_name CBNodeTerminal
 
-
 signal terminal_about_to_be_deleted() 
 
 enum TYPE {
@@ -12,22 +11,19 @@ enum TYPE {
 
 var terminal_type: TYPE:
 	get: return _terminal_type
+var active_port: CBNodePort:
+	get: return _active_port
 
-## The position this port is relative to the root [CBNodeConnectableBase]
-var CB_node_offset: Vector2:
-	get: return _CB_node_offset
-	
-var _CB_node_offset: Vector2
 var _terminal_type: TYPE ## The type of terminal
+var _active_port: CBNodePort = null # becomes valid after setup
 
-
-var _tex_input: TextureRect
-var _tex_output: TextureRect
-var _tex_recursive: TextureRect
+var _tex_input: CBNodePort
+var _tex_output: CBNodePort
+var _tex_recursive: CBNodePort
 var _button: Button
 var _parent_node: CBNodeConnectableBase
 
-func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeConnectableBase):
+func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeConnectableBase, signal_to_report_updated_position: Signal):
 	_tex_input = $input
 	_tex_output = $output
 	_tex_recursive = $recurse
@@ -39,31 +35,18 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 	match(_terminal_type):
 		TYPE.RECURSIVE:
 			_tex_recursive.visible = true
+			_active_port = _tex_recursive
 		TYPE.INPUT:
 			_tex_input.visible = true
+			_active_port = _tex_input
 		TYPE.OUTPUT:
 			_tex_output.visible = true
-
-func get_active_port() -> CBNodePort:
-	match(_terminal_type):
-		TYPE.INPUT:
-			return _tex_input
-		TYPE.OUTPUT:
-			return _tex_output
-		_:
-			return _tex_recursive
+			_active_port = _tex_output
+	_active_port.setup(parent_node, signal_to_report_updated_position)
 
 
 func update_text(new_text: StringName) -> void:
 	_button.text = new_text
-
-## Called by the root [CBNodeConnectableBase] when something happens that changes this objects relative position inside the node
-func node_offset_has_changed(higher_offset: Vector2) -> void:
-	_CB_node_offset = higher_offset + position
-
-## Called by the root [CBNodeConnectableBase] when this terminal moves either as a response to this objects relative position (called after node_offset_has_changed) or if the whole node is moved in the GraphEdit
-func terminal_has_moved() -> void:
-	get_active_port().node_has_moved()
 
 func _port_reporting_deletion() -> void:
 	terminal_about_to_be_deleted.emit()

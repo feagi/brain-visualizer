@@ -18,7 +18,13 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 
 
 func _update_line_endpoint_positions() -> void:
-	set_line_endpoints(_source_port.get_center_port_position(), _destination_port.get_center_port_position())
+	var CB_source_pos: Vector2 = _source_port.get_center_port_CB_position()
+	var CB_destination_pos: Vector2 = _destination_port.get_center_port_CB_position()
+	position_offset = (CB_source_pos + CB_destination_pos) / 2.0
+	print((CB_source_pos + CB_destination_pos) / 2.0)
+	
+	
+	set_line_endpoints(CB_source_pos, CB_destination_pos)
 
 func _on_link_about_to_be_deleted() -> void:
 	_source_port.request_deletion()

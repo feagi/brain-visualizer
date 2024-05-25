@@ -17,6 +17,7 @@ func line_setup() -> void:
 	var mat: Material = _line.material
 	var unique_line_material: Material = mat.duplicate()
 	_line.material = unique_line_material
+	set_line_dashing(false)
 	
 	for i in NUM_POINTS_PER_CURVE: # TODO optimize! This should be static in TSCN
 		_line.add_point(Vector2(0,0))
