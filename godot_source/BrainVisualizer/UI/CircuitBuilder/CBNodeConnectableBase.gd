@@ -8,11 +8,19 @@ signal output_container_offset_changed()
 
 
 
+
+
+
 var _recursives: VBoxContainer
 var _inputs: VBoxContainer
 var _outputs: VBoxContainer
 
 var _recursive_container_offset: Vector2
+
+func _init():
+	set_notify_local_transform(true)
+
+
 
 
 func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: NodePath) -> void:
@@ -21,7 +29,7 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	if !recursive_path.is_empty():
 		_recursives =  get_node(recursive_path)
 	position_offset_changed.connect(_on_node_move)
-	resized.connect(_on_node_move)
+
 	
 	
 ## Called by [CircuitBuilder] when adding a connection to the Node object
@@ -32,7 +40,7 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 		CBNodeTerminal.TYPE.INPUT:
 			_inputs.add_child(terminal)
 			terminal.setup(CBNodeTerminal.TYPE.INPUT, text, self, input_container_offset_changed)
-			output_container_offset_changed.emit() # because output is below, so all are moved
+
 
 		CBNodeTerminal.TYPE.OUTPUT:
 			_outputs.add_child(terminal)
@@ -42,8 +50,6 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 		CBNodeTerminal.TYPE.RECURSIVE:
 			_recursives.add_child(terminal)
 			terminal.setup(CBNodeTerminal.TYPE.RECURSIVE, text, self, recursive_container_offset_changed)
-			input_container_offset_changed.emit() # both inpouts and outputs are below recursives
-			output_container_offset_changed.emit()
 
 	return terminal
 
