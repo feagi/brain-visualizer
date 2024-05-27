@@ -4,6 +4,10 @@ class_name CBNodePort
 signal node_moved()
 signal deletion_requested()
 
+var root_node: CBNodeConnectableBase:
+	get: return _root_node
+
+
 var _root_node: CBNodeConnectableBase
 
 func setup(root_node: CBNodeConnectableBase, signal_terminals_moving: Signal) -> void:

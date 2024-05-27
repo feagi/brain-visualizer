@@ -7,17 +7,9 @@ signal input_container_offset_changed()
 signal output_container_offset_changed()
 
 
-
-
-
-
 var _recursives: VBoxContainer
 var _inputs: VBoxContainer
 var _outputs: VBoxContainer
-
-var _recursive_container_offset: Vector2
-
-
 
 
 func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: NodePath) -> void:
@@ -39,7 +31,6 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 			_inputs.add_child(terminal)
 			terminal.setup(CBNodeTerminal.TYPE.INPUT, text, self, input_container_offset_changed)
 
-
 		CBNodeTerminal.TYPE.OUTPUT:
 			_outputs.add_child(terminal)
 			terminal.setup(CBNodeTerminal.TYPE.OUTPUT, text, self, output_container_offset_changed)
@@ -55,4 +46,4 @@ func _on_node_move() -> void:
 	recursive_container_offset_changed.emit()
 	input_container_offset_changed.emit()
 	output_container_offset_changed.emit()
-	print(position_offset)
+

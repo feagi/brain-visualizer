@@ -21,6 +21,7 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 	_update_line_endpoint_positions()
 	_source_port.node_moved.connect(_update_line_endpoint_positions)
 	_destination_port.node_moved.connect(_update_line_endpoint_positions)
+	name = "Line_%s->%s" % [source_port.root_node.name,destination_port.root_node.name]
 	
 	if link.parent_chain.is_registered_to_established_mapping_set():
 		# Update line to reflect properties of cortical mapping
@@ -37,7 +38,6 @@ func _update_line_endpoint_positions() -> void:
 	var CB_source_pos: Vector2 = _source_port.get_center_port_CB_position()
 	var CB_destination_pos: Vector2 = _destination_port.get_center_port_CB_position()
 	position_offset = (CB_source_pos + CB_destination_pos) / 2.0
-	print((CB_source_pos + CB_destination_pos) / 2.0)
 	
 	
 	set_line_endpoints(CB_source_pos, CB_destination_pos)

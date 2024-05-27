@@ -159,4 +159,5 @@ func is_source_region() -> bool:
 func is_destination_region() -> bool:
 	return _destination is BrainRegion
 
-
+func is_recursive() -> bool:
+	return _source == _destination

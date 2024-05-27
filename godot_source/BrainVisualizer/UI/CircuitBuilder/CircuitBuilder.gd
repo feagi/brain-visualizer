@@ -10,6 +10,7 @@ class_name CircuitBuilder
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
+const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeRegionIO/CBNodeRegionIO.tscn")
 const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")
 const PREFAB_NODE_PORT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.tscn")
 
@@ -24,30 +25,37 @@ var _cortical_nodes: Dictionary = {}
 var _subregion_nodes: Dictionary = {}
 var _representing_region: BrainRegion
 
+
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	
 	for area: BaseCorticalArea in _representing_region.contained_cortical_areas:
-		CACHE_add_cortical_area(area)
+		_CACHE_add_cortical_area(area)
 	
 	for subregion: BrainRegion in _representing_region.contained_regions:
-		CACHE_add_subregion(subregion)
+		_CACHE_add_subregion(subregion)
 	
 	for bridge_link: ConnectionChainLink in _representing_region.bridge_chain_links:
-		CACHE_link_bridge_added(bridge_link)
+		_CACHE_link_bridge_added(bridge_link)
+	
+	for parent_input: ConnectionChainLink in _representing_region.input_chain_links:
+		_CACHE_link_parent_input_added(parent_input)
+	
+	for parent_output: ConnectionChainLink in _representing_region.output_chain_links:
+		_CACHE_link_parent_output_added(parent_output)
 	
 	name = region.name
 	
-	region.name_updated.connect(CACHE_this_region_name_update)
-	region.cortical_area_added_to_region.connect(CACHE_add_cortical_area)
-	region.cortical_area_removed_from_region.connect(CACHE_remove_cortical_area)
-	region.subregion_added_to_region.connect(CACHE_add_subregion)
-	region.subregion_removed_from_region.connect(CACHE_remove_subregion)
-	region.bridge_link_added.connect(CACHE_link_bridge_added)
+	region.name_updated.connect(_CACHE_this_region_name_update)
+	region.cortical_area_added_to_region.connect(_CACHE_add_cortical_area)
+	region.cortical_area_removed_from_region.connect(_CACHE_remove_cortical_area)
+	region.subregion_added_to_region.connect(_CACHE_add_subregion)
+	region.subregion_removed_from_region.connect(_CACHE_remove_subregion)
+	region.bridge_link_added.connect(_CACHE_link_bridge_added)
 
 #region Responses to Cache Signals
 
-func CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
+func _CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
 	if (area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
 		return
@@ -56,7 +64,7 @@ func CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
 	add_child(cortical_node)
 	cortical_node.setup(area)
 
-func CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
+func _CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
@@ -65,7 +73,7 @@ func CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	cortical_nodes.erase(area.cortical_ID)
 	
 
-func CACHE_add_subregion(subregion: BrainRegion) -> void:
+func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	if (subregion.ID in subregion_nodes.keys()):
 		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.ID)
 		return
@@ -75,7 +83,7 @@ func CACHE_add_subregion(subregion: BrainRegion) -> void:
 	region_node.setup(subregion)
 	region_node.double_clicked.connect(_user_double_clicked_region)
 
-func CACHE_remove_subregion(subregion: BrainRegion) -> void:
+func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.ID in subregion_nodes.keys()):
 		push_error("UI CB: Unable to find region %s to remove node of!" % subregion.ID)
 		return
@@ -84,12 +92,13 @@ func CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	subregion_nodes.erase(subregion.ID)
 
 ## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too
-func CACHE_this_region_name_update(new_name: StringName) -> void:
+func _CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
 
-func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
-	var source_node: CBNodeConnectableBase =  _get_associated_connectable_graph_node(link.source)
-	var destination_node: CBNodeConnectableBase =  _get_associated_connectable_graph_node(link.destination)
+func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
+	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
+	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
+
 	if (source_node == null) or (destination_node == null):
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
 		return
@@ -104,6 +113,43 @@ func CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
+	move_child(line, 0)
+	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+
+func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
+	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
+	
+	if destination_node == null:
+		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
+		return
+	
+	var source_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(true, destination_node)
+	source_node.setup(_representing_region, true)
+	
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+
+	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
+	add_child(line)
+	move_child(line, 0)
+	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+
+func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
+	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
+	
+	if source_node == null:
+		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
+		return
+	
+	var destination_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(true, source_node)
+	destination_node.setup(_representing_region, true)
+	
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+
+	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
+	add_child(line)
+	move_child(line, 0)
 	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
 
 #endregion
@@ -132,4 +178,15 @@ func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNo
 			push_error("UI CB: Unable to find region %s node in CB for region %s" % [(genome_object as BrainRegion).ID, _representing_region.ID])
 			return null
 		return _subregion_nodes[(genome_object as BrainRegion).ID]
+
+func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBNodeRegionIO:
+	var IO_node: CBNodeRegionIO = PREFAB_NODE_REGIONIO.instantiate()
+	add_child(IO_node)
+	if is_region_input:
+		IO_node.position_offset = target_node.position_offset - CBNodeRegionIO.CONNECTED_NODE_OFFSET
+	else:
+		IO_node.position_offset = target_node.position_offset + CBNodeRegionIO.CONNECTED_NODE_OFFSET
+	return IO_node
+	
 #endregion
+
