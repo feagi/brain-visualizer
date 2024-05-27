@@ -39,9 +39,13 @@ func setup(region: BrainRegion) -> void:
 		_CACHE_link_bridge_added(bridge_link)
 	
 	for parent_input: ConnectionChainLink in _representing_region.input_chain_links:
+		if parent_input.parent_region != _representing_region:
+			continue # We do not care about conneciton links that are inside other regions
 		_CACHE_link_parent_input_added(parent_input)
 	
 	for parent_output: ConnectionChainLink in _representing_region.output_chain_links:
+		if parent_output.parent_region != _representing_region:
+			continue # We do not care about conneciton links that are inside other regions
 		_CACHE_link_parent_output_added(parent_output)
 	
 	name = region.name
