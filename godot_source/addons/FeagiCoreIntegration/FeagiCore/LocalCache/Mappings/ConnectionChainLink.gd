@@ -10,7 +10,7 @@ enum LINK_TYPE {
 	BRIDGE, ## The chain link connects 2 internal members of a region
 	PARENTS_OUTPUT, ## The Chain link connects an internal member of a region toward that regions output
 	PARENTS_INPUT, ## The Chain link connects the regions input toward an internal member of that region
-	INVALID ## Can only occur if the pathing makes no sense. Error state!
+	INVALID ## Pathing makes no sense. Error state!
 }
 
 
@@ -109,7 +109,7 @@ func FEAGI_updated_associated_mapping_set() -> void:
 
 
 ## Called by [ConnectionChain] when this object is about to be deleted
-func prepare_to_delete() -> void:
+func FEAGI_prepare_to_delete() -> void:
 	about_to_be_removed.emit()
 	match(_link_type):
 		LINK_TYPE.INVALID:
@@ -146,7 +146,17 @@ func prepare_to_delete() -> void:
 				(_destination as BaseCorticalArea).input_remove_link(self)
 			else:
 				(_destination as BrainRegion).input_remove_link(self)
-	
-	
+
+func is_source_cortical_area() -> bool:
+	return _source is BaseCorticalArea
+
+func is_destination_cortical_area() -> bool:
+	return _destination is BaseCorticalArea
+
+func is_source_region() -> bool:
+	return _source is BrainRegion
+
+func is_destination_region() -> bool:
+	return _destination is BrainRegion
 
 

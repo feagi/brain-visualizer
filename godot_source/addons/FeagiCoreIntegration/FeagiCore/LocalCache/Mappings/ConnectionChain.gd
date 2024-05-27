@@ -93,7 +93,7 @@ func FEAGI_set_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 
 func FEAGI_prepare_to_delete() -> void:
 	for chain_link in _chain_links:
-		chain_link.prepare_to_delete()
+		chain_link.FEAGI_prepare_to_delete()
 	about_to_be_deleted.emit()
 	_chain_links = []
 
@@ -102,3 +102,11 @@ func FEAGI_updated_associated_mapping_set() -> void:
 	associated_mapping_set_updated.emit()
 	for chain_link in _chain_links:
 		chain_link.FEAGI_updated_associated_mapping_set()
+
+## Does this chain correspond to an actual mapping?
+func is_registered_to_established_mapping_set() -> bool:
+	return _mapping_set != null
+
+## Does this chain correspond to a partial mapping set (A 'hint' from an imported region)
+func is_registered_to_partial_mapping_set() -> bool:
+	return _partial_mapping_set != null

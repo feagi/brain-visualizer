@@ -17,9 +17,6 @@ var _outputs: VBoxContainer
 
 var _recursive_container_offset: Vector2
 
-func _init():
-	set_notify_local_transform(true)
-
 
 
 
@@ -29,6 +26,7 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	if !recursive_path.is_empty():
 		_recursives =  get_node(recursive_path)
 	position_offset_changed.connect(_on_node_move)
+	draw.connect(_on_node_move)
 
 	
 	
