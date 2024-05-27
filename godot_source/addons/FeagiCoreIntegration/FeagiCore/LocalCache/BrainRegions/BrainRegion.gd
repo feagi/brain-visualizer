@@ -253,12 +253,30 @@ func is_root_region() -> bool:
 func is_cortical_area_in_region_directly(cortical_area: BaseCorticalArea) -> bool:
 	return cortical_area in _contained_cortical_areas
 
+func is_subregion_directly(region: BrainRegion) -> bool:
+	return region in _contained_regions
+
+func is_genome_object_in_region_directly(object: GenomeObject) -> bool:
+	if object is BaseCorticalArea:
+		return is_cortical_area_in_region_directly(object as BaseCorticalArea)
+	if object is BrainRegion:
+		return is_subregion_directly(object as BrainRegion)
+	return false
+
 ## Returns if a cortical area is within this region (including within another region inside here)
-func is_cortical_area_in_region(cortical_area: BaseCorticalArea) -> bool:
+func is_cortical_area_in_region_recursive(cortical_area: BaseCorticalArea) -> bool:
 	if cortical_area in _contained_cortical_areas:
 		return true
 	for region: BrainRegion in _contained_regions:
-		if region.is_cortical_area_in_region(cortical_area):
+		if region.is_cortical_area_in_region_recursive(cortical_area):
+			return true
+	return false
+
+func is_subregion_recursive(region: BrainRegion) -> bool:
+	for search_region in _contained_regions:
+		if search_region == region:
+			return true
+		if search_region.is_subregion_recursive(region):
 			return true
 	return false
 

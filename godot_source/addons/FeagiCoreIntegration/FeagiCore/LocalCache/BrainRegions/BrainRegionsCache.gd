@@ -75,6 +75,7 @@ func FEAGI_remove_region(region_ID: StringName) -> void:
 func is_root_available() -> bool:
 	return BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()
 
+
 ## Attempts to return the root [BrainRegion]. If it fails, this logs and error and returns null
 func return_root_region() -> BrainRegion:
 	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
@@ -157,13 +158,13 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	var start_region: BrainRegion
 	if is_start_cortical_area:
 		start_region = (starting_point as BaseCorticalArea).current_region
+		if (starting_point as BaseCorticalArea).cortical_ID == "CJWM3_":
+			print("A")
 	else:
 		start_region = starting_point
 	var end_region: BrainRegion
 	if is_end_cortical_area:
 		end_region = (stoppping_point as BaseCorticalArea).current_region
-		if (stoppping_point as BaseCorticalArea).cortical_ID == "CJWM3_":
-			print("A")
 	else:
 		end_region = stoppping_point
 	

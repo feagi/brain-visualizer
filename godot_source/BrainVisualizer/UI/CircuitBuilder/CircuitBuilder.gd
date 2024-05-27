@@ -141,8 +141,8 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
 		return
 	
-	var destination_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(true, source_node)
-	destination_node.setup(_representing_region, true)
+	var destination_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(false, source_node)
+	destination_node.setup(_representing_region, false)
 	
 	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
 	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)

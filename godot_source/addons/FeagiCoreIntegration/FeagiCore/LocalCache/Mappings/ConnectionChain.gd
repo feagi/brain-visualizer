@@ -49,41 +49,41 @@ func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
 	for i in (len(_total_chain_path) - 1):
 		## If either side is a cortical area, then the parent region is the parent region of the cortical area. If both are regions, then the parent is the parent of either region
 		var parent_region: BrainRegion
-		var link_type: ConnectionChainLink.LINK_TYPE = ConnectionChainLink.determine_link_type(_source, _destination)
+		var link_type: ConnectionChainLink.LINK_TYPE = ConnectionChainLink.determine_link_type(_total_chain_path[i], _total_chain_path[i + 1])
 		match(link_type):
 			
 			ConnectionChainLink.LINK_TYPE.INVALID:
 				var ID1: StringName
-				if _source is BaseCorticalArea:
-					ID1 = _source.cortical_ID
+				if _total_chain_path[i] is BaseCorticalArea:
+					ID1 = (_total_chain_path[i] as BaseCorticalArea).cortical_ID
 				else:
-					ID1 = (_source as BrainRegion).ID
+					ID1 = (_total_chain_path[i] as BrainRegion).ID
 				var ID2: StringName
-				if _destination is BaseCorticalArea:
-					ID2 = _destination.cortical_ID
+				if _total_chain_path[i + 1] is BaseCorticalArea:
+					ID2 = (_total_chain_path[i + 1] as BaseCorticalArea).cortical_ID
 				else:
-					ID2 = (_destination as BrainRegion).ID
+					ID2 = (_total_chain_path[i + 1] as BrainRegion).ID
 				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted! Skipping!" % [ID1, ID2])
 			
 			ConnectionChainLink.LINK_TYPE.BRIDGE:
-				if _source is BaseCorticalArea:
-					parent_region = _source.current_region
+				if _total_chain_path[i] is BaseCorticalArea:
+					parent_region = (_total_chain_path[i] as BaseCorticalArea).current_region
 				else:
-					parent_region = (_source as BrainRegion).parent_region
+					parent_region = (_total_chain_path[i] as BrainRegion).parent_region
 			
 			ConnectionChainLink.LINK_TYPE.PARENTS_OUTPUT:
-				if _source is BaseCorticalArea:
-					parent_region = _source.current_region
+				if _total_chain_path[i] is BaseCorticalArea:
+					parent_region = (_total_chain_path[i] as BaseCorticalArea).current_region
 				else:
-					parent_region = (_source as BrainRegion).parent_region
+					parent_region = (_total_chain_path[i] as BrainRegion).parent_region
 			
 			ConnectionChainLink.LINK_TYPE.PARENTS_INPUT:
-				if _destination is BaseCorticalArea:
-					parent_region = _destination.current_region
+				if _total_chain_path[i + 1] is BaseCorticalArea:
+					parent_region = (_total_chain_path[i + 1] as BaseCorticalArea).current_region
 				else:
-					parent_region = (_destination as BrainRegion).parent_region
+					parent_region = (_total_chain_path[i + 1] as BrainRegion).parent_region
 		
-		_chain_links.append(ConnectionChainLink.new(parent_region, total_chain_path[i], total_chain_path[i + 1], self, link_type))
+		_chain_links.append(ConnectionChainLink.new(parent_region, _total_chain_path[i], _total_chain_path[i + 1], self, link_type))
 
 func FEAGI_set_mapping(mapping: InterCorticalMappingSet) -> void:
 	_mapping_set = mapping

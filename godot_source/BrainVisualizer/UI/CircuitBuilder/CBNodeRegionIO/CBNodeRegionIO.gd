@@ -2,7 +2,7 @@ extends CBNodeConnectableBase
 class_name CBNodeRegionIO
 ## Represents an input / output of the region from the INSIDE of said region
 
-const CONNECTED_NODE_OFFSET: Vector2 = Vector2(300, -50)
+const CONNECTED_NODE_OFFSET: Vector2 = Vector2(500, -50)
 
 var _is_input: bool
 

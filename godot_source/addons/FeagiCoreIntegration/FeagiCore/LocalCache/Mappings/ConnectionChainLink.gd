@@ -31,21 +31,19 @@ var _destination: GenomeObject = null
 var _parent_chain: ConnectionChain
 var _link_type: LINK_TYPE
 
-## Given 2 objects, what kind of connection link would be formed?
+#TODO this shouldnt be a seperate static function since it can be confusingly misused easliy
+## Given 2 objects next to each other in a connection chain, what kind of connection link would be formed?
 static func determine_link_type(start: GenomeObject, end: GenomeObject) -> LINK_TYPE:
+	if GenomeObject.are_siblings(start, end):
+		return LINK_TYPE.BRIDGE
 	if start is BaseCorticalArea:
-		if end is BaseCorticalArea:
-			return LINK_TYPE.BRIDGE
 		return LINK_TYPE.PARENTS_OUTPUT
 	if end is BaseCorticalArea:
 		return LINK_TYPE.PARENTS_INPUT
-	# Both are regions
-	if (start as BrainRegion).parent_region.ID == (end as BrainRegion).parent_region.ID:
-		return LINK_TYPE.BRIDGE # If the start and end have the same parent, then they must be siblings within it
-	if (start as BrainRegion).ID == (end as BrainRegion).parent_region.ID:
+	if (start as BrainRegion).is_subregion_directly(end as BrainRegion):
 		return LINK_TYPE.PARENTS_INPUT
-	if (start as BrainRegion).parent_region.ID == (end as BrainRegion).ID:
-		return LINK_TYPE.PARENTS_OUTPUT # If the start and end have the same parent, then they must be siblings within it
+	if (end as BrainRegion).is_subregion_directly(start as BrainRegion):
+		return LINK_TYPE.PARENTS_OUTPUT
 	return LINK_TYPE.INVALID # This can only happen if the 2 objects are not directly next to each other
 	
 
