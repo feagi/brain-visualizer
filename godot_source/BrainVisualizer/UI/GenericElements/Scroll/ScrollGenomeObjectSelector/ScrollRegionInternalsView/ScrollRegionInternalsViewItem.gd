@@ -1,4 +1,4 @@
-extends Container
+extends BoxContainer
 class_name ScrollRegionInternalsViewItem
 
 const PATH_CORTICAL_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png"

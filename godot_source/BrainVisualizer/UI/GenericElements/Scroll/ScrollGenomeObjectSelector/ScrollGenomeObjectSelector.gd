@@ -55,4 +55,9 @@ func _user_selected_region(region: BrainRegion, from_view: ScrollRegionInternals
 
 func _user_selected_cortical_area(area: BaseCorticalArea, from_view: ScrollRegionInternalsView) -> void:
 	_last_selected_area = area
-
+	var index: int = _views.find(from_view)
+	if index == -1:
+		push_error("UI: Unable to find the View")
+		return
+	area_selected.emit(area)
+	_close_to_the_right_of(index + 1)

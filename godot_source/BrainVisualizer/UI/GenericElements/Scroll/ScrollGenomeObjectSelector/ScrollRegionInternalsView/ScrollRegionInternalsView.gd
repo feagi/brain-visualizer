@@ -1,4 +1,4 @@
-extends ScrollContainer
+extends PanelContainer
 class_name ScrollRegionInternalsView
 
 const LIST_ITEM_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsViewItem.tscn")
