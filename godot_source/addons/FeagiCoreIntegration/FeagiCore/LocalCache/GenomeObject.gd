@@ -64,3 +64,10 @@ func get_name() -> StringName:
 	if self is BaseCorticalArea:
 		return (self as BaseCorticalArea).name
 	return "UNKNOWN"
+
+func get_ID() -> StringName:
+	if self is BrainRegion:
+		return (self as BrainRegion).cortical_ID
+	if self is BaseCorticalArea:
+		return (self as BaseCorticalArea).ID
+	return "UNKNOWN"

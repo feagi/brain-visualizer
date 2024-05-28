@@ -1,7 +1,8 @@
-[gd_scene load_steps=11 format=3 uid="uid://cmrolnqpu52u8"]
+[gd_scene load_steps=12 format=3 uid="uid://cmrolnqpu52u8"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Create_Region/WindowCreateRegion.gd" id="1_bf8xt"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_xhweg"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/RegionDropDown.gd" id="3_16rxf"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_yyqls"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_whcst"]
 [ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_l1778"]
@@ -41,11 +42,10 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Parent Region"
 
-[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="RegionDropDown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-editable = false
-script = ExtResource("3_yyqls")
+script = ExtResource("3_16rxf")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
