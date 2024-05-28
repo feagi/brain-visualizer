@@ -22,6 +22,7 @@ func _init():
 func _ready() -> void:
 	mouse_entered.connect(_mouse_entered)
 	mouse_exited.connect(_mouse_exited)
+	_set_appropriate_stylebox(disabled, false, false)
 
 func _gui_input(event: InputEvent) -> void:
 	if _disabled:
@@ -33,6 +34,7 @@ func _gui_input(event: InputEvent) -> void:
 		if !_hovered:
 			return
 		_set_appropriate_stylebox(_disabled, _hovered, mouse_event.pressed)
+		pressed.emit()
 
 func is_hovered() -> bool:
 	return _hovered
@@ -58,17 +60,18 @@ func _set_appropriate_stylebox(is_button_disabled: bool, is_mouse_hovering: bool
 			push_error("Missing panel_disabled for PanelContainerButton")
 		return
 	if is_mouse_hovering:
+		if is_user_clicking_down:
+			if has_theme_stylebox("panel_pressed", "PanelContainerButton"):
+				add_theme_stylebox_override("panel", get_theme_stylebox("panel_pressed", "PanelContainerButton"))
+			else:
+				push_error("Missing panel_pressed for PanelContainerButton")
+			return
 		if has_theme_stylebox("panel_hover", "PanelContainerButton"):
 			add_theme_stylebox_override("panel", get_theme_stylebox("panel_hover", "PanelContainerButton"))
 		else:
 			push_error("Missing panel_hover for PanelContainerButton")
 		return
-	if is_user_clicking_down:
-		if has_theme_stylebox("panel_pressed", "PanelContainerButton"):
-			add_theme_stylebox_override("panel", get_theme_stylebox("panel_pressed", "PanelContainerButton"))
-		else:
-			push_error("Missing panel_pressed for PanelContainerButton")
-		return
+
 	# button just chilling
 	if has_theme_stylebox("panel", "PanelContainerButton"):
 		add_theme_stylebox_override("panel", get_theme_stylebox("panel", "PanelContainerButton"))
