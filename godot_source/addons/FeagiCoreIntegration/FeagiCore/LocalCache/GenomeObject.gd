@@ -2,6 +2,15 @@ extends RefCounted
 class_name GenomeObject
 ## Any singular object that exists in the genome (essentially any object that can be within a region) that can be linked
 
+enum ARRAY_MAKEUP {
+	SINGLE_CORTICAL_AREA,
+	SINGLE_BRAIN_REGION,
+	MULTIPLE_CORTICAL_AREAS,
+	MULTIPLE_BRAIN_REGIONS,
+	VARIOUS_GENOME_OBJECTS,
+	UNKNOWN
+}
+
 static func are_siblings(A: GenomeObject, B: GenomeObject) -> bool:
 	var par_A: BrainRegion = A.get_parent_region()
 	var par_B: BrainRegion = B.get_parent_region()
@@ -9,7 +18,34 @@ static func are_siblings(A: GenomeObject, B: GenomeObject) -> bool:
 	if (par_A == null) or (par_B == null):
 		return false
 	return par_A.ID == par_B.ID
+
+
+static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MAKEUP:
+	if len(genome_objects) == 0:
+		return ARRAY_MAKEUP.UNKNOWN
+	if len(genome_objects) == 1:
+		if genome_objects[0] is BaseCorticalArea:
+			return ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
+		if genome_objects[0] is BrainRegion:
+			return ARRAY_MAKEUP.SINGLE_BRAIN_REGION
+		return ARRAY_MAKEUP.UNKNOWN
+	var br: bool
+	var ca: bool
+	for selection in genome_objects:
+		if selection is BaseCorticalArea:
+			ca = true
+			continue
+		if selection is BrainRegion:
+			br = true
+			continue
+		return ARRAY_MAKEUP.UNKNOWN
 		
+	if br and ca:
+		return ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
+	if br:
+		return ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS
+	return ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
+
 	
 ## Generic function to ge tthe parent region of a [GenomeObject]. Returns null if this is run on the root parent
 func get_parent_region() -> BrainRegion:

@@ -67,14 +67,14 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> void:
 	var configurable_popup: WindowConfigurablePopup = _default_spawn_window(_prefab_configurable_popup, popup_definition.window_name) as WindowConfigurablePopup
 	configurable_popup.setup(popup_definition)
 
-func spawn_quick_cortical_menu(cortical_area: BaseCorticalArea) -> void:
+func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject]) -> void:
 	# cortical area was selected, make sure its selected in both sides
-	if "quick_connect" in loaded_windows:
-		return # dont open this window if quick connect is open!
-	if "left_bar" in loaded_windows:
-		spawn_cortical_properties(cortical_area) # if cortical properties is open, refresh it
+	#if "quick_connect" in loaded_windows:
+	#	return # dont open this window if quick connect is open!
+	#if "left_bar" in loaded_windows:
+	#	spawn_cortical_properties(cortical_area) # if cortical properties is open, refresh it #TODO
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_prefab_quick_cortical_menu, "quick_cortical_menu") as QuickCorticalMenu
-	quick_cortical_menu.setup(cortical_area)
+	quick_cortical_menu.setup(selected_objects)
 	
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	if "import_amalgamation" in loaded_windows:

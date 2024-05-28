@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://c4nh5ikljookn"]
+[gd_scene load_steps=23 format=3 uid="uid://c4nh5ikljookn"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Quick_Cortical_Menu/QuickCorticalMenu.gd" id="1_8td17"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_iacyx"]
@@ -10,9 +10,13 @@
 [ext_resource type="Texture2D" uid="uid://citjc28nshych" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_H.png" id="9_8220t"]
 [ext_resource type="Texture2D" uid="uid://8q1ac1u70yrj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_C.png" id="10_apr2r"]
 [ext_resource type="Texture2D" uid="uid://bn7md8hhhbwge" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_D.png" id="10_op4fb"]
+[ext_resource type="Texture2D" uid="uid://diblnvtxqfa70" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_S.png" id="11_60rj6"]
 [ext_resource type="Texture2D" uid="uid://d1k3sn8mfuya7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_S.png" id="11_hl6lb"]
 [ext_resource type="Texture2D" uid="uid://b8fnvawra5ikg" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_C.png" id="12_daddx"]
+[ext_resource type="Texture2D" uid="uid://ceyxh5hrqm3v7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_C.png" id="12_j7irs"]
 [ext_resource type="Texture2D" uid="uid://bovp43qb5nd5r" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_H.png" id="13_2u3te"]
+[ext_resource type="Texture2D" uid="uid://njjvlcn1tkef" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_H.png" id="13_tbiqk"]
+[ext_resource type="Texture2D" uid="uid://bchi6p8u43oyl" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_D.png" id="14_03052"]
 [ext_resource type="Texture2D" uid="uid://3td2dny3y65m" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_D.png" id="14_acjss"]
 [ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="15_e2qrx"]
 [ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="16_alv5k"]
@@ -24,6 +28,7 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_8td17")
+window_spawn_location = null
 
 [node name="TitleBar" parent="." instance=ExtResource("2_iacyx")]
 layout_mode = 2
@@ -70,6 +75,19 @@ ignore_texture_size = true
 stretch_mode = 5
 flip_v = true
 
+[node name="AddToNewRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Delete this Cortical Area..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("11_60rj6")
+texture_pressed = ExtResource("12_j7irs")
+texture_hover = ExtResource("13_tbiqk")
+texture_disabled = ExtResource("14_03052")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="Clone" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
@@ -98,5 +116,6 @@ stretch_mode = 5
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Details" to="." method="_button_details"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToNewRegion" to="." method="_button_delete"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Delete" to="." method="_button_delete"]
