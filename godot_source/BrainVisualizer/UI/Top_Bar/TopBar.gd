@@ -101,6 +101,7 @@ func _open_create_cortical() -> void:
 
 func _open_neuron_morphologies() -> void:
 	BV.WM.spawn_manager_morphology()
+	BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
 
 func _open_create_morpology() -> void:
 	BV.WM.spawn_create_morphology()

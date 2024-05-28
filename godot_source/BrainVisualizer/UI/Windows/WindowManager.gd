@@ -14,6 +14,7 @@ const _prefab_clone_cortical: PackedScene = preload("res://BrainVisualizer/UI/Wi
 const _prefab_import_amalgamation: PackedScene = preload("res://BrainVisualizer/UI/Windows/Amalgamation_Request/WindowAmalgamationRequest.tscn")
 const _prefab_configurable_popup: PackedScene = preload("res://BrainVisualizer/UI/Windows/Configurable_Popup/WindowConfigurablePopup.tscn")
 const _prefab_developer_options: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowDeveloperOptions.tscn")
+const _prefab_select_genome_object: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.tscn")
 
 var loaded_windows: Dictionary
 
@@ -57,6 +58,10 @@ func spawn_quick_connect(initial_source_area: BaseCorticalArea = null) -> void:
 func spawn_cortical_view() -> void:
 	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_prefab_cortical_view, "view_cortical") as WindowViewCorticalArea
 	view_cortical.setup()
+
+func spawn_select_genome_object(top_region: BrainRegion, selection_type: SelectGenomeObject.SELECTION_TYPE = SelectGenomeObject.SELECTION_TYPE.GENOME_OBJECT) -> void:
+	var select_genome_object: SelectGenomeObject = _default_spawn_window(_prefab_select_genome_object, "select_genome_object") as SelectGenomeObject
+	select_genome_object.setup(top_region, selection_type)
 
 func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> void:
 	var configurable_popup: WindowConfigurablePopup = _default_spawn_window(_prefab_configurable_popup, popup_definition.window_name) as WindowConfigurablePopup

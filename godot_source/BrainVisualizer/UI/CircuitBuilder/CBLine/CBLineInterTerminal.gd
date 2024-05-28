@@ -11,6 +11,7 @@ var _source_port: CBNodePort
 var _destination_port: CBNodePort
 var _link: ConnectionChainLink
 
+
 ## Sets up the default line behavior, by having it connect to the ports of the 2 given terminals
 func setup(source_port: CBNodePort, destination_port: CBNodePort, link: ConnectionChainLink) -> void:
 	line_setup()
@@ -27,6 +28,7 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 		# Update line to reflect properties of cortical mapping
 		_on_full_mapping_change(link.parent_chain.mapping_set)
 		link.parent_chain.mapping_set.mappings_changed.connect(_on_full_mapping_change)
+		_button.pressed.connect(_user_pressed_button)
 		return
 	if link.parent_chain.is_registered_to_partial_mapping_set():
 		#TODO
@@ -53,3 +55,6 @@ func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 	else:
 		set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PSPP.a))
 	set_line_dashing(mapping_ref.is_any_mapping_plastic())
+
+func _user_pressed_button() -> void:
+	BV.UI.window_manager.spawn_edit_mappings((_link.source as BaseCorticalArea), (_link.destination as BaseCorticalArea))
