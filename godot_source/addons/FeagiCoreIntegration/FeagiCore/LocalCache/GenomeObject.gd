@@ -21,3 +21,10 @@ func get_parent_region() -> BrainRegion:
 		return (self as BaseCorticalArea).current_region
 	push_error("FEAGI CORE CACHE: Unable to get parent region of unknown GenomeObject type!")
 	return null
+
+func get_name() -> StringName:
+	if self is BrainRegion:
+		return (self as BrainRegion).name
+	if self is BaseCorticalArea:
+		return (self as BaseCorticalArea).name
+	return "UNKNOWN"

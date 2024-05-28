@@ -12,15 +12,16 @@ var _lookup: Dictionary = {} # Key'd by user definable keys, data is the relevan
 func _ready():
 	_container = $BoxContainer
 
-func add_item(control: Control, lookup_key: Variant, enable_delete_button: bool = true, delete_button_deletes_item: bool = true) -> void:
+func add_item(control: Control, lookup_key: Variant, enable_delete_button: bool = true, delete_button_deletes_item: bool = true) -> ScrollSectionGenericItem:
 	if lookup_key in _lookup.keys():
 		push_error("UI: Unable to add item with existing key!")
-		return
+		return null
 	var item: ScrollSectionGenericItem = PREFAB_ITEM.instantiate()
 	item.setup(control, enable_delete_button, delete_button_deletes_item)
 	_container.add_child(item)
 	_lookup[lookup_key] = item
 	item.deleted.connect(_user_pressing_delete_item)
+	return item
 
 #TODO
 func define_empty_notice_control(empty_control: Control) -> void:
