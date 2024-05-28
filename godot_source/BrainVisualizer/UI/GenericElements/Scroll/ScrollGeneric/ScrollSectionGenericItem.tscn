@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://kvolmoptsp33"]
+
+[ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_jmsfr"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.gd" id="1_oexre"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="5_uduhd"]
+
+[node name="ScrollSectionGenericItem" type="HBoxContainer"]
+offset_right = 72.0
+offset_bottom = 72.0
+script = ExtResource("1_oexre")
+
+[node name="Delete" type="TextureRect" parent="."]
+layout_mode = 2
+texture = ExtResource("1_jmsfr")
+expand_mode = 3
+script = ExtResource("5_uduhd")
