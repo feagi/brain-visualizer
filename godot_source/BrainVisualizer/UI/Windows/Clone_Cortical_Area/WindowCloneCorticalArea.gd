@@ -15,9 +15,9 @@ var _preview_holder: GenericSinglePreviewHandler
 
 func _ready() -> void:
 	super()
-	_field_cortical_name =  _window_internals.get_node('HBoxContainer/Cortical_Name')
-	_field_3d_location =  _window_internals.get_node('HBoxContainer2/Coordinates_3D')
-	_field_2d_location =  _window_internals.get_node('HBoxContainer3/Coordinates_2D')
+	_field_cortical_name = _window_internals.get_node('HBoxContainer/Cortical_Name')
+	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
+	_field_2d_location = _window_internals.get_node('HBoxContainer3/Coordinates_2D')
 	_preview_holder = GenericSinglePreviewHandler.new()
 
 func setup(cloning_cortical_area: BaseCorticalArea) -> void:
