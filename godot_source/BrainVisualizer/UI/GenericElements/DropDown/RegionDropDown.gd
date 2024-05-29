@@ -9,7 +9,7 @@ signal user_selected_region(region_ref: BrainRegion)
 # If true, will automatically add regions from the drop down that were added to the cache
 @export var sync_added_regions: bool = true
 
-@export var load_available_regions_on_start = true
+@export var load_available_brain_regions_on_start = true
 
 ## If True, will hide the circle selection icon on the dropdown
 @export var hide_circle_select_icon: bool = true
@@ -21,8 +21,8 @@ var _default_width: float
 func _ready():
 	_default_width = custom_minimum_size.x
 	_popup = get_popup()
-	if load_available_regions_on_start:
-		reload_available_regions()
+	if load_available_brain_regions_on_start:
+		reload_available_brain_regions()
 	item_selected.connect(_user_selected_option)
 	if sync_removed_regions:
 		FeagiCore.feagi_local_cache.brain_regions.region_about_to_be_removed.connect(_region_was_deleted_from_cache)
@@ -31,9 +31,9 @@ func _ready():
 	BV.UI.theme_changed.connect(_on_theme_change)
 	_on_theme_change()
 
-func reload_available_regions() -> void:
+func reload_available_brain_regions() -> void:
 	var regions: Array[BrainRegion] = []
-	regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_regions.values())
+	regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
 	overwrite_regions(regions)
 
 ## Clears all listed regions
@@ -77,10 +77,10 @@ func set_selected_region(set_region: BrainRegion) -> void:
 	select(index)
 
 func set_selected_region_by_ID(region_ID: StringName) -> void:
-	if region_ID not in FeagiCore.feagi_local_cache.brain_regions.available_regions.keys():
+	if region_ID not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys():
 		push_error("Attempted to set region dropdown to region not found in cache by ID of " + region_ID + ". Skipping!")
 		return
-	set_selected_region(FeagiCore.feagi_local_cache.brain_regions.available_regions[region_ID])
+	set_selected_region(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[region_ID])
 
 ## Set the dropdown to select nothing
 func deselect_all() -> void:

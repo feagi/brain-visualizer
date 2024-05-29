@@ -82,6 +82,10 @@ func _button_clone() -> void:
 	BV.WM.spawn_clone_cortical((_selection[0] as BaseCorticalArea))
 	close_window()
 
+func _button_add_to_new_region() -> void:
+	BV.WM.spawn_create_region(FeagiCore.feagi_local_cache.brain_regions.return_root_region(), _selection)
+	close_window()
+
 func _button_delete() -> void:
 	var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
 		"No"
