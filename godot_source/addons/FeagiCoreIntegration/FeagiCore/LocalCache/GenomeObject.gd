@@ -1,6 +1,12 @@
 extends RefCounted
 class_name GenomeObject
-## Any singular object that exists in the genome (essentially any object that can be within a region) that can be linked
+## Any singular object that exists in the genome (essentially any object that can be within a region) that can be linked and exist in a [BrainRegion]
+
+signal parent_region_changed(old_region: BrainRegion, new_region: BrainRegion)
+signal input_link_added(link: ConnectionChainLink)
+signal output_link_added(link: ConnectionChainLink)
+signal input_link_removed(link: ConnectionChainLink)
+signal output_link_removed(link: ConnectionChainLink)
 
 enum ARRAY_MAKEUP {
 	SINGLE_CORTICAL_AREA,
@@ -11,14 +17,30 @@ enum ARRAY_MAKEUP {
 	UNKNOWN
 }
 
+## What reigon is this object under?
+var current_parent_region: BrainRegion:
+	get: return _current_parent_region
+
+## What [ConnectionChainLink]s are going into this object?
+var input_chain_links: Array[ConnectionChainLink]:
+	get: return _input_chain_links
+
+## What [ConnectionChainLink] are leaving this object
+var output_chain_links: Array[ConnectionChainLink]:
+	get: return _output_chain_links
+
+var _current_parent_region: BrainRegion
+var _input_chain_links: Array[ConnectionChainLink]
+var _output_chain_links: Array[ConnectionChainLink]
+
+
 static func are_siblings(A: GenomeObject, B: GenomeObject) -> bool:
-	var par_A: BrainRegion = A.get_parent_region()
-	var par_B: BrainRegion = B.get_parent_region()
+	var par_A: BrainRegion = A.current_parent_region
+	var par_B: BrainRegion = B.current_parent_region
 	
 	if (par_A == null) or (par_B == null):
 		return false
 	return par_A.ID == par_B.ID
-
 
 static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MAKEUP:
 	if len(genome_objects) == 0:
@@ -66,16 +88,47 @@ static func filter_brain_regions(genome_objects: Array[GenomeObject]) -> Array[B
 			output.append(object as BrainRegion)
 	return output
 
-## Generic function to ge tthe parent region of a [GenomeObject]. Returns null if this is run on the root parent
-func get_parent_region() -> BrainRegion:
-	if self is BrainRegion:
-		if (self as BrainRegion).is_root_region():
-			return null
-		return (self as BrainRegion).parent_region
-	if self is BaseCorticalArea:
-		return (self as BaseCorticalArea).current_region
-	push_error("FEAGI CORE CACHE: Unable to get parent region of unknown GenomeObject type!")
-	return null
+## Change form one existing parent region to another
+func change_parent_brain_region(new_parent_region: BrainRegion) -> void:
+	var old_region_cache: BrainRegion = _current_parent_region # yes this method uses more memory but avoids potential shenanigans
+	_current_parent_region = new_parent_region
+	old_region_cache.FEAGI_genome_object_deregister_as_child(self)
+	new_parent_region.FEAGI_genome_object_register_as_child(self)
+	parent_region_changed.emit(old_region_cache, new_parent_region)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region. 
+func input_add_link(link: ConnectionChainLink) -> void:
+	if link in _input_chain_links:
+		push_error("CORE CACHE: Unable to add input link to object %s when it already exists!" % get_ID())
+		return
+	_input_chain_links.append(link)
+	input_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func output_add_link(link: ConnectionChainLink) -> void:
+	if link in _output_chain_links:
+		push_error("CORE CACHE: Unable to add output link to object %s when it already exists!" % get_ID())
+		return
+	_output_chain_links.append(link)
+	output_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func input_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _input_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from object %s as it wasn't found!" % get_ID())
+		return
+	_input_chain_links.remove_at(index)
+	input_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func output_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _output_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from object %s as it wasn't found!" % get_ID())
+		return
+	_output_chain_links.remove_at(index)
+	output_link_removed.emit(link)
 
 func get_name() -> StringName:
 	if self is BrainRegion:
@@ -90,3 +143,8 @@ func get_ID() -> StringName:
 	if self is BaseCorticalArea:
 		return (self as BaseCorticalArea).ID
 	return "UNKNOWN"
+
+## For initialization of an object to a [BrainRegion]. Not for CHANGING regions!
+func _init_self_to_brain_region(parent_region: BrainRegion) -> void:
+	_current_parent_region = parent_region
+	parent_region.FEAGI_genome_object_register_as_child(self)

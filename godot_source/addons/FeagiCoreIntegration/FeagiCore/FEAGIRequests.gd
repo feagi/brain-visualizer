@@ -146,7 +146,17 @@ func create_region(parent_region_ID: StringName, region_internals: Array[GenomeO
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_region_region, dict_to_send)
 	
-
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create region of name %s!" % region_name)
+		return FEAGI_response_data
+	var response: StringName = FEAGI_response_data.decode_response_as_string()
+	#TODO
+	return FEAGI_response_data
+	
 #endregion
 
 

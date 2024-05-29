@@ -27,11 +27,6 @@ signal dimensions_updated(dim: Vector3i, this_cortical_area: BaseCorticalArea)
 signal coordinates_3D_updated(coords: Vector3i, this_cortical_area: BaseCorticalArea)
 signal coordinates_2D_updated(coords: Vector2i, this_cortical_area: BaseCorticalArea)
 signal cortical_visibility_updated(visibility: bool, this_cortical_area: BaseCorticalArea)
-signal parent_region_changed(old_region: BrainRegion, new_region: BrainRegion)
-signal input_link_added(link: ConnectionChainLink)
-signal output_link_added(link: ConnectionChainLink)
-signal input_link_removed(link: ConnectionChainLink)
-signal output_link_removed(link: ConnectionChainLink)
 signal cortical_neuron_per_vox_count_updated(density: int, this_cortical_area: BaseCorticalArea)
 signal cortical_synaptic_attractivity_updated(attractivity: int, this_cortical_area: BaseCorticalArea)
 signal changed_monitoring_membrane_potential(is_monitoring: bool)
@@ -77,21 +72,6 @@ var coordinates_2D: Vector2i:
 var coordinates_3D: Vector3i:
 	get:
 		return _coordinates_3D
-
-## What reigon is this area under?
-var current_region: BrainRegion:
-	get: 
-		return _current_region
-
-## What [ConnectionChainLink]s are going into this cortical area?
-var input_chain_links: Array[ConnectionChainLink]:
-	get: 
-		return _input_chain_links
-
-## What [ConnectionChainLink] are leaving this cortical area
-var output_chain_links: Array[ConnectionChainLink]:
-	get: 
-		return _output_chain_links
 
 var cortical_neuron_per_vox_count: int:
 	get:
@@ -158,9 +138,6 @@ var _cortical_neuron_per_vox_count: int = 1
 var _cortical_synaptic_attractivity: int = 100
 var _coordinates_2D_available: bool = false  # if coordinates_2D are available from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are available from FEAGI
-var _current_region: BrainRegion
-var _input_chain_links: Array[ConnectionChainLink]
-var _output_chain_links: Array[ConnectionChainLink]
 var _cortical_visiblity: bool = true
 
 #TODO this shouldn't be here
@@ -222,14 +199,13 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 	_name = cortical_name
 	_dimensions = cortical_dimensions
 	_cortical_visiblity = visiblity
-	_current_region = parent_region
-	_current_region.FEAGI_add_a_cortical_area(self)
+	_init_self_to_brain_region(parent_region)
 
 
 ## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	remove_all_connections()
-	_current_region.FEAGI_remove_a_cortical_area(self)
+	_current_parent_region.FEAGI_remove_a_cortical_area(self)
 	about_to_be_deleted.emit()
 	# [CorticalAreasCache] then deletes this object
 
@@ -324,13 +300,7 @@ func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 	_cortical_synaptic_attractivity = new_attractivity
 	cortical_synaptic_attractivity_updated.emit(new_attractivity, self)
 
-## The parent region of this cortical area was updated
-func FEAGI_changed_parent_region(new_region: BrainRegion):
-	var old_region_cache: BrainRegion = _current_region # yes this method uses more memory but avoids potential shenanigans
-	_current_region = new_region
-	old_region_cache.FEAGI_remove_a_cortical_area(self)
-	new_region.FEAGI_add_a_cortical_area(self)
-	parent_region_changed.emit(old_region_cache, new_region)
+
 
 
 # The following functions are often overridden in child classes
@@ -365,48 +335,6 @@ func _has_memory_parameters() -> bool:
 
 #endregion
 
-#region Region information
-
-## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region. 
-func input_add_link(link: ConnectionChainLink) -> void:
-	if link in _input_chain_links:
-		push_error("CORE CACHE: Unable to add input link to region %s when it already exists!" % name)
-		return
-	_input_chain_links.append(link)
-	input_link_added.emit(link)
-
-## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
-func output_add_link(link: ConnectionChainLink) -> void:
-	if link in _output_chain_links:
-		push_error("CORE CACHE: Unable to add output link to region %s when it already exists!" % name)
-		return
-	_output_chain_links.append(link)
-	output_link_added.emit(link)
-
-## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
-func input_remove_link(link: ConnectionChainLink) -> void:
-	var index: int = _input_chain_links.find(link)
-	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
-		return
-	_input_chain_links.remove_at(index)
-	input_link_removed.emit(link)
-
-## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
-func output_remove_link(link: ConnectionChainLink) -> void:
-	var index: int = _output_chain_links.find(link)
-	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % name)
-		return
-	_output_chain_links.remove_at(index)
-	output_link_removed.emit(link)
-
-
-## Returns the path to this cortical area as a path
-func get_region_path() -> Array[BrainRegion]:
-	return FeagiCore.feagi_local_cache.brain_regions.get_path_to_cortical_area(self)
-
-#endregion
 
 #TODO this shouldn't be here
 ## Get 3D coordinates that BV uses currently

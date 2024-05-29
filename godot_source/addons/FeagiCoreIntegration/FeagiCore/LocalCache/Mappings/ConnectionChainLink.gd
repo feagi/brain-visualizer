@@ -57,49 +57,21 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 	
 	match(_link_type):
 		LINK_TYPE.INVALID:
-			var ID1: StringName
-			if coming_from is BaseCorticalArea:
-				ID1 = coming_from.cortical_ID
-			else:
-				ID1 = (coming_from as BrainRegion).ID
-			var ID2: StringName
-			if going_to is BaseCorticalArea:
-				ID2 = going_to.cortical_ID
-			else:
-				ID2 = (going_to as BrainRegion).ID
-			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [ID1, ID2])
+			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [coming_from.get_ID(), going_to.get_ID()])
 			return
 			
 		LINK_TYPE.BRIDGE:
-			if coming_from is BaseCorticalArea:
-				(coming_from as BaseCorticalArea).output_add_link(self)
-			else:
-				(coming_from as BrainRegion).output_add_link(self)
-			if going_to is BaseCorticalArea:
-				(going_to as BaseCorticalArea).input_add_link(self)
-			else:
-				(going_to as BrainRegion).input_add_link(self)
+			coming_from.output_add_link(self)
+			going_to.input_add_link(self)
 			_parent_region.bridge_add_link(self)
 		
 		LINK_TYPE.PARENTS_OUTPUT:
-			if coming_from is BaseCorticalArea:
-				(coming_from as BaseCorticalArea).output_add_link(self)
-			else:
-				(coming_from as BrainRegion).output_add_link(self)
-			if going_to is BaseCorticalArea:
-				(going_to as BaseCorticalArea).output_add_link(self)
-			else:
-				(going_to as BrainRegion).output_add_link(self)
+			coming_from.output_add_link(self)
+			going_to.output_add_link(self)
 		
 		LINK_TYPE.PARENTS_INPUT:
-			if coming_from is BaseCorticalArea:
-				(coming_from as BaseCorticalArea).input_add_link(self)
-			else:
-				(coming_from as BrainRegion).input_add_link(self)
-			if going_to is BaseCorticalArea:
-				(going_to as BaseCorticalArea).input_add_link(self)
-			else:
-				(going_to as BrainRegion).input_add_link(self)
+			coming_from.input_add_link(self)
+			going_to.input_add_link(self)
 
 ## Called from [ConnectionChain] when the associated mapping set gets updated
 func FEAGI_updated_associated_mapping_set() -> void:

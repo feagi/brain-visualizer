@@ -23,7 +23,7 @@ var partial_mapping_set: PartialMappingSet:
 var _source: GenomeObject = null
 var _destination: GenomeObject = null
 var _chain_links: Array[ConnectionChainLink] = []
-var _total_chain_path: Array
+var _total_chain_path: Array[GenomeObject]
 var _is_both_ends_cortical_areas: bool
 var _mapping_set: InterCorticalMappingSet
 var _partial_mapping_set: PartialMappingSet
@@ -47,41 +47,21 @@ func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(starting_point, stoppping_point)
 	
 	for i in (len(_total_chain_path) - 1):
-		## If either side is a cortical area, then the parent region is the parent region of the cortical area. If both are regions, then the parent is the parent of either region
 		var parent_region: BrainRegion
 		var link_type: ConnectionChainLink.LINK_TYPE = ConnectionChainLink.determine_link_type(_total_chain_path[i], _total_chain_path[i + 1])
 		match(link_type):
 			
 			ConnectionChainLink.LINK_TYPE.INVALID:
-				var ID1: StringName
-				if _total_chain_path[i] is BaseCorticalArea:
-					ID1 = (_total_chain_path[i] as BaseCorticalArea).cortical_ID
-				else:
-					ID1 = (_total_chain_path[i] as BrainRegion).ID
-				var ID2: StringName
-				if _total_chain_path[i + 1] is BaseCorticalArea:
-					ID2 = (_total_chain_path[i + 1] as BaseCorticalArea).cortical_ID
-				else:
-					ID2 = (_total_chain_path[i + 1] as BrainRegion).ID
-				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted! Skipping!" % [ID1, ID2])
+				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted! Skipping!" % [_total_chain_path[i].get_ID(), _total_chain_path[i + 1].get_ID()])
 			
 			ConnectionChainLink.LINK_TYPE.BRIDGE:
-				if _total_chain_path[i] is BaseCorticalArea:
-					parent_region = (_total_chain_path[i] as BaseCorticalArea).current_region
-				else:
-					parent_region = (_total_chain_path[i] as BrainRegion).parent_region
+				parent_region = _total_chain_path[i].current_parent_region
 			
 			ConnectionChainLink.LINK_TYPE.PARENTS_OUTPUT:
-				if _total_chain_path[i] is BaseCorticalArea:
-					parent_region = (_total_chain_path[i] as BaseCorticalArea).current_region
-				else:
-					parent_region = (_total_chain_path[i] as BrainRegion).parent_region
+				parent_region = _total_chain_path[i].current_parent_region
 			
 			ConnectionChainLink.LINK_TYPE.PARENTS_INPUT:
-				if _total_chain_path[i + 1] is BaseCorticalArea:
-					parent_region = (_total_chain_path[i + 1] as BaseCorticalArea).current_region
-				else:
-					parent_region = (_total_chain_path[i + 1] as BrainRegion).parent_region
+				parent_region = _total_chain_path[i + 1].current_parent_region
 		
 		_chain_links.append(ConnectionChainLink.new(parent_region, _total_chain_path[i], _total_chain_path[i + 1], self, link_type))
 

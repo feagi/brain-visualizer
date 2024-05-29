@@ -23,13 +23,16 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	var cortical_area_mapping: Dictionary = {}
 	# Second pass is to link all child region to a given parent region, and to calculate mappings for cortical IDs to their correct parent region
 	for parent_region_ID: StringName in region_summary_data.keys():
+		var parent_region: BrainRegion = _available_brain_regions[parent_region_ID]
 		# link child regions
 		var child_region_IDs: Array[StringName] = []
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
-		_available_brain_regions[parent_region_ID].init_region_relationships(child_regions)
+		#_available_brain_regions[parent_region_ID].init_region_relationships(child_regions)
+		for child_region in child_regions:
+			child_region.FEAGI_init_parent_relation(parent_region)
 		
-		# Create cortical ID mapping
+		# Create cortical ID mapping (but don't add cortical areas yet)
 		var cortical_IDs: Array[StringName] = []
 		cortical_IDs.assign(region_summary_data[parent_region_ID]["areas"])
 		for cortical_ID in cortical_IDs:
@@ -52,7 +55,7 @@ func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: 
 	region_outputs: Dictionary, containing_regions: Array[BrainRegion]):
 	
 	var region: BrainRegion = BrainRegion.new(region_ID, region_name, coord_2D, coord_3D, 
-		dim_3D, contained_areas)
+		dim_3D)
 	region.init_contained_regions(containing_regions)
 	_available_brain_regions[region_ID] = region
 	region_added.emit(region)
@@ -64,7 +67,8 @@ func FEAGI_remove_region(region_ID: StringName) -> void:
 	region.FEAGI_delete_this_region()
 	region_about_to_be_removed.emit(region)
 	_available_brain_regions.erase(region_ID)
-	
+
+
 #endregion
 
 
@@ -150,27 +154,25 @@ func is_objects_within_same_region(A: GenomeObject, B: GenomeObject) -> bool:
 	return parent_A.ID == parent_B.ID
 
 ## As a single flat array, get the end inclusive path from the starting [GenomeObject], to the end [GenomeObject]
-func get_total_path_between_objects(starting_point: GenomeObject, stoppping_point: GenomeObject) -> Array:
+func get_total_path_between_objects(starting_point: GenomeObject, stoppping_point: GenomeObject) -> Array[GenomeObject]:
 	# Get start / stop points
 	var is_start_cortical_area: bool = starting_point is BaseCorticalArea
 	var is_end_cortical_area: bool = stoppping_point is BaseCorticalArea
 	
 	var start_region: BrainRegion
 	if is_start_cortical_area:
-		start_region = (starting_point as BaseCorticalArea).current_region
-		if (starting_point as BaseCorticalArea).cortical_ID == "CJWM3_":
-			print("A")
+		start_region = (starting_point as BaseCorticalArea).current_parent_region
 	else:
 		start_region = starting_point
 	var end_region: BrainRegion
 	if is_end_cortical_area:
-		end_region = (stoppping_point as BaseCorticalArea).current_region
+		end_region = (stoppping_point as BaseCorticalArea).current_parent_region
 	else:
 		end_region = stoppping_point
 	
 	# Generate total path
 	var region_path: Array[Array] = FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(start_region, end_region)
-	var total_chain_path: Array = []
+	var total_chain_path: Array[GenomeObject] = []
 	if is_start_cortical_area:
 		total_chain_path.append(starting_point)
 	total_chain_path.append_array(region_path[0])  # ascending

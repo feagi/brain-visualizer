@@ -9,16 +9,11 @@ signal name_updated(new_name: StringName)
 signal coordinates_2D_updated(new_position: Vector2i)
 signal coordinates_3D_updated(new_position: Vector3i)
 signal dimensions_3D_changed(new_dimension: Vector3i)
-signal parent_region_changed(old_parent_region: BrainRegion, new_parent_region: BrainRegion)
 signal cortical_area_added_to_region(area: BaseCorticalArea)
 signal cortical_area_removed_from_region(area: BaseCorticalArea)
 signal subregion_added_to_region(subregion: BrainRegion)
 signal subregion_removed_from_region(subregion: BrainRegion)
-signal input_link_added(link: ConnectionChainLink)
-signal output_link_added(link: ConnectionChainLink)
 signal bridge_link_added(link: ConnectionChainLink)
-signal input_link_removed(link: ConnectionChainLink)
-signal output_link_removed(link: ConnectionChainLink)
 signal bridge_link_removed(link: ConnectionChainLink)
 
 
@@ -48,12 +43,6 @@ var contained_cortical_areas: Array[BaseCorticalArea]:
 	get: return _contained_cortical_areas
 var contained_regions: Array[BrainRegion]:
 	get: return _contained_regions
-var parent_region: BrainRegion:
-	get: return _parent_region
-var input_chain_links: Array[ConnectionChainLink]: ## Input links are connect to the input side of a region
-	get: return _input_chain_links
-var output_chain_links: Array[ConnectionChainLink]: ## Output links are connect to the output side of a region
-	get: return _output_chain_links
 var bridge_chain_links: Array[ConnectionChainLink]: ## Bridge links connect 2 internal members together, they do not connect to the input / output of the region
 	get: return _bridge_chain_links
 
@@ -64,30 +53,10 @@ var _coordinates_2d: Vector2i
 var _dimensions_3d: Vector3i
 var _contained_cortical_areas: Array[BaseCorticalArea]
 var _contained_regions: Array[BrainRegion]
-var _parent_region: BrainRegion
-var _input_chain_links: Array[ConnectionChainLink]
-var _output_chain_links: Array[ConnectionChainLink]
 var _bridge_chain_links: Array[ConnectionChainLink]
 
-## Spawns a [BrainRegion] from the JSON details from FEAGI. Remember to run "init_region_relationships" seperately afterwards!
-static func from_FEAGI_JSON(dict: Dictionary, ID: StringName) -> BrainRegion:
-	var arr_IDs: Array[StringName] = []
-	arr_IDs.assign(dict["areas"])
-	var contained_areas: Array[BaseCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.arr_of_IDs_to_arr_of_area(arr_IDs)
-	
-	return BrainRegion.new(
-		ID,
-		dict["title"],
-		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
-		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
-		Vector3i(10,10,10), #TODO
-		Vector3i(10,10,10), #TODO
-		contained_areas,
-	)
-
-## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas. Main use is when loading genomes when we dont have objects to reference yet
+## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas
 static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) -> BrainRegion:
-	var contained_areas: Array[BaseCorticalArea] = []
 	return BrainRegion.new(
 		ID,
 		dict["title"],
@@ -95,9 +64,7 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
 		Vector3i(10,10,10), #TODO
 		Vector3i(10,10,10), #TODO
-		contained_areas,
 	)
-
 
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
@@ -118,64 +85,69 @@ static func object_array_to_ID_array(regions: Array[BrainRegion]) -> Array[Strin
 	return output
 
 #NOTE: Specifically not initing regions since we need to set up all objects FIRST
-func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, dim_3D: Vector3i,
-	contained_areas: Array[BaseCorticalArea]):
-	
+func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, dim_3D: Vector3i):
 	_ID = region_ID
 	_name = region_name
 	_coordinates_3d = coord_3D
 	_coordinates_2d = coord_2D
 	_dimensions_3d = dim_3D
-	_contained_cortical_areas = contained_areas
-
-## during Genome loading ONLY, after we created the general objects, now we can 
-func init_region_relationships(containing_regions: Array[BrainRegion]) -> void:
-	_contained_regions = containing_regions
-	_parent_region = parent_region
-	for region in _contained_regions:
-		region.FEAGI_change_parent_region(self)
 
 ## Updates from FEAGI updating this cache object
 #region FEAGI Interactions
 
-## FEAGI confirmed a cortical area was added, called by [BaseCorticalArea] as they register themselves
-func FEAGI_add_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
-	if cortical_area in _contained_cortical_areas:
-		push_error("CORE CACHE: Cannot add cortical area %s to region %s that already contains it! Skipping!" % [cortical_area.cortical_ID, _ID])
+## Only called by FEAGI during Genome loading, inits the parent region of this region
+func FEAGI_init_parent_relation(parent_region: BrainRegion) -> void:
+	if is_root_region():
+		push_error("CORE CACHE: Root region cannot be a subregion!")
 		return
-	_contained_cortical_areas.append(cortical_area)
-	cortical_area_added_to_region.emit(cortical_area)
+	_init_self_to_brain_region(parent_region)
 
-## FEAGI confirmed a cortical area was removed, called by [BaseCorticalArea] as they deregister themselves
-func FEAGI_remove_a_cortical_area(cortical_area: BaseCorticalArea) -> void:
-	var index: int = _contained_cortical_areas.find(cortical_area)
-	if index == -1:
-		push_error("CORE CACHE: Cannot remove cortical area %s from region %s that doesn't contains it! Skipping!" % [cortical_area.cortical_ID, _ID])
+
+## When an [GenomeObject] gets a parent region set / changed, it calls this function of the new parent instance to register itself
+func FEAGI_genome_object_register_as_child(genome_object: GenomeObject) -> void:
+	if genome_object is BaseCorticalArea:
+		var cortical_area: BaseCorticalArea = (genome_object as BaseCorticalArea)
+		if cortical_area in _contained_cortical_areas:
+			push_error("CORE CACHE: Cannot add cortical area %s to region %s that already contains it! Skipping!" % [cortical_area.cortical_ID, _ID])
+			return
+		_contained_cortical_areas.append(cortical_area)
+		cortical_area_added_to_region.emit(cortical_area)
 		return
-	_contained_cortical_areas.remove_at(index)
-
-## FEAGI confirmed a region was added
-func FEAGI_add_a_subregion(region: BrainRegion) -> void:
-	if region in _contained_regions:
-		push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.ID, _ID])
+	if genome_object is BrainRegion:
+		var region: BrainRegion = (genome_object as BrainRegion)
+		if region.is_root_region():
+			push_error("CORE CACHE: Unable to add root region as a subregion!")
+			return
+		if region in _contained_regions:
+			push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.ID, _ID])
+			return
+		_contained_regions.append(region)
+		subregion_added_to_region.emit(region)
 		return
-	_contained_regions.append(region)
-	subregion_added_to_region.emit(region)
+	push_error("CORE CACHE: Unknown GenomeObject type tried to be added to region %s!" % _ID)
 
-## FEAGI confirmed a contained region was removed
-func FEAGI_remove_a_subregion(region: BrainRegion) -> void:
-	var index: int = _contained_regions.find(region)
-	if index == -1:
-		push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.ID, _ID])
+func FEAGI_genome_object_deregister_as_child(genome_object: GenomeObject) -> void:
+	if genome_object is BaseCorticalArea:
+		var cortical_area: BaseCorticalArea = (genome_object as BaseCorticalArea)
+		var index: int = _contained_cortical_areas.find(cortical_area)
+		if index == -1:
+			push_error("CORE CACHE: Cannot remove cortical area %s from region %s that doesn't contains it! Skipping!" % [cortical_area.cortical_ID, _ID])
+			return
+		_contained_cortical_areas.remove_at(index)
+		cortical_area_removed_from_region.emit(cortical_area)
 		return
-	_contained_regions.remove_at(index)
-	subregion_removed_from_region.emit(region)
+	if genome_object is BrainRegion:
+		var region: BrainRegion = (genome_object as BrainRegion)
+		var index: int = _contained_regions.find(region)
+		if index == -1:
+			push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.ID, _ID])
+			return
+		_contained_regions.remove_at(index)
+		subregion_removed_from_region.emit(region)
+		return
+	push_error("CORE CACHE: Unknown GenomeObject type tried to be removed from region %s!" % _ID)
 
-## FEAGI confirmed that this region was moved and now has another parent region
-func FEAGI_change_parent_region(new_region: BrainRegion) -> void:
-	var old_cache: BrainRegion = _parent_region # yes this method uses more memory but avoids potential shenanigans
-	_parent_region = new_region
-	parent_region_changed.emit(old_cache, new_region)
+
 
 #TODO make better deletion with proper checks
 ## FEAGI confirmed this region is deleted
@@ -291,7 +263,7 @@ func get_path() -> Array[BrainRegion]:
 	var path: Array[BrainRegion] = []
 	while !searching_region.is_root_region():
 		path.append(searching_region)
-		searching_region = searching_region.parent_region
+		searching_region = searching_region.current_parent_region
 	path.append(searching_region)
 	path.reverse()
 	return path
