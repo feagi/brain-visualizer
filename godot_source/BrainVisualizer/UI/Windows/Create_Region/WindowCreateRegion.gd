@@ -38,11 +38,8 @@ func _add_button_response(genome_object: GenomeObject) -> void:
 	button.text = genome_object.get_name()
 	_selected.append(genome_object)
 	_scroll_section.add_item(button, genome_object)
-
-func _user_deleted_selection(item: ScrollSectionGenericItem) -> void:
-	var genome_object_deleted: GenomeObject = item.lookup_key
 	
 
 func _create_region_button_pressed() -> void:
-
+	
 	pass

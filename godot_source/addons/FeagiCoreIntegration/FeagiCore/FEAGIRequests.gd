@@ -120,6 +120,36 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 #endregion
 
 
+#region Brain Regions
+func create_region(parent_region_ID: StringName, region_internals: Array[GenomeObject], region_name: StringName, coords_2D: Vector2i, coords_3D: Vector3) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !parent_region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region_ID)
+		return FeagiRequestOutput.requirement_fail("INVALID_PARENT_ID")
+	for internal in region_internals:
+		if internal is BrainRegion:
+			if (internal as BrainRegion).is_root_region():
+				push_error("FEAGI Requests: Cannot add root region as a subregion!")
+				return FeagiRequestOutput.requirement_fail("CHILD_ROOT")
+	
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"region_title": region_name,
+		"parent_region_id": parent_region_ID,
+		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
+		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
+		"areas": BaseCorticalArea.object_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
+		"regions": BrainRegion.object_array_to_ID_array(GenomeObject.filter_brain_regions(region_internals)),
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_region_region, dict_to_send)
+	
+
+#endregion
+
+
 #region Cortical Areas
 
 #NOTE: No way to request a core area, since we shouldn't be able to make those directly!
@@ -133,8 +163,6 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	if !checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to delete cortical area %s that is not found in cache!" % checking_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
-	
-	print()
 	
 	# Define Request
 	var dict_to_send: Dictionary = {"cortical_id": checking_cortical_ID}

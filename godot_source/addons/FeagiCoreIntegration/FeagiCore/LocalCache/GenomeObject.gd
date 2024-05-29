@@ -46,7 +46,26 @@ static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MA
 		return ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS
 	return ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
 
-	
+static func get_ID_array(genome_objects: Array[GenomeObject]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for object in genome_objects:
+		output.append(object.get_ID())
+	return output
+
+static func filter_cortical_areas(genome_objects: Array[GenomeObject]) -> Array[BaseCorticalArea]:
+	var output: Array[BaseCorticalArea] = []
+	for object in genome_objects:
+		if object is BaseCorticalArea:
+			output.append(object as BaseCorticalArea)
+	return output
+
+static func filter_brain_regions(genome_objects: Array[GenomeObject]) -> Array[BrainRegion]:
+	var output: Array[BrainRegion] = []
+	for object in genome_objects:
+		if object is BrainRegion:
+			output.append(object as BrainRegion)
+	return output
+
 ## Generic function to ge tthe parent region of a [GenomeObject]. Returns null if this is run on the root parent
 func get_parent_region() -> BrainRegion:
 	if self is BrainRegion:

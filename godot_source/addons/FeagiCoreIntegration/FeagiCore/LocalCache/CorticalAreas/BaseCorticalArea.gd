@@ -209,6 +209,13 @@ static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) 
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
 
+static func object_array_to_ID_array(areas: Array[BaseCorticalArea]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for area in areas:
+		output.append(area.cortical_ID)
+	return output
+	
+
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
 	_cortical_ID = ID

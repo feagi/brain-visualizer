@@ -111,6 +111,11 @@ static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 	push_error("CORE CACHE: Unable to get parent region of an object of unknown type!")
 	return null
 
+static func object_array_to_ID_array(regions: Array[BrainRegion]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for region in regions:
+		output.append(region.ID)
+	return output
 
 #NOTE: Specifically not initing regions since we need to set up all objects FIRST
 func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, dim_3D: Vector3i,
