@@ -54,7 +54,6 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 	_source = coming_from
 	_destination = going_to
 	_link_type = link_type_
-	
 	match(_link_type):
 		LINK_TYPE.INVALID:
 			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [coming_from.get_ID(), going_to.get_ID()])
@@ -87,35 +86,17 @@ func FEAGI_prepare_to_delete() -> void:
 			pass
 			
 		LINK_TYPE.BRIDGE:
-			if _source is BaseCorticalArea:
-				(_source as BaseCorticalArea).output_remove_link(self)
-			else:
-				(_source as BrainRegion).output_remove_link(self)
-			if _destination is BaseCorticalArea:
-				(_destination as BaseCorticalArea).input_remove_link(self)
-			else:
-				(_destination as BrainRegion).input_remove_link(self)
+			_source.output_remove_link(self)
+			_destination.input_remove_link(self)
 			_parent_region.bridge_remove_link(self)
 		
 		LINK_TYPE.PARENTS_OUTPUT:
-			if _source is BaseCorticalArea:
-				(_source as BaseCorticalArea).output_remove_link(self)
-			else:
-				(_source as BrainRegion).output_remove_link(self)
-			if _destination is BaseCorticalArea:
-				(_destination as BaseCorticalArea).output_remove_link(self)
-			else:
-				(_destination as BrainRegion).output_remove_link(self)
+			_source.output_remove_link(self)
+			_destination.output_remove_link(self)
 
 		LINK_TYPE.PARENTS_INPUT:
-			if _source is BaseCorticalArea:
-				(_source as BaseCorticalArea).input_remove_link(self)
-			else:
-				(_source as BrainRegion).input_remove_link(self)
-			if _destination is BaseCorticalArea:
-				(_destination as BaseCorticalArea).input_remove_link(self)
-			else:
-				(_destination as BrainRegion).input_remove_link(self)
+			_source.input_remove_link(self)
+			_destination.input_remove_link(self)
 
 func is_source_cortical_area() -> bool:
 	return _source is BaseCorticalArea

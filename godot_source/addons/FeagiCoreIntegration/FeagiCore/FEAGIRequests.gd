@@ -154,7 +154,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		push_error("FEAGI Requests: Unable to create region of name %s!" % region_name)
 		return FEAGI_response_data
 	var response: StringName = FEAGI_response_data.decode_response_as_string()
-	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response, parent_region, region_name, )
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response, parent_region, region_name, coords_2D, coords_3D, region_internals)
 	
 	return FEAGI_response_data
 	
