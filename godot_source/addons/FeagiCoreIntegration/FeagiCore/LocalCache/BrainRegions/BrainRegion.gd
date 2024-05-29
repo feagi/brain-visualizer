@@ -63,7 +63,6 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
 		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
 		Vector3i(10,10,10), #TODO
-		Vector3i(10,10,10), #TODO
 	)
 
 ## Gets the parent region of the object (if it is capable of having one)
@@ -85,12 +84,11 @@ static func object_array_to_ID_array(regions: Array[BrainRegion]) -> Array[Strin
 	return output
 
 #NOTE: Specifically not initing regions since we need to set up all objects FIRST
-func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, dim_3D: Vector3i):
+func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i):
 	_ID = region_ID
 	_name = region_name
 	_coordinates_3d = coord_3D
 	_coordinates_2d = coord_2D
-	_dimensions_3d = dim_3D
 
 ## Updates from FEAGI updating this cache object
 #region FEAGI Interactions

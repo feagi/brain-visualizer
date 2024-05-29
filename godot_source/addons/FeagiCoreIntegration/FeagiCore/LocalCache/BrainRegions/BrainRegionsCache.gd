@@ -50,13 +50,14 @@ func FEAGI_clear_all_regions() -> void:
 	for region_ID: StringName in _available_brain_regions.keys():
 		FEAGI_remove_region(region_ID)
 
-func FEAGI_add_region(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, 
-	dim_3D: Vector3i, contained_areas: Array[BaseCorticalArea], region_inputs: Dictionary, 
-	region_outputs: Dictionary, containing_regions: Array[BrainRegion]):
-	
-	var region: BrainRegion = BrainRegion.new(region_ID, region_name, coord_2D, coord_3D, 
-		dim_3D)
-	region.init_contained_regions(containing_regions)
+func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []):
+	if region_ID in _available_brain_regions.keys():
+		push_error("CORE CACHE: Unable to add another region of the ID %s!" % region_ID)
+		return
+	var region: BrainRegion = BrainRegion.new(region_ID, region_name, coord_2D, coord_3D)
+	region.FEAGI_init_parent_relation(parent_region)
+	for object in contained_objects:
+		object.change_parent_brain_region(region)
 	_available_brain_regions[region_ID] = region
 	region_added.emit(region)
 

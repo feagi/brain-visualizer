@@ -121,13 +121,13 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 
 
 #region Brain Regions
-func create_region(parent_region_ID: StringName, region_internals: Array[GenomeObject], region_name: StringName, coords_2D: Vector2i, coords_3D: Vector3) -> FeagiRequestOutput:
+func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObject], region_name: StringName, coords_2D: Vector2i, coords_3D: Vector3) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !parent_region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region_ID)
+	if !parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region.ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_PARENT_ID")
 	for internal in region_internals:
 		if internal is BrainRegion:
@@ -138,7 +138,7 @@ func create_region(parent_region_ID: StringName, region_internals: Array[GenomeO
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"region_title": region_name,
-		"parent_region_id": parent_region_ID,
+		"parent_region_id": parent_region.ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
 		"areas": BaseCorticalArea.object_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
@@ -154,7 +154,8 @@ func create_region(parent_region_ID: StringName, region_internals: Array[GenomeO
 		push_error("FEAGI Requests: Unable to create region of name %s!" % region_name)
 		return FEAGI_response_data
 	var response: StringName = FEAGI_response_data.decode_response_as_string()
-	#TODO
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response, parent_region, region_name, )
+	
 	return FEAGI_response_data
 	
 #endregion
