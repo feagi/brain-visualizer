@@ -38,6 +38,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = "Selected region " + region.name
 			quick_connect_button.visible = false
 			clone_button.visible = false
+			delete_button.visible = false #TODO temp
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			_titlebar.title = "Selected multiple areas"
 			quick_connect_button.visible = false
