@@ -41,14 +41,15 @@ func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: Bas
 	if !_are_cortical_areas_valid():
 		return
 	
-	BV.CB.set_outlining_state_of_connection(source, destination, true)
+	#BV.CB.set_outlining_state_of_connection(source, destination, true) #TODO restore
 	
 	_request_mappings_from_feagi()
 
 ## Overridden!
 func close_window():
 	if _source_area != null && _destination_area != null:
-		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		#BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false) #TODO restore
+		pass
 	super()
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
