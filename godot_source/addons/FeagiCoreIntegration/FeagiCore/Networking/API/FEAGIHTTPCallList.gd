@@ -6,10 +6,6 @@ class_name FEAGIHTTPCallList
 
 
 
-
-
-
-
 ## Add custom cortical area (or memory, or copies an existing area), this really should be split up from feagis side
 static func POST_CustomCorticalArea(name: StringName, position_3d: Vector3i, dimensions: Vector3i, 
 	is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), memory_type: bool = false, 

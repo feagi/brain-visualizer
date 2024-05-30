@@ -223,11 +223,14 @@ func update_cortical_area_cache_from_summary_DEPRECATED(_new_listing_with_summar
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
 func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
-	for cortical_ID in IDs_to_locations.keys():
-		if !(cortical_ID in _available_cortical_areas.keys()):
-			push_error("Unable to update position of %s due to this cortical area missing in cache" % cortical_ID)
+	for cortical in IDs_to_locations.keys():
+		if cortical == null:
+			push_error("Unable to update position of %s null cortical area!")
 			continue
-		_available_cortical_areas[cortical_ID].coordinates_2D = IDs_to_locations[cortical_ID]
+		if !(cortical.cortical_ID in _available_cortical_areas.keys()):
+			push_error("Unable to update position of %s due to this cortical area missing in cache" % cortical.cortical_ID)
+			continue
+		cortical.coordinates_2D = IDs_to_locations[cortical]
 
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
 func FEAGI_hard_wipe_available_cortical_areas():

@@ -70,6 +70,16 @@ func FEAGI_remove_region(region_ID: StringName) -> void:
 	_available_brain_regions.erase(region_ID)
 
 
+## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
+func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
+	for region in IDs_to_locations.keys():
+		if region == null:
+			push_error("Unable to update position of %s null bnrain region!")
+			continue
+		if !(region.ID in _available_brain_regions.keys()):
+			push_error("Unable to update position of %s due to this brain region missing in cache" % region.cortical_ID)
+			continue
+		region.coordinates_2d = IDs_to_locations[region]
 #endregion
 
 

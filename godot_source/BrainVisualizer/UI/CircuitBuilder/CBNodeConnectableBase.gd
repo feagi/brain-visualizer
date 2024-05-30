@@ -2,6 +2,7 @@ extends GraphNode
 class_name CBNodeConnectableBase
 ## Any graph node that can reciewve inputs and outputs
 
+signal node_moved(self_ref: CBNodeConnectableBase, new_offset_pos: Vector2i)
 signal recursive_container_offset_changed()
 signal input_container_offset_changed()
 signal output_container_offset_changed()
@@ -13,6 +14,7 @@ var _outputs: VBoxContainer
 
 
 func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: NodePath) -> void:
+	dragged.connect(_on_finish_drag)
 	_inputs = get_node(input_path)
 	_outputs = get_node(output_path)
 	if !recursive_path.is_empty():
@@ -47,3 +49,6 @@ func _on_node_move() -> void:
 	input_container_offset_changed.emit()
 	output_container_offset_changed.emit()
 
+func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
+	#_dragged = false
+	node_moved.emit(self, to_position)

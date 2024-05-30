@@ -24,7 +24,14 @@ var subregion_nodes: Dictionary: ## All subregion nodes on CB, key'd by their re
 var _cortical_nodes: Dictionary = {}
 var _subregion_nodes: Dictionary = {}
 var _representing_region: BrainRegion
+var _move_timer: Timer
+var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value is new vector2 position
 
+func _ready():
+	_move_timer = $Timer
+	_move_timer.wait_time = move_time_delay_before_update_FEAGI
+	_move_timer.one_shot = true
+	_move_timer.timeout.connect(_move_timer_finished)
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
@@ -67,6 +74,8 @@ func _CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
 	cortical_nodes[area.cortical_ID] = cortical_node
 	add_child(cortical_node)
 	cortical_node.setup(area)
+	cortical_node.node_moved.connect(_genome_object_moved)
+	
 
 func _CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
@@ -85,6 +94,7 @@ func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	add_child(region_node)
 	region_node.setup(subregion)
 	region_node.double_clicked.connect(_user_double_clicked_region)
+	region_node.node_moved.connect(_genome_object_moved)
 
 func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.ID in subregion_nodes.keys()):
@@ -167,6 +177,27 @@ func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 #endregion
 
 #region Internals
+
+## Every time a cortical node moves, store and send it when time is ready
+func _genome_object_moved(node: CBNodeConnectableBase, new_position: Vector2i) -> void:
+	var genome_object: GenomeObject 
+	if node is CBNodeCorticalArea:
+		genome_object = (node as CBNodeCorticalArea).representing_cortical_area
+	elif node is CBNodeRegion:
+		genome_object = (node as CBNodeRegion).representing_region
+	else:
+		return
+	print("Buffering change in position of genome object ")
+	if _moved_genome_objects_buffer == {}:
+		print("Starting 2D move timer for %d seconds" % move_time_delay_before_update_FEAGI)
+		_move_timer.start()
+	_moved_genome_objects_buffer[genome_object] = new_position
+
+## When the move timer goes off, send all the buffered genome objects with their new positions to feagi
+func _move_timer_finished():
+	print("Sending change of 2D positions for %d objects(s)" % len(_moved_genome_objects_buffer.keys()))
+	FeagiCore.requests.mass_move_genome_objects_2D(_moved_genome_objects_buffer)
+	_moved_genome_objects_buffer = {}
 
 ## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
 func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:

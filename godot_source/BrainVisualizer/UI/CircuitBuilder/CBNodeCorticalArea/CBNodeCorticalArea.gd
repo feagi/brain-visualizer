@@ -7,8 +7,14 @@ var representing_cortical_area: BaseCorticalArea:
 var _representing_cortical_area: BaseCorticalArea
 
 
-
-
+#TODO TEMP
+# Announce if cortical area was selected with one click and open cortical properties panel on double click
+func _gui_input(event):
+	if !(event is InputEventMouseButton): return
+	var mouse_event: InputEventMouseButton = event
+	if mouse_event.is_pressed(): return
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
+	BV.UI.user_selected_single_cortical_area_independently(_representing_cortical_area)
 
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: BaseCorticalArea) -> void:

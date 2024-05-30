@@ -44,14 +44,15 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 signal double_clicked(self_ref: CBNodeRegion) ## Node was double clicked
 
 func _gui_input(event):
+	var mouse_event: InputEventMouseButton
 	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		mouse_event = event as InputEventMouseButton
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
+		BV.UI.user_selected_single_cortical_area_independently(_representing_region)
 		if !mouse_event.double_click:
 			return
 		double_clicked.emit(self)
-
-
+	#	TODO TEMP
 
 #endregion

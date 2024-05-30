@@ -59,6 +59,16 @@ func clear_whole_genome() -> void:
 	#cache_reloaded.emit()
 	
 
+## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
+func FEAGI_mass_update_2D_positions(genome_objects_to_locations: Dictionary) -> void:
+	var corticals: Dictionary = {}
+	var regions: Dictionary = {}
+	for genome_object: GenomeObject in genome_objects_to_locations.keys():
+		if genome_object is BaseCorticalArea:
+			corticals[genome_object as BaseCorticalArea] = genome_objects_to_locations[genome_object]
+		if genome_object is BrainRegion:
+			regions[genome_object as BrainRegion] = genome_objects_to_locations[genome_object]
+	cortical_areas.FEAGI_mass_update_2D_positions(corticals)
 
 #region Templates
 

@@ -120,6 +120,37 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 #endregion
 
 
+## Mass move a bunch of cortical areas at once
+func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vector2is: Dictionary) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	for move in genome_objects_mapped_to_new_locations_as_vector2is.keys():
+		if !genome_objects_mapped_to_new_locations_as_vector2is[move] is Vector2i:
+			push_error("FEAGI Requests: Value does not seem to be a Vector2i!" % move)
+			return FeagiRequestOutput.requirement_fail("INVALID_VALUE")
+		#TODO ID check
+	
+	# Define Request
+	var dict_to_send: Dictionary = {}
+	for move in genome_objects_mapped_to_new_locations_as_vector2is.keys():
+		dict_to_send[(move as GenomeObject).get_ID()] = FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_relocate_members, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to 2D move %d genome objects!" % len(genome_objects_mapped_to_new_locations_as_vector2is))
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully 2D moved %d genome objects!" % len(genome_objects_mapped_to_new_locations_as_vector2is))
+	FeagiCore.feagi_local_cache.FEAGI_mass_update_2D_positions(genome_objects_mapped_to_new_locations_as_vector2is)
+	return FEAGI_response_data
+
+
 #region Brain Regions
 func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObject], region_name: StringName, coords_2D: Vector2i, coords_3D: Vector3) -> FeagiRequestOutput:
 	# Requirement checking
@@ -407,42 +438,6 @@ func delete_cortical_area(deleting_ID: StringName) -> FeagiRequestOutput:
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_ID)
 	FeagiCore.feagi_local_cache.cortical_areas.remove_cortical_area(deleting_ID)
-	return FEAGI_response_data
-
-
-## Mass move a bunch of cortical areas at once
-func mass_move_cortical_areas_2D(cortical_IDs_mapped_to_vector2i_positions: Dictionary) -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.can_interact_with_feagi():
-		push_error("FEAGI Requests: Not ready for requests!")
-		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	for move_ID in cortical_IDs_mapped_to_vector2i_positions.keys():
-		if !(move_ID is String || move_ID is StringName):
-			push_error("FEAGI Requests: Key does not seem to be a string!" % move_ID)
-			return FeagiRequestOutput.requirement_fail("INVALID_KEY")
-		if !cortical_IDs_mapped_to_vector2i_positions[move_ID] is Vector2i:
-			push_error("FEAGI Requests: Value does not seem to be a Vector2i!" % move_ID)
-			return FeagiRequestOutput.requirement_fail("INVALID_VALUE")
-		if !move_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-			push_error("FEAGI Requests: Unable to move cortical area %s that is not found in cache!" % move_ID)
-			return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
-	
-	# Define Request
-	var dict_to_send: Dictionary = {}
-	for move_ID in cortical_IDs_mapped_to_vector2i_positions.keys():
-		dict_to_send[move_ID] = FEAGIUtils.vector2i_to_array(cortical_IDs_mapped_to_vector2i_positions[move_ID])
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_coord2d, dict_to_send)
-	
-	# Send request and await results
-	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	await HTTP_FEAGI_request_worker.worker_done
-	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to 2D move %d cortical areas!" % len(cortical_IDs_mapped_to_vector2i_positions))
-		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully 2D moved %d cortical areas!" % len(cortical_IDs_mapped_to_vector2i_positions))
-	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_mass_update_2D_positions(cortical_IDs_mapped_to_vector2i_positions)
 	return FEAGI_response_data
 
 
