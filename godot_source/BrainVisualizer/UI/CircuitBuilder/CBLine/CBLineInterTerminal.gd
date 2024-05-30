@@ -19,6 +19,7 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 	_source_port = source_port
 	_destination_port = destination_port
 	_link = link
+	_link.about_to_be_removed.connect(_on_link_about_to_be_deleted)
 	_update_line_endpoint_positions()
 	_source_port.node_moved.connect(_update_line_endpoint_positions)
 	_destination_port.node_moved.connect(_update_line_endpoint_positions)
@@ -47,6 +48,8 @@ func _update_line_endpoint_positions() -> void:
 func _on_link_about_to_be_deleted() -> void:
 	_source_port.request_deletion()
 	_destination_port.request_deletion()
+	queue_free()
+	
 
 func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 	_button.text = "  " + str(mapping_ref.number_mappings) + "  "

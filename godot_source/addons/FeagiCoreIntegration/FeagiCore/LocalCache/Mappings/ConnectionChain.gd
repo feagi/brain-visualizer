@@ -103,6 +103,8 @@ func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -
 	
 	## If any of these involved objects change parent region, this chain is invalid. We need to know so we can trash the current [ConnectionChainLink] and build new ones
 	for involved_object: GenomeObject in complete_chain_path:
+		if involved_object.parent_region_changed.is_connected(_involved_object_changed_parent):
+			continue
 		involved_object.parent_region_changed.connect(_involved_object_changed_parent)
 
 func _involved_object_changed_parent(_irrelevant1, _irrelevant2) -> void:

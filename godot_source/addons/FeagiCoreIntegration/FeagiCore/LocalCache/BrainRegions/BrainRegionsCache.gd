@@ -56,9 +56,9 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 		return
 	var region: BrainRegion = BrainRegion.new(region_ID, region_name, coord_2D, coord_3D)
 	region.FEAGI_init_parent_relation(parent_region)
+	_available_brain_regions[region_ID] = region
 	for object in contained_objects:
 		object.change_parent_brain_region(region)
-	_available_brain_regions[region_ID] = region
 	region_added.emit(region)
 
 func FEAGI_remove_region(region_ID: StringName) -> void:
