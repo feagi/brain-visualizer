@@ -934,8 +934,7 @@ func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_a
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
 	var temp_json_inbetween: Array[Dictionary] = MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
-	var new_mappings: InterCorticalMappingSet = InterCorticalMappingSet.from_FEAGI_JSON(temp_json_inbetween, source_area, destination_area)
-	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, new_mappings.mappings)
+	FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID].FEAGI_updated_mappings_JSON(temp_json_inbetween)
 	return FEAGI_response_data
 
 

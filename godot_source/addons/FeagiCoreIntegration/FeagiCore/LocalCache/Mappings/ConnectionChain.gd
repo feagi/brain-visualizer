@@ -110,3 +110,6 @@ func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -
 func _involved_object_changed_parent(_irrelevant1, _irrelevant2) -> void:
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(_source, _destination)
 	_rebuild_connection_chain_links(_total_chain_path)
+
+func _mappings_changed(_irrelevant) -> void:
+	FEAGI_prepare_to_delete()
