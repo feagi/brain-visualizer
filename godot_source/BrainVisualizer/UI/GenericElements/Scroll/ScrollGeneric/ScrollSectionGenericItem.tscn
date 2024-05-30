@@ -1,8 +1,11 @@
-[gd_scene load_steps=4 format=3 uid="uid://kvolmoptsp33"]
+[gd_scene load_steps=7 format=3 uid="uid://kvolmoptsp33"]
 
 [ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_jmsfr"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.gd" id="1_oexre"]
+[ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="4_35f1l"]
+[ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="5_8608q"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="5_uduhd"]
+[ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="6_0h2cx"]
 
 [node name="ScrollSectionGenericItem" type="HBoxContainer"]
 offset_right = 72.0
@@ -14,3 +17,7 @@ layout_mode = 2
 texture = ExtResource("1_jmsfr")
 expand_mode = 3
 script = ExtResource("5_uduhd")
+texture_normal = ExtResource("1_jmsfr")
+texture_pressed = ExtResource("4_35f1l")
+texture_hover = ExtResource("5_8608q")
+texture_disabled = ExtResource("6_0h2cx")

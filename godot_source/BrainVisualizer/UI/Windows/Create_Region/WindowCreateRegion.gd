@@ -28,8 +28,8 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 		_scroll_section.add_item(button, selected)
 
 func _add_button_pressed() -> void:
-	## TODO open menu
-	pass
+	var genome_window: SelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
+	genome_window.user_selected_object_final.connect(_add_button_response)
 
 func _add_button_response(genome_object: GenomeObject) -> void:
 	if genome_object == null:

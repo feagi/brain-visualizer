@@ -1,5 +1,8 @@
 extends BaseDraggableWindow
-class_name SelectGenomeObject
+class_name SelectGenomeObject #TODO fix class name
+
+signal user_selected_object_nonfinal(object: GenomeObject)
+signal user_selected_object_final(object: GenomeObject)
 
 enum SELECTION_TYPE {
 	GENOME_OBJECT,
@@ -45,6 +48,13 @@ func _object_selected(object: GenomeObject) -> void:
 		_area_selected(object as BaseCorticalArea)
 	if object is BrainRegion:
 		_region_selected(object as BrainRegion)
+	user_selected_object_nonfinal.emit(object)
+	if object is BaseCorticalArea and (_type_of_selection == SELECTION_TYPE.CORTICAL_AREA or _type_of_selection == SELECTION_TYPE.GENOME_OBJECT):
+		_select.disabled = false
+	elif object is BrainRegion and (_type_of_selection == SELECTION_TYPE.BRAIN_REGION or _type_of_selection == SELECTION_TYPE.GENOME_OBJECT):
+		_select.disabled = false
+	else:
+		true
 
 func _area_selected(area: BaseCorticalArea) -> void:
 	_selected_object = area
@@ -54,3 +64,17 @@ func _region_selected(region: BrainRegion) -> void:
 	_selected_object = region
 	_selection_label.text = "Selected brain region %s" % region.name
 
+func _select_pressed() -> void:
+	if _selected_object == null:
+		close_window()
+		return
+	match(_type_of_selection):
+		SELECTION_TYPE.GENOME_OBJECT:
+			user_selected_object_final.emit(_selected_object)
+		SELECTION_TYPE.BRAIN_REGION:
+			if _selected_object is BrainRegion:
+				user_selected_object_final.emit(_selected_object)
+		SELECTION_TYPE.CORTICAL_AREA:
+			if _selected_object is BaseCorticalArea:
+				user_selected_object_final.emit(_selected_object)
+	close_window()
