@@ -139,9 +139,9 @@ func get_name() -> StringName:
 
 func get_ID() -> StringName:
 	if self is BrainRegion:
-		return (self as BrainRegion).cortical_ID
+		return (self as BrainRegion).ID
 	if self is BaseCorticalArea:
-		return (self as BaseCorticalArea).ID
+		return (self as BaseCorticalArea).cortical_ID
 	return "UNKNOWN"
 
 ## For initialization of an object to a [BrainRegion]. Not for CHANGING regions!

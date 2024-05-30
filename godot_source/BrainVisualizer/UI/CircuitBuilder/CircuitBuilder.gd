@@ -72,7 +72,6 @@ func _CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
-	#NOTE: We assume that all connections to / from this area have already been called to be removed by the cache FIRST
 	cortical_nodes[area.cortical_ID].queue_free()
 	cortical_nodes.erase(area.cortical_ID)
 	

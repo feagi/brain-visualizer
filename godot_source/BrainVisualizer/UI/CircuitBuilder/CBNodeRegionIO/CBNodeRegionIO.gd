@@ -16,6 +16,12 @@ func setup(parent_region: BrainRegion, is_input: bool) -> void:
 	CACHE_updated_region_name(parent_region.name)
 	parent_region.name_updated.connect(CACHE_updated_region_name)
 
+## Called by [CircuitBuilder] when adding a connection to the Node object, EXTENDED in this class because any deletion of the single terminal implies that this whole node should go
+func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:
+	var terminal: CBNodeTerminal = super(connection_type, text, port_prefab)
+	terminal.terminal_about_to_be_deleted.connect(queue_free)
+	return terminal
+
 ## Updates the title text of the node
 func CACHE_updated_region_name(name_text: StringName) -> void:
 	var text: StringName

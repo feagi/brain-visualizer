@@ -43,6 +43,7 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 			_tex_output.visible = true
 			_active_port = _tex_output
 	_active_port.setup(parent_node, signal_to_report_updated_position)
+	_active_port.deletion_requested.connect(_port_reporting_deletion)
 
 
 func update_text(new_text: StringName) -> void:
@@ -51,4 +52,3 @@ func update_text(new_text: StringName) -> void:
 func _port_reporting_deletion() -> void:
 	terminal_about_to_be_deleted.emit()
 	queue_free()
-
