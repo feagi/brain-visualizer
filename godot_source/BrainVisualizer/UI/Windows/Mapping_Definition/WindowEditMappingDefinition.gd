@@ -86,13 +86,14 @@ func _source_changed(new_source: BaseCorticalArea) -> void:
 	if _source_area != null:
 		if _source_area.efferent_mapping_retrieved_from_feagi.is_connected(_retrieved_feagi_mapping_data):
 			_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
-		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		#BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false) #TODO restore
 	_source_area = new_source
 	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
 func _destination_changed(new_destination: BaseCorticalArea) -> void:
 	if _destination_area != null:
-		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		#BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false) #TODO restore
+		pass
 	_destination_area = new_destination
 	_selected_cortical_areas_changed(_source_area, _destination_area)
