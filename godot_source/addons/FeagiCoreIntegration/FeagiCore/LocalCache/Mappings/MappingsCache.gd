@@ -24,11 +24,24 @@ func FEAGI_set_mapping_JSON(source: BaseCorticalArea, destination: BaseCorticalA
 		_established_mappings[source.cortical_ID] = {}
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
 		## Mapping exists, update it!
-		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings(mappings_JSON)
+		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings_JSON(mappings_JSON)
 		mapping_updated.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
 	else:
 		## Mapping doesn't exist, create it!	
 		_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.from_FEAGI_JSON(mappings_JSON, source, destination)
+		mapping_created.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
+
+## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
+func FEAGI_set_mapping(source: BaseCorticalArea, destination: BaseCorticalArea, new_mappings: Array[SingleMappingDefinition]):
+	if !source.cortical_ID in _established_mappings.keys():
+		_established_mappings[source.cortical_ID] = {}
+	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
+		## Mapping exists, update it!
+		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings(new_mappings)
+		mapping_updated.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
+	else:
+		## Mapping doesn't exist, create it!	
+		_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.new(source, destination, new_mappings)
 		mapping_created.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
 
 ## Load in all mappings from summary data. Called from [FEAGILocalCache] when loading genome

@@ -47,8 +47,14 @@ static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], so
 	return InterCorticalMappingSet.new(source_area, destination_area, new_mappings)
 
 ## FEAGI responded with updated mappings
-func FEAGI_updated_mappings(FEAGI_mappings_JSON: Array[Dictionary]) -> void:
+func FEAGI_updated_mappings_JSON(FEAGI_mappings_JSON: Array[Dictionary]) -> void:
 	_mappings = SingleMappingDefinition.from_FEAGI_JSON_array(FEAGI_mappings_JSON)
+	mappings_changed.emit(self)
+	_connection_chain.FEAGI_updated_associated_mapping_set()
+
+## FEAGI responded with updated mappings
+func FEAGI_updated_mappings(new_mappings_between_areas: Array[SingleMappingDefinition]) -> void:
+	_mappings = new_mappings_between_areas
 	mappings_changed.emit(self)
 	_connection_chain.FEAGI_updated_associated_mapping_set()
 
