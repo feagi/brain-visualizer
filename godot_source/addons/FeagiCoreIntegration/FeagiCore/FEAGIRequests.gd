@@ -153,8 +153,8 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to create region of name %s!" % region_name)
 		return FEAGI_response_data
-	var response: StringName = FEAGI_response_data.decode_response_as_string()
-	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response, parent_region, region_name, coords_2D, coords_3D, region_internals)
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response["region_id"], parent_region, region_name, coords_2D, coords_3D, region_internals)
 	return FEAGI_response_data
 	
 #endregion
@@ -1024,11 +1024,15 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 
 
 ## Used for error automated error handling of HTTP requests, outputs booleans to set up easy early returns
-func _return_if_HTTP_failed_and_automatically_handle(output: FeagiRequestOutput) -> bool:
+func _return_if_HTTP_failed_and_automatically_handle(output: FeagiRequestOutput, optional_input_for_debugging: APIRequestWorkerDefinition = null) -> bool:
 	if output.has_timed_out:
 		print("TODO generic timeout handling")
 		return true
 	if output.has_errored:
 		print("TODO generic error handling")
+		if OS.is_debug_build() and optional_input_for_debugging != null:
+			push_error("FEAGI Requests: Error at endpoint %s" % optional_input_for_debugging.full_address)
+			
+		
 		return true
 	return false
