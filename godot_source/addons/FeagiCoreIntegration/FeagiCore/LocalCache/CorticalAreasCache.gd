@@ -243,10 +243,17 @@ func hard_wipe_available_cortical_areas():
 #endregion
 
 #region queries
-## Returns true if a cortical area exists with a given name (NOT ID)
-func exist_cortical_area_of_name(searching_name: StringName) -> bool:
+## Returns true if a cortical area exists with a given substring of name (NOT ID)
+func exist_cortical_area_with_subname(searching_name: StringName) -> bool:
 	for cortical_area in _available_cortical_areas.values():
 		if cortical_area.name.to_lower().contains(searching_name.to_lower()):
+			return true
+	return false
+
+## Returns true if a cortical area exists with a given name (NOT ID)
+func exist_cortical_area_with_exact_name(searching_name: StringName) -> bool:
+	for cortical_area in _available_cortical_areas.values():
+		if cortical_area.name.to_lower() == searching_name.to_lower():
 			return true
 	return false
 #endregion
