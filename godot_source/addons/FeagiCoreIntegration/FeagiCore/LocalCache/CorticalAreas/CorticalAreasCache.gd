@@ -271,7 +271,7 @@ func get_all_cortical_area_names() -> Array[StringName]:
 ## Returns true if a cortical area exists with a given name (NOT ID)
 func exist_cortical_area_of_name(searching_name: StringName) -> bool:
 	for cortical_area in _available_cortical_areas.values():
-		if cortical_area.name.to_lower().contains(searching_name.to_lower()):
+		if cortical_area.name.to_lower() == searching_name.to_lower():
 			return true
 	return false
 #endregion
