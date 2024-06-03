@@ -18,7 +18,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
 	_setup_base_window("quick_cortical_menu")
 	focus_exited.connect(_on_focus_lost)
-	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - CENTER_OFFSET
+	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - (CENTER_OFFSET * BV.UI.loaded_theme_scale.x)
 	if position_to_spawn.y < CENTER_OFFSET.y:
 		position_to_spawn.y += int(CENTER_OFFSET.y * 2.0)
 	position = position_to_spawn

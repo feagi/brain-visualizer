@@ -4,6 +4,12 @@ class_name UIManager
 
 # TODO dev menu - build_settings_object
 
+enum UI_VIEW {
+	CIRCUIT_BUILDER,
+	BRAIN_MONITOR
+}
+
+
 ## public var references and init for this object
 #region References and Init
 
