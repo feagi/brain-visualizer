@@ -16,6 +16,7 @@ const _prefab_configurable_popup: PackedScene = preload("res://BrainVisualizer/U
 const _prefab_developer_options: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowDeveloperOptions.tscn")
 const _prefab_select_genome_object: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.tscn")
 const _prefab_create_region: PackedScene = preload("res://BrainVisualizer/UI/Windows/Create_Region/WindowCreateRegion.tscn")
+const _prefab_edit_region: PackedScene = preload("res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.tscn")
 
 var loaded_windows: Dictionary
 
@@ -73,7 +74,10 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> WindowConfigu
 func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:
 	var create_region: WindowCreateRegion = _default_spawn_window(_prefab_create_region, "create_region") as WindowCreateRegion
 	create_region.setup(parent_region, selected_objects)
-	
+
+func spawn_edit_region(editing_region: BrainRegion) -> void:
+	var edit_region: WindowEditRegion = _default_spawn_window(_prefab_edit_region, "edit_region") as WindowEditRegion
+	edit_region.setup(editing_region)
 
 func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject]) -> void:
 	# cortical area was selected, make sure its selected in both sides

@@ -1,0 +1,56 @@
+extends BaseDraggableWindow
+class_name WindowEditRegion
+
+const BUTTON_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollIItemPrefab.tscn")
+
+var _region_name: TextInput
+var _region_ID: TextInput
+var _region_parent: Button
+var _region_3D_position: Vector3iSpinboxField
+var _scroll_section: ScrollSectionGeneric
+var _editing_region: BrainRegion
+
+func _ready() -> void:
+	super()
+	_region_name = _window_internals.get_node("HBoxContainer3/TextInput")
+	_region_ID = _window_internals.get_node("HBoxContainer/TextInput")
+	_region_parent = _window_internals.get_node("HBoxContainer5/Button")
+	_region_3D_position = _window_internals.get_node("HBoxContainer2/Vector3fField")
+	_scroll_section = _window_internals.get_node("ScrollSectionGenericTemplate/PanelContainer/ScrollSectionGeneric")
+
+func setup(editing_region: BrainRegion) -> void:
+	_setup_base_window("edit_region")
+	if editing_region.is_root_region():
+		push_warning("UI WINDOW: Unable to create window for editing regions for the root region! Closing the window!")
+		close_window()
+		return
+	_editing_region = editing_region
+	_region_name.text = editing_region.name
+	_region_ID.text = editing_region.ID
+	_region_parent.text = editing_region.current_parent_region.name
+	_region_3D_position.current_vector = editing_region.coordinates_3d
+	for areas in editing_region.contained_cortical_areas:
+		_load_internal_listing(areas)
+	for regions in editing_region.contained_regions:
+		_load_internal_listing(regions)
+
+func _load_internal_listing(genome_object: GenomeObject) -> void:
+	if genome_object == null:
+		return
+	var button: Button = BUTTON_PREFAB.instantiate()
+	button.text = genome_object.get_name()
+	_scroll_section.add_item(button, genome_object)
+
+func _on_press_cancel():
+	close_window()
+
+func _on_press_open_circuit_builder():
+	pass
+
+func _on_press_change_parent():
+	pass
+
+func _on_press_update():
+	#TODO
+	close_window()
+

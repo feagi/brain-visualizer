@@ -71,7 +71,7 @@ func _button_details() -> void:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			BV.WM.spawn_cortical_properties((_selection[0] as BaseCorticalArea))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
-			#TODO
+			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
 			pass
 	close_window()
 

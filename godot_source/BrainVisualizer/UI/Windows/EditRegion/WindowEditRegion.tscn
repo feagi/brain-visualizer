@@ -1,0 +1,140 @@
+[gd_scene load_steps=6 format=3 uid="uid://cav0qsdij6r3j"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.gd" id="1_1ef3e"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_shuhl"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_x0h7e"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="5_ysyug"]
+[ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="11_fciic"]
+
+[node name="WindowEditRegion" type="VBoxContainer"]
+offset_right = 422.0
+offset_bottom = 530.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_1ef3e")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_shuhl")]
+layout_mode = 2
+title = "Edit Brain Region"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Region Name"
+
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+script = ExtResource("4_x0h7e")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Region ID"
+
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_x0h7e")
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Parent Region"
+
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "PARENT"
+
+[node name="HBoxContainer2" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+vertical = true
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3D Position"
+
+[node name="Vector3fField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" instance=ExtResource("5_ysyug")]
+layout_mode = 2
+
+[node name="HBoxContainer6" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+vertical = true
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Open in"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6"]
+layout_mode = 2
+
+[node name="CB" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "Circuit Builder"
+
+[node name="BM" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+disabled = true
+text = "Brain Monitor"
+
+[node name="ScrollSectionGenericTemplate" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Region internals"
+
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" instance=ExtResource("11_fciic")]
+layout_mode = 2
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Button2" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Update"
