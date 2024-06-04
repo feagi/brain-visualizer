@@ -2,6 +2,8 @@ extends Node
 class_name UIManager
 ## Manages UI aspects of BV as a whole
 
+const PREFAB_CB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
+
 # TODO dev menu - build_settings_object
 
 enum UI_VIEW {
@@ -19,14 +21,14 @@ var notification_system: NotificationSystem:
 	get: return _notification_system
 var top_bar: TopBar:
 	get: return _top_bar
-var root_multi_tab_view: RootMultiTabView:
-	get: return _root_multi_tab_view
+var root_UI_view: UIView:
+	get: return _root_UI_view
 
 
 var _top_bar: TopBar
 var _brain_monitor # lol
 var _window_manager: WindowManager
-var _root_multi_tab_view: RootMultiTabView
+var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
 
@@ -42,7 +44,7 @@ func _ready():
 	_brain_monitor = $BrainMonitor
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
-	_root_multi_tab_view = $CB_Holder/RootMultiTabView
+	_root_UI_view = $CB_Holder/UIView
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -85,8 +87,13 @@ func FEAGI_confirmed_genome() -> void:
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		push_error("UI: Unable to init root region for CB and BM since no root region was detected!")
 		return
-
-	_root_multi_tab_view.setup_with_root_regions()
+	
+	var initial_tabs: Array[Control]
+	var cb: CircuitBuilder = PREFAB_CB.instantiate()
+	cb.setup(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
+	initial_tabs = [cb]
+	_root_UI_view.set_this_as_root_view()
+	_root_UI_view.setup_as_single_tab(initial_tabs)
 	
 
 #endregion

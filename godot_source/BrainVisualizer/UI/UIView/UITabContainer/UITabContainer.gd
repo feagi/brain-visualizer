@@ -101,6 +101,7 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 		add_child(cb)
 		var tab_idx: int = get_tab_idx_from_control(cb)
 		set_tab_icon(tab_idx , ICON_CB)
+		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
 		current_tab = tab_idx
 		cb.user_request_viewing_subregion.connect(_internal_CB_requesting_CB_view_of_region)
 		return

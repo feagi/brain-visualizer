@@ -32,6 +32,8 @@ func _ready():
 	_move_timer.wait_time = move_time_delay_before_update_FEAGI
 	_move_timer.one_shot = true
 	_move_timer.timeout.connect(_move_timer_finished)
+	focus_entered.connect(_toggle_draggability_based_on_focus)
+	focus_exited.connect(_toggle_draggability_based_on_focus)
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
@@ -221,6 +223,13 @@ func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNo
 	else:
 		IO_node.position_offset = target_node.position_offset + CBNodeRegionIO.CONNECTED_NODE_OFFSET
 	return IO_node
-	
+
+func _toggle_draggability_based_on_focus() -> void:
+	var are_nodes_draggable = has_focus()
+	for child in get_children():
+		if child is CBNodeConnectableBase:
+			(child as CBNodeConnectableBase).draggable = are_nodes_draggable
+			continue
+
 #endregion
 
