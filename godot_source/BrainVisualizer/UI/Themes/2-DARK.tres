@@ -1,6 +1,6 @@
 [gd_resource type="Theme" load_steps=30 format=3 uid="uid://dlabuxhglmgw5"]
 
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_y2mkv"]
+[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_wdhi1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -157,7 +157,7 @@ Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 40
 Label_UniformWidth/base_type = &"Label"
 Label_UniformWidth/font_sizes/font_size = 32
-Label_UniformWidth/fonts/font = ExtResource("1_y2mkv")
+Label_UniformWidth/fonts/font = ExtResource("1_wdhi1")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 32
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
@@ -214,6 +214,7 @@ RichTextLabel/font_sizes/bold_italics_font_size = 32
 RichTextLabel/font_sizes/italics_font_size = 32
 RichTextLabel/font_sizes/mono_font_size = 32
 RichTextLabel/font_sizes/normal_font_size = 32
+TabContainer/font_sizes/font_size = 32
 TextEdit/font_sizes/font_size = 32
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
 TextureButton/constants/size_x = 96

@@ -34,6 +34,7 @@ func _ready():
 	_move_timer.timeout.connect(_move_timer_finished)
 	focus_entered.connect(_toggle_draggability_based_on_focus)
 	focus_exited.connect(_toggle_draggability_based_on_focus)
+	connection_request.connect(_on_connection_request)
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
@@ -78,7 +79,6 @@ func _CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
 	cortical_node.setup(area)
 	cortical_node.node_moved.connect(_genome_object_moved)
 	
-
 func _CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
@@ -86,7 +86,6 @@ func _CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
 	cortical_nodes[area.cortical_ID].queue_free()
 	cortical_nodes.erase(area.cortical_ID)
 	
-
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	if (subregion.ID in subregion_nodes.keys()):
 		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.ID)
@@ -176,6 +175,18 @@ signal user_request_viewing_subregion(region: BrainRegion)
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
+func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:
+	var source_area: BaseCorticalArea = null
+	var destination_area: BaseCorticalArea = null
+	if (from_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
+		source_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_node]
+		return
+	if (to_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
+		destination_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_node]
+		return
+	BV.UI.window_manager.spawn_edit_mappings(source_area, destination_area)
+	
+	
 #endregion
 
 #region Internals

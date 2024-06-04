@@ -214,6 +214,7 @@ RichTextLabel/font_sizes/bold_italics_font_size = 16
 RichTextLabel/font_sizes/italics_font_size = 16
 RichTextLabel/font_sizes/mono_font_size = 16
 RichTextLabel/font_sizes/normal_font_size = 16
+TabContainer/font_sizes/font_size = 16
 TextEdit/font_sizes/font_size = 16
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
 TextureButton/constants/size_x = 48
