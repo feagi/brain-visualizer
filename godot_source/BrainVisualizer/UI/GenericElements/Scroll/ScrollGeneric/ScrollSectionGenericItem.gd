@@ -12,12 +12,8 @@ var _delete_button: ButtonTextureRectScaling
 var _control: Control
 var _self_delete: bool
 
-
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	_delete_button = $Delete
-
 func setup(control: Control, key_to_lookup: Variant, enable_delete_button: bool = true, delete_button_deletes_item: bool = true) -> void:
+	_delete_button = $Delete
 	_control = control
 	_lookup_key = key_to_lookup
 	_self_delete = delete_button_deletes_item

@@ -145,7 +145,15 @@ func FEAGI_genome_object_deregister_as_child(genome_object: GenomeObject) -> voi
 		return
 	push_error("CORE CACHE: Unknown GenomeObject type tried to be removed from region %s!" % _ID)
 
-
+## Called from FEAGI when we update properties of the brain region
+func FEAGI_edited_region(title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
+	name = title
+	#TODO description?
+	coordinates_2d = position_2D
+	coordinates_3d = position_3D
+	if new_parent_region.ID != current_parent_region.ID:
+		change_parent_brain_region(new_parent_region)
+		
 
 #TODO make better deletion with proper checks
 ## FEAGI confirmed this region is deleted

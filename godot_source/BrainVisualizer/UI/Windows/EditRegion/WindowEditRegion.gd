@@ -9,6 +9,7 @@ var _region_parent: Button
 var _region_3D_position: Vector3iSpinboxField
 var _scroll_section: ScrollSectionGeneric
 var _editing_region: BrainRegion
+var _editing_region_parent: BrainRegion
 
 func _ready() -> void:
 	super()
@@ -25,6 +26,7 @@ func setup(editing_region: BrainRegion) -> void:
 		close_window()
 		return
 	_editing_region = editing_region
+	_editing_region_parent = editing_region.current_parent_region
 	_region_name.text = editing_region.name
 	_region_ID.text = editing_region.ID
 	_region_parent.text = editing_region.current_parent_region.name
@@ -39,7 +41,7 @@ func _load_internal_listing(genome_object: GenomeObject) -> void:
 		return
 	var button: Button = BUTTON_PREFAB.instantiate()
 	button.text = genome_object.get_name()
-	_scroll_section.add_item(button, genome_object)
+	_scroll_section.add_item(button, genome_object, false)
 
 func _on_press_cancel():
 	close_window()
@@ -53,6 +55,6 @@ func _on_press_change_parent():
 	pass
 
 func _on_press_update():
-	#TODO
+	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2d, _region_3D_position.current_vector) # TODO description, 2d location?
 	close_window()
 

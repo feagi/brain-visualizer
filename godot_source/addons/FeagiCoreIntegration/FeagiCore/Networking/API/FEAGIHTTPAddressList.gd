@@ -51,6 +51,7 @@ var PUT_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_pro
 var PUT_genome_morphology: StringName = "/v1/morphology/morphology"
 var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
+var PUT_region_region: StringName = "/v1/region/region"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
