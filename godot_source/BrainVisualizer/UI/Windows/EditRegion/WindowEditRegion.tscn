@@ -138,3 +138,6 @@ text = "Cancel"
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Update"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6/HBoxContainer/CB" to="." method="_on_press_open_circuit_builder"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4/Button" to="." method="_on_press_cancel"]

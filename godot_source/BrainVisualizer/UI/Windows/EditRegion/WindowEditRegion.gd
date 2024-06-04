@@ -44,8 +44,10 @@ func _load_internal_listing(genome_object: GenomeObject) -> void:
 func _on_press_cancel():
 	close_window()
 
-func _on_press_open_circuit_builder():
-	pass
+func _on_press_open_circuit_builder(): #TODO change the spawn region to the last active one
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.return_root_region()
+	var root_region_tab: UITabContainer = BV.UI.root_UI_view.return_UITabContainer_holding_CB_of_given_region(root_region)
+	BV.UI.root_UI_view.show_or_create_CB_of_region(_editing_region, root_region_tab)
 
 func _on_press_change_parent():
 	pass
