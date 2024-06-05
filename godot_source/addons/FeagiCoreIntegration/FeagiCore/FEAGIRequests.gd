@@ -172,7 +172,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"region_title": region_name,
+		"title": region_name,
 		"parent_region_id": parent_region.ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
@@ -981,10 +981,19 @@ func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_a
 		return FeagiRequestOutput.requirement_fail("AREA_NO_LONGER_EXIST")
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
+	
 	var temp_json_inbetween: Array[Dictionary] = MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
-	FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID].FEAGI_updated_mappings_JSON(temp_json_inbetween)
+	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, temp_json_inbetween)
+	var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
+	mapping_set.mappings_changed.emit(mapping_set)
+	mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()
+	FeagiCore.feagi_local_cache.mapping_data.mapping_updated.emit(mapping_set)
 	return FEAGI_response_data
-
+	#if FeagiCore.feagi_local_cache.mapping_data.does_mappings_exist_between_areas(source_area, destination_area):
+	#	FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID].FEAGI_updated_mappings_JSON(temp_json_inbetween)
+	#	return FEAGI_response_data
+	# doesnt exist, create
+	
 
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
 func append_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:

@@ -24,12 +24,11 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 	_source_port.node_moved.connect(_update_line_endpoint_positions)
 	_destination_port.node_moved.connect(_update_line_endpoint_positions)
 	name = "Line_%s->%s" % [source_port.root_node.name,destination_port.root_node.name]
+	link.associated_mapping_set_updated.connect(_proxy_mapping_change_connection)
+	_button.pressed.connect(_user_pressed_button)
 	
 	if link.parent_chain.is_registered_to_established_mapping_set():
-		# Update line to reflect properties of cortical mapping
 		_on_full_mapping_change(link.parent_chain.mapping_set)
-		link.parent_chain.mapping_set.mappings_changed.connect(_on_full_mapping_change)
-		_button.pressed.connect(_user_pressed_button)
 		return
 	if link.parent_chain.is_registered_to_partial_mapping_set():
 		#TODO
@@ -49,6 +48,9 @@ func _on_link_about_to_be_deleted() -> void:
 	_source_port.request_deletion()
 	_destination_port.request_deletion()
 	queue_free()
+
+func _proxy_mapping_change_connection() -> void:
+	_on_full_mapping_change(_link.parent_chain.mapping_set)
 	
 
 func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:

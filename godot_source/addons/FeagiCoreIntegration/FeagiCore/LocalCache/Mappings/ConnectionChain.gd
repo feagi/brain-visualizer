@@ -50,6 +50,7 @@ func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
 
 func FEAGI_set_mapping(mapping: InterCorticalMappingSet) -> void:
 	_mapping_set = mapping
+	FEAGI_updated_associated_mapping_set()
 
 func FEAGI_set_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 	_partial_mapping_set = partial_mapping
@@ -60,7 +61,7 @@ func FEAGI_prepare_to_delete() -> void:
 	about_to_be_deleted.emit()
 	_chain_links = []
 
-## Called by [InterCorticalMappingSert] when it gets updated gets updated
+## Called by [InterCorticalMappingSet] when it gets updated gets updated
 func FEAGI_updated_associated_mapping_set() -> void:
 	associated_mapping_set_updated.emit()
 	for chain_link in _chain_links:
