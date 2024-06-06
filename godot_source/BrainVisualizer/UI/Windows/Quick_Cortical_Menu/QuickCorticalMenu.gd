@@ -26,7 +26,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			var area: BaseCorticalArea = (_selection[0] as BaseCorticalArea)
-			_titlebar.title = "Selected Area " + area.name
+			_titlebar.title = area.name
 			if !area.user_can_delete_this_area:
 				delete_button.disabled = true
 				delete_button.tooltip_text = "This Cortical Area Cannot Be Deleted"
@@ -35,7 +35,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			var region: BrainRegion = (_selection[0] as BrainRegion)
-			_titlebar.title = "Selected region " + region.name
+			_titlebar.title = region.name
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			delete_button.visible = false #TODO temp

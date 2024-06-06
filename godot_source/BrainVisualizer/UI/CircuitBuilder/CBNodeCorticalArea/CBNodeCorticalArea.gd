@@ -14,7 +14,8 @@ func _gui_input(event):
 	var mouse_event: InputEventMouseButton = event
 	if mouse_event.is_pressed(): return
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
-	BV.UI.user_selected_single_cortical_area_independently(_representing_cortical_area)
+	if !_dragged:
+		BV.UI.user_selected_single_cortical_area_independently(_representing_cortical_area)
 
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: BaseCorticalArea) -> void:
@@ -42,6 +43,7 @@ func CACHE_updated_cortical_area_name(name_text: StringName) -> void:
 ## Updates the position within CB of the node
 func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 	position_offset = new_position
+	_dragged = false
 
 #endregion
 

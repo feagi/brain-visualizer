@@ -31,6 +31,7 @@ func CACHE_updated_region_name(name_text: StringName) -> void:
 ## Updates the position within CB of the node
 func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 	position_offset = new_position
+	_dragged = false
 
 #endregion
 
@@ -47,9 +48,11 @@ func _gui_input(event):
 	var mouse_event: InputEventMouseButton
 	if event is InputEventMouseButton:
 		mouse_event = event as InputEventMouseButton
+		if mouse_event.is_pressed(): return
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
-		BV.UI.user_selected_single_cortical_area_independently(_representing_region)
+		if !_dragged:
+			BV.UI.user_selected_single_cortical_area_independently(_representing_region)
 		if !mouse_event.double_click:
 			return
 		double_clicked.emit(self)

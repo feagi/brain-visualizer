@@ -7,7 +7,7 @@ signal recursive_container_offset_changed()
 signal input_container_offset_changed()
 signal output_container_offset_changed()
 
-
+var _dragged: bool = false
 var _recursives: VBoxContainer
 var _inputs: VBoxContainer
 var _outputs: VBoxContainer
@@ -21,6 +21,8 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 		_recursives =  get_node(recursive_path)
 	position_offset_changed.connect(_on_node_move)
 	draw.connect(_on_node_move)
+	position_offset_changed.connect(_on_position_changed)
+	_dragged = false
 
 	
 	
@@ -50,5 +52,8 @@ func _on_node_move() -> void:
 	output_container_offset_changed.emit()
 
 func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
-	#_dragged = false
+	_dragged = false
 	node_moved.emit(self, to_position)
+
+func _on_position_changed() -> void:
+	_dragged = true
