@@ -153,10 +153,10 @@ func FEAGI_edited_region(title: StringName, _description: StringName, new_parent
 	coordinates_3d = position_3D
 	if new_parent_region.ID != current_parent_region.ID:
 		change_parent_brain_region(new_parent_region)
-		
+
 
 #TODO make better deletion with proper checks
-## FEAGI confirmed this region is deleted
+## FEAGI confirmed this region is deleted. Called by [BrainRegionCache]
 func FEAGI_delete_this_region() -> void:
 	if len(_contained_regions) != 0:
 		push_error("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_ID])
@@ -276,5 +276,14 @@ func get_path() -> Array[BrainRegion]:
 
 func is_safe_to_add_child_region(possible_child: BrainRegion) -> bool:
 	return !(possible_child in get_path())
+
+func get_all_included_genome_objects() -> Array[GenomeObject]:
+	var contained_objects: Array[GenomeObject] = []
+	for area in _contained_cortical_areas:
+		contained_objects.append(area)
+	for region in _contained_regions:
+		contained_objects.append(region)
+	return contained_objects
+
 
 #endregion

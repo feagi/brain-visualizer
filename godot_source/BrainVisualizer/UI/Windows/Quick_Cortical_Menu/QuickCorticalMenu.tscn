@@ -74,10 +74,10 @@ ignore_texture_size = true
 stretch_mode = 5
 flip_v = true
 
-[node name="AddToNewRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="AddToRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "Add to a new region..."
+tooltip_text = "Add to a region..."
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("11_60rj6")
@@ -115,6 +115,6 @@ stretch_mode = 5
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Details" to="." method="_button_details"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToNewRegion" to="." method="_button_add_to_new_region"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToRegion" to="." method="_button_add_to_region"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Delete" to="." method="_button_delete"]

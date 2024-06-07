@@ -235,7 +235,73 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	brain_region.FEAGI_edited_region(region_name, region_description, parent_region, coords_2D, coords_3D)
 	return FEAGI_response_data
 
+func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[GenomeObject]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !target_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % target_region.ID)
+		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
+	for object in objects_to_move:
+		if object is BrainRegion:
+			if (object as BrainRegion).is_root_region():
+				push_error("FEAGI Requests: Unable to make Root Region a child of %s!" % target_region.name)
+				return FeagiRequestOutput.requirement_fail("CANNOT_MOVE_ROOT")
+			if (object as BrainRegion).ID == target_region.ID:
+				push_error("FEAGI Requests: Cannot make region %s child of itself!" % target_region.name)
+				return FeagiRequestOutput.requirement_fail("CANNOT_RECURSE_REGION")
+	
+	# Define Request
+	var dict_to_send: Dictionary = {}
+	for object in objects_to_move:
+		dict_to_send[object.get_ID()] = target_region.ID
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_relocateMembers, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to move objects to region of name %s!" % target_region.name)
+		return FEAGI_response_data
+	for object in objects_to_move:
+		object.change_parent_brain_region(target_region)
+	return FEAGI_response_data
 
+
+func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !deleting_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % deleting_region.ID)
+		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
+	if deleting_region.is_root_region():
+		push_error("FEAGI Requests: Unable to delete Root Region!")
+		return FeagiRequestOutput.requirement_fail("CANNOT_DELETE_ROOT")
+
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"id": deleting_region.ID
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_region_region, dict_to_send)
+	
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete region of name %s!" % deleting_region.name)
+		return FEAGI_response_data
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_remove_region_and_raise_internals(deleting_region)
+	return FEAGI_response_data
+
+	
+	
+	
 #endregion
 
 

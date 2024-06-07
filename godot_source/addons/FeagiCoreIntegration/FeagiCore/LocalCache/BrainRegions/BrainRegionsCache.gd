@@ -48,7 +48,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 ## Clears all regions from the cache
 func FEAGI_clear_all_regions() -> void:
 	for region_ID: StringName in _available_brain_regions.keys():
-		FEAGI_remove_region(region_ID)
+		FEAGI_remove_region_and_internals(region_ID)
 
 func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []):
 	if region_ID in _available_brain_regions.keys():
@@ -61,14 +61,26 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 		object.change_parent_brain_region(region)
 	region_added.emit(region)
 
-func FEAGI_remove_region(region_ID: StringName) -> void:
+#NOT COMPLETE #TODO
+func FEAGI_remove_region_and_internals(region_ID: StringName) -> void:
 	if !(region_ID in _available_brain_regions.keys()):
 		push_error("CORE CACHE: Unable to find region %s to delete! Skipping!" % region_ID)
 	var region: BrainRegion = _available_brain_regions[region_ID]
+	
 	region.FEAGI_delete_this_region()
 	region_about_to_be_removed.emit(region)
 	_available_brain_regions.erase(region_ID)
 
+## FEAGI states that a region is to be removed and internals raised
+func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
+	var contained_objects: Array[GenomeObject] = []
+	var new_parent: BrainRegion = region.current_parent_region
+	for object: GenomeObject in region.get_all_included_genome_objects():
+		object.change_parent_brain_region(new_parent)
+	region.FEAGI_delete_this_region()
+	region_about_to_be_removed.emit(region)
+	_available_brain_regions.erase(region.ID)
+	
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
 func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:

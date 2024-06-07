@@ -120,6 +120,10 @@ text = "Position"
 [node name="Cortical_Position" parent="." instance=ExtResource("4_8p7n5")]
 layout_mode = 2
 
+[node name="Region" type="Button" parent="."]
+layout_mode = 2
+text = "Region"
+
 [node name="gap" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
@@ -129,3 +133,5 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
+
+[connection signal="pressed" from="Region" to="." method="_user_requests_editing_region"]

@@ -51,8 +51,6 @@ func _on_press_open_circuit_builder(): #TODO change the spawn region to the last
 	var root_region_tab: UITabContainer = BV.UI.root_UI_view.return_UITabContainer_holding_CB_of_given_region(root_region)
 	BV.UI.root_UI_view.show_or_create_CB_of_region(_editing_region, root_region_tab)
 
-func _on_press_change_parent():
-	pass
 
 func _on_press_update():
 	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2d, _region_3D_position.current_vector) # TODO description, 2d location?

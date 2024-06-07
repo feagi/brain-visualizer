@@ -13,7 +13,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
 	var quick_connect_button: TextureButton = _window_internals.get_node('HBoxContainer/QuickConnect')
-	var move_to_new_region_button: TextureButton = _window_internals.get_node('HBoxContainer/AddToNewRegion')
+	var move_to_region_button: TextureButton = _window_internals.get_node('HBoxContainer/AddToRegion')
 	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
 	_setup_base_window("quick_cortical_menu")
@@ -38,7 +38,6 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = region.name
 			quick_connect_button.visible = false
 			clone_button.visible = false
-			delete_button.visible = false #TODO temp
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			_titlebar.title = "Selected multiple areas"
 			quick_connect_button.visible = false
@@ -83,18 +82,19 @@ func _button_clone() -> void:
 	BV.WM.spawn_clone_cortical((_selection[0] as BaseCorticalArea))
 	close_window()
 
-func _button_add_to_new_region() -> void:
-	BV.WM.spawn_create_region(FeagiCore.feagi_local_cache.brain_regions.return_root_region(), _selection)
+func _button_add_to_region() -> void:
+	var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
+	BV.WM.spawn_move_to_region(_selection)
 	close_window()
 
 func _button_delete() -> void:
-	var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
-		"No"
-		)
 	var delete_confirmation: ConfigurablePopupDefinition
 	var button_array: Array[ConfigurableButtonDefinition]
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
+				"No"
+				)
 			var yes_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_custom_button_definition(
 				"Yes",
 				FeagiCore.requests.delete_cortical_area,
@@ -108,7 +108,20 @@ func _button_delete() -> void:
 				button_array
 				)
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
-			pass #TODO
+			var no_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_close_button_definition(
+				"No"
+				)
+			var yes_button: ConfigurableButtonDefinition = ConfigurableButtonDefinition.create_custom_button_definition(
+				"Yes",
+				FeagiCore.requests.delete_regions_and_raise_internals,
+				[(_selection[0] as BrainRegion)]
+				)
+			button_array = [no_button, yes_button]
+			delete_confirmation = ConfigurablePopupDefinition.new(
+				"Confirm Deletion", 
+				"Are you sure you wish to delete region %s?" % (_selection[0] as BrainRegion).name,
+				button_array
+				)
 	
 	BV.WM.spawn_popup(delete_confirmation)
 	close_window()

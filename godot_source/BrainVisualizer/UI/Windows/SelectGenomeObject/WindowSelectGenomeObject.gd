@@ -12,6 +12,7 @@ enum SELECTION_TYPE {
 
 var _selected_object: GenomeObject
 var _type_of_selection: SELECTION_TYPE
+var _starting_region: BrainRegion
 var _scroll_genome_object: ScrollGenomeObjectSelector
 var _selection_label: Label
 var _select: Button
@@ -28,6 +29,7 @@ func _ready() -> void:
 func setup(starting_region: BrainRegion, type_of_selection: SELECTION_TYPE) -> void:
 	_setup_base_window("select_genome_object")
 	_type_of_selection = type_of_selection
+	_starting_region = starting_region
 	_scroll_genome_object.setup_from_starting_region(starting_region)
 	
 	match(_type_of_selection):
@@ -59,10 +61,12 @@ func _object_selected(object: GenomeObject) -> void:
 func _area_selected(area: BaseCorticalArea) -> void:
 	_selected_object = area
 	_selection_label.text = "Selected cortical area %s" % area.name
+	_select.disabled = false
 
 func _region_selected(region: BrainRegion) -> void:
 	_selected_object = region
 	_selection_label.text = "Selected brain region %s" % region.name
+	_select.disabled = false
 
 func _select_pressed() -> void:
 	if _selected_object == null:

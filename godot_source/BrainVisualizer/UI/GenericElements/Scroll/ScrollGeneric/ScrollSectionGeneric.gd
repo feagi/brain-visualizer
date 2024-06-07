@@ -50,4 +50,6 @@ func remove_all_items() -> void:
 		child.queue_free()
 
 func _user_pressing_delete_item(ref: ScrollSectionGenericItem) -> void:
+	if ref.auto_delete_enabled:
+		attempt_remove_item(ref.lookup_key)
 	user_pressed_delete_item.emit(ref)
