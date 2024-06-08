@@ -1,6 +1,7 @@
 extends BaseDraggableWindow
 class_name WindowEditRegion
 
+const WINDOW_NAME: StringName = "edit_region"
 const BUTTON_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollIItemPrefab.tscn")
 
 var _region_name: TextInput
@@ -20,7 +21,7 @@ func _ready() -> void:
 	_scroll_section = _window_internals.get_node("ScrollSectionGenericTemplate/PanelContainer/ScrollSectionGeneric")
 
 func setup(editing_region: BrainRegion) -> void:
-	_setup_base_window("edit_region")
+	_setup_base_window(WINDOW_NAME)
 	if editing_region.is_root_region():
 		push_warning("UI WINDOW: Unable to create window for editing regions for the root region! Closing the window!")
 		close_window()
@@ -47,7 +48,7 @@ func _on_press_cancel():
 	close_window()
 
 func _on_press_open_circuit_builder(): #TODO change the spawn region to the last active one
-	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.return_root_region()
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	var root_region_tab: UITabContainer = BV.UI.root_UI_view.return_UITabContainer_holding_CB_of_given_region(root_region)
 	BV.UI.root_UI_view.show_or_create_CB_of_region(_editing_region, root_region_tab)
 

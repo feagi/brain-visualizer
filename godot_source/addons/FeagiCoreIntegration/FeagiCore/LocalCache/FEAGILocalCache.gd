@@ -11,13 +11,14 @@ var brain_regions: BrainRegionsCache
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
 var mapping_data: MappingsCache
+var mapping_restrictions: MappingRestrictions
 
 func _init():
 	cortical_areas = CorticalAreasCache.new()
 	morphologies = MorphologiesCache.new()
 	brain_regions = BrainRegionsCache.new()
 	mapping_data = MappingsCache.new()
-
+	mapping_restrictions = load("res://addons/FeagiCoreIntegration/FeagiCore/MappingRestrictions.tres")
 
 ## Given several summary datas from FEAGI, we can build the entire cache at once
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
@@ -64,8 +65,8 @@ func FEAGI_mass_update_2D_positions(genome_objects_to_locations: Dictionary) -> 
 	var corticals: Dictionary = {}
 	var regions: Dictionary = {}
 	for genome_object: GenomeObject in genome_objects_to_locations.keys():
-		if genome_object is BaseCorticalArea:
-			corticals[genome_object as BaseCorticalArea] = genome_objects_to_locations[genome_object]
+		if genome_object is AbstractCorticalArea:
+			corticals[genome_object as AbstractCorticalArea] = genome_objects_to_locations[genome_object]
 		if genome_object is BrainRegion:
 			regions[genome_object as BrainRegion] = genome_objects_to_locations[genome_object]
 	cortical_areas.FEAGI_mass_update_2D_positions(corticals)
@@ -97,7 +98,7 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			ipu_device["cortical_name"],
 			ipu_device["structure"],
 			resolution,
-			BaseCorticalArea.CORTICAL_AREA_TYPE.IPU
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 		)
 	var opu_devices: Dictionary = dict["OPU"]["supported_devices"]
 	for opu_ID: StringName in opu_devices.keys():
@@ -110,7 +111,7 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			opu_device["cortical_name"],
 			opu_device["structure"],
 			resolution,
-			BaseCorticalArea.CORTICAL_AREA_TYPE.OPU
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 		)
 	
 	templates_updated.emit()

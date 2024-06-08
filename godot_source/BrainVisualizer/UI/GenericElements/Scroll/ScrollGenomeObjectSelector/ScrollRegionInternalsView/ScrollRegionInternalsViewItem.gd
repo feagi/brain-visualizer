@@ -21,7 +21,7 @@ func _ready():
 	_arrow = $PanelContainerButton/HBoxContainer/Arrow
 	_button.pressed.connect(_button_pressed)
 
-func setup_cortical_area(cortical_area: BaseCorticalArea) -> void:
+func setup_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	_target = cortical_area
 	_arrow.visible = false
 	_icon.texture = load(PATH_CORTICAL_ICON)

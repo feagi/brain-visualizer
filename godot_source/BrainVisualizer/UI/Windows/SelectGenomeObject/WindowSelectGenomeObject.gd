@@ -1,5 +1,7 @@
 extends BaseDraggableWindow
-class_name SelectGenomeObject #TODO fix class name
+class_name WindowSelectGenomeObject
+
+const WINDOW_NAME: StringName = "select_genome_object"
 
 signal user_selected_object_nonfinal(object: GenomeObject)
 signal user_selected_object_final(object: GenomeObject)
@@ -27,7 +29,7 @@ func _ready() -> void:
 	
 
 func setup(starting_region: BrainRegion, type_of_selection: SELECTION_TYPE) -> void:
-	_setup_base_window("select_genome_object")
+	_setup_base_window(WINDOW_NAME)
 	_type_of_selection = type_of_selection
 	_starting_region = starting_region
 	_scroll_genome_object.setup_from_starting_region(starting_region)
@@ -46,19 +48,19 @@ func setup(starting_region: BrainRegion, type_of_selection: SELECTION_TYPE) -> v
 	
 
 func _object_selected(object: GenomeObject) -> void:
-	if object is BaseCorticalArea:
-		_area_selected(object as BaseCorticalArea)
+	if object is AbstractCorticalArea:
+		_area_selected(object as AbstractCorticalArea)
 	if object is BrainRegion:
 		_region_selected(object as BrainRegion)
 	user_selected_object_nonfinal.emit(object)
-	if object is BaseCorticalArea and (_type_of_selection == SELECTION_TYPE.CORTICAL_AREA or _type_of_selection == SELECTION_TYPE.GENOME_OBJECT):
+	if object is AbstractCorticalArea and (_type_of_selection == SELECTION_TYPE.CORTICAL_AREA or _type_of_selection == SELECTION_TYPE.GENOME_OBJECT):
 		_select.disabled = false
 	elif object is BrainRegion and (_type_of_selection == SELECTION_TYPE.BRAIN_REGION or _type_of_selection == SELECTION_TYPE.GENOME_OBJECT):
 		_select.disabled = false
 	else:
 		true
 
-func _area_selected(area: BaseCorticalArea) -> void:
+func _area_selected(area: AbstractCorticalArea) -> void:
 	_selected_object = area
 	_selection_label.text = "Selected cortical area %s" % area.name
 	_select.disabled = false
@@ -79,6 +81,6 @@ func _select_pressed() -> void:
 			if _selected_object is BrainRegion:
 				user_selected_object_final.emit(_selected_object)
 		SELECTION_TYPE.CORTICAL_AREA:
-			if _selected_object is BaseCorticalArea:
+			if _selected_object is AbstractCorticalArea:
 				user_selected_object_final.emit(_selected_object)
 	close_window()

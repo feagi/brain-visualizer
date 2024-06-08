@@ -1,0 +1,137 @@
+[gd_scene load_steps=5 format=3 uid="uid://506fv2gitw7k"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CorticalProperties/Parts/CorticalPropertiesCorticalParameters.gd" id="1_cw12e"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_2t536"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_yn385"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_8p7n5"]
+
+[node name="CorticalPropertiesCorticalParameters" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.5
+offset_top = 1.0
+offset_right = -824.5
+offset_bottom = -363.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cw12e")
+
+[node name="Row_Cortical_Name" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Row_Cortical_Name"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The user defined name of the cortical area"
+mouse_filter = 1
+text = "Cortical Name"
+
+[node name="Cortical_Name" type="LineEdit" parent="Row_Cortical_Name"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+script = ExtResource("2_2t536")
+
+[node name="Row_Cortical_ID" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Row_Cortical_ID"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The internal ID of this cortical area"
+mouse_filter = 1
+text = "Cortical ID"
+
+[node name="Cortical_ID" type="LineEdit" parent="Row_Cortical_ID"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("2_2t536")
+enable_signaling_on_ready = false
+
+[node name="Row_Cortical_Type" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Row_Cortical_Type"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The type this cortical area is"
+mouse_filter = 1
+text = "Cortical Type"
+
+[node name="Cortical_Type" type="LineEdit" parent="Row_Cortical_Type"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("2_2t536")
+enable_signaling_on_ready = false
+
+[node name="Row_Voxel_Neuron_Density" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "Number of neurons within each voxel"
+
+[node name="Label" type="Label" parent="Row_Voxel_Neuron_Density"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Voxel Neuron Density"
+
+[node name="Voxel_Neuron_Density" type="LineEdit" parent="Row_Voxel_Neuron_Density"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("3_yn385")
+
+[node name="Synaptic_Attractivity" type="HBoxContainer" parent="."]
+layout_mode = 2
+tooltip_text = "The rate of success in accepting incoming synapses"
+
+[node name="Label" type="Label" parent="Synaptic_Attractivity"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Synaptic Attractivity"
+
+[node name="Synaptic_Attractivity" type="LineEdit" parent="Synaptic_Attractivity"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("3_yn385")
+
+[node name="Label_Dimensions" type="Label" parent="."]
+layout_mode = 2
+tooltip_text = "The dimensions of the cortical area, determines the nymber and layout of neurons"
+mouse_filter = 1
+text = "Dimension"
+
+[node name="Cortical_Size" parent="." instance=ExtResource("4_8p7n5")]
+layout_mode = 2
+label_x_text = &"W"
+label_y_text = &"H"
+label_z_text = &"D"
+int_x_min = 1
+int_y_min = 1
+int_z_min = 1
+
+[node name="Label_Position" type="Label" parent="."]
+layout_mode = 2
+tooltip_text = "The position of the cortical area"
+mouse_filter = 1
+text = "Position"
+
+[node name="Cortical_Position" parent="." instance=ExtResource("4_8p7n5")]
+layout_mode = 2
+
+[node name="Region" type="Button" parent="."]
+layout_mode = 2
+text = "Region"
+
+[node name="gap" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="Update_Button" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply Update"
+
+[connection signal="pressed" from="Region" to="." method="_user_requests_editing_region"]

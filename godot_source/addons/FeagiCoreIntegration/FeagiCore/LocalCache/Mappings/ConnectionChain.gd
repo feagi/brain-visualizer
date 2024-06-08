@@ -43,7 +43,7 @@ static func from_mapping_suggestion(suggestion: PartialMappingSet) -> Connection
 func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
 	_source = starting_point
 	_destination = stoppping_point
-	_is_both_ends_cortical_areas = (starting_point is BaseCorticalArea) and (stoppping_point is BaseCorticalArea)
+	_is_both_ends_cortical_areas = (starting_point is AbstractCorticalArea) and (stoppping_point is AbstractCorticalArea)
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(starting_point, stoppping_point)
 	_rebuild_connection_chain_links(_total_chain_path)
 	

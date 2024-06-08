@@ -62,7 +62,7 @@ func _gui_input(event):
 	
 	
 
-func set_outlining_state_of_connection(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, highlighting: bool) -> void:
+func set_outlining_state_of_connection(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea, highlighting: bool) -> void:
 	if source_area == null:
 		push_error("Unable to set connection line details with a null source area! Skip[ping!]")
 		return
@@ -80,14 +80,14 @@ func set_outlining_state_of_connection(source_area: BaseCorticalArea, destinatio
 
 
 ## highlights / selects a cortical area in CB
-func select_single_cortical_area(cortical_area: BaseCorticalArea) -> void:
+func select_single_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	if !(cortical_area.cortical_ID in cortical_nodes.keys()):
 		push_error("CB: Unable to find cortical area as a node to select!")
 		return
 	var cortical_node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]
 	set_selected(cortical_node)
 
-func center_on_cortical_area(cortical_area: BaseCorticalArea) -> void:
+func center_on_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	if !(cortical_area.cortical_ID in cortical_nodes.keys()):
 		push_error("CB: Unable to find cortical area as a node to focus!")
 		return
@@ -95,7 +95,7 @@ func center_on_cortical_area(cortical_area: BaseCorticalArea) -> void:
 	scroll_offset = cortical_node.position_offset - (size / 2.0)
 
 ## Spawns a cortical Node, should only be called via FEAGI
-func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> CorticalNode:
+func feagi_spawn_single_cortical_node(cortical_area: AbstractCorticalArea) -> CorticalNode:
 	var cortical_node: CorticalNode = _cortical_node_prefab.instantiate()
 	var offset: Vector2
 	if cortical_area.is_coordinates_2D_available:
@@ -113,7 +113,7 @@ func feagi_spawn_single_cortical_node(cortical_area: BaseCorticalArea) -> Cortic
 	return cortical_node
 
 ## Deletes a cortical Node, should only be called via FEAGI
-func feagi_deleted_single_cortical_node(cortical_area: BaseCorticalArea) -> void:
+func feagi_deleted_single_cortical_node(cortical_area: AbstractCorticalArea) -> void:
 	if cortical_area.cortical_ID not in cortical_nodes.keys():
 		push_error("GRAPH: Attempted to remove non-existant cortex node " + cortical_area.cortical_ID + "! Skipping...")
 	var node: CorticalNode = cortical_nodes[cortical_area.cortical_ID]

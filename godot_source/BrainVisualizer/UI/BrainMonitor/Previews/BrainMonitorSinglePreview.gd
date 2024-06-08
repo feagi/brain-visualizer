@@ -30,7 +30,7 @@ func update_size(new_size: Vector3) -> void:
 	scale = new_size
 	
 func update_position(new_position: Vector3) -> void:
-	position = BaseCorticalArea.true_position_to_BV_position(new_position, scale) #TODO this func needs to be moved to BMM
+	position = AbstractCorticalArea.true_position_to_BV_position(new_position, scale) #TODO this func needs to be moved to BMM
 
 func set_color(new_color: Color) -> void:
 	_material.albedo_color = new_color

@@ -62,11 +62,11 @@ func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 	set_line_dashing(mapping_ref.is_any_mapping_plastic())
 
 func _user_pressed_button() -> void:
-	var source_area: BaseCorticalArea = null
-	var destination_area: BaseCorticalArea = null
-	if _link.parent_chain.source is BaseCorticalArea:
-		source_area = _link.parent_chain.source as BaseCorticalArea
-	if _link.parent_chain.destination is BaseCorticalArea:
-		destination_area = _link.parent_chain.destination as BaseCorticalArea
+	var source_area: AbstractCorticalArea = null
+	var destination_area: AbstractCorticalArea = null
+	if _link.parent_chain.source is AbstractCorticalArea:
+		source_area = _link.parent_chain.source as AbstractCorticalArea
+	if _link.parent_chain.destination is AbstractCorticalArea:
+		destination_area = _link.parent_chain.destination as AbstractCorticalArea
 	
 	BV.UI.window_manager.spawn_edit_mappings(source_area, destination_area)

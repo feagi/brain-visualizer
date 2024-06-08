@@ -4,17 +4,17 @@ class_name ScrollGenomeObjectSelector
 const PREFAB_SCROLLREGIONVIEW: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsView.tscn")
 
 signal region_selected(region: BrainRegion)
-signal area_selected(area: BaseCorticalArea)
+signal area_selected(area: AbstractCorticalArea)
  # ScrollRegionInternalsView
 
 var last_selected_region: BrainRegion:
 	get: return _last_selected_region
 
-var last_selected_area: BaseCorticalArea:
+var last_selected_area: AbstractCorticalArea:
 	get: return _last_selected_area
 
 var _last_selected_region: BrainRegion
-var _last_selected_area: BaseCorticalArea
+var _last_selected_area: AbstractCorticalArea
 var _starting_region: BrainRegion
 var _views: Array[ScrollRegionInternalsView] = []
 var _container: HBoxContainer
@@ -53,7 +53,7 @@ func _user_selected_region(region: BrainRegion, from_view: ScrollRegionInternals
 	_close_to_the_right_of(index + 1)
 	_add_view(region)
 
-func _user_selected_cortical_area(area: BaseCorticalArea, from_view: ScrollRegionInternalsView) -> void:
+func _user_selected_cortical_area(area: AbstractCorticalArea, from_view: ScrollRegionInternalsView) -> void:
 	_last_selected_area = area
 	var index: int = _views.find(from_view)
 	if index == -1:

@@ -1,11 +1,11 @@
 extends RefCounted
 class_name CorticalPropertyPostSynapticPotentialParameters
 
-signal neuron_psp_uniform_distribution_updated(new_val: bool, this_cortical_area: BaseCorticalArea)
-signal neuron_neuron_mp_driven_psp_updated(new_val: bool, this_cortical_area: BaseCorticalArea)
-signal neuron_post_synaptic_potential_updated(new_val: float, this_cortical_area: BaseCorticalArea)
-signal neuron_post_synaptic_potential_max_updated(new_val: float, this_cortical_area: BaseCorticalArea)
-signal neuron_degeneracy_coefficient_updated(new_val: int, this_cortical_area: BaseCorticalArea)
+signal neuron_psp_uniform_distribution_updated(new_val: bool, this_cortical_area: AbstractCorticalArea)
+signal neuron_neuron_mp_driven_psp_updated(new_val: bool, this_cortical_area: AbstractCorticalArea)
+signal neuron_post_synaptic_potential_updated(new_val: float, this_cortical_area: AbstractCorticalArea)
+signal neuron_post_synaptic_potential_max_updated(new_val: float, this_cortical_area: AbstractCorticalArea)
+signal neuron_degeneracy_coefficient_updated(new_val: int, this_cortical_area: AbstractCorticalArea)
 
 var neuron_psp_uniform_distribution: bool:
 	get:
@@ -42,9 +42,9 @@ var _neuron_mp_driven_psp: bool = false
 var _neuron_post_synaptic_potential: float = 0.0
 var _neuron_post_synaptic_potential_max: float = 0.0
 var _neuron_degeneracy_coefficient: int = 0
-var _cortical_area: BaseCorticalArea
+var _cortical_area: AbstractCorticalArea
 
-func _init(cortical_area_ref: BaseCorticalArea) -> void:
+func _init(cortical_area_ref: AbstractCorticalArea) -> void:
 	_cortical_area = cortical_area_ref
 
 ## Apply Properties from FEAGI

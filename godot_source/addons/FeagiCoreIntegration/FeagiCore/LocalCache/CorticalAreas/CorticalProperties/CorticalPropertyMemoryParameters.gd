@@ -37,9 +37,9 @@ var longterm_memory_threshold: int:
 var _initial_neuron_lifespan: int = 0
 var _lifespan_growth_rate: int = 0
 var _longterm_memory_threshold: int = 0
-var _cortical_area: BaseCorticalArea
+var _cortical_area: AbstractCorticalArea
 
-func _init(cortical_area_ref: BaseCorticalArea) -> void:
+func _init(cortical_area_ref: AbstractCorticalArea) -> void:
 	_cortical_area = cortical_area_ref
 
 func _set_initial_neuron_lifespan(new_val: int) -> void:

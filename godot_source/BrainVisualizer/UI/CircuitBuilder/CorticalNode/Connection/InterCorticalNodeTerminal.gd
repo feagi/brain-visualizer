@@ -11,9 +11,9 @@ enum TYPE {
 
 var terminal_type: TYPE:
 	get: return _terminal_type
-var connected_area: BaseCorticalArea:
+var connected_area: AbstractCorticalArea:
 	get: return _connected_area
-var representing_area: BaseCorticalArea:
+var representing_area: AbstractCorticalArea:
 	get: return _parent_node.cortical_area_ref
 var cortical_node: CorticalNode:
 	get: return _parent_node
@@ -21,7 +21,7 @@ var cortical_node: CorticalNode:
 var _terminal_type: TYPE ## The type of terminal
 var _active_point: TerminalPortTexture
 
-var _connected_area: BaseCorticalArea
+var _connected_area: AbstractCorticalArea
 var _parent_node: CorticalNode
 var _cortical_label: Button
 
@@ -80,7 +80,7 @@ func get_output_location() -> Vector2:
 func _terminal_location_changed()-> void:
 	_active_point.node_move_terminal()
 
-func _cortical_name_update(new_name: String, _area: BaseCorticalArea) -> void:
+func _cortical_name_update(new_name: String, _area: AbstractCorticalArea) -> void:
 	_cortical_label.text = new_name
 
 func _parent_node_selected() -> void:

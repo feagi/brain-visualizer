@@ -1,4 +1,4 @@
-extends BaseCorticalArea
+extends AbstractCorticalArea
 class_name CustomCorticalArea
 ## Also known as "Interconnect" Cortical Area
 
@@ -17,8 +17,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	return
 
 
-func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
+	return AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 
 func _has_neuron_firing_parameters() -> bool:
 	return true

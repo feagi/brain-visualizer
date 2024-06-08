@@ -1,6 +1,6 @@
 extends PanelContainer
 class_name PanelContainerButton
-## Essentially a replica of [BaseButton] but as a [PanelCOntainer] you can put items inside of
+## Essentially a replica of [BaseButton] but as a [PanelContainer] you can put items inside of
 #TODO toggle support
 
 signal pressed()

@@ -6,9 +6,9 @@ class_name InterCorticalMappingSet
 signal mappings_changed(self_mappings: InterCorticalMappingSet)
 signal mappings_about_to_be_deleted()
 
-var source_cortical_area: BaseCorticalArea:
+var source_cortical_area: AbstractCorticalArea:
 	get: return _src_cortical
-var destination_cortical_area: BaseCorticalArea:
+var destination_cortical_area: AbstractCorticalArea:
 	get: return _dst_cortical
 var mappings: Array[SingleMappingDefinition]:
 	get: return _mappings
@@ -25,24 +25,24 @@ var is_limit_on_mapping_count: bool:
 var is_restriction_on_morphologies_used: bool:
 	get: return len(_morphologies_restricted_to) != 0
 
-var _src_cortical: BaseCorticalArea
-var _dst_cortical: BaseCorticalArea
+var _src_cortical: AbstractCorticalArea
+var _dst_cortical: AbstractCorticalArea
 var _mappings: Array[SingleMappingDefinition]
 var _max_number_mappings_supported: int = -1
 var _morphologies_restricted_to: Array[BaseMorphology] = []
 var _connection_chain: ConnectionChain
 
 ## Create Object
-func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings_between_them: Array[SingleMappingDefinition]) -> void:
+func _init(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea, mappings_between_them: Array[SingleMappingDefinition]) -> void:
 	_src_cortical = source_area
 	_dst_cortical = destination_area
 	_mappings = mappings_between_them
-	_max_number_mappings_supported = MappingHints.get_allowed_mapping_count(source_area, destination_area)
-	_morphologies_restricted_to = MappingHints.get_allowed_morphologies_to_map_toward(source_area, destination_area)
+	#_max_number_mappings_supported = #TODO
+	#_morphologies_restricted_to = 
 	_connection_chain = ConnectionChain.from_established_FEAGI_mapping(self)
 
 ## Create object from FEAGI JSON data
-static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> InterCorticalMappingSet:
+static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> InterCorticalMappingSet:
 	var new_mappings: Array[SingleMappingDefinition] = SingleMappingDefinition.from_FEAGI_JSON_array(mapping_properties_from_FEAGI)
 	return InterCorticalMappingSet.new(source_area, destination_area, new_mappings)
 

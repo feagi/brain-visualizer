@@ -1,4 +1,4 @@
-extends BaseCorticalArea
+extends AbstractCorticalArea
 class_name CoreCorticalArea
 ## Cannot be edited or removed
 
@@ -21,8 +21,8 @@ func _user_can_edit_name() -> bool:
 func _user_can_delete_area() -> bool:
 	return false
 
-func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.CORTICAL_AREA_TYPE.CORE
+func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
+	return AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE
 
 func _has_neuron_firing_parameters() -> bool:
 	return true

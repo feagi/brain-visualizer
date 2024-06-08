@@ -72,7 +72,7 @@ func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool
 	size = Vector2i(0,0) # Force shrink to minimum possible size
 
 ## Only called when feagi updated a mapping. This is a hacky work around to have morphology refresh if any mapping changes
-func feagi_updated_mappings(_src: BaseCorticalArea, _dst: BaseCorticalArea) -> void:
+func feagi_updated_mappings(_src: AbstractCorticalArea, _dst: AbstractCorticalArea) -> void:
 	#TODO this is hacky, we need to move away from this
 	if _loaded_morphology != null:
 		load_morphology(_loaded_morphology)

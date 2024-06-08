@@ -58,7 +58,7 @@ func get_PSP_signal_type() -> MappingsCache.SIGNAL_TYPE:
 	return MappingsCache.SIGNAL_TYPE.EXCITATORY
 
 func is_source_cortical_area() -> bool:
-	return _source is BaseCorticalArea
+	return _source is AbstractCorticalArea
 
 func is_destination_cortical_area() -> bool:
-	return _destination is BaseCorticalArea
+	return _destination is AbstractCorticalArea

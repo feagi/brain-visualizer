@@ -44,11 +44,10 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	return cortical_area_mapping
 		
 
-
-## Clears all regions from the cache
-func FEAGI_clear_all_regions() -> void:
-	for region_ID: StringName in _available_brain_regions.keys():
-		FEAGI_remove_region_and_internals(region_ID)
+### Clears all regions from the cache
+#func FEAGI_clear_all_regions() -> void:
+#	for region_ID: StringName in _available_brain_regions.keys():
+#		FEAGI_remove_region_and_internals(region_ID)
 
 func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []):
 	if region_ID in _available_brain_regions.keys():
@@ -61,15 +60,32 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 		object.change_parent_brain_region(region)
 	region_added.emit(region)
 
+func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
+	if !(editing_region.region_ID in _available_brain_regions.keys()):
+		push_error("CORE CACHE: Unable to edit noncached region of the ID %s!" % editing_region.region_ID)
+		return
+	editing_region.FEAGI_edited_region(title, _description, new_parent_region, position_2D, position_3D)
+
+## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
+func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
+	for region in IDs_to_locations.keys():
+		if region == null:
+			push_error("Unable to update position of %s null bnrain region!")
+			continue
+		if !(region.region_ID in _available_brain_regions.keys()):
+			push_error("Unable to update position of %s due to this brain region missing in cache" % region.cortical_ID)
+			continue
+		region.FEAGI_change_coordinates_2D(IDs_to_locations[region])
+
 #NOT COMPLETE #TODO
-func FEAGI_remove_region_and_internals(region_ID: StringName) -> void:
-	if !(region_ID in _available_brain_regions.keys()):
-		push_error("CORE CACHE: Unable to find region %s to delete! Skipping!" % region_ID)
-	var region: BrainRegion = _available_brain_regions[region_ID]
-	
-	region.FEAGI_delete_this_region()
-	region_about_to_be_removed.emit(region)
-	_available_brain_regions.erase(region_ID)
+#func FEAGI_remove_region_and_internals(region_ID: StringName) -> void:
+#	if !(region_ID in _available_brain_regions.keys()):
+#		push_error("CORE CACHE: Unable to find region %s to delete! Skipping!" % region_ID)
+#	var region: BrainRegion = _available_brain_regions[region_ID]
+#	
+#	region.FEAGI_delete_this_region()
+#	region_about_to_be_removed.emit(region)
+#	_available_brain_regions.erase(region_ID)
 
 ## FEAGI states that a region is to be removed and internals raised
 func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
@@ -79,19 +95,8 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 		object.change_parent_brain_region(new_parent)
 	region.FEAGI_delete_this_region()
 	region_about_to_be_removed.emit(region)
-	_available_brain_regions.erase(region.ID)
-	
+	_available_brain_regions.erase(region.region_ID)
 
-## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
-func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
-	for region in IDs_to_locations.keys():
-		if region == null:
-			push_error("Unable to update position of %s null bnrain region!")
-			continue
-		if !(region.ID in _available_brain_regions.keys()):
-			push_error("Unable to update position of %s due to this brain region missing in cache" % region.cortical_ID)
-			continue
-		region.coordinates_2d = IDs_to_locations[region]
 #endregion
 
 
@@ -103,8 +108,8 @@ func is_root_available() -> bool:
 	return BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()
 
 
-## Attempts to return the root [BrainRegion]. If it fails, this logs and error and returns null
-func return_root_region() -> BrainRegion:
+## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
+func get_root_region() -> BrainRegion:
 	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
 		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
 		return null
@@ -117,7 +122,7 @@ func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> 
 	var path_B: Array[BrainRegion] = B.get_path()
 	
 	if len(path_A) == 0 or len(path_B) == 0:
-		push_error("CORE CACHE: Unable to calculate lowest similar region path between %s and %s!" % [A.ID, B.ID])
+		push_error("CORE CACHE: Unable to calculate lowest similar region path between %s and %s!" % [A.region_ID, B.region_ID])
 		return []
 	
 	var search_depth: int
@@ -129,7 +134,7 @@ func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> 
 		search_depth = len(path_A)
 	
 	for i in search_depth:
-		if path_A[i].ID != path_B[i].ID:
+		if path_A[i].region_ID != path_B[i].region_ID:
 			return path
 		path.append(path_A[i])
 	
@@ -141,7 +146,7 @@ func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> 
 func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
 	var common_path: Array[BrainRegion] = get_common_path_containing_both_regions(source, destination)
 	if len(common_path) == 0:
-		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.ID, destination.ID])
+		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.region_ID, destination.region_ID])
 	var lowest_common_region: BrainRegion = common_path.back()
 
 	
@@ -166,30 +171,20 @@ func arr_of_region_IDs_to_arr_of_Regions(IDs: Array[StringName]) -> Array[BrainR
 		output.append(_available_brain_regions[ID])
 	return output
 
-## Checks if given [GenomeObject]s are within the same parent region
-func is_objects_within_same_region(A: GenomeObject, B: GenomeObject) -> bool:
-	var parent_A: BrainRegion = BrainRegion.get_parent_region_of_object(A)
-	var parent_B: BrainRegion = BrainRegion.get_parent_region_of_object(B)
-	
-	if (parent_A == null) or (parent_B == null):
-		push_error("CORE CACHE: Unable to get parent regions to compare if objects are within same parent region!")
-		return false
-	return parent_A.ID == parent_B.ID
-
 ## As a single flat array, get the end inclusive path from the starting [GenomeObject], to the end [GenomeObject]
 func get_total_path_between_objects(starting_point: GenomeObject, stoppping_point: GenomeObject) -> Array[GenomeObject]:
 	# Get start / stop points
-	var is_start_cortical_area: bool = starting_point is BaseCorticalArea
-	var is_end_cortical_area: bool = stoppping_point is BaseCorticalArea
+	var is_start_cortical_area: bool = starting_point is AbstractCorticalArea
+	var is_end_cortical_area: bool = stoppping_point is AbstractCorticalArea
 	
 	var start_region: BrainRegion
 	if is_start_cortical_area:
-		start_region = (starting_point as BaseCorticalArea).current_parent_region
+		start_region = (starting_point as AbstractCorticalArea).current_parent_region
 	else:
 		start_region = starting_point
 	var end_region: BrainRegion
 	if is_end_cortical_area:
-		end_region = (stoppping_point as BaseCorticalArea).current_parent_region
+		end_region = (stoppping_point as AbstractCorticalArea).current_parent_region
 	else:
 		end_region = stoppping_point
 	

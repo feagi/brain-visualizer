@@ -16,9 +16,9 @@ enum LINK_TYPE {
 
 var parent_region: BrainRegion:
 	get: return _parent_region
-var source: GenomeObject: ## Can be [BrainRegion] or [BaseCorticalArea]
+var source: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea]
 	get: return _source
-var destination: GenomeObject: ## Can be [BrainRegion] or [BaseCorticalArea]
+var destination: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea]
 	get: return _destination
 var parent_chain: ConnectionChain:
 	get: return _parent_chain
@@ -36,9 +36,9 @@ var _link_type: LINK_TYPE
 static func determine_link_type(start: GenomeObject, end: GenomeObject) -> LINK_TYPE:
 	if GenomeObject.are_siblings(start, end):
 		return LINK_TYPE.BRIDGE
-	if start is BaseCorticalArea:
+	if start is AbstractCorticalArea:
 		return LINK_TYPE.PARENTS_OUTPUT
-	if end is BaseCorticalArea:
+	if end is AbstractCorticalArea:
 		return LINK_TYPE.PARENTS_INPUT
 	if (start as BrainRegion).is_subregion_directly(end as BrainRegion):
 		return LINK_TYPE.PARENTS_INPUT
@@ -60,17 +60,17 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 			return
 			
 		LINK_TYPE.BRIDGE:
-			coming_from.output_add_link(self)
-			going_to.input_add_link(self)
-			_parent_region.bridge_add_link(self)
+			coming_from.FEAGI_output_add_link(self)
+			going_to.FEAGI_input_add_link(self)
+			_parent_region.FEAGI_bridge_add_link(self)
 		
 		LINK_TYPE.PARENTS_OUTPUT:
-			coming_from.output_add_link(self)
-			going_to.output_add_link(self)
+			coming_from.FEAGI_output_add_link(self)
+			going_to.FEAGI_output_add_link(self)
 		
 		LINK_TYPE.PARENTS_INPUT:
-			coming_from.input_add_link(self)
-			going_to.input_add_link(self)
+			coming_from.FEAGI_input_add_link(self)
+			going_to.FEAGI_input_add_link(self)
 
 ## Called from [ConnectionChain] when the associated mapping set gets updated
 func FEAGI_updated_associated_mapping_set() -> void:
@@ -99,10 +99,10 @@ func FEAGI_prepare_to_delete() -> void:
 			_destination.input_remove_link(self)
 
 func is_source_cortical_area() -> bool:
-	return _source is BaseCorticalArea
+	return _source is AbstractCorticalArea
 
 func is_destination_cortical_area() -> bool:
-	return _destination is BaseCorticalArea
+	return _destination is AbstractCorticalArea
 
 func is_source_region() -> bool:
 	return _source is BrainRegion

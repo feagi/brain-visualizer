@@ -1,4 +1,4 @@
-extends BaseCorticalArea
+extends AbstractCorticalArea
 class_name IPUCorticalArea
 ## Cortical area for processing inputs
 
@@ -8,7 +8,7 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		push_error("FEAGI CORE CACHE: Unable to define root region for OPU %s as the root region isnt loaded!" % ID)
 	else:
-		parent_region = FeagiCore.feagi_local_cache.brain_regions.return_root_region()
+		parent_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	super(ID, cortical_name, cortical_dimensions, parent_region, visiblity) 
 
 static func create_from_template(ID: StringName, template: CorticalTemplate, new_channel_count: int, visiblity: bool = true) -> IPUCorticalArea:
@@ -23,8 +23,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 	return
 
-func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.CORTICAL_AREA_TYPE.IPU
+func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
+	return AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 
 func _has_neuron_firing_parameters() -> bool:
 	return true

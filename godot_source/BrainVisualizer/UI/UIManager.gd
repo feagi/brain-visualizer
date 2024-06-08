@@ -90,7 +90,7 @@ func FEAGI_confirmed_genome() -> void:
 	
 	var initial_tabs: Array[Control]
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
-	cb.setup(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
+	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	initial_tabs = [cb]
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
@@ -100,7 +100,7 @@ func FEAGI_confirmed_genome() -> void:
 
 
 #region User Interactions
-signal user_selected_single_cortical_area(area: BaseCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
+signal user_selected_single_cortical_area(area: AbstractCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
 func _input(event):
 	if FeagiCore.feagi_settings == null:
@@ -115,25 +115,25 @@ func _input(event):
 				return
 			show_developer_menu()
 
-var selected_cortical_areas: Array[BaseCorticalArea]:
+var selected_cortical_areas: Array[AbstractCorticalArea]:
 	get: return _selected_cortical_areas
 
-var _selected_cortical_areas: Array[BaseCorticalArea] = []
+var _selected_cortical_areas: Array[AbstractCorticalArea] = []
 
 
-func set_user_selected_cortical_areas(selected: Array[BaseCorticalArea]) -> void:
+func set_user_selected_cortical_areas(selected: Array[AbstractCorticalArea]) -> void:
 	pass
 
 func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:
-	if object is BaseCorticalArea:
-		user_selected_single_cortical_area.emit(object as BaseCorticalArea)
+	if object is AbstractCorticalArea:
+		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
 	var selected: Array[GenomeObject] = [object]
 	_window_manager.spawn_quick_cortical_menu(selected)
 
-func user_selected_single_cortical_area_appending(area: BaseCorticalArea) -> void:
+func user_selected_single_cortical_area_appending(area: AbstractCorticalArea) -> void:
 	pass
 
-func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
+func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
 
@@ -266,27 +266,27 @@ func _find_possible_scales() -> void:
 #region Notification Filtering Proxies
 
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
-func _proxy_notification_cortical_area_added(cortical_area: BaseCorticalArea) -> void:
+func _proxy_notification_cortical_area_added(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
 	_notification_system.add_notification("Confirmed addition of cortical area %s!" % cortical_area.name)
 	
 	
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
-func _proxy_notification_cortical_area_updated(cortical_area: BaseCorticalArea) -> void:
+func _proxy_notification_cortical_area_updated(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
 	_notification_system.add_notification("Confirmed update of cortical area %s!" % cortical_area.name)
 	
 	
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
-func _proxy_notification_cortical_area_removed(cortical_area: BaseCorticalArea) -> void:
+func _proxy_notification_cortical_area_removed(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
 	_notification_system.add_notification("Confirmed removal of cortical area %s!" % cortical_area.name)
 	
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
-func _proxy_notification_mappings_updated(source: BaseCorticalArea, destination: BaseCorticalArea) -> void:
+func _proxy_notification_mappings_updated(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
 	_notification_system.add_notification("Confirmed updated mapping information from %s to %s!" % [source.name, destination.name])

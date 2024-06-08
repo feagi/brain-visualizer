@@ -176,7 +176,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		"parent_region_id": parent_region.ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
-		"areas": BaseCorticalArea.object_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
+		"areas": AbstractCorticalArea.cortical_area_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
 		"regions": BrainRegion.object_array_to_ID_array(GenomeObject.filter_brain_regions(region_internals)),
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_region_region, dict_to_send)
@@ -232,7 +232,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to create region of name %s!" % brain_region.name)
 		return FEAGI_response_data
-	brain_region.FEAGI_edited_region(region_name, region_description, parent_region, coords_2D, coords_3D)
+	FeagiCore.local_feagi_cache.brain_regions.FEAGI_edited_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
 	return FEAGI_response_data
 
 func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[GenomeObject]) -> FeagiRequestOutput:
@@ -356,7 +356,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"cortical_name": cortical_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
 		"brain_region_id": parent_region.ID,
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
@@ -397,7 +397,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		"cortical_name": cortical_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_group": BaseCorticalArea.cortical_type_to_str(BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null],
 		"sub_group_id": "MEMORY",
@@ -432,7 +432,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 	if channel_count < 1:
 		push_error("FEAGI Requests: Channel count is too low!")
 		return FeagiRequestOutput.requirement_fail("CHANNEL_TOO_LOW")
-	if !(IOPU_template.cortical_type  in [BaseCorticalArea.CORTICAL_AREA_TYPE.IPU, BaseCorticalArea.CORTICAL_AREA_TYPE.OPU]):
+	if !(IOPU_template.cortical_type  in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]):
 		push_error("FEAGI Requests: Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return FeagiRequestOutput.requirement_fail("NON_IOPU")
 	
@@ -441,7 +441,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 	var dict_to_send: Dictionary = {
 		"cortical_id": IOPU_template.ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
-		"cortical_type": BaseCorticalArea.cortical_type_to_str(IOPU_template.cortical_type),
+		"cortical_type": AbstractCorticalArea.cortical_type_to_str(IOPU_template.cortical_type),
 		"channel_count": channel_count,
 		"coordinates_2d": [null, null]
 	}
@@ -457,7 +457,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 		push_error("FEAGI Requests: Unable to create IPU/OPU cortical area!")
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	if IOPU_template.cortical_type == BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+	if IOPU_template.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_input_cortical_area(IOPU_template.ID, IOPU_template, channel_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	else: #OPU
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_output_cortical_area(IOPU_template.ID, IOPU_template, channel_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
@@ -467,7 +467,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 
 
 ## Clone a given cortical area
-func clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i, parent_region: BrainRegion) -> FeagiRequestOutput:
+func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i, parent_region: BrainRegion) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -483,10 +483,10 @@ func clone_cortical_area(cloning_area: BaseCorticalArea, new_name: StringName, n
 	var FEAGI_response_data: FeagiRequestOutput
 	
 	match(cloning_area.group):
-		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			print("FEAGI REQUEST: Request copying memory cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
 			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)
-		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			print("FEAGI REQUEST: Request copying custom cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
 			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)
 		_:
@@ -606,7 +606,7 @@ func toggle_synaptic_monitoring(cortical_area_ID: StringName, should_monitor: bo
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set synaptic monitoring on cortical area %s!" % cortical_area_ID)
-	var cortical_area: BaseCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
+	var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
 	cortical_area.is_monitoring_synaptic_potential = should_monitor
 	return FEAGI_response_data
 
@@ -639,7 +639,7 @@ func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bo
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set membrane monitoring on cortical area %s!" % cortical_area_ID)
-	var cortical_area: BaseCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
+	var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
 	cortical_area.is_monitoring_membrane_potential = should_monitor
 	return FEAGI_response_data
 
@@ -995,8 +995,8 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 		push_error("FEAGI Requests: Retrieved cortical mapping refers to a cortical area no longer in the cache!")
 		return FeagiRequestOutput.requirement_fail("AREA_NO_LONGER_EXIST")
 	var response: Array = FEAGI_response_data.decode_response_as_array()
-	var source_area: BaseCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
-	var destination_area: BaseCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
+	var source_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
+	var destination_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
 	var properties: Array[MappingProperty] = []
 	var raw_dicts: Array[Dictionary] = []
 	raw_dicts.assign(response)
@@ -1008,7 +1008,7 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 
 
 ## Set (overwrite) the mappings between 2 areas
-func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  mappings: Array[MappingProperty]) -> FeagiRequestOutput:
+func set_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mappings: Array[MappingProperty]) -> FeagiRequestOutput:
 	var source_cortical_ID = source_area.cortical_ID
 	var destination_cortical_ID = destination_area.cortical_ID
 	
@@ -1062,7 +1062,7 @@ func set_mappings_between_corticals(source_area: BaseCorticalArea, destination_a
 	
 
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
-func append_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:
+func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:
 	var current_mappings: Array[MappingProperty] = source_area.get_mappings_to(destination_area).mappings
 	current_mappings.append(mapping)
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, current_mappings)
@@ -1070,14 +1070,14 @@ func append_mapping_between_corticals(source_area: BaseCorticalArea, destination
 
 
 ## Append a default mapping betwseen 2 cortical areas, given the morphology to use. Assumes the current mapping information is up to date
-func append_default_mapping_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea,  morphology: BaseMorphology) -> FeagiRequestOutput:
+func append_default_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  morphology: BaseMorphology) -> FeagiRequestOutput:
 	var appending_mapping: MappingProperty = MappingProperty.create_default_mapping(morphology)
 	var return_data: FeagiRequestOutput = await append_mapping_between_corticals(source_area, destination_area, appending_mapping)
 	return return_data
 
 
 ## delete the mappings between 2 areas
-func delete_mappings_between_corticals(source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> FeagiRequestOutput:
+func delete_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> FeagiRequestOutput:
 	var empty_mappings: Array[MappingProperty] = []
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, empty_mappings)
 	return return_data

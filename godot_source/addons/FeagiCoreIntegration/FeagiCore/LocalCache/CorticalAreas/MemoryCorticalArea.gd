@@ -1,4 +1,4 @@
-extends BaseCorticalArea
+extends AbstractCorticalArea
 class_name MemoryCorticalArea
 ## A Memory cortical area object. In FEAGI this is a subtype of the custom cortical area object, but here we have it as a completely independent object from the custom cortical area
 
@@ -13,8 +13,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 
 	memory_parameters.FEAGI_apply_detail_dictionary(data)
 
-func _get_group() -> BaseCorticalArea.CORTICAL_AREA_TYPE:
-	return BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
+	return AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 
 # OVERRIDDEN
 func _user_can_edit_cortical_neuron_per_vox_count() -> bool:

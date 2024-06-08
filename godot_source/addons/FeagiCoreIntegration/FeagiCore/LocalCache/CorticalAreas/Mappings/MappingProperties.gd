@@ -12,9 +12,9 @@ signal mappings_changed(self_mappings: MappingProperties)
 signal mappings_about_to_be_deleted()
 signal region_path_between_cortical_areas_changed()
 
-var source_cortical_area: BaseCorticalArea:
+var source_cortical_area: AbstractCorticalArea:
 	get: return _src_cortical
-var destination_cortical_area: BaseCorticalArea:
+var destination_cortical_area: AbstractCorticalArea:
 	get: return _dst_cortical
 var mappings: Array[MappingProperty]:
 	get: return _mappings
@@ -29,13 +29,13 @@ var is_limit_on_mapping_count: bool:
 var is_restriction_on_morphologies_used: bool:
 	get: return len(_morphologies_restricted_to) != 0
 
-var _src_cortical: BaseCorticalArea
-var _dst_cortical: BaseCorticalArea
+var _src_cortical: AbstractCorticalArea
+var _dst_cortical: AbstractCorticalArea
 var _mappings: Array[MappingProperty]
 var _max_number_mappings_supported: int = -1
 var _morphologies_restricted_to: Array[ BaseMorphology] = []
 
-func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, mappings_between_them: Array[MappingProperty]) -> void:
+func _init(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea, mappings_between_them: Array[MappingProperty]) -> void:
 	_src_cortical = source_area
 	_dst_cortical = destination_area
 	_mappings = mappings_between_them
@@ -45,7 +45,7 @@ func _init(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, ma
 	destination_area.parent_region_changed.connect(_proxy_region_change)
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
-static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
+static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> MappingProperties:
 	var new_mappings: Array[MappingProperty] = []
 	for raw_mappings in mapping_properties_from_FEAGI:
 		if raw_mappings["morphology_id"] not in  FeagiCore.feagi_local_cache.morphology_cache.available_morphologies.keys():
@@ -55,12 +55,12 @@ static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, 
 	return MappingProperties.new(source_area, destination_area, new_mappings)
 
 ## Creates an empty mapping between a source and destination cortical area
-static func create_empty_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea) -> MappingProperties:
+static func create_empty_mapping(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> MappingProperties:
 	var empty_typed_array: Array[MappingProperty] = [] # Because the array type casting in godot is still stupid. Too Bad!
 	return MappingProperties.new(source_area, destination_area, empty_typed_array)
 
 ## Creates a default mapping object given a source, destination, and morphology to use. Default settings will be used
-static func create_default_mapping(source_area: BaseCorticalArea, destination_area: BaseCorticalArea, morphology_to_use: BaseMorphology) -> MappingProperties:
+static func create_default_mapping(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea, morphology_to_use: BaseMorphology) -> MappingProperties:
 	var default_mapping: Array[MappingProperty] = [MappingProperty.create_default_mapping(morphology_to_use)]
 	return MappingProperties.new(source_area, destination_area, default_mapping)
 

@@ -3,7 +3,7 @@ class_name ScrollRegionInternalsView
 
 const LIST_ITEM_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsViewItem.tscn")
 
-signal clicked_cortical_area(area: BaseCorticalArea, self_reference: ScrollRegionInternalsView)
+signal clicked_cortical_area(area: AbstractCorticalArea, self_reference: ScrollRegionInternalsView)
 signal clicked_region(region: BrainRegion, self_reference: ScrollRegionInternalsView)
 signal selected_object_removed(removed: GenomeObject, self_reference: ScrollRegionInternalsView)
 
@@ -53,7 +53,7 @@ func _add_region(region: BrainRegion) -> void:
 	item.user_clicked.connect(_region_selected)
 	_internal_regions[region.ID] = item
 
-func _add_cortical_area(area: BaseCorticalArea) -> void:
+func _add_cortical_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID in _internal_cortical_areas:
 		push_error("UI: Unable to add area %s to ScrollRegionInternalView of region %s as it already exists!" % [area.cortical_ID, _representing_region.ID])
 		return
@@ -72,7 +72,7 @@ func _remove_region(region: BrainRegion) -> void:
 	if region == _selected_object:
 		selected_object_removed.emit(region, self)
 
-func _remove_cortical_area(area: BaseCorticalArea) -> void:
+func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if !(area.cortical_ID in _internal_cortical_areas):
 		push_error("UI: Unable to remove area %s to ScrollRegionInternalView of region %s as it doesn't exist in this list!" % [area.cortical_ID, _representing_region.ID])
 		return
@@ -85,6 +85,6 @@ func _region_selected(region: BrainRegion) -> void:
 	_selected_object = region
 	clicked_region.emit(region, self)
 
-func _area_selected(area: BaseCorticalArea) -> void:
+func _area_selected(area: AbstractCorticalArea) -> void:
 	_selected_object = area
 	clicked_cortical_area.emit(area, self)

@@ -12,7 +12,7 @@ func setup_with_root_regions() -> void:
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		push_error("UI: Unable to add views of root region as the region does not exist!")
 		return
-	primary_tabs.add_CB_tab(FeagiCore.feagi_local_cache.brain_regions.return_root_region())
+	primary_tabs.add_CB_tab(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	$SplitContainer/Secondary.visible = false
 	
 

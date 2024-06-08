@@ -107,9 +107,9 @@ var _neuron_fire_threshold: int = 0
 var _neuron_firing_threshold_limit: int = 0
 var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
 var _neuron_excitability: int = 0
-var _cortical_area: BaseCorticalArea
+var _cortical_area: AbstractCorticalArea
 
-func _init(cortical_area_ref: BaseCorticalArea) -> void:
+func _init(cortical_area_ref: AbstractCorticalArea) -> void:
 	_cortical_area = cortical_area_ref
 
 func _set_neuron_mp_charge_accumulation(new_val: bool) -> void:

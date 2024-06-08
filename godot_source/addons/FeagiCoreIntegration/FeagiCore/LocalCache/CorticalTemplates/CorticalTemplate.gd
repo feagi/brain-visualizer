@@ -17,7 +17,7 @@ var structure: STRUCTURE:
 	get: return _structure
 var resolution: Vector3i:
 	get: return _resolution
-var cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE:
+var cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	get: return _cortical_type
 
 var _ID: StringName
@@ -25,9 +25,9 @@ var _is_enabled: bool
 var _cortical_name: StringName
 var _structure: STRUCTURE
 var _resolution: Vector3i
-var _cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE
+var _cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
 
-func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	_ID = template_ID
 	_is_enabled = template_enabled
 	_cortical_name = template_name

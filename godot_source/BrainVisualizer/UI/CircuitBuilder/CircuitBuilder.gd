@@ -39,7 +39,7 @@ func _ready():
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	
-	for area: BaseCorticalArea in _representing_region.contained_cortical_areas:
+	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
 		_CACHE_add_cortical_area(area)
 	
 	for subregion: BrainRegion in _representing_region.contained_regions:
@@ -58,7 +58,7 @@ func setup(region: BrainRegion) -> void:
 			continue # We do not care about conneciton links that are inside other regions
 		_CACHE_link_parent_output_added(parent_output)
 	
-	name = region.name
+	name = region.friendly_name
 	
 	region.name_updated.connect(_CACHE_this_region_name_update)
 	region.cortical_area_added_to_region.connect(_CACHE_add_cortical_area)
@@ -69,7 +69,7 @@ func setup(region: BrainRegion) -> void:
 
 #region Responses to Cache Signals
 
-func _CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
+func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	if (area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
 		return
@@ -79,7 +79,7 @@ func _CACHE_add_cortical_area(area: BaseCorticalArea) -> void:
 	cortical_node.setup(area)
 	cortical_node.node_moved.connect(_genome_object_moved)
 	
-func _CACHE_remove_cortical_area(area: BaseCorticalArea) -> void:
+func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
@@ -176,8 +176,8 @@ func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
 func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:
-	var source_area: BaseCorticalArea = null
-	var destination_area: BaseCorticalArea = null
+	var source_area: AbstractCorticalArea = null
+	var destination_area: AbstractCorticalArea = null
 	if (from_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
 		source_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_node]
 	if (to_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
@@ -212,11 +212,11 @@ func _move_timer_finished():
 
 ## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
 func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:
-	if genome_object is BaseCorticalArea:
-		if !((genome_object as BaseCorticalArea).cortical_ID in _cortical_nodes.keys()):
-			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as BaseCorticalArea).cortical_ID, _representing_region.ID])
+	if genome_object is AbstractCorticalArea:
+		if !((genome_object as AbstractCorticalArea).cortical_ID in _cortical_nodes.keys()):
+			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as AbstractCorticalArea).cortical_ID, _representing_region.ID])
 			return null
-		return _cortical_nodes[(genome_object as BaseCorticalArea).cortical_ID]
+		return _cortical_nodes[(genome_object as AbstractCorticalArea).cortical_ID]
 	else:
 		#brain region
 		if !((genome_object as BrainRegion).ID in _subregion_nodes.keys()):
