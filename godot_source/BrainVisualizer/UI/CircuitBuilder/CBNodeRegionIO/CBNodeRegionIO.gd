@@ -13,8 +13,8 @@ func setup(parent_region: BrainRegion, is_input: bool) -> void:
 	var recursive_path: NodePath = NodePath("") # this cannot be recursive
 	setup_base(recursive_path, input_path, output_path)
 	_is_input = is_input
-	CACHE_updated_region_name(parent_region.name)
-	parent_region.name_updated.connect(CACHE_updated_region_name)
+	CACHE_updated_region_name(parent_region.friendly_name)
+	parent_region.friendly_name_updated.connect(CACHE_updated_region_name)
 
 ## Called by [CircuitBuilder] when adding a connection to the Node object, EXTENDED in this class because any deletion of the single terminal implies that this whole node should go
 func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:

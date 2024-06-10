@@ -39,6 +39,7 @@ func select_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
 	if refresh_morphology_from_FEAGI_on_select:
 		FeagiCore.requests.get_morphology(morphology.name)
+		
 
 ## User selected morpholgy from the list
 func _morphology_button_pressed(morphology_selection:BaseMorphology) -> void:

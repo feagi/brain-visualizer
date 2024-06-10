@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://bq4c4j2yujcwt"]
+[gd_scene load_steps=4 format=3 uid="uid://bq4c4j2yujcwt"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.gd" id="1_cwaox"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_y8w4n"]
+[ext_resource type="PackedScene" uid="uid://bpc4cbet6k5h4" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.tscn" id="3_ewhco"]
 
 [node name="ExampleWindow" type="VBoxContainer"]
 offset_right = 126.0
@@ -28,16 +29,14 @@ layout_mode = 2
 [node name="ends" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
-[node name="Source" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+[node name="Source" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
-text = "SOURCE"
 
 [node name="todo" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Destination" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+[node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
-text = "DESTINATION"

@@ -100,7 +100,7 @@ func filter_by_button_text_whitelist(whitelist: PackedStringArray) -> void:
 
 func filter_by_IDs(whitelist: Array) -> void:
 	for child in _scroll_holder.get_children():
-		if child.ID in whitelist:
+		if child.region_ID in whitelist:
 			child.visible = true
 		else:
 			child.visible = false
@@ -114,7 +114,7 @@ func toggle_filter_text_box(is_enabled_filter_box: bool) -> void:
 
 func _find_child_index_with_ID(searching_ID: Variant) -> int:
 	for child in _scroll_holder.get_children():
-		if child.ID == searching_ID:
+		if child.region_ID == searching_ID:
 			return child.get_index()
 	push_error("UI: Unable to find child index with given ID!")
 	return -1

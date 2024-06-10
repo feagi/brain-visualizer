@@ -60,7 +60,7 @@ func setup(mapping_properties: MappingProperties, type_terminal: TYPE, when_node
 
 	_cortical_label.text = _connected_area.name
 	name = _connected_area.cortical_ID
-	_connected_area.name_updated.connect(_cortical_name_update)
+	_connected_area.friendly_name_updated.connect(_cortical_name_update)
 	when_node_moves.connect(_terminal_location_changed)
 	_parent_node.node_selected.connect(_parent_node_selected)
 	_parent_node.node_deselected.connect(_parent_node_deselected)

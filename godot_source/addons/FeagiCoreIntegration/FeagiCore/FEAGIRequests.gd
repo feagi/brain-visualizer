@@ -135,7 +135,7 @@ func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vecto
 	# Define Request
 	var dict_to_send: Dictionary = {}
 	for move in genome_objects_mapped_to_new_locations_as_vector2is.keys():
-		dict_to_send[(move as GenomeObject).get_ID()] = FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])
+		dict_to_send[(move as GenomeObject).genome_ID] = FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_relocate_members, dict_to_send)
 	
 	# Send request and await results
@@ -158,8 +158,8 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region.ID)
+	if !parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_PARENT_ID")
 	if region_name == "":
 		push_error("FEAGI Requests: Region name cannot be blank!")
@@ -173,7 +173,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"title": region_name,
-		"parent_region_id": parent_region.ID,
+		"parent_region_id": parent_region.region_ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
 		"areas": AbstractCorticalArea.cortical_area_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
@@ -198,14 +198,14 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !brain_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.ID)
+	if !brain_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
-	if !parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such parent region ID %s to place subregion under!" % parent_region.ID)
+	if !parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such parent region ID %s to place subregion under!" % parent_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_PARENT_ID")
-	if !brain_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.ID)
+	if !brain_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	if brain_region.is_root_region():
 		push_error("FEAGI Requests: Unable to edit root region!")
@@ -216,10 +216,10 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"region_id": brain_region.ID,
+		"region_id": brain_region.region_ID,
 		"region_title": region_name,
 		"region_description": region_description,
-		"parent_region_id": parent_region.ID,
+		"parent_region_id": parent_region.region_ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coords_3D),
 	}
@@ -240,22 +240,22 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !target_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % target_region.ID)
+	if !target_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % target_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	for object in objects_to_move:
 		if object is BrainRegion:
 			if (object as BrainRegion).is_root_region():
 				push_error("FEAGI Requests: Unable to make Root Region a child of %s!" % target_region.name)
 				return FeagiRequestOutput.requirement_fail("CANNOT_MOVE_ROOT")
-			if (object as BrainRegion).ID == target_region.ID:
+			if (object as BrainRegion).region_ID == target_region.region_ID:
 				push_error("FEAGI Requests: Cannot make region %s child of itself!" % target_region.name)
 				return FeagiRequestOutput.requirement_fail("CANNOT_RECURSE_REGION")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {}
 	for object in objects_to_move:
-		dict_to_send[object.get_ID()] = target_region.ID
+		dict_to_send[object.genome_ID] = target_region.region_ID
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_relocateMembers, dict_to_send)
 	
 	# Send request and await results
@@ -275,8 +275,8 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !deleting_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % deleting_region.ID)
+	if !deleting_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % deleting_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	if deleting_region.is_root_region():
 		push_error("FEAGI Requests: Unable to delete Root Region!")
@@ -284,7 +284,7 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"id": deleting_region.ID
+		"id": deleting_region.region_ID
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_region_region, dict_to_send)
 	
@@ -345,8 +345,8 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	if cortical_name in FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names():
 		push_error("FEAGI Requests: Cannot create custom cortical area of name %s when a cortical area of this name already exists!" % cortical_name)
 		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
-	if !(parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
-		push_error("FEAGI Requests: Cannot create custom cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.ID])
+	if !(parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
+		push_error("FEAGI Requests: Cannot create custom cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.region_ID])
 		return FeagiRequestOutput.requirement_fail("REGION_NOT_EXISTS")
 	
 	print("FEAGI REQUEST: Request creating custom cortical area by name %s" % cortical_name)
@@ -357,7 +357,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
 		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
-		"brain_region_id": parent_region.ID,
+		"brain_region_id": parent_region.region_ID,
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
 	}
@@ -387,8 +387,8 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 	if cortical_name in FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names():
 		push_error("FEAGI Requests: Cannot create custom cortical area of name %s when a cortical area of this name already exists!" % cortical_name)
 		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
-	if !(parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
-		push_error("FEAGI Requests: Cannot create memory cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.ID])
+	if !(parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
+		push_error("FEAGI Requests: Cannot create memory cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.region_ID])
 		return FeagiRequestOutput.requirement_fail("REGION_NOT_EXISTS")
 	
 	print("FEAGI REQUEST: Request creating custom memory cortical area by name %s" % cortical_name)
@@ -401,7 +401,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null],
 		"sub_group_id": "MEMORY",
-		"brain_region_id": parent_region.ID,
+		"brain_region_id": parent_region.region_ID,
 	}
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)

@@ -25,7 +25,7 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
 		var button: Button = BUTTON_PREFAB.instantiate()
-		button.text = selected.get_name()
+		button.text = selected.friendly_name
 		_scroll_section.add_item(button, selected)
 
 func _add_button_pressed() -> void:
@@ -36,7 +36,7 @@ func _add_button_response(genome_object: GenomeObject) -> void:
 	if genome_object == null:
 		return
 	var button: Button = BUTTON_PREFAB.instantiate()
-	button.text = genome_object.get_name()
+	button.text = genome_object.friendly_name
 	_scroll_section.add_item(button, genome_object)
 	
 

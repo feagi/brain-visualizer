@@ -26,7 +26,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			var area: AbstractCorticalArea = (_selection[0] as AbstractCorticalArea)
-			_titlebar.title = area.name
+			_titlebar.title = area.friendly_name
 			if !area.user_can_delete_this_area:
 				delete_button.disabled = true
 				delete_button.tooltip_text = "This Cortical Area Cannot Be Deleted"
@@ -35,7 +35,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			var region: BrainRegion = (_selection[0] as BrainRegion)
-			_titlebar.title = region.name
+			_titlebar.title = region.friendly_name
 			quick_connect_button.visible = false
 			clone_button.visible = false
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
@@ -93,7 +93,7 @@ func _button_delete() -> void:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			delete_confirmation = ConfigurablePopupDefinition.create_cancel_and_action_popup(
 				"Confirm Deletion", 
-				"Are you sure you wish to delete cortical area %s?" % (_selection[0] as AbstractCorticalArea).name,
+				"Are you sure you wish to delete cortical area %s?" % (_selection[0] as AbstractCorticalArea).friendly_name,
 				FeagiCore.requests.delete_cortical_area.bind((_selection[0] as AbstractCorticalArea)),
 				"Yes",
 				"No"
@@ -101,7 +101,7 @@ func _button_delete() -> void:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			delete_confirmation = ConfigurablePopupDefinition.create_cancel_and_action_popup(
 				"Confirm Deletion", 
-				"Are you sure you wish to delete region %s and bring its internals up to this region?" % (_selection[0] as BrainRegion).name,
+				"Are you sure you wish to delete region %s and bring its internals up to this region?" % (_selection[0] as BrainRegion).friendly_name,
 				FeagiCore.requests.delete_regions_and_raise_internals.bind((_selection[0] as BrainRegion)),
 				"Yes",
 				"No"

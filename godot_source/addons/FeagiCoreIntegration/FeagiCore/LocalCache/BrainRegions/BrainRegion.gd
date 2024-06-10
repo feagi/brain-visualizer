@@ -51,7 +51,7 @@ static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 static func object_array_to_ID_array(regions: Array[BrainRegion]) -> Array[StringName]:
 	var output: Array[StringName] = []
 	for region in regions:
-		output.append(region.ID)
+		output.append(region.region_ID)
 	return output
 
 #NOTE: Specifically not initing region connections since we need to set up all objects FIRST
@@ -88,7 +88,7 @@ func FEAGI_genome_object_register_as_child(genome_object: GenomeObject) -> void:
 			push_error("CORE CACHE: Unable to add root region as a subregion!")
 			return
 		if region in _contained_regions:
-			push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.ID, _genome_ID])
+			push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.region_ID, _genome_ID])
 			return
 		_contained_regions.append(region)
 		subregion_added_to_region.emit(region)
@@ -110,7 +110,7 @@ func FEAGI_genome_object_deregister_as_child(genome_object: GenomeObject) -> voi
 		var region: BrainRegion = (genome_object as BrainRegion)
 		var index: int = _contained_regions.find(region)
 		if index == -1:
-			push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.ID, _genome_ID])
+			push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.region_ID, _genome_ID])
 			return
 		_contained_regions.remove_at(index)
 		subregion_removed_from_region.emit(region)

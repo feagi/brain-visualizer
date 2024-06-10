@@ -53,7 +53,7 @@ func list_all_cached_areas() -> void:
 func add_cortical_area(new_area: AbstractCorticalArea) -> void:
 	_listed_areas.append(new_area)
 	if(display_names_instead_of_IDs):
-		add_item(new_area.name)
+		add_item(new_area.friendly_name)
 	else:
 		add_item(new_area.cortical_ID)
 	if hide_circle_select_icon:

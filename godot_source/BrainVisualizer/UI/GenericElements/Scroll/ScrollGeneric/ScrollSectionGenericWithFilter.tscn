@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://bang2hiadhcuc"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.gd" id="1_5vbem"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.gd" id="1_dnnmd"]
+
+[node name="ScrollSectionGenericWithFilter" type="VBoxContainer"]
+script = ExtResource("1_5vbem")
+
+[node name="LineEdit" type="LineEdit" parent="."]
+layout_mode = 2
+
+[node name="ScrollSectionGeneric" type="ScrollContainer" parent="."]
+layout_mode = 2
+script = ExtResource("1_dnnmd")
+
+[node name="BoxContainer" type="BoxContainer" parent="ScrollSectionGeneric"]
+layout_mode = 2
+vertical = true

@@ -25,16 +25,16 @@ func setup_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	_target = cortical_area
 	_arrow.visible = false
 	_icon.texture = load(PATH_CORTICAL_ICON)
-	_updated_name(cortical_area.name)
-	cortical_area.name_updated.connect(_updated_name)
+	_updated_name(cortical_area.friendly_name)
+	cortical_area.friendly_name_updated.connect(_updated_name)
 	name = cortical_area.cortical_ID
 
 func setup_region(region: BrainRegion) -> void:
 	_target = region
 	_icon.texture = load(PATH_REGION_ICON)
-	_updated_name(region.name)
-	region.name_updated.connect(_updated_name)
-	name = region.ID
+	_updated_name(region.friendly_name)
+	region.friendly_name_updated.connect(_updated_name)
+	name = region.region_ID
 
 func _button_pressed() -> void:
 	user_clicked.emit(_target)

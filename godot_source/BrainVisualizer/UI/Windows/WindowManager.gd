@@ -4,7 +4,8 @@ class_name WindowManager
 
 const _PREFAB_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/CorticalProperties/WindowCorticalProperties.tscn")
 const _PREFAB_CREATE_MORPHOLOGY: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.tscn")
-const _PREFAB_EDIT_MAPPINGS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Mapping_Definition/WindowEditMappingDefinition.tscn")
+const _PREFAB_EDIT_MAPPINGS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Mapping_Definition/WindowEditMappingDefinition.tscn") #TODO remove
+const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.tscn")
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
 const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.tscn")
 const _PREFAB_QUICK_CONNECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.tscn")
@@ -41,9 +42,14 @@ func spawn_developer_options() -> void:
 	var developer_window: WindowDeveloperOptions = _default_spawn_window(_PREFAB_DEVELOPER_OPTIONS, WindowDeveloperOptions.WINDOW_NAME)
 	developer_window.setup()
 
-func spawn_edit_mappings(source: AbstractCorticalArea = null, destination: AbstractCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false):
+func spawn_edit_mappings(source: AbstractCorticalArea = null, destination: AbstractCorticalArea = null, spawn_default_mapping_if_applicable_on_spawn = false): #TODO REMOVE
 	var edit_mappings: WindowEditMappingDefinition = _default_spawn_window(_PREFAB_EDIT_MAPPINGS, WindowEditMappingDefinition.WINDOW_NAME) as WindowEditMappingDefinition
 	edit_mappings.setup(source, destination, spawn_default_mapping_if_applicable_on_spawn)
+
+func spawn_mapping_editor(source: GenomeObject, destination: GenomeObject) -> WindowMappingEditor:
+	var mapping_editor: WindowMappingEditor = _default_spawn_window(_PREFAB_MAPPING_EDITOR, WindowMappingEditor.WINDOW_NAME) as WindowMappingEditor
+	mapping_editor.setup(source, destination)
+	return mapping_editor
 
 func spawn_create_cortical() -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
@@ -61,7 +67,7 @@ func spawn_cortical_view() -> void:
 	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_PREFAB_CORTICAL_VIEW, WindowViewCorticalArea.WINDOW_NAME) as WindowViewCorticalArea
 	view_cortical.setup()
 
-func spawn_select_genome_object(top_region: BrainRegion, selection_type: WindowSelectGenomeObject.SELECTION_TYPE = WindowSelectGenomeObject.SELECTION_TYPE.GENOME_OBJECT) -> WindowSelectGenomeObject:
+func spawn_select_genome_object(top_region: BrainRegion, selection_type: GenomeObject.SINGLE_MAKEUP = GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT) -> WindowSelectGenomeObject:
 	var select_genome_object: WindowSelectGenomeObject = _default_spawn_window(_PREFAB_SELECT_GENOME_OBJECT, WindowSelectGenomeObject.WINDOW_NAME) as WindowSelectGenomeObject
 	select_genome_object.setup(top_region, selection_type)
 	return select_genome_object

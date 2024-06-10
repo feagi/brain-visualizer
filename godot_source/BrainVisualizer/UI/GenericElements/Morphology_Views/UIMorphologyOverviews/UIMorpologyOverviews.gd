@@ -48,7 +48,6 @@ func _ready() -> void:
 	_update_morphology_button.visible = enable_update_morphology_button
 	_UI_morphology_definition.editing_allowed_from_this_window = morphology_properties_editable
 	_no_name_text = _morphology_name_label.text
-	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mappings_changed.connect(feagi_updated_mappings)
 	_custom_minimum_size_scalar = ScalingCustomMinimumSize.new(controls_to_scale_by_min_size)
 	_custom_minimum_size_scalar.theme_updated(BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_custom_minimum_size_scalar.theme_updated)
@@ -70,12 +69,6 @@ func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool
 	# Scroll already requests a property refresh on selection, but since we use usages, lets also refresh usage information
 	FeagiCore.requests.get_morphology_usage(morphology.name)
 	size = Vector2i(0,0) # Force shrink to minimum possible size
-
-## Only called when feagi updated a mapping. This is a hacky work around to have morphology refresh if any mapping changes
-func feagi_updated_mappings(_src: AbstractCorticalArea, _dst: AbstractCorticalArea) -> void:
-	#TODO this is hacky, we need to move away from this
-	if _loaded_morphology != null:
-		load_morphology(_loaded_morphology)
 
 func _user_requested_update_morphology() -> void:
 	BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % _loaded_morphology.name)

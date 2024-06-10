@@ -42,26 +42,26 @@ func _ready():
 
 ## Displays properties of a cortical area, toggles editability depending on corticala rea configuraiton
 func display_cortical_properties(cortical_reference: AbstractCorticalArea) -> void:
-	_line_cortical_name.text = cortical_reference.name
+	_line_cortical_name.text = cortical_reference.friendly_name
 	_line_cortical_ID.text = cortical_reference.cortical_ID
-	_line_cortical_type.text = AbstractCorticalArea.cortical_type_to_str(cortical_reference.group)
+	_line_cortical_type.text = AbstractCorticalArea.cortical_type_to_str(cortical_reference.cortical_type)
 	_line_voxel_neuron_density.current_int = cortical_reference.cortical_neuron_per_vox_count
 	_line_synaptic_attractivity.current_int = cortical_reference.cortical_synaptic_attractivity
-	_vector_dimensions.current_vector = cortical_reference.dimensions
+	_vector_dimensions.current_vector = cortical_reference.dimensions_3D
 	_vector_position.current_vector = cortical_reference.coordinates_3D
-	_region_button.text = cortical_reference.current_parent_region.name
+	_region_button.text = cortical_reference.current_parent_region.friendly_name
 	
 	_line_cortical_name.editable = cortical_reference.user_can_edit_name
 	_line_voxel_neuron_density.editable = cortical_reference.user_can_edit_cortical_neuron_per_vox_count
 	_line_synaptic_attractivity.editable = cortical_reference.user_can_edit_cortical_synaptic_attractivity
 	_vector_dimensions.editable = cortical_reference.user_can_edit_dimensions
 	
-	cortical_reference.name_updated.connect(FEAGI_set_cortical_name)
+	cortical_reference.friendly_name_updated.connect(FEAGI_set_cortical_name)
 	cortical_reference.cortical_neuron_per_vox_count_updated.connect(FEAGI_set_voxel_neuron_density)
 	cortical_reference.cortical_synaptic_attractivity_updated.connect(FEAGI_set_synaptic_attractivity)
-	cortical_reference.dimensions_updated.connect(FEAGI_set_cortical_dimension)
+	cortical_reference.dimensions_3D_updated.connect(FEAGI_set_cortical_dimension)
 	cortical_reference.coordinates_3D_updated.connect(FEAGI_set_cortical_position)
-	cortical_reference.parent_region_changed.connect(FEAGI_set_region)
+	cortical_reference.parent_region_updated.connect(FEAGI_set_region)
 
 
 func FEAGI_set_cortical_name(new_name: StringName, _duplicate_ref: AbstractCorticalArea):
@@ -85,7 +85,7 @@ func FEAGI_set_cortical_position(new_position: Vector3i, _duplicate_ref: Abstrac
 	_FEAGI_confirmed_update()
 
 func FEAGI_set_region(new_region: BrainRegion):
-	_region_button.text = new_region.name
+	_region_button.text = new_region.friendly_name
 	_FEAGI_confirmed_update()
 
 ## FEAGI confirmed changes, show this in the UI and clear the backend dict
@@ -136,5 +136,7 @@ func _enable_3D_preview():
 
 
 func _user_requests_editing_region() -> void:
-	var window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region(),WindowSelectGenomeObject.SELECTION_TYPE.BRAIN_REGION)
-	window.user_selected_object_final.connect(_user_edit_region)
+	#var window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region(),WindowSelectGenomeObject.SELECTION_TYPE.BRAIN_REGION)
+	#window.user_selected_object_final.connect(_user_edit_region)
+	#TODO
+	pass

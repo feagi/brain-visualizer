@@ -50,7 +50,7 @@ func overwrite_regions(new_region: Array[BrainRegion]) -> void:
 ## Add a singular region to the end of the drop down
 func add_region(new_region: BrainRegion) -> void:
 	_listed_regions.append(new_region)
-	add_item(new_region.name) # using name only since as of writing, regions do not have IDs
+	add_item(new_region.friendly_name) # using name only since as of writing, regions do not have IDs
 	if hide_circle_select_icon:
 		_popup.set_item_as_radio_checkable(_popup.get_item_count() - 1, false) # Remove Circle Selection
 	
@@ -66,7 +66,7 @@ func get_selected_region() -> BrainRegion:
 func get_selected_region_name() -> StringName:
 	if selected == -1: 
 		return &""
-	return _listed_regions[selected].name
+	return _listed_regions[selected].friendly_name
 
 ## Set the drop down selection to a specific (contained) region
 func set_selected_region(set_region: BrainRegion) -> void:

@@ -56,7 +56,7 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 	_link_type = link_type_
 	match(_link_type):
 		LINK_TYPE.INVALID:
-			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [coming_from.get_ID(), going_to.get_ID()])
+			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [coming_from.genome_ID, going_to.genome_ID])
 			return
 			
 		LINK_TYPE.BRIDGE:

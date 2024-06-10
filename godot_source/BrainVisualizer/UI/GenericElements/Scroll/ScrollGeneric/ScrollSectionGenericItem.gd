@@ -1,38 +1,43 @@
 extends HBoxContainer
 class_name ScrollSectionGenericItem
-## A generic Scroll item that supports any control, and that has a delete button
+## A generic Scroll item that supports any control
 
-signal deleted(self_ref: ScrollSectionGenericItem)
-
-var lookup_key: Variant:
-	get: return _lookup_key
-
-var auto_delete_enabled: bool:
-	get: return _auto_delete_enabled
+var name_tag: StringName:
+	get: return _name_tag
 
 var _lookup_key: Variant
-var _delete_button: ButtonTextureRectScaling
+var _name_tag: StringName
 var _control: Control
-var _auto_delete_enabled: bool
 
-func setup(control: Control, key_to_lookup: Variant, enable_delete_button: bool = true, delete_button_deletes_item: bool = true) -> void:
-	_delete_button = $Delete
+func setup(control: Control, key_to_lookup: Variant, name_tag: StringName) -> void:
 	_control = control
 	_lookup_key = key_to_lookup
-	_auto_delete_enabled = delete_button_deletes_item
+	_name_tag = name_tag
 	add_child(_control)
 	move_child(_control, 0)
-	if !enable_delete_button:
-		_delete_button.queue_free()
+
+func get_lookup_key() -> Variant:
+	return _lookup_key
+
+## Get the control that was created here
+func get_control() -> Control:
+	return _control
+
+## Returns the text button if it exists (otherwise returns null)
+func get_text_button() -> Button:
+	return _control.get_node("Text")
+
+## Returns the delete button if it exists (otherwise returns null)
+func get_delete_button() -> TextureButton:
+	return _control.get_node("Delete")
+
+## Returns the edit button if it exists (otherwise returns null)
+func get_edit_button() -> TextureButton:
+	return _control.get_node("Edit")
+
+func set_highlighting(is_highlighted: bool) -> void:
+	if (_control as Variant).has_method("set_highlighting"):
+		(_control as Variant).set_highlighting(is_highlighted)
 		return
-	_delete_button.pressed.connect(_delete_button_pressed)
-	
+	push_warning("UI: Included control has no 'is_highlighting' function! Skipping setting highlight state!")
 
-func _delete_button_pressed() -> void:
-	deleted.emit(self)
-	if _auto_delete_enabled:
-		queue_free()
-
-
-func _on_delete_pressed():
-	pass # Replace with function body.

@@ -28,10 +28,10 @@ func setup(editing_region: BrainRegion) -> void:
 		return
 	_editing_region = editing_region
 	_editing_region_parent = editing_region.current_parent_region
-	_region_name.text = editing_region.name
-	_region_ID.text = editing_region.ID
-	_region_parent.text = editing_region.current_parent_region.name
-	_region_3D_position.current_vector = editing_region.coordinates_3d
+	_region_name.text = editing_region.friendly_name
+	_region_ID.text = editing_region.region_ID
+	_region_parent.text = editing_region.current_parent_region.friendly_name
+	_region_3D_position.current_vector = editing_region.coordinates_3D
 	for areas in editing_region.contained_cortical_areas:
 		_load_internal_listing(areas)
 	for regions in editing_region.contained_regions:
@@ -41,8 +41,8 @@ func _load_internal_listing(genome_object: GenomeObject) -> void:
 	if genome_object == null:
 		return
 	var button: Button = BUTTON_PREFAB.instantiate()
-	button.text = genome_object.get_name()
-	_scroll_section.add_item(button, genome_object, false)
+	button.text = genome_object.friendly_name
+	#_scroll_section.add_item(button, genome_object, false)
 
 func _on_press_cancel():
 	close_window()

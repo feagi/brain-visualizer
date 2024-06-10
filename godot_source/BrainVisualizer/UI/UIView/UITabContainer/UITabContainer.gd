@@ -33,7 +33,7 @@ func show_CB_of_region(region: BrainRegion) -> void:
 ## SPECIFCIALLY creates a CB of a region, and then adds it to this UITabContainer
 func spawn_CB_of_region(region: BrainRegion) -> void:
 	if does_contain_CB_of_region(region):
-		push_error("UI UITabCOntainer: This tab container already contains region ID %s!" % region.ID)
+		push_error("UI UITabCOntainer: This tab container already contains region ID %s!" % region.region_ID)
 		return
 	var new_cb: CircuitBuilder = PREFAB_CIRCUITBUILDER.instantiate()
 	new_cb.setup(region)
@@ -43,7 +43,7 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 func bring_existing_region_CB_to_top(region: BrainRegion) -> void:
 	var cb: CircuitBuilder = return_CB_of_region(region)
 	if cb == null:
-		push_warning("UI: Unable to find CB for region %s to bring to the top!" % region.ID)
+		push_warning("UI: Unable to find CB for region %s to bring to the top!" % region.region_ID)
 		return
 	var tab_idx: int = get_tab_idx_from_control(cb)
 	current_tab = tab_idx
@@ -70,7 +70,7 @@ func is_current_top_view_root_region() -> bool:
 func does_contain_CB_of_region(searching_region: BrainRegion) -> bool:
 	for child in get_children():
 		if child is CircuitBuilder:
-			if (child as CircuitBuilder).representing_region.ID == searching_region.ID:
+			if (child as CircuitBuilder).representing_region.region_ID == searching_region.region_ID:
 				return true
 	return false
 
@@ -78,7 +78,7 @@ func does_contain_CB_of_region(searching_region: BrainRegion) -> bool:
 func return_CB_of_region(searching_region: BrainRegion) -> CircuitBuilder:
 	for child in get_children():
 		if child is CircuitBuilder:
-			if (child as CircuitBuilder).representing_region.ID == searching_region.ID:
+			if (child as CircuitBuilder).representing_region.region_ID == searching_region.region_ID:
 				return (child as CircuitBuilder)
 	return null
 

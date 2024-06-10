@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MappingRestrictions" load_steps=8 format=3 uid="uid://d0ba2vskmumy"]
+[gd_resource type="Resource" script_class="MappingRestrictions" load_steps=9 format=3 uid="uid://d0ba2vskmumy"]
 
 [ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictions.gd" id="1_qysk5"]
 [ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictionDefault.gd" id="1_y5wpv"]
@@ -30,7 +30,14 @@ cortical_destination_type = 5
 restricted_to_morphology_of_names = Array[StringName]([])
 max_number_mappings = -1
 
+[sub_resource type="Resource" id="Resource_hkdvp"]
+script = ExtResource("2_ojjbj")
+cortical_source_type = 1
+cortical_destination_type = 1
+restricted_to_morphology_of_names = Array[StringName]([&"projector"])
+max_number_mappings = 1
+
 [resource]
 script = ExtResource("1_qysk5")
-restrictions = Array[ExtResource("2_ojjbj")]([SubResource("Resource_4dtq8"), SubResource("Resource_alfs1")])
+restrictions = Array[ExtResource("2_ojjbj")]([SubResource("Resource_4dtq8"), SubResource("Resource_alfs1"), SubResource("Resource_hkdvp")])
 default_mapping_settings = Array[ExtResource("1_y5wpv")]([SubResource("Resource_84m7c"), SubResource("Resource_yns2e")])

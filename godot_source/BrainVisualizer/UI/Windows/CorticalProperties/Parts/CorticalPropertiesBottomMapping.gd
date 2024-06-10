@@ -22,12 +22,12 @@ func setup(data: Dictionary, _main_window: Node) -> void:
 	if data["aff2this"]:
 		# afferent
 		_ID_Button.text = _source_area.name
-		_source_area.name_updated.connect(_cortical_name_changed)
+		_source_area.friendly_name_updated.connect(_cortical_name_changed)
 		name = _source_area.cortical_ID
 	else:
 		# efferent
 		_ID_Button.text = _destination_area.name
-		_destination_area.name_updated.connect(_cortical_name_changed)
+		_destination_area.friendly_name_updated.connect(_cortical_name_changed)
 		name = _destination_area.cortical_ID
 	
 

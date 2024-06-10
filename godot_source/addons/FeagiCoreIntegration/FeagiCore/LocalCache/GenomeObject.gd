@@ -5,8 +5,8 @@ class_name GenomeObject
 signal friendly_name_updated(new_name: StringName)
 signal coordinates_2D_updated(new_position: Vector2i)
 signal coordinates_3D_updated(new_position: Vector3i)
-signal dimensions_3D_changed(new_dimension: Vector3i)
-signal parent_region_changed(old_region: BrainRegion, new_region: BrainRegion)
+signal dimensions_3D_updated(new_dimension: Vector3i)
+signal parent_region_updated(old_region: BrainRegion, new_region: BrainRegion)
 signal input_link_added(link: ConnectionChainLink)
 signal output_link_added(link: ConnectionChainLink)
 signal input_link_removed(link: ConnectionChainLink)
@@ -19,6 +19,13 @@ enum ARRAY_MAKEUP {
 	MULTIPLE_CORTICAL_AREAS,
 	MULTIPLE_BRAIN_REGIONS,
 	VARIOUS_GENOME_OBJECTS,
+	UNKNOWN
+}
+
+enum SINGLE_MAKEUP {
+	SINGLE_CORTICAL_AREA,
+	SINGLE_BRAIN_REGION,
+	ANY_GENOME_OBJECT,
 	UNKNOWN
 }
 
@@ -83,6 +90,8 @@ static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MA
 	var br: bool
 	var ca: bool
 	for selection in genome_objects:
+		if selection == null:
+			return ARRAY_MAKEUP.UNKNOWN
 		if selection is AbstractCorticalArea:
 			ca = true
 			continue
@@ -97,11 +106,29 @@ static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MA
 		return ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS
 	return ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
 
+static func get_makeup_of_single_object(genome_object: GenomeObject) -> SINGLE_MAKEUP:
+	if genome_object == null:
+		return SINGLE_MAKEUP.UNKNOWN
+	if genome_object is AbstractCorticalArea:
+		return SINGLE_MAKEUP.SINGLE_CORTICAL_AREA
+	if genome_object is BrainRegion:
+		return SINGLE_MAKEUP.SINGLE_BRAIN_REGION
+	return SINGLE_MAKEUP.UNKNOWN
+
+static func is_given_object_covered_by_makeup(given: GenomeObject, makeup: SINGLE_MAKEUP) -> bool:
+	var given_type: SINGLE_MAKEUP = GenomeObject.get_makeup_of_single_object(given)
+	if given_type == SINGLE_MAKEUP.UNKNOWN:
+		return false
+	if makeup == SINGLE_MAKEUP.ANY_GENOME_OBJECT:
+		return true
+	return given_type == makeup
+	
+
 ## Given an array of GenomeObjects, return a String Array of their Genome_IDs
 static func get_ID_array(genome_objects: Array[GenomeObject]) -> Array[StringName]:
 	var output: Array[StringName] = []
 	for object in genome_objects:
-		output.append(object.get_ID())
+		output.append(object.genome_ID)
 	return output
 
 ## Given an Array of GenomeObjects, return only the AbstractCorticalAreas
@@ -146,7 +173,7 @@ func FEAGI_change_dimensions_3D(new_dim_3D: Vector3i) -> void:
 	if _dimensions_3D == new_dim_3D:
 		return
 	_dimensions_3D = new_dim_3D
-	dimensions_3D_changed.emit(new_dim_3D)
+	dimensions_3D_updated.emit(new_dim_3D)
 
 ## Change from one existing parent region to another
 func FEAGI_change_parent_brain_region(new_parent_region: BrainRegion) -> void:
@@ -156,7 +183,7 @@ func FEAGI_change_parent_brain_region(new_parent_region: BrainRegion) -> void:
 	_parent_region = new_parent_region
 	old_region_cache.FEAGI_genome_object_deregister_as_child(self)
 	new_parent_region.FEAGI_genome_object_register_as_child(self)
-	parent_region_changed.emit(old_region_cache, new_parent_region)
+	parent_region_updated.emit(old_region_cache, new_parent_region)
 
 ## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region. 
 func FEAGI_input_add_link(link: ConnectionChainLink) -> void:

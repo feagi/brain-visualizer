@@ -60,7 +60,7 @@ func setup(region: BrainRegion) -> void:
 	
 	name = region.friendly_name
 	
-	region.name_updated.connect(_CACHE_this_region_name_update)
+	region.friendly_name_updated.connect(_CACHE_this_region_name_update)
 	region.cortical_area_added_to_region.connect(_CACHE_add_cortical_area)
 	region.cortical_area_removed_from_region.connect(_CACHE_remove_cortical_area)
 	region.subregion_added_to_region.connect(_CACHE_add_subregion)
@@ -87,23 +87,23 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 	cortical_nodes.erase(area.cortical_ID)
 	
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
-	if (subregion.ID in subregion_nodes.keys()):
-		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.ID)
+	if (subregion.region_ID in subregion_nodes.keys()):
+		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.region_ID)
 		return
 	var region_node: CBNodeRegion = PREFAB_NODE_BRAINREGION.instantiate()
-	subregion_nodes[subregion.ID] = region_node
+	subregion_nodes[subregion.region_ID] = region_node
 	add_child(region_node)
 	region_node.setup(subregion)
 	region_node.double_clicked.connect(_user_double_clicked_region)
 	region_node.node_moved.connect(_genome_object_moved)
 
 func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
-	if !(subregion.ID in subregion_nodes.keys()):
-		push_error("UI CB: Unable to find region %s to remove node of!" % subregion.ID)
+	if !(subregion.region_ID in subregion_nodes.keys()):
+		push_error("UI CB: Unable to find region %s to remove node of!" % subregion.region_ID)
 		return
 	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
-	subregion_nodes[subregion.ID].queue_free()
-	subregion_nodes.erase(subregion.ID)
+	subregion_nodes[subregion.region_ID].queue_free()
+	subregion_nodes.erase(subregion.region_ID)
 
 ## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too
 func _CACHE_this_region_name_update(new_name: StringName) -> void:
@@ -114,7 +114,7 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 
 	if (source_node == null) or (destination_node == null):
-		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
+		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 
 	if source_node == destination_node:
@@ -134,7 +134,7 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 	
 	if destination_node == null:
-		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
+		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 	
 	var source_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(true, destination_node)
@@ -152,7 +152,7 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	
 	if source_node == null:
-		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.ID)
+		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 	
 	var destination_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(false, source_node)
@@ -214,15 +214,15 @@ func _move_timer_finished():
 func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:
 	if genome_object is AbstractCorticalArea:
 		if !((genome_object as AbstractCorticalArea).cortical_ID in _cortical_nodes.keys()):
-			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as AbstractCorticalArea).cortical_ID, _representing_region.ID])
+			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as AbstractCorticalArea).cortical_ID, _representing_region.region_ID])
 			return null
 		return _cortical_nodes[(genome_object as AbstractCorticalArea).cortical_ID]
 	else:
 		#brain region
-		if !((genome_object as BrainRegion).ID in _subregion_nodes.keys()):
-			push_error("UI CB: Unable to find region %s node in CB for region %s" % [(genome_object as BrainRegion).ID, _representing_region.ID])
+		if !((genome_object as BrainRegion).region_ID in _subregion_nodes.keys()):
+			push_error("UI CB: Unable to find region %s node in CB for region %s" % [(genome_object as BrainRegion).region_ID, _representing_region.region_ID])
 			return null
-		return _subregion_nodes[(genome_object as BrainRegion).ID]
+		return _subregion_nodes[(genome_object as BrainRegion).region_ID]
 
 func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBNodeRegionIO:
 	var IO_node: CBNodeRegionIO = PREFAB_NODE_REGIONIO.instantiate()

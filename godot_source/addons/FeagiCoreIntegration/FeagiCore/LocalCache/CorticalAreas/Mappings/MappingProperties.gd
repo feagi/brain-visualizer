@@ -41,8 +41,8 @@ func _init(source_area: AbstractCorticalArea, destination_area: AbstractCortical
 	_mappings = mappings_between_them
 	_max_number_mappings_supported = MappingHints.get_allowed_mapping_count(source_area, destination_area)
 	_morphologies_restricted_to = MappingHints.get_allowed_morphologies_to_map_toward(source_area, destination_area)
-	source_area.parent_region_changed.connect(_proxy_region_change)
-	destination_area.parent_region_changed.connect(_proxy_region_change)
+	source_area.parent_region_updated.connect(_proxy_region_change)
+	destination_area.parent_region_updated.connect(_proxy_region_change)
 
 ## Given the dictionary from the FEAGI mapping properties call directly creates a MappingProperties object. Yes the spelling is correct
 static func from_FEAGI_mapping_properties(mapping_properties_from_FEAGI: Array, source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> MappingProperties:
