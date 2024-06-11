@@ -20,7 +20,7 @@ func load_mappings(mappings: Array[SingleMappingDefinition], default_morphology:
 	
 	for mapping in mappings:
 		var row: MappingEditorRowGeneric = PREFAB_ROW.instantiate()
-		_scroll.add_generic_item(row, null, "")
+		_scroll.add_generic_item(row, null, "") #NOTE: Doing this first so _ready has a chance to run
 		row.load_mapping(mapping)
 
 func export_mappings() -> Array[SingleMappingDefinition]:
@@ -33,6 +33,6 @@ func export_mappings() -> Array[SingleMappingDefinition]:
 
 func _add_mapping_row() -> void:
 	var row: MappingEditorRowGeneric = PREFAB_ROW.instantiate()
-	row.load_default_settings(_default_morphology)
 	_scroll.add_generic_item(row, null, "")
+	row.load_default_settings(_default_morphology)
 

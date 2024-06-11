@@ -135,7 +135,7 @@ func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vecto
 	# Define Request
 	var dict_to_send: Dictionary = {}
 	for move in genome_objects_mapped_to_new_locations_as_vector2is.keys():
-		dict_to_send[(move as GenomeObject).genome_ID] = FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])
+		dict_to_send[(move as GenomeObject).genome_ID] = {"coordinate_2d": FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_relocate_members, dict_to_send)
 	
 	# Send request and await results
@@ -1008,7 +1008,7 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 
 
 ## Set (overwrite) the mappings between 2 areas
-func set_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mappings: Array[MappingProperty]) -> FeagiRequestOutput:
+func set_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mappings: Array[SingleMappingDefinition]) -> FeagiRequestOutput:
 	var source_cortical_ID = source_area.cortical_ID
 	var destination_cortical_ID = destination_area.cortical_ID
 	
@@ -1022,15 +1022,12 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!" % destination_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
-	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
-		push_error("FEAGI Requests: Given mappings are invalid for creating a mapping between %s towards %s!" % [source_cortical_ID, destination_cortical_ID])
-		return FeagiRequestOutput.requirement_fail("INVALID_MAPPING")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"src_cortical_area": source_cortical_ID,
 		"dst_cortical_area": destination_cortical_ID,
-		"mapping_string": MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
+		"mapping_string": SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
 		}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_mappingProperties, dict_to_send)
 	
@@ -1048,12 +1045,11 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
 	
-	var temp_json_inbetween: Array[Dictionary] = MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
-	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, temp_json_inbetween)
-	var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
-	mapping_set.mappings_changed.emit(mapping_set)
-	mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()
-	FeagiCore.feagi_local_cache.mapping_data.mapping_updated.emit(mapping_set)
+	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
+	#var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
+	#mapping_set.mappings_changed.emit(mapping_set)
+	#mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()
+	#FeagiCore.feagi_local_cache.mapping_data.mapping_updated.emit(mapping_set)
 	return FEAGI_response_data
 	#if FeagiCore.feagi_local_cache.mapping_data.does_mappings_exist_between_areas(source_area, destination_area):
 	#	FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID].FEAGI_updated_mappings_JSON(temp_json_inbetween)
@@ -1062,8 +1058,8 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	
 
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
-func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:
-	var current_mappings: Array[MappingProperty] = source_area.get_mappings_to(destination_area).mappings
+func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: SingleMappingDefinition) -> FeagiRequestOutput:
+	var current_mappings: Array[SingleMappingDefinition] = source_area.efferent_mappings[destination_area].mappings
 	current_mappings.append(mapping)
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, current_mappings)
 	return return_data
@@ -1071,14 +1067,14 @@ func append_mapping_between_corticals(source_area: AbstractCorticalArea, destina
 
 ## Append a default mapping betwseen 2 cortical areas, given the morphology to use. Assumes the current mapping information is up to date
 func append_default_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  morphology: BaseMorphology) -> FeagiRequestOutput:
-	var appending_mapping: MappingProperty = MappingProperty.create_default_mapping(morphology)
+	var appending_mapping: SingleMappingDefinition = SingleMappingDefinition.create_default_mapping(morphology)
 	var return_data: FeagiRequestOutput = await append_mapping_between_corticals(source_area, destination_area, appending_mapping)
 	return return_data
 
 
 ## delete the mappings between 2 areas
 func delete_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> FeagiRequestOutput:
-	var empty_mappings: Array[MappingProperty] = []
+	var empty_mappings: Array[SingleMappingDefinition] = []
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, empty_mappings)
 	return return_data
 

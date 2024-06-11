@@ -143,7 +143,7 @@ func _setting_morphology() -> void:
 
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area
-	_step1_label.text = " Selected Source Area: [" + cortical_area.name + "]"
+	_step1_label.text = " Selected Source Area: [" + cortical_area.friendly_name + "]"
 	_step1_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	if !_finished_selecting:
 		_step2_panel.visible = true
@@ -154,7 +154,7 @@ func _set_source(cortical_area: AbstractCorticalArea) -> void:
 
 func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 	_destination = cortical_area
-	_step2_label.text = " Selected Destination Area: [" + cortical_area.name + "]"
+	_step2_label.text = " Selected Destination Area: [" + cortical_area.friendly_name + "]"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:
@@ -167,7 +167,7 @@ func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 
 func _set_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
-	_step3_label.text = " Selected Connectivity Rule: " + morphology.name
+	_step3_label.text = " Selected Connectivity Rule: " + morphology.friendly_name
 	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	_step3_morphology_view.load_morphology(morphology)
 	_step3_morphology_details.load_morphology(morphology)

@@ -64,11 +64,14 @@ horizontal_alignment = 2
 
 [node name="Recursive" type="VBoxContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
 alignment = 1
 
 [node name="Inputs" type="VBoxContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
 
 [node name="Outputs" type="VBoxContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
 alignment = 2

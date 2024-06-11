@@ -118,7 +118,7 @@ func toggle_all_visiblity(show: bool) -> void:
 ## Ignoring the key system, directly gets all the spawned rows of the scroll section
 func get_all_spawned_children_of_container() -> Array[ScrollSectionGenericItem]:
 	var output: Array[ScrollSectionGenericItem]
-	for child in get_children():
+	for child in _container.get_children():
 		if child is ScrollSectionGenericItem:
 			output.append(child)
 	return output

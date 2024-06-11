@@ -92,8 +92,8 @@ var _special_cases: Array[MAPPING_SPECIAL_CASES]
 ## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
 ## An empty array means there are no restrictions
 static func get_allowed_morphologies_to_map_toward(source_cortical_area: AbstractCorticalArea, destination_cortical_area: AbstractCorticalArea) -> Array[BaseMorphology]:
-	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.group
-	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.group
+	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.cortical_type
+	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.cortical_type
 	var acceptable_morphologies_str: Array[StringName] = []
 	
 	if source_type in MORPHOLOGY_RESTRICTIONS.keys():
@@ -119,8 +119,8 @@ static func get_allowed_morphologies_to_map_toward(source_cortical_area: Abstrac
 ## Returns an array of morphologies allowed to be used toward a specific destination cortical area.
 ## An empty array means there are no restrictions
 static func get_default_morphology_to_map_with(source_cortical_area: AbstractCorticalArea, destination_cortical_area: AbstractCorticalArea) -> BaseMorphology:
-	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.group
-	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.group
+	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.cortical_type
+	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.cortical_type
 	
 	if source_type in MORPHOLOGY_DEFAULTS.keys():
 		# Source type has specific mapping
@@ -140,8 +140,8 @@ static func get_default_morphology_to_map_with(source_cortical_area: AbstractCor
 ## Returns the number of mappings allowed to the destination cortical area
 ## Returns -1 is there is no limit
 static func get_allowed_mapping_count(source_cortical_area: AbstractCorticalArea, destination_cortical_area: AbstractCorticalArea) -> int:
-	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.group
-	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.group
+	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.cortical_type
+	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.cortical_type
 
 	if source_type in MAPPING_COUNT_LIMITS.keys():
 		# Source type has specific mapping
@@ -162,8 +162,8 @@ static func get_allowed_mapping_count(source_cortical_area: AbstractCorticalArea
 ## Returns the special case flag (as ana array since there may be multiple) to the destination cortical area
 ## Returns [] if none is found
 static func get_special_cases_for_mapping_to_destination(source_cortical_area: AbstractCorticalArea, destination_cortical_area: AbstractCorticalArea) -> Array[MAPPING_SPECIAL_CASES]:
-	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.group
-	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.group
+	var source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = source_cortical_area.cortical_type
+	var destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = destination_cortical_area.cortical_type
 	var output: Array[MAPPING_SPECIAL_CASES] = []
 
 	if source_type in MAPPING_CORTICAL_TYPE_SPECIAL_CASES.keys():
