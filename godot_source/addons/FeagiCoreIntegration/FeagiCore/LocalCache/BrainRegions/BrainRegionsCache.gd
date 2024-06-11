@@ -57,7 +57,7 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 	region.FEAGI_init_parent_relation(parent_region)
 	_available_brain_regions[region_ID] = region
 	for object in contained_objects:
-		object.change_parent_brain_region(region)
+		object.FEAGI_change_parent_brain_region(region)
 	region_added.emit(region)
 
 func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
@@ -92,7 +92,7 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 	var contained_objects: Array[GenomeObject] = []
 	var new_parent: BrainRegion = region.current_parent_region
 	for object: GenomeObject in region.get_all_included_genome_objects():
-		object.change_parent_brain_region(new_parent)
+		object.FEAGI_change_parent_brain_region(new_parent)
 	region.FEAGI_delete_this_region()
 	region_about_to_be_removed.emit(region)
 	_available_brain_regions.erase(region.region_ID)

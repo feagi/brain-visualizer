@@ -6,7 +6,7 @@
 custom_minimum_size = Vector2(250, 0)
 offset_right = 250.0
 offset_bottom = 78.0
-theme_override_constants/separation = 0
+theme_override_constants/separation = 8
 slot/0/left_enabled = true
 slot/0/left_type = 0
 slot/0/left_color = Color(1, 1, 1, 1)

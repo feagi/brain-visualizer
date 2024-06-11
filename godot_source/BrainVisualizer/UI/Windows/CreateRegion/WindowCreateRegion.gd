@@ -26,7 +26,7 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	for selected in selected_items:
 		var button: Button = BUTTON_PREFAB.instantiate()
 		button.text = selected.friendly_name
-		_scroll_section.add_item(button, selected)
+		_scroll_section.add_generic_item(button, selected, selected.friendly_name)
 
 func _add_button_pressed() -> void:
 	var genome_window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
@@ -37,7 +37,7 @@ func _add_button_response(genome_object: GenomeObject) -> void:
 		return
 	var button: Button = BUTTON_PREFAB.instantiate()
 	button.text = genome_object.friendly_name
-	_scroll_section.add_item(button, genome_object)
+	_scroll_section.add_generic_item(button, genome_object, genome_object.friendly_name)
 	
 
 func _create_region_button_pressed() -> void:
