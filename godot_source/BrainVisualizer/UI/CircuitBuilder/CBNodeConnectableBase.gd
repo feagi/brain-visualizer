@@ -30,6 +30,7 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:
 	# NOTE: We ask for the prefab as an input since its a waste to have every instance of this object store a copy in memory
 	var terminal: CBNodeTerminal = port_prefab.instantiate()
+	terminal.tree_exited.connect(_force_shrink)
 	match(connection_type):
 		CBNodeTerminal.TYPE.INPUT:
 			_inputs.add_child(terminal)
@@ -57,3 +58,6 @@ func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 
 func _on_position_changed() -> void:
 	_dragged = true
+
+func _force_shrink() -> void:
+	size = Vector2(0,0)

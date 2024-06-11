@@ -66,6 +66,11 @@ func FEAGI_updated_mappings(new_mappings_between_areas: Array[SingleMappingDefin
 	mappings_changed.emit(self)
 	_connection_chain.FEAGI_updated_associated_mapping_set()
 
+## FEAGI is stating this mapping is to be deleted, signal out the intent and then allow [MappingsCache] to free this object
+func FEAGI_delete_this_mapping() -> void:
+	mappings_about_to_be_deleted.emit(self)
+	_connection_chain.FEAGI_prepare_to_delete()
+
 ## Returns true if any other internal mappings are plastic
 func is_any_mapping_plastic() -> bool:
 	for mapping: SingleMappingDefinition in _mappings:

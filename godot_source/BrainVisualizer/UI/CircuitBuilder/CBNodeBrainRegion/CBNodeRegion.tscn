@@ -10,6 +10,7 @@ offset_bottom = 78.0
 scale = Vector2(0.995621, 1.01454)
 size_flags_horizontal = 4
 size_flags_vertical = 0
+theme_override_constants/separation = 8
 slot/0/left_enabled = true
 slot/0/left_type = 0
 slot/0/left_color = Color(1, 1, 1, 1)
@@ -61,9 +62,11 @@ horizontal_alignment = 2
 
 [node name="Inputs" type="VBoxContainer" parent="."]
 layout_mode = 2
+size_flags_vertical = 0
 theme_type_variation = &"VBoxContainer_far"
 
 [node name="Outputs" type="VBoxContainer" parent="."]
 layout_mode = 2
+size_flags_vertical = 0
 theme_type_variation = &"VBoxContainer_far"
 alignment = 2

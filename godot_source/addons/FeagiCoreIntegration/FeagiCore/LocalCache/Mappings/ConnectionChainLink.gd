@@ -86,17 +86,17 @@ func FEAGI_prepare_to_delete() -> void:
 			pass
 			
 		LINK_TYPE.BRIDGE:
-			_source.output_remove_link(self)
-			_destination.input_remove_link(self)
-			_parent_region.bridge_remove_link(self)
+			_source.FEAGI_output_remove_link(self)
+			_destination.FEAGI_input_remove_link(self)
+			_parent_region.FEAGI_bridge_remove_link(self)
 		
 		LINK_TYPE.PARENTS_OUTPUT:
-			_source.output_remove_link(self)
-			_destination.output_remove_link(self)
+			_source.FEAGI_output_remove_link(self)
+			_destination.FEAGI_output_remove_link(self)
 
 		LINK_TYPE.PARENTS_INPUT:
-			_source.input_remove_link(self)
-			_destination.input_remove_link(self)
+			_source.FEAGI_input_remove_link(self)
+			_destination.FEAGI_input_remove_link(self)
 
 func is_source_cortical_area() -> bool:
 	return _source is AbstractCorticalArea
