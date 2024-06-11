@@ -69,4 +69,4 @@ func _user_pressed_button() -> void:
 	if _link.parent_chain.destination is AbstractCorticalArea:
 		destination_area = _link.parent_chain.destination as AbstractCorticalArea
 	
-	BV.UI.window_manager.spawn_edit_mappings(source_area, destination_area)
+	BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)

@@ -294,29 +294,41 @@ var _afferent_mappings: Dictionary = {}
 var _efferent_mappings: Dictionary = {}
 var _recursive_mappings: Dictionary = {} # technically, this will only be of size 0 or 1 lol
 
+## Called by [InterCorticalMappingSet] during its init
 func CACHE_mapping_set_register_an_afferent(mapping_set: InterCorticalMappingSet) -> void:
 	_afferent_mappings[mapping_set.source_cortical_area] = mapping_set
 	afferent_input_cortical_area_added.emit(mapping_set.source_cortical_area, mapping_set)
 
+## Called by [InterCorticalMappingSet] during its init
 func CACHE_mapping_set_register_an_efferent(mapping_set: InterCorticalMappingSet) -> void:
 	_efferent_mappings[mapping_set.destination_cortical_area] = mapping_set
 	efferent_input_cortical_area_added.emit(mapping_set.destination_cortical_area, mapping_set)
 
+## Called by [InterCorticalMappingSet] during its init
 func CACHE_mapping_set_register_a_recursive(mapping_set: InterCorticalMappingSet) -> void:
 	_recursive_mappings[mapping_set.destination_cortical_area] = mapping_set
 	recursive_cortical_area_added.emit(mapping_set.destination_cortical_area, mapping_set)
 
+## Called by [InterCorticalMappingSet] during its init
 func CACHE_mapping_set_deregister_an_afferent(mapping_set: InterCorticalMappingSet) -> void:
 	_afferent_mappings.erase(mapping_set.source_cortical_area)
 	afferent_input_cortical_area_removed.emit(mapping_set.source_cortical_area, mapping_set)
 
+## Called by [InterCorticalMappingSet] during its init
 func CACHE_mapping_set_deregister_an_efferent(mapping_set: InterCorticalMappingSet) -> void:
 	_efferent_mappings.erase(mapping_set.destination_cortical_area)
 	efferent_input_cortical_area_removed.emit(mapping_set.destination_cortical_area, mapping_set)
 
+## Called by [InterCorticalMappingSet] during its init
 func CACHE_mapping_set_deregister_a_rescursive(mapping_set: InterCorticalMappingSet) -> void:
 	_recursive_mappings.erase(mapping_set.source_cortical_area)
 	recursive_cortical_area_removed.emit(mapping_set.source_cortical_area, mapping_set)
+
+func get_mapping_array_toward_cortical_area(destination: AbstractCorticalArea) -> Array[SingleMappingDefinition]:
+	if destination in _efferent_mappings:
+		return _efferent_mappings[destination].mappings
+	# no mapping exists between these areas, return an empty array!
+	return []
 
 #endregion
 

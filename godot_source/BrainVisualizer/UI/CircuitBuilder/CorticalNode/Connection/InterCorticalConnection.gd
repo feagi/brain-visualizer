@@ -140,7 +140,7 @@ func _set_highlighting(setting: HIGHLIGHT) -> void:
 			_line.material.set_shader_parameter(&"linSlope", 0.0)
 	
 func _spawn_edit_mapping_window() -> void:
-	BV.WM.spawn_edit_mappings(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
+	BV.WM.spawn_mapping_editor(_source_node.cortical_area_ref, _destination_node.cortical_area_ref)
 
 ## Update position of the box and line if either [CorticalNode] moves
 func _update_position(_irrelevant = null) -> void:

@@ -136,7 +136,7 @@ func _move_timer_finished():
 
 ## User requested a connection. Note that this function is going to be redone in the graph edit refactor
 func _user_request_connection(from_cortical_ID: StringName, _from_port: int, to_cortical_ID: StringName, _to_port: int) -> void:
-	BV.WM.spawn_edit_mappings(FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_cortical_ID], FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_cortical_ID], false) #TODO talk to nadji, this being true makes no sense
+	BV.WM.spawn_mapping_editor(FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_cortical_ID], FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_cortical_ID])
 
 func _on_genome_change_state(new_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE):
 	if new_state != FeagiCore.GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:

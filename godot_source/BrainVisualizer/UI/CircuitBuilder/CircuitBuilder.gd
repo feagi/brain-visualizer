@@ -182,7 +182,7 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 		source_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_node]
 	if (to_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
 		destination_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_node]
-	BV.UI.window_manager.spawn_edit_mappings(source_area, destination_area)
+	BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)
 	
 	
 #endregion

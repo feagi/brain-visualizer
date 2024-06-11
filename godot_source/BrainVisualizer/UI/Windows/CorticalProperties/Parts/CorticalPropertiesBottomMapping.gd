@@ -37,7 +37,7 @@ func _user_pressed_delete_button():
 	
 func _user_pressed_edit_button():
 	print("Cortical Properties is requesting Cortical Connection Editing")
-	BV.WM.spawn_edit_mappings(_source_area, _destination_area)
+	BV.WM.spawn_mapping_editor(_source_area, _destination_area)
 
 func _cortical_name_changed(new_name: StringName, _cortical_area: AbstractCorticalArea) -> void:
 	_ID_Button.text = new_name

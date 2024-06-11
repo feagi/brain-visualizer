@@ -49,7 +49,7 @@ func _load_mapping_between_cortical_areas(source: AbstractCorticalArea, destinat
 		_mode = MODE.GENERAL_MAPPING
 		_generic_mapping_settings.clear()
 		_generic_mapping_settings.visible = true
-		var mappings: Array[SingleMappingDefinition] = source.efferent_mappings[destination].mappings
+		var mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
 		var default_morphlogy_name: StringName = FeagiCore.feagi_local_cache.mapping_restrictions.get_defaults_between_2_cortical_areas(source, destination).name_of_default_morphology
 		var default_morphology_for_new_mappings: BaseMorphology = null
 		if default_morphlogy_name in FeagiCore.feagi_local_cache.morphologies.available_morphologies:

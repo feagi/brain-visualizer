@@ -25,4 +25,4 @@ func _mapping_update(mapping_properties: MappingProperties) -> void:
 	pass
 
 func _on_press() -> void:
-	BV.WM.spawn_edit_mappings(_parent_node.cortical_area_ref, _parent_node.cortical_area_ref)
+	BV.WM.spawn_mapping_editor(_parent_node.cortical_area_ref, _parent_node.cortical_area_ref)

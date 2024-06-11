@@ -69,7 +69,7 @@ static func from_FEAGI_JSON_array(mapping_dicts: Array[Dictionary]) -> Array[Sin
 static func to_FEAGI_JSON_array(input_mappings: Array[SingleMappingDefinition]) -> Array[Dictionary]:
 	var output: Array[Dictionary] = []
 	for mapping: SingleMappingDefinition in input_mappings:
-		if !mapping.is_morphology_valid():
+		if mapping.is_morphology_valid():
 			output.append(mapping.to_FEAGI_JSON())
 		else:
 			push_error("Exporting SingleMappingDefinition that has a null morphology. These placeholders will be skipped in the export in an attempt at stability, but this should never happen!")
