@@ -22,13 +22,14 @@ func setup(adding: Array[GenomeObject]) -> void:
 
 func _region_selected(region: BrainRegion) -> void:
 	_region_to_move_to = region
-	_region_label.text = region.name
+	_region_label.text = region.friendly_name
 	_select.disabled = false
 
 func _add_region_pressed() -> void:
 	if _region_to_move_to == null:
 		_region_to_move_to = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	BV.WM.spawn_create_region(_region_to_move_to, _objects_adding)
+	close_window()
 
 func _select_pressed() -> void:
 	FeagiCore.requests.move_objects_to_region(_region_to_move_to, _objects_adding)
