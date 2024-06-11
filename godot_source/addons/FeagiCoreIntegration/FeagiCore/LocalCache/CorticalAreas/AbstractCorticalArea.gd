@@ -276,77 +276,47 @@ func BV_position() -> Vector3:
 # NOTE: While we have connection links for pathing information for HOW connections are made to other objects, we 
 # also have this to know WHAT we are connecting to, because sometimes we don't care about partial connections or regions
 
-signal afferent_input_cortical_area_added(area: AbstractCorticalArea)
-signal efferent_input_cortical_area_added(area: AbstractCorticalArea)
-signal recursive_cortical_area_added(area: AbstractCorticalArea)
-signal afferent_input_cortical_area_removed(area: AbstractCorticalArea)
-signal efferent_input_cortical_area_removed(area: AbstractCorticalArea)
-signal recursive_cortical_area_removed(area: AbstractCorticalArea)
+signal afferent_input_cortical_area_added(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal efferent_input_cortical_area_added(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal recursive_cortical_area_added(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal afferent_input_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal efferent_input_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal recursive_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
 
-var afferent_areas: Array[AbstractCorticalArea]:
-	get: return _afferent_areas
-var efferent_areas: Array[AbstractCorticalArea]:
-	get: return _efferent_areas
-var recursive_areas: Array[AbstractCorticalArea]:
-	get: return _recursive_areas
+var afferent_mappings: Dictionary: # Key'd by the [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+	get: return _afferent_mappings
+var efferent_mappings: Dictionary: # Key'd by the [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+	get: return _efferent_mappings
+var recursive_mappings: Dictionary: # Key'd by the [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+	get: return _recursive_mappings
 
-var _afferent_areas: Array[AbstractCorticalArea] = []
-var _efferent_areas: Array[AbstractCorticalArea] = []
-var _recursive_areas: Array[AbstractCorticalArea] = [] # technically, this will only be of size 0 or 1 lol
+var _afferent_mappings: Dictionary = {}
+var _efferent_mappings: Dictionary = {}
+var _recursive_mappings: Dictionary = {} # technically, this will only be of size 0 or 1 lol
 
-## Called by connection_chain on its initialization if it is connecting 2 cortical areas together
-func CACHE_connection_chain_register_an_afferent(chain: ConnectionChain) -> void:
-	_afferent_areas.append(chain.source as AbstractCorticalArea)
-	afferent_input_cortical_area_added.emit(chain.source as AbstractCorticalArea)
-	chain.about_to_be_deleted.connect(CACHE_connection_chain_deregister_an_afferent)
+func CACHE_mapping_set_register_an_afferent(mapping_set: InterCorticalMappingSet) -> void:
+	_afferent_mappings[mapping_set.source_cortical_area] = mapping_set
+	afferent_input_cortical_area_added.emit(mapping_set.source_cortical_area, mapping_set)
 
-## Called by connection_chain on its initialization if it is connecting 2 cortical areas together
-func CACHE_connection_chain_register_an_efferent(chain: ConnectionChain) -> void:
-	_efferent_areas.append(chain.destination as AbstractCorticalArea)
-	efferent_input_cortical_area_added.emit(chain.destination as AbstractCorticalArea)
-	chain.about_to_be_deleted.connect(CACHE_connection_chain_deregister_an_efferent)
+func CACHE_mapping_set_register_an_efferent(mapping_set: InterCorticalMappingSet) -> void:
+	_efferent_mappings[mapping_set.destination_cortical_area] = mapping_set
+	efferent_input_cortical_area_added.emit(mapping_set.destination_cortical_area, mapping_set)
 
-## Called by connection_chain on its initialization if it is connecting 2 cortical areas together
-func CACHE_connection_chain_register_an_recursive(chain: ConnectionChain) -> void:
-	_recursive_areas.append(chain.source as AbstractCorticalArea)
-	recursive_cortical_area_added.emit(chain.destination as AbstractCorticalArea)
-	chain.about_to_be_deleted.connect(CACHE_connection_chain_deregister_an_recursive)
+func CACHE_mapping_set_register_a_recursive(mapping_set: InterCorticalMappingSet) -> void:
+	_recursive_mappings[mapping_set.destination_cortical_area] = mapping_set
+	recursive_cortical_area_added.emit(mapping_set.destination_cortical_area, mapping_set)
 
-## Called by connection_chain on its initialization if it is disconnecting 2 cortical areas 
-func CACHE_connection_chain_deregister_an_afferent(chain: ConnectionChain) -> void:
-	var index: int = _afferent_areas.find(chain.source)
-	_afferent_areas.remove_at(index)
-	afferent_input_cortical_area_removed.emit(chain.source as AbstractCorticalArea)
+func CACHE_mapping_set_deregister_an_afferent(mapping_set: InterCorticalMappingSet) -> void:
+	_afferent_mappings.erase(mapping_set.source_cortical_area)
+	afferent_input_cortical_area_removed.emit(mapping_set.source_cortical_area, mapping_set)
 
-## Called by connection_chain on its initialization if it is disconnecting 2 cortical areas 
-func CACHE_connection_chain_deregister_an_efferent(chain: ConnectionChain) -> void:
-	var index: int = _afferent_areas.find(chain.destination)
-	_efferent_areas.remove_at(index)
-	efferent_input_cortical_area_removed.emit(chain.destination as AbstractCorticalArea)
+func CACHE_mapping_set_deregister_an_efferent(mapping_set: InterCorticalMappingSet) -> void:
+	_efferent_mappings.erase(mapping_set.destination_cortical_area)
+	efferent_input_cortical_area_removed.emit(mapping_set.destination_cortical_area, mapping_set)
 
-## Called by connection_chain on its initialization if it is disconnecting 2 cortical areas 
-func CACHE_connection_chain_deregister_an_recursive(chain: ConnectionChain) -> void:
-	var index: int = _afferent_areas.find(chain.source)
-	_recursive_areas.remove_at(index)
-	recursive_cortical_area_added.emit(chain.source as AbstractCorticalArea)	
-
-#TODO syc with mapping restrictions
-# The following functions are often overridden in child classes
-## What moprphologies are allowed to connect to this cortical area? return empty if no restriction
-func get_allowed_afferent_morphology_names() -> PackedStringArray:
-	return []
-
-## What moprphologies are allowed to connect from this cortical area? return empty if no restriction
-func get_allowed_efferent_morphology_names() -> PackedStringArray:
-	return []
-
-func _on_input_link_added(link: ConnectionChainLink) -> void:
-	if link.source is AbstractCorticalArea:
-		afferent_input_cortical_area_added.emit(link.source as AbstractCorticalArea)
-
-func _on_output_link_added(link: ConnectionChainLink) -> void:
-	if link.destination is AbstractCorticalArea:
-		efferent_input_cortical_area_added.emit(link.destination as AbstractCorticalArea)
+func CACHE_mapping_set_deregister_a_rescursive(mapping_set: InterCorticalMappingSet) -> void:
+	_recursive_mappings.erase(mapping_set.source_cortical_area)
+	recursive_cortical_area_removed.emit(mapping_set.source_cortical_area, mapping_set)
 
 #endregion
 

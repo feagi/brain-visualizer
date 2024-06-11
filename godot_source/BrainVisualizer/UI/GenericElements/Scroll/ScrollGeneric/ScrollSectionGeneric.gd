@@ -26,7 +26,8 @@ func add_generic_item(control: Control, lookup_key: Variant, friendly_name: Stri
 	var item: ScrollSectionGenericItem = PREFAB_ITEM.instantiate()
 	item.setup(control, lookup_key, friendly_name)
 	_container.add_child(item)
-	_lookup[lookup_key] = item
+	if lookup_key != null: # we dont put null keys in the lookup dictionary, under the assumption the user knows what they are doing
+		_lookup[lookup_key] = item
 	_scale_theme_applier.search_for_matching_children(item)
 	_scale_theme_applier.update_theme_customs(BV.UI.loaded_theme) #TODO VERY BAD
 	return item
@@ -109,7 +110,15 @@ func filter_by_friendly_name(filter: StringName, is_filter_pass: bool = true) ->
 		else:
 			item.visible = !is_filter_pass
 
-## Toggles the visiblity of all given items
+## Toggles the visiblity of all given items. Uses their keys
 func toggle_all_visiblity(show: bool) -> void:
 	for item: ScrollSectionGenericItem in _lookup.values():
 		item.visible = show
+
+## Ignoring the key system, directly gets all the spawned rows of the scroll section
+func get_all_spawned_children_of_container() -> Array[ScrollSectionGenericItem]:
+	var output: Array[ScrollSectionGenericItem]
+	for child in get_children():
+		if child is ScrollSectionGenericItem:
+			output.append(child)
+	return output

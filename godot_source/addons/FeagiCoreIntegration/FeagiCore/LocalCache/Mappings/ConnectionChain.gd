@@ -46,14 +46,7 @@ func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
 	_is_both_ends_cortical_areas = (starting_point is AbstractCorticalArea) and (stoppping_point is AbstractCorticalArea)
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(starting_point, stoppping_point)
 	_rebuild_connection_chain_links(_total_chain_path)
-	if _is_both_ends_cortical_areas:
-		if starting_point.genome_ID == stoppping_point.genome_ID:
-			(starting_point as AbstractCorticalArea).CACHE_connection_chain_register_an_recursive(self)
-			return
-		(stoppping_point as AbstractCorticalArea).CACHE_connection_chain_register_an_afferent(self)
-		(starting_point as AbstractCorticalArea).CACHE_connection_chain_register_an_efferent(self)
 	
-
 func FEAGI_set_mapping(mapping: InterCorticalMappingSet) -> void:
 	_mapping_set = mapping
 	FEAGI_updated_associated_mapping_set()

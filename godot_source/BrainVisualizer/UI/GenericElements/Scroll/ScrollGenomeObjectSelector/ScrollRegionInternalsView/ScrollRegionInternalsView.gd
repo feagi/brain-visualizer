@@ -44,18 +44,18 @@ func reset_to_blank() -> void:
 		child.queue_free()
 
 func _add_region(region: BrainRegion) -> void:
-	if region.ID in _internal_regions:
-		push_error("UI: Unable to add region %s to ScrollRegionInternalView of region %s as it already exists!" % [region.ID, _representing_region.ID])
+	if region.region_ID in _internal_regions:
+		push_error("UI: Unable to add region %s to ScrollRegionInternalView of region %s as it already exists!" % [region.region_ID, _representing_region.region_ID])
 		return
 	var item: ScrollRegionInternalsViewItem =  LIST_ITEM_PREFAB.instantiate()
 	_container.add_child(item)
 	item.setup_region(region)
 	item.user_clicked.connect(_region_selected)
-	_internal_regions[region.ID] = item
+	_internal_regions[region.region_ID] = item
 
 func _add_cortical_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID in _internal_cortical_areas:
-		push_error("UI: Unable to add area %s to ScrollRegionInternalView of region %s as it already exists!" % [area.cortical_ID, _representing_region.ID])
+		push_error("UI: Unable to add area %s to ScrollRegionInternalView of region %s as it already exists!" % [area.cortical_ID, _representing_region.region_ID])
 		return
 	var item: ScrollRegionInternalsViewItem =  LIST_ITEM_PREFAB.instantiate()
 	_container.add_child(item)
@@ -64,17 +64,17 @@ func _add_cortical_area(area: AbstractCorticalArea) -> void:
 	_internal_cortical_areas[area.cortical_ID] = item
 
 func _remove_region(region: BrainRegion) -> void:
-	if !(region.ID in _internal_regions):
-		push_error("UI: Unable to remove region %s to ScrollRegionInternalView of region %s as it doesn't exist in this list!" % [region.ID, _representing_region.ID])
+	if !(region.region_ID in _internal_regions):
+		push_error("UI: Unable to remove region %s to ScrollRegionInternalView of region %s as it doesn't exist in this list!" % [region.region_ID, _representing_region.region_ID])
 		return
-	_internal_regions[region.ID].queue_free()
-	_internal_regions.erase(region.ID)
+	_internal_regions[region.region_ID].queue_free()
+	_internal_regions.erase(region.region_ID)
 	if region == _selected_object:
 		selected_object_removed.emit(region, self)
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if !(area.cortical_ID in _internal_cortical_areas):
-		push_error("UI: Unable to remove area %s to ScrollRegionInternalView of region %s as it doesn't exist in this list!" % [area.cortical_ID, _representing_region.ID])
+		push_error("UI: Unable to remove area %s to ScrollRegionInternalView of region %s as it doesn't exist in this list!" % [area.cortical_ID, _representing_region.region_ID])
 		return
 	_internal_cortical_areas[area.cortical_ID].queue_free()
 	_internal_cortical_areas.erase(area.cortical_ID)

@@ -15,17 +15,20 @@ func initial_values_from_FEAGI(cortical_reference: AbstractCorticalArea) -> void
 	_cortical_area_ref = cortical_reference
 	
 	# Inputs
-	for afferent_area: AbstractCorticalArea in cortical_reference.afferent_areas:
+	for afferent_area: AbstractCorticalArea in cortical_reference.afferent_mappings.keys():
 		_add_afferent_area(afferent_area)
-	for efferent_area: AbstractCorticalArea in cortical_reference.efferent_areas:
+		afferent_area.afferent_input_cortical_area_removed.connect(_remove_afferent_area)
+	# Outputs
+	for efferent_area: AbstractCorticalArea in cortical_reference.efferent_mappings.keys():
 		_add_efferent_area(efferent_area)
+		efferent_area.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
 	
 	cortical_reference.afferent_input_cortical_area_added.connect(_add_afferent_area)
 	cortical_reference.efferent_input_cortical_area_added.connect(_add_efferent_area)
 	cortical_reference.afferent_input_cortical_area_removed.connect(_add_afferent_area)
 	cortical_reference.efferent_input_cortical_area_removed.connect(_add_efferent_area)
 
-func _add_afferent_area(area: AbstractCorticalArea) -> void:
+func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
 	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(area, _cortical_area_ref)
 	var item: ScrollSectionGenericItem = _scroll_afferent.add_text_button_with_delete(
 		area,
@@ -36,7 +39,7 @@ func _add_afferent_area(area: AbstractCorticalArea) -> void:
 	)
 	# item.get_delete_button().pressed.connect() #TODO delete confirmation
 
-func _add_efferent_area(area: AbstractCorticalArea) -> void:
+func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
 	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_ref, area)
 	var item: ScrollSectionGenericItem = _scroll_efferent.add_text_button_with_delete(
 		area,
@@ -47,10 +50,10 @@ func _add_efferent_area(area: AbstractCorticalArea) -> void:
 	)
 	# item.get_delete_button().pressed.connect() #TODO delete confirmation
 
-func _remove_afferent_area(area: AbstractCorticalArea) -> void:
+func _remove_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
 	_scroll_afferent.attempt_remove_item(area)
 
-func _remove_efferent_area(area: AbstractCorticalArea) -> void:
+func _remove_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
 	_scroll_efferent.attempt_remove_item(area)
 
 func _remove_efferent_connection(efferent_area: AbstractCorticalArea):

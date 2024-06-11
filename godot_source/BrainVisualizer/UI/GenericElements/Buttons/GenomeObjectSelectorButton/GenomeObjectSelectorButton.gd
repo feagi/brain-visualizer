@@ -33,15 +33,17 @@ func update_selection(genome_object: GenomeObject) -> void:
 	_switch_button_visuals(genome_object)
 	object_selected.emit(_current_selected)
 
+
+
 func _button_pressed() -> void:
 	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _selection_allowed)
 	window.user_selected_object_final.connect(update_selection)
 
 func _switch_button_visuals(selected: GenomeObject) -> void:
 	var type: GenomeObject.SINGLE_MAKEUP = GenomeObject.get_makeup_of_single_object(selected)
-	_cortical_icon.visible = type == GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
-	_region_icon.visible = type == GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
-	if type == GenomeObject.ARRAY_MAKEUP.UNKNOWN:
+	_cortical_icon.visible = type == GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA
+	_region_icon.visible = type == GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION
+	if type == GenomeObject.SINGLE_MAKEUP.UNKNOWN:
 		_text.text = "None Selected"
 	else:
 		_text.text = selected.friendly_name

@@ -5,4 +5,5 @@
 [node name="ScrollSectionGenericItem" type="HBoxContainer"]
 offset_bottom = 161.0
 size_flags_horizontal = 3
+theme_type_variation = &"HBoxContainer_adjacent"
 script = ExtResource("1_oexre")

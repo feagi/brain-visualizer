@@ -4,7 +4,7 @@ class_name InterCorticalMappingSet
 ## NOTE: This is essentially relegated to be created in the cache, not elsewhere
 
 signal mappings_changed(self_mappings: InterCorticalMappingSet)
-signal mappings_about_to_be_deleted()
+signal mappings_about_to_be_deleted(self_mappings: InterCorticalMappingSet)
 
 var source_cortical_area: AbstractCorticalArea:
 	get: return _src_cortical
@@ -40,6 +40,14 @@ func _init(source_area: AbstractCorticalArea, destination_area: AbstractCortical
 	#_max_number_mappings_supported = #TODO
 	#_morphologies_restricted_to = 
 	_connection_chain = ConnectionChain.from_established_FEAGI_mapping(self)
+	if is_recursive():
+		source_area.CACHE_mapping_set_register_a_recursive(self)
+		mappings_about_to_be_deleted.connect(source_area.CACHE_mapping_set_deregister_a_rescursive)
+		return
+	destination_area.CACHE_mapping_set_register_an_afferent(self)
+	source_area.CACHE_mapping_set_register_an_efferent(self)
+	mappings_about_to_be_deleted.connect(destination_area.CACHE_mapping_set_deregister_an_afferent)
+	mappings_about_to_be_deleted.connect(source_area.CACHE_mapping_set_deregister_an_efferent)
 
 ## Create object from FEAGI JSON data
 static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> InterCorticalMappingSet:
