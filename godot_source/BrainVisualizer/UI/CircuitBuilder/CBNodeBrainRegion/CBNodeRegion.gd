@@ -20,6 +20,7 @@ func setup(region_ref: BrainRegion) -> void:
 	
 	_representing_region.friendly_name_updated.connect(CACHE_updated_region_name)
 	_representing_region.coordinates_2D_updated.connect(CACHE_updated_2D_position)
+	# NOTE: Deletion of the of the region (node) is handled by CB
 
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
 #region CACHE Events and responses
@@ -33,12 +34,10 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 	position_offset = new_position
 	_dragged = false
 
-#endregion
-
-#region CB and Line Interactions
-
 
 #endregion
+
+
 
 #region User Interactions
 

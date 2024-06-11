@@ -88,26 +88,7 @@ func _button_add_to_region() -> void:
 	close_window()
 
 func _button_delete() -> void:
-	var delete_confirmation: ConfigurablePopupDefinition
-	match(_mode):
-		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			delete_confirmation = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-				"Confirm Deletion", 
-				"Are you sure you wish to delete cortical area %s?" % (_selection[0] as AbstractCorticalArea).friendly_name,
-				FeagiCore.requests.delete_cortical_area.bind((_selection[0] as AbstractCorticalArea)),
-				"Yes",
-				"No"
-				)
-		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
-			delete_confirmation = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-				"Confirm Deletion", 
-				"Are you sure you wish to delete region %s and bring its internals up to this region?" % (_selection[0] as BrainRegion).friendly_name,
-				FeagiCore.requests.delete_regions_and_raise_internals.bind((_selection[0] as BrainRegion)),
-				"Yes",
-				"No"
-				)
-	
-	BV.WM.spawn_popup(delete_confirmation)
+	BV.WM.spawn_confirm_deletion(_selection)
 	close_window()
 
 func _on_focus_lost() -> void:

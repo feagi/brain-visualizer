@@ -266,7 +266,7 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 		push_error("FEAGI Requests: Unable to move objects to region of name %s!" % target_region.name)
 		return FEAGI_response_data
 	for object in objects_to_move:
-		object.change_parent_brain_region(target_region)
+		object.FEAGI_change_parent_brain_region(target_region)
 	return FEAGI_response_data
 
 
@@ -482,7 +482,7 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	
 	var FEAGI_response_data: FeagiRequestOutput
 	
-	match(cloning_area.group):
+	match(cloning_area.cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			print("FEAGI REQUEST: Request copying memory cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
 			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)

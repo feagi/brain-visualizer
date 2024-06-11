@@ -93,8 +93,8 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 	var new_parent: BrainRegion = region.current_parent_region
 	for object: GenomeObject in region.get_all_included_genome_objects():
 		object.FEAGI_change_parent_brain_region(new_parent)
-	region.FEAGI_delete_this_region()
 	region_about_to_be_removed.emit(region)
+	region.FEAGI_delete_this_region()
 	_available_brain_regions.erase(region.region_ID)
 
 #endregion

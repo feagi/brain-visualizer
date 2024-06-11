@@ -19,6 +19,7 @@ const _PREFAB_SELECT_GENOME_OBJECT: PackedScene = preload("res://BrainVisualizer
 const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateRegion/WindowCreateRegion.tscn")
 const _PREFAB_EDIT_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.tscn")
 const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.tscn")
+const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
 
 var loaded_windows: Dictionary
 
@@ -54,6 +55,10 @@ func spawn_mapping_editor(source: GenomeObject, destination: GenomeObject) -> Wi
 func spawn_create_cortical() -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup()
+
+func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> void:
+	var confirm_deletion: WindowConfirmDeletion = _default_spawn_window(_PREFAB_CONFIRM_DELETION, WindowConfirmDeletion.WINDOW_NAME) as WindowConfirmDeletion
+	confirm_deletion.setup(objects_to_delete, is_deleting_single_region_internals_instead_of_raising)
 
 func spawn_clone_cortical(cloning_from: AbstractCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_PREFAB_CLONE_CORTICAL, WindowCloneCorticalArea.WINDOW_NAME) as WindowCloneCorticalArea

@@ -96,6 +96,7 @@ func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	region_node.setup(subregion)
 	region_node.double_clicked.connect(_user_double_clicked_region)
 	region_node.node_moved.connect(_genome_object_moved)
+	subregion.subregion_removed_from_region.connect(_CACHE_remove_subregion)
 
 func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.region_ID in subregion_nodes.keys()):

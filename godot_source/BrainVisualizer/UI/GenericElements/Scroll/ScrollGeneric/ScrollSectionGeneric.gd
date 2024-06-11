@@ -34,12 +34,13 @@ func add_generic_item(control: Control, lookup_key: Variant, friendly_name: Stri
 
 ## Allows the addition text button with a label
 func add_text_button(lookup_key: Variant, text: StringName, button_action: Callable, theme_variant: StringName = DEFAULT_BUTTON_THEME_VARIANT) -> ScrollSectionGenericItem:
-	var prefab: HBoxContainer = PREFAB_BUTTON_WITH_DELETE.instantiate()
+	var prefab: HBoxContainer = PREFAB_BUTTON.instantiate()
 	var button: Button = prefab.get_node("ScrollSectionTextButton")
 	button.text = text
-	button.pressed.connect(button_action)
+	if !button_action.is_null():
+		button.pressed.connect(button_action)
 	button.theme_type_variation = theme_variant
-	return add_generic_item(button, lookup_key, text)
+	return add_generic_item(prefab, lookup_key, text)
 
 ## Allows the addition text button with a label that can be deleted
 func add_text_button_with_delete(lookup_key: Variant, text: StringName, button_action: Callable, theme_variant: StringName = DEFAULT_BUTTON_THEME_VARIANT, enable_auto_delete: bool = true) -> ScrollSectionGenericItem:
@@ -47,7 +48,8 @@ func add_text_button_with_delete(lookup_key: Variant, text: StringName, button_a
 	var button: Button = prefab.get_node("Text")
 	var delete: TextureButton = prefab.get_node("Delete")
 	button.text = text
-	button.pressed.connect(button_action)
+	if !button_action.is_null():
+		button.pressed.connect(button_action)
 	button.theme_type_variation = theme_variant
 	if enable_auto_delete:
 		delete.pressed.connect(prefab.queue_free)
@@ -59,7 +61,8 @@ func add_text_button_with_edit(lookup_key: Variant, text: StringName, button_act
 	var button: Button = prefab.get_node("Text")
 	var edit: TextureButton = prefab.get_node("Edit")
 	button.text = text
-	button.pressed.connect(button_action)
+	if !button_action.is_null():
+		button.pressed.connect(button_action)
 	button.theme_type_variation = theme_variant
 	edit.pressed.connect(edit_button_action)
 	return add_generic_item(prefab, lookup_key, text)

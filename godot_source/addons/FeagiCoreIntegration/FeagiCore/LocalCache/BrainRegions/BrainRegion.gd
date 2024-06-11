@@ -135,6 +135,7 @@ func FEAGI_delete_this_region() -> void:
 	if is_root_region():
 		push_error("CORE CACHE: Cannot remove root region region! Skipping!")
 	about_to_be_deleted.emit()
+	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	# This function should be called by [BrainRegionsCache], which will then free this object
 
 #endregion
