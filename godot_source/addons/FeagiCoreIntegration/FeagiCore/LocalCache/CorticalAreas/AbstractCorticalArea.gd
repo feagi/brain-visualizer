@@ -154,7 +154,7 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 ## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	#NOTE: Assumption is made that connections were already removed firstZ!
-	_parent_region.FEAGI_remove_a_cortical_area(self)
+	_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	about_to_be_deleted.emit()
 	# [CorticalAreasCache] then deletes this object
 

@@ -102,7 +102,7 @@ func feagi_spawn_single_cortical_node(cortical_area: AbstractCorticalArea) -> Co
 		offset = cortical_area.coordinates_2D
 	else:
 		if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI:
-			offset = _spawn_sorter.add_cortical_area_to_memory_and_return_position(cortical_area.group)
+			offset = _spawn_sorter.add_cortical_area_to_memory_and_return_position(cortical_area.cortical_type)
 		else:
 			offset = Vector2(0.0,0.0) # TODO use center of view instead
 	add_child(cortical_node)

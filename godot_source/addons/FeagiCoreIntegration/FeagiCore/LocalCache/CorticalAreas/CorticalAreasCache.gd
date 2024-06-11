@@ -215,7 +215,7 @@ func search_for_available_cortical_areas_by_name(search_term: StringName) -> Arr
 func search_for_available_cortical_areas_by_type(searching_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> Array[AbstractCorticalArea]:
 	var output: Array[AbstractCorticalArea] = []
 	for cortical_area in _available_cortical_areas.values():
-		if cortical_area.group == searching_cortical_type:
+		if cortical_area.cortical_type == searching_cortical_type:
 			output.append(cortical_area)
 	return output
 
@@ -229,7 +229,7 @@ func get_all_cortical_area_names() -> Array[StringName]:
 ## Returns true if a cortical area exists with a given name (NOT ID)
 func exist_cortical_area_of_name(searching_name: StringName) -> bool:
 	for cortical_area in _available_cortical_areas.values():
-		if cortical_area.name.to_lower() == searching_name.to_lower():
+		if cortical_area.friendly_name.to_lower() == searching_name.to_lower():
 			return true
 	return false
 #endregion
