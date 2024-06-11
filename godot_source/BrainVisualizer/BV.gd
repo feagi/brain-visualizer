@@ -14,9 +14,6 @@ var UI: UIManager:
 var BM: Node:
 	get: return get_node("/root/BrainVisualizer/UIManager/BrainMonitor")
 
-var CB: CorticalNodeGraph: #TODO update class name
-	get: return get_node("/root/BrainVisualizer/UIManager/CB_Holder/CircuitBuilder")
-
 var NOTIF: NotificationSystem:
 	get: return get_node("/root/BrainVisualizer/UIManager/NotificationSystem") as NotificationSystem
 
