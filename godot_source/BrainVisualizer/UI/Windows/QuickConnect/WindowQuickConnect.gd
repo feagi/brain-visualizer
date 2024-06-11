@@ -167,7 +167,7 @@ func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 
 func _set_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
-	_step3_label.text = " Selected Connectivity Rule: " + morphology.friendly_name
+	_step3_label.text = " Selected Connectivity Rule: " + morphology.name
 	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	_step3_morphology_view.load_morphology(morphology)
 	_step3_morphology_details.load_morphology(morphology)

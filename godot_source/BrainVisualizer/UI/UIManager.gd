@@ -296,20 +296,20 @@ func _proxy_notification_mappings_updated(source: AbstractCorticalArea, destinat
 func _proxy_notification_morphology_added(morphology: BaseMorphology) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
-	_notification_system.add_notification("Confirmed addition of connectivity rule %s!" % morphology.friendly_name)
+	_notification_system.add_notification("Confirmed addition of connectivity rule %s!" % morphology.name)
 
 
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
 func _proxy_notification_morphology_updated(morphology: BaseMorphology) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
-	_notification_system.add_notification("Confirmed update of connectivity rule %s!" % morphology.friendly_name)
+	_notification_system.add_notification("Confirmed update of connectivity rule %s!" % morphology.name)
 
 
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
 func _proxy_notification_morphology_removed(morphology: BaseMorphology) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
 		return
-	_notification_system.add_notification("Confirmed removal of connectivity rule %s!" % morphology.friendly_name)
+	_notification_system.add_notification("Confirmed removal of connectivity rule %s!" % morphology.name)
 
 #endregion
