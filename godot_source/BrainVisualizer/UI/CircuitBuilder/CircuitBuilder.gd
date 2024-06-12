@@ -127,8 +127,18 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 		source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.RECURSIVE, source_node.title, PREFAB_NODE_TERMINAL)
 		return
 	
-	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
-	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	var source_title: StringName
+	var destination_title: StringName
+	if link.parent_chain.is_registered_to_established_mapping_set():
+		source_title = link.parent_chain.source.friendly_name
+		destination_title = link.parent_chain.destination.friendly_name
+	else:
+		# TODO fallback for partial mapping set
+		source_title = source_node.title
+		destination_title = destination_node.title
+	
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_title, PREFAB_NODE_TERMINAL)
 	
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
@@ -147,8 +157,18 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	var source_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(true, destination_node)
 	source_node.setup(_representing_region, true)
 	
-	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
-	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	var source_title: StringName
+	var destination_title: StringName
+	if link.parent_chain.is_registered_to_established_mapping_set():
+		source_title = link.parent_chain.source.friendly_name
+		destination_title = link.parent_chain.destination.friendly_name
+	else:
+		# TODO fallback for partial mapping set
+		source_title = source_node.title
+		destination_title = destination_node.title
+	
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_title, PREFAB_NODE_TERMINAL)
 
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
@@ -167,8 +187,18 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	var destination_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(false, source_node)
 	destination_node.setup(_representing_region, false)
 	
-	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
-	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	var source_title: StringName
+	var destination_title: StringName
+	if link.parent_chain.is_registered_to_established_mapping_set():
+		source_title = link.parent_chain.source.friendly_name
+		destination_title = link.parent_chain.destination.friendly_name
+	else:
+		# TODO fallback for partial mapping set
+		source_title = source_node.title
+		destination_title = destination_node.title
+	
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_title, PREFAB_NODE_TERMINAL)
 
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)

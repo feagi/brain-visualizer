@@ -84,7 +84,7 @@ func _button_clone() -> void:
 
 func _button_add_to_region() -> void:
 	var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
-	BV.WM.spawn_move_to_region(_selection)
+	BV.WM.spawn_move_to_region(_selection, parent_region)
 	close_window()
 
 func _button_delete() -> void:

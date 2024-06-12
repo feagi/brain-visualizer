@@ -52,6 +52,7 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 func update_text(new_text: StringName) -> void:
 	_button.text = new_text
 
+
 func _port_reporting_deletion() -> void:
 	terminal_about_to_be_deleted.emit()
 	queue_free()

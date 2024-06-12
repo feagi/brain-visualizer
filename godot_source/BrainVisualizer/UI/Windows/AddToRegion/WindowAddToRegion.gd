@@ -15,10 +15,10 @@ func _ready():
 	_region_label = _window_internals.get_node("Label")
 	_select = _window_internals.get_node("HBoxContainer/Select")
 
-func setup(adding: Array[GenomeObject]) -> void:
+func setup(adding: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_objects_adding = adding
-	_explorer.setup_from_starting_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	_explorer.setup_from_starting_region(starting_region)
 
 func _region_selected(region: BrainRegion) -> void:
 	_region_to_move_to = region

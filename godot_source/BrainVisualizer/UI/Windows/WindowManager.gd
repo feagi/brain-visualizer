@@ -90,9 +90,9 @@ func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
 	edit_region.setup(editing_region)
 
-func spawn_move_to_region(objects: Array[GenomeObject]) -> void:
+func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	var move_to_region: WindowAddToRegion = _default_spawn_window(_PREFAB_MOVE_TO_REGION, WindowAddToRegion.WINDOW_NAME) as WindowAddToRegion
-	move_to_region.setup(objects)
+	move_to_region.setup(objects, starting_region)
 
 func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject]) -> void:
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME) as QuickCorticalMenu
