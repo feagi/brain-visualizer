@@ -54,6 +54,6 @@ func _on_press_open_circuit_builder(): #TODO change the spawn region to the last
 
 
 func _on_press_update():
-	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2d, _region_3D_position.current_vector) # TODO description, 2d location?
+	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2D, _region_3D_position.current_vector) # TODO description, 2d location?
 	close_window()
 

@@ -66,6 +66,8 @@ func setup(region: BrainRegion) -> void:
 	region.subregion_added_to_region.connect(_CACHE_add_subregion)
 	region.subregion_removed_from_region.connect(_CACHE_remove_subregion)
 	region.bridge_link_added.connect(_CACHE_link_bridge_added)
+	region.input_link_added.connect(_CACHE_link_parent_input_added)
+	region.output_link_added.connect(_CACHE_link_parent_output_added)
 
 #region Responses to Cache Signals
 

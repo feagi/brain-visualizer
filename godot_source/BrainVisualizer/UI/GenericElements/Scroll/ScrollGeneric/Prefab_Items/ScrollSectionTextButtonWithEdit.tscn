@@ -9,6 +9,7 @@
 [node name="HBoxContainer" type="HBoxContainer"]
 offset_right = 34.0
 offset_bottom = 23.0
+size_flags_horizontal = 3
 script = ExtResource("1_4lr7s")
 
 [node name="Text" type="Button" parent="."]
