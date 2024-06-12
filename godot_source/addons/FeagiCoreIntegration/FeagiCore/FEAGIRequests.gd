@@ -294,7 +294,7 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to delete region of name %s!" % deleting_region.name)
+		push_error("FEAGI Requests: Unable to delete region of name %s!" % deleting_region.friendly_name)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_remove_region_and_raise_internals(deleting_region)
 	return FEAGI_response_data

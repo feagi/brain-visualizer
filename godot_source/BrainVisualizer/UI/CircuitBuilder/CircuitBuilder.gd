@@ -113,6 +113,8 @@ func _CACHE_this_region_name_update(new_name: StringName) -> void:
 	name = new_name
 
 func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
+	if link.parent_region != representing_region:
+		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 
@@ -134,6 +136,8 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
+	if link.parent_region != representing_region:
+		return
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 	
 	if destination_node == null:
@@ -152,6 +156,8 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
+	if link.parent_region != representing_region:
+		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	
 	if source_node == null:
