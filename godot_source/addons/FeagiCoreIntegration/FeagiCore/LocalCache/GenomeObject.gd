@@ -147,6 +147,15 @@ static func filter_brain_regions(genome_objects: Array[GenomeObject]) -> Array[B
 			output.append(object as BrainRegion)
 	return output
 
+## Gets average 2D location of all given [GenomeObject]s. Probably only makes sense if you use this on objects all within one subregion
+static func get_average_2D_location(objects: Array[GenomeObject]) -> Vector2i:
+	var output: Vector2i = Vector2i(0,0)
+	for object in objects:
+		output += object.coordinates_2D
+	return Vector2i( int( float(output.x) / float(len(objects) )), int( float(output.y) / float(len(objects) )) )
+	
+	
+
 #endregion
 
 #region FEAGI Interactions

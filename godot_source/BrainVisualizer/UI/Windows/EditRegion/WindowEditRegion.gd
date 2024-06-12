@@ -40,9 +40,7 @@ func setup(editing_region: BrainRegion) -> void:
 func _load_internal_listing(genome_object: GenomeObject) -> void:
 	if genome_object == null:
 		return
-	var button: Button = BUTTON_PREFAB.instantiate()
-	button.text = genome_object.friendly_name
-	#_scroll_section.add_item(button, genome_object, false)
+	_scroll_section.add_text_button(genome_object, genome_object.friendly_name, Callable())
 
 func _on_press_cancel():
 	close_window()
