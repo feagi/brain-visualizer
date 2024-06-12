@@ -55,4 +55,6 @@ layout_mode = 2
 theme_type_variation = &"Button_big"
 text = " Set Mapping "
 
+[connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Source" to="." method="_source_button_picked"]
+[connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Destination" to="." method="_destination_button_picked"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Button" to="." method="_user_pressed_set_mappings"]

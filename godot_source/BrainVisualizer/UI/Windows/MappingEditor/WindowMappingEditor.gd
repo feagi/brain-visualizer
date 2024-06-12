@@ -33,8 +33,8 @@ func setup(source: GenomeObject, destination: GenomeObject) -> void:
 
 
 func set_2_genome_objects(source: GenomeObject, destination: GenomeObject) -> void:
-	_source_button.update_selection(source)
-	_destination_button.update_selection(destination)
+	_source_button.update_selection_no_signal(source)
+	_destination_button.update_selection_no_signal(destination)
 	_source = source
 	_destination = destination
 	if _source is AbstractCorticalArea and _destination is AbstractCorticalArea:

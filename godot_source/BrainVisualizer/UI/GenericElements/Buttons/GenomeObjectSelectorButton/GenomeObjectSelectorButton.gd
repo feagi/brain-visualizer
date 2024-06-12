@@ -26,13 +26,15 @@ func setup(genome_object: GenomeObject, restricted_to: GenomeObject.SINGLE_MAKEU
 	pressed.connect(_button_pressed)
 
 func update_selection(genome_object: GenomeObject) -> void:
+	update_selection_no_signal(genome_object)
+	object_selected.emit(_current_selected)
+
+func update_selection_no_signal(genome_object: GenomeObject) -> void:
 	if !GenomeObject.is_given_object_covered_by_makeup(genome_object, _selection_allowed):
 		push_error("UI: Invalid GenomeObject type selected for button given restriction! Ignoring!")
 		return
 	_current_selected = genome_object
 	_switch_button_visuals(genome_object)
-	object_selected.emit(_current_selected)
-
 
 
 func _button_pressed() -> void:
