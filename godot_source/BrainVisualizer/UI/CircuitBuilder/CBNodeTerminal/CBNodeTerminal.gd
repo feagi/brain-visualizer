@@ -36,12 +36,15 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 		TYPE.RECURSIVE:
 			_tex_recursive.visible = true
 			_active_port = _tex_recursive
+			_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		TYPE.INPUT:
 			_tex_input.visible = true
 			_active_port = _tex_input
+			_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		TYPE.OUTPUT:
 			_tex_output.visible = true
 			_active_port = _tex_output
+			_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_active_port.setup(parent_node, signal_to_report_updated_position)
 	_active_port.deletion_requested.connect(_port_reporting_deletion)
 
