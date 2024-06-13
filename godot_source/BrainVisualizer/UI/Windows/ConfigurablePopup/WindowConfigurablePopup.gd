@@ -10,14 +10,16 @@ func _ready() -> void:
 	_button_container = _window_internals.get_node("HBoxContainer")
 
 func setup(popup_definition: ConfigurablePopupDefinition) -> void:
-	_setup_base_window(popup_definition.window_name) #TODO: come up witha  better method later
+	_setup_base_window(popup_definition.window_name)
 	_titlebar.title = popup_definition.title
 	_message_box.text = popup_definition.message
 	_generate_buttons(popup_definition.buttons)
-	custom_minimum_size = popup_definition.minimum_size # TODO proper scaling support
-
+	_theme_custom_scaler.search_for_matching_children(_window_internals)
+	custom_minimum_size = popup_definition.minimum_size
+	_theme_updated(BV.UI.loaded_theme) # to scale generated buttons
 
 func _generate_buttons(buttons: Array[Button]) -> void:
 	for button in buttons:
 		button.pressed.connect(close_window)
 		_button_container.add_child(button)
+		_button_container.theme_type_variation = "Button_big"

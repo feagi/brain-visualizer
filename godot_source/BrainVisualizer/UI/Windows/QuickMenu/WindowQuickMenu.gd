@@ -41,7 +41,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
 			if !area.can_exist_in_subregion:
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "This Cortical Area cannot be moved into a Brain Region"
+				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Brain Region"
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			quick_connect_button.visible = false
@@ -64,7 +64,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "One or more of the selected cannot be moved to a region"
+				move_to_region_button.tooltip_text = "One or more of the selected areas cannot be moved to a region"
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
 			quick_connect_button.visible = false
@@ -85,7 +85,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			var filtered_areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(filtered_areas):
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "One or more of the selected cannot be moved to a region"
+				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a region"
 			
 
 
