@@ -30,6 +30,17 @@ clip_text = true
 fit_to_longest_item = false
 script = ExtResource("2_ndwr8")
 
+[node name="edit" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("7_5oycp")
+texture_pressed = ExtResource("8_bbn6j")
+texture_hover = ExtResource("9_21qfw")
+texture_disabled = ExtResource("10_jwhcp")
+ignore_texture_size = true
+stretch_mode = 0
+
 [node name="Scalar" parent="." instance=ExtResource("3_7llad")]
 custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
@@ -86,17 +97,6 @@ layout_mode = 2
 alignment = 1
 script = ExtResource("4_y0rve")
 
-[node name="edit" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-theme_type_variation = &"TextureButton_icon"
-texture_normal = ExtResource("7_5oycp")
-texture_pressed = ExtResource("8_bbn6j")
-texture_hover = ExtResource("9_21qfw")
-texture_disabled = ExtResource("10_jwhcp")
-ignore_texture_size = true
-stretch_mode = 0
-
 [node name="remove" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -108,6 +108,7 @@ texture_disabled = ExtResource("14_yxhwi")
 ignore_texture_size = true
 stretch_mode = 0
 
+[connection signal="pressed" from="edit" to="." method="_on_edit_pressed"]
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
 [connection signal="pressed" from="remove" to="." method="_on_mapping_delete_press"]

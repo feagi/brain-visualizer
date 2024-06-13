@@ -62,5 +62,10 @@ func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_LTP_multiplier.editable = toggle_state
 	_LTD_multiplier.editable = toggle_state
 
+func _on_edit_pressed() -> void:
+	var morphology: BaseMorphology = _morphologies.get_selected_morphology()
+	if morphology != null:
+		BV.WM.spawn_manager_morphology(morphology)
+
 func _on_mapping_delete_press() -> void:
 	get_parent().queue_free()

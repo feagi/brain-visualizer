@@ -23,6 +23,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Mapping Definition"
 
+[node name="edit_placeholder" type="Control" parent="labels_box"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
 [node name="Label2" type="Label" parent="labels_box"]
 custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
@@ -77,11 +82,6 @@ layout_mode = 2
 size_flags_horizontal = 0
 text = "LTD Multi."
 horizontal_alignment = 1
-
-[node name="edit_placeholder" type="Control" parent="labels_box"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 4
 
 [node name="add_button" type="TextureButton" parent="labels_box"]
 custom_minimum_size = Vector2(32, 32)
