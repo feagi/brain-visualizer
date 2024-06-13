@@ -18,8 +18,12 @@ func setup(popup_definition: ConfigurablePopupDefinition) -> void:
 	custom_minimum_size = popup_definition.minimum_size
 	_theme_updated(BV.UI.loaded_theme) # to scale generated buttons
 
-func _generate_buttons(buttons: Array[Button]) -> void:
-	for button in buttons:
+func _generate_buttons(button_defs: Array[ConfigurablePopupButtonDefinition]) -> void:
+	for button_def in button_defs:
+		var button: Button = Button.new()
+		button.text = button_def.text
+		for call in button_def.pressed_callables:
+			button.pressed.connect(call)
 		button.pressed.connect(close_window)
 		_button_container.add_child(button)
 		_button_container.theme_type_variation = "Button_big"
