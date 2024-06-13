@@ -24,6 +24,9 @@ func _user_can_delete_area() -> bool:
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE
 
+func _area_can_exist_in_subregion() -> bool:
+	return false
+
 func _has_neuron_firing_parameters() -> bool:
 	return true
 #end region

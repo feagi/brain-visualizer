@@ -83,6 +83,9 @@ var user_can_edit_cortical_synaptic_attractivity: bool:
 var user_can_clone_this_cortical_area: bool:
 	get: return _user_can_clone_this_area()
 
+var can_exist_in_subregion: bool:
+	get: return _area_can_exist_in_subregion()
+
 var has_neuron_firing_parameters: bool:
 	get:  return _has_neuron_firing_parameters()
 
@@ -137,6 +140,27 @@ static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) 
 		_:
 			return CORTICAL_AREA_TYPE.UNKNOWN
 
+## Filters through a GenomeObject array to output only [AbstractCorticalArea]s
+static func genome_array_to_cortical_area_array(genome_objects: Array[GenomeObject]) -> Array[AbstractCorticalArea]:
+	var output: Array[AbstractCorticalArea] = []
+	for genome in genome_objects:
+		if genome is AbstractCorticalArea:
+			output.append(genome)
+	return output
+
+## If any of the given cortical areas are of a type specified, returns true
+static func array_contains_cortical_area_of_types(areas: Array[AbstractCorticalArea], types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE]) -> bool:
+	for area in areas:
+		if area.cortical_type in types:
+			return true
+	return false
+
+## Returns true only if all given cortical areas can be allowed in subregions
+static func can_all_areas_exist_in_subregion(areas: Array[AbstractCorticalArea]) -> bool:
+	for area in areas:
+		if !area.can_exist_in_subregion:
+			return false
+	return true
 
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
@@ -255,11 +279,15 @@ func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 func _user_can_clone_this_area() -> bool:
 	return false
 
+func _area_can_exist_in_subregion() -> bool:
+	return true
+
 func _has_neuron_firing_parameters() -> bool:
 	return false
 
 func _has_memory_parameters() -> bool:
 	return false
+
 
 
 #endregion
