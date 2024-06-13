@@ -25,7 +25,7 @@ static func create_close_button(text: StringName = "OK") -> ConfigurablePopupBut
 static func create_action_button(action: Callable, text: StringName) -> ConfigurablePopupButtonDefinition:
 	var button: ConfigurablePopupButtonDefinition = ConfigurablePopupButtonDefinition.new()
 	button.text = text
-	button.pressed_callable = [action]
+	button.pressed_callables = [action]
 	return button
 
 ## Generates a definition of a window with a simple window and a single button to close it

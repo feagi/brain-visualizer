@@ -14,9 +14,7 @@ func setup(popup_definition: ConfigurablePopupDefinition) -> void:
 	_titlebar.title = popup_definition.title
 	_message_box.text = popup_definition.message
 	_generate_buttons(popup_definition.buttons)
-	_theme_custom_scaler.search_for_matching_children(_window_internals)
 	custom_minimum_size = popup_definition.minimum_size
-	_theme_updated(BV.UI.loaded_theme) # to scale generated buttons
 
 func _generate_buttons(button_defs: Array[ConfigurablePopupButtonDefinition]) -> void:
 	for button_def in button_defs:
@@ -27,3 +25,4 @@ func _generate_buttons(button_defs: Array[ConfigurablePopupButtonDefinition]) ->
 		button.pressed.connect(close_window)
 		_button_container.add_child(button)
 		_button_container.theme_type_variation = "Button_big"
+		button.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(button, "Button_big")
