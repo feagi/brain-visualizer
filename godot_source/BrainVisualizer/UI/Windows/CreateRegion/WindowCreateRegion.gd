@@ -47,5 +47,9 @@ func _create_region_button_pressed() -> void:
 	var region_name: StringName = _name_box.text
 	var coords_2D: Vector2i = GenomeObject.get_average_2D_location(selected)
 	var coords_3D: Vector3i = _vector.current_vector
+	if region_name == "":
+		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your Brain Region!")
+		BV.WM.spawn_popup(popup)
+		return
 	FeagiCore.requests.create_region(region, selected, region_name, coords_2D, coords_3D)
 	close_window()
