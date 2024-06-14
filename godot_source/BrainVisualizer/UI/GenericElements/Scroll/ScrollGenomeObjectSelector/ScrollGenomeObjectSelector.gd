@@ -15,6 +15,7 @@ var last_selected_area: AbstractCorticalArea:
 
 var _last_selected_region: BrainRegion
 var _last_selected_area: AbstractCorticalArea
+var _view_config: SelectGenomeObjectSettings
 var _starting_region: BrainRegion
 var _views: Array[ScrollRegionInternalsView] = []
 var _container: HBoxContainer
@@ -25,9 +26,10 @@ func _ready():
 func reset_to_empty() -> void:
 	_close_to_the_right_of(0)
 
-func setup_from_starting_region(starting_region: BrainRegion) -> void:
+func setup_from_starting_region(settings: SelectGenomeObjectSettings) -> void:
+	_view_config = settings
 	reset_to_empty()
-	_add_view(starting_region)
+	_add_view(_view_config.starting_region)
 
 ## Close all views right of the given index (inclusive)
 func _close_to_the_right_of(last_to_close: int) -> void:
@@ -39,7 +41,7 @@ func _add_view(region: BrainRegion) -> void:
 	var scene: ScrollRegionInternalsView = PREFAB_SCROLLREGIONVIEW.instantiate()
 	_container.add_child(scene)
 	_views.append(scene)
-	scene.setup(region)
+	scene.setup(region, _view_config)
 	scene.clicked_region.connect(_user_selected_region)
 	scene.clicked_cortical_area.connect(_user_selected_cortical_area)
 

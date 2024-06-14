@@ -18,17 +18,21 @@ func _ready():
 func setup(adding: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_objects_adding = adding
-	_explorer.setup_from_starting_region(starting_region)
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_region_selection(starting_region)
+	_explorer.setup_from_starting_region(config)
 
 func _region_selected(region: BrainRegion) -> void:
 	_region_to_move_to = region
-	_region_label.text = region.friendly_name
+	_region_label.text = "Selected " + region.friendly_name +" as the move destination"
 	_select.disabled = false
 
 func _add_region_pressed() -> void:
-	if _region_to_move_to == null:
-		_region_to_move_to = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	BV.WM.spawn_create_region(_region_to_move_to, _objects_adding)
+	var top_region: BrainRegion
+	if len(_objects_adding) > 0:
+		top_region = _objects_adding[0].current_parent_region
+	else:
+		top_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	BV.WM.spawn_create_region(top_region , _objects_adding)
 	close_window()
 
 func _select_pressed() -> void:

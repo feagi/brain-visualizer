@@ -72,9 +72,9 @@ func spawn_cortical_view() -> void:
 	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_PREFAB_CORTICAL_VIEW, WindowViewCorticalArea.WINDOW_NAME) as WindowViewCorticalArea
 	view_cortical.setup()
 
-func spawn_select_genome_object(top_region: BrainRegion, selection_type: GenomeObject.SINGLE_MAKEUP = GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT) -> WindowSelectGenomeObject:
+func spawn_select_genome_object(view_config: SelectGenomeObjectSettings) -> WindowSelectGenomeObject:
 	var select_genome_object: WindowSelectGenomeObject = _default_spawn_window(_PREFAB_SELECT_GENOME_OBJECT, WindowSelectGenomeObject.WINDOW_NAME) as WindowSelectGenomeObject
-	select_genome_object.setup(top_region, selection_type)
+	select_genome_object.setup(view_config)
 	return select_genome_object
 
 func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> WindowConfigurablePopup:

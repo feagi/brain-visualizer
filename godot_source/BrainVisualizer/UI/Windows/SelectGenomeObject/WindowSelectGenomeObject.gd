@@ -7,8 +7,7 @@ signal user_selected_object_nonfinal(object: GenomeObject)
 signal user_selected_object_final(object: GenomeObject)
 
 var _selected_object: GenomeObject
-var _type_of_selection: GenomeObject.SINGLE_MAKEUP
-var _starting_region: BrainRegion
+var _selection_config: SelectGenomeObjectSettings
 var _scroll_genome_object: ScrollGenomeObjectSelector
 var _selection_label: Label
 var _select: Button
@@ -21,13 +20,12 @@ func _ready() -> void:
 	_select.disabled = true
 	
 
-func setup(starting_region: BrainRegion, type_of_selection: GenomeObject.SINGLE_MAKEUP) -> void:
+func setup(config: SelectGenomeObjectSettings) -> void:
 	_setup_base_window(WINDOW_NAME)
-	_type_of_selection = type_of_selection
-	_starting_region = starting_region
-	_scroll_genome_object.setup_from_starting_region(starting_region)
+	_selection_config = config
+	_scroll_genome_object.setup_from_starting_region(_selection_config)
 	
-	match(_type_of_selection):
+	match(_selection_config.target_type):
 		GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT:
 			_selection_label.text = "Please select a target"
 			_scroll_genome_object.region_selected.connect(_object_selected)
@@ -46,7 +44,7 @@ func _object_selected(object: GenomeObject) -> void:
 	if object is BrainRegion:
 		_region_selected(object as BrainRegion)
 	user_selected_object_nonfinal.emit(object)
-	_select.disabled = !GenomeObject.is_given_object_covered_by_makeup(object, _type_of_selection)
+	_select.disabled = !GenomeObject.is_given_object_covered_by_makeup(object, _selection_config.target_type)
 
 
 func _area_selected(area: AbstractCorticalArea) -> void:
@@ -63,7 +61,7 @@ func _select_pressed() -> void:
 	if _selected_object == null:
 		close_window()
 		return
-	match(_type_of_selection):
+	match(_selection_config.target_type):
 		GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT:
 			user_selected_object_final.emit(_selected_object)
 		GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION:

@@ -36,6 +36,10 @@ func setup_region(region: BrainRegion) -> void:
 	region.friendly_name_updated.connect(_updated_name)
 	name = region.region_ID
 
+func set_rendering(is_visible: bool, is_disabled: bool) -> void:
+	visible = is_visible
+	_button.disabled = is_disabled
+
 func _button_pressed() -> void:
 	user_clicked.emit(_target)
 

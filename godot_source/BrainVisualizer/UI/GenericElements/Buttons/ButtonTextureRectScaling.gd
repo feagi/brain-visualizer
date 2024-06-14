@@ -20,7 +20,7 @@ var _hovered: bool = false
 var _disabled: bool = false
 
 func _init():
-	disabled = disabled
+	disabled = disabled # The wonders of OOP!
 
 func _ready() -> void:
 	mouse_entered.connect(_mouse_entered)

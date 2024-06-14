@@ -38,7 +38,16 @@ func update_selection_no_signal(genome_object: GenomeObject) -> void:
 
 
 func _button_pressed() -> void:
-	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _selection_allowed)
+	var config: SelectGenomeObjectSettings
+	match(_selection_allowed):
+		GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA:
+			config = SelectGenomeObjectSettings.config_for_cortical_area_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+		GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION:
+			config = SelectGenomeObjectSettings.config_for_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+		_:
+			config = SelectGenomeObjectSettings.config_for_selecting_anything(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	config.target_type = _selection_allowed
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
 	window.user_selected_object_final.connect(update_selection)
 
 func _switch_button_visuals(selected: GenomeObject) -> void:

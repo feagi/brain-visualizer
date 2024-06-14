@@ -14,14 +14,16 @@ var _representing_region: BrainRegion
 var _internal_regions: Dictionary
 var _internal_cortical_areas: Dictionary
 var _selected_object: GenomeObject
+var _view_config: SelectGenomeObjectSettings
 
 var _container: VBoxContainer
 
 func _ready():
 	_container = $Scroll/VBoxContainer
 
-func setup(brain_region: BrainRegion) -> void:
+func setup(brain_region: BrainRegion, view_config: SelectGenomeObjectSettings) -> void:
 	_representing_region = brain_region
+	_view_config = view_config
 	for region in brain_region.contained_regions:
 		_add_region(region)
 	for area in brain_region.contained_cortical_areas:
@@ -50,6 +52,10 @@ func _add_region(region: BrainRegion) -> void:
 	var item: ScrollRegionInternalsViewItem =  LIST_ITEM_PREFAB.instantiate()
 	_container.add_child(item)
 	item.setup_region(region)
+	item.set_rendering(
+		_view_config.is_region_shown(region),
+		_view_config.is_region_disabled(region)
+	)
 	item.user_clicked.connect(_region_selected)
 	_internal_regions[region.region_ID] = item
 
@@ -60,6 +66,10 @@ func _add_cortical_area(area: AbstractCorticalArea) -> void:
 	var item: ScrollRegionInternalsViewItem =  LIST_ITEM_PREFAB.instantiate()
 	_container.add_child(item)
 	item.setup_cortical_area(area)
+	item.set_rendering(
+		_view_config.is_cortical_area_shown(area),
+		_view_config.is_cortical_area_disabled(area)
+	)
 	item.user_clicked.connect(_area_selected)
 	_internal_cortical_areas[area.cortical_ID] = item
 
