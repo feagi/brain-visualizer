@@ -32,7 +32,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-text = "Select a Region"
+text = "No Region Selected"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

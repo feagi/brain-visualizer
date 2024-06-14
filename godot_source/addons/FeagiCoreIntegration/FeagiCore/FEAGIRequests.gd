@@ -1084,14 +1084,16 @@ func delete_mappings_between_corticals(source_area: AbstractCorticalArea, destin
 
 #region Amalgamation
 ## Confirm the import of a pending amalgamation at a specific coordinate
-func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName) -> FeagiRequestOutput:
+func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName, parent_region_ID: StringName) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 	print("FEAGI REQUEST: Request confirming amalgamation of ID %s" % amalgamation_ID)
 	
 	# Define Request #TODO why are the parameters in the URL
-	var dict_to_send: Dictionary = 	{}
+	var dict_to_send: Dictionary = 	{
+		"brain_region_id": parent_region_ID
+	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
 		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID
 		, dict_to_send)
