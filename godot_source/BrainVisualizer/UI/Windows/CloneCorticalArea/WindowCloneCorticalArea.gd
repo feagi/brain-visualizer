@@ -25,14 +25,14 @@ func _ready() -> void:
 func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cloning_cortical_area = cloning_cortical_area
-	_field_cortical_name.text = cloning_cortical_area.name + NAME_APPEND
+	_field_cortical_name.text = cloning_cortical_area.friendly_name + NAME_APPEND
 	_field_3d_location.current_vector = cloning_cortical_area.coordinates_3D + OFFSET_3D
 	_field_2d_location.current_vector = cloning_cortical_area.coordinates_2D + OFFSET_2D
 	
 	var closing_signals: Array[Signal] = [close_window_requested]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimensions_signal]
-	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions, move_signals, resize_signals, closing_signals)
+	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, move_signals, resize_signals, closing_signals)
 
 
 func _clone_pressed():

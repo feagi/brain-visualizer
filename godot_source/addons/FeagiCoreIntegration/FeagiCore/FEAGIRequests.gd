@@ -485,10 +485,10 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	match(cloning_area.cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			print("FEAGI REQUEST: Request copying memory cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)
+			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions_3D, parent_region, true, new_position_2D)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			print("FEAGI REQUEST: Request copying custom cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)
+			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions_3D, parent_region, true, new_position_2D)
 		_:
 			push_error("FEAGI Requests: No procedure for cloning a cortical area of type %s" % cloning_area.type_as_string)
 			return FeagiRequestOutput.requirement_fail("TYPE_NOT_ALLOWED")
