@@ -68,6 +68,8 @@ func setup(region: BrainRegion) -> void:
 	region.bridge_link_added.connect(_CACHE_link_bridge_added)
 	region.input_link_added.connect(_CACHE_link_parent_input_added)
 	region.output_link_added.connect(_CACHE_link_parent_output_added)
+	
+	BV.UI.user_selected_single_cortical_area.connect(_highlight_area)
 
 #region Responses to Cache Signals
 
@@ -211,6 +213,10 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 #region User Interactions
 signal user_request_viewing_subregion(region: BrainRegion)
 
+func unhighlight_all_area_nodes() -> void:
+	for node in _cortical_nodes.values():
+		node.selected = false
+
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
@@ -222,8 +228,12 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 	if (to_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
 		destination_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_node]
 	BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)
-	
-	
+
+func _highlight_area(area: AbstractCorticalArea) -> void:
+	unhighlight_all_area_nodes()
+	if area.cortical_ID in _cortical_nodes:
+		_cortical_nodes[area.cortical_ID].selected = true
+
 #endregion
 
 #region Internals
@@ -278,6 +288,5 @@ func _toggle_draggability_based_on_focus() -> void:
 		if child is CBNodeConnectableBase:
 			(child as CBNodeConnectableBase).draggable = are_nodes_draggable
 			continue
-
 #endregion
 
