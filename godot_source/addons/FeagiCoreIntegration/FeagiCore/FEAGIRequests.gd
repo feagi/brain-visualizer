@@ -1059,7 +1059,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
 func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: SingleMappingDefinition) -> FeagiRequestOutput:
-	var current_mappings: Array[SingleMappingDefinition] = source_area.efferent_mappings[destination_area].mappings
+	var current_mappings: Array[SingleMappingDefinition] = source_area.get_mapping_array_toward_cortical_area(destination_area)
 	current_mappings.append(mapping)
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, current_mappings)
 	return return_data
