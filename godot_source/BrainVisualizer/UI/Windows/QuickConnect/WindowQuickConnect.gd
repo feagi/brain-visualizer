@@ -132,12 +132,12 @@ func _setting_destination() -> void:
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
-	var mapping_hint: MappingHints = MappingHints.new(_source, _destination)
+	var mapping_hint: MappingRestrictions = FeagiCore.feagi_local_cache.mapping_restrictions
 	_selected_morphology = null
 	_step3_label.text = " Please Select A Morphology..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
-	if mapping_hint.is_morphologies_restricted:
-		_step3_scroll.set_morphologies(mapping_hint.restricted_morphologies)
+	if FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(_source, _destination).has_restricted_morphologies():
+		_step3_scroll.set_morphologies(FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(_source, _destination).get_morphologies_restricted_to())
 	_step3_scroll.select_morphology(mapping_hint.default_morphology)
 	
 

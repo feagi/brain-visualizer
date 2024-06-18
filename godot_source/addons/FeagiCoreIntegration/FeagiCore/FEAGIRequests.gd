@@ -997,10 +997,8 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	var response: Array = FEAGI_response_data.decode_response_as_array()
 	var source_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 	var destination_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-	var properties: Array[MappingProperty] = []
 	var raw_dicts: Array[Dictionary] = []
 	raw_dicts.assign(response)
-	properties = MappingProperty.from_array_of_dict(raw_dicts)
 	
 	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, raw_dicts)
