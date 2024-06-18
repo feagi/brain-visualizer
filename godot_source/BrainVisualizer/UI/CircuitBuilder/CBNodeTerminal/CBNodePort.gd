@@ -9,8 +9,8 @@ var root_node: CBNodeConnectableBase:
 
 var _root_node: CBNodeConnectableBase
 
-func setup(root_node: CBNodeConnectableBase, signal_terminals_moving: Signal) -> void:
-	_root_node = root_node
+func setup(root_node_: CBNodeConnectableBase, signal_terminals_moving: Signal) -> void:
+	_root_node = root_node_
 	signal_terminals_moving.connect(_node_has_moved)
 	_node_has_moved()
 	

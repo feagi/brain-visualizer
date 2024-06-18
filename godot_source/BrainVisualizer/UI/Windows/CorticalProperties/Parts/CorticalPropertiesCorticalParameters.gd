@@ -14,7 +14,7 @@ var _line_voxel_neuron_density: IntInput
 var _line_synaptic_attractivity: IntInput
 var _vector_position: Vector3iSpinboxField
 var _vector_dimensions: Vector3iSpinboxField
-var _region_button: GenomeObjectSelectorButton
+var _region_button: Button
 var _update_button: Button
 var _growing_cortical_update: Dictionary
 var _preview_handler: GenericSinglePreviewHandler = null
@@ -22,7 +22,7 @@ var _preview_handler: GenericSinglePreviewHandler = null
 
 func _ready():
 	_line_cortical_name = $Row_Cortical_Name/Cortical_Name
-	_region_button = $Row_Region/GenomeObjectSelectorButton
+	_region_button = $Row_Region/Region
 	_line_cortical_ID = $Row_Cortical_ID/Cortical_ID
 	_line_cortical_type = $Row_Cortical_Type/Cortical_Type
 	_line_voxel_neuron_density = $Row_Voxel_Neuron_Density/Voxel_Neuron_Density
@@ -43,13 +43,15 @@ func _ready():
 ## Displays properties of a cortical area, toggles editability depending on corticala rea configuraiton
 func display_cortical_properties(cortical_reference: AbstractCorticalArea) -> void:
 	_line_cortical_name.text = cortical_reference.friendly_name
+	_region_button.text = cortical_reference.current_parent_region.friendly_name
+	_region_button.disabled = !cortical_reference.can_exist_in_subregion
 	_line_cortical_ID.text = cortical_reference.cortical_ID
 	_line_cortical_type.text = AbstractCorticalArea.cortical_type_to_str(cortical_reference.cortical_type)
 	_line_voxel_neuron_density.current_int = cortical_reference.cortical_neuron_per_vox_count
 	_line_synaptic_attractivity.current_int = cortical_reference.cortical_synaptic_attractivity
 	_vector_dimensions.current_vector = cortical_reference.dimensions_3D
 	_vector_position.current_vector = cortical_reference.coordinates_3D
-	_region_button.setup(cortical_reference.current_parent_region, GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION)
+	
 	
 	_line_cortical_name.editable = cortical_reference.user_can_edit_name
 	_line_voxel_neuron_density.editable = cortical_reference.user_can_edit_cortical_neuron_per_vox_count
@@ -85,7 +87,7 @@ func FEAGI_set_cortical_position(new_position: Vector3i, _duplicate_ref: Abstrac
 	_FEAGI_confirmed_update()
 
 func FEAGI_set_region(new_region: BrainRegion):
-	_region_button.update_selection(new_region)
+	_region_button.text = new_region.friendly_name
 	_FEAGI_confirmed_update()
 
 ## FEAGI confirmed changes, show this in the UI and clear the backend dict
@@ -120,6 +122,11 @@ func _user_edit_dimension(new_dimension: Vector3i) -> void:
 	_append_to_growing_update("cortical_dimensions", FEAGIUtils.vector3i_to_array(new_dimension))
 	if !is_instance_valid(_preview_handler):
 		_enable_3D_preview()
+
+func _user_press_edit_region() -> void:
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_cortical_area_moving_to_subregion(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	window.user_selected_object_final.connect(_user_edit_region)
 
 func _user_edit_region(new_region: BrainRegion) -> void:
 	_append_to_growing_update("parent_region_id", new_region.region_ID)
