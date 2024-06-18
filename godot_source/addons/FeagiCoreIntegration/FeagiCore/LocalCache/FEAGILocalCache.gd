@@ -47,17 +47,15 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 
 ## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
-	#TODO
-	cache_reloaded.emit()
-	return
-	
 	print("\nFEAGI CACHE: REMOVING the ENTIRE local cached genome!")
-	cortical_areas.update_cortical_area_cache_from_summary({})
+	mapping_data.FEAGI_delete_all_mappings()
+	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
 	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
-	#cache_reloaded.emit()
+	cache_reloaded.emit()
+	return
 	
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI

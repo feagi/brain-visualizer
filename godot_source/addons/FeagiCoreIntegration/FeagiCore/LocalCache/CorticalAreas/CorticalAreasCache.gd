@@ -192,10 +192,12 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
 func FEAGI_hard_wipe_available_cortical_areas():
-	print("CACHE: Wiping cortical areas and connections...")
-	var all_cortical_area_IDs: Array = _available_cortical_areas.keys()
-	for cortical_area_ID in all_cortical_area_IDs:
-		remove_cortical_area(cortical_area_ID)
+	print("CACHE: Wiping cortical areas")
+	for cortical_ID in _available_cortical_areas:
+		var area: AbstractCorticalArea = _available_cortical_areas[cortical_ID]
+		area.FEAGI_delete_cortical_area()
+		cortical_area_about_to_be_removed.emit(area)
+	_available_cortical_areas = {}
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
 #endregion
 

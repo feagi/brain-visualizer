@@ -21,6 +21,8 @@ func setup(adding: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_region_selection(starting_region)
 	_explorer.setup_from_starting_region(config)
 
+	
+
 func _region_selected(region: BrainRegion) -> void:
 	_region_to_move_to = region
 	_region_label.text = "Selected " + region.friendly_name +" as the move destination"

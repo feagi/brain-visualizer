@@ -14,7 +14,7 @@ script = ExtResource("1_mvyuv")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_qajk0")]
 layout_mode = 2
-title = "Select a Region Target"
+title = "Select a Target Brain Region"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -42,7 +42,7 @@ alignment = 2
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
-text = "Add Region"
+text = " Create Brain Region "
 
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2

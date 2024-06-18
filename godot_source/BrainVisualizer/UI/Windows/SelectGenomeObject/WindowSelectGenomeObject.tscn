@@ -14,7 +14,7 @@ script = ExtResource("1_63jkm")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_1e0a2")]
 layout_mode = 2
-title = "Select Object from Genome"
+title = "Select Candidates"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2

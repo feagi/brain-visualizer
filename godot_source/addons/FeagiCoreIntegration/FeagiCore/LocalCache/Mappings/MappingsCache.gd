@@ -69,6 +69,13 @@ func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
 
+func FEAGI_delete_all_mappings() -> void:
+	for source_ID: StringName in established_mappings.keys():
+		for destination_ID: StringName in established_mappings[source_ID]:
+			var existing_mappings: InterCorticalMappingSet = _established_mappings[source_ID][destination_ID]
+			existing_mappings.FEAGI_delete_this_mapping()
+	_established_mappings = {}
+
 func FEAGI_delete_mappings(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
 	if !source.cortical_ID in _established_mappings.keys():
 		# mapping already doesnt exist, ignore
