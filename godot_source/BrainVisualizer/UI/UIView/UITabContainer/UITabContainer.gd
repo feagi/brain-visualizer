@@ -48,6 +48,19 @@ func bring_existing_region_CB_to_top(region: BrainRegion) -> void:
 	var tab_idx: int = get_tab_idx_from_control(cb)
 	current_tab = tab_idx
 
+## Closes all nonroot CB and BM views. If this results in all tabs being removed, it will emit all_tabs_removed
+func close_all_nonroot_views() -> void:
+	for child in get_children():
+		if child is CircuitBuilder:
+			if !(child as CircuitBuilder).representing_region.is_root_region():
+				child.queue_free()
+			continue
+		#TODO BM
+	
+	if len(get_children()) == 0:
+		all_tabs_removed.emit()
+	
+
 #region Queries
 
 ## Returns an array of all CB tabs
@@ -74,6 +87,10 @@ func does_contain_CB_of_region(searching_region: BrainRegion) -> bool:
 				return true
 	return false
 
+## Returns true if there is a CB of the root region as a tab here
+func does_contain_root_region_CB() -> bool:
+	return does_contain_CB_of_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+
 ## Returns the CB of the given region. Returns null if it doesn't exist
 func return_CB_of_region(searching_region: BrainRegion) -> CircuitBuilder:
 	for child in get_children():
@@ -84,6 +101,7 @@ func return_CB_of_region(searching_region: BrainRegion) -> CircuitBuilder:
 
 func get_tab_IDX_as_control(idx: int) -> Control:
 	return get_child(idx) as Control
+
 
 #endregion
 func _on_user_close_tab(tab_idx: int) -> void:

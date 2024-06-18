@@ -27,7 +27,7 @@ func _ready():
 	_primary_container = $SplitContainer/Primary
 	_secondary_container = $SplitContainer/Secondary
 
-## Only called for the root view [UIView] by [UIManager]
+## Only called for the root view [UIView] by [UIManager]. NOTE: NOTHING TO DO WITH BRAIN REGIONS
 func set_this_as_root_view() -> void: 
 	_is_root_view = true
 
@@ -49,6 +49,8 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 		return
 	## Region doesn't exist as a CB anywhere, create one
 	UI_tab_to_create_in.spawn_CB_of_region(region)
+
+
 
 #region Queries
 

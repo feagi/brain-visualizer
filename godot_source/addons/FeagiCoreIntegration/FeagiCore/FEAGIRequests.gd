@@ -255,7 +255,7 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 	# Define Request
 	var dict_to_send: Dictionary = {}
 	for object in objects_to_move:
-		dict_to_send[object.genome_ID] = target_region.region_ID
+		dict_to_send[object.genome_ID] = {"parent_region_id": target_region.region_ID}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_relocateMembers, dict_to_send)
 	
 	# Send request and await results

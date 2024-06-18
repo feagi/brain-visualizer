@@ -54,8 +54,6 @@ func _gui_input(event):
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
 
-		if !_dragged:
-			BV.UI.user_selected_single_cortical_area_independently(_representing_region)
 	#	TODO TEMP
 
 #endregion
