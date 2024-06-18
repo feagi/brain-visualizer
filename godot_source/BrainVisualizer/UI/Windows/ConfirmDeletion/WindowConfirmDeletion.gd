@@ -49,7 +49,7 @@ func _scroll_show_objects(objects: Array[GenomeObject]) -> void:
 func _yes_pressed() -> void:
 	match _mode:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			FeagiCore.requests.delete_cortical_area((_deletion_targets[0] as AbstractCorticalArea).cortical_ID)
+			FeagiCore.requests.delete_cortical_area((_deletion_targets[0] as AbstractCorticalArea))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			if _is_deleting_internals:
 				pass #TODO

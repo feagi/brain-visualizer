@@ -311,11 +311,11 @@ signal afferent_input_cortical_area_removed(area: AbstractCorticalArea, mapping_
 signal efferent_input_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
 signal recursive_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
 
-var afferent_mappings: Dictionary: # Key'd by the [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+var afferent_mappings: Dictionary: # Key'd by the source [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
 	get: return _afferent_mappings
-var efferent_mappings: Dictionary: # Key'd by the [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+var efferent_mappings: Dictionary: # Key'd by the destination [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
 	get: return _efferent_mappings
-var recursive_mappings: Dictionary: # Key'd by the [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+var recursive_mappings: Dictionary: # Key'd by the (self) [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
 	get: return _recursive_mappings
 
 var _afferent_mappings: Dictionary = {}

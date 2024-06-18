@@ -69,6 +69,18 @@ func FEAGI_mass_update_2D_positions(genome_objects_to_locations: Dictionary) -> 
 			regions[genome_object as BrainRegion] = genome_objects_to_locations[genome_object]
 	cortical_areas.FEAGI_mass_update_2D_positions(corticals)
 
+## Deletes all mappings involving a cortical area before deleting the area itself
+func FEAGI_delete_all_mappings_involving_area_and_area(deleting: AbstractCorticalArea) -> void:
+	for recursive in deleting.recursive_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(deleting, deleting)
+	for efferent in deleting.efferent_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(deleting, efferent)
+	for afferent in deleting.afferent_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(afferent, deleting)
+	cortical_areas.remove_cortical_area(deleting.cortical_ID)
+	
+	
+
 #region Templates
 
 signal templates_updated()

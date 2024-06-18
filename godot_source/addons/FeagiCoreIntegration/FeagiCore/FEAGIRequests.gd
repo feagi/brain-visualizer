@@ -529,17 +529,17 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 
 
 ## Attempts to delete a cortical area
-func delete_cortical_area(deleting_ID: StringName) -> FeagiRequestOutput:
+func delete_cortical_area(deleting_area: AbstractCorticalArea) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !deleting_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		push_error("FEAGI Requests: Unable to delete cortical area %s that is not found in cache!" % deleting_ID)
+	if !deleting_area.cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to delete cortical area %s that is not found in cache!" % deleting_area.cortical_ID)
 		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
 	
 	# Define Request
-	var dict_to_send: Dictionary = {"cortical_id": deleting_ID}
+	var dict_to_send: Dictionary = {"cortical_id": deleting_area.cortical_ID}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_GE_corticalArea, dict_to_send)
 
 	# Send request and await results
@@ -547,11 +547,11 @@ func delete_cortical_area(deleting_ID: StringName) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to delete cortical area of ID %s!" % deleting_ID)
+		push_error("FEAGI Requests: Unable to delete cortical area of ID %s!" % deleting_area.cortical_ID)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_ID)
-	FeagiCore.feagi_local_cache.cortical_areas.remove_cortical_area(deleting_ID)
+	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_area.cortical_ID)
+	FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting_area)
 	return FEAGI_response_data
 
 
