@@ -67,6 +67,7 @@ func _ready():
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
+	_root_UI_view.close_all_non_root_brain_region_views()
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it

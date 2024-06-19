@@ -50,6 +50,11 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 	## Region doesn't exist as a CB anywhere, create one
 	UI_tab_to_create_in.spawn_CB_of_region(region)
 
+## Closes all non-root [BrainRegion] views
+func close_all_non_root_brain_region_views() -> void:
+	var all_tab_containers: Array[UITabContainer] = get_recursive_UITabContainer_children()
+	for tab_container in all_tab_containers:
+		tab_container.close_all_nonroot_views()
 
 
 #region Queries
