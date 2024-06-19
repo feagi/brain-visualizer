@@ -3,6 +3,7 @@ class_name FEAGIRequests
 
 #region Genome and FEAGI general
 
+#WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
@@ -1106,7 +1107,7 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
 	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
 	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	reload_genome()
+	FeagiCore.request_reload_genome()
 	return FEAGI_response_data
 	
 

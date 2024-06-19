@@ -262,8 +262,8 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	else:
 		if _pending_amalgamation != "":
 			# An amalgamation was pending, now its not (either due to confirmation OR deletion
-			amalgamation_no_longer_pending.emit(_pending_amalgamation)
 			_pending_amalgamation = ""
+			amalgamation_no_longer_pending.emit(_pending_amalgamation)
 			
 	
 
