@@ -28,7 +28,6 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		var child_region_IDs: Array[StringName] = []
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
-		#_available_brain_regions[parent_region_ID].init_region_relationships(child_regions)
 		for child_region in child_regions:
 			child_region.FEAGI_init_parent_relation(parent_region)
 		
@@ -41,15 +40,40 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 				continue
 			cortical_area_mapping[cortical_ID] = parent_region_ID
 	
+	
+	
 	return cortical_area_mapping
-		
+
+func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:
+	var region_dict: Dictionary
+	var arr_IO: Array[Dictionary]
+	var region: BrainRegion
+	for region_ID in region_summary_data:
+		region_dict = region_summary_data[region_ID]
+		if region_dict.has("inputs"):
+			if !(region_ID in _available_brain_regions):
+				push_error("CORE CACHE: Unable to find region %s to add partial mapping set to!")
+				continue
+			region = _available_brain_regions[region_ID]
+			arr_IO = []
+			arr_IO.assign(region_dict["inputs"])
+			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, true)
+		if region_dict.has("outputs"):
+			if !(region_ID in _available_brain_regions):
+				push_error("CORE CACHE: Unable to find region %s to add partial mapping set to!")
+				continue
+			region = _available_brain_regions[region_ID]
+			arr_IO = []
+			arr_IO.assign(region_dict["outputs"])
+			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, false)
+			
 
 ### Clears all regions from the cache
 #func FEAGI_clear_all_regions() -> void:
 #	for region_ID: StringName in _available_brain_regions.keys():
 #		FEAGI_remove_region_and_internals(region_ID)
 
-func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []):
+func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []) -> void:
 	if region_ID in _available_brain_regions.keys():
 		push_error("CORE CACHE: Unable to add another region of the ID %s!" % region_ID)
 		return

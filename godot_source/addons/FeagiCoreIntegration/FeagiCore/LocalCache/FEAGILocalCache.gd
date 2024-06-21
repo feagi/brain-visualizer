@@ -33,13 +33,13 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	# Create cortical area objects, using the above dict to retrieve the parent region in an efficient manner
 	# Create morphology objects
 	# Create mapping objects
-	# Creeate connection hint objects
+	# Create connection hint objects
 	
 	var cortical_area_IDs_mapped_to_parent_regions_IDs = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary) 
 	cortical_areas.FEAGI_load_all_cortical_areas(cortical_area_summary, cortical_area_IDs_mapped_to_parent_regions_IDs)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
 	mapping_data.FEAGI_load_all_mappings(mapping_summary)
-
+	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()

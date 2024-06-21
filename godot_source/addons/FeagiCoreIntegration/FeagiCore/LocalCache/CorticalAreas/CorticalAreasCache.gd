@@ -246,6 +246,13 @@ func arr_of_IDs_to_arr_of_area(IDs: Array[StringName]) -> Array[AbstractCortical
 		output.append(_available_cortical_areas[ID])
 	return output
 
+## Returns the [AbstractCorticalArea] if the given ID exists, otherwise returns null
+func try_to_get_cortical_area_by_ID(ID: StringName) -> AbstractCorticalArea:
+	if ID in _available_cortical_areas:
+		return _available_cortical_areas[ID]
+	else:
+		return null
+
 #region Internal
 
 

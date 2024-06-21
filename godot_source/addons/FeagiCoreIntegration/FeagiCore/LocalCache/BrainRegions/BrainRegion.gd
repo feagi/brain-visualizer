@@ -25,6 +25,7 @@ var bridge_chain_links: Array[ConnectionChainLink]: ## Bridge links connect 2 in
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
 var _bridge_chain_links: Array[ConnectionChainLink]
+var _partial_mappings: Array[PartialMappingSet] = []
 
 ## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas
 static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) -> BrainRegion:
@@ -35,6 +36,7 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
 		Vector3i(10,10,10), #TODO
 	)
+	
 
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
@@ -138,6 +140,11 @@ func FEAGI_delete_this_region() -> void:
 	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	# This function should be called by [BrainRegionsCache], which will then free this object
 
+func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
+	if len(JSON_arr) == 0:
+		return # No point if the arr is empty
+	_partial_mappings.append_array(PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input))
+
 #endregion
 
 
@@ -235,5 +242,8 @@ func get_number_of_internals_recursive() -> Vector2i:
 	current.y = len(_contained_cortical_areas)
 	return current
 
+func has_partial_mappings() -> bool:
+	return len(_partial_mappings) > 0
 
 #endregion
+
