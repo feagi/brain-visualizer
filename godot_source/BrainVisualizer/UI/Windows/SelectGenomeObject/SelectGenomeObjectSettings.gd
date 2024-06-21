@@ -21,9 +21,9 @@ var override_cortical_areas_to_not_disable: Array[AbstractCorticalArea] = []
 var disable_all_cortical_areas_of_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = []
 var cortical_areas_to_disable: Array[AbstractCorticalArea] = []
 
-static func config_for_region_selection(starting_region: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+static func config_for_region_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.starting_region = starting_region
+	output.starting_region = starting_region_
 	output.hide_all_cortical_areas = true
 	output.target_type = GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION
 	if area_to_show_disabled != null:
@@ -31,17 +31,17 @@ static func config_for_region_selection(starting_region: BrainRegion, area_to_sh
 		output.disable_all_cortical_areas = true
 	return output
 
-static func config_for_cortical_area_selection(starting_region: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+static func config_for_cortical_area_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.starting_region = starting_region
+	output.starting_region = starting_region_
 	output.target_type = GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA
 	if area_to_show_disabled != null:
 		output.cortical_areas_to_disable = [area_to_show_disabled]
 	return output
 
-static func config_for_cortical_area_moving_to_subregion(starting_region: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+static func config_for_cortical_area_moving_to_subregion(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.starting_region = starting_region
+	output.starting_region = starting_region_
 	output.target_type = GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT
 	var disable_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]
 	output.disable_all_cortical_areas_of_types = disable_types
@@ -49,9 +49,9 @@ static func config_for_cortical_area_moving_to_subregion(starting_region: BrainR
 		output.cortical_areas_to_disable = [area_to_show_disabled]
 	return output
 
-static func config_for_selecting_anything(starting_region: BrainRegion) -> SelectGenomeObjectSettings:
+static func config_for_selecting_anything(starting_region_: BrainRegion) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.starting_region = starting_region
+	output.starting_region = starting_region_
 	return output
 
 ## Returns false if a cortical area is not to be shown (not visible)
