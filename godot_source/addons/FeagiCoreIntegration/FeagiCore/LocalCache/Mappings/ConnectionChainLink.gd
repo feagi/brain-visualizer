@@ -10,7 +10,9 @@ enum LINK_TYPE {
 	BRIDGE, ## The chain link connects 2 internal members of a region
 	PARENTS_OUTPUT, ## The Chain link connects an internal member of a region toward that regions output
 	PARENTS_INPUT, ## The Chain link connects the regions input toward an internal member of that region
-	INVALID ## Pathing makes no sense. Error state!
+	INVALID, ## Pathing makes no sense. Error state!
+	PARENTS_OUTPUT_OPEN, ## Region Output but unconnected
+	PARENTS_INPUT_OPEN, ## Region Input but unconnected
 }
 
 
@@ -34,6 +36,12 @@ var _link_type: LINK_TYPE
 #TODO this shouldnt be a seperate static function since it can be confusingly misused easliy
 ## Given 2 objects next to each other in a connection chain, what kind of connection link would be formed?
 static func determine_link_type(start: GenomeObject, end: GenomeObject) -> LINK_TYPE:
+	if start is BrainRegion and end == null:
+		return LINK_TYPE.PARENTS_OUTPUT_OPEN
+	if end is BrainRegion and start == null:
+		return LINK_TYPE.PARENTS_INPUT_OPEN
+	if start == null or end == null:
+		return LINK_TYPE.INVALID
 	if GenomeObject.are_siblings(start, end):
 		return LINK_TYPE.BRIDGE
 	if start is AbstractCorticalArea:

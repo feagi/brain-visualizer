@@ -11,6 +11,7 @@ signal subregion_added_to_region(subregion: BrainRegion)
 signal subregion_removed_from_region(subregion: BrainRegion)
 signal bridge_link_added(link: ConnectionChainLink)
 signal bridge_link_removed(link: ConnectionChainLink)
+signal partial_mappings_inputted()
 
 
 var region_ID: StringName:
@@ -143,8 +144,8 @@ func FEAGI_delete_this_region() -> void:
 func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
 	if len(JSON_arr) == 0:
 		return # No point if the arr is empty
-	_partial_mappings.append_array(PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input))
-
+	_partial_mappings.append_array(PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self))
+	partial_mappings_inputted.emit()
 #endregion
 
 

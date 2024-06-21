@@ -215,12 +215,14 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	# Generate total path
 	var region_path: Array[Array] = FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(start_region, end_region)
 	var total_chain_path: Array[GenomeObject] = []
-	if is_start_cortical_area:
-		total_chain_path.append(starting_point)
+	#if is_start_cortical_area:
+	#	total_chain_path.append(starting_point)
+	total_chain_path.append(starting_point)
 	total_chain_path.append_array(region_path[0])  # ascending
 	total_chain_path.append_array(region_path[1])  # decending
-	if is_end_cortical_area:
-		total_chain_path.append(stoppping_point)
+	#if is_end_cortical_area:
+	#	total_chain_path.append(stoppping_point)
+	total_chain_path.append(stoppping_point)
 	return total_chain_path
 
 #endregion
