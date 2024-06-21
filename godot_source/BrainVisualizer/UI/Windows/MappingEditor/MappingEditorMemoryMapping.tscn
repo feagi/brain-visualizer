@@ -1,0 +1,38 @@
+[gd_scene load_steps=3 format=3 uid="uid://c7ov4mq4cau4l"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.gd" id="1_evrjv"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="2_vtoir"]
+
+[node name="MappingEditorMemoryMapping" type="VBoxContainer"]
+script = ExtResource("1_evrjv")
+
+[node name="labels_box" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_type_variation = &"HBoxContainer_farther"
+
+[node name="Label" type="Label" parent="labels_box"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Mapping Definition"
+
+[node name="Label2" type="Label" parent="labels_box"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Toggle"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+disabled = true
+text = "Memory"
+
+[node name="ToggleButton" type="TextureButton" parent="HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_vtoir")

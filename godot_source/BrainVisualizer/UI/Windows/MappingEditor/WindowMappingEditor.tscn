@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bq4c4j2yujcwt"]
+[gd_scene load_steps=6 format=3 uid="uid://bq4c4j2yujcwt"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.gd" id="1_cwaox"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_y8w4n"]
 [ext_resource type="PackedScene" uid="uid://bpc4cbet6k5h4" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.tscn" id="3_ewhco"]
 [ext_resource type="PackedScene" uid="uid://cxb6dif7pqgss" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings.tscn" id="4_n57ep"]
+[ext_resource type="PackedScene" uid="uid://c7ov4mq4cau4l" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.tscn" id="4_vr6mc"]
 
 [node name="WindowMappingEditor" type="VBoxContainer"]
 offset_right = 126.0
@@ -41,6 +42,9 @@ layout_mode = 2
 
 [node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
+layout_mode = 2
+
+[node name="MappingEditorMemoryMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_vr6mc")]
 layout_mode = 2
 
 [node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
