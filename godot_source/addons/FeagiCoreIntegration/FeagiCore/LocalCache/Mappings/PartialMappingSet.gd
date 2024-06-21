@@ -3,7 +3,7 @@ class_name PartialMappingSet
 ## When a region is imported from an old genome, external connections are severed. This object stores the memory state of that connection and can serve as a template to make new established mappings.
 ## Since it is a hint, it cannot be edited, only consumed / destroyed
 
-signal mappings_about_to_be_deleted()
+signal mappings_about_to_be_deleted(self_ref: PartialMappingSet)
 
 var mappings: Array[SingleMappingDefinition]:
 	get: return _mappings
@@ -73,6 +73,8 @@ static func from_FEAGI_JSON_array(hints: Array[Dictionary], is_input: bool, brai
 	
 	return output
 
+func FEAGI_deleted_mapping_set() -> void:
+	mappings_about_to_be_deleted.emit(self) # This causes a cascade that will free this object from memory
 
 ## Returns true if any other internal mappings are plastic
 func is_any_mapping_plastic() -> bool:

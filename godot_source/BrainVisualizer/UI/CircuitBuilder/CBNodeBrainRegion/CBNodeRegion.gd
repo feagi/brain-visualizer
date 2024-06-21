@@ -37,8 +37,6 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 
 #endregion
 
-
-
 #region User Interactions
 
 signal double_clicked(self_ref: CBNodeRegion) ## Node was double clicked

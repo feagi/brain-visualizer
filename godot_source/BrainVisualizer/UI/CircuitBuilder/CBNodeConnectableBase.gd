@@ -34,16 +34,23 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 	match(connection_type):
 		CBNodeTerminal.TYPE.INPUT:
 			_inputs.add_child(terminal)
-			terminal.setup(CBNodeTerminal.TYPE.INPUT, text, self, input_container_offset_changed)
+			terminal.setup(connection_type, text, self, input_container_offset_changed)
 
 		CBNodeTerminal.TYPE.OUTPUT:
 			_outputs.add_child(terminal)
-			terminal.setup(CBNodeTerminal.TYPE.OUTPUT, text, self, output_container_offset_changed)
-			# nothing below, nothing to do
+			terminal.setup(connection_type, text, self, output_container_offset_changed)
 
 		CBNodeTerminal.TYPE.RECURSIVE:
 			_recursives.add_child(terminal)
-			terminal.setup(CBNodeTerminal.TYPE.RECURSIVE, text, self, recursive_container_offset_changed)
+			terminal.setup(connection_type, text, self, recursive_container_offset_changed)
+
+		CBNodeTerminal.TYPE.INPUT_OPEN:
+			_inputs.add_child(terminal)
+			terminal.setup(connection_type, text, self, input_container_offset_changed)
+
+		CBNodeTerminal.TYPE.OUTPUT_OPEN:
+			_outputs.add_child(terminal)
+			terminal.setup(connection_type, text, self, output_container_offset_changed)
 
 	return terminal
 

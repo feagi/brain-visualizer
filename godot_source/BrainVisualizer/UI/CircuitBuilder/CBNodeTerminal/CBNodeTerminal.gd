@@ -6,7 +6,9 @@ signal terminal_about_to_be_deleted()
 enum TYPE {
 	INPUT,
 	OUTPUT,
-	RECURSIVE
+	RECURSIVE,
+	INPUT_OPEN,
+	OUTPUT_OPEN
 }
 
 var terminal_type: TYPE:
@@ -45,6 +47,15 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 			_tex_output.visible = true
 			_active_port = _tex_output
 			_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		TYPE.INPUT_OPEN:
+			_tex_input.visible = true
+			_active_port = _tex_input
+			_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		TYPE.OUTPUT_OPEN:
+			_tex_output.visible = true
+			_active_port = _tex_output
+			_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			
 	_active_port.setup(parent_node, signal_to_report_updated_position)
 	_active_port.deletion_requested.connect(_port_reporting_deletion)
 
@@ -52,6 +63,9 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 func update_text(new_text: StringName) -> void:
 	_button.text = new_text
 
+## In the case of open ports, register the partial mapping such that this port doesnt need to be instructed by a [CBLineInterTerminal] to do things
+func register_partial_mapping(partial_mapping: PartialMappingSet) -> void:
+	partial_mapping.mappings_about_to_be_deleted.connect(_port_reporting_deletion)
 
 func _port_reporting_deletion() -> void:
 	terminal_about_to_be_deleted.emit()

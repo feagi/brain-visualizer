@@ -15,7 +15,8 @@ signal input_open_link_added(link: ConnectionChainLink)
 signal input_open_link_removed(link: ConnectionChainLink)
 signal output_open_link_added(link: ConnectionChainLink)
 signal output_open_link_removed(link: ConnectionChainLink)
-signal partial_mappings_inputted()
+signal partial_mappings_inputted(mappings: PartialMappingSet)
+signal partial_mappings_about_to_be_removed(mappings: PartialMappingSet)
 
 
 var region_ID: StringName:
@@ -154,8 +155,20 @@ func FEAGI_delete_this_region() -> void:
 func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
 	if len(JSON_arr) == 0:
 		return # No point if the arr is empty
-	_partial_mappings.append_array(PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self))
-	partial_mappings_inputted.emit()
+	var new_mappings: Array[PartialMappingSet] = PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self)
+	_partial_mappings.append_array(new_mappings)
+	for mapping in new_mappings:
+		partial_mappings_inputted.emit(mapping)
+		mapping.mappings_about_to_be_deleted.connect(_FEAGI_partical_mapping_removed)
+
+func _FEAGI_partical_mapping_removed(mapping: PartialMappingSet) -> void:
+	var index: int = _partial_mappings.find(mapping)
+	if index == -1:
+		push_error("CORE CACHE: Unable to find PartialMappingSet to remove!")
+		return
+	partial_mappings_about_to_be_removed.emit(mapping)
+	_partial_mappings.remove_at(index)
+
 #endregion
 
 

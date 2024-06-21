@@ -58,6 +58,7 @@ func setup(region: BrainRegion) -> void:
 			continue # We do not care about conneciton links that are inside other regions
 		_CACHE_link_parent_output_added(parent_output)
 	
+	
 	name = region.friendly_name
 	
 	region.friendly_name_updated.connect(_CACHE_this_region_name_update)
@@ -68,6 +69,7 @@ func setup(region: BrainRegion) -> void:
 	region.bridge_link_added.connect(_CACHE_link_bridge_added)
 	region.input_link_added.connect(_CACHE_link_parent_input_added)
 	region.output_link_added.connect(_CACHE_link_parent_output_added)
+	region.input_open_link_added.connect(_CACHE_link_region_input_open_added)
 	
 	BV.UI.user_selected_single_cortical_area.connect(_highlight_area)
 
@@ -78,7 +80,7 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
 		return
 	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
-	cortical_nodes[area.cortical_ID] = cortical_node
+	_cortical_nodes[area.cortical_ID] = cortical_node
 	add_child(cortical_node)
 	cortical_node.setup(area)
 	cortical_node.node_moved.connect(_genome_object_moved)
@@ -87,20 +89,22 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
-	cortical_nodes[area.cortical_ID].queue_free()
-	cortical_nodes.erase(area.cortical_ID)
+	_cortical_nodes[area.cortical_ID].queue_free()
+	_cortical_nodes.erase(area.cortical_ID)
 	
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	if (subregion.region_ID in subregion_nodes.keys()):
 		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.region_ID)
 		return
 	var region_node: CBNodeRegion = PREFAB_NODE_BRAINREGION.instantiate()
-	subregion_nodes[subregion.region_ID] = region_node
+	_subregion_nodes[subregion.region_ID] = region_node
 	add_child(region_node)
 	region_node.setup(subregion)
 	region_node.double_clicked.connect(_user_double_clicked_region)
 	region_node.node_moved.connect(_genome_object_moved)
 	subregion.subregion_removed_from_region.connect(_CACHE_remove_subregion)
+	for link: ConnectionChainLink in subregion.input_open_chain_links:
+		_CACHE_link_region_input_open_added(region_node, link)
 
 func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.region_ID in subregion_nodes.keys()):
@@ -206,6 +210,11 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	add_child(line)
 	move_child(line, 0)
 	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+
+# This is called from the Brain Region nodes directly
+func _CACHE_link_region_input_open_added(region_node: CBNodeRegion, link: ConnectionChainLink) -> void:
+	var input_terminal: CBNodeTerminal = region_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT_OPEN, link.parent_chain.partial_mapping_set.internal_target_cortical_area.friendly_name, PREFAB_NODE_TERMINAL)
+	
 
 #endregion
 
