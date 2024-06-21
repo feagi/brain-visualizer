@@ -49,11 +49,14 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 			_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		TYPE.INPUT_OPEN:
 			_tex_input.visible = true
+			_tex_input.texture = load("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Resources/cb-port-ring.png")
 			_active_port = _tex_input
 			_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			
 		TYPE.OUTPUT_OPEN:
 			_tex_output.visible = true
 			_active_port = _tex_output
+			_tex_output.texture = load("res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Resources/cb-port-ring.png")
 			_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			
 	_active_port.setup(parent_node, signal_to_report_updated_position)

@@ -78,4 +78,7 @@ func _user_pressed_button() -> void:
 	if _link.parent_chain.destination is AbstractCorticalArea:
 		destination_area = _link.parent_chain.destination as AbstractCorticalArea
 	
-	BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)
+	if !_link.parent_chain.is_registered_to_partial_mapping_set():
+		BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)
+	else:
+		BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area, _link.parent_chain.partial_mapping_set)

@@ -34,5 +34,8 @@ disabled = true
 text = "Memory"
 
 [node name="ToggleButton" type="TextureButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+ignore_texture_size = true
+stretch_mode = 0
 script = ExtResource("2_vtoir")

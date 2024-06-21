@@ -42,9 +42,9 @@ func spawn_developer_options() -> void:
 	var developer_window: WindowDeveloperOptions = _default_spawn_window(_PREFAB_DEVELOPER_OPTIONS, WindowDeveloperOptions.WINDOW_NAME)
 	developer_window.setup()
 
-func spawn_mapping_editor(source: GenomeObject, destination: GenomeObject) -> WindowMappingEditor:
+func spawn_mapping_editor(source: GenomeObject, destination: GenomeObject, partial_mapping: PartialMappingSet = null) -> WindowMappingEditor:
 	var mapping_editor: WindowMappingEditor = _default_spawn_window(_PREFAB_MAPPING_EDITOR, WindowMappingEditor.WINDOW_NAME) as WindowMappingEditor
-	mapping_editor.setup(source, destination)
+	mapping_editor.setup(source, destination, partial_mapping)
 	return mapping_editor
 
 func spawn_create_cortical() -> void:

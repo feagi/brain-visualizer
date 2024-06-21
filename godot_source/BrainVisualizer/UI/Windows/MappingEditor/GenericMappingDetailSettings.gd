@@ -19,9 +19,7 @@ func load_mappings(mappings: Array[SingleMappingDefinition], default_morphology:
 	_default_morphology = default_morphology
 	
 	for mapping in mappings:
-		var row: MappingEditorRowGeneric = PREFAB_ROW.instantiate()
-		_scroll.add_generic_item(row, null, "") #NOTE: Doing this first so _ready has a chance to run
-		row.load_mapping(mapping)
+		import_single_mapping(mapping)
 
 func export_mappings() -> Array[SingleMappingDefinition]:
 	var mappings: Array[SingleMappingDefinition] = []
@@ -30,6 +28,11 @@ func export_mappings() -> Array[SingleMappingDefinition]:
 		var mapping_row: MappingEditorRowGeneric = item.get_control()
 		mappings.append(mapping_row.export_mapping())
 	return mappings
+
+func import_single_mapping(mapping: SingleMappingDefinition) -> void:
+	var row: MappingEditorRowGeneric = PREFAB_ROW.instantiate()
+	_scroll.add_generic_item(row, null, "") #NOTE: Doing this first so _ready has a chance to run
+	row.load_mapping(mapping)
 
 func _add_mapping_row() -> void:
 	var row: MappingEditorRowGeneric = PREFAB_ROW.instantiate()
