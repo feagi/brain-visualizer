@@ -11,6 +11,10 @@ signal subregion_added_to_region(subregion: BrainRegion)
 signal subregion_removed_from_region(subregion: BrainRegion)
 signal bridge_link_added(link: ConnectionChainLink)
 signal bridge_link_removed(link: ConnectionChainLink)
+signal input_open_link_added(link: ConnectionChainLink)
+signal input_open_link_removed(link: ConnectionChainLink)
+signal output_open_link_added(link: ConnectionChainLink)
+signal output_open_link_removed(link: ConnectionChainLink)
 signal partial_mappings_inputted()
 
 
@@ -22,10 +26,16 @@ var contained_regions: Array[BrainRegion]:
 	get: return _contained_regions
 var bridge_chain_links: Array[ConnectionChainLink]: ## Bridge links connect 2 internal members together, they do not connect to the input / output of the region
 	get: return _bridge_chain_links
+var input_open_chain_links: Array[ConnectionChainLink]: 
+	get: return _input_open_chain_links
+var output_open_chain_links: Array[ConnectionChainLink]:
+	get: return _output_open_chain_links
 
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
 var _bridge_chain_links: Array[ConnectionChainLink]
+var _input_open_chain_links: Array[ConnectionChainLink]
+var _output_open_chain_links: Array[ConnectionChainLink]
 var _partial_mappings: Array[PartialMappingSet] = []
 
 ## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas
@@ -169,6 +179,40 @@ func FEAGI_bridge_remove_link(link: ConnectionChainLink) -> void:
 		return
 	_bridge_chain_links.remove_at(index)
 	bridge_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func FEAGI_input_open_add_link(link: ConnectionChainLink) -> void:
+	if link in _input_open_chain_links:
+		push_error("CORE CACHE: Unable to add bridge link to region %s when it already exists!" % _genome_ID)
+		return
+	_input_open_chain_links.append(link)
+	input_open_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func FEAGI_input_open_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _input_open_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		return
+	_input_open_chain_links.remove_at(index)
+	input_open_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func FEAGI_output_open_add_link(link: ConnectionChainLink) -> void:
+	if link in _output_open_chain_links:
+		push_error("CORE CACHE: Unable to add bridge link to region %s when it already exists!" % _genome_ID)
+		return
+	_output_open_chain_links.append(link)
+	output_open_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func FEAGI_output_open_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _output_open_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		return
+	_output_open_chain_links.remove_at(index)
+	output_open_link_removed.emit(link)
 
 #endregion
 

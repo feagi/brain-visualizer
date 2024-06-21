@@ -18,9 +18,9 @@ enum LINK_TYPE {
 
 var parent_region: BrainRegion:
 	get: return _parent_region
-var source: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea]
+var source: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea] or null
 	get: return _source
-var destination: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea]
+var destination: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea] or null
 	get: return _destination
 var parent_chain: ConnectionChain:
 	get: return _parent_chain
@@ -64,7 +64,7 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 	_link_type = link_type_
 	match(_link_type):
 		LINK_TYPE.INVALID:
-			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [coming_from.genome_ID, going_to.genome_ID])
+			push_error("FEAGI CORE CACHE: Invalid link!")
 			return
 			
 		LINK_TYPE.BRIDGE:
@@ -79,6 +79,14 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 		LINK_TYPE.PARENTS_INPUT:
 			coming_from.FEAGI_input_add_link(self)
 			going_to.FEAGI_input_add_link(self)
+		
+		LINK_TYPE.PARENTS_OUTPUT_OPEN:
+			(coming_from as BrainRegion).FEAGI_output_open_add_link(self)
+			# Nothing other side
+			
+		LINK_TYPE.PARENTS_INPUT_OPEN:
+			(going_to as BrainRegion).FEAGI_input_open_add_link(self)
+			# Nothing other side
 
 ## Called from [ConnectionChain] when the associated mapping set gets updated
 func FEAGI_updated_associated_mapping_set() -> void:

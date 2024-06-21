@@ -106,7 +106,7 @@ func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -
 				if complete_chain_path[i + 1] != null:
 					dest_ID = complete_chain_path[i + 1].genome_ID
 				
-				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted! Skipping!" % [source_ID, dest_ID])
+				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted!" % [source_ID, dest_ID])
 			
 			ConnectionChainLink.LINK_TYPE.BRIDGE:
 				parent_region = complete_chain_path[i].current_parent_region
