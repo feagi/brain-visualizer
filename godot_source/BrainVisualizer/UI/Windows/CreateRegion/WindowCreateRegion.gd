@@ -24,9 +24,11 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	_setup_base_window(WINDOW_NAME)
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
-		var button: Button = BUTTON_PREFAB.instantiate()
-		button.text = selected.friendly_name
-		_scroll_section.add_generic_item(button, selected, selected.friendly_name)
+		_scroll_section.add_text_button_with_delete(selected, selected.friendly_name, Callable())
+		
+		#var button: Button = BUTTON_PREFAB.instantiate()
+		#button.text = selected.friendly_name
+		#_scroll_section.add_generic_item(button, selected, selected.friendly_name)
 
 func _add_button_pressed() -> void:
 	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_cortical_area_moving_to_subregion(_region_drop_down.get_selected_region())
@@ -36,9 +38,10 @@ func _add_button_pressed() -> void:
 func _add_button_response(genome_object: GenomeObject) -> void:
 	if genome_object == null:
 		return
-	var button: Button = BUTTON_PREFAB.instantiate()
-	button.text = genome_object.friendly_name
-	_scroll_section.add_generic_item(button, genome_object, genome_object.friendly_name)
+	_scroll_section.add_text_button_with_delete(genome_object, genome_object.friendly_name, Callable())
+	#var button: Button = BUTTON_PREFAB.instantiate()
+	#button.text = genome_object.friendly_name
+	#_scroll_section.add_generic_item(button, genome_object, genome_object.friendly_name)
 	
 
 func _create_region_button_pressed() -> void:
