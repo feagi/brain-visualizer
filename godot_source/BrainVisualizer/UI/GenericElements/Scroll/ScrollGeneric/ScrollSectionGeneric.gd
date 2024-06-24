@@ -52,7 +52,10 @@ func add_text_button_with_delete(lookup_key: Variant, text: StringName, button_a
 		button.pressed.connect(button_action)
 	button.theme_type_variation = theme_variant
 	if enable_auto_delete:
-		delete.pressed.connect(prefab.queue_free)
+		if lookup_key == null:
+			delete.pressed.connect(prefab.queue_free)
+		else:
+			delete.pressed.connect(attempt_remove_item.bind(lookup_key))
 	return add_generic_item(prefab, lookup_key, text)
 
 ## Allows the addition text button with a label with a seperate edit button
