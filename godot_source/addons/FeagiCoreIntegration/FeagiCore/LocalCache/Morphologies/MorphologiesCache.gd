@@ -123,3 +123,9 @@ func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringN
 			if !surpress_missing_error:
 				push_error("Unable to find requested morphology by name of '%s', Returning Empty!" % req_morph)
 	return output
+
+## Gets a morphology by name if exists, otherwise returns null
+func try_get_morphology_object(morphology_name: StringName) -> BaseMorphology:
+	if morphology_name in _available_morphologies:
+		return _available_morphologies[morphology_name]
+	return null
