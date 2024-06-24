@@ -218,7 +218,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"region_id": brain_region.region_ID,
-		"region_title": region_name,
+		"title": region_name,
 		"region_description": region_description,
 		"parent_region_id": parent_region.region_ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
@@ -233,7 +233,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to create region of name %s!" % brain_region.name)
 		return FEAGI_response_data
-	FeagiCore.local_feagi_cache.brain_regions.FEAGI_edited_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_edit_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
 	return FEAGI_response_data
 
 func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[GenomeObject]) -> FeagiRequestOutput:
