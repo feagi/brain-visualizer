@@ -26,6 +26,9 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 
+[node name="Instructions" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
 [node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_e2y22")]
 custom_minimum_size = Vector2(600, 300)
 layout_mode = 2
@@ -37,6 +40,13 @@ text = "Please Select"
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 alignment = 2
+
+[node name="Deselect" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Deselect All"
 
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2
@@ -54,5 +64,6 @@ layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Select"
 
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Deselect" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Cancel" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Select" to="." method="_select_pressed"]

@@ -33,7 +33,7 @@ func setup_from_starting_region(settings: SelectGenomeObjectSettings) -> void:
 func apply_name_filter(filter: StringName) -> void:
 	for view in _views:
 		view.filter_by_name(filter)
-		
+
 
 func _add_starter_view(region: BrainRegion) -> void:
 	var scene: ScrollRegionInternalsView = PREFAB_SCROLLREGIONVIEW.instantiate()

@@ -6,6 +6,7 @@ class_name SelectGenomeObjectSettings
 # Objects that are disabled will appear, but cannot be selected (regions can still be expanded)
 
 var target_type: GenomeObject.ARRAY_MAKEUP = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
+var pick_instructions: StringName = ""
 
 var starting_region: BrainRegion = null
 var override_regions_to_not_hide: Array[BrainRegion] = []
@@ -26,6 +27,7 @@ var cortical_areas_to_disable: Array[AbstractCorticalArea] = []
 
 static func config_for_single_region_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
+	output.pick_instructions = "Please select a single region:"
 	output.starting_region = starting_region_
 	output.hide_all_cortical_areas = true
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
@@ -36,6 +38,7 @@ static func config_for_single_region_selection(starting_region_: BrainRegion, ar
 
 static func config_for_single_cortical_area_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
+	output.pick_instructions = "Please select a single cortical area:"
 	output.starting_region = starting_region_
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 	if area_to_show_disabled != null:
@@ -44,6 +47,7 @@ static func config_for_single_cortical_area_selection(starting_region_: BrainReg
 
 static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
+	output.pick_instructions = "Please select the objects you wish to move into into the region:"
 	output.starting_region = starting_region_
 	output.target_type = GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
 	var disable_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]
