@@ -32,6 +32,7 @@ func setup_from_starting_region(settings: SelectGenomeObjectSettings) -> void:
 	_views.append(scene)
 	scene.setup_first(_view_config.starting_region, _view_config, _selected_objects)
 	scene.region_expansion_attempted.connect(_user_expanding_region)
+	scene.genome_object_toggled.connect(_user_selected_object)
 
 #TODO improve
 func apply_name_filter(filter: StringName) -> void:
@@ -49,6 +50,7 @@ func _user_expanding_region(region: BrainRegion, from_view: ScrollRegionInternal
 	_views.append(scene)
 	scene.setup_rest(region, _view_config, _selected_objects)
 	scene.region_expansion_attempted.connect(_user_expanding_region)
+	scene.genome_object_toggled.connect(_user_selected_object)
 
 ## Close all views right of the given index (inclusive)
 func _close_to_the_right_of(last_to_close: int) -> void:
@@ -58,12 +60,15 @@ func _close_to_the_right_of(last_to_close: int) -> void:
 
 func _user_selected_object(genome_object: GenomeObject, is_on: bool, from_view: ScrollRegionInternalsView) -> void:
 	if !_multiselect_enabled:
-		object_removed.emit(_selected_objects[0])
-		for view in _views:
-			if view.representing_region.is_genome_object_in_region_directly(genome_object):
-				view.set_toggle(genome_object, false)
-				break
+		# Deselect previous object
+		var previous_object: GenomeObject = _selected_objects[0]
 		_selected_objects = []
+		object_removed.emit(previous_object)
+		# object_added called later
+		for view in _views:
+			if previous_object in view.get_existing_internals():
+				view.set_toggle(previous_object, false)
+				break
 	
 	from_view.set_toggle(genome_object, is_on)
 	if is_on:

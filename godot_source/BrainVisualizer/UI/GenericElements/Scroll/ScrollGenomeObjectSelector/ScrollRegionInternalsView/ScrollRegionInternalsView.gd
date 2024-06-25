@@ -23,6 +23,8 @@ func _ready():
 ## In special case of left most container, just to show the root region, but technically nothing is holding this
 func setup_first(first_region: BrainRegion, view_config: SelectGenomeObjectSettings, preselected_objects: Array[GenomeObject]) -> void:
 	_view_config = view_config
+	if !first_region.is_root_region():
+		_representing_region = first_region.current_parent_region
 	_multiselect_enabled = view_config.is_multiselect_allowed()
 	reset_to_blank()
 	_add_region(first_region, first_region in preselected_objects)
@@ -49,16 +51,16 @@ func reset_to_blank() -> void:
 
 func set_toggle(object: GenomeObject, is_on: bool) -> void:
 	if object is AbstractCorticalArea:
-		if !object.cortical_ID in _internal_cortical_areas:
-			push_error("UI: Unable to find area %s to toggle!" % object.cortical_ID)
+		if !object.genome_ID in _internal_cortical_areas:
+			push_error("UI: Unable to find area %s to toggle!" % object.genome_ID)
 			return
 		(_internal_cortical_areas[object.cortical_ID] as ScrollRegionInternalsViewItem).set_checkbox_check(is_on)
 		return
 	if object is BrainRegion:
-		if !object.cortical_ID in _internal_regions:
-			push_error("UI: Unable to find region %s to toggle!" % object.cortical_ID)
+		if !object.genome_ID in _internal_regions:
+			push_error("UI: Unable to find region %s to toggle!" % object.genome_ID)
 			return
-		(_internal_regions[object.cortical_ID] as ScrollRegionInternalsViewItem).set_checkbox_check(is_on)
+		(_internal_regions[object.genome_ID] as ScrollRegionInternalsViewItem).set_checkbox_check(is_on)
 		return
 
 func filter_by_name(friendly_name: StringName) -> void:
@@ -72,6 +74,12 @@ func filter_by_name(friendly_name: StringName) -> void:
 	for item: ScrollRegionInternalsViewItem  in _internal_cortical_areas.values:
 		item.visible = item.target.friendly_name.contains(friendly_name)
 
+func get_existing_internals() -> Array[GenomeObject]:
+	if _representing_region == null:
+		# This only occurs on the view holding a root region, as it has no parent
+		return [FeagiCore.feagi_local_cache.brain_regions.get_root_region()]
+	return _representing_region.get_all_included_genome_objects()
+
 func _add_region(region: BrainRegion, is_preselected: bool = false) -> void:
 	if region.region_ID in _internal_regions:
 		push_error("UI: Unable to add region %s to ScrollRegionInternalView of region %s as it already exists!" % [region.region_ID, _representing_region.region_ID])
@@ -81,7 +89,7 @@ func _add_region(region: BrainRegion, is_preselected: bool = false) -> void:
 	item.setup_region(region)
 	item.background_clicked.connect(_region_expansion_proxy)
 	
-	if _view_config.is_region_disabled(region):
+	if !_view_config.is_region_disabled(region):
 		item.disable_checkbox_button(false)
 		item.checkbox_clicked.connect(_object_selection_proxy)
 	else:
@@ -103,7 +111,7 @@ func _add_cortical_area(area: AbstractCorticalArea, is_preselected: bool = false
 	var item: ScrollRegionInternalsViewItem =  LIST_ITEM_PREFAB.instantiate()
 	_container.add_child(item)
 	item.setup_cortical_area(area)
-	if _view_config.is_cortical_area_disabled(area):
+	if !_view_config.is_cortical_area_disabled(area):
 		item.disable_checkbox_button(false)
 		item.checkbox_clicked.connect(_object_selection_proxy)
 	else:

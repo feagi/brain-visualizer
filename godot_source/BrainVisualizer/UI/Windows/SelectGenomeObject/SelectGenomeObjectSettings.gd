@@ -68,15 +68,16 @@ static func config_for_single_cortical_area_selection(starting_region: BrainRegi
 	return output
 
 ## Starts at a given area, allows for selecting multiple objects to move to a subregion. Automatically disallows picking areas that cannot be moved and the root region
-static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, areas_that_cannot_be_moved: Array[AbstractCorticalArea] = [], regions_that_cannot_be_moved: Array[BrainRegion] = []) -> SelectGenomeObjectSettings:
+static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, objects_already_tagged_for_moving: Array[GenomeObject] = [], other_objects_not_to_move: Array[GenomeObject] = []) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.target_type = GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
 	output.pick_instructions = "Please select the objects you wish to move:"
 	output.starting_region = starting_region_
+	output.preselected_objects = objects_already_tagged_for_moving
 	output.disable_all_cortical_areas_of_types = AbstractCorticalArea.TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION
-	output.cortical_areas_to_disable = areas_that_cannot_be_moved
+	output.cortical_areas_to_disable = GenomeObject.filter_cortical_areas(other_objects_not_to_move)
 	output.regions_to_disable = [FeagiCore.feagi_local_cache.brain_regions.get_root_region()]
-	output.regions_to_disable.append_array(regions_that_cannot_be_moved)
+	output.regions_to_disable.append_array(GenomeObject.filter_brain_regions(other_objects_not_to_move))
 	return output
 
 ## Starting at given region, select any number of given objects

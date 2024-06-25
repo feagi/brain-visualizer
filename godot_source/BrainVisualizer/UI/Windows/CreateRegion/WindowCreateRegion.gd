@@ -26,12 +26,13 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	for selected in selected_items:
 		_scroll_section.add_text_button_with_delete(selected, selected.friendly_name, Callable())
 		
-		#var button: Button = BUTTON_PREFAB.instantiate()
-		#button.text = selected.friendly_name
-		#_scroll_section.add_generic_item(button, selected, selected.friendly_name)
 
 func _add_button_pressed() -> void:
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(_region_drop_down.get_selected_region())
+	var selected: Array[GenomeObject] = []
+	selected.assign(_scroll_section.get_key_array())
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_multiple_objects_moving_to_subregion(
+		FeagiCore.feagi_local_cache.brain_regions.get_root_region(),
+		selected)
 	var genome_window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
 	genome_window.final_selection.connect(_selection_complete)
 
@@ -43,9 +44,6 @@ func _add_button_response(genome_object: GenomeObject) -> void:
 	if genome_object == null:
 		return
 	_scroll_section.add_text_button_with_delete(genome_object, genome_object.friendly_name, Callable())
-	#var button: Button = BUTTON_PREFAB.instantiate()
-	#button.text = genome_object.friendly_name
-	#_scroll_section.add_generic_item(button, genome_object, genome_object.friendly_name)
 	
 
 func _create_region_button_pressed() -> void:
