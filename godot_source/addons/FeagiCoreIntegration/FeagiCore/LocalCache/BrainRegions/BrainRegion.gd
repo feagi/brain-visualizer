@@ -303,11 +303,12 @@ func get_number_of_internals_recursive() -> Vector2i:
 func has_partial_mappings() -> bool:
 	return len(_partial_mappings) > 0
 
-## Returns true if any immediate children areas / regions have a name containing the given substring
+## Returns true if any immediate children areas / regions have a name containing the given substring. Case Insensitive
 func contains_any_object_with_friendly_name_containing_substring(substring: StringName) -> bool:
+	var loweer: StringName = substring.to_lower()
 	var all_objects: Array[GenomeObject] = get_all_included_genome_objects()
 	for object in all_objects:
-		if object.friendly_name.contains(substring):
+		if object.friendly_name.to_lower().contains(substring):
 			return true
 	return false
 
@@ -316,7 +317,7 @@ func contains_any_object_with_friendly_name_containing_substring_recursive(subst
 	if contains_any_object_with_friendly_name_containing_substring(substring):
 		return true
 	for region in _contained_regions:
-		if contains_any_object_with_friendly_name_containing_substring_recursive(substring):
+		if region.contains_any_object_with_friendly_name_containing_substring_recursive(substring):
 			return true
 	return false
 

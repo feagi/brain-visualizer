@@ -68,10 +68,16 @@ func filter_by_name(friendly_name: StringName) -> void:
 		_show_all_allowed()
 		return
 	
-	for item: ScrollRegionInternalsViewItem  in _internal_regions.values:
-		item.visible = (item.target as BrainRegion).contains_any_object_with_friendly_name_containing_substring_recursive(friendly_name)
+	for item: ScrollRegionInternalsViewItem  in _internal_regions.values():
+		if !_view_config.is_region_shown(item.target as BrainRegion):
+			item.visible = false
+			continue
+		item.visible = (item.target as BrainRegion).contains_any_object_with_friendly_name_containing_substring_recursive(friendly_name) or item.target.friendly_name.to_lower().contains(friendly_name.to_lower())
 	
-	for item: ScrollRegionInternalsViewItem  in _internal_cortical_areas.values:
+	for item: ScrollRegionInternalsViewItem  in _internal_cortical_areas.values():
+		if !_view_config.is_cortical_area_shown(item.target as AbstractCorticalArea):
+			item.visible = false
+			continue
 		item.visible = item.target.friendly_name.contains(friendly_name)
 
 func get_existing_internals() -> Array[GenomeObject]:
@@ -137,11 +143,11 @@ func _object_selection_proxy(object: GenomeObject, is_selected: bool) -> void:
 	genome_object_toggled.emit(object, is_selected, self)
 
 func _show_all_allowed() -> void:
-	for item: ScrollRegionInternalsViewItem  in _internal_regions.values:
-		if _view_config.is_cortical_area_shown(item.target):
+	for item: ScrollRegionInternalsViewItem  in _internal_regions.values():
+		if _view_config.is_region_shown(item.target):
 			item.visible = true
 
-	for item: ScrollRegionInternalsViewItem  in _internal_cortical_areas.values:
-		if _view_config.is_region_shown(item.target):
+	for item: ScrollRegionInternalsViewItem  in _internal_cortical_areas.values():
+		if _view_config.is_cortical_area_shown(item.target):
 			item.visible = true
 		
