@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.gd" id="1_4wwv0"]
 
 [node name="ScrollGenomeObjectSelector" type="ScrollContainer"]
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(650, 300)
 offset_right = 534.0
 offset_bottom = 393.0
 vertical_scroll_mode = 0

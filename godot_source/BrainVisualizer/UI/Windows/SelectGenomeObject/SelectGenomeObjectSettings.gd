@@ -39,7 +39,7 @@ var cortical_areas_to_disable: Array[AbstractCorticalArea] = []
 static func config_for_selecting_new_parent_region(current_parent: BrainRegion, objects_being_moved: Array[GenomeObject]) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
-	output.starting_region = current_parent
+	output.starting_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	output.pick_instructions = "Please select the new parent Brain Region:"
 	output.hide_all_cortical_areas = true
 	output.preselected_objects = [current_parent]

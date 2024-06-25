@@ -3,6 +3,7 @@ class_name ScrollGenomeObjectSelector
 
 const PREFAB_SCROLLREGIONVIEW: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsView.tscn")
 
+
 signal object_added(genome_object: GenomeObject)
 signal object_removed(genome_object: GenomeObject)
 
@@ -81,3 +82,4 @@ func _user_selected_object(genome_object: GenomeObject, is_on: bool, from_view: 
 		if index != -1:
 			_selected_objects.remove_at(index)
 			object_removed.emit(genome_object)
+

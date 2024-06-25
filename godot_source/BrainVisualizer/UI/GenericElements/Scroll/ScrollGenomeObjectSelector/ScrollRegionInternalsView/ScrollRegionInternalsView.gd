@@ -32,6 +32,7 @@ func setup_first(first_region: BrainRegion, view_config: SelectGenomeObjectSetti
 func setup_rest(brain_region: BrainRegion, view_config: SelectGenomeObjectSettings, preselected_objects: Array[GenomeObject]) -> void:
 	_representing_region = brain_region
 	_view_config = view_config
+	_multiselect_enabled = _view_config.is_multiselect_allowed()
 	for region in brain_region.contained_regions:
 		_add_region(region, region in preselected_objects)
 	for area in brain_region.contained_cortical_areas:

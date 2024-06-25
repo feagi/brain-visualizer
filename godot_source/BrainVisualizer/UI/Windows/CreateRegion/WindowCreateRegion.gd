@@ -37,13 +37,9 @@ func _add_button_pressed() -> void:
 	genome_window.final_selection.connect(_selection_complete)
 
 func _selection_complete(array: Array[GenomeObject]) -> void:
+	_scroll_section.remove_all_items()
 	for object in array:
 		_scroll_section.add_text_button_with_delete(object, object.friendly_name, Callable())
-
-func _add_button_response(genome_object: GenomeObject) -> void:
-	if genome_object == null:
-		return
-	_scroll_section.add_text_button_with_delete(genome_object, genome_object.friendly_name, Callable())
 	
 
 func _create_region_button_pressed() -> void:

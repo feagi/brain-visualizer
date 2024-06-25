@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://cevmyu0h3jk73"]
+[gd_scene load_steps=5 format=3 uid="uid://cevmyu0h3jk73"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.gd" id="1_63jkm"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1e0a2"]
 [ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_e2y22"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_ypcw4"]
 
 [node name="SelectGenomeObject" type="VBoxContainer"]
 offset_right = 126.0
@@ -29,13 +30,21 @@ layout_mode = 2
 [node name="Instructions" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+placeholder_text = "Filter..."
+script = ExtResource("3_ypcw4")
+
 [node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_e2y22")]
-custom_minimum_size = Vector2(600, 300)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 text = "Please Select"
+autowrap_mode = 3
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -64,5 +73,8 @@ layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Select"
 
+[connection signal="text_changed" from="WindowPanel/WindowMargin/WindowInternals/TextInput" to="WindowPanel/WindowMargin/WindowInternals/ScrollGenomeObjectSelector" method="apply_name_filter"]
+[connection signal="object_added" from="WindowPanel/WindowMargin/WindowInternals/ScrollGenomeObjectSelector" to="." method="_proxy_object_added_or_removed"]
+[connection signal="object_removed" from="WindowPanel/WindowMargin/WindowInternals/ScrollGenomeObjectSelector" to="." method="_proxy_object_added_or_removed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Cancel" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Select" to="." method="_select_pressed"]

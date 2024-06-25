@@ -62,7 +62,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Wiring Mode"
+text = "External Wiring Mode"
 
 [node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
 custom_minimum_size = Vector2(200, 0)
