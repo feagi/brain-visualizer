@@ -5,8 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_xpgkm"]
 
 [node name="WindowAddToRegion" type="VBoxContainer"]
-offset_right = 126.0
-offset_bottom = 40.0
+offset_right = 632.0
+offset_bottom = 455.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -61,7 +61,6 @@ theme_type_variation = &"Button_big"
 disabled = true
 text = "Select"
 
-[connection signal="region_selected" from="WindowPanel/WindowMargin/WindowInternals/ScrollGenomeObjectSelector" to="." method="_region_selected"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Add" to="." method="_add_region_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Cancel" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Select" to="." method="_select_pressed"]

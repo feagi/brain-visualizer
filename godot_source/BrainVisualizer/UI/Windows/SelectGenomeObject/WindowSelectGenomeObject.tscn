@@ -64,6 +64,5 @@ layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Select"
 
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Deselect" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Cancel" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Select" to="." method="_select_pressed"]

@@ -42,3 +42,6 @@ horizontal_alignment = 1
 layout_mode = 2
 texture = ExtResource("3_lqhgv")
 expand_mode = 2
+
+[connection signal="pressed" from="PanelContainerButton" to="." method="_background_pressed"]
+[connection signal="toggled" from="PanelContainerButton/HBoxContainer/VBoxContainer/CheckButton" to="." method="_checkbox_toggled"]

@@ -24,7 +24,7 @@ func reset() -> void:
 		queue_free() # get rid of any stranglers
 	
 func setup_from_starting_region(settings: SelectGenomeObjectSettings) -> void:
-	reset()
+	#reset()
 	_view_config = settings
 	_multiselect_enabled = _view_config.multiselect_allowed()
 	_add_starter_view(_view_config.starting_region)
