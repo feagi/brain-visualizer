@@ -127,6 +127,9 @@ func _add_cortical_area(area: AbstractCorticalArea, is_preselected: bool = false
 	
 	if is_preselected:
 		item.set_checkbox_check(true)
+		
+	if !_multiselect_enabled:
+		item.set_to_radio_button_mode()
 	
 	item.visible = _view_config.is_cortical_area_shown(area)
 
