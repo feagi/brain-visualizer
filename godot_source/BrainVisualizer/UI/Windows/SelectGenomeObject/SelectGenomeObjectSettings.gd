@@ -2,7 +2,10 @@ extends RefCounted
 class_name SelectGenomeObjectSettings
 ## Allows for easy configuration of the [WindowSelectGenomeObject] directly or via presets
 
-var target_type: GenomeObject.SINGLE_MAKEUP = GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT
+# Objects that are hidden / not shown will not appear at the list at all
+# Objects that are disabled will appear, but cannot be selected (regions can still be expanded)
+
+var target_type: GenomeObject.ARRAY_MAKEUP = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 
 var starting_region: BrainRegion = null
 var override_regions_to_not_hide: Array[BrainRegion] = []
@@ -21,28 +24,28 @@ var override_cortical_areas_to_not_disable: Array[AbstractCorticalArea] = []
 var disable_all_cortical_areas_of_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = []
 var cortical_areas_to_disable: Array[AbstractCorticalArea] = []
 
-static func config_for_region_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+static func config_for_single_region_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.starting_region = starting_region_
 	output.hide_all_cortical_areas = true
-	output.target_type = GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION
+	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
 	if area_to_show_disabled != null:
 		output.override_cortical_areas_to_not_hide = [area_to_show_disabled]
 		output.disable_all_cortical_areas = true
 	return output
 
-static func config_for_cortical_area_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+static func config_for_single_cortical_area_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.starting_region = starting_region_
-	output.target_type = GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA
+	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 	if area_to_show_disabled != null:
 		output.cortical_areas_to_disable = [area_to_show_disabled]
 	return output
 
-static func config_for_cortical_area_moving_to_subregion(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.starting_region = starting_region_
-	output.target_type = GenomeObject.SINGLE_MAKEUP.ANY_GENOME_OBJECT
+	output.target_type = GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
 	var disable_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]
 	output.disable_all_cortical_areas_of_types = disable_types
 	if area_to_show_disabled != null:
@@ -82,10 +85,15 @@ func is_region_shown(region: BrainRegion) -> bool:
 		return false
 	return !hide_all_regions
 
-## Returns false if a region is to be disabled
+## Returns false if a region is to be disabled (preventing to be selected, but user can still click it to expand)
 func is_region_disabled(region: BrainRegion) -> bool:
 	if region in override_regions_to_not_disable:
 		return false
+	if !(target_type in [GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION, GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS, GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS]):
+		return true
 	if region in regions_to_disable:
 		return true
 	return disable_all_regions
+
+func multiselect_allowed() -> bool:
+	return target_type in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS, GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS]

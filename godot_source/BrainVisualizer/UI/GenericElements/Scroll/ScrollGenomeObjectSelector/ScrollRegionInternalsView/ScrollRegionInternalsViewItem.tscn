@@ -5,8 +5,8 @@
 [ext_resource type="Texture2D" uid="uid://ccyrqv02uu5qv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="3_lqhgv"]
 
 [node name="ScrollRegionInternalsViewItem" type="BoxContainer"]
-offset_right = 213.0
-offset_bottom = 58.0
+offset_right = 190.0
+offset_bottom = 43.0
 script = ExtResource("1_v74x2")
 
 [node name="PanelContainerButton" parent="." instance=ExtResource("2_7h3ma")]
@@ -14,6 +14,18 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="HBoxContainer" type="HBoxContainer" parent="PanelContainerButton"]
+layout_mode = 2
+
+[node name="gap" type="Control" parent="PanelContainerButton/HBoxContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainerButton/HBoxContainer"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+alignment = 1
+
+[node name="CheckButton" type="CheckBox" parent="PanelContainerButton/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 
 [node name="Icon" type="TextureRect" parent="PanelContainerButton/HBoxContainer"]
