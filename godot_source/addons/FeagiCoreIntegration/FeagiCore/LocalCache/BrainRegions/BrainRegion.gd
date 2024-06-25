@@ -31,6 +31,8 @@ var input_open_chain_links: Array[ConnectionChainLink]:
 	get: return _input_open_chain_links
 var output_open_chain_links: Array[ConnectionChainLink]:
 	get: return _output_open_chain_links
+var partial_mappings: Array[PartialMappingSet]:
+	get: return _partial_mappings
 
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
@@ -302,6 +304,13 @@ func get_number_of_internals_recursive() -> Vector2i:
 
 func has_partial_mappings() -> bool:
 	return len(_partial_mappings) > 0
+
+## Returns the PartialMappingSet that involved the target area if it exists. Otherwise returns null
+func return_partial_mapping_set_of_target_area(internal_target: AbstractCorticalArea) -> PartialMappingSet:
+	for partial_mapping in _partial_mappings:
+		if partial_mapping.internal_target_cortical_area == internal_target:
+			return partial_mapping
+	return null
 
 ## Returns true if any immediate children areas / regions have a name containing the given substring. Case Insensitive
 func contains_any_object_with_friendly_name_containing_substring(substring: StringName) -> bool:

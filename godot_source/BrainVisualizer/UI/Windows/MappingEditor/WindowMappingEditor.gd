@@ -35,6 +35,7 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 	_source = source
 	_destination = destination
 	
+
 	var source_button_start_explorer: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	var destination_button_start_explorer: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	if source is BrainRegion:
@@ -42,21 +43,14 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 	if destination is BrainRegion:
 		destination_button_start_explorer = destination
 	
-	_partial_mapping = partial_mapping
+	_generic_mapping_settings_partial.import_mapping_hint.connect(_generic_mapping_settings.import_single_mapping)
 	_source_button.setup(source, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA, source_button_start_explorer)
 	_destination_button.setup(destination, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA, destination_button_start_explorer)
 	_memory_mapping.visible = false
 	_generic_mapping_settings.visible = false
 	if _source is AbstractCorticalArea and _destination is AbstractCorticalArea:
 		_load_mapping_between_cortical_areas(source as AbstractCorticalArea, destination as AbstractCorticalArea)
-	if partial_mapping == null:
-		_generic_mapping_settings_partial.clear()
-		_generic_mapping_settings_partial.visible = false
-		_suggested_label.visible = false
-	else:
-		_generic_mapping_settings_partial.load_mappings(partial_mapping.mappings)
-		_suggested_label.visible = true
-		_generic_mapping_settings_partial.import_mapping_hint.connect(_generic_mapping_settings.import_single_mapping)
+	_load_partial_mappings(partial_mapping)
 
 
 func set_2_genome_objects(source: GenomeObject, destination: GenomeObject) -> void:
@@ -96,8 +90,19 @@ func _load_mapping_between_cortical_areas(source: AbstractCorticalArea, destinat
 			_memory_mapping.visible = true
 			var mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
 			_memory_mapping.load_mappings(mappings)
-			
-		
+
+## Loads a set of partial mappings given one. Unloads it and clears the GUI if null is passed
+func _load_partial_mappings(partial_mapping: PartialMappingSet) -> void:
+	_partial_mapping = partial_mapping
+	if partial_mapping == null:
+		_generic_mapping_settings_partial.clear()
+		_suggested_label.visible = false
+		_generic_mapping_settings_partial.visible = false
+	else:
+		_generic_mapping_settings_partial.load_mappings(partial_mapping.mappings)
+		_suggested_label.visible = true
+		_generic_mapping_settings_partial.visible = true
+
 func _user_pressed_set_mappings() -> void:
 	var mappings: Array[SingleMappingDefinition]
 	match(_mode):
@@ -111,12 +116,34 @@ func _user_pressed_set_mappings() -> void:
 			close_window()
 
 func _source_button_picked(genome_object: GenomeObject) -> void:
+	if _source is BrainRegion:
+		if !(_source as BrainRegion).is_root_region():
+			if _destination is AbstractCorticalArea:
+				var partial_mapping: PartialMappingSet = (_source as BrainRegion).return_partial_mapping_set_of_target_area(_destination as AbstractCorticalArea)
+				_load_partial_mappings(partial_mapping)
+	elif _destination is BrainRegion:
+		if !(_destination as BrainRegion).is_root_region():
+			if _source is AbstractCorticalArea:
+				var partial_mapping: PartialMappingSet = (_destination as BrainRegion).return_partial_mapping_set_of_target_area(_source as AbstractCorticalArea)
+				_load_partial_mappings(partial_mapping)
+		 
 	set_2_genome_objects(genome_object, _destination)
 	_source_button.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 
 func _destination_button_picked(genome_object: GenomeObject) -> void:
+	if _source is BrainRegion:
+		if !(_source as BrainRegion).is_root_region():
+			if _destination is AbstractCorticalArea:
+				var partial_mapping: PartialMappingSet = (_source as BrainRegion).return_partial_mapping_set_of_target_area(genome_object as AbstractCorticalArea)
+				_load_partial_mappings(partial_mapping)
+	elif _destination is BrainRegion:
+		if !(_destination as BrainRegion).is_root_region():
+			if _source is AbstractCorticalArea:
+				var partial_mapping: PartialMappingSet = (_destination as BrainRegion).return_partial_mapping_set_of_target_area(genome_object as AbstractCorticalArea)
+				_load_partial_mappings(partial_mapping)
+	
 	set_2_genome_objects(_source, genome_object)
-	_destination.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	_destination_button.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 
 func _import_partial_mapping(mapping: SingleMappingDefinition) -> void:
 	_generic_mapping_settings.add

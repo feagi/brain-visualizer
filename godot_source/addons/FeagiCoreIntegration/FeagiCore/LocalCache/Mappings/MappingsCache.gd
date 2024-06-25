@@ -17,7 +17,6 @@ var established_mappings: Dictionary: # Mappings Established in the FEAGI Connec
 var _established_mappings: Dictionary
 
 
-
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array[Dictionary]) -> void:
 	if !source.cortical_ID in _established_mappings.keys():

@@ -61,15 +61,16 @@ func _close_to_the_right_of(last_to_close: int) -> void:
 
 func _user_selected_object(genome_object: GenomeObject, is_on: bool, from_view: ScrollRegionInternalsView) -> void:
 	if !_multiselect_enabled:
-		# Deselect previous object
-		var previous_object: GenomeObject = _selected_objects[0]
-		_selected_objects = []
-		object_removed.emit(previous_object)
-		# object_added called later
-		for view in _views:
-			if previous_object in view.get_existing_internals():
-				view.set_toggle(previous_object, false)
-				break
+		if len(_selected_objects) != 0:
+			# Deselect previous object
+			var previous_object: GenomeObject = _selected_objects[0]
+			_selected_objects = []
+			object_removed.emit(previous_object)
+			# object_added called later
+			for view in _views:
+				if previous_object in view.get_existing_internals():
+					view.set_toggle(previous_object, false)
+					break
 	
 	from_view.set_toggle(genome_object, is_on)
 	if is_on:
