@@ -34,9 +34,17 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 	_setup_base_window(WINDOW_NAME)
 	_source = source
 	_destination = destination
+	
+	var source_button_start_explorer: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	var destination_button_start_explorer: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if source is BrainRegion:
+		source_button_start_explorer = source
+	if destination is BrainRegion:
+		destination_button_start_explorer = destination
+	
 	_partial_mapping = partial_mapping
-	_source_button.setup(source, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA)
-	_destination_button.setup(destination, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA)
+	_source_button.setup(source, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA, source_button_start_explorer)
+	_destination_button.setup(destination, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA, destination_button_start_explorer)
 	_memory_mapping.visible = false
 	_generic_mapping_settings.visible = false
 	if _source is AbstractCorticalArea and _destination is AbstractCorticalArea:
@@ -104,9 +112,11 @@ func _user_pressed_set_mappings() -> void:
 
 func _source_button_picked(genome_object: GenomeObject) -> void:
 	set_2_genome_objects(genome_object, _destination)
+	_source_button.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 
 func _destination_button_picked(genome_object: GenomeObject) -> void:
 	set_2_genome_objects(_source, genome_object)
+	_destination.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 
 func _import_partial_mapping(mapping: SingleMappingDefinition) -> void:
 	_generic_mapping_settings.add

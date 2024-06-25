@@ -17,6 +17,7 @@ func setup(region_ref: BrainRegion) -> void:
 	_representing_region = region_ref
 	CACHE_updated_region_name(region_ref.friendly_name)
 	CACHE_updated_2D_position(region_ref.coordinates_2D)
+	name = region_ref.region_ID
 	
 	_representing_region.friendly_name_updated.connect(CACHE_updated_region_name)
 	_representing_region.coordinates_2D_updated.connect(CACHE_updated_2D_position)

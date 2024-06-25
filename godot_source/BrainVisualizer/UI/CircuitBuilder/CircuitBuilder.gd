@@ -237,13 +237,20 @@ func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
 func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:
-	var source_area: AbstractCorticalArea = null
-	var destination_area: AbstractCorticalArea = null
+	var source: GenomeObject = null
+	var destination: GenomeObject = null
+	
 	if (from_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
-		source_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_node]
+		source = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[from_node]
+	elif from_node in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		source = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[from_node]
+	
 	if (to_node in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
-		destination_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_node]
-	BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)
+			destination = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_node]
+	elif to_node in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		destination = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[to_node]
+
+	BV.UI.window_manager.spawn_mapping_editor(source, destination)
 
 func _highlight_area(area: AbstractCorticalArea) -> void:
 	unhighlight_all_area_nodes()
