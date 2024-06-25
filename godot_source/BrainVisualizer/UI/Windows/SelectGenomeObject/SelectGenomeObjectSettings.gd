@@ -57,17 +57,31 @@ static func config_for_selecting_new_parent_region(current_parent: BrainRegion, 
 			output.regions_to_disable.append(region)
 	return output
 
-## Starts at a given area, allows for picking a single cortical area, bar the defined unpickables
-static func config_for_single_cortical_area_selection(starting_region: BrainRegion, unpickable_areas: Array[AbstractCorticalArea] = []) -> SelectGenomeObjectSettings:
+## Starts at a given region, allows for picking a single cortical area, bar the defined unpickables
+static func config_for_single_cortical_area_selection(starting_region: BrainRegion, current_selected_area: AbstractCorticalArea = null, unpickable_areas: Array[AbstractCorticalArea] = []) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 	output.starting_region = starting_region
-	output.pick_instructions = "Please select a cortical area:"
+	output.pick_instructions = "Please select a Cortical Area:"
+	if current_selected_area != null:
+		output.preselected_objects = [current_selected_area]
 	output.disable_all_regions = true
 	output.cortical_areas_to_disable = unpickable_areas
 	return output
 
-## Starts at a given area, allows for selecting multiple objects to move to a subregion. Automatically disallows picking areas that cannot be moved and the root region
+## Starts at a given region, allows for picking a single cortical area, bar the defined unpickables
+static func config_for_single_brain_region_selection(starting_region: BrainRegion, currently_picked_region: BrainRegion = null, unpickable_regions: Array[BrainRegion] = []) -> SelectGenomeObjectSettings:
+	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
+	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
+	output.starting_region = starting_region
+	output.pick_instructions = "Please select a Brain Region:"
+	if currently_picked_region != null:
+		output.preselected_objects = [currently_picked_region]
+	output.regions_to_disable = unpickable_regions
+	output.hide_all_cortical_areas = true
+	return output
+
+## Starts at a given region, allows for selecting multiple objects to move to a subregion. Automatically disallows picking areas that cannot be moved and the root region
 static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, objects_already_tagged_for_moving: Array[GenomeObject] = [], other_objects_not_to_move: Array[GenomeObject] = []) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.target_type = GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS

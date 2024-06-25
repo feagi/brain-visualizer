@@ -42,6 +42,7 @@ script = ExtResource("3_ypcw4")
 layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(650, 0)
 layout_mode = 2
 text = "Please Select"
 autowrap_mode = 3

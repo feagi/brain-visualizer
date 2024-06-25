@@ -36,6 +36,7 @@ alignment = 1
 [node name="Source" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
+disabled = false
 
 [node name="todo" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
 custom_minimum_size = Vector2(100, 0)
@@ -44,6 +45,7 @@ layout_mode = 2
 [node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
+disabled = false
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(1300, 0)
