@@ -31,7 +31,7 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 		#_scroll_section.add_generic_item(button, selected, selected.friendly_name)
 
 func _add_button_pressed() -> void:
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_cortical_area_moving_to_subregion(_region_drop_down.get_selected_region())
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(_region_drop_down.get_selected_region())
 	var genome_window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
 	genome_window.user_selected_object_final.connect(_add_button_response)
 

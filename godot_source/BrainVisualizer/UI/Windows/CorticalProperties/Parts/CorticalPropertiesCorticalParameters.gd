@@ -124,7 +124,7 @@ func _user_edit_dimension(new_dimension: Vector3i) -> void:
 		_enable_3D_preview()
 
 func _user_press_edit_region() -> void:
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_cortical_area_moving_to_subregion(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
 	window.user_selected_object_final.connect(_user_edit_region)
 

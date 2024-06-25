@@ -18,7 +18,7 @@ func _ready():
 func setup(adding: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_objects_adding = adding
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_region_selection(starting_region)
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_region_selection(starting_region)
 	_explorer.setup_from_starting_region(config)
 
 	

@@ -25,7 +25,7 @@ func setup(config: SelectGenomeObjectSettings) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_selection_config = config
 	_scroll_genome_object.setup_from_starting_region(_selection_config)
-	_instructions = _selection_config.pick_instructions
+	_instructions.text = _selection_config.pick_instructions
 	_updated_selected_objects()
 
 
