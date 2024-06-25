@@ -56,6 +56,26 @@ text = "Parent Region"
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Wiring Mode"
+
+[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "All Items"
+popup/item_0/id = 0
+popup/item_1/text = "System Areas Only"
+popup/item_1/id = 1
+popup/item_2/text = "None"
+popup/item_2/id = 2
+
 [node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2

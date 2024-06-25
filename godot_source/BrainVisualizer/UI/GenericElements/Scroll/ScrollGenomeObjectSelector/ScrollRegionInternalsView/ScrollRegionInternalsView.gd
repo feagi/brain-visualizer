@@ -13,13 +13,21 @@ var _representing_region: BrainRegion
 var _internal_regions: Dictionary
 var _internal_cortical_areas: Dictionary
 var _view_config: SelectGenomeObjectSettings
+var _multiselect_enabled: bool
 
 var _container: VBoxContainer
 
 func _ready():
 	_container = $Scroll/VBoxContainer
 
-func setup(brain_region: BrainRegion, view_config: SelectGenomeObjectSettings, preselected_objects: Array[GenomeObject]) -> void:
+## In special case of left most container, just to show the root region, but technically nothing is holding this
+func setup_first(first_region: BrainRegion, view_config: SelectGenomeObjectSettings, preselected_objects: Array[GenomeObject]) -> void:
+	_view_config = view_config
+	_multiselect_enabled = view_config.is_multiselect_allowed()
+	reset_to_blank()
+	_add_region(first_region, first_region in preselected_objects)
+
+func setup_rest(brain_region: BrainRegion, view_config: SelectGenomeObjectSettings, preselected_objects: Array[GenomeObject]) -> void:
 	_representing_region = brain_region
 	_view_config = view_config
 	for region in brain_region.contained_regions:
@@ -31,18 +39,7 @@ func setup(brain_region: BrainRegion, view_config: SelectGenomeObjectSettings, p
 	brain_region.subregion_added_to_region.connect(_add_region)
 	#NOTE: We do not have to worry about the region this object represents in this code, since the left side InternalsView will send out a signal that will result in closing this view
 
-func setup_blank() -> void:
-	reset_to_blank()
 
-## In special case of left most container, just to show the root region, but technically nothing is holding this
-func setup_as_first(region: BrainRegion) -> void:
-	reset_to_blank()
-	var item: ScrollRegionInternalsViewItem =  LIST_ITEM_PREFAB.instantiate()
-	_container.add_child(item)
-	item.setup_region(region)
-	item.disable_checkbox_button(true)
-	item.background_clicked.connect(_region_expansion_proxy)
-	
 func reset_to_blank() -> void:
 	_representing_region = null
 	_internal_regions = {}
@@ -93,6 +90,9 @@ func _add_region(region: BrainRegion, is_preselected: bool = false) -> void:
 	
 	if is_preselected:
 		item.set_checkbox_check(true)
+	
+	if !_multiselect_enabled:
+		item.set_to_radio_button_mode()
 		
 	item.visible = _view_config.is_region_shown(region)
 

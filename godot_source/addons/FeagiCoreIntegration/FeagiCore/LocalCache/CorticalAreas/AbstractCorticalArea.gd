@@ -5,6 +5,13 @@ class_name AbstractCorticalArea
 
 # Main functionality for cortical area, and base details such as ID, name, and positions
 #region Base Functionality
+
+const TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION: Array[CORTICAL_AREA_TYPE] = [
+	CORTICAL_AREA_TYPE.IPU,
+	CORTICAL_AREA_TYPE.OPU,
+	CORTICAL_AREA_TYPE.CORE,
+]
+
 ## The type of cortical area, not 1-1 mapped with feagi
 enum CORTICAL_AREA_TYPE {
 	IPU,
@@ -84,7 +91,8 @@ var user_can_clone_this_cortical_area: bool:
 	get: return _user_can_clone_this_area()
 
 var can_exist_in_subregion: bool:
-	get: return _area_can_exist_in_subregion()
+	get: return !(cortical_type in TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION)
+	#get: return _area_can_exist_in_subregion()
 
 var has_neuron_firing_parameters: bool:
 	get:  return _has_neuron_firing_parameters()
@@ -278,9 +286,6 @@ func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 
 func _user_can_clone_this_area() -> bool:
 	return false
-
-func _area_can_exist_in_subregion() -> bool:
-	return true
 
 func _has_neuron_firing_parameters() -> bool:
 	return false

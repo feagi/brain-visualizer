@@ -45,7 +45,7 @@ func _button_pressed() -> void:
 			config = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 			multi_select = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 		GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION:
-			config = SelectGenomeObjectSettings.config_for_single_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+			#config = SelectGenomeObjectSettings.config_for_single_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 			multi_select = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
 		_:
 			config = SelectGenomeObjectSettings.config_for_selecting_anything(FeagiCore.feagi_local_cache.brain_regions.get_root_region())

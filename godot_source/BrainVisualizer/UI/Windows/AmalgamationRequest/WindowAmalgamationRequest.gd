@@ -8,6 +8,7 @@ signal null_dimchange_signal(val: Vector3i) # Not technically utilized, but need
 var _field_title: TextInput
 var _field_3d_location: Vector3iSpinboxField
 var _region_button: GenomeObjectSelectorButton
+var _wiring_selector: OptionButton
 
 var _amalgamation_ID: StringName
 var _circuit_size: Vector3i
@@ -19,6 +20,7 @@ func _ready() -> void:
 	_field_title = _window_internals.get_node('HBoxContainer/AmalgamationTitle')
 	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
 	_region_button = _window_internals.get_node('HBoxContainer4/GenomeObjectSelectorButton')
+	_wiring_selector = _window_internals.get_node('HBoxContainer5/OptionButton')
 
 	
 
@@ -35,7 +37,16 @@ func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: 
 
 
 func _import_pressed():
-	FeagiCore.requests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID, _region_button.current_selected.genome_ID)
+	var wiring_mode: String = "none" #TODO move to an enum!
+	match(_wiring_selector.selected):
+		0:
+			wiring_mode = "all"
+		1:
+			wiring_mode = "system"
+		2:
+			wiring_mode = "none"
+	
+	FeagiCore.requests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID, _region_button.current_selected.genome_ID, wiring_mode)
 	close_window(false)
 
 #OVERRIDE

@@ -18,11 +18,10 @@ func _ready():
 func setup(adding: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_objects_adding = adding
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_region_selection(starting_region)
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_selecting_new_parent_region(starting_region, _objects_adding)
 	_explorer.setup_from_starting_region(config)
 
 	
-
 func _region_selected(region: BrainRegion) -> void:
 	_region_to_move_to = region
 	_region_label.text = "Selected " + region.friendly_name +" as the move destination"

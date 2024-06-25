@@ -320,5 +320,14 @@ func contains_any_object_with_friendly_name_containing_substring_recursive(subst
 			return true
 	return false
 
+## Returns all regions, recursively, under this region
+func get_all_subregions_recursive() -> Array[BrainRegion]:
+	var output: Array[BrainRegion] = _contained_regions
+	for subregion in _contained_regions:
+		output.append_array(subregion.get_all_subregions_recursive())
+	return output
+	
+	
+
 #endregion
 

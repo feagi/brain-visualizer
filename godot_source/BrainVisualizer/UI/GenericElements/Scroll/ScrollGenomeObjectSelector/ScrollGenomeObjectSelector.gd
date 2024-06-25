@@ -19,39 +19,35 @@ var _container: HBoxContainer
 func _ready():
 	_container = $HBoxContainer
 
-func reset() -> void:
-	for child in get_children():
+func reset_views() -> void:
+	for child in _container.get_children():
 		queue_free() # get rid of any stranglers
 	
 func setup_from_starting_region(settings: SelectGenomeObjectSettings) -> void:
-	#reset()
 	_view_config = settings
-	_multiselect_enabled = _view_config.multiselect_allowed()
-	_add_starter_view(_view_config.starting_region)
+	_selected_objects = _view_config.preselected_objects
+	_multiselect_enabled = _view_config.is_multiselect_allowed()
+	var scene: ScrollRegionInternalsView = PREFAB_SCROLLREGIONVIEW.instantiate()
+	_container.add_child(scene)
+	_views.append(scene)
+	scene.setup_first(_view_config.starting_region, _view_config, _selected_objects)
+	scene.region_expansion_attempted.connect(_user_expanding_region)
 
 #TODO improve
 func apply_name_filter(filter: StringName) -> void:
 	for view in _views:
 		view.filter_by_name(filter)
 
-
-func _add_starter_view(region: BrainRegion) -> void:
-	var scene: ScrollRegionInternalsView = PREFAB_SCROLLREGIONVIEW.instantiate()
-	_container.add_child(scene)
-	_views.append(scene)
-	scene.setup_as_first(region)
-	scene.region_expansion_attempted.connect(_user_expanding_region)
-
 func _user_expanding_region(region: BrainRegion, from_view: ScrollRegionInternalsView) -> void:
 	var index: int = _views.find(from_view)
 	if index == -1:
 		push_error("UI: Unable to find the View to selected region %s" % region.ID)
 		return
-	_close_to_the_right_of(index)
+	_close_to_the_right_of(index + 1)
 	var scene: ScrollRegionInternalsView = PREFAB_SCROLLREGIONVIEW.instantiate()
 	_container.add_child(scene)
 	_views.append(scene)
-	scene.setup(region, _view_config, _selected_objects)
+	scene.setup_rest(region, _view_config, _selected_objects)
 	scene.region_expansion_attempted.connect(_user_expanding_region)
 
 ## Close all views right of the given index (inclusive)

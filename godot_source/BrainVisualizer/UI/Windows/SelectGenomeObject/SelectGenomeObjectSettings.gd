@@ -5,61 +5,89 @@ class_name SelectGenomeObjectSettings
 # Objects that are hidden / not shown will not appear at the list at all
 # Objects that are disabled will appear, but cannot be selected (regions can still be expanded)
 
+# NOTE: Keep rules for what is / isn't allowed, so when new objects are added, we can update the selector dynamically!
+
+
 var target_type: GenomeObject.ARRAY_MAKEUP = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 var pick_instructions: StringName = ""
 
 var starting_region: BrainRegion = null
+var preselected_objects: Array[GenomeObject] = []
+
+# NOTE: Rules proceed from top down, where top takes precedence
+
 var override_regions_to_not_hide: Array[BrainRegion] = []
 var hide_all_regions: bool = false
 var regions_to_hide: Array[BrainRegion] = []
+
 var override_regions_to_not_disable: Array[BrainRegion] = []
 var disable_all_regions: bool = false
 var regions_to_disable: Array[BrainRegion] = []
 
-var hide_all_cortical_areas: bool = false
+
 var override_cortical_areas_to_not_hide: Array[AbstractCorticalArea] = []
 var hide_all_cortical_areas_of_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = []
+var hide_all_cortical_areas: bool = false
 var cortical_areas_to_hide: Array[AbstractCorticalArea] = []
-var disable_all_cortical_areas: bool = false
+
 var override_cortical_areas_to_not_disable: Array[AbstractCorticalArea] = []
 var disable_all_cortical_areas_of_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = []
+var disable_all_cortical_areas: bool = false
 var cortical_areas_to_disable: Array[AbstractCorticalArea] = []
 
-static func config_for_single_region_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+## Preselcts the current parent, disables the selection of objects being moved
+static func config_for_selecting_new_parent_region(current_parent: BrainRegion, objects_being_moved: Array[GenomeObject]) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.pick_instructions = "Please select a single region:"
-	output.starting_region = starting_region_
-	output.hide_all_cortical_areas = true
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
-	if area_to_show_disabled != null:
-		output.override_cortical_areas_to_not_hide = [area_to_show_disabled]
-		output.disable_all_cortical_areas = true
+	output.starting_region = current_parent
+	output.pick_instructions = "Please select the new parent Brain Region:"
+	output.hide_all_cortical_areas = true
+	output.preselected_objects = [current_parent]
+	
+	# Disallow the moving regions, or their subregions, from being move targets
+	var regions_being_moved: Array[BrainRegion] = GenomeObject.filter_brain_regions(objects_being_moved)
+	var subregions_being_moved: Array[BrainRegion] = []
+	for region_being_moved in regions_being_moved:
+		subregions_being_moved.append_array(region_being_moved.get_all_subregions_recursive())
+	var regions_to_disallow_picking =  regions_being_moved
+	regions_to_disallow_picking.append_array(subregions_being_moved)
+	# remove duplicates
+	for region in regions_to_disallow_picking:
+		if !(region in output.regions_to_disable):
+			output.regions_to_disable.append(region)
 	return output
 
-static func config_for_single_cortical_area_selection(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+## Starts at a given area, allows for picking a single cortical area, bar the defined unpickables
+static func config_for_single_cortical_area_selection(starting_region: BrainRegion, unpickable_areas: Array[AbstractCorticalArea] = []) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.pick_instructions = "Please select a single cortical area:"
-	output.starting_region = starting_region_
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
-	if area_to_show_disabled != null:
-		output.cortical_areas_to_disable = [area_to_show_disabled]
+	output.starting_region = starting_region
+	output.pick_instructions = "Please select a cortical area:"
+	output.disable_all_regions = true
+	output.cortical_areas_to_disable = unpickable_areas
 	return output
 
-static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, area_to_show_disabled: AbstractCorticalArea = null) -> SelectGenomeObjectSettings:
+## Starts at a given area, allows for selecting multiple objects to move to a subregion. Automatically disallows picking areas that cannot be moved and the root region
+static func config_for_multiple_objects_moving_to_subregion(starting_region_: BrainRegion, areas_that_cannot_be_moved: Array[AbstractCorticalArea] = [], regions_that_cannot_be_moved: Array[BrainRegion] = []) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
-	output.pick_instructions = "Please select the objects you wish to move into into the region:"
-	output.starting_region = starting_region_
 	output.target_type = GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
-	var disable_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE] = [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]
-	output.disable_all_cortical_areas_of_types = disable_types
-	if area_to_show_disabled != null:
-		output.cortical_areas_to_disable = [area_to_show_disabled]
+	output.pick_instructions = "Please select the objects you wish to move:"
+	output.starting_region = starting_region_
+	output.disable_all_cortical_areas_of_types = AbstractCorticalArea.TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION
+	output.cortical_areas_to_disable = areas_that_cannot_be_moved
+	output.regions_to_disable = [FeagiCore.feagi_local_cache.brain_regions.get_root_region()]
+	output.regions_to_disable.append_array(regions_that_cannot_be_moved)
 	return output
 
+## Starting at given region, select any number of given objects
 static func config_for_selecting_anything(starting_region_: BrainRegion) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
+	output.target_type = GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
 	output.starting_region = starting_region_
 	return output
+
+func is_multiselect_allowed() -> bool:
+	return target_type in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS, GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS]
 
 ## Returns false if a cortical area is not to be shown (not visible)
 func is_cortical_area_shown(area: AbstractCorticalArea) -> bool:
@@ -99,5 +127,3 @@ func is_region_disabled(region: BrainRegion) -> bool:
 		return true
 	return disable_all_regions
 
-func multiselect_allowed() -> bool:
-	return target_type in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS, GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS]

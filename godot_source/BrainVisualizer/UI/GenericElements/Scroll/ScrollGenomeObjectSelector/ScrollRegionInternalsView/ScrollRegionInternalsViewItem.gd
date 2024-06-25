@@ -17,6 +17,7 @@ var _name: Label
 var _icon: TextureRect
 var _arrow: TextureRect
 var _checkbox: CheckBox
+var _radio_button_group: ButtonGroup
 
 
 func _ready():
@@ -42,6 +43,10 @@ func setup_region(region: BrainRegion) -> void:
 	_updated_name(region.friendly_name)
 	region.friendly_name_updated.connect(_updated_name)
 	name = region.region_ID
+
+func set_to_radio_button_mode() -> void:
+	_radio_button_group = ButtonGroup.new()
+	_checkbox.button_group = _radio_button_group
 
 func set_checkbox_check(is_checked: bool) -> void:
 	_checkbox.set_pressed_no_signal(is_checked)
