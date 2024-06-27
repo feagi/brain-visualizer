@@ -91,6 +91,9 @@ func _user_requesting_exit() -> void:
 	close_window()
 
 func _user_requesing_creation() -> void:
+	
+	
+	
 	match(_type_selected):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			# checks
@@ -98,6 +101,11 @@ func _user_requesing_creation() -> void:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "An input cortical area of type %s already exists!" % _IOPU_definition.dropdown.get_selected_template().cortical_name, "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
+			if AbstractCorticalArea.get_neuron_count(_IOPU_definition.dropdown.get_selected_template().calculate_IOPU_dimension(int(_IOPU_definition.channel_count.value)), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
+				BV.WM.spawn_popup(popup_definition)
+				return
+			
 			FeagiCore.requests.add_IOPU_cortical_area(
 				_IOPU_definition.dropdown.get_selected_template(),
 				int(_IOPU_definition.channel_count.value),
@@ -110,6 +118,11 @@ func _user_requesing_creation() -> void:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "An output cortical area of type %s already exists!" % _IOPU_definition.dropdown.get_selected_template().cortical_name, "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
+			if AbstractCorticalArea.get_neuron_count(_IOPU_definition.dropdown.get_selected_template().calculate_IOPU_dimension(int(_IOPU_definition.channel_count.value)), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
+				BV.WM.spawn_popup(popup_definition)
+				return
+				
 			FeagiCore.requests.add_IOPU_cortical_area(
 				_IOPU_definition.dropdown.get_selected_template(),
 				int(_IOPU_definition.channel_count.value),
@@ -120,6 +133,11 @@ func _user_requesing_creation() -> void:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
+				BV.WM.spawn_popup(popup_definition)
+				return
+			
+			if AbstractCorticalArea.get_neuron_count(_custom_definition.dimensions.current_vector, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
 			
@@ -146,6 +164,10 @@ func _user_requesing_creation() -> void:
 			
 			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(_memory_definition.cortical_name.text):
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
+				BV.WM.spawn_popup(popup_definition)
+				return
+			if AbstractCorticalArea.get_neuron_count(_custom_definition.dimensions.current_vector, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
 			

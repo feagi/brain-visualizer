@@ -59,6 +59,9 @@ var cortical_neuron_per_vox_count: int:
 var cortical_synaptic_attractivity: int:
 	get: return _cortical_synaptic_attractivity
 
+var neuron_count: int:
+	get: return AbstractCorticalArea.get_neuron_count(_dimensions_3D, _cortical_neuron_per_vox_count)
+
 var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
 
 ## Has a 2D location been specified in FEAGI yet or is still unknown?
@@ -173,7 +176,10 @@ static func can_all_areas_exist_in_subregion(areas: Array[AbstractCorticalArea])
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
-	
+
+static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
+	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
+
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
 	_genome_ID = ID
@@ -263,6 +269,8 @@ func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 	_cortical_synaptic_attractivity = new_attractivity
 	cortical_synaptic_attractivity_updated.emit(new_attractivity, self)
 
+func get_neuron_change_with_new_details(new_dimension: Vector3i, new_density: float) -> int:
+	return AbstractCorticalArea.get_neuron_count(new_dimension, new_density) - neuron_count
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
