@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=16 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -24,6 +24,9 @@ sky_material = SubResource("ShaderMaterial_ouwte")
 [sub_resource type="Environment" id="Environment_rks2y"]
 background_mode = 2
 sky = SubResource("Sky_btdg3")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rogx1"]
+bg_color = Color(0.117647, 0.14902, 0.203922, 0.780392)
 
 [node name="BrainVisualizer" type="Node"]
 script = ExtResource("1_234dh")
@@ -75,5 +78,23 @@ offset_top = -23.0
 grow_horizontal = 0
 grow_vertical = 0
 horizontal_alignment = 2
+
+[node name="TempLoadingScreen" type="PanelContainer" parent="UIManager"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/TempLoadingScreen"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="UIManager/TempLoadingScreen/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 40
+text = "FEAGI is Loading..."
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]
