@@ -95,6 +95,6 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
-text = "FEAGI is Loading..."
+text = "Loading..."
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]

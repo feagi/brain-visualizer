@@ -101,6 +101,11 @@ func _user_requests_update() -> void:
 	if _growing_cortical_update == {}:
 		# If user presses update button but no properties are set to change, do nothing
 		return
+	if AbstractCorticalArea.get_neuron_count(_vector_dimensions.current_vector, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
+		BV.WM.spawn_popup(popup_definition)
+		return
+	
 	print("User requesing Summary changes to cortical area")
 	user_requested_update.emit(_growing_cortical_update)
 
