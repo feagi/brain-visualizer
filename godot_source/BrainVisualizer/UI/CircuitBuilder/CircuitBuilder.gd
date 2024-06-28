@@ -10,8 +10,10 @@ class_name CircuitBuilder
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
-const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeRegionIO/CBNodeRegionIO.tscn")
-const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")
+const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeRegionIO/CBNodeRegionIO.tscn") #WARNING DELETE ME
+const PREFAB_REGIONIO_NODE: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.tscn")
+const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")#WARNING DELETE ME
+const PREFAB_ENDPOINT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn")
 const PREFAB_NODE_PORT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.tscn")
 
 var representing_region: BrainRegion:
@@ -163,26 +165,24 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 	
-	var source_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(true, destination_node)
-	source_node.setup(_representing_region, true)
+	var source_node: CBRegionIONode = _spawn_and_position_region_IO_node(true, destination_node)
+	source_node.setup(link.parent_chain.source, link.parent_chain.destination, true)
 	
 	var source_title: StringName
-	var destination_title: StringName
 	if link.parent_chain.is_registered_to_established_mapping_set():
 		source_title = link.parent_chain.source.friendly_name
-		destination_title = link.parent_chain.destination.friendly_name
 	else:
 		# TODO fallback for partial mapping set
 		source_title = source_node.title
-		destination_title = destination_node.title
 	
-	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
+	#var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
+	var source_endpoint: CBLineEndpoint = source_node.add_output_endpoint(PREFAB_ENDPOINT, CBLineEndpoint.PORT_STYLE.FULL)
 	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_title, PREFAB_NODE_TERMINAL)
 
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+	line.setup(source_endpoint, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	if link.parent_region != representing_region:
@@ -193,26 +193,23 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 	
-	var destination_node: CBNodeRegionIO = _spawn_and_position_region_IO_node(false, source_node)
-	destination_node.setup(_representing_region, false)
+	var destination_node: CBRegionIONode = _spawn_and_position_region_IO_node(false, source_node)
+	destination_node.setup(link.parent_chain.destination, link.parent_chain.source, false)
 	
-	var source_title: StringName
 	var destination_title: StringName
 	if link.parent_chain.is_registered_to_established_mapping_set():
-		source_title = link.parent_chain.source.friendly_name
 		destination_title = link.parent_chain.destination.friendly_name
 	else:
 		# TODO fallback for partial mapping set
-		source_title = source_node.title
 		destination_title = destination_node.title
 	
 	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
-	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_title, PREFAB_NODE_TERMINAL)
+	var destination_endpoint: CBLineEndpoint = destination_node.add_input_endpoint(PREFAB_ENDPOINT, CBLineEndpoint.PORT_STYLE.FULL)
 
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+	line.setup(source_terminal.active_port, destination_endpoint, link)
 
 # This is called from the Brain Region nodes directly
 func _CACHE_link_region_input_open_added(region_node: CBNodeRegion, link: ConnectionChainLink) -> void:
@@ -296,7 +293,16 @@ func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNo
 			return null
 		return _subregion_nodes[(genome_object as BrainRegion).region_ID]
 
-func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBNodeRegionIO:
+func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBRegionIONode:
+	var IO_node: CBRegionIONode = PREFAB_REGIONIO_NODE.instantiate()
+	add_child(IO_node)
+	if is_region_input:
+		IO_node.position_offset = target_node.position_offset - CBRegionIONode.CONNECTED_NODE_OFFSET
+	else:
+		IO_node.position_offset = target_node.position_offset + CBRegionIONode.CONNECTED_NODE_OFFSET
+	return IO_node
+
+func _DEPRECATED_spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBNodeRegionIO:
 	var IO_node: CBNodeRegionIO = PREFAB_NODE_REGIONIO.instantiate()
 	add_child(IO_node)
 	if is_region_input:

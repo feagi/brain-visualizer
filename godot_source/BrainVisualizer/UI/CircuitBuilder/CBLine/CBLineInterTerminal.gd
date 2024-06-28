@@ -8,13 +8,13 @@ const LINE_COLOR_TRANSPARENT: Color = Color(0,0,0,0)
 const LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY: float = 0.3
 
 var _button: Button
-var _source_port: CBNodePort
-var _destination_port: CBNodePort
+var _source_port
+var _destination_port
 var _link: ConnectionChainLink
 
-
+#TODO temporarily remove types here for dual system management
 ## Sets up the default line behavior, by having it connect to the ports of the 2 given terminals
-func setup(source_port: CBNodePort, destination_port: CBNodePort, link: ConnectionChainLink) -> void:
+func setup(source_port, destination_port, link: ConnectionChainLink) -> void:
 	line_setup()
 	_button = $Button
 	_source_port = source_port

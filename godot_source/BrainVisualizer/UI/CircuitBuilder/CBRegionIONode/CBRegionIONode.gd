@@ -1,5 +1,7 @@
 extends CBAbstractNode
-class_name CBRegionIO
+class_name CBRegionIONode
+
+const CONNECTED_NODE_OFFSET: Vector2 = Vector2(500, -50)
 
 const KNOWN_ICON_PATHS : Dictionary = {
 	"iv00_C" : "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/iv00_C.png",
@@ -49,13 +51,11 @@ func setup(outside_object: GenomeObject, inside_object: GenomeObject, is_region_
 ## Creates and adds an input CBLineEndpoint # NOTE: Does not call the base implementation since we dont need to spawn a CBLineEndpoint
 func add_input_endpoint(_endpoint_prefab: PackedScene, port_style: CBLineEndpoint.PORT_STYLE) -> CBLineEndpoint:
 	_endpoint.setup(self, node_moved, port_style)
-	_set_direction(true)
 	return _endpoint
 
 ## Creates and adds an output CBLineEndpoint # NOTE: Does not call the base implementation since we dont need to spawn a CBLineEndpoint
 func add_output_endpoint(_endpoint_prefab: PackedScene, port_style: CBLineEndpoint.PORT_STYLE) -> CBLineEndpoint:
 	_endpoint.setup(self, node_moved, port_style)
-	_set_direction(false)
 	return _endpoint
 
 func _outside_name_updated(new_name: StringName) -> void:
