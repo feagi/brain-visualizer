@@ -173,7 +173,7 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 		source_title = link.parent_chain.source.friendly_name
 	else:
 		# TODO fallback for partial mapping set
-		source_title = source_node.title
+		pass
 	
 	#var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
 	var source_endpoint: CBLineEndpoint = source_node.add_output_endpoint(PREFAB_ENDPOINT, CBLineEndpoint.PORT_STYLE.FULL)
@@ -201,7 +201,7 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 		destination_title = link.parent_chain.destination.friendly_name
 	else:
 		# TODO fallback for partial mapping set
-		destination_title = destination_node.title
+		pass
 	
 	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
 	var destination_endpoint: CBLineEndpoint = destination_node.add_input_endpoint(PREFAB_ENDPOINT, CBLineEndpoint.PORT_STYLE.FULL)

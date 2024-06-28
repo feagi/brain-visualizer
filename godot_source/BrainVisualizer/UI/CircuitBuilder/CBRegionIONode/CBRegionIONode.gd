@@ -10,9 +10,9 @@ const KNOWN_ICON_PATHS : Dictionary = {
 	"___pwr" : "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/___pwr.png",
 }
 const ICON_CUSTOM_INPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-input.png"
-const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-input.png"
-const ICON_UNKNOWN_INPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-input.png"
-const ICON_UNKNOWN_OUTPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-input.png"
+const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-output.png"
+const ICON_UNKNOWN_INPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/unknown-input.png"
+const ICON_UNKNOWN_OUTPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/unknown-output.png"
 
 var _is_region_input: bool
 var _outside: GenomeObject
@@ -64,15 +64,15 @@ func _outside_name_updated(new_name: StringName) -> void:
 func _set_direction(is_input: bool) -> void:
 	_is_region_input = is_input
 	if is_input:
-		move_child(_icon, 0)
-		move_child(_path, 1)
-		move_child(_arrow, 2)
-		move_child(_endpoint, 3)
+		$HBoxContainer.move_child(_icon, 0)
+		$HBoxContainer.move_child(_path, 1)
+		$HBoxContainer.move_child(_arrow, 2)
+		$HBoxContainer.move_child(_endpoint, 3)
 	else:
-		move_child(_endpoint, 0)
-		move_child(_arrow, 1)
-		move_child(_path, 2)
-		move_child(_icon, 3)
+		$HBoxContainer.move_child(_endpoint, 0)
+		$HBoxContainer.move_child(_arrow, 1)
+		$HBoxContainer.move_child(_path, 2)
+		$HBoxContainer.move_child(_icon, 3)
 
 func _path_updated(_irrelevant1 = null, _irrelevant2 = null) -> void:
 	if _is_region_input:
@@ -98,12 +98,11 @@ func _set_icon(external_object: GenomeObject) -> void:
 		_icon.texture = load(KNOWN_ICON_PATHS[external_object.genome_ID])
 		return
 	if external_object is AbstractCorticalArea:
-		if (external_object as AbstractCorticalArea).cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			if _is_region_input:
-				_icon.texture = load(ICON_CUSTOM_INPUT)
-			else:
-				_icon.texture = load(ICON_CUSTOM_OUTPUT)
-			return
+		if _is_region_input:
+			_icon.texture = load(ICON_CUSTOM_INPUT)
+		else:
+			_icon.texture = load(ICON_CUSTOM_OUTPUT)
+		return
 	if _is_region_input:
 		_icon.texture = load(ICON_UNKNOWN_INPUT)
 	else:

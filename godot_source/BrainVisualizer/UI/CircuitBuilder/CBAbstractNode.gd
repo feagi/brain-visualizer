@@ -13,7 +13,7 @@ var _output_endpoints: Array[CBLineEndpoint] = []
 
 func setup_base() -> void:
 	dragged.connect(_on_finish_drag)
-	#draw.connect(_on_node_move)
+	draw.connect(_on_position_changed)
 	position_offset_changed.connect(_on_position_changed)
 	_is_currently_being_dragged = false
 
@@ -65,4 +65,5 @@ func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 
 func _on_position_changed() -> void:
 	_is_currently_being_dragged = true
+	node_moved.emit()
 
