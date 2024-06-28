@@ -24,7 +24,7 @@ func setup(source_port, destination_port, link: ConnectionChainLink) -> void:
 	_update_line_endpoint_positions()
 	_source_port.node_moved.connect(_update_line_endpoint_positions)
 	_destination_port.node_moved.connect(_update_line_endpoint_positions)
-	name = "Line_%s->%s" % [source_port.root_node.name,destination_port.root_node.name]
+	#name = "Line_%s->%s" % [source_port.root_node.name,destination_port.root_node.name]
 	link.associated_mapping_set_updated.connect(_proxy_mapping_change_connection)
 	_button.pressed.connect(_user_pressed_button)
 	

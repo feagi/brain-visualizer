@@ -29,7 +29,7 @@ var _endpoint: CBLineEndpoint
 
 func setup(outside_object: GenomeObject, inside_object: GenomeObject, is_region_input: bool) -> void:
 	setup_base()
-	_arrow = $HBoxContainer/Arrow
+	_icon = $HBoxContainer/Icon
 	_path = $HBoxContainer/Path
 	_arrow = $HBoxContainer/Arrow
 	_endpoint = $HBoxContainer/CbLineEndPoint
