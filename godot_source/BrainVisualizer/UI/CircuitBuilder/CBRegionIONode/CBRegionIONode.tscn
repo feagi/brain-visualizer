@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3 uid="uid://cst1ciwraah37"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.gd" id="1_bd7dq"]
+[ext_resource type="PackedScene" uid="uid://ctcyqnotj188l" path="res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn" id="3_6cfee"]
+
+[node name="CBRegionIONode" type="GraphElement"]
+offset_right = 112.0
+offset_bottom = 64.0
+script = ExtResource("1_bd7dq")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+expand_mode = 1
+
+[node name="Path" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+text = "#"
+
+[node name="Arrow" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "NAME"
+
+[node name="CbLineEndPoint" parent="HBoxContainer" instance=ExtResource("3_6cfee")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
