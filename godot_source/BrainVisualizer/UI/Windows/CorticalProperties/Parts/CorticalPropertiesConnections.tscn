@@ -10,6 +10,10 @@
 [node name="CorticalPropertiesConnections" type="VBoxContainer"]
 script = ExtResource("1_kpjok")
 
+[node name="recursive" type="Button" parent="."]
+layout_mode = 2
+text = "None Recursive"
+
 [node name="L_A" type="HBoxContainer" parent="."]
 layout_mode = 2
 
