@@ -91,7 +91,8 @@ func FEAGI_confirmed_genome() -> void:
 	initial_tabs = [cb]
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
-	$TempLoadingScreen.queue_free()
+	if $TempLoadingScreen != null:
+		$TempLoadingScreen.queue_free()
 	
 
 #endregion
