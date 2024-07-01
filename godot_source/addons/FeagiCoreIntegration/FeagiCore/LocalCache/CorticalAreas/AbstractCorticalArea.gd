@@ -231,7 +231,8 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 			push_error("Unable to find new region ID %s for cortical area %s" % [data["parent_region_id"], cortical_ID])
 			return
 		var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[data["parent_region_id"]]
-		FEAGI_change_parent_brain_region(new_region)
+		if new_region != current_parent_region:
+			FEAGI_change_parent_brain_region(new_region)
 			
 
 	FEAGI_apply_detail_dictionary(data)

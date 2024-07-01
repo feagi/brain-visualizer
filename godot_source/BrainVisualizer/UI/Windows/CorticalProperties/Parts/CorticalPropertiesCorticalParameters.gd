@@ -17,6 +17,7 @@ var _vector_dimensions: Vector3iSpinboxField
 var _region_button: Button
 var _update_button: Button
 var _growing_cortical_update: Dictionary
+var _cortical_reference: AbstractCorticalArea
 var _preview_handler: GenericSinglePreviewHandler = null
 
 
@@ -42,6 +43,7 @@ func _ready():
 
 ## Displays properties of a cortical area, toggles editability depending on corticala rea configuraiton
 func display_cortical_properties(cortical_reference: AbstractCorticalArea) -> void:
+	_cortical_reference = cortical_reference
 	_line_cortical_name.text = cortical_reference.friendly_name
 	_region_button.text = cortical_reference.current_parent_region.friendly_name
 	_region_button.disabled = !cortical_reference.can_exist_in_subregion
@@ -86,7 +88,7 @@ func FEAGI_set_cortical_position(new_position: Vector3i, _duplicate_ref: Abstrac
 	_vector_position.current_vector = new_position
 	_FEAGI_confirmed_update()
 
-func FEAGI_set_region(new_region: BrainRegion):
+func FEAGI_set_region(_old_region: BrainRegion, new_region: BrainRegion):
 	_region_button.text = new_region.friendly_name
 	_FEAGI_confirmed_update()
 
@@ -129,12 +131,12 @@ func _user_edit_dimension(new_dimension: Vector3i) -> void:
 		_enable_3D_preview()
 
 func _user_press_edit_region() -> void:
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_brain_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _cortical_reference.current_parent_region)
 	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
-	window.user_selected_object_final.connect(_user_edit_region)
+	window.final_selection.connect(_user_edit_region)
 
-func _user_edit_region(new_region: BrainRegion) -> void:
-	_append_to_growing_update("parent_region_id", new_region.region_ID)
+func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
+	_append_to_growing_update("parent_region_id", selected_objects[0].genome_ID)
 
 func _append_to_growing_update(key: StringName, value: Variant) -> void:
 	_growing_cortical_update[key] = value
