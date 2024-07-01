@@ -39,6 +39,7 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 			_tex_recursive.visible = true
 			_active_port = _tex_recursive
 			_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			_button.pressed.connect(_recursive_button_mapping_window_call)
 		TYPE.INPUT:
 			_tex_input.visible = true
 			_active_port = _tex_input
@@ -73,3 +74,9 @@ func register_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 func _port_reporting_deletion() -> void:
 	terminal_about_to_be_deleted.emit()
 	queue_free()
+
+func _recursive_button_mapping_window_call() -> void:
+	if !_parent_node is CBNodeCorticalArea:
+		return
+	var area: AbstractCorticalArea = (_parent_node as CBNodeCorticalArea).representing_cortical_area
+	BV.WM.spawn_mapping_editor(area, area)
