@@ -5,7 +5,7 @@ signal neuron_psp_uniform_distribution_updated(new_val: bool, this_cortical_area
 signal neuron_neuron_mp_driven_psp_updated(new_val: bool, this_cortical_area: AbstractCorticalArea)
 signal neuron_post_synaptic_potential_updated(new_val: float, this_cortical_area: AbstractCorticalArea)
 signal neuron_post_synaptic_potential_max_updated(new_val: float, this_cortical_area: AbstractCorticalArea)
-signal neuron_degeneracy_coefficient_updated(new_val: int, this_cortical_area: AbstractCorticalArea)
+signal neuron_degeneracy_coefficient_updated(new_val: float, this_cortical_area: AbstractCorticalArea)
 
 var neuron_psp_uniform_distribution: bool:
 	get:
@@ -31,7 +31,7 @@ var neuron_post_synaptic_potential_max: float:
 	set(v):
 		_set_neuron_post_synaptic_potential_max(v)
 
-var neuron_degeneracy_coefficient: int:
+var neuron_degeneracy_coefficient: float:
 	get:
 		return _neuron_degeneracy_coefficient
 	set(v):
@@ -41,7 +41,7 @@ var _neuron_psp_uniform_distribution: bool = false
 var _neuron_mp_driven_psp: bool = false
 var _neuron_post_synaptic_potential: float = 0.0
 var _neuron_post_synaptic_potential_max: float = 0.0
-var _neuron_degeneracy_coefficient: int = 0
+var _neuron_degeneracy_coefficient: float = 0.0
 var _cortical_area: AbstractCorticalArea
 
 func _init(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -85,7 +85,7 @@ func _set_neuron_post_synaptic_potential_max(new_val: float) -> void:
 	_neuron_post_synaptic_potential_max = new_val
 	neuron_post_synaptic_potential_max_updated.emit(new_val, _cortical_area)
 
-func _set_neuron_degeneracy_coefficient(new_val: int) -> void:
+func _set_neuron_degeneracy_coefficient(new_val: float) -> void:
 	if new_val == _neuron_degeneracy_coefficient: 
 		return
 	_neuron_degeneracy_coefficient = new_val

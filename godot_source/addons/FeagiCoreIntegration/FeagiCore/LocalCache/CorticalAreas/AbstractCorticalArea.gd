@@ -369,6 +369,8 @@ func CACHE_mapping_set_deregister_a_rescursive(mapping_set: InterCorticalMapping
 func get_mapping_array_toward_cortical_area(destination: AbstractCorticalArea) -> Array[SingleMappingDefinition]:
 	if destination in _efferent_mappings:
 		return _efferent_mappings[destination].mappings
+	if destination in _recursive_mappings:
+		return _recursive_mappings[destination].mappings
 	# no mapping exists between these areas, return an empty array!
 	return []
 
