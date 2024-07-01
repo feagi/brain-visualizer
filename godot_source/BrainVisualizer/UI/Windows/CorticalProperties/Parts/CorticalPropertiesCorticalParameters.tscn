@@ -109,6 +109,7 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("3_yn385")
+suffix = " %"
 
 [node name="Label_Dimensions" type="Label" parent="."]
 layout_mode = 2

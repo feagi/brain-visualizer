@@ -76,7 +76,7 @@ func user_request_Post_Synaptic_Potential(value: int) -> void:
 func user_request_PSP_Max(value: int) -> void:
 	_growing_cortical_update["neuron_post_synaptic_potential_max"] = value
 
-func user_request_Degeneracy_Constant(value: int) -> void:
+func user_request_Degeneracy_Constant(value: float) -> void:
 	_growing_cortical_update["neuron_degeneracy_coefficient"] = value
 
 func user_request_PSP_Uniforimity(value: bool) -> void:

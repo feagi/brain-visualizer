@@ -24,6 +24,7 @@ signal user_interacted()
 @export var suffix: String = ""
 @export var max_value: float = 9999999999.0
 @export var min_value: float = -9999999999.0
+@export var number_decimal_places: int = 2
 
 var current_float: float:
 	get: return _previous_float
@@ -75,4 +76,4 @@ func _user_attempt_confirm_value(input_text: String) -> void:
 	release_focus()
 
 func _set_value_UI(new_float: float) -> void:
-	text = prefix + str(clamp(new_float, min_value, max_value)) + suffix
+	text = prefix + str(clamp(new_float, min_value, max_value)).pad_decimals(number_decimal_places) + suffix

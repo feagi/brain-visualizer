@@ -63,6 +63,9 @@ text = "Leak Variability"
 layout_mode = 2
 alignment = 2
 script = ExtResource("3_ermgo")
+suffix = " %"
+max_value = 100
+min_value = 0
 
 [node name="Refactory_Period" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -147,6 +150,7 @@ text = "Neuron Excitability"
 layout_mode = 2
 alignment = 2
 script = ExtResource("3_ermgo")
+suffix = " %"
 max_value = 100
 min_value = 0
 
