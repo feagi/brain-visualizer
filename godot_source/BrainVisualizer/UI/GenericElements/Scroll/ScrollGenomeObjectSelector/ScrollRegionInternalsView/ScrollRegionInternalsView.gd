@@ -68,18 +68,19 @@ func filter_by_name(friendly_name: StringName) -> void:
 	if friendly_name == "":
 		_show_all_allowed()
 		return
+	var name_lower: StringName = friendly_name.to_lower()
 	
 	for item: ScrollRegionInternalsViewItem  in _internal_regions.values():
 		if !_view_config.is_region_shown(item.target as BrainRegion):
 			item.visible = false
 			continue
-		item.visible = (item.target as BrainRegion).contains_any_object_with_friendly_name_containing_substring_recursive(friendly_name) or item.target.friendly_name.to_lower().contains(friendly_name.to_lower())
+		item.visible = (item.target as BrainRegion).contains_any_object_with_friendly_name_containing_substring_recursive(name_lower) or item.target.friendly_name.to_lower() == name_lower
 	
 	for item: ScrollRegionInternalsViewItem  in _internal_cortical_areas.values():
 		if !_view_config.is_cortical_area_shown(item.target as AbstractCorticalArea):
 			item.visible = false
 			continue
-		item.visible = item.target.friendly_name.contains(friendly_name)
+		item.visible = item.target.friendly_name.to_lower().contains(name_lower)
 
 func get_existing_internals() -> Array[GenomeObject]:
 	if _representing_region == null:

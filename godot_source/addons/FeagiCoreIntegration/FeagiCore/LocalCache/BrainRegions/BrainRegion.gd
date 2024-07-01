@@ -321,7 +321,7 @@ func contains_any_object_with_friendly_name_containing_substring(substring: Stri
 			return true
 	return false
 
-## Returns true if any immediate children areas / regions, or the region internals, have a name containing the given substring
+## Returns true if any immediate children areas / regions, or the region internals, have a name containing the given substring. Case Insentive
 func contains_any_object_with_friendly_name_containing_substring_recursive(substring: StringName) -> bool:
 	if contains_any_object_with_friendly_name_containing_substring(substring):
 		return true
