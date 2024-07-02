@@ -9,7 +9,7 @@ var _Threshold_Limit: IntInput
 var _neuron_excitability: IntInput
 var _Refactory_Period: IntInput
 var _Leak_Constant: IntInput
-var _Leak_Variability: IntInput
+var _Leak_Variability: FloatInput
 var _Consecutive_Fire_Count: IntInput
 var _Snooze_Period: IntInput
 var _Threshold_Inc: Vector3fField
@@ -36,7 +36,7 @@ func _ready():
 	_Threshold_Limit.int_confirmed.connect(user_request_Threshold_Limit)
 	_Refactory_Period.int_confirmed.connect(user_request_Refactory_Period)
 	_Leak_Constant.int_confirmed.connect(user_request_Leak_Constant)
-	_Leak_Variability.int_confirmed.connect(user_request_Leak_Variability)
+	_Leak_Variability.float_confirmed.connect(user_request_Leak_Variability)
 	_Consecutive_Fire_Count.int_confirmed.connect(user_request_Consecutive_Fire_Count)
 	_neuron_excitability.int_confirmed.connect(_user_request_neuron_excitability)
 	_Snooze_Period.int_confirmed.connect(user_request_Snooze_Period)
@@ -49,7 +49,7 @@ func display_cortical_properties(cortical_reference) -> void: #NOTE: Can't type 
 	_Threshold_Limit.current_int = cortical_reference.neuron_firing_parameters.neuron_firing_threshold_limit
 	_Refactory_Period.current_int = cortical_reference.neuron_firing_parameters.neuron_refractory_period
 	_Leak_Constant.current_int = cortical_reference.neuron_firing_parameters.neuron_leak_coefficient
-	_Leak_Variability.current_int = cortical_reference.neuron_firing_parameters.neuron_leak_variability
+	_Leak_Variability.current_float = cortical_reference.neuron_firing_parameters.neuron_leak_variability
 	_Consecutive_Fire_Count.current_int = cortical_reference.neuron_firing_parameters.neuron_consecutive_fire_count
 	_Snooze_Period.current_int = cortical_reference.neuron_firing_parameters.neuron_snooze_period
 	_Threshold_Inc.current_vector = cortical_reference.neuron_firing_parameters.neuron_fire_threshold_increment
@@ -120,8 +120,8 @@ func _feagi_update_refactory_period(value: int, _cortical_ref) -> void:
 func _feagi_update_Leak_Constant(value: int, _cortical_ref) -> void:
 	_Leak_Constant.current_int = value
 
-func _feagi_update_Leak_Variability(value: int, _cortical_ref) -> void:
-	_Leak_Variability.current_int = value
+func _feagi_update_Leak_Variability(value: float, _cortical_ref) -> void:
+	_Leak_Variability.current_float = value
 
 func _feagi_update_Threshold_Inc(value: Vector3, _cortical_ref) -> void:
 	_Threshold_Inc.current_vector = value
