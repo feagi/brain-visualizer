@@ -33,6 +33,7 @@ var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuro
 var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 var GET_morphology_morphologies: StringName = '/v1/morphology/morphologies'
 var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
+var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortical_visibility'
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -53,6 +54,7 @@ var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
 var PUT_region_region: StringName = "/v1/region/region"
 var PUT_region_relocateMembers: StringName = "/v1/region/relocate_members"
+var PUT_corticalArea_corticalVisibility: StringName = "/v1/cortical_area/cortical_visibility"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

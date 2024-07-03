@@ -110,8 +110,9 @@ func remove_all_items() -> void:
 
 ## Hide whatever does (or does not) contain the fiven filter string, in its friendly_name tag
 func filter_by_friendly_name(filter: StringName, is_filter_pass: bool = true) -> void:
+	var filter_lower: StringName = filter.to_lower()
 	for item: ScrollSectionGenericItem in _lookup.values():
-		if filter.contains(item.name_tag):
+		if item.name_tag.to_lower().contains(filter_lower):
 			item.visible = is_filter_pass
 		else:
 			item.visible = !is_filter_pass

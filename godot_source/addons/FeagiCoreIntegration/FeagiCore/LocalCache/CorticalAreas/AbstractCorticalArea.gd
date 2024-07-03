@@ -49,7 +49,7 @@ var cortical_type: CORTICAL_AREA_TYPE:
 var type_as_string: StringName:
 	get: return AbstractCorticalArea.cortical_type_to_str(_get_group())
 
-## Is cortical area visible?
+## Is cortical area activity visible?
 var cortical_visibility: bool:
 	get: return _cortical_visiblity
 
@@ -179,6 +179,12 @@ static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringNam
 
 static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
 	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
+
+static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for e in arr:
+		output.append(e.cortical_ID)
+	return output
 
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):

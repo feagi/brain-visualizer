@@ -199,6 +199,15 @@ func FEAGI_hard_wipe_available_cortical_areas():
 		cortical_area_about_to_be_removed.emit(area)
 	_available_cortical_areas = {}
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
+
+## Sets all cortical areas in the list as visible, and all those not as not visible (in terms of activity rendering)
+func FEAGI_set_visible_cortical_areas(visible_areas: Array[AbstractCorticalArea]) -> void:
+	var cached_areas: Array[AbstractCorticalArea] = []
+	cached_areas.assign(_available_cortical_areas.values())
+	for area in cached_areas:
+		area.FEAGI_set_cortical_visibility(area in visible_areas)
+
+	
 #endregion
 
 #region Queries
