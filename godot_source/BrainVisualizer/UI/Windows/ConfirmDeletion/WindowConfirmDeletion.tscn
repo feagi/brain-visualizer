@@ -5,8 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="3_cunev"]
 
 [node name="WindowConfirmDeletion" type="VBoxContainer"]
-offset_right = 126.0
-offset_bottom = 40.0
+offset_right = 300.0
+offset_bottom = 385.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -18,10 +18,11 @@ title = "Confirm Deletion"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"WindowBackground"
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_WindowBorder"
+theme_type_variation = &"WindowMargins"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
@@ -42,13 +43,13 @@ alignment = 2
 
 [node name="No" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2
-theme_type_variation = &"Button_big"
+theme_type_variation = &"WindowDialogButton_128x64"
 text = "No
 "
 
 [node name="Yes" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2
-theme_type_variation = &"Button_big"
+theme_type_variation = &"WindowDialogButton_128x64"
 text = "Yes
 "
 

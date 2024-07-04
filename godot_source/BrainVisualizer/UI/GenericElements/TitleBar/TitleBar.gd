@@ -78,7 +78,7 @@ func get_minimum_width() -> int:
 	return minimum_width
 
 func _on_theme_change(_new_theme: Theme = null) -> void:
-	var min_size: Vector2i = BV.UI.get_minimum_size_from_loaded_theme("TextureButton_WindowClose")
+	var min_size: Vector2i = BV.UI.get_minimum_size_from_loaded_theme("WindowTitleBarCloseButton")
 	_tex_button.custom_minimum_size = min_size
 	_left_gap.custom_minimum_size = min_size
 

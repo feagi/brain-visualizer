@@ -22,8 +22,6 @@ layout_mode = 2
 [node name="BurstEngine" parent="HBoxContainer" instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
-color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="HBoxContainer/BurstEngine" index="0"]
 tooltip_text = "Burst Engine"
@@ -31,8 +29,6 @@ tooltip_text = "Burst Engine"
 [node name="GenomeAvailability" parent="HBoxContainer" instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
-color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="HBoxContainer/GenomeAvailability" index="0"]
 tooltip_text = "Genome Availibility"
@@ -40,8 +36,6 @@ tooltip_text = "Genome Availibility"
 [node name="GenomeValidity" parent="HBoxContainer" instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
-color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="HBoxContainer/GenomeValidity" index="0"]
 tooltip_text = "Genome Validity"
@@ -49,8 +43,6 @@ tooltip_text = "Genome Validity"
 [node name="BrainReadiness" parent="HBoxContainer" instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
-color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="HBoxContainer/BrainReadiness" index="0"]
 tooltip_text = "Brain Readiness"
@@ -58,8 +50,6 @@ tooltip_text = "Brain Readiness"
 [node name="Data" parent="HBoxContainer" instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
-color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="HBoxContainer/Data" index="0"]
 tooltip_text = "Brain Data"
@@ -67,8 +57,6 @@ tooltip_text = "Brain Data"
 [node name="Summary" parent="HBoxContainer" instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
-color_true = Color(0.360784, 1, 0.623529, 1)
-color_false = Color(0.24, 0.24, 0.24, 1)
 
 [node name="ColorRect" parent="HBoxContainer/Summary" index="0"]
 tooltip_text = "System State"

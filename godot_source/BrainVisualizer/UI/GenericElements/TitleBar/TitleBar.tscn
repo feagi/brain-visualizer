@@ -9,7 +9,7 @@
 [node name="TitleBar" type="PanelContainer"]
 offset_right = 92.0
 offset_bottom = 40.0
-theme_type_variation = &"TitleBarContainer"
+theme_type_variation = &"WindowTitleBar"
 script = ExtResource("1_dpkpa")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
@@ -18,7 +18,6 @@ layout_mode = 2
 [node name="gap" type="Control" parent="HBoxContainer"]
 layout_mode = 2
 mouse_filter = 1
-metadata/_edit_group_ = true
 
 [node name="Title_Text" type="Label" parent="HBoxContainer"]
 layout_mode = 2
@@ -30,7 +29,7 @@ vertical_alignment = 1
 
 [node name="Close_Button" type="TextureButton" parent="HBoxContainer"]
 layout_mode = 2
-theme_type_variation = &"TextureButton_WindowClose"
+theme_type_variation = &"WindowTitleBarCloseButton"
 texture_normal = ExtResource("3_b7bry")
 texture_pressed = ExtResource("4_aacjk")
 texture_hover = ExtResource("5_uuesj")

@@ -25,18 +25,19 @@
 [node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 1605.0
-offset_bottom = 86.0
-theme_type_variation = &"HBoxContainer_far"
+offset_right = 1340.0
+offset_bottom = 106.0
+theme_type_variation = &"TopBarOuterSpacing"
 script = ExtResource("1_f5hja")
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
 [node name="Buttons" type="PanelContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"TopBarBackground"
 
 [node name="MarginContainer" type="MarginContainer" parent="Buttons"]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
+theme_type_variation = &"TopBarOuterMargin"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
 layout_mode = 2
@@ -116,10 +117,11 @@ stretch_mode = 0
 
 [node name="ChangeSize" type="PanelContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"TopBarBackground"
 
 [node name="MarginContainer" type="MarginContainer" parent="ChangeSize"]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
+theme_type_variation = &"TopBarOuterMargin"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
 layout_mode = 2
@@ -131,7 +133,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Decrease UI Size"
-theme_type_variation = &"TextureButton_TopBar"
+theme_type_variation = &"TopBarSquareButton"
 texture_normal = ExtResource("9_5f4b8")
 texture_pressed = ExtResource("10_k4lex")
 texture_hover = ExtResource("11_0uis6")
@@ -145,7 +147,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Increase UI Size"
-theme_type_variation = &"TextureButton_TopBar"
+theme_type_variation = &"TopBarSquareButton"
 texture_normal = ExtResource("13_3kcdr")
 texture_pressed = ExtResource("14_ww002")
 texture_hover = ExtResource("15_585hi")
@@ -155,10 +157,11 @@ stretch_mode = 0
 
 [node name="DropDownPanel" type="PanelContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"TopBarBackground"
 
 [node name="MarginContainer" type="MarginContainer" parent="DropDownPanel"]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
+theme_type_variation = &"TopBarOuterMargin"
 
 [node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
 layout_mode = 2
@@ -167,10 +170,11 @@ size_flags_vertical = 4
 
 [node name="DetailsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"TopBarBackground"
 
 [node name="MarginContainer" type="MarginContainer" parent="DetailsPanel"]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
+theme_type_variation = &"WindowMargins"
 
 [node name="Details" parent="DetailsPanel/MarginContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
 layout_mode = 2

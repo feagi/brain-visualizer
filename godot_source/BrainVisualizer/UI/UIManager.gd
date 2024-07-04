@@ -238,11 +238,11 @@ func _load_new_theme(theme: Theme) -> void:
 	var scalar: Vector2 = Vector2(1,1)
 	
 	_loaded_theme = theme
-	if _loaded_theme.has_constant("size_x", "generic_scale"):
+	if _loaded_theme.has_constant("size_x", "GENERIC_SCALE"):
 		scalar.x = float(_loaded_theme.get_constant("size_x", "generic_scale")) / 4.0
 	else:
 		push_error("UI: Unable to find size_x under the generic_scale type of the newely loaded theme! There will be scaling issues!")
-	if _loaded_theme.has_constant("size_y", "generic_scale"):
+	if _loaded_theme.has_constant("size_y", "GENERIC_SCALE"):
 		scalar.y = float(_loaded_theme.get_constant("size_y", "generic_scale")) / 4.0
 	else:
 		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")

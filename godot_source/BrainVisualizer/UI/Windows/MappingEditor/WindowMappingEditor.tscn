@@ -8,8 +8,8 @@
 [ext_resource type="PackedScene" uid="uid://bifi2v0y8l2bl" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings_partial.tscn" id="6_yr7ns"]
 
 [node name="WindowMappingEditor" type="VBoxContainer"]
-offset_right = 1332.0
-offset_bottom = 703.0
+offset_right = 1300.0
+offset_bottom = 682.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -21,10 +21,11 @@ title = "Mapping Editor"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
+theme_type_variation = &"WindowBackground"
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_WindowBorder"
+theme_type_variation = &"WindowMargins"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
@@ -70,7 +71,7 @@ alignment = 2
 
 [node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2
-theme_type_variation = &"Button_big"
+theme_type_variation = &"WindowDialogButton_128x64"
 text = " Set Mapping "
 
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Source" to="." method="_source_button_picked"]
