@@ -52,6 +52,7 @@ layout_mode = 2
 text = "Established Mappings"
 
 [node name="MappingEditorMemoryMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_vr6mc")]
+visible = false
 layout_mode = 2
 
 [node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
