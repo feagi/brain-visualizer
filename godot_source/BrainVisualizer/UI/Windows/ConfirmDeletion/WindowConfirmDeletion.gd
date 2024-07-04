@@ -55,9 +55,8 @@ func _yes_pressed() -> void:
 				pass #TODO
 			else:
 				FeagiCore.requests.delete_regions_and_raise_internals(_deletion_targets[0] as BrainRegion)
-		_:
-			#TODO Not implemented FEAGI side!
-			pass
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			FeagiCore.requests.mass_delete_cortical_areas(GenomeObject.filter_cortical_areas(_deletion_targets)) #idc
 	close_window()
 
 func _no_pressed() -> void:

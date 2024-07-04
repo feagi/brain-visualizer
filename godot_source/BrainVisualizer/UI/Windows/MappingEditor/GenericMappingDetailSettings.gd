@@ -24,7 +24,7 @@ func load_mappings(mappings: Array[SingleMappingDefinition], restrictions: Mappi
 	for mapping in mappings:
 		import_single_mapping(mapping)
 	if restrictions.has_max_number_mappings():
-		_add_button.disabled = restrictions.max_number_mappings >= len(mappings)
+		_add_button.disabled = restrictions.max_number_mappings < len(mappings)
 
 func export_mappings() -> Array[SingleMappingDefinition]:
 	var mappings: Array[SingleMappingDefinition] = []

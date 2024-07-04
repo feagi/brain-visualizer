@@ -25,12 +25,12 @@ cortical_destination_type = 5
 restricted_to_morphology_of_names = Array[StringName]([&"projector"])
 max_number_mappings = -1
 allow_changing_scalar = false
-allow_changing_PSP = false
-allow_changing_inhibitory = false
-allow_changing_plasticity = false
-allow_changing_plasticity_constant = false
-allow_changing_LTP = false
-allow_changing_LTD = false
+allow_changing_PSP = true
+allow_changing_inhibitory = true
+allow_changing_plasticity = true
+allow_changing_plasticity_constant = true
+allow_changing_LTP = true
+allow_changing_LTD = true
 restriction_name = 0
 
 [sub_resource type="Resource" id="Resource_4dtq8"]

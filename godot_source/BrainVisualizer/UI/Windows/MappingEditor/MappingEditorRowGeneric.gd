@@ -35,6 +35,7 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 	_PSP.editable = restrictions.allow_changing_PSP
 	_inhibitory.disabled = !restrictions.allow_changing_inhibitory
 	_plasticity.disabled = !restrictions.allow_changing_plasticity
+	_plasticity_constant.editable = restrictions.allow_changing_plasticity_constant
 	_LTP_multiplier.editable = restrictions.allow_changing_LTP
 	_LTD_multiplier.editable = restrictions.allow_changing_LTD
 
