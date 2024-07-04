@@ -62,6 +62,7 @@ var DELETE_GE_morphology: StringName = "/v1/morphology/morphology"
 var DELETE_GE_amalgamationCancellation: StringName = "/v1/genome/amalgamation_cancellation"
 var DELETE_region_region: StringName = "/v1/region/region"
 var DELETE_region_regionAndMembers: StringName = "/v1/region/region_and_members"
+var DELETE_corticalArea_multi_corticalArea = "v1/cortical_area/multi/cortical_area"
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	# Preappend the FEAGIFullAddress to each string above
