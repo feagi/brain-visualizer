@@ -37,9 +37,10 @@ alignment = 1
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
 
-[node name="todo" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Arrow" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
+expand_mode = 1
 
 [node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
