@@ -59,7 +59,13 @@ func close_all_nonroot_views() -> void:
 	
 	if len(get_children()) == 0:
 		all_tabs_removed.emit()
-	
+
+## Closes all views, will emit all_tabs_removed
+func close_all_views() -> void:
+	for child in get_children():
+		child.queue_free()
+	all_tabs_removed.emit()
+
 
 #region Queries
 

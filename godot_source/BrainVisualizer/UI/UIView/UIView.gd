@@ -39,7 +39,6 @@ func setup_as_single_tab(tabs: Array[Control]) -> void:
 	_primary_container.add_child(new_tab)
 	new_tab.setup(tabs)
 	new_tab.requested_view_region_as_CB.connect(show_or_create_CB_of_region)
-	
 
 ## Searches from the root [UIView] for a CB of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
 func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
@@ -56,9 +55,14 @@ func close_all_non_root_brain_region_views() -> void:
 	for tab_container in all_tab_containers:
 		tab_container.close_all_nonroot_views()
 
+func reset():
+	for child in _primary_container.get_children():
+		child.queue_free()
+	for child in _secondary_container.get_children():
+		child.queue_free()
+
 
 #region Queries
-
 
 ## Searches recursively downwards all [UITabContainer]s for one that contains a CB of the given region and returns it. If none found returns null
 func return_UITabContainer_holding_CB_of_given_region(region: BrainRegion) -> UITabContainer:
