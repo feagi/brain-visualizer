@@ -2,6 +2,8 @@ extends ScrollContainer
 class_name ScrollSectionGeneric
 ## Allows for creating lists of a control (with IDs and passable references)
 
+signal item_about_to_be_deleted(item: ScrollSectionGenericItem)
+
 const DEFAULT_BUTTON_THEME_VARIANT: StringName = "Button_List"
 const PREFAB_ITEM: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.tscn")
 const PREFAB_BUTTON: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.tscn")
@@ -28,6 +30,7 @@ func add_generic_item(control: Control, lookup_key: Variant, friendly_name: Stri
 	_container.add_child(item)
 	if lookup_key != null: # we dont put null keys in the lookup dictionary, under the assumption the user knows what they are doing
 		_lookup[lookup_key] = item
+	item.about_to_be_deleted.connect(_proxy_report_deletion)
 	_scale_theme_applier.search_for_matching_children(item)
 	_scale_theme_applier.update_theme_customs(BV.UI.loaded_theme) #TODO VERY BAD
 	return item
@@ -102,6 +105,9 @@ func set_highlighting(lookup_key: Variant, is_highlighted: bool) -> void:
 func get_key_array() -> Array:
 	return _lookup.keys()
 
+func get_item_count() -> int:
+	return len(get_all_spawned_children_of_container())
+
 ## Deletes all items
 func remove_all_items() -> void:
 	_lookup = {}
@@ -129,3 +135,6 @@ func get_all_spawned_children_of_container() -> Array[ScrollSectionGenericItem]:
 		if child is ScrollSectionGenericItem:
 			output.append(child)
 	return output
+
+func _proxy_report_deletion(item: ScrollSectionGenericItem) -> void:
+	item_about_to_be_deleted.emit(item)

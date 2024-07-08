@@ -2,6 +2,8 @@ extends HBoxContainer
 class_name ScrollSectionGenericItem
 ## A generic Scroll item that supports any control
 
+signal about_to_be_deleted(self_ref: ScrollSectionGenericItem)
+
 var name_tag: StringName:
 	get: return _name_tag
 
@@ -41,3 +43,6 @@ func set_highlighting(is_highlighted: bool) -> void:
 		return
 	push_warning("UI: Included control has no 'is_highlighting' function! Skipping setting highlight state!")
 
+func delete_this() -> void: # Hello?
+	about_to_be_deleted.emit(self) # I'm gonna report you to Garry!
+	queue_free()

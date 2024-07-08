@@ -43,7 +43,7 @@ static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingD
 ## Given the dictionary from FEAGI directly creates a [SingleMappingDefinition] object
 static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefinition:
 	if !(mapping_property["morphology_id"] in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()):
-		push_error("Unable to find morphology %s in cache when creating MappingProperty! Creating SinlgeMappingDefinition with null morphology!" % mapping_property["morphology_id"])
+		push_error("Unable to find morphology %s in cache when creating MappingProperty! Creating SingleMappingDefinition with null morphology!" % mapping_property["morphology_id"])
 		return SingleMappingDefinition.create_default_mapping(null)
 	var morphology_cached: BaseMorphology =  FeagiCore.feagi_local_cache.morphologies.available_morphologies[mapping_property["morphology_id"]]
 	var scalar_used: Vector3i = FEAGIUtils.array_to_vector3i(mapping_property["morphology_scalar"])
@@ -52,6 +52,16 @@ static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefini
 	if !plasticity:
 		return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
 	else:
+		# failsafe since feagi can send invalid dicts sometimes
+		if !"plasticity_constant" in mapping_property:
+			mapping_property["plasticity_constant"] = 0.0
+			push_error("FEAGI CORE: Feagi missing key for plasticity_constant for mapping!")
+		if !"ltp_multiplier" in mapping_property:
+			mapping_property["ltp_multiplier"] = 0.0
+			push_error("FEAGI CORE: Feagi missing key for ltp_multiplier for mapping!")
+		if !"ltd_multiplier" in mapping_property:
+			mapping_property["ltd_multiplier"] = 0.0
+			push_error("FEAGI CORE: Feagi missing key for ltd_multiplier for mapping!")
 		var plasticity_constant_used: float = mapping_property["plasticity_constant"]
 		var LTP_multiplier_used: float = mapping_property["ltp_multiplier"]
 		var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]

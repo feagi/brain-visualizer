@@ -2,22 +2,17 @@ extends BaseDraggableWindow
 class_name WindowMappingEditor
 
 const WINDOW_NAME: StringName = "mapping_editor"
-
-enum MODE {
-	NOTHING,
-	GENERAL_MAPPING,
-	TOWARDS_MEMORY
-}
+const TEXTURE_ARROW_VALID = preload("res://BrainVisualizer/UI/Windows/MappingEditor/Resources/connection.png")
+const TEXTURE_ARROW_INVALID = preload("res://BrainVisualizer/UI/Windows/MappingEditor/Resources/connection-broken.png")
 
 var _source: GenomeObject
 var _destination: GenomeObject
-var _mode: MODE
 
 var _generic_mapping_settings: GenericMappingDetailSettings
-var _memory_mapping: MappingEditorMemoryMapping
 var _generic_mapping_settings_partial: GenericMappingDetailSettingsPartial
 var _source_button: GenomeObjectSelectorButton
 var _destination_button: GenomeObjectSelectorButton
+var _arrow: TextureRect
 var _suggested_label: Label
 var _partial_mapping: PartialMappingSet = null
 
@@ -25,7 +20,7 @@ var _partial_mapping: PartialMappingSet = null
 
 func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: PartialMappingSet = null) -> void:
 	_source_button = _window_internals.get_node("ends/Source")
-	_memory_mapping = _window_internals.get_node("MappingEditorMemoryMapping")
+	_arrow = _window_internals.get_node("ends/Arrow")
 	_destination_button = _window_internals.get_node("ends/Destination")
 	_generic_mapping_settings = _window_internals.get_node("GenericMappingDetailSettings")
 	_generic_mapping_settings_partial = _window_internals.get_node("GenericMappingDetailSettingsPartial")
@@ -38,16 +33,19 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 
 	var source_button_start_explorer: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	var destination_button_start_explorer: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	
 	if source is BrainRegion:
 		source_button_start_explorer = source
+		_arrow.texture = TEXTURE_ARROW_INVALID
+		_arrow.tooltip_text = "Only connections between 2 cortical areas is possible."
 	if destination is BrainRegion:
 		destination_button_start_explorer = destination
+		_arrow.texture = TEXTURE_ARROW_INVALID
+		_arrow.tooltip_text = "Only connections between 2 cortical areas is possible."
 	
 	_generic_mapping_settings_partial.import_mapping_hint.connect(_generic_mapping_settings.import_single_mapping)
 	_source_button.setup(source, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA, source_button_start_explorer)
 	_destination_button.setup(destination, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA, destination_button_start_explorer)
-	_memory_mapping.visible = false
-	_generic_mapping_settings.visible = false
 	if _source is AbstractCorticalArea and _destination is AbstractCorticalArea:
 		_load_mapping_between_cortical_areas(source as AbstractCorticalArea, destination as AbstractCorticalArea)
 	_load_partial_mappings(partial_mapping)
@@ -58,7 +56,6 @@ func set_2_genome_objects(source: GenomeObject, destination: GenomeObject) -> vo
 	_destination_button.update_selection_no_signal(destination)
 	_source = source
 	_destination = destination
-	_memory_mapping.visible = false
 	_generic_mapping_settings.visible = false
 	if _source is AbstractCorticalArea and _destination is AbstractCorticalArea:
 		_load_mapping_between_cortical_areas(source as AbstractCorticalArea, destination as AbstractCorticalArea)
@@ -70,26 +67,15 @@ func set_2_genome_objects(source: GenomeObject, destination: GenomeObject) -> vo
 		_generic_mapping_settings_partial.visible = false
 	
 func _load_mapping_between_cortical_areas(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
+	_arrow.texture = TEXTURE_ARROW_VALID
+	_arrow.tooltip_text = ""
 	var restrictions: MappingRestrictionCorticalMorphology = FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(source, destination)
 	var defaults: MappingRestrictionDefault = FeagiCore.feagi_local_cache.mapping_restrictions.get_defaults_between_2_cortical_areas(source, destination)
-	match(restrictions.restriction_name):
-		MappingRestrictionCorticalMorphology.RESTRICTION_NAME.DEFAULT:
-			# Seems like a generic no frills mapping
-			_mode = MODE.GENERAL_MAPPING
-			_generic_mapping_settings.clear()
-			_generic_mapping_settings.visible = true
-			var mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
-			var default_morphlogy_name: StringName = FeagiCore.feagi_local_cache.mapping_restrictions.get_defaults_between_2_cortical_areas(source, destination).name_of_default_morphology
-			var default_morphology_for_new_mappings: BaseMorphology = null
-			if default_morphlogy_name in FeagiCore.feagi_local_cache.morphologies.available_morphologies:
-				default_morphology_for_new_mappings = FeagiCore.feagi_local_cache.morphologies.available_morphologies[default_morphlogy_name]
-			_generic_mapping_settings.load_mappings(mappings, default_morphology_for_new_mappings)
-		MappingRestrictionCorticalMorphology.RESTRICTION_NAME.TOWARD_MEMORY:
-			_mode = MODE.TOWARDS_MEMORY
-			_generic_mapping_settings.clear()
-			_memory_mapping.visible = true
-			var mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
-			_memory_mapping.load_mappings(mappings)
+	
+	_generic_mapping_settings.clear()
+	var mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
+	_generic_mapping_settings.load_mappings(mappings, restrictions, defaults)
+	
 
 ## Loads a set of partial mappings given one. Unloads it and clears the GUI if null is passed
 func _load_partial_mappings(partial_mapping: PartialMappingSet) -> void:
@@ -105,15 +91,10 @@ func _load_partial_mappings(partial_mapping: PartialMappingSet) -> void:
 
 func _user_pressed_set_mappings() -> void:
 	var mappings: Array[SingleMappingDefinition]
-	match(_mode):
-		MODE.GENERAL_MAPPING:
-			mappings = _generic_mapping_settings.export_mappings()
-			FeagiCore.requests.set_mappings_between_corticals(_source, _destination, mappings)
-			close_window()
-		MODE.TOWARDS_MEMORY:
-			mappings = _memory_mapping.export_mappings()
-			FeagiCore.requests.set_mappings_between_corticals(_source, _destination, mappings)
-			close_window()
+	mappings = _generic_mapping_settings.export_mappings()
+	FeagiCore.requests.set_mappings_between_corticals(_source, _destination, mappings)
+	close_window()
+
 
 func _source_button_picked(genome_object: GenomeObject) -> void:
 	if _source is BrainRegion:

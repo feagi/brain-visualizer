@@ -70,6 +70,7 @@ func FEAGI_about_to_reset_genome() -> void:
 	_root_UI_view.close_all_non_root_brain_region_views()
 
 
+
 ## Called from above when we have no genome, disable UI elements that connect to it
 func FEAGI_no_genome() -> void:
 	print("UI: Disabling FEAGI UI elements due to no genome")
@@ -89,6 +90,7 @@ func FEAGI_confirmed_genome() -> void:
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
 	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	initial_tabs = [cb]
+	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
 	if $TempLoadingScreen != null:

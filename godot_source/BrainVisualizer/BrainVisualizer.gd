@@ -40,7 +40,6 @@ func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, prev
 				_UI_manager.window_manager.spawn_popup(tell_user)
 
 func _on_genome_reloading() -> void:
-	print("e")
 	_UI_manager.FEAGI_about_to_reset_genome()
 
 func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
