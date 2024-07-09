@@ -1,0 +1,52 @@
+extends LineEdit
+class_name AbstractLineInput
+## Base Abstract class for other specific types of user inputs (floats, ints, etc)
+
+signal contents_updated()
+
+@export var prefix: String = "" ## What to add before the value
+@export var suffix: String = "" ## What to add after the value
+@export var string_representing_invalid: String = "*"
+
+var previous_text: String
+
+func _ready():
+	previous_text = text
+	focus_entered.connect(_on_focus_enter)
+	focus_exited.connect(_on_exiting_typing_mode)
+	text_submitted.connect(_on_exiting_typing_mode)
+	
+
+func set_text_as_invalid() -> void:
+	previous_text = string_representing_invalid
+	text = string_representing_invalid
+
+## Formats the input to something acceptable for the use, or returns an empty string if this isn't possible
+func _set_input_text_valid(_input_text: String) -> String:
+	# OVERRIDE with specific function here
+	return ""
+
+func _get_current_text() -> String:
+	var left_text: String = text.left(len(text) - len(suffix))
+	return left_text.right(len(text) - len(prefix))
+
+func _enter_typing_mode() -> void:
+	text = _get_current_text()
+
+func _accept_text_change(new_text: String) -> void:
+	previous_text = new_text
+	text = prefix + new_text + suffix
+
+func _reject_text_change(replacing_text: String = previous_text) -> void:
+	text = prefix + replacing_text + suffix
+
+func _on_focus_enter() -> void:
+	_enter_typing_mode()
+
+func _on_exiting_typing_mode(_irrelevant) -> void:
+	if _set_input_text_valid(text) != "":
+		_accept_text_change(text)
+		contents_updated.emit()
+	else:
+		_reject_text_change()
+	
