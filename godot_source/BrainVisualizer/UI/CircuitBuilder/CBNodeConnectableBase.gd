@@ -53,8 +53,8 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 			terminal.setup(connection_type, text, self, output_container_offset_changed)
 	
 	terminal.button.resized.connect(_on_node_move)
-	terminal.active_port.resized.connect(_on_node_move)
-	terminal.terminal_about_to_be_deleted.connect(_on_node_move)
+	#terminal.active_port.resized.connect(_on_node_move)
+	#terminal.terminal_about_to_be_deleted.connect(_on_node_move)
 	return terminal
 
 func _on_node_move() -> void:
