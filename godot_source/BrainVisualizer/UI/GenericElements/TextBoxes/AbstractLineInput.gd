@@ -2,24 +2,28 @@ extends LineEdit
 class_name AbstractLineInput
 ## Base Abstract class for other specific types of user inputs (floats, ints, etc)
 
-signal contents_updated()
+signal user_update_accepted() ## text update form user accepted
 
 @export var prefix: String = "" ## What to add before the value
 @export var suffix: String = "" ## What to add after the value
 @export var string_representing_invalid: String = "*"
+@export var confirm_when_focus_lost: bool = true ## If thew user clicks off the line edit, should we take that as an enter attempt?
 
 var previous_text: String
 
 func _ready():
 	previous_text = text
 	focus_entered.connect(_on_focus_enter)
-	focus_exited.connect(_on_exiting_typing_mode)
 	text_submitted.connect(_on_exiting_typing_mode)
-	
+	if confirm_when_focus_lost:
+		focus_exited.connect(_on_exiting_typing_mode)
 
 func set_text_as_invalid() -> void:
 	previous_text = string_representing_invalid
 	text = string_representing_invalid
+
+func set_value_from_text(input: String) -> void:
+	_accept_text_change(_set_input_text_valid(input))
 
 ## Formats the input to something acceptable for the use, or returns an empty string if this isn't possible
 func _set_input_text_valid(_input_text: String) -> String:
@@ -44,9 +48,10 @@ func _on_focus_enter() -> void:
 	_enter_typing_mode()
 
 func _on_exiting_typing_mode(_irrelevant) -> void:
-	if _set_input_text_valid(text) != "":
-		_accept_text_change(text)
-		contents_updated.emit()
+	var user_text: String = _set_input_text_valid(text)
+	if user_text != "":
+		_accept_text_change(user_text)
+		user_update_accepted.emit()
 	else:
 		_reject_text_change()
 	
