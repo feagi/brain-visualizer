@@ -173,6 +173,12 @@ static func can_all_areas_exist_in_subregion(areas: Array[AbstractCorticalArea])
 			return false
 	return true
 
+static func can_all_areas_be_deleted(areas: Array[AbstractCorticalArea]) -> bool:
+	for area in areas:
+		if !area.user_can_delete_this_area:
+			return false
+	return true
+
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
@@ -185,6 +191,8 @@ static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[Abstract
 	for e in arr:
 		output.append(e.cortical_ID)
 	return output
+
+
 
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):

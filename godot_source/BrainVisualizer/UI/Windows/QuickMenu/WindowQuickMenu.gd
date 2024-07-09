@@ -57,7 +57,6 @@ func setup(selection: Array[GenomeObject]) -> void:
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
-			delete_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple areas"
 			
@@ -65,12 +64,16 @@ func setup(selection: Array[GenomeObject]) -> void:
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "One or more of the selected areas cannot be moved to a region"
+			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
+				delete_button.disabled = true
+				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
+				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
-			delete_button.visible = false
+			delete_button.visible = true
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple regions"
 
@@ -78,7 +81,6 @@ func setup(selection: Array[GenomeObject]) -> void:
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
-			delete_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple objects"
 			
@@ -86,6 +88,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(filtered_areas):
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a region"
+			if !AbstractCorticalArea.can_all_areas_be_deleted(filtered_areas):
+				delete_button.disabled = true
+				delete_button.tooltip_text = "One or more of the selected objects cannot be deleted"
 			
 
 
