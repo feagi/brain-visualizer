@@ -21,3 +21,6 @@ script = ExtResource("1_75y4c")
 
 [node name="Timer" type="Timer" parent="."]
 one_shot = true
+
+[connection signal="node_deselected" from="." to="." method="_removing_node"]
+[connection signal="node_selected" from="." to="." method="_adding_node"]

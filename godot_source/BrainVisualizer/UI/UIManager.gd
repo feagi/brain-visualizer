@@ -136,6 +136,9 @@ func user_selected_single_cortical_area_independently(object: GenomeObject) -> v
 func user_selected_single_cortical_area_appending(area: AbstractCorticalArea) -> void:
 	pass
 
+func user_selected_genome_objects(objects: Array[GenomeObject]) -> void:
+	_window_manager.spawn_quick_cortical_menu(objects)
+
 func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	_brain_monitor.snap_camera_to_cortical_area(cortical_area)

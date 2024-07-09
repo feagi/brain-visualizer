@@ -38,6 +38,7 @@ func _ready():
 	focus_exited.connect(_toggle_draggability_based_on_focus)
 	connection_request.connect(_on_connection_request)
 
+
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	
@@ -226,6 +227,8 @@ func _CACHE_link_region_output_open_added(region_node: CBNodeRegion, link: Conne
 #region User Interactions
 signal user_request_viewing_subregion(region: BrainRegion)
 
+
+
 func unhighlight_all_area_nodes() -> void:
 	for node in _cortical_nodes.values():
 		node.selected = false
@@ -253,6 +256,72 @@ func _highlight_area(area: AbstractCorticalArea) -> void:
 	unhighlight_all_area_nodes()
 	if area.cortical_ID in _cortical_nodes:
 		_cortical_nodes[area.cortical_ID].selected = true
+
+func _gui_input(event):
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.is_pressed():
+			_starting_box_drag()
+			
+
+func _input(event):
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if !mouse_event.is_pressed():
+			_stopped_box_drag()
+
+#endregion
+
+#region multi-select
+
+signal genome_objects_selected(objects: Array[GenomeObject])
+
+var _is_dragging_box: bool = false
+var _names_of_selected_nodes: Array[StringName] = []
+
+func _starting_box_drag() -> void:
+	if _is_dragging_box:
+		return
+	unhighlight_all_area_nodes()
+	_names_of_selected_nodes = []
+	_is_dragging_box = true
+
+func _adding_node(node: GraphElement) -> void:
+	if !_is_dragging_box:
+		return
+	if node.name in _names_of_selected_nodes:
+		return
+	_names_of_selected_nodes.append(node.name)
+
+func _removing_node(node: GraphElement) -> void:
+	if !_is_dragging_box:
+		return
+	var index: int = _names_of_selected_nodes.find(node.name)
+	if index != -1:
+		_names_of_selected_nodes.remove_at(index)
+
+func _stopped_box_drag() -> void:
+	if !_is_dragging_box:
+		return
+	if len(_names_of_selected_nodes) == 0:
+		return
+	var genome_objs: Array[GenomeObject] = []
+	var node: Node
+	for given_name in _names_of_selected_nodes:
+		node = get_node(NodePath(given_name))
+		if node is CBNodeCorticalArea:
+			genome_objs.append(node.representing_cortical_area)
+			continue
+		if node is CBNodeRegion:
+			genome_objs.append(node.representing_region)
+			continue
+	_is_dragging_box = false
+	genome_objects_selected.emit(genome_objs)
+	BV.UI.user_selected_genome_objects(genome_objs)
+
+
+
+
 
 #endregion
 
