@@ -34,6 +34,7 @@ func CACHE_updated_region_name(name_text: StringName) -> void:
 func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 	position_offset = new_position
 	_dragged = false
+	_on_node_move()
 
 
 #endregion
