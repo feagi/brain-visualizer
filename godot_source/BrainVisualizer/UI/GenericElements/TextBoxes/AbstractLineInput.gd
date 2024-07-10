@@ -47,7 +47,7 @@ func _reject_text_change(replacing_text: String = previous_text) -> void:
 func _on_focus_enter() -> void:
 	_enter_typing_mode()
 
-func _on_exiting_typing_mode(_irrelevant) -> void:
+func _on_exiting_typing_mode(_irrelevant = null) -> void:
 	var user_text: String = _set_input_text_valid(text)
 	if user_text != "":
 		_accept_text_change(user_text)
