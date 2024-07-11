@@ -36,3 +36,5 @@ func _set_input_text_valid(input_text: String) -> String:
 		return str(full_float).pad_decimals(number_decimal_places)
 	return ""
 
+func _proxy_emit_confirmed_value(value_as_string: String) -> void:
+	float_confirmed.emit(value_as_string.to_float())

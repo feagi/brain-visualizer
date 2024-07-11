@@ -30,6 +30,10 @@ func _set_input_text_valid(_input_text: String) -> String:
 	# OVERRIDE with specific function here
 	return ""
 
+func _proxy_emit_confirmed_value(value_as_string: String) -> void:
+	# OVERRIDE with specific signal to emit here
+	pass
+
 func _get_current_text() -> String:
 	var left_text: String = text.left(len(text) - len(suffix))
 	return left_text.right(len(text) - len(prefix))
@@ -52,6 +56,7 @@ func _on_exiting_typing_mode(_irrelevant = null) -> void:
 	if user_text != "":
 		_accept_text_change(user_text)
 		user_update_accepted.emit()
+		_proxy_emit_confirmed_value(user_text)
 	else:
 		_reject_text_change()
 	

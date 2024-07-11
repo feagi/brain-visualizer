@@ -35,3 +35,6 @@ func _set_input_text_valid(input_text: String) -> String:
 		full_int = clamp(full_int, min_value, max_value)
 		return str(full_int)
 	return ""
+
+func _proxy_emit_confirmed_value(value_as_string: String) -> void:
+	int_confirmed.emit(value_as_string.to_int())

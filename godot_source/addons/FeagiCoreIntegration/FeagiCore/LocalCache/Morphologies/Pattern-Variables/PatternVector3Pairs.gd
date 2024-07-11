@@ -1,4 +1,4 @@
-extends RefCounted
+extends Resource
 class_name PatternVector3Pairs
 ## Organizes PatternVector3s into in/out pairs, which is used in [PatternMorphology]
 
@@ -40,8 +40,5 @@ static func create_empty() -> PatternVector3Pairs:
 
 func to_array_of_arrays() -> Array[Array]:
 	return [_incoming.to_FEAGI_array(), _outgoing.to_FEAGI_array()]
-
-func duplicate() -> PatternVector3Pairs:
-	return PatternVector3Pairs.new(_incoming, _outgoing)
 
 

@@ -61,7 +61,6 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("2_2t536")
-enable_signaling_on_ready = false
 
 [node name="Row_Cortical_Type" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -78,7 +77,6 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("2_2t536")
-enable_signaling_on_ready = false
 
 [node name="Row_Voxel_Neuron_Density" type="HBoxContainer" parent="."]
 layout_mode = 2
