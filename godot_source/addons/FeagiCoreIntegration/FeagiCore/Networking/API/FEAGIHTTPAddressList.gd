@@ -54,7 +54,7 @@ var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
 var PUT_region_region: StringName = "/v1/region/region"
 var PUT_region_relocateMembers: StringName = "/v1/region/relocate_members"
-var PUT_corticalArea_corticalVisibility: StringName = "/v1/cortical_area/cortical_visibility"
+var PUT_corticalArea_suppressCorticalVisibility: StringName = "/v1/cortical_area/suppress_cortical_visibility"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

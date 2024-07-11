@@ -670,7 +670,7 @@ func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	cortical_area.is_monitoring_membrane_potential = should_monitor
 	return FEAGI_response_data
 
-func set_cortical_areas_that_are_visible(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+func set_cortical_areas_that_are_invisible(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -678,7 +678,7 @@ func set_cortical_areas_that_are_visible(cortical_areas: Array[AbstractCorticalA
 	
 	# Define Request
 	var array_of_IDs = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas)
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_corticalVisibility, array_of_IDs)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_suppressCorticalVisibility, array_of_IDs)
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
@@ -688,7 +688,7 @@ func set_cortical_areas_that_are_visible(cortical_areas: Array[AbstractCorticalA
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully updated the visibility of cortical areas!")
-	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_set_visible_cortical_areas(cortical_areas)
+	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_set_invisible_cortical_areas(cortical_areas)
 	return FEAGI_response_data
 
 
