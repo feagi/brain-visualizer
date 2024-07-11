@@ -40,7 +40,7 @@ func _button_update_visabilities() -> void:
 	for cortical_area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
 		var item: ScrollSectionGenericItem = _scroll_section.scroll_section.attempt_retrieve_item(cortical_area)
 		var checkbox: CheckBox = item.get_control().get_node("CheckBox")
-		if checkbox.button_pressed:
+		if !checkbox.button_pressed:
 			visible_cortical_areas.append(cortical_area)
-	FeagiCore.requests.set_cortical_areas_that_are_visible(visible_cortical_areas)
+	FeagiCore.requests.set_cortical_areas_that_are_invisible(visible_cortical_areas)
 	close_window()

@@ -27,6 +27,9 @@ func _ready():
 	super()
 	set_value_from_text(str(initial_float))
 
+func set_float(val: float) -> void:
+	current_float = val
+
 ## OVERRIDDEN: Formats the input to something acceptable for the use, or returns an empty string if this isn't possible
 func _set_input_text_valid(input_text: String) -> String:
 	if input_text.is_valid_float():

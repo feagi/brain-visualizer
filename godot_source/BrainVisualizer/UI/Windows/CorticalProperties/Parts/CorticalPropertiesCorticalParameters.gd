@@ -148,9 +148,3 @@ func _enable_3D_preview():
 		var preview_close_signals: Array[Signal] = [_update_button.pressed, top_panel.close_window_requested, top_panel.tree_exiting]
 		BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions.current_vector, move_signals, resize_signals, preview_close_signals)
 
-
-func _user_requests_editing_region() -> void:
-	#var window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region(),WindowSelectGenomeObject.SELECTION_TYPE.BRAIN_REGION)
-	#window.user_selected_object_final.connect(_user_edit_region)
-	#TODO
-	pass
