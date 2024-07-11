@@ -5,8 +5,6 @@ class_name FloatInput
 # useful properties inherited
 # editable
 
-const ACCEPTABLE_CHARACTERS_WHILE_TYPING: PackedStringArray = ["", "-"]
-
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
 ## Only emits if user changes the text THEN focuses off the textbox
@@ -27,7 +25,7 @@ func _ready():
 	super()
 	set_value_from_text(str(initial_float))
 
-func set_float(val: float) -> void:
+func set_float(val: float) -> void: # used for signals
 	current_float = val
 
 ## OVERRIDDEN: Formats the input to something acceptable for the use, or returns an empty string if this isn't possible
