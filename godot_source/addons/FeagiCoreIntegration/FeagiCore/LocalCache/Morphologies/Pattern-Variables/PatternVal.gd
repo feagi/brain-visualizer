@@ -1,4 +1,4 @@
-extends Resource
+extends RefCounted
 class_name PatternVal
 ## PatternMorphology values can be ints, or "*" or "?". This can hold all of those
 
@@ -64,4 +64,5 @@ func _verify(input: Variant) -> void:
 			return
 		return
 
-
+func duplicate() -> PatternVal:
+	return PatternVal.new(_data)

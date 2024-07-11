@@ -1,4 +1,4 @@
-extends Resource
+extends RefCounted
 class_name PatternVector3
 ## AN emulated Vector3 but using [PatternVal]
 
@@ -29,5 +29,6 @@ static func create_empty() -> PatternVector3:
 func to_FEAGI_array() -> Array:
 	return [x.data, y.data, z.data]
 
-
+func duplicate() -> PatternVector3:
+	return PatternVector3.new(x.duplicate(), y.duplicate(), z.duplicate())
 
