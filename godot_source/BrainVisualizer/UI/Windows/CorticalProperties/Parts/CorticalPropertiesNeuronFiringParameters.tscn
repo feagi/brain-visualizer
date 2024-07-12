@@ -149,9 +149,9 @@ text = "Neuron Excitability"
 layout_mode = 2
 alignment = 2
 script = ExtResource("3_ermgo")
-suffix = " %"
 max_value = 100
 min_value = 0
+suffix = " %"
 
 [node name="Fire_Threshold_Label" type="Label" parent="."]
 layout_mode = 2
@@ -178,11 +178,4 @@ text = "Apply Update"
 
 [connection signal="pressed" from="MP_Accumulation/MP_Accumulation" to="." method="_enable_update_button"]
 [connection signal="toggled" from="MP_Accumulation/MP_Accumulation" to="." method="user_request_MP_Accumumulation"]
-[connection signal="user_interacted" from="Leak_Constant/Leak_Constant" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Refactory_Period/Refactory_Period" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Consecutive_Fire_Count/Consecutive_Fire_Count" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Snooze_Period/Snooze_Period" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Fire_Threshold/Fire_Threshold" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Threshold_Limit/Threshold_Limit" to="." method="_enable_update_button"]
-[connection signal="user_interacted" from="Neuron_Excitability/Neuron_Excitability" to="." method="_enable_update_button"]
 [connection signal="pressed" from="Update_Button" to="." method="_user_requests_update"]

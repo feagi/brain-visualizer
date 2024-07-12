@@ -21,8 +21,29 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var _vector_position: Vector3iSpinboxField
 @export var _button_summary_send: Button
 
+#Firing Paramters
+@export var _line_Fire_Threshold: IntInput
+@export var _line_Threshold_Limit: IntInput
+@export var _line_neuron_excitability: IntInput
+@export var _line_Refactory_Period: IntInput
+@export var _line_Leak_Constant: IntInput
+@export var _line_Leak_Variability: FloatInput
+@export var _line_Consecutive_Fire_Count: IntInput
+@export var _line_Snooze_Period: IntInput
+@export var _line_Threshold_Inc: Vector3fField
+@export var _button_MP_Accumulation: ToggleButton
+@export var _button_firing_send: Button
+
 var _setup_voxel_neuron_density: CorticalPropertyMultiReferenceHandler
 var _setup_synaptic_attractivity: CorticalPropertyMultiReferenceHandler
+var _setup_Fire_Threshold: CorticalPropertyMultiReferenceHandler
+var _setup_Threshold_Limit: CorticalPropertyMultiReferenceHandler
+var _setup_Refactory_Period: CorticalPropertyMultiReferenceHandler
+var _setup_Leak_Variability: CorticalPropertyMultiReferenceHandler
+var _setup_Consecutive_Fire_Count: CorticalPropertyMultiReferenceHandler
+var _setup_Snooze_Period: CorticalPropertyMultiReferenceHandler
+var _setup_Threshold_Inc: CorticalPropertyMultiReferenceHandler
+var _setup_MP_Accumulation: CorticalPropertyMultiReferenceHandler
 
 var _growing_cortical_update: Dictionary = {}
 
@@ -39,12 +60,29 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
 	_button_summary_send.pressed.connect(_send_button_pressed.bind(_button_summary_send))
+	_button_firing_send.pressed.connect(_send_button_pressed.bind(_button_firing_send))
 	
 	_setup_voxel_neuron_density = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count", "cortical_neuron_per_vox_count", _button_summary_send)
 	_setup_synaptic_attractivity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_synaptic_attractivity, "", "cortical_synaptic_attractivity", "cortical_synaptic_attractivity", _button_summary_send)
+	_setup_Fire_Threshold = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Fire_Threshold, "neuron_firing_parameters", "neuron_fire_threshold", "neuron_fire_threshold", _button_firing_send)
+	_setup_Threshold_Limit = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Refactory_Period, "neuron_firing_parameters", "neuron_firing_threshold_limit", "neuron_firing_threshold_limit", _button_firing_send)
+	_setup_Refactory_Period = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Leak_Constant, "neuron_firing_parameters", "neuron_refractory_period", "neuron_refractory_period", _button_firing_send)
+	_setup_Leak_Variability = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Leak_Variability, "neuron_firing_parameters", "neuron_leak_coefficient", "neuron_leak_coefficient", _button_firing_send)
+	_setup_Consecutive_Fire_Count = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Consecutive_Fire_Count, "neuron_firing_parameters", "neuron_consecutive_fire_count", "neuron_consecutive_fire_count", _button_firing_send)
+	_setup_Snooze_Period = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Snooze_Period, "neuron_firing_parameters", "neuron_snooze_period", "neuron_snooze_period", _button_firing_send)
+	_setup_Threshold_Inc = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Threshold_Inc, "neuron_firing_parameters", "neuron_fire_threshold_increment", "neuron_fire_threshold_increment", _button_firing_send)
+	_setup_MP_Accumulation = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _button_MP_Accumulation, "neuron_firing_parameters", "neuron_mp_charge_accumulation", "neuron_mp_charge_accumulation", _button_firing_send)
 
 	_setup_voxel_neuron_density.send_to_update_button.connect(_add_to_dictionary)
 	_setup_synaptic_attractivity.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Fire_Threshold.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Threshold_Limit.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Refactory_Period.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Leak_Variability.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Consecutive_Fire_Count.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Snooze_Period.send_to_update_button.connect(_add_to_dictionary)
+	_setup_Threshold_Inc.send_to_update_button.connect(_add_to_dictionary)
+	_setup_MP_Accumulation.send_to_update_button.connect(_add_to_dictionary)
 
 	refresh_from_core()
 	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
@@ -52,6 +90,14 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	_setup_voxel_neuron_density.post_load_setup_and_connect_signals_from_FEAGI("cortical_neuron_per_vox_count_updated")
 	_setup_synaptic_attractivity.post_load_setup_and_connect_signals_from_FEAGI("cortical_synaptic_attractivity_updated")
+	_setup_Fire_Threshold.post_load_setup_and_connect_signals_from_FEAGI("neuron_fire_threshold_updated")
+	_setup_Threshold_Limit.post_load_setup_and_connect_signals_from_FEAGI("neuron_firing_threshold_limit_updated")
+	_setup_Refactory_Period.post_load_setup_and_connect_signals_from_FEAGI("neuron_refractory_period_updated")
+	_setup_Leak_Variability.post_load_setup_and_connect_signals_from_FEAGI("neuron_leak_variability_updated")
+	_setup_Consecutive_Fire_Count.post_load_setup_and_connect_signals_from_FEAGI("neuron_consecutive_fire_count_updated")
+	_setup_Snooze_Period.post_load_setup_and_connect_signals_from_FEAGI("neuron_snooze_period_updated")
+	_setup_Threshold_Inc.post_load_setup_and_connect_signals_from_FEAGI("neuron_fire_threshold_increment_updated")
+	_setup_MP_Accumulation.post_load_setup_and_connect_signals_from_FEAGI("neuron_mp_charge_accumulation_updated")
 
 func refresh_from_core() -> void:
 	# Handle exceptions here
@@ -67,7 +113,7 @@ func refresh_from_core() -> void:
 
 	else:
 		_line_cortical_name.text = "Multiple Selected"
-		#_region_button.text = cortical_ref.current_parent_region.friendly_name?
+		#_region_button.text = cortical_ref.current_parent_region.friendly_name #TODO?
 		_line_cortical_ID.text = "Multiple Selected"
 		_line_cortical_type.text = "Multiple Selected"
 		_vector_dimensions_spin.visible = false
@@ -77,6 +123,14 @@ func refresh_from_core() -> void:
 
 	_setup_voxel_neuron_density.refresh_values_from_cache_and_update_control()
 	_setup_synaptic_attractivity.refresh_values_from_cache_and_update_control()
+	_setup_Fire_Threshold.refresh_values_from_cache_and_update_control()
+	_setup_Threshold_Limit.refresh_values_from_cache_and_update_control()
+	_setup_Refactory_Period.refresh_values_from_cache_and_update_control()
+	_setup_Leak_Variability.refresh_values_from_cache_and_update_control()
+	_setup_Consecutive_Fire_Count.refresh_values_from_cache_and_update_control()
+	_setup_Snooze_Period.refresh_values_from_cache_and_update_control()
+	_setup_Threshold_Inc.refresh_values_from_cache_and_update_control()
+	_setup_MP_Accumulation.refresh_values_from_cache_and_update_control()
 
 func _add_to_dictionary(update_button: Button, key: StringName, value: Variant) -> void:
 	# NOTE: The button node name should be the section name
@@ -89,7 +143,7 @@ func _send_button_pressed(button_pressing: Button) -> void:
 	button_pressing.disabled = true
 	if _growing_cortical_update[button_pressing.name] == {}:
 		return
-	FeagiCore.requests.mass_update_cortical_areas(AbstractCorticalArea.cortical_area_array_to_ID_array(_cortical_area_refs), _growing_cortical_update[button_pressing.name])
+	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[button_pressing.name])
 	_growing_cortical_update[button_pressing.name] = {}
 	
 	# TODO calculate neuron count changes

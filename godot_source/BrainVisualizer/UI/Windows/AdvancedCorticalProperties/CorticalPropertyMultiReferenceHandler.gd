@@ -38,6 +38,8 @@ func post_load_setup_and_connect_signals_from_FEAGI(signal_name: String):
 		else:
 			section_object = area # to allow us to grab universal properties
 		
+		
+		
 		var signal_ref: Signal = section_object.get(signal_name)
 		signal_ref.connect(refresh_values_from_cache_and_update_control)
 
@@ -63,7 +65,8 @@ func refresh_values_from_cache_and_update_control(_irrelevant1 = null, _irreleva
 			continue
 		continue
 	# If we got here, values are identical
-	_set_control_to_value(current_value)
+	if current_value != null:
+		_set_control_to_value(current_value)
 
 func _set_control_to_value(value: Variant) -> void:
 	if _control is TextInput:

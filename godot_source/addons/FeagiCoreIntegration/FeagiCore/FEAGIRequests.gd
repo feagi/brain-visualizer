@@ -553,6 +553,31 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 
+func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], properties: Dictionary) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+
+	
+	# Define Request
+	properties["cortical_id_list"] = AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea, properties)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update %d cortical area!" % len(editing_areas))
+		return FEAGI_response_data
+	for ID in AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas):
+		properties["cortical_id"] = ID
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
+	print("FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
+	return FEAGI_response_data
+
 
 ## Attempts to delete a cortical area
 func delete_cortical_area(deleting_area: AbstractCorticalArea) -> FeagiRequestOutput:
