@@ -183,7 +183,6 @@ text = "Voxel Neuron Density"
 [node name="Voxel_Neuron_Density" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Voxel_Neuron_Density"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-editable = false
 script = ExtResource("9_xe4wg")
 
 [node name="Synaptic_Attractivity" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
@@ -198,7 +197,6 @@ text = "Synaptic Attractivity"
 [node name="Synaptic_Attractivity" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Synaptic_Attractivity"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-editable = false
 script = ExtResource("9_xe4wg")
 suffix = " %"
 

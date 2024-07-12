@@ -27,7 +27,7 @@ var _is_open: bool
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	($VerticalCollapsible/HBoxContainer/Section_Title as Label).text = section_text
+	#($VerticalCollapsible/HBoxContainer/Section_Title as Label).text = section_text #TODO
 	_collapsing_button_toggle = $VerticalCollapsible/HBoxContainer/Collapsible_Toggle
 	_collapsing_section = $VerticalCollapsible/PanelContainer
 	is_open = start_open
