@@ -20,6 +20,8 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var _vector_dimensions_nonspin: Vector3iField
 @export var _vector_position: Vector3iSpinboxField
 
+var _setup_voxel_neuron_density: CorticalPropertyMultiReferenceHandler
+var _setup_synaptic_attractivity: CorticalPropertyMultiReferenceHandler
 
 var _growing_cortical_update: Dictionary = {}
 
@@ -36,12 +38,20 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
 	
-	var setup_voxel_neuron_density: CorticalPropertyMultiReferenceHandler = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
-	var setup_synaptic_attractivity: CorticalPropertyMultiReferenceHandler = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+	_setup_voxel_neuron_density = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
+	_setup_synaptic_attractivity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+
+	refresh_from_core()
+	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	refresh_from_core()
 	
+	_setup_voxel_neuron_density.post_load_setup_and_connect_signals_from_FEAGI("cortical_neuron_per_vox_count_updated")
+	_setup_synaptic_attractivity.post_load_setup_and_connect_signals_from_FEAGI("cortical_synaptic_attractivity_updated")
+
+func refresh_from_core() -> void:
 	# Handle exceptions here
-	if len(cortical_area_references) == 1:
-		var cortical_ref: AbstractCorticalArea = cortical_area_references[0]
+	if len(_cortical_area_refs) == 1:
+		var cortical_ref: AbstractCorticalArea = _cortical_area_refs[0]
 		
 		_line_cortical_name.text = cortical_ref.friendly_name
 		_region_button.text = cortical_ref.current_parent_region.friendly_name
@@ -49,7 +59,6 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_line_cortical_type.text = cortical_ref.type_as_string
 		_vector_dimensions_spin.current_vector = cortical_ref.dimensions_3D
 		_vector_position.current_vector = cortical_ref.coordinates_3D
-		
 
 	else:
 		_line_cortical_name.text = "Multiple Selected"
@@ -60,7 +69,9 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_vector_dimensions_nonspin.visible = true
 		# TODO Dimensions
 		# TODO Position
-	
+
+	_setup_voxel_neuron_density.refresh_values_from_cache_and_update_control()
+	_setup_synaptic_attractivity.refresh_values_from_cache_and_update_control()
 
 func _add_to_dictionary(update_button: Button, key: StringName, value: Variant) -> void:
 	# NOTE: The button node name should be the section name

@@ -12,10 +12,11 @@ func _init(cortical_references: Array[AbstractCorticalArea], control: Control, s
 	_control = control
 	_section_name = section_name
 	_variable_name = variable_name
-	_refresh_values_from_cache_and_update_control()
+
+
 
 ## To be called after cortical areas are updated in cache to avoid repetitve spam
-func connect_signals_from_FEAGI(signal_name: String):
+func post_load_setup_and_connect_signals_from_FEAGI(signal_name: String):
 	var section_object: RefCounted
 	for area in _cortical_references:
 		if _section_name != "":
@@ -24,15 +25,10 @@ func connect_signals_from_FEAGI(signal_name: String):
 			section_object = area # to allow us to grab universal properties
 		
 		var signal_ref: Signal = section_object.get(signal_name)
-		if _control is IntInput:
-			signal_ref.connect((_control as IntInput).set_float)
-			continue
-		if _control is FloatInput:
-			signal_ref.connect((_control as FloatInput).set_float)
-			continue
+		signal_ref.connect(refresh_values_from_cache_and_update_control)
 
 
-func _refresh_values_from_cache_and_update_control(_irrelevant1 = null, _irrelevant2 = null):
+func refresh_values_from_cache_and_update_control(_irrelevant1 = null, _irrelevant2 = null):
 	var differences: int = -1 # first one will always fail
 	var section_object: RefCounted
 	var current_value: Variant = null
