@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://bj1avx68qlh3o"]
+[gd_scene load_steps=25 format=3 uid="uid://bj1avx68qlh3o"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.gd" id="1_mwcmr"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_c4mg3"]
@@ -15,6 +15,8 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="13_ypuy1"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="14_3jdx4"]
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3fField.tscn" id="15_msb58"]
+[ext_resource type="PackedScene" uid="uid://bsjtfu2i0eyou" path="res://BrainVisualizer/UI/Windows/CorticalProperties/Parts/CorticalPropertiesConnections.tscn" id="16_g1jml"]
+[ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://BrainVisualizer/UI/Windows/CorticalProperties/Parts/CorticalPropertiesDangerZone.tscn" id="17_ad7el"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4txug"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
@@ -37,7 +39,7 @@ bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3nhm5"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
-[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send")]
+[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_section_cortical_marea_monitoring", "membrane_toggle", "post_synaptic_toggle", "_section_connections", "_section_dangerzone")]
 offset_right = 360.0
 offset_bottom = 420.0
 size_flags_horizontal = 0
@@ -55,6 +57,7 @@ _vector_dimensions_spin = NodePath("WindowPanel/WindowMargin/WindowInternals/Sum
 _vector_dimensions_nonspin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size_ns")
 _vector_position = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Position")
 _button_summary_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Summary")
+_section_firing_parameters = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing")
 _line_Fire_Threshold = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold/Fire_Threshold")
 _line_Threshold_Limit = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Threshold_Limit/Threshold_Limit")
 _line_neuron_excitability = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Neuron_Excitability/Neuron_Excitability")
@@ -66,6 +69,15 @@ _line_Snooze_Period = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_
 _line_Threshold_Inc = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold_Increment")
 _button_MP_Accumulation = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/MP_Accumulation/MP_Accumulation")
 _button_firing_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/CorticalPropertyNeuronFiringParameters")
+_section_memory = NodePath("WindowPanel/WindowMargin/WindowInternals/Memory")
+_line_initial_neuron_lifespan = NodePath("WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/initial_neuron_lifespan/initial_neuron_lifespan")
+_line_lifespan_growth_rate = NodePath("WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/lifespan_growth_rate/lifespan_growth_rate")
+_line_longterm_memory_threshold = NodePath("WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/longterm_memory_threshold/longterm_memory_threshold")
+_section_cortical_marea_monitoring = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring")
+membrane_toggle = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer/Membrane")
+post_synaptic_toggle = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer2/PostSynaptic")
+_section_connections = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections")
+_section_dangerzone = NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_c4mg3")]
 layout_mode = 2
@@ -544,7 +556,7 @@ script = ExtResource("9_xe4wg")
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="Update_Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
+[node name="Memory" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
@@ -678,7 +690,7 @@ min_value = 0.0
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="Update_Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters"]
+[node name="Post_Synaptic_Potential_Paramyeters" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters"]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
@@ -805,6 +817,9 @@ layout_mode = 2
 [node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer"]
 layout_mode = 2
 
+[node name="CorticalPropertiesConnections" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere" instance=ExtResource("16_g1jml")]
+layout_mode = 2
+
 [node name="DangerZone" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_vertical = 0
@@ -846,19 +861,22 @@ layout_mode = 2
 [node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer"]
 layout_mode = 2
 
+[node name="CorticalPropertiesDangerZone" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere" instance=ExtResource("17_ad7el")]
+layout_mode = 2
+
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Summary" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region/Region" to="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters" method="_user_press_edit_region"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/MP_Accumulation/MP_Accumulation" to="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters" method="_enable_update_button"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/MP_Accumulation/MP_Accumulation" to="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters" method="user_request_MP_Accumumulation"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Memory" method="_toggle_button_pressed"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/Update_Button" to="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters" method="_user_requests_update"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/Memory" to="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters" method="_user_requests_update"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/PSP_Uniformity/PSP_Uniformity" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters" method="_enable_update_button"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/PSP_Uniformity/PSP_Uniformity" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters" method="user_request_PSP_Uniforimity"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/MP_Driven_PSP/MP_Driven_PSP" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters" method="_enable_update_button"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/MP_Driven_PSP/MP_Driven_PSP" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters" method="user_request_MP_Driven_PSP"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/Update_Button" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters" method="_user_requests_update"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/Post_Synaptic_Potential_Paramyeters" to="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters" method="_user_requests_update"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring" method="_toggle_button_pressed"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer/Membrane" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_membrane_monitoring_status"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer2/PostSynaptic" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_synaptic_monitoring_status"]
