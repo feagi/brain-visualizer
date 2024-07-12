@@ -41,7 +41,15 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var _line_longterm_memory_threshold: IntInput
 @export var _button_memory_send: Button
 
-@export var _section_cortical_marea_monitoring: VerticalCollapsibleHiding
+@export var _section_post_synaptic_potential_parameters: VerticalCollapsibleHiding
+@export var _line_Post_Synaptic_Potential: FloatInput
+@export var _line_PSP_Max: FloatInput
+@export var _line_Degeneracy_Constant: FloatInput
+@export var _button_PSP_Uniformity: ToggleButton
+@export var _button_MP_Driven_PSP: ToggleButton
+@export var _button_pspp_send: Button
+
+@export var _section_cortical_area_monitoring: VerticalCollapsibleHiding
 @export var membrane_toggle: ToggleButton
 @export var post_synaptic_toggle: ToggleButton
 
@@ -66,6 +74,12 @@ var _setup_initial_neuron_lifespan: CorticalPropertyMultiReferenceHandler
 var _setup_lifespan_growth_rate: CorticalPropertyMultiReferenceHandler
 var _setup_longterm_memory_threshold: CorticalPropertyMultiReferenceHandler
 
+# pspp
+var _setup_Post_Synaptic_Potential: CorticalPropertyMultiReferenceHandler
+var _setup_PSP_Max: CorticalPropertyMultiReferenceHandler
+var _setup_Degeneracy_Constant: CorticalPropertyMultiReferenceHandler
+var _setup_button_PSP_Uniformity: CorticalPropertyMultiReferenceHandler
+var _setup_MP_Driven_PSP: CorticalPropertyMultiReferenceHandler
 
 var _growing_cortical_update: Dictionary = {}
 
@@ -92,15 +106,17 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# Setup window for multi vs single mode
 	if len(cortical_area_references) == 1:
 		# Single Cortical Area Mode window setup
-		_section_connections.visible = false
+		_section_connections.visible = true
 		_vector_dimensions_spin.visible = true
 		_vector_dimensions_nonspin.visible = false
 		
 	else:
 		# Multiple Cortical Areas Mode window setup
-		_section_connections.visible = true
+		_section_connections.visible = false
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
+		_section_cortical_area_monitoring.visible = false
+		_section_dangerzone.visible = false
 	
 	# Initialize Summary Section part 1 (all cortical areas have this), other stuff setup in "refresh_from_core"
 	_setup_voxel_neuron_density = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count", "cortical_neuron_per_vox_count", _button_summary_send)
@@ -137,15 +153,29 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	# Memory
 	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
-		_setup_initial_neuron_lifespan = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Snooze_Period, "memory_parameters", "initial_neuron_lifespan", "neuron_init_lifespan", _button_memory_send)
-		_setup_lifespan_growth_rate = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Threshold_Inc, "memory_parameters", "lifespan_growth_rate", "neuron_lifespan_growth_rate", _button_memory_send)
-		_setup_longterm_memory_threshold = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _button_MP_Accumulation, "memory_parameters", "longterm_memory_threshold", "neuron_longterm_mem_threshold", _button_memory_send)
+		_setup_initial_neuron_lifespan = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_initial_neuron_lifespan, "memory_parameters", "initial_neuron_lifespan", "neuron_init_lifespan", _button_memory_send)
+		_setup_lifespan_growth_rate = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_lifespan_growth_rate, "memory_parameters", "lifespan_growth_rate", "neuron_lifespan_growth_rate", _button_memory_send)
+		_setup_longterm_memory_threshold = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_longterm_memory_threshold, "memory_parameters", "longterm_memory_threshold", "neuron_longterm_mem_threshold", _button_memory_send)
 		
 		_setup_initial_neuron_lifespan.send_to_update_button.connect(_add_to_dictionary)
 		_setup_lifespan_growth_rate.send_to_update_button.connect(_add_to_dictionary)
 		_setup_longterm_memory_threshold.send_to_update_button.connect(_add_to_dictionary)
 	else:
 		_section_memory.visible = false
+	
+	# PSPP
+	if true: # As of now, all cortical areas have post_synaptic_potential_paramamters, but this is still a seperate section in case this changes
+		_setup_Post_Synaptic_Potential = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential", "neuron_post_synaptic_potential", _button_pspp_send)
+		_setup_PSP_Max = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_PSP_Max, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential_max", "neuron_post_synaptic_potential_max", _button_pspp_send)
+		_setup_Degeneracy_Constant = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient", "neuron_degeneracy_coefficient", _button_pspp_send)
+		_setup_button_PSP_Uniformity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution", "neuron_psp_uniform_distribution", _button_pspp_send)
+		_setup_MP_Driven_PSP = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp", "neuron_mp_driven_psp", _button_pspp_send)
+		
+		_setup_Post_Synaptic_Potential.send_to_update_button.connect(_add_to_dictionary)
+		_setup_PSP_Max.send_to_update_button.connect(_add_to_dictionary)
+		_setup_Degeneracy_Constant.send_to_update_button.connect(_add_to_dictionary)
+		_setup_button_PSP_Uniformity.send_to_update_button.connect(_add_to_dictionary)
+		_setup_MP_Driven_PSP.send_to_update_button.connect(_add_to_dictionary)
 		
 	
 	# Everything that happened prior was just making connections, not loading actual data. Loading
@@ -174,7 +204,12 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_setup_lifespan_growth_rate.post_load_setup_and_connect_signals_from_FEAGI("lifespan_growth_rate_updated")
 		_setup_longterm_memory_threshold.post_load_setup_and_connect_signals_from_FEAGI("longterm_memory_threshold_updated")
 
-	
+	if true: #pspp
+		_setup_Post_Synaptic_Potential.post_load_setup_and_connect_signals_from_FEAGI("neuron_post_synaptic_potential_updated")
+		_setup_PSP_Max.post_load_setup_and_connect_signals_from_FEAGI("neuron_post_synaptic_potential_max_updated")
+		_setup_Degeneracy_Constant.post_load_setup_and_connect_signals_from_FEAGI("neuron_degeneracy_coefficient_updated")
+		_setup_button_PSP_Uniformity.post_load_setup_and_connect_signals_from_FEAGI("neuron_psp_uniform_distribution_updated")
+		_setup_MP_Driven_PSP.post_load_setup_and_connect_signals_from_FEAGI("neuron_neuron_mp_driven_psp_updated")
 
 
 ## Actually load in relevant data to window
@@ -213,7 +248,18 @@ func refresh_from_core() -> void:
 		_setup_Snooze_Period.refresh_values_from_cache_and_update_control()
 		_setup_Threshold_Inc.refresh_values_from_cache_and_update_control()
 		_setup_MP_Accumulation.refresh_values_from_cache_and_update_control()
+	
+	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
+		_setup_initial_neuron_lifespan.refresh_values_from_cache_and_update_control()
+		_setup_lifespan_growth_rate.refresh_values_from_cache_and_update_control()
+		_setup_longterm_memory_threshold.refresh_values_from_cache_and_update_control()
 
+	if true: #pspp
+		_setup_Post_Synaptic_Potential.refresh_values_from_cache_and_update_control()
+		_setup_PSP_Max.refresh_values_from_cache_and_update_control()
+		_setup_Degeneracy_Constant.refresh_values_from_cache_and_update_control()
+		_setup_button_PSP_Uniformity.refresh_values_from_cache_and_update_control()
+		_setup_MP_Driven_PSP.refresh_values_from_cache_and_update_control()
 
 
 
