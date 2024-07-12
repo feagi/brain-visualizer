@@ -56,7 +56,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			quick_connect_button.visible = false
 			clone_button.visible = false
-			details_button.visible = false
+			details_button.tooltip_text = "View Details of these Cortical Areas"
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple areas"
 			
@@ -107,7 +107,8 @@ func _button_details() -> void:
 			BV.WM.spawn_cortical_properties((_selection[0] as AbstractCorticalArea))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
-			pass
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 	close_window()
 
 func _button_quick_connect() -> void:

@@ -19,6 +19,7 @@ const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Win
 const _PREFAB_EDIT_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.tscn")
 const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.tscn")
 const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
+const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.tscn")
 
 var loaded_windows: Dictionary
 
@@ -29,6 +30,10 @@ var _window_memory_states: Dictionary = {
 func spawn_cortical_properties(cortical_area: AbstractCorticalArea) -> void:
 	var left_bar: WindowCorticalProperties = _default_spawn_window(_PREFAB_CORTICAL_PROPERTIES, WindowCorticalProperties.WINDOW_NAME) as WindowCorticalProperties
 	left_bar.setup(cortical_area)
+
+func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
+	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties
+	cortical_window.setup(cortical_areas)
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_PREFAB_CREATE_MORPHOLOGY, WindowCreateMorphology.WINDOW_NAME) as WindowCreateMorphology

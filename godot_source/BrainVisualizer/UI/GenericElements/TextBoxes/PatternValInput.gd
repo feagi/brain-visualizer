@@ -13,7 +13,7 @@ class_name PatternValInput
 signal patternval_confirmed(new_patternval: PatternVal)
 
 ## due to godot limitations, can only use int here
-@export var intial_patternval: PatternVal
+@export var intial_patternval: int
 
 var current_patternval: PatternVal:
 	get: return PatternVal.new(previous_text)
@@ -24,7 +24,7 @@ var current_patternval: PatternVal:
 
 func _ready():
 	super()
-	set_value_from_text(intial_patternval.as_StringName)
+	set_value_from_text(str(intial_patternval))
 
 func set_pattern_val(val: PatternVal) -> void:
 	current_patternval = val
@@ -36,4 +36,4 @@ func _set_input_text_valid(input_text: String) -> String:
 	return ""
 
 func _proxy_emit_confirmed_value(value_as_string: String) -> void:
-	patternval_confirmed.emit(PatternVal(value_as_string))
+	patternval_confirmed.emit(PatternVal.new(value_as_string))

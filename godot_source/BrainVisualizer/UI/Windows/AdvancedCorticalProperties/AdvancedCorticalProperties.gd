@@ -3,7 +3,7 @@ class_name AdvancedCorticalProperties
 ## Shows properties of various cortical areas and allows multi-editing
 
 
-const WINDOW_NAME: StringName = "cortical_properties"
+const WINDOW_NAME: StringName = "adv_cortical_properties"
 
 var _cortical_area_refs: Array[AbstractCorticalArea]
 
