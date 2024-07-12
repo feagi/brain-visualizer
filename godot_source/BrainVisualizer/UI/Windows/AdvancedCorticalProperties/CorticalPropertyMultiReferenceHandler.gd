@@ -27,6 +27,9 @@ func _init(cortical_references: Array[AbstractCorticalArea], control: Control, s
 	if _control is FloatInput:
 		(_control as FloatInput).float_confirmed.connect(_proxy_emit)
 		return
+	if _control is ToggleButton:
+		(_control as ToggleButton).toggled.connect(_proxy_emit)
+		return
 
 
 ## To be called after cortical areas are updated in cache to avoid repetitve spam
@@ -78,14 +81,18 @@ func _set_control_to_value(value: Variant) -> void:
 	if _control is FloatInput:
 		(_control as FloatInput).set_float(value)
 		return
-	# TODO multibutton
+	if _control is ToggleButton:
+		(_control as ToggleButton).set_toggle_no_signal(value)
+		return
 	
 
 func _set_control_as_conflicting_values() -> void:
 	if _control is AbstractLineInput:
 		(_control as AbstractLineInput).set_text_as_invalid()
 		return
-	# TODO button
+	if _control is ToggleButton:
+		(_control as ToggleButton).is_inbetween = true
+		return
 
 func _proxy_emit(value: Variant) -> void:
 	send_to_update_button.emit(_button_for_sending_to_FEAGI, _variable_key_for_FEAGI, value)
