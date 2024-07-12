@@ -192,7 +192,26 @@ static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[Abstract
 		output.append(e.cortical_ID)
 	return output
 
+## If all cortical areas in an array are of the same type, return that type enum, otherwise return CORTICAL_AREA_TYPE.UNKNOWN
+static func array_oc_cortical_areas_type_identification(areas: Array[AbstractCorticalArea]) -> CORTICAL_AREA_TYPE:
+	if len(areas) == 0:
+		return CORTICAL_AREA_TYPE.UNKNOWN
+	var comparison: CORTICAL_AREA_TYPE = areas[0].cortical_type
+	if len(areas) == 1:
+		return comparison
+	for i in range(1, len(areas)):
+		if areas[i].cortical_type != comparison:
+			return CORTICAL_AREA_TYPE.UNKNOWN
+	return comparison
 
+## If given a boolean property, returns true if all areas have this property true. otherwise, returns false, and returns false if property is invalid
+static func boolean_property_of_all_cortical_areas_are_true(areas: Array[AbstractCorticalArea], property: StringName) -> bool:
+	for area in areas:
+		if area.get(property) == null:
+			return false
+		if area.get(property) != true:
+			return false
+	return true
 
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
