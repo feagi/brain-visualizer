@@ -45,6 +45,7 @@ var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_d
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
 var POST_region_region: StringName = "/v1/region/region"
+var POST_corticalArea_multi_corticalAreaProperties: StringName = "/v1/cortical_area/multi/cortical_area_properties"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
@@ -55,6 +56,8 @@ var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
 var PUT_region_region: StringName = "/v1/region/region"
 var PUT_region_relocateMembers: StringName = "/v1/region/relocate_members"
 var PUT_corticalArea_suppressCorticalVisibility: StringName = "/v1/cortical_area/suppress_cortical_visibility"
+var PUT_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/cortical_area"
+
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

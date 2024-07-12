@@ -336,6 +336,31 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
 	return FEAGI_response_data
 
+### Requests information on multiple cortical areas
+func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var IDs: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(checking_areas)
+	var dict_to_send: Dictionary = {"cortical_id_list": IDs}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_corticalArea_multi_corticalAreaProperties, dict_to_send)
+
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab cortical area details of %d cortical areas!" % len(checking_areas))
+		return FEAGI_response_data
+	var responses: Array = FEAGI_response_data.decode_response_as_array()
+	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(checking_areas))
+	for response in responses:
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
+	return FEAGI_response_data
+	
 
 ## Adds a custom cortical area
 func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, parent_region: BrainRegion, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
