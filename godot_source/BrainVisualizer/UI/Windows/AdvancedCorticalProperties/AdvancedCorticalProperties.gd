@@ -7,46 +7,24 @@ const WINDOW_NAME: StringName = "cortical_properties"
 
 var _cortical_area_refs: Array[AbstractCorticalArea]
 
+# Sections
+# Summary
+@export var _section_summary: VerticalCollapsibleHiding
+@export var _line_cortical_name: TextInput
+@export var _region_button: Button
+@export var _line_cortical_ID: TextInput
+@export var _line_cortical_type: TextInput
+@export var _line_voxel_neuron_density: IntInput
+@export var _line_synaptic_attractivity: IntInput
+@export var _vector_dimensions_spin: Vector3iSpinboxField
+@export var _vector_dimensions_nonspin: Vector3iField
+@export var _vector_position: Vector3iSpinboxField
 
-static func set_UI_element_value(areas: Array[AbstractCorticalArea], section_name: StringName, value_name: StringName, UI_element: Control) -> void:
-	var differences: int = -1 # first one will always fail
-	var current_value: Variant = null
-	var prev_value: Variant = null
-	var section_object: RefCounted
-	for area in areas:
-		if section_name != "":
-			section_object = area.get(section_name) # Assumption is that all cortical areas have the section
-		else:
-			section_object = area # to allow us to grab universal properties
-		current_value = section_object.get(value_name)
-		if current_value != prev_value:
-			prev_value = current_value
-			differences += 1
-			if differences > 0:
-				# Differences, assign invalid
-				if UI_element is AbstractLineInput:
-					(UI_element as AbstractLineInput).set_text_as_invalid()
-					return
-				# TODO button
-				return
-	
-	# if we get to this point, values are consistent
-	if UI_element is FloatInput:
-		(UI_element as FloatInput).current_float = current_value
-	# TODO other types
-	
-static func connect_FEAGI_signals(areas: Array[AbstractCorticalArea], section_name: StringName, signal_name: StringName, UI_element: Control) -> void:
-	var section_object: RefCounted
-	var signal_ref: Signal
-	for area in areas:
-		if section_name != "":
-			section_object = area.get(section_name) # Assumption is that all cortical areas have the section
-		else:
-			section_object = area # to allow us to grab universal properties
-		signal_ref = section_object.get(signal_name)
-		if UI_element is FloatInput:
-			signal_ref.connect((UI_element as FloatInput).set_float)
-			continue
+
+var _growing_cortical_update: Dictionary = {}
+
+
+var _preview_handler: GenericSinglePreviewHandler = null #TODO
 
 
 func _ready():
@@ -57,6 +35,53 @@ func _ready():
 func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
-	var top_bar
 	
+	var setup_voxel_neuron_density: CorticalPropertyMultiReferenceHandler = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
+	var setup_synaptic_attractivity: CorticalPropertyMultiReferenceHandler = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
 	
+	# Handle exceptions here
+	if len(cortical_area_references) == 1:
+		var cortical_ref: AbstractCorticalArea = cortical_area_references[0]
+		
+		_line_cortical_name.text = cortical_ref.friendly_name
+		_region_button.text = cortical_ref.current_parent_region.friendly_name
+		_line_cortical_ID.text = cortical_ref.cortical_ID
+		_line_cortical_type.text = cortical_ref.type_as_string
+		_vector_dimensions_spin.current_vector = cortical_ref.dimensions_3D
+		_vector_position.current_vector = cortical_ref.coordinates_3D
+		
+
+	else:
+		_line_cortical_name.text = "Multiple Selected"
+		#_region_button.text = cortical_ref.current_parent_region.friendly_name?
+		_line_cortical_ID.text = "Multiple Selected"
+		_line_cortical_type.text = "Multiple Selected"
+		_vector_dimensions_spin.visible = false
+		_vector_dimensions_nonspin.visible = true
+		# TODO Dimensions
+		# TODO Position
+	
+
+func _add_to_dictionary(update_button: Button, key: StringName, value: Variant) -> void:
+	# NOTE: The button node name should be the section name
+	update_button.disabled = false
+	if ! update_button.name in _growing_cortical_update:
+		_growing_cortical_update[update_button.name] = {}
+	_growing_cortical_update[update_button.name][key] = value
+
+func _button_pressed(button_pressing: Button) -> void:
+	button_pressing.disabled = true
+	if _growing_cortical_update[button_pressing.name] == {}:
+		return
+	FeagiCore.requests.mass_update_cortical_areas(AbstractCorticalArea.cortical_area_array_to_ID_array(_cortical_area_refs), _growing_cortical_update[button_pressing.name])
+	_growing_cortical_update[button_pressing.name] = {}
+	
+	# TODO calculate neuron count changes
+
+
+
+
+
+
+## F
+
