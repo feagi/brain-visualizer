@@ -64,7 +64,6 @@ text = "Leak Variability"
 layout_mode = 2
 alignment = 2
 script = ExtResource("5_i6o2y")
-string_representing_invalid = "mult."
 
 [node name="Refactory_Period" type="HBoxContainer" parent="."]
 layout_mode = 2

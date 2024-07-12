@@ -55,7 +55,6 @@ func display_cortical_properties(cortical_reference) -> void: #NOTE: Can't type 
 	_Threshold_Inc.current_vector = cortical_reference.neuron_firing_parameters.neuron_fire_threshold_increment
 	_neuron_excitability.current_int = cortical_reference.neuron_firing_parameters.neuron_excitability
 	_MP_Accumulation.set_toggle_no_signal(cortical_reference.neuron_firing_parameters.neuron_mp_charge_accumulation)
-	_Leak_Variability.set_text_as_invalid()
 	
 	cortical_reference.neuron_firing_parameters.neuron_mp_charge_accumulation_updated.connect(_feagi_update_MP_Accumumulation)
 	cortical_reference.neuron_firing_parameters.neuron_leak_coefficient_updated.connect(_feagi_update_Leak_Constant)
