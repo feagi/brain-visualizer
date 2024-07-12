@@ -1,18 +1,32 @@
 extends RefCounted
 class_name CorticalPropertyMultiReferenceHandler
 
+signal send_to_update_button(update_button: Button, key: StringName, value: Variant)
+
 var _cortical_references: Array[AbstractCorticalArea]
 var _control: Control
 var _section_name: String # may be empty string if it is not in a subsection
 var _variable_name: String
+var _button_for_sending_to_FEAGI: Button
+var _variable_key_for_FEAGI: StringName
 
 
-func _init(cortical_references: Array[AbstractCorticalArea], control: Control, section_name: String, variable_name: String):
+func _init(cortical_references: Array[AbstractCorticalArea], control: Control, section_name: String, variable_name: String, variable_key_for_FEAGI: StringName, button_for_sending_to_FEAGI: Button):
 	_cortical_references = cortical_references
 	_control = control
 	_section_name = section_name
 	_variable_name = variable_name
-
+	_button_for_sending_to_FEAGI = button_for_sending_to_FEAGI
+	_variable_key_for_FEAGI = variable_key_for_FEAGI
+	if _control is TextInput:
+		(_control as TextInput).text_confirmed.connect(_proxy_emit)
+		return
+	if _control is IntInput:
+		(_control as IntInput).int_confirmed.connect(_proxy_emit)
+		return
+	if _control is FloatInput:
+		(_control as FloatInput).float_confirmed.connect(_proxy_emit)
+		return
 
 
 ## To be called after cortical areas are updated in cache to avoid repetitve spam
@@ -70,3 +84,5 @@ func _set_control_as_conflicting_values() -> void:
 		return
 	# TODO button
 
+func _proxy_emit(value: Variant) -> void:
+	send_to_update_button.emit(_button_for_sending_to_FEAGI, _variable_key_for_FEAGI, value)

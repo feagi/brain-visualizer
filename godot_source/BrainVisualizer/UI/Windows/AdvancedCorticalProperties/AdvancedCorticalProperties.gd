@@ -19,6 +19,7 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var _vector_dimensions_spin: Vector3iSpinboxField
 @export var _vector_dimensions_nonspin: Vector3iField
 @export var _vector_position: Vector3iSpinboxField
+@export var _button_summary_send: Button
 
 var _setup_voxel_neuron_density: CorticalPropertyMultiReferenceHandler
 var _setup_synaptic_attractivity: CorticalPropertyMultiReferenceHandler
@@ -37,9 +38,13 @@ func _ready():
 func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
+	_button_summary_send.pressed.connect(_send_button_pressed.bind(_button_summary_send))
 	
-	_setup_voxel_neuron_density = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
-	_setup_synaptic_attractivity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+	_setup_voxel_neuron_density = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count", "cortical_neuron_per_vox_count", _button_summary_send)
+	_setup_synaptic_attractivity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_synaptic_attractivity, "", "cortical_synaptic_attractivity", "cortical_synaptic_attractivity", _button_summary_send)
+
+	_setup_voxel_neuron_density.send_to_update_button.connect(_add_to_dictionary)
+	_setup_synaptic_attractivity.send_to_update_button.connect(_add_to_dictionary)
 
 	refresh_from_core()
 	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
@@ -80,7 +85,7 @@ func _add_to_dictionary(update_button: Button, key: StringName, value: Variant) 
 		_growing_cortical_update[update_button.name] = {}
 	_growing_cortical_update[update_button.name][key] = value
 
-func _button_pressed(button_pressing: Button) -> void:
+func _send_button_pressed(button_pressing: Button) -> void:
 	button_pressing.disabled = true
 	if _growing_cortical_update[button_pressing.name] == {}:
 		return

@@ -33,7 +33,7 @@ bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3nhm5"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
-[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity")]
+[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send")]
 offset_right = 360.0
 offset_bottom = 420.0
 size_flags_horizontal = 0
@@ -47,6 +47,10 @@ _line_cortical_ID = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/V
 _line_cortical_type = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Type/Cortical_Type")
 _line_voxel_neuron_density = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Voxel_Neuron_Density/Voxel_Neuron_Density")
 _line_synaptic_attractivity = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Synaptic_Attractivity/Synaptic_Attractivity")
+_vector_dimensions_spin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size")
+_vector_dimensions_nonspin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size_ns")
+_vector_position = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Position")
+_button_summary_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Summary")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_c4mg3")]
 layout_mode = 2
