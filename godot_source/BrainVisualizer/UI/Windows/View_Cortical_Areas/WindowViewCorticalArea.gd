@@ -27,6 +27,7 @@ func _cortical_area_added(cortical_area: AbstractCorticalArea) -> void:
 	var button: Button = item.get_node("Button")
 	var checkbox: CheckBox = item.get_node("CheckBox")
 	button.text = cortical_area.friendly_name
+	button.pressed.connect(_press_cortical.bind(cortical_area))
 	checkbox.button_pressed = cortical_area.cortical_visibility
 	cortical_area.friendly_name_updated.connect(button.set_text)
 	
@@ -44,3 +45,6 @@ func _button_update_visabilities() -> void:
 			visible_cortical_areas.append(cortical_area)
 	FeagiCore.requests.set_cortical_areas_that_are_invisible(visible_cortical_areas)
 	close_window()
+
+func _press_cortical(cortical_area: AbstractCorticalArea) -> void:
+	BV.UI.snap_camera_to_cortical_area(cortical_area)

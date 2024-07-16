@@ -276,6 +276,7 @@ func _send_button_pressed(button_pressing: Button) -> void:
 		return
 	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[button_pressing.name])
 	_growing_cortical_update[button_pressing.name] = {}
+	close_window()
 	
 	# TODO calculate neuron count changes
 
