@@ -3,6 +3,7 @@ class_name AbstractLineInput
 ## Base Abstract class for other specific types of user inputs (floats, ints, etc)
 
 signal user_update_accepted() ## text update form user accepted
+signal user_interacted()
 
 @export var prefix: String = "" ## What to add before the value
 @export var suffix: String = "" ## What to add after the value
@@ -15,8 +16,10 @@ func _ready():
 	previous_text = text
 	focus_entered.connect(_on_focus_enter)
 	text_submitted.connect(_on_exiting_typing_mode)
+	text_changed.connect(func(_irrelevant) : user_interacted.emit())
 	if confirm_when_focus_lost:
 		focus_exited.connect(_on_exiting_typing_mode)
+	
 
 func set_text_as_invalid() -> void:
 	previous_text = string_representing_invalid

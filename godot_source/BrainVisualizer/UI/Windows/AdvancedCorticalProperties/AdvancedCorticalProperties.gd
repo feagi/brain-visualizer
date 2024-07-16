@@ -261,8 +261,6 @@ func refresh_from_core() -> void:
 		_setup_button_PSP_Uniformity.refresh_values_from_cache_and_update_control()
 		_setup_MP_Driven_PSP.refresh_values_from_cache_and_update_control()
 
-
-
 func _add_to_dictionary(update_button: Button, key: StringName, value: Variant) -> void:
 	# NOTE: The button node name should be the section name
 	update_button.disabled = false

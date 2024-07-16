@@ -20,15 +20,19 @@ func _init(cortical_references: Array[AbstractCorticalArea], control: Control, s
 	_variable_key_for_FEAGI = variable_key_for_FEAGI
 	if _control is TextInput:
 		(_control as TextInput).text_confirmed.connect(_proxy_emit)
+		(_control as TextInput).user_interacted.connect(_enable_button)
 		return
 	if _control is IntInput:
 		(_control as IntInput).int_confirmed.connect(_proxy_emit)
+		(_control as IntInput).user_interacted.connect(_enable_button)
 		return
 	if _control is FloatInput:
 		(_control as FloatInput).float_confirmed.connect(_proxy_emit)
+		(_control as FloatInput).user_interacted.connect(_enable_button)
 		return
 	if _control is ToggleButton:
 		(_control as ToggleButton).toggled.connect(_proxy_emit)
+		(_control as ToggleButton).pressed.connect(_enable_button)
 		return
 
 
@@ -84,7 +88,9 @@ func _set_control_to_value(value: Variant) -> void:
 	if _control is ToggleButton:
 		(_control as ToggleButton).set_toggle_no_signal(value)
 		return
-	
+
+func _enable_button():
+	_button_for_sending_to_FEAGI.disabled = false
 
 func _set_control_as_conflicting_values() -> void:
 	if _control is AbstractLineInput:
