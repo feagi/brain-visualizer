@@ -406,3 +406,39 @@ func _user_pressed_delete_button() -> void:
 	genome_objects.assign(_cortical_area_refs)
 	BV.WM.spawn_confirm_deletion(genome_objects)
 	close_window()
+
+## OVERRIDDEN from Window manager, to save previous position and collapsible states
+func export_window_details() -> Dictionary:
+	return {
+		"position": position,
+		"toggles": _get_expanded_sections()
+	}
+
+## OVERRIDDEN from Window manager, to load previous position and collapsible states
+func import_window_details(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
+	if "toggles" in previous_data.keys():
+		_set_expanded_sections(previous_data["toggles"])
+
+## Flexible method to return all collapsed sections in Cortical Properties
+func _get_expanded_sections() -> Array[bool]:
+	var output: Array[bool] = []
+	for child in _window_internals.get_children():
+		if child is VerticalCollapsibleHiding:
+			output.append((child as VerticalCollapsibleHiding).is_open)
+	return output
+
+## Flexible method to set all collapsed sections in Cortical Properties
+func _set_expanded_sections(expanded: Array[bool]) -> void:
+	var collapsibles: Array[VerticalCollapsibleHiding] = []
+	
+	for child in _window_internals.get_children():
+		if child is VerticalCollapsibleHiding:
+			collapsibles.append((child as VerticalCollapsibleHiding))
+	
+	var masimum: int = len(collapsibles)
+	if len(expanded) < masimum:
+		masimum = len(expanded)
+	
+	for i: int in masimum:
+		collapsibles[i].is_open = expanded[i]
