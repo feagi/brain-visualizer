@@ -297,8 +297,8 @@ func _send_button_pressed(button_pressing: Button) -> void:
 
 func _montoring_update_button_pressed() -> void:
 	#TODO this only works for single areas, improve
-	FeagiCore.requests.toggle_membrane_monitoring(_cortical_area_refs[0].cortical_ID, membrane_toggle.button_pressed)
-	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_area_refs[0].cortical_ID, post_synaptic_toggle.button_pressed)
+	FeagiCore.requests.toggle_membrane_monitoring(_cortical_area_refs, membrane_toggle.button_pressed)
+	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_area_refs, post_synaptic_toggle.button_pressed)
 	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, {"cortical_visibility": render_activity_toggle.button_pressed})
 	_button_monitoring_send.disabled = true
 

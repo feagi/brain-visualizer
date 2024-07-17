@@ -88,6 +88,7 @@ render_activity_toggle = NodePath("WindowPanel/WindowMargin/WindowInternals/Cori
 _button_monitoring_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/Monitoring")
 _section_connections = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections")
 _section_dangerzone = NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone")
+window_spawn_location = null
 
 [node name="TitleBar" parent="." instance=ExtResource("2_c4mg3")]
 layout_mode = 2
