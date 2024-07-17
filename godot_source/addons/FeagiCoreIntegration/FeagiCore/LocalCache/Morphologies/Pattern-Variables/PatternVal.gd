@@ -47,9 +47,6 @@ static func create_empty() -> PatternVal:
 	return PatternVal.new(0)
 
 func _verify(input: Variant) -> void:
-	if input is int:
-		_data = input
-		return
 	if input is StringName:
 		if input.is_valid_int():
 			_data = input.to_int()
@@ -66,6 +63,7 @@ func _verify(input: Variant) -> void:
 			_data = StringName(input)
 			return
 		return
+	_data = int(input) # last ditch effort
 
 func duplicate() -> PatternVal:
 	return PatternVal.new(_data)
