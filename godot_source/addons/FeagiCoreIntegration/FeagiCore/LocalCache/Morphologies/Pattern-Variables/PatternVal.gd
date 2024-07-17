@@ -3,7 +3,7 @@ class_name PatternVal
 ## PatternMorphology values can be ints, or "*" or "?". This can hold all of those
 
 ## All possible characters (non ints) a pattern var can be, as Strings
-const ACCEPTABLE_CHARS: PackedStringArray = [&"*", &"?"]
+const ACCEPTABLE_CHARS: PackedStringArray = [&"*", &"?", &"!"]
 
 var data: Variant:
 	get: return _data
@@ -19,6 +19,9 @@ var isAny: bool:
 
 var isMatchingOther: bool:
 	get: return str(_data) == "?"
+
+var isMatchingNot: bool:
+	get: return str(_data) == "!"
 
 var as_StringName: StringName:
 	get: return str(_data)
