@@ -126,6 +126,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_vector_dimensions_spin.visible = true
 		_vector_dimensions_nonspin.visible = false
 		_setup_connection_info(_cortical_area_refs[0])
+		_region_button.pressed.connect(_user_press_edit_region) # do not allow region editing for multiple cortical areas at this time
 		
 	else:
 		# Multiple Cortical Areas Mode window setup
@@ -400,6 +401,14 @@ func _user_pressed_add_efferent_button() -> void:
 	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], null)
 
 #endregion
+
+func _user_press_edit_region() -> void:
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_brain_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _cortical_area_refs[0].current_parent_region)
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	window.final_selection.connect(_user_edit_region)
+
+func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
+	_add_to_dictionary(_button_summary_send, "parent_region_id", selected_objects[0].genome_ID)
 
 func _user_pressed_delete_button() -> void:
 	var genome_objects: Array[GenomeObject] = []
