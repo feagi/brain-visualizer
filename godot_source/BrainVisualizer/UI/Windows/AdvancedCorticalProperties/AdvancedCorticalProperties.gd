@@ -193,9 +193,9 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_setup_MP_Driven_PSP.send_to_update_button.connect(_add_to_dictionary)
 	
 	# Monitoring
-	_setup_membrane_monitoring = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "", "is_monitoring_membrane_potential", "", _button_monitoring_send)
-	_setup_post_synaptic_monitoring = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "", "is_monitoring_synaptic_potential", "", _button_monitoring_send)
-	_setup_render_activity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "", "cortical_visibility", "", _button_monitoring_send)
+	_setup_membrane_monitoring = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, membrane_toggle, "", "is_monitoring_membrane_potential", "", _button_monitoring_send)
+	_setup_post_synaptic_monitoring = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, post_synaptic_toggle, "", "is_monitoring_synaptic_potential", "", _button_monitoring_send)
+	_setup_render_activity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, render_activity_toggle, "", "cortical_visibility", "", _button_monitoring_send)
 	# NOTE due to having multiple endpoints, we have a custom handler for the update button sending things
 
 	
@@ -231,6 +231,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_setup_Degeneracy_Constant.post_load_setup_and_connect_signals_from_FEAGI("neuron_degeneracy_coefficient_updated")
 		_setup_button_PSP_Uniformity.post_load_setup_and_connect_signals_from_FEAGI("neuron_psp_uniform_distribution_updated")
 		_setup_MP_Driven_PSP.post_load_setup_and_connect_signals_from_FEAGI("neuron_neuron_mp_driven_psp_updated")
+	
+	# monitoring
+	#_setup_membrane_monitoring.post_load_setup_and_connect_signals_from_FEAGI("neuron_degeneracy_coefficient_updated")
+	#_setup_post_synaptic_monitoring.post_load_setup_and_connect_signals_from_FEAGI("neuron_psp_uniform_distribution_updated")
+	_setup_render_activity.post_load_setup_and_connect_signals_from_FEAGI("cortical_visibility_updated")
 
 
 ## Actually load in relevant data to window
@@ -281,6 +286,11 @@ func refresh_from_core() -> void:
 		_setup_Degeneracy_Constant.refresh_values_from_cache_and_update_control()
 		_setup_button_PSP_Uniformity.refresh_values_from_cache_and_update_control()
 		_setup_MP_Driven_PSP.refresh_values_from_cache_and_update_control()
+	
+	# monitoring
+	_setup_membrane_monitoring.refresh_values_from_cache_and_update_control()
+	_setup_post_synaptic_monitoring.refresh_values_from_cache_and_update_control()
+	_setup_render_activity.refresh_values_from_cache_and_update_control()
 
 func _add_to_dictionary(update_button: Button, key: StringName, value: Variant) -> void:
 	# NOTE: The button node name should be the section name
