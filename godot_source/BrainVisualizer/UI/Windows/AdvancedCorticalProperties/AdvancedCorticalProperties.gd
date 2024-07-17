@@ -2,10 +2,83 @@ extends BaseDraggableWindow
 class_name AdvancedCorticalProperties
 ## Shows properties of various cortical areas and allows multi-editing
 
+# region Window Global
 
 const WINDOW_NAME: StringName = "adv_cortical_properties"
-
 var _cortical_area_refs: Array[AbstractCorticalArea]
+var _growing_cortical_update: Dictionary = {}
+
+
+func _ready():
+	super()
+
+static func add_to_dict_to_send(send_button: Button, )
+
+## Load in initial values of the cortical area from Cache
+func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
+	# NOTE: We load initial values from cache while showing the relevant sections, however we do 
+	# not connect the signals for cache events updating the window until all relevant cortical area
+	# information has been updated. If we did not do this, this window would refresh with every
+	# cortical area update, which may be many depending on the selection and would cause a large
+	# lag spike. While this method is more tenous, it ultimately provides a better experience for
+	# the end user
+	
+	_setup_base_window(WINDOW_NAME)
+	_cortical_area_refs = cortical_area_references
+	
+
+
+
+
+#endregion
+
+
+#region Summary
+var _preview_handler: GenericSinglePreviewHandler = null #TODO
+
+
+
+
+
+#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Sections
 # Summary
@@ -97,14 +170,9 @@ var _setup_membrane_monitoring: CorticalPropertyMultiReferenceHandler
 var _setup_post_synaptic_monitoring: CorticalPropertyMultiReferenceHandler
 var _setup_render_activity: CorticalPropertyMultiReferenceHandler
 
-var _growing_cortical_update: Dictionary = {}
 
 
-var _preview_handler: GenericSinglePreviewHandler = null #TODO
 
-
-func _ready():
-	super()
 
 
 ## Load in initial values of the cortical area from Cache
