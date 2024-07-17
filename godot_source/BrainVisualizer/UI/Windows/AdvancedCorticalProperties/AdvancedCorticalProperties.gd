@@ -59,7 +59,12 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var render_activity_toggle: ToggleButton
 @export var _button_monitoring_send: Button
 
+# Connections
 @export var _section_connections: VerticalCollapsibleHiding
+@export var _scroll_afferent: ScrollSectionGeneric
+@export var _scroll_efferent: ScrollSectionGeneric
+@export var _button_recursive: Button
+
 
 @export var _section_dangerzone: VerticalCollapsibleHiding
 
@@ -120,6 +125,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_connections.visible = true
 		_vector_dimensions_spin.visible = true
 		_vector_dimensions_nonspin.visible = false
+		_setup_connection_info(_cortical_area_refs[0])
 		
 	else:
 		# Multiple Cortical Areas Mode window setup
@@ -292,7 +298,8 @@ func _send_button_pressed(button_pressing: Button) -> void:
 	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[button_pressing.name])
 	_growing_cortical_update[button_pressing.name] = {}
 	close_window()
-	
+
+
 	# TODO calculate neuron count changes
 
 func _montoring_update_button_pressed() -> void:
@@ -302,3 +309,86 @@ func _montoring_update_button_pressed() -> void:
 	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, {"cortical_visibility": render_activity_toggle.button_pressed})
 	_button_monitoring_send.disabled = true
 
+#region Cortical Connections
+
+func _setup_connection_info(cortical_reference: AbstractCorticalArea) -> void:
+	# Recursive
+	for recursive_area: AbstractCorticalArea in cortical_reference.recursive_mappings.keys():
+		_add_recursive_area(recursive_area)
+	
+	# Inputs
+	for afferent_area: AbstractCorticalArea in cortical_reference.afferent_mappings.keys():
+		_add_afferent_area(afferent_area)
+		afferent_area.afferent_input_cortical_area_removed.connect(_remove_afferent_area)
+	# Outputs
+	for efferent_area: AbstractCorticalArea in cortical_reference.efferent_mappings.keys():
+		_add_efferent_area(efferent_area)
+		efferent_area.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
+
+	cortical_reference.recursive_cortical_area_added.connect(_add_recursive_area)
+	cortical_reference.recursive_cortical_area_added.connect(_remove_recursive_area)
+	cortical_reference.afferent_input_cortical_area_added.connect(_add_afferent_area)
+	cortical_reference.efferent_input_cortical_area_added.connect(_add_efferent_area)
+	cortical_reference.afferent_input_cortical_area_removed.connect(_remove_afferent_area)
+	cortical_reference.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
+
+func _add_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	_button_recursive.text = "Recursive Connection"
+
+func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(area, _cortical_area_refs[0])
+	var item: ScrollSectionGenericItem = _scroll_afferent.add_text_button_with_delete(
+		area,
+		" " + area.friendly_name + " ",
+		call_mapping_window,
+		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
+		false
+	)
+	var delete_request: Callable = FeagiCore.requests.delete_mappings_between_corticals.bind(area, _cortical_area_refs[0])
+	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Delete these mappings?",
+		"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
+		delete_request,
+		"Yes"
+		)
+	var popup_request: Callable = BV.WM.spawn_popup.bind(delete_popup)
+	item.get_delete_button().pressed.connect(popup_request)
+
+func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], area)
+	var item: ScrollSectionGenericItem = _scroll_efferent.add_text_button_with_delete(
+		area,
+		area.friendly_name,
+		call_mapping_window,
+		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
+		false
+	)
+	var delete_request: Callable = FeagiCore.requests.delete_mappings_between_corticals.bind(_cortical_area_refs[0], area)
+	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Delete these mappings?",
+		"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
+		delete_request,
+		"Yes"
+		)
+	var popup_request: Callable = BV.WM.spawn_popup.bind(delete_popup)
+	item.get_delete_button().pressed.connect(popup_request)
+
+func _remove_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	_button_recursive.text = "None Recursive"
+
+func _remove_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	_scroll_afferent.attempt_remove_item(area)
+
+func _remove_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	_scroll_efferent.attempt_remove_item(area)
+
+func _user_pressed_recursive_button() -> void:
+	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], _cortical_area_refs[0])
+
+func _user_pressed_add_afferent_button() -> void:
+	BV.WM.spawn_mapping_editor(null, _cortical_area_refs[0])
+
+func _user_pressed_add_efferent_button() -> void:
+	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], null)
+
+#endregion
