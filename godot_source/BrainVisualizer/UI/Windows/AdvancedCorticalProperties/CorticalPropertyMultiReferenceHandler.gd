@@ -35,7 +35,6 @@ func _init(cortical_references: Array[AbstractCorticalArea], control: Control, s
 		(_control as ToggleButton).pressed.connect(_enable_button)
 		return
 
-
 ## To be called after cortical areas are updated in cache to avoid repetitve spam
 func post_load_setup_and_connect_signals_from_FEAGI(signal_name: String):
 	var section_object: RefCounted

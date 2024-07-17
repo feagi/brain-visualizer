@@ -39,7 +39,7 @@ bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3nhm5"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
-[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "_section_connections", "_section_dangerzone")]
+[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_section_dangerzone")]
 offset_right = 360.0
 offset_bottom = 420.0
 size_flags_horizontal = 0
@@ -84,6 +84,8 @@ _button_pspp_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Syna
 _section_cortical_area_monitoring = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring")
 membrane_toggle = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer/Membrane")
 post_synaptic_toggle = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer2/PostSynaptic")
+render_activity_toggle = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer3/ActivtyRender")
+_button_monitoring_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/Monitoring")
 _section_connections = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections")
 _section_dangerzone = NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone")
 
@@ -784,6 +786,30 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("13_ypuy1")
 
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "If the membrane potentials should be recorded and monitored"
+mouse_filter = 1
+text = "Render Activity"
+
+[node name="ActivtyRender" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer3"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+texture_normal = ExtResource("12_l3mcy")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("13_ypuy1")
+
+[node name="Monitoring" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply Update"
+
 [node name="Connections" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_vertical = 0
@@ -886,5 +912,7 @@ layout_mode = 2
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring" method="_toggle_button_pressed"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer/Membrane" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_membrane_monitoring_status"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer2/PostSynaptic" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_synaptic_monitoring_status"]
+[connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer3/ActivtyRender" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_membrane_monitoring_status"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/Monitoring" to="." method="_montoring_update_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Connections" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/DangerZone" method="_toggle_button_pressed"]

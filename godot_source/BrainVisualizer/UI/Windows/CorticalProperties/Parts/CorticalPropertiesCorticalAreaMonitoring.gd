@@ -30,10 +30,8 @@ func _FEAGI_set_synaptic_toggle(state: bool) -> void:
 	post_synaptic_toggle.set_toggle_no_signal(state)
 
 func _user_request_change_membrane_monitoring_status(new_state:bool) -> void:
-	pass
 	FeagiCore.requests.toggle_membrane_monitoring(_cortical_reference.cortical_ID, new_state)
 
 func _user_request_change_synaptic_monitoring_status(new_state:bool) -> void:
-	pass
 	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_reference.cortical_ID, new_state)
 

@@ -35,12 +35,14 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var _button_MP_Accumulation: ToggleButton
 @export var _button_firing_send: Button
 
+# Memory
 @export var _section_memory: VerticalCollapsibleHiding
 @export var _line_initial_neuron_lifespan: IntInput
 @export var _line_lifespan_growth_rate: IntInput
 @export var _line_longterm_memory_threshold: IntInput
 @export var _button_memory_send: Button
 
+# PostSynapticPotential
 @export var _section_post_synaptic_potential_parameters: VerticalCollapsibleHiding
 @export var _line_Post_Synaptic_Potential: FloatInput
 @export var _line_PSP_Max: FloatInput
@@ -49,9 +51,13 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 @export var _button_MP_Driven_PSP: ToggleButton
 @export var _button_pspp_send: Button
 
+# Monitoring
+# NOTE: This section works differently since the membrane / synaptic monitoring refer to seperate endpoints
 @export var _section_cortical_area_monitoring: VerticalCollapsibleHiding
 @export var membrane_toggle: ToggleButton
 @export var post_synaptic_toggle: ToggleButton
+@export var render_activity_toggle: ToggleButton
+@export var _button_monitoring_send: Button
 
 @export var _section_connections: VerticalCollapsibleHiding
 
@@ -80,6 +86,11 @@ var _setup_PSP_Max: CorticalPropertyMultiReferenceHandler
 var _setup_Degeneracy_Constant: CorticalPropertyMultiReferenceHandler
 var _setup_button_PSP_Uniformity: CorticalPropertyMultiReferenceHandler
 var _setup_MP_Driven_PSP: CorticalPropertyMultiReferenceHandler
+
+# Monitoring
+var _setup_membrane_monitoring: CorticalPropertyMultiReferenceHandler
+var _setup_post_synaptic_monitoring: CorticalPropertyMultiReferenceHandler
+var _setup_render_activity: CorticalPropertyMultiReferenceHandler
 
 var _growing_cortical_update: Dictionary = {}
 
@@ -115,7 +126,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_connections.visible = false
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
-		_section_cortical_area_monitoring.visible = false
+		_section_cortical_area_monitoring.visible = false #TODO endpoints need to support multiple
 		_section_dangerzone.visible = false
 	
 	# Initialize Summary Section part 1 (all cortical areas have this), other stuff setup in "refresh_from_core"
@@ -176,7 +187,13 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_setup_Degeneracy_Constant.send_to_update_button.connect(_add_to_dictionary)
 		_setup_button_PSP_Uniformity.send_to_update_button.connect(_add_to_dictionary)
 		_setup_MP_Driven_PSP.send_to_update_button.connect(_add_to_dictionary)
-		
+	
+	# Monitoring
+	_setup_membrane_monitoring = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "", "is_monitoring_membrane_potential", "", _button_monitoring_send)
+	_setup_post_synaptic_monitoring = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "", "is_monitoring_synaptic_potential", "", _button_monitoring_send)
+	_setup_render_activity = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_Post_Synaptic_Potential, "", "cortical_visibility", "", _button_monitoring_send)
+	# NOTE due to having multiple endpoints, we have a custom handler for the update button sending things
+
 	
 	# Everything that happened prior was just making connections, not loading actual data. Loading
 	# data comes now in "refresh_from_core"
@@ -278,5 +295,10 @@ func _send_button_pressed(button_pressing: Button) -> void:
 	
 	# TODO calculate neuron count changes
 
-
+func _montoring_update_button_pressed() -> void:
+	#TODO this only works for single areas, improve
+	FeagiCore.requests.toggle_membrane_monitoring(_cortical_area_refs[0].cortical_ID, membrane_toggle.button_pressed)
+	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_area_refs[0].cortical_ID, post_synaptic_toggle.button_pressed)
+	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, {"cortical_visibility": render_activity_toggle.button_pressed})
+	_button_monitoring_send.disabled = true
 
