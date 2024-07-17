@@ -104,7 +104,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 func _button_details() -> void:
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			BV.WM.spawn_cortical_properties((_selection[0] as AbstractCorticalArea))
+			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:

@@ -2,7 +2,6 @@ extends Node
 class_name WindowManager
 ## Coordinates all the visible windows
 
-const _PREFAB_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/CorticalProperties/WindowCorticalProperties.tscn")
 const _PREFAB_CREATE_MORPHOLOGY: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.tscn")
 const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.tscn")
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
@@ -25,11 +24,6 @@ var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
 }
-
-## Opens a left pane allowing the user to view and edit details of a particular cortical area
-func spawn_cortical_properties(cortical_area: AbstractCorticalArea) -> void:
-	var left_bar: WindowCorticalProperties = _default_spawn_window(_PREFAB_CORTICAL_PROPERTIES, WindowCorticalProperties.WINDOW_NAME) as WindowCorticalProperties
-	left_bar.setup(cortical_area)
 
 func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
 	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties
