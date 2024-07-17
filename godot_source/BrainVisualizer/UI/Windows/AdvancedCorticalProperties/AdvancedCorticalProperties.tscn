@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://bj1avx68qlh3o"]
+[gd_scene load_steps=32 format=3 uid="uid://bj1avx68qlh3o"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.gd" id="1_mwcmr"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_c4mg3"]
@@ -17,10 +17,13 @@
 [ext_resource type="PackedScene" uid="uid://do28ox8hb6e08" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3fField.tscn" id="15_msb58"]
 [ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="16_is0mw"]
 [ext_resource type="Texture2D" uid="uid://dryfi4tlhq5mq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="17_0ofyd"]
-[ext_resource type="PackedScene" uid="uid://ckej7m86vhcdj" path="res://BrainVisualizer/UI/Windows/CorticalProperties/Parts/CorticalPropertiesDangerZone.tscn" id="17_ad7el"]
 [ext_resource type="Texture2D" uid="uid://ddg6hll5cu8vb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="18_53725"]
 [ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="19_8v30q"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="20_4gnc7"]
+[ext_resource type="Texture2D" uid="uid://cvipwuuo2wa4i" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="21_rudp3"]
+[ext_resource type="Texture2D" uid="uid://bo26ji1fksorf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="22_gf55e"]
+[ext_resource type="Texture2D" uid="uid://c2uogfrcw4gbq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="23_4pkn4"]
+[ext_resource type="Texture2D" uid="uid://b2nlag14kcmcs" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="24_m25xf"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4txug"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
@@ -954,8 +957,27 @@ layout_mode = 2
 [node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer"]
 layout_mode = 2
 
-[node name="CorticalPropertiesDangerZone" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere" instance=ExtResource("17_ad7el")]
+[node name="CorticalPropertiesDangerZone" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere"]
 layout_mode = 2
+
+[node name="Delete" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"]
+layout_mode = 2
+
+[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DELETE Cortical Area"
+
+[node name="DeleteButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("21_rudp3")
+texture_pressed = ExtResource("22_gf55e")
+texture_hover = ExtResource("23_4pkn4")
+texture_disabled = ExtResource("24_m25xf")
+ignore_texture_size = true
+stretch_mode = 0
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Summary" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region/Region" to="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters" method="_user_press_edit_region"]
@@ -978,3 +1000,4 @@ layout_mode = 2
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_A/Add" to="." method="_user_pressed_add_afferent_button"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E/Add" to="." method="_user_pressed_add_efferent_button"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/DangerZone" method="_toggle_button_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete/DeleteButton" to="." method="_user_pressed_delete_button"]

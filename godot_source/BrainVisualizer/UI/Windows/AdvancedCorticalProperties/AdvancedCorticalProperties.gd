@@ -132,8 +132,6 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_connections.visible = false
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
-		_section_cortical_area_monitoring.visible = false #TODO endpoints need to support multiple
-		_section_dangerzone.visible = false
 	
 	# Initialize Summary Section part 1 (all cortical areas have this), other stuff setup in "refresh_from_core"
 	_setup_voxel_neuron_density = CorticalPropertyMultiReferenceHandler.new(_cortical_area_refs, _line_voxel_neuron_density, "", "cortical_neuron_per_vox_count", "cortical_neuron_per_vox_count", _button_summary_send)
@@ -392,3 +390,9 @@ func _user_pressed_add_efferent_button() -> void:
 	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], null)
 
 #endregion
+
+func _user_pressed_delete_button() -> void:
+	var genome_objects: Array[GenomeObject] = []
+	genome_objects.assign(_cortical_area_refs)
+	BV.WM.spawn_confirm_deletion(genome_objects)
+	close_window()
