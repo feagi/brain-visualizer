@@ -655,23 +655,20 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	return FEAGI_response_data
 
 
-## Toggle is the synaptic activity of a cortical area should be monitored
-func toggle_synaptic_monitoring(cortical_area_ID: StringName, should_monitor: bool) -> FeagiRequestOutput:
+## Toggle the synaptic activity monitoring of cortical areas
+func toggle_synaptic_monitoring(cortical_areas: Array[AbstractCorticalArea], should_monitor: bool) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !cortical_area_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		push_error("FEAGI Requests: Unable to find cortical area %s that is not found in cache!!" % cortical_area_ID)
-		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
 	if !FeagiCore.feagi_local_cache.influxdb_availability:
 		push_error("FEAGI Requests: InfluxDB is not available for toggling synaptic monitoring!")
 		return FeagiRequestOutput.requirement_fail("NO_INFLUXDB")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"ID": cortical_area_ID,
-		"state": should_monitor}
+		"cortical_id_list" : AbstractCorticalArea.array_of_cortical_areas_to_array_of_cortical_IDs(cortical_areas)
+	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_MON_neuron_membranePotential, dict_to_send)
 	
 	# Send request and await results
@@ -679,23 +676,22 @@ func toggle_synaptic_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to set synaptic monitoring on cortical area %s!" % cortical_area_ID)
+		push_error("FEAGI Requests: Unable to set synaptic monitoring on %d cortical areas!" % len(cortical_areas))
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully set synaptic monitoring on cortical area %s!" % cortical_area_ID)
-	var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
-	cortical_area.is_monitoring_synaptic_potential = should_monitor
+	print("FEAGI REQUEST: Successfully set synaptic monitoring on %d cortical areas!" % len(cortical_areas))
+	for cortical_area in cortical_areas:
+		cortical_area.is_monitoring_synaptic_potential = should_monitor
 	return FEAGI_response_data
 
 
-## Toggle is the membrane activity of a cortical area should be monitored
-func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bool) -> FeagiRequestOutput:
+## Toggle the membrane activity monitoring of cortical areas
+func toggle_membrane_monitoring(cortical_areas: Array[AbstractCorticalArea], should_monitor: bool) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !cortical_area_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		push_error("FEAGI Requests: Unable to find cortical area %s that is not found in cache!!" % cortical_area_ID)
+
 		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
 	if !FeagiCore.feagi_local_cache.influxdb_availability:
 		push_error("FEAGI Requests: InfluxDB is not available for toggling membrane monitoring!")
@@ -703,8 +699,8 @@ func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"ID": cortical_area_ID,
-		"state": should_monitor}
+		"cortical_id_list" : AbstractCorticalArea.array_of_cortical_areas_to_array_of_cortical_IDs(cortical_areas)
+	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_monitoring_neuron_membranePotential_set, dict_to_send)
 	
 	# Send request and await results
@@ -712,12 +708,12 @@ func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to set membrane monitoring on cortical area %s!" % cortical_area_ID)
+		push_error("FEAGI Requests: Unable to set membrane monitoring on %d cortical areas!" % len(cortical_areas))
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully set membrane monitoring on cortical area %s!" % cortical_area_ID)
-	var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
-	cortical_area.is_monitoring_membrane_potential = should_monitor
+	print("FEAGI REQUEST: Successfully set membrane monitoring on %d cortical areas!" % len(cortical_areas))
+	for cortical_area in cortical_areas:
+		cortical_area.is_monitoring_membrane_potential = should_monitor
 	return FEAGI_response_data
 
 func set_cortical_areas_that_are_invisible(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
