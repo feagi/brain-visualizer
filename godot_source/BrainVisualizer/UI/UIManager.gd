@@ -125,9 +125,12 @@ var _selected_cortical_areas: Array[AbstractCorticalArea] = []
 func set_user_selected_cortical_areas(selected: Array[AbstractCorticalArea]) -> void:
 	pass
 
+# TEMP TODO remove this as it is a standin for broken BM functions!
 func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:
 	if object is AbstractCorticalArea:
-		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
+		user_selected_single_cortical_area.emit(object as AbstractCorticalArea) 
+		var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
+		window_manager.spawn_adv_cortical_properties(areas)
 
 func user_selected_single_cortical_area_appending(area: AbstractCorticalArea) -> void:
 	pass
