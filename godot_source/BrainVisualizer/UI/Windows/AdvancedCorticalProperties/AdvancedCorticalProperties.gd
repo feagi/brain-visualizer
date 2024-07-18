@@ -308,6 +308,8 @@ func _init_firing_parameters() -> void:
 	_connect_control_to_update_button(_line_Consecutive_Fire_Count, "neuron_consecutive_fire_count", _button_firing_send)
 	_connect_control_to_update_button(_line_Snooze_Period, "neuron_snooze_period", _button_firing_send)
 	_connect_control_to_update_button(_line_Threshold_Inc, "neuron_fire_threshold_increment", _button_firing_send)
+	
+	_button_firing_send.pressed.connect(_send_update.bind(_button_firing_send))
 
 func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_button_MP_Accumulation, "neuron_firing_parameters", "neuron_mp_charge_accumulation")
@@ -335,6 +337,8 @@ func _init_memory() -> void:
 	_connect_control_to_update_button(_line_initial_neuron_lifespan, "neuron_init_lifespan", _button_memory_send)
 	_connect_control_to_update_button(_line_lifespan_growth_rate, "neuron_lifespan_growth_rate", _button_memory_send)
 	_connect_control_to_update_button(_line_longterm_memory_threshold, "neuron_longterm_mem_threshold", _button_memory_send)
+	
+	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
 
 func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_line_initial_neuron_lifespan, "memory_parameters", "initial_neuron_lifespan")
@@ -360,6 +364,8 @@ func _init_psp() -> void:
 	_connect_control_to_update_button(_line_Degeneracy_Constant, "neuron_degeneracy_coefficient", _button_pspp_send)
 	_connect_control_to_update_button(_button_PSP_Uniformity, "neuron_psp_uniform_distribution", _button_pspp_send)
 	_connect_control_to_update_button(_button_MP_Driven_PSP, "neuron_mp_driven_psp", _button_pspp_send)
+	
+	_button_pspp_send.pressed.connect(_send_update.bind(_button_pspp_send))
 
 func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Post_Synaptic_Potential, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential")
