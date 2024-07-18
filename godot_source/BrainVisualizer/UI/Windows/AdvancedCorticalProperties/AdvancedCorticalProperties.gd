@@ -117,6 +117,10 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
 		_growing_cortical_update[send_button.name] = {}
+	if value is Vector3i:
+		value = FEAGIUtils.vector3i_to_array(value)
+	elif value is Vector3:
+		value = FEAGIUtils.vector3_to_array(value)
 	_growing_cortical_update[send_button.name][key_name] = value
 
 func _send_update(send_button: Button) -> void:
@@ -223,6 +227,9 @@ func _refresh_from_cache_summary() -> void:
 	_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
 	_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 	
+	_vector_dimensions_spin.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
+	_vector_position.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
+	
 	if len(_cortical_area_refs) != 1:
 		pass
 		#TODO connect size vector
@@ -241,6 +248,12 @@ func _user_press_edit_region() -> void:
 
 func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
 	_add_to_dictionary(_button_summary_send, "parent_region_id", selected_objects[0].genome_ID)
+
+func _enable_3D_preview(): #NOTE only currently works with single
+		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
+		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
+		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
+		BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, move_signals, resize_signals, preview_close_signals)
 
 #endregion
 
