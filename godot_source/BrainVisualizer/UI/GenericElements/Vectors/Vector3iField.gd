@@ -2,6 +2,7 @@ extends BoxContainer
 class_name Vector3iField
 
 signal user_updated_vector(new_vector3: Vector3i)
+signal user_interacted()
 
 @export var label_x_text: StringName = &"X"
 @export var label_y_text: StringName = &"Y"
@@ -68,9 +69,15 @@ func _ready():
 	_field_x.int_confirmed.connect(_emit_new_vector)
 	_field_y.int_confirmed.connect(_emit_new_vector)
 	_field_z.int_confirmed.connect(_emit_new_vector)
-
+	
+	_field_x.user_interacted.connect(_emit_interaction)
+	_field_y.user_interacted.connect(_emit_interaction)
+	_field_z.user_interacted.connect(_emit_interaction)
+	
 	editable = initial_editable
 
 func _emit_new_vector(_dont_care: int) -> void:
 	user_updated_vector.emit(current_vector)
 
+func _emit_interaction():
+	user_interacted.emit()

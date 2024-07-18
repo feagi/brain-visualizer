@@ -119,7 +119,6 @@ static func true_position_to_BV_position(true_position: Vector3, scale: Vector3)
 		-(int(scale.z / 2.0) + true_position.z))
 			
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
-	var section_object: RefCounted = null
 	var differences: int = -1 # first one will always fail
 	var previous_value: Variant = null
 	var current_value: Variant = null
@@ -297,9 +296,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
-		cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+		_cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+		cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
 	if "cortical_synaptic_attractivity" in data.keys(): 
-		cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+		_cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+		cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 

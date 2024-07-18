@@ -98,7 +98,6 @@ _scroll_afferent = NodePath("WindowPanel/WindowMargin/WindowInternals/Connection
 _scroll_efferent = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/Efferents")
 _button_recursive = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/recursive")
 _section_dangerzone = NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone")
-window_spawn_location = null
 
 [node name="TitleBar" parent="." instance=ExtResource("2_c4mg3")]
 layout_mode = 2

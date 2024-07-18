@@ -2,6 +2,8 @@ extends BaseDraggableWindow
 class_name AdvancedCorticalProperties
 ## Shows properties of various cortical areas and allows multi-editing
 
+#TODO URGENT: Major missing feature -> per unit connection to cache for live cahce updates
+
 # region Window Global
 
 const WINDOW_NAME: StringName = "adv_cortical_properties"
@@ -11,8 +13,7 @@ var _growing_cortical_update: Dictionary = {}
 
 func _ready():
 	super()
-
-static func add_to_dict_to_send(send_button: Button, )
+	
 
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
@@ -26,6 +27,144 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
 	
+	# Some sections are only in single cortical area mode
+	if len(cortical_area_references) == 1:
+		_section_connections.visible = true
+	else:
+		_section_connections.visible = false
+	
+	# init sections (that are relevant given the selected)
+	_init_summary()
+	_refresh_from_cache_summary()
+	
+	# Request the newest state from feagi, and dont continue until then
+	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	
+	# refresh all relevant sections again
+	_refresh_from_cache_summary()
+	
+	# Establish connections from core to the UI elements
+	#TODO
+	
+
+
+
+func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
+	if AbstractCorticalArea.do_cortical_areas_have_matching_values_for_property(_cortical_area_refs, composition_section_name, property_name):
+		_set_control_to_value(control, _cortical_area_refs[0].return_property_by_name_and_section(composition_section_name, property_name))
+	else:
+		_set_control_as_conflicting_values(control)
+
+func _set_control_as_conflicting_values(control: Control) -> void:
+	if control is AbstractLineInput:
+		(control as AbstractLineInput).set_text_as_invalid()
+		return
+	if control is ToggleButton:
+		(control as ToggleButton).is_inbetween = true
+		return
+	#NOTE: Vectors only handled here temporarily
+
+func _set_control_to_value(control: Control, value: Variant) -> void:
+	if control is TextInput:
+		(control as TextInput).text = value
+		return
+	if control is IntInput:
+		(control as IntInput).set_int(value)
+		return
+	if control is FloatInput:
+		(control as FloatInput).set_float(value)
+		return
+	if control is ToggleButton:
+		(control as ToggleButton).set_toggle_no_signal(value)
+		return
+	if control is Vector3iField:
+		(control as Vector3iField).current_vector = value
+		return
+	if control is Vector3iSpinboxField:
+		(control as Vector3iSpinboxField).current_vector = value
+		return
+	if control is Vector3fField:
+		(control as Vector3fField).current_vector = value
+		return
+		
+
+func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
+	if (control as Variant).has_signal("user_interacted"):
+		(control as Variant).user_interacted.connect(_enable_button.bind(send_update_button))
+	if control is TextInput:
+		(control as TextInput).text_confirmed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is IntInput:
+		(control as IntInput).int_confirmed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is FloatInput:
+		(control as FloatInput).float_confirmed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is ToggleButton:
+		(control as ToggleButton).toggled.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is Vector3iField:
+		(control as Vector3iField).user_updated_vector.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is Vector3iSpinboxField:
+		(control as Vector3iSpinboxField).user_updated_vector.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is Vector3fField:
+		(control as Vector3fField).user_updated_vector.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	
+	
+func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
+	if !send_button.name in _growing_cortical_update:
+		_growing_cortical_update[send_button.name] = {}
+	_growing_cortical_update[send_button.name][key_name] = value
+
+func _send_update(send_button: Button) -> void:
+	if send_button.name in _growing_cortical_update:
+		FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[send_button.name])
+		_growing_cortical_update[send_button.name] = {}
+	send_button.disabled = true
+
+func _enable_button(send_button: Button) -> void:
+	send_button.disabled = false
+	
+	
+## OVERRIDDEN from Window manager, to save previous position and collapsible states
+func export_window_details() -> Dictionary:
+	return {
+		"position": position,
+		"toggles": _get_expanded_sections()
+	}
+
+## OVERRIDDEN from Window manager, to load previous position and collapsible states
+func import_window_details(previous_data: Dictionary) -> void:
+	position = previous_data["position"]
+	if "toggles" in previous_data.keys():
+		_set_expanded_sections(previous_data["toggles"])
+
+## Flexible method to return all collapsed sections in Cortical Properties
+func _get_expanded_sections() -> Array[bool]:
+	var output: Array[bool] = []
+	for child in _window_internals.get_children():
+		if child is VerticalCollapsibleHiding:
+			output.append((child as VerticalCollapsibleHiding).is_open)
+	return output
+
+## Flexible method to set all collapsed sections in Cortical Properties
+func _set_expanded_sections(expanded: Array[bool]) -> void:
+	var collapsibles: Array[VerticalCollapsibleHiding] = []
+	
+	for child in _window_internals.get_children():
+		if child is VerticalCollapsibleHiding:
+			collapsibles.append((child as VerticalCollapsibleHiding))
+	
+	var masimum: int = len(collapsibles)
+	if len(expanded) < masimum:
+		masimum = len(expanded)
+	
+	for i: int in masimum:
+		collapsibles[i].is_open = expanded[i]
+
 
 
 
@@ -36,9 +175,71 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 #region Summary
 var _preview_handler: GenericSinglePreviewHandler = null #TODO
 
+@export var _section_summary: VerticalCollapsibleHiding
+@export var _line_cortical_name: TextInput
+@export var _region_button: Button
+@export var _line_cortical_ID: TextInput
+@export var _line_cortical_type: TextInput
+@export var _line_voxel_neuron_density: IntInput
+@export var _line_synaptic_attractivity: IntInput
+@export var _vector_dimensions_spin: Vector3iSpinboxField
+@export var _vector_dimensions_nonspin: Vector3iField
+@export var _vector_position: Vector3iSpinboxField
+@export var _button_summary_send: Button
 
+func _init_summary() -> void:
+	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
+	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
+		_line_cortical_type.text = "Multiple Selected"
+	else:
+		_line_cortical_type.text = AbstractCorticalArea.cortical_type_to_str(type)
+	
+	_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
+	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
+	
+	# TODO renable region button, but check to make sure all types can be moved
+	
+	
+	if len(_cortical_area_refs) != 1:
+		_line_cortical_name.text = "Multiple Selected"
+		_line_cortical_name.editable = false
+		_region_button.text = "Multiple Selected"
+		_line_cortical_ID.text = "Multiple Selected"
+		_vector_position.editable = false # TODO show multiple values
+		_vector_dimensions_spin.visible = false
+		_vector_dimensions_nonspin.visible = true
+		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+	else:
+		_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
+	
+	_button_summary_send.pressed.connect(_send_update.bind(_button_summary_send))
 
+func _refresh_from_cache_summary() -> void:
+	_line_cortical_name.text = "Multiple Selected"
+	
+	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
+	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+	_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
+	_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
+	
+	if len(_cortical_area_refs) != 1:
+		pass
+		#TODO connect size vector
+	else:
+		# single
+		_line_cortical_name.text = _cortical_area_refs[0].friendly_name
+		_region_button.text = _cortical_area_refs[0].current_parent_region.friendly_name
+		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
+		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
+		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
 
+func _user_press_edit_region() -> void:
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_brain_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _cortical_area_refs[0].current_parent_region)
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	window.final_selection.connect(_user_edit_region)
+
+func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
+	_add_to_dictionary(_button_summary_send, "parent_region_id", selected_objects[0].genome_ID)
 
 #endregion
 
@@ -82,17 +283,7 @@ var _preview_handler: GenericSinglePreviewHandler = null #TODO
 
 # Sections
 # Summary
-@export var _section_summary: VerticalCollapsibleHiding
-@export var _line_cortical_name: TextInput
-@export var _region_button: Button
-@export var _line_cortical_ID: TextInput
-@export var _line_cortical_type: TextInput
-@export var _line_voxel_neuron_density: IntInput
-@export var _line_synaptic_attractivity: IntInput
-@export var _vector_dimensions_spin: Vector3iSpinboxField
-@export var _vector_dimensions_nonspin: Vector3iField
-@export var _vector_position: Vector3iSpinboxField
-@export var _button_summary_send: Button
+
 
 #Firing Paramters
 @export var _section_firing_parameters: VerticalCollapsibleHiding
@@ -176,7 +367,7 @@ var _setup_render_activity: CorticalPropertyMultiReferenceHandler
 
 
 ## Load in initial values of the cortical area from Cache
-func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
+func setup_prev(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# NOTE: We load initial values from cache while showing the relevant sections, however we do 
 	# not connect the signals for cache events updating the window until all relevant cortical area
 	# information has been updated. If we did not do this, this window would refresh with every
@@ -470,13 +661,7 @@ func _user_pressed_add_efferent_button() -> void:
 
 #endregion
 
-func _user_press_edit_region() -> void:
-	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_brain_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _cortical_area_refs[0].current_parent_region)
-	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
-	window.final_selection.connect(_user_edit_region)
 
-func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
-	_add_to_dictionary(_button_summary_send, "parent_region_id", selected_objects[0].genome_ID)
 
 func _user_pressed_delete_button() -> void:
 	var genome_objects: Array[GenomeObject] = []
@@ -484,38 +669,4 @@ func _user_pressed_delete_button() -> void:
 	BV.WM.spawn_confirm_deletion(genome_objects)
 	close_window()
 
-## OVERRIDDEN from Window manager, to save previous position and collapsible states
-func export_window_details() -> Dictionary:
-	return {
-		"position": position,
-		"toggles": _get_expanded_sections()
-	}
 
-## OVERRIDDEN from Window manager, to load previous position and collapsible states
-func import_window_details(previous_data: Dictionary) -> void:
-	position = previous_data["position"]
-	if "toggles" in previous_data.keys():
-		_set_expanded_sections(previous_data["toggles"])
-
-## Flexible method to return all collapsed sections in Cortical Properties
-func _get_expanded_sections() -> Array[bool]:
-	var output: Array[bool] = []
-	for child in _window_internals.get_children():
-		if child is VerticalCollapsibleHiding:
-			output.append((child as VerticalCollapsibleHiding).is_open)
-	return output
-
-## Flexible method to set all collapsed sections in Cortical Properties
-func _set_expanded_sections(expanded: Array[bool]) -> void:
-	var collapsibles: Array[VerticalCollapsibleHiding] = []
-	
-	for child in _window_internals.get_children():
-		if child is VerticalCollapsibleHiding:
-			collapsibles.append((child as VerticalCollapsibleHiding))
-	
-	var masimum: int = len(collapsibles)
-	if len(expanded) < masimum:
-		masimum = len(expanded)
-	
-	for i: int in masimum:
-		collapsibles[i].is_open = expanded[i]
