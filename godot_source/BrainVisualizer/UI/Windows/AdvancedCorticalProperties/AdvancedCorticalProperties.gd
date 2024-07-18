@@ -30,23 +30,47 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# Some sections are only in single cortical area mode
 	if len(cortical_area_references) == 1:
 		_section_connections.visible = true
+		_setup_connection_info(cortical_area_references[0])
 	else:
 		_section_connections.visible = false
 	
 	# init sections (that are relevant given the selected)
 	_init_summary()
-	_refresh_from_cache_summary()
+	_init_monitoring()
+	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
+		_init_firing_parameters()
+	else:
+		_section_firing_parameters.visible = false
+	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
+		_init_memory()
+	else:
+		_section_memory.visible = false
+	if true: # currently, all cortical areas have this
+		_init_psp()
+	
+	
+	_refresh_all_relevant()
 	
 	# Request the newest state from feagi, and dont continue until then
 	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
 	
 	# refresh all relevant sections again
-	_refresh_from_cache_summary()
+	_refresh_all_relevant()
 	
 	# Establish connections from core to the UI elements
 	#TODO
 	
-
+func _refresh_all_relevant() -> void:
+	_refresh_from_cache_summary() # all cortical areas have these
+	_refresh_from_cache_monitoring()
+	
+	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
+		_refresh_from_cache_firing_parameters()
+	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
+		_refresh_from_cache_memory()
+	if true: # currently, all cortical areas have this
+		_refresh_from_cache_psp()
+	
 
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
@@ -113,9 +137,6 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 		(control as Vector3fField).user_updated_vector.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
 		return
 	
-
-	
-	
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
 		_growing_cortical_update[send_button.name] = {}
@@ -124,6 +145,7 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 	elif value is Vector3:
 		value = FEAGIUtils.vector3_to_array(value)
 	_growing_cortical_update[send_button.name][key_name] = value
+	send_button.disabled = false
 
 func _send_update(send_button: Button) -> void:
 	if send_button.name in _growing_cortical_update:
@@ -287,7 +309,7 @@ func _init_firing_parameters() -> void:
 	_connect_control_to_update_button(_line_Snooze_Period, "neuron_snooze_period", _button_firing_send)
 	_connect_control_to_update_button(_line_Threshold_Inc, "neuron_fire_threshold_increment", _button_firing_send)
 
-func _refresh_from_cache_firing_paramters() -> void:
+func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_button_MP_Accumulation, "neuron_firing_parameters", "neuron_mp_charge_accumulation")
 	_update_control_with_value_from_areas(_line_Fire_Threshold, "neuron_firing_parameters", "neuron_fire_threshold")
 	_update_control_with_value_from_areas(_line_Threshold_Limit, "neuron_firing_parameters", "neuron_firing_threshold_limit")
@@ -314,7 +336,7 @@ func _init_memory() -> void:
 	_connect_control_to_update_button(_line_lifespan_growth_rate, "neuron_lifespan_growth_rate", _button_memory_send)
 	_connect_control_to_update_button(_line_longterm_memory_threshold, "neuron_longterm_mem_threshold", _button_memory_send)
 
-func _refresh_memory() -> void:
+func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_line_initial_neuron_lifespan, "memory_parameters", "initial_neuron_lifespan")
 	_update_control_with_value_from_areas(_line_lifespan_growth_rate, "memory_parameters", "lifespan_growth_rate")
 	_update_control_with_value_from_areas(_line_longterm_memory_threshold, "memory_parameters", "longterm_memory_threshold")
@@ -339,7 +361,7 @@ func _init_psp() -> void:
 	_connect_control_to_update_button(_button_PSP_Uniformity, "neuron_psp_uniform_distribution", _button_pspp_send)
 	_connect_control_to_update_button(_button_MP_Driven_PSP, "neuron_mp_driven_psp", _button_pspp_send)
 
-func _refresh_psp() -> void:
+func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Post_Synaptic_Potential, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential")
 	_update_control_with_value_from_areas(_line_PSP_Max, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential_max")
 	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
@@ -361,7 +383,7 @@ func _refresh_psp() -> void:
 func _init_monitoring() -> void:
 	_button_monitoring_send.pressed.connect(_montoring_update_button_pressed)
 	
-func _refresh_monitoring() -> void:
+func _refresh_from_cache_monitoring() -> void:
 	_update_control_with_value_from_areas(membrane_toggle, "", "is_monitoring_membrane_potential")
 	_update_control_with_value_from_areas(post_synaptic_toggle, "", "is_monitoring_synaptic_potential")
 	_update_control_with_value_from_areas(render_activity_toggle, "", "cortical_visibility")
@@ -480,4 +502,7 @@ func _user_pressed_delete_button() -> void:
 
 
 #endregion
+
+
+
 
