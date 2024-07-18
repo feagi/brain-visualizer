@@ -117,6 +117,26 @@ static func true_position_to_BV_position(true_position: Vector3, scale: Vector3)
 		(int(scale.x / 2.0) + true_position.x),
 		(int(scale.y / 2.0) + true_position.y),
 		-(int(scale.z / 2.0) + true_position.z))
+			
+static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
+	var section_object: RefCounted = null
+	var differences: int = -1 # first one will always fail
+	var previous_value: Variant = null
+	var current_value: Variant = null
+	#TODO for vectors, to have per element diffs, branch out from here
+	for area in areas:
+		current_value = area.return_property_by_name_and_section(composition_section_name, property_name)
+		if current_value == null:
+			return false # if the property doesnt exist
+		if previous_value != current_value:
+			differences += 1
+			if differences > 0:
+				# Differences
+				return false
+			previous_value = current_value
+		continue
+	# If we got here, values are identical
+	return true
 
 ## Array of Cortical Areas to Array of Cortical IDs
 static func cortical_area_array_to_ID_array(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
@@ -305,6 +325,17 @@ func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 
 func get_neuron_change_with_new_details(new_dimension: Vector3i, new_density: float) -> int:
 	return AbstractCorticalArea.get_neuron_count(new_dimension, new_density) - neuron_count
+
+## Returns the value of a property (optionally within a section). returns null if nonexistant
+func return_property_by_name_and_section(composition_section_name: StringName, property_name: StringName) -> Variant:
+	var section_object: RefCounted = null
+	if composition_section_name != "":
+		section_object = get(composition_section_name) # Assumption is that all cortical areas in the selected array have the section
+		if section_object == null:
+			return null # if the section doesnt exist
+	else:
+		section_object = self # to allow us to grab universal properties on the [AbstractCorticalArea] directly
+	return section_object.get(property_name)
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
