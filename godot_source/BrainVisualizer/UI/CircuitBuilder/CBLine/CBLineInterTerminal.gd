@@ -5,15 +5,16 @@ class_name CBLineInterTerminal
 const LINE_COLOR_PSPP: Color = Color.DARK_GREEN
 const LINE_COLOR_PSPN: Color = Color.DARK_RED
 const LINE_COLOR_TRANSPARENT: Color = Color(0,0,0,0)
+const LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY: float = 0.3
 
 var _button: Button
-var _source_port: CBNodePort
-var _destination_port: CBNodePort
+var _source_port
+var _destination_port
 var _link: ConnectionChainLink
 
-
+#TODO temporarily remove types here for dual system management
 ## Sets up the default line behavior, by having it connect to the ports of the 2 given terminals
-func setup(source_port: CBNodePort, destination_port: CBNodePort, link: ConnectionChainLink) -> void:
+func setup(source_port, destination_port, link: ConnectionChainLink) -> void:
 	line_setup()
 	_button = $Button
 	_source_port = source_port
@@ -23,7 +24,7 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 	_update_line_endpoint_positions()
 	_source_port.node_moved.connect(_update_line_endpoint_positions)
 	_destination_port.node_moved.connect(_update_line_endpoint_positions)
-	name = "Line_%s->%s" % [source_port.root_node.name,destination_port.root_node.name]
+	#name = "Line_%s->%s" % [source_port.root_node.name,destination_port.root_node.name]
 	link.associated_mapping_set_updated.connect(_proxy_mapping_change_connection)
 	_button.pressed.connect(_user_pressed_button)
 	
@@ -31,7 +32,7 @@ func setup(source_port: CBNodePort, destination_port: CBNodePort, link: Connecti
 		_on_full_mapping_change(link.parent_chain.mapping_set)
 		return
 	if link.parent_chain.is_registered_to_partial_mapping_set():
-		#TODO
+		_on_partial_mapping(link.parent_chain.partial_mapping_set)
 		return
 	
 
@@ -61,6 +62,14 @@ func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 		set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PSPP.a))
 	set_line_dashing(mapping_ref.is_any_mapping_plastic())
 
+func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
+	_button.text = "  0  "
+	if partial_mapping.is_any_PSP_multiplier_negative():
+		set_line_base_color(Color(LINE_COLOR_PSPN.r, LINE_COLOR_PSPN.g, LINE_COLOR_PSPN.b, LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY))
+	else:
+		set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY))
+	set_line_dashing(partial_mapping.is_any_mapping_plastic())
+
 func _user_pressed_button() -> void:
 	var source_area: AbstractCorticalArea = null
 	var destination_area: AbstractCorticalArea = null
@@ -69,4 +78,7 @@ func _user_pressed_button() -> void:
 	if _link.parent_chain.destination is AbstractCorticalArea:
 		destination_area = _link.parent_chain.destination as AbstractCorticalArea
 	
-	BV.UI.window_manager.spawn_edit_mappings(source_area, destination_area)
+	if !_link.parent_chain.is_registered_to_partial_mapping_set():
+		BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area)
+	else:
+		BV.UI.window_manager.spawn_mapping_editor(source_area, destination_area, _link.parent_chain.partial_mapping_set)

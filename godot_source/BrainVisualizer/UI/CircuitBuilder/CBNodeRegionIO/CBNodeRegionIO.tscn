@@ -1,6 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://vrmdr5go1rne"]
-
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeRegionIO/CBNodeRegionIO.gd" id="1_ql4ta"]
+[gd_scene format=3 uid="uid://vrmdr5go1rne"]
 
 [node name="CBNodeRegionIO" type="GraphNode"]
 custom_minimum_size = Vector2(150, 0)
@@ -43,7 +41,6 @@ slot/3/right_type = 0
 slot/3/right_color = Color(1, 1, 1, 1)
 slot/3/right_icon = null
 slot/3/draw_stylebox = true
-script = ExtResource("1_ql4ta")
 
 [node name="Top_Connector" type="HBoxContainer" parent="."]
 visible = false

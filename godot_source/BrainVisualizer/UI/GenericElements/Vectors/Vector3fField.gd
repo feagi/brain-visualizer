@@ -69,12 +69,12 @@ func _ready():
 	_field_y.float_confirmed.connect(_emit_new_vector)
 	_field_z.float_confirmed.connect(_emit_new_vector)
 
-	_field_x.user_interacted.connect(_emit_user_interaction)
-	_field_y.user_interacted.connect(_emit_user_interaction)
-	_field_z.user_interacted.connect(_emit_user_interaction)
+	_field_x.user_interacted.connect(_emit_user_interacted)
+	_field_y.user_interacted.connect(_emit_user_interacted)
+	_field_z.user_interacted.connect(_emit_user_interacted)
 
 func _emit_new_vector(_dont_care: float) -> void:
 	user_updated_vector.emit(current_vector)
 	
-func _emit_user_interaction():
+func _emit_user_interacted():
 	user_interacted.emit()

@@ -2,8 +2,8 @@ extends RefCounted
 class_name ConnectionChain
 ## Stores information about the path connections / connection hints take through regions
 
-signal associated_mapping_set_updated()
-signal about_to_be_deleted()
+signal associated_mapping_set_updated(self_ref: ConnectionChain)
+signal about_to_be_deleted(self_ref: ConnectionChain)
 
 var source: GenomeObject:
 	get: return _source
@@ -30,24 +30,35 @@ var _partial_mapping_set: PartialMappingSet
 
 ## Creates a connection chain from a established mapping between 2 cortical areas
 static func from_established_FEAGI_mapping(mapping: InterCorticalMappingSet) -> ConnectionChain:
-	var chain: ConnectionChain = ConnectionChain.new(mapping.source_cortical_area, mapping.destination_cortical_area)
+	var chain: ConnectionChain = ConnectionChain.new(mapping.source_cortical_area, mapping.destination_cortical_area, false, false)
 	chain.FEAGI_set_mapping(mapping)
 	return chain
 
 ## Creates a connection chain from a a mapping suggestion (incomplete mapping / hint)
-static func from_mapping_suggestion(suggestion: PartialMappingSet) -> ConnectionChain:
-	var chain: ConnectionChain = ConnectionChain.new(suggestion.source, suggestion.destination)
+static func from_partial_mapping_set(suggestion: PartialMappingSet) -> ConnectionChain:
+	var source: GenomeObject
+	var destination: GenomeObject
+	if suggestion.is_region_input:
+		source = suggestion.region
+		destination = suggestion.internal_target_cortical_area
+	else:
+		source = suggestion.internal_target_cortical_area
+		destination = suggestion.region
+	var chain: ConnectionChain = ConnectionChain.new(source, destination, suggestion.is_region_input, !suggestion.is_region_input)
 	chain.FEAGI_set_partial_mapping(suggestion)
 	return chain
 
-func _init(starting_point: GenomeObject, stoppping_point: GenomeObject):
+func _init(starting_point: GenomeObject, stoppping_point: GenomeObject, is_starting_open: bool, is_ending_open: bool):
 	_source = starting_point
 	_destination = stoppping_point
 	_is_both_ends_cortical_areas = (starting_point is AbstractCorticalArea) and (stoppping_point is AbstractCorticalArea)
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(starting_point, stoppping_point)
+	if is_starting_open:
+		_total_chain_path.push_front(null)
+	if is_ending_open:
+		_total_chain_path.push_back(null)
 	_rebuild_connection_chain_links(_total_chain_path)
 	
-
 func FEAGI_set_mapping(mapping: InterCorticalMappingSet) -> void:
 	_mapping_set = mapping
 	FEAGI_updated_associated_mapping_set()
@@ -58,12 +69,12 @@ func FEAGI_set_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 func FEAGI_prepare_to_delete() -> void:
 	for chain_link in _chain_links:
 		chain_link.FEAGI_prepare_to_delete()
-	about_to_be_deleted.emit()
+	about_to_be_deleted.emit(self)
 	_chain_links = []
 
 ## Called by [InterCorticalMappingSet] when it gets updated gets updated
 func FEAGI_updated_associated_mapping_set() -> void:
-	associated_mapping_set_updated.emit()
+	associated_mapping_set_updated.emit(self)
 	for chain_link in _chain_links:
 		chain_link.FEAGI_updated_associated_mapping_set()
 
@@ -88,7 +99,14 @@ func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -
 		match(link_type):
 			
 			ConnectionChainLink.LINK_TYPE.INVALID:
-				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted! Skipping!" % [complete_chain_path[i].get_ID(), complete_chain_path[i + 1].get_ID()])
+				var source_ID: StringName = "[UNKNOWN]"
+				var dest_ID: StringName = "[UNKNOWN]"
+				if complete_chain_path[i] != null:
+					source_ID = complete_chain_path[i].genome_ID
+				if complete_chain_path[i + 1] != null:
+					dest_ID = complete_chain_path[i + 1].genome_ID
+				
+				push_error("FEAGI CORE CACHE: Invalid link with %s towards %s attempted!" % [source_ID, dest_ID])
 			
 			ConnectionChainLink.LINK_TYPE.BRIDGE:
 				parent_region = complete_chain_path[i].current_parent_region
@@ -98,15 +116,23 @@ func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -
 			
 			ConnectionChainLink.LINK_TYPE.PARENTS_INPUT:
 				parent_region = complete_chain_path[i + 1].current_parent_region
+				
+			ConnectionChainLink.LINK_TYPE.PARENTS_OUTPUT_OPEN:
+				parent_region = complete_chain_path[i - 1].current_parent_region
+				
+			ConnectionChainLink.LINK_TYPE.PARENTS_INPUT_OPEN:
+				parent_region = complete_chain_path[i + 1].current_parent_region
 		
 		var connection_chain_link: ConnectionChainLink = ConnectionChainLink.new(parent_region, complete_chain_path[i], complete_chain_path[i + 1], self, link_type)
 		_chain_links.append(connection_chain_link)
 	
 	## If any of these involved objects change parent region, this chain is invalid. We need to know so we can trash the current [ConnectionChainLink] and build new ones
 	for involved_object: GenomeObject in complete_chain_path:
-		if involved_object.parent_region_changed.is_connected(_involved_object_changed_parent):
+		if involved_object == null:
 			continue
-		involved_object.parent_region_changed.connect(_involved_object_changed_parent)
+		if involved_object.parent_region_updated.is_connected(_involved_object_changed_parent):
+			continue
+		involved_object.parent_region_updated.connect(_involved_object_changed_parent)
 
 func _involved_object_changed_parent(_irrelevant1, _irrelevant2) -> void:
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(_source, _destination)

@@ -1,0 +1,29 @@
+[gd_scene load_steps=6 format=3 uid="uid://4qbe5uwsf36c"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_4lr7s"]
+[ext_resource type="Texture2D" uid="uid://cas8w6tbsvf0l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="1_bbv56"]
+[ext_resource type="Texture2D" uid="uid://c7titv7o7iu41" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="2_202j6"]
+[ext_resource type="Texture2D" uid="uid://bs4u3x8y64aic" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="3_ergia"]
+[ext_resource type="Texture2D" uid="uid://b32s4sgq2hx1v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="4_bq48b"]
+
+[node name="HBoxContainer" type="HBoxContainer"]
+offset_right = 34.0
+offset_bottom = 23.0
+size_flags_horizontal = 3
+script = ExtResource("1_4lr7s")
+
+[node name="Text" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Button_List"
+text = "Text"
+
+[node name="Edit" type="TextureButton" parent="."]
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("1_bbv56")
+texture_pressed = ExtResource("2_202j6")
+texture_hover = ExtResource("3_ergia")
+texture_disabled = ExtResource("4_bq48b")
+ignore_texture_size = true
+stretch_mode = 0

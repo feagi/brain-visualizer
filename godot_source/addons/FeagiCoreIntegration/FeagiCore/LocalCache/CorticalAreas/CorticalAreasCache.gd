@@ -192,11 +192,22 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
 func FEAGI_hard_wipe_available_cortical_areas():
-	print("CACHE: Wiping cortical areas and connections...")
-	var all_cortical_area_IDs: Array = _available_cortical_areas.keys()
-	for cortical_area_ID in all_cortical_area_IDs:
-		remove_cortical_area(cortical_area_ID)
+	print("CACHE: Wiping cortical areas")
+	for cortical_ID in _available_cortical_areas:
+		var area: AbstractCorticalArea = _available_cortical_areas[cortical_ID]
+		area.FEAGI_delete_cortical_area()
+		cortical_area_about_to_be_removed.emit(area)
+	_available_cortical_areas = {}
 	print("CACHE: Wiping cortical areas and connection wipe complete!")
+
+## Sets all cortical areas in the list as visible, and all those not as not visible (in terms of activity rendering)
+func FEAGI_set_invisible_cortical_areas(invisible_areas: Array[AbstractCorticalArea]) -> void:
+	var cached_areas: Array[AbstractCorticalArea] = []
+	cached_areas.assign(_available_cortical_areas.values())
+	for area in cached_areas:
+		area.FEAGI_set_cortical_visibility(!(area in invisible_areas))
+
+	
 #endregion
 
 #region Queries
@@ -215,7 +226,7 @@ func search_for_available_cortical_areas_by_name(search_term: StringName) -> Arr
 func search_for_available_cortical_areas_by_type(searching_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> Array[AbstractCorticalArea]:
 	var output: Array[AbstractCorticalArea] = []
 	for cortical_area in _available_cortical_areas.values():
-		if cortical_area.group == searching_cortical_type:
+		if cortical_area.cortical_type == searching_cortical_type:
 			output.append(cortical_area)
 	return output
 
@@ -288,7 +299,7 @@ func exist_cortical_area_with_subname(searching_name: StringName) -> bool:
 ## Returns true if a cortical area exists with a given name (NOT ID)
 func exist_cortical_area_with_exact_name(searching_name: StringName) -> bool:
 	for cortical_area in _available_cortical_areas.values():
-		if cortical_area.name.to_lower() == searching_name.to_lower():
+		if cortical_area.friendly_name.to_lower() == searching_name.to_lower():
 			return true
 	return false
 #endregion
@@ -301,6 +312,23 @@ func arr_of_IDs_to_arr_of_area(IDs: Array[StringName]) -> Array[AbstractCortical
 			push_error("CORE CACHE: Unable to find cortical of ID %s! Skipping!" % ID)
 			continue
 		output.append(_available_cortical_areas[ID])
+	return output
+
+## Returns the [AbstractCorticalArea] if the given ID exists, otherwise returns null
+func try_to_get_cortical_area_by_ID(ID: StringName) -> AbstractCorticalArea:
+	if ID in _available_cortical_areas:
+		return _available_cortical_areas[ID]
+	else:
+		return null
+
+func invert_selecteion(selected: Array[AbstractCorticalArea]) -> Array[AbstractCorticalArea]:
+	var output: Array[AbstractCorticalArea]
+	output.assign(_available_cortical_areas.values())
+	var search: int
+	while len(selected) > 0:
+		search = output.find(selected.pop_front())
+		if search != -1:
+			output.remove_at(search)
 	return output
 
 #region Internal

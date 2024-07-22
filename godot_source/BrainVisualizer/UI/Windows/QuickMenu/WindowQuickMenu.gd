@@ -25,37 +25,73 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			details_button.tooltip_text = "View Cortical Area Details"
+			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
+			move_to_region_button.tooltip_text = "Add to a region..."
+			clone_button.tooltip_text = "Clone Cortical Area..."
+			delete_button.tooltip_text = "Delete this Cortical Area..."
+			
 			var area: AbstractCorticalArea = (_selection[0] as AbstractCorticalArea)
-			_titlebar.title = area.name
+			_titlebar.title = area.friendly_name
 			if !area.user_can_delete_this_area:
 				delete_button.disabled = true
 				delete_button.tooltip_text = "This Cortical Area Cannot Be Deleted"
 			if !area.user_can_clone_this_cortical_area:
 				clone_button.disabled = true
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
+			if !area.can_exist_in_subregion:
+				move_to_region_button.disabled = true
+				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Brain Region"
+			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+			quick_connect_button.visible = false
+			clone_button.visible = false
+			details_button.tooltip_text = "View Brain Region Details"
+			move_to_region_button.tooltip_text = "Add to a Brain Region..."
+			delete_button.tooltip_text = "Delete this Brain Region..."
+			
 			var region: BrainRegion = (_selection[0] as BrainRegion)
-			_titlebar.title = region.name
-			quick_connect_button.visible = false
-			clone_button.visible = false
+			_titlebar.title = region.friendly_name
+
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			quick_connect_button.visible = false
+			clone_button.visible = false
+			details_button.tooltip_text = "View Details of these Cortical Areas"
+			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple areas"
-			quick_connect_button.visible = false
-			clone_button.visible = false
-			details_button.visible = false
-			delete_button.visible = false
+			
+			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
+			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
+				move_to_region_button.disabled = true
+				move_to_region_button.tooltip_text = "One or more of the selected areas cannot be moved to a region"
+			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
+				delete_button.disabled = true
+				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
+				
+			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			quick_connect_button.visible = false
+			clone_button.visible = false
+			details_button.visible = false
+			delete_button.visible = true
+			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple regions"
-			quick_connect_button.visible = false
-			clone_button.visible = false
-			details_button.visible = false
-			delete_button.visible = false
+
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
-			_titlebar.title = "Selected multiple objects"
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
-			delete_button.visible = false
+			move_to_region_button.tooltip_text = "Add to a region..."
+			_titlebar.title = "Selected multiple objects"
+			
+			var filtered_areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
+			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(filtered_areas):
+				move_to_region_button.disabled = true
+				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a region"
+			if !AbstractCorticalArea.can_all_areas_be_deleted(filtered_areas):
+				delete_button.disabled = true
+				delete_button.tooltip_text = "One or more of the selected objects cannot be deleted"
+			
 
 
 
@@ -68,10 +104,11 @@ func setup(selection: Array[GenomeObject]) -> void:
 func _button_details() -> void:
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			BV.WM.spawn_cortical_properties((_selection[0] as AbstractCorticalArea))
+			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
-			pass
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 	close_window()
 
 func _button_quick_connect() -> void:
@@ -84,30 +121,11 @@ func _button_clone() -> void:
 
 func _button_add_to_region() -> void:
 	var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
-	BV.WM.spawn_move_to_region(_selection)
+	BV.WM.spawn_move_to_region(_selection, parent_region)
 	close_window()
 
 func _button_delete() -> void:
-	var delete_confirmation: ConfigurablePopupDefinition
-	match(_mode):
-		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			delete_confirmation = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-				"Confirm Deletion", 
-				"Are you sure you wish to delete cortical area %s?" % (_selection[0] as AbstractCorticalArea).name,
-				FeagiCore.requests.delete_cortical_area.bind((_selection[0] as AbstractCorticalArea)),
-				"Yes",
-				"No"
-				)
-		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
-			delete_confirmation = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-				"Confirm Deletion", 
-				"Are you sure you wish to delete region %s and bring its internals up to this region?" % (_selection[0] as BrainRegion).name,
-				FeagiCore.requests.delete_regions_and_raise_internals.bind((_selection[0] as BrainRegion)),
-				"Yes",
-				"No"
-				)
-	
-	BV.WM.spawn_popup(delete_confirmation)
+	BV.WM.spawn_confirm_deletion(_selection)
 	close_window()
 
 func _on_focus_lost() -> void:

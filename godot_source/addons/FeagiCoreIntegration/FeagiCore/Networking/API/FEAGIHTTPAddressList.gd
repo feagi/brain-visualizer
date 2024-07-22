@@ -33,6 +33,7 @@ var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuro
 var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 var GET_morphology_morphologies: StringName = '/v1/morphology/morphologies'
 var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
+var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortical_visibility'
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -44,6 +45,7 @@ var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_d
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
 var POST_region_region: StringName = "/v1/region/region"
+var POST_corticalArea_multi_corticalAreaProperties: StringName = "/v1/cortical_area/multi/cortical_area_properties"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
@@ -53,6 +55,9 @@ var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
 var PUT_region_region: StringName = "/v1/region/region"
 var PUT_region_relocateMembers: StringName = "/v1/region/relocate_members"
+var PUT_corticalArea_suppressCorticalVisibility: StringName = "/v1/cortical_area/suppress_cortical_visibility"
+var PUT_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/cortical_area"
+
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
@@ -60,6 +65,7 @@ var DELETE_GE_morphology: StringName = "/v1/morphology/morphology"
 var DELETE_GE_amalgamationCancellation: StringName = "/v1/genome/amalgamation_cancellation"
 var DELETE_region_region: StringName = "/v1/region/region"
 var DELETE_region_regionAndMembers: StringName = "/v1/region/region_and_members"
+var DELETE_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/cortical_area"
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	# Preappend the FEAGIFullAddress to each string above

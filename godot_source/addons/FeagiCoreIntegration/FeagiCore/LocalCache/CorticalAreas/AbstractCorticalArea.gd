@@ -5,6 +5,13 @@ class_name AbstractCorticalArea
 
 # Main functionality for cortical area, and base details such as ID, name, and positions
 #region Base Functionality
+
+const TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION: Array[CORTICAL_AREA_TYPE] = [
+	CORTICAL_AREA_TYPE.IPU,
+	CORTICAL_AREA_TYPE.OPU,
+	CORTICAL_AREA_TYPE.CORE,
+]
+
 ## The type of cortical area, not 1-1 mapped with feagi
 enum CORTICAL_AREA_TYPE {
 	IPU,
@@ -42,7 +49,7 @@ var cortical_type: CORTICAL_AREA_TYPE:
 var type_as_string: StringName:
 	get: return AbstractCorticalArea.cortical_type_to_str(_get_group())
 
-## Is cortical area visible?
+## Is cortical area activity visible?
 var cortical_visibility: bool:
 	get: return _cortical_visiblity
 
@@ -51,6 +58,9 @@ var cortical_neuron_per_vox_count: int:
 
 var cortical_synaptic_attractivity: int:
 	get: return _cortical_synaptic_attractivity
+
+var neuron_count: int:
+	get: return AbstractCorticalArea.get_neuron_count(_dimensions_3D, _cortical_neuron_per_vox_count)
 
 var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
 
@@ -83,6 +93,10 @@ var user_can_edit_cortical_synaptic_attractivity: bool:
 var user_can_clone_this_cortical_area: bool:
 	get: return _user_can_clone_this_area()
 
+var can_exist_in_subregion: bool:
+	get: return !(cortical_type in TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION)
+	#get: return _area_can_exist_in_subregion()
+
 var has_neuron_firing_parameters: bool:
 	get:  return _has_neuron_firing_parameters()
 
@@ -103,6 +117,25 @@ static func true_position_to_BV_position(true_position: Vector3, scale: Vector3)
 		(int(scale.x / 2.0) + true_position.x),
 		(int(scale.y / 2.0) + true_position.y),
 		-(int(scale.z / 2.0) + true_position.z))
+			
+static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
+	var differences: int = -1 # first one will always fail
+	var previous_value: Variant = null
+	var current_value: Variant = null
+	#TODO for vectors, to have per element diffs, branch out from here
+	for area in areas:
+		current_value = area.return_property_by_name_and_section(composition_section_name, property_name)
+		if current_value == null:
+			return false # if the property doesnt exist
+		if previous_value != current_value:
+			differences += 1
+			if differences > 0:
+				# Differences
+				return false
+			previous_value = current_value
+		continue
+	# If we got here, values are identical
+	return true
 
 ## Array of Cortical Areas to Array of Cortical IDs
 static func cortical_area_array_to_ID_array(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
@@ -137,11 +170,68 @@ static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) 
 		_:
 			return CORTICAL_AREA_TYPE.UNKNOWN
 
+## Filters through a GenomeObject array to output only [AbstractCorticalArea]s
+static func genome_array_to_cortical_area_array(genome_objects: Array[GenomeObject]) -> Array[AbstractCorticalArea]:
+	var output: Array[AbstractCorticalArea] = []
+	for genome in genome_objects:
+		if genome is AbstractCorticalArea:
+			output.append(genome)
+	return output
+
+## If any of the given cortical areas are of a type specified, returns true
+static func array_contains_cortical_area_of_types(areas: Array[AbstractCorticalArea], types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE]) -> bool:
+	for area in areas:
+		if area.cortical_type in types:
+			return true
+	return false
+
+## Returns true only if all given cortical areas can be allowed in subregions
+static func can_all_areas_exist_in_subregion(areas: Array[AbstractCorticalArea]) -> bool:
+	for area in areas:
+		if !area.can_exist_in_subregion:
+			return false
+	return true
+
+static func can_all_areas_be_deleted(areas: Array[AbstractCorticalArea]) -> bool:
+	for area in areas:
+		if !area.user_can_delete_this_area:
+			return false
+	return true
 
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
-	
+
+static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
+	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
+
+static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for e in arr:
+		output.append(e.cortical_ID)
+	return output
+
+## If all cortical areas in an array are of the same type, return that type enum, otherwise return CORTICAL_AREA_TYPE.UNKNOWN
+static func array_oc_cortical_areas_type_identification(areas: Array[AbstractCorticalArea]) -> CORTICAL_AREA_TYPE:
+	if len(areas) == 0:
+		return CORTICAL_AREA_TYPE.UNKNOWN
+	var comparison: CORTICAL_AREA_TYPE = areas[0].cortical_type
+	if len(areas) == 1:
+		return comparison
+	for i in range(1, len(areas)):
+		if areas[i].cortical_type != comparison:
+			return CORTICAL_AREA_TYPE.UNKNOWN
+	return comparison
+
+## If given a boolean property, returns true if all areas have this property true. otherwise, returns false, and returns false if property is invalid
+static func boolean_property_of_all_cortical_areas_are_true(areas: Array[AbstractCorticalArea], property: StringName) -> bool:
+	for area in areas:
+		if area.get(property) == null:
+			return false
+		if area.get(property) != true:
+			return false
+	return true
+
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
 	_genome_ID = ID
@@ -154,7 +244,7 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 ## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	#NOTE: Assumption is made that connections were already removed firstZ!
-	_parent_region.FEAGI_remove_a_cortical_area(self)
+	_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	about_to_be_deleted.emit()
 	# [CorticalAreasCache] then deletes this object
 
@@ -193,7 +283,8 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 			push_error("Unable to find new region ID %s for cortical area %s" % [data["parent_region_id"], cortical_ID])
 			return
 		var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[data["parent_region_id"]]
-		FEAGI_change_parent_brain_region(new_region)
+		if new_region != current_parent_region:
+			FEAGI_change_parent_brain_region(new_region)
 			
 
 	FEAGI_apply_detail_dictionary(data)
@@ -205,9 +296,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
-		cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+		_cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+		cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
 	if "cortical_synaptic_attractivity" in data.keys(): 
-		cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+		_cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+		cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
@@ -231,6 +324,19 @@ func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 	_cortical_synaptic_attractivity = new_attractivity
 	cortical_synaptic_attractivity_updated.emit(new_attractivity, self)
 
+func get_neuron_change_with_new_details(new_dimension: Vector3i, new_density: float) -> int:
+	return AbstractCorticalArea.get_neuron_count(new_dimension, new_density) - neuron_count
+
+## Returns the value of a property (optionally within a section). returns null if nonexistant
+func return_property_by_name_and_section(composition_section_name: StringName, property_name: StringName) -> Variant:
+	var section_object: RefCounted = null
+	if composition_section_name != "":
+		section_object = get(composition_section_name) # Assumption is that all cortical areas in the selected array have the section
+		if section_object == null:
+			return null # if the section doesnt exist
+	else:
+		section_object = self # to allow us to grab universal properties on the [AbstractCorticalArea] directly
+	return section_object.get(property_name)
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
@@ -262,6 +368,7 @@ func _has_memory_parameters() -> bool:
 	return false
 
 
+
 #endregion
 
 
@@ -270,16 +377,66 @@ func _has_memory_parameters() -> bool:
 func BV_position() -> Vector3:
 	return AbstractCorticalArea.true_position_to_BV_position(_coordinates_3D, _dimensions_3D)
 
-# Functionality and references to how this cortical area is mapped / connected to other cortical areas
+# Functionality and references to how this cortical area is mapped / connected to other cortical areas / regions
 #region Mapping
-	
-# The following functions are often overridden in child classes
-## What moprphologies are allowed to connect to this cortical area? return empty if no restriction
-func get_allowed_afferent_morphology_names() -> PackedStringArray:
-	return []
 
-## What moprphologies are allowed to connect from this cortical area? return empty if no restriction
-func get_allowed_efferent_morphology_names() -> PackedStringArray:
+# NOTE: While we have connection links for pathing information for HOW connections are made to other objects, we 
+# also have this to know WHAT we are connecting to, because sometimes we don't care about partial connections or regions
+
+signal afferent_input_cortical_area_added(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal efferent_input_cortical_area_added(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal recursive_cortical_area_added(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal afferent_input_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal efferent_input_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+signal recursive_cortical_area_removed(area: AbstractCorticalArea, mapping_set: InterCorticalMappingSet)
+
+var afferent_mappings: Dictionary: # Key'd by the source [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+	get: return _afferent_mappings
+var efferent_mappings: Dictionary: # Key'd by the destination [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+	get: return _efferent_mappings
+var recursive_mappings: Dictionary: # Key'd by the (self) [AbstractCorticalArea] object, value is the related [InterCorticalMappingSet]
+	get: return _recursive_mappings
+
+var _afferent_mappings: Dictionary = {}
+var _efferent_mappings: Dictionary = {}
+var _recursive_mappings: Dictionary = {} # technically, this will only be of size 0 or 1 lol
+
+## Called by [InterCorticalMappingSet] during its init
+func CACHE_mapping_set_register_an_afferent(mapping_set: InterCorticalMappingSet) -> void:
+	_afferent_mappings[mapping_set.source_cortical_area] = mapping_set
+	afferent_input_cortical_area_added.emit(mapping_set.source_cortical_area, mapping_set)
+
+## Called by [InterCorticalMappingSet] during its init
+func CACHE_mapping_set_register_an_efferent(mapping_set: InterCorticalMappingSet) -> void:
+	_efferent_mappings[mapping_set.destination_cortical_area] = mapping_set
+	efferent_input_cortical_area_added.emit(mapping_set.destination_cortical_area, mapping_set)
+
+## Called by [InterCorticalMappingSet] during its init
+func CACHE_mapping_set_register_a_recursive(mapping_set: InterCorticalMappingSet) -> void:
+	_recursive_mappings[mapping_set.destination_cortical_area] = mapping_set
+	recursive_cortical_area_added.emit(mapping_set.destination_cortical_area, mapping_set)
+
+## Called by [InterCorticalMappingSet] during its init
+func CACHE_mapping_set_deregister_an_afferent(mapping_set: InterCorticalMappingSet) -> void:
+	_afferent_mappings.erase(mapping_set.source_cortical_area)
+	afferent_input_cortical_area_removed.emit(mapping_set.source_cortical_area, mapping_set)
+
+## Called by [InterCorticalMappingSet] during its init
+func CACHE_mapping_set_deregister_an_efferent(mapping_set: InterCorticalMappingSet) -> void:
+	_efferent_mappings.erase(mapping_set.destination_cortical_area)
+	efferent_input_cortical_area_removed.emit(mapping_set.destination_cortical_area, mapping_set)
+
+## Called by [InterCorticalMappingSet] during its init
+func CACHE_mapping_set_deregister_a_rescursive(mapping_set: InterCorticalMappingSet) -> void:
+	_recursive_mappings.erase(mapping_set.source_cortical_area)
+	recursive_cortical_area_removed.emit(mapping_set.source_cortical_area, mapping_set)
+
+func get_mapping_array_toward_cortical_area(destination: AbstractCorticalArea) -> Array[SingleMappingDefinition]:
+	if destination in _efferent_mappings:
+		return _efferent_mappings[destination].mappings
+	if destination in _recursive_mappings:
+		return _recursive_mappings[destination].mappings
+	# no mapping exists between these areas, return an empty array!
 	return []
 
 #endregion

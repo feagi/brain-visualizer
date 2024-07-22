@@ -11,6 +11,12 @@ signal subregion_added_to_region(subregion: BrainRegion)
 signal subregion_removed_from_region(subregion: BrainRegion)
 signal bridge_link_added(link: ConnectionChainLink)
 signal bridge_link_removed(link: ConnectionChainLink)
+signal input_open_link_added(link: ConnectionChainLink)
+signal input_open_link_removed(link: ConnectionChainLink)
+signal output_open_link_added(link: ConnectionChainLink)
+signal output_open_link_removed(link: ConnectionChainLink)
+signal partial_mappings_inputted(mappings: PartialMappingSet)
+signal partial_mappings_about_to_be_removed(mappings: PartialMappingSet)
 
 
 var region_ID: StringName:
@@ -21,10 +27,19 @@ var contained_regions: Array[BrainRegion]:
 	get: return _contained_regions
 var bridge_chain_links: Array[ConnectionChainLink]: ## Bridge links connect 2 internal members together, they do not connect to the input / output of the region
 	get: return _bridge_chain_links
+var input_open_chain_links: Array[ConnectionChainLink]: 
+	get: return _input_open_chain_links
+var output_open_chain_links: Array[ConnectionChainLink]:
+	get: return _output_open_chain_links
+var partial_mappings: Array[PartialMappingSet]:
+	get: return _partial_mappings
 
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
 var _bridge_chain_links: Array[ConnectionChainLink]
+var _input_open_chain_links: Array[ConnectionChainLink]
+var _output_open_chain_links: Array[ConnectionChainLink]
+var _partial_mappings: Array[PartialMappingSet] = []
 
 ## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas
 static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) -> BrainRegion:
@@ -35,6 +50,7 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
 		Vector3i(10,10,10), #TODO
 	)
+	
 
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
@@ -51,7 +67,7 @@ static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 static func object_array_to_ID_array(regions: Array[BrainRegion]) -> Array[StringName]:
 	var output: Array[StringName] = []
 	for region in regions:
-		output.append(region.ID)
+		output.append(region.region_ID)
 	return output
 
 #NOTE: Specifically not initing region connections since we need to set up all objects FIRST
@@ -88,7 +104,7 @@ func FEAGI_genome_object_register_as_child(genome_object: GenomeObject) -> void:
 			push_error("CORE CACHE: Unable to add root region as a subregion!")
 			return
 		if region in _contained_regions:
-			push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.ID, _genome_ID])
+			push_error("CORE CACHE: Cannot add region %s to region %s that already contains it! Skipping!" % [region.region_ID, _genome_ID])
 			return
 		_contained_regions.append(region)
 		subregion_added_to_region.emit(region)
@@ -110,7 +126,7 @@ func FEAGI_genome_object_deregister_as_child(genome_object: GenomeObject) -> voi
 		var region: BrainRegion = (genome_object as BrainRegion)
 		var index: int = _contained_regions.find(region)
 		if index == -1:
-			push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.ID, _genome_ID])
+			push_error("CORE CACHE: Cannot remove region %s from region %s that doesn't contains it! Skipping!" % [region.region_ID, _genome_ID])
 			return
 		_contained_regions.remove_at(index)
 		subregion_removed_from_region.emit(region)
@@ -135,7 +151,25 @@ func FEAGI_delete_this_region() -> void:
 	if is_root_region():
 		push_error("CORE CACHE: Cannot remove root region region! Skipping!")
 	about_to_be_deleted.emit()
+	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	# This function should be called by [BrainRegionsCache], which will then free this object
+
+func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
+	if len(JSON_arr) == 0:
+		return # No point if the arr is empty
+	var new_mappings: Array[PartialMappingSet] = PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self)
+	_partial_mappings.append_array(new_mappings)
+	for mapping in new_mappings:
+		partial_mappings_inputted.emit(mapping)
+		mapping.mappings_about_to_be_deleted.connect(_FEAGI_partical_mapping_removed)
+
+func _FEAGI_partical_mapping_removed(mapping: PartialMappingSet) -> void:
+	var index: int = _partial_mappings.find(mapping)
+	if index == -1:
+		push_error("CORE CACHE: Unable to find PartialMappingSet to remove!")
+		return
+	partial_mappings_about_to_be_removed.emit(mapping)
+	_partial_mappings.remove_at(index)
 
 #endregion
 
@@ -160,6 +194,40 @@ func FEAGI_bridge_remove_link(link: ConnectionChainLink) -> void:
 		return
 	_bridge_chain_links.remove_at(index)
 	bridge_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func FEAGI_input_open_add_link(link: ConnectionChainLink) -> void:
+	if link in _input_open_chain_links:
+		push_error("CORE CACHE: Unable to add bridge link to region %s when it already exists!" % _genome_ID)
+		return
+	_input_open_chain_links.append(link)
+	input_open_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func FEAGI_input_open_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _input_open_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		return
+	_input_open_chain_links.remove_at(index)
+	input_open_link_removed.emit(link)
+
+## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region
+func FEAGI_output_open_add_link(link: ConnectionChainLink) -> void:
+	if link in _output_open_chain_links:
+		push_error("CORE CACHE: Unable to add bridge link to region %s when it already exists!" % _genome_ID)
+		return
+	_output_open_chain_links.append(link)
+	output_open_link_added.emit(link)
+
+## Called by [ConnectionChainLink] when it is about to be free'd, removes the reference to that link to this region
+func FEAGI_output_open_remove_link(link: ConnectionChainLink) -> void:
+	var index: int = _output_open_chain_links.find(link)
+	if index == -1:
+		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		return
+	_output_open_chain_links.remove_at(index)
+	output_open_link_removed.emit(link)
 
 #endregion
 
@@ -234,5 +302,42 @@ func get_number_of_internals_recursive() -> Vector2i:
 	current.y = len(_contained_cortical_areas)
 	return current
 
+func has_partial_mappings() -> bool:
+	return len(_partial_mappings) > 0
+
+## Returns the PartialMappingSet that involved the target area if it exists. Otherwise returns null
+func return_partial_mapping_set_of_target_area(internal_target: AbstractCorticalArea) -> PartialMappingSet:
+	for partial_mapping in _partial_mappings:
+		if partial_mapping.internal_target_cortical_area == internal_target:
+			return partial_mapping
+	return null
+
+## Returns true if any immediate children areas / regions have a name containing the given substring. Case Insensitive
+func contains_any_object_with_friendly_name_containing_substring(substring: StringName) -> bool:
+	var loweer: StringName = substring.to_lower()
+	var all_objects: Array[GenomeObject] = get_all_included_genome_objects()
+	for object in all_objects:
+		if object.friendly_name.to_lower().contains(substring):
+			return true
+	return false
+
+## Returns true if any immediate children areas / regions, or the region internals, have a name containing the given substring. Case Insentive
+func contains_any_object_with_friendly_name_containing_substring_recursive(substring: StringName) -> bool:
+	if contains_any_object_with_friendly_name_containing_substring(substring):
+		return true
+	for region in _contained_regions:
+		if region.contains_any_object_with_friendly_name_containing_substring_recursive(substring):
+			return true
+	return false
+
+## Returns all regions, recursively, under this region
+func get_all_subregions_recursive() -> Array[BrainRegion]:
+	var output: Array[BrainRegion] = _contained_regions
+	for subregion in _contained_regions:
+		output.append_array(subregion.get_all_subregions_recursive())
+	return output
+	
+	
 
 #endregion
+

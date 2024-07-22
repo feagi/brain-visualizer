@@ -10,15 +10,17 @@ enum LINK_TYPE {
 	BRIDGE, ## The chain link connects 2 internal members of a region
 	PARENTS_OUTPUT, ## The Chain link connects an internal member of a region toward that regions output
 	PARENTS_INPUT, ## The Chain link connects the regions input toward an internal member of that region
-	INVALID ## Pathing makes no sense. Error state!
+	INVALID, ## Pathing makes no sense. Error state!
+	PARENTS_OUTPUT_OPEN, ## Region Output but unconnected
+	PARENTS_INPUT_OPEN, ## Region Input but unconnected
 }
 
 
 var parent_region: BrainRegion:
 	get: return _parent_region
-var source: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea]
+var source: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea] or null
 	get: return _source
-var destination: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea]
+var destination: GenomeObject: ## Can be [BrainRegion] or [AbstractCorticalArea] or null
 	get: return _destination
 var parent_chain: ConnectionChain:
 	get: return _parent_chain
@@ -34,6 +36,12 @@ var _link_type: LINK_TYPE
 #TODO this shouldnt be a seperate static function since it can be confusingly misused easliy
 ## Given 2 objects next to each other in a connection chain, what kind of connection link would be formed?
 static func determine_link_type(start: GenomeObject, end: GenomeObject) -> LINK_TYPE:
+	if start is BrainRegion and end == null:
+		return LINK_TYPE.PARENTS_OUTPUT_OPEN
+	if end is BrainRegion and start == null:
+		return LINK_TYPE.PARENTS_INPUT_OPEN
+	if start == null or end == null:
+		return LINK_TYPE.INVALID
 	if GenomeObject.are_siblings(start, end):
 		return LINK_TYPE.BRIDGE
 	if start is AbstractCorticalArea:
@@ -56,7 +64,7 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 	_link_type = link_type_
 	match(_link_type):
 		LINK_TYPE.INVALID:
-			push_error("FEAGI CORE CACHE: Invalid link with %s towards %s!" % [coming_from.get_ID(), going_to.get_ID()])
+			push_error("FEAGI CORE CACHE: Invalid link!")
 			return
 			
 		LINK_TYPE.BRIDGE:
@@ -71,6 +79,14 @@ func _init(region_parent: BrainRegion, coming_from: GenomeObject, going_to: Geno
 		LINK_TYPE.PARENTS_INPUT:
 			coming_from.FEAGI_input_add_link(self)
 			going_to.FEAGI_input_add_link(self)
+		
+		LINK_TYPE.PARENTS_OUTPUT_OPEN:
+			(coming_from as BrainRegion).FEAGI_output_open_add_link(self)
+			# Nothing other side
+			
+		LINK_TYPE.PARENTS_INPUT_OPEN:
+			(going_to as BrainRegion).FEAGI_input_open_add_link(self)
+			# Nothing other side
 
 ## Called from [ConnectionChain] when the associated mapping set gets updated
 func FEAGI_updated_associated_mapping_set() -> void:
@@ -86,17 +102,17 @@ func FEAGI_prepare_to_delete() -> void:
 			pass
 			
 		LINK_TYPE.BRIDGE:
-			_source.output_remove_link(self)
-			_destination.input_remove_link(self)
-			_parent_region.bridge_remove_link(self)
+			_source.FEAGI_output_remove_link(self)
+			_destination.FEAGI_input_remove_link(self)
+			_parent_region.FEAGI_bridge_remove_link(self)
 		
 		LINK_TYPE.PARENTS_OUTPUT:
-			_source.output_remove_link(self)
-			_destination.output_remove_link(self)
+			_source.FEAGI_output_remove_link(self)
+			_destination.FEAGI_output_remove_link(self)
 
 		LINK_TYPE.PARENTS_INPUT:
-			_source.input_remove_link(self)
-			_destination.input_remove_link(self)
+			_source.FEAGI_input_remove_link(self)
+			_destination.FEAGI_input_remove_link(self)
 
 func is_source_cortical_area() -> bool:
 	return _source is AbstractCorticalArea

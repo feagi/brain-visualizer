@@ -4,7 +4,7 @@ class_name InterCorticalMappingSet
 ## NOTE: This is essentially relegated to be created in the cache, not elsewhere
 
 signal mappings_changed(self_mappings: InterCorticalMappingSet)
-signal mappings_about_to_be_deleted()
+signal mappings_about_to_be_deleted(self_mappings: InterCorticalMappingSet)
 
 var source_cortical_area: AbstractCorticalArea:
 	get: return _src_cortical
@@ -40,6 +40,14 @@ func _init(source_area: AbstractCorticalArea, destination_area: AbstractCortical
 	#_max_number_mappings_supported = #TODO
 	#_morphologies_restricted_to = 
 	_connection_chain = ConnectionChain.from_established_FEAGI_mapping(self)
+	if is_recursive():
+		source_area.CACHE_mapping_set_register_a_recursive(self)
+		mappings_about_to_be_deleted.connect(source_area.CACHE_mapping_set_deregister_a_rescursive)
+		return
+	destination_area.CACHE_mapping_set_register_an_afferent(self)
+	source_area.CACHE_mapping_set_register_an_efferent(self)
+	mappings_about_to_be_deleted.connect(destination_area.CACHE_mapping_set_deregister_an_afferent)
+	mappings_about_to_be_deleted.connect(source_area.CACHE_mapping_set_deregister_an_efferent)
 
 ## Create object from FEAGI JSON data
 static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> InterCorticalMappingSet:
@@ -57,6 +65,11 @@ func FEAGI_updated_mappings(new_mappings_between_areas: Array[SingleMappingDefin
 	_mappings = new_mappings_between_areas
 	mappings_changed.emit(self)
 	_connection_chain.FEAGI_updated_associated_mapping_set()
+
+## FEAGI is stating this mapping is to be deleted, signal out the intent and then allow [MappingsCache] to free this object
+func FEAGI_delete_this_mapping() -> void:
+	mappings_about_to_be_deleted.emit(self)
+	_connection_chain.FEAGI_prepare_to_delete()
 
 ## Returns true if any other internal mappings are plastic
 func is_any_mapping_plastic() -> bool:

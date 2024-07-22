@@ -33,13 +33,13 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	# Create cortical area objects, using the above dict to retrieve the parent region in an efficient manner
 	# Create morphology objects
 	# Create mapping objects
-	# Creeate connection hint objects
+	# Create connection hint objects
 	
 	var cortical_area_IDs_mapped_to_parent_regions_IDs = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary) 
 	cortical_areas.FEAGI_load_all_cortical_areas(cortical_area_summary, cortical_area_IDs_mapped_to_parent_regions_IDs)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
 	mapping_data.FEAGI_load_all_mappings(mapping_summary)
-
+	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()
@@ -47,17 +47,15 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 
 ## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
-	#TODO
-	cache_reloaded.emit()
-	return
-	
 	print("\nFEAGI CACHE: REMOVING the ENTIRE local cached genome!")
-	cortical_areas.update_cortical_area_cache_from_summary({})
+	mapping_data.FEAGI_delete_all_mappings()
+	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
 	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
-	#cache_reloaded.emit()
+	cache_reloaded.emit()
+	return
 	
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
@@ -70,6 +68,18 @@ func FEAGI_mass_update_2D_positions(genome_objects_to_locations: Dictionary) -> 
 		if genome_object is BrainRegion:
 			regions[genome_object as BrainRegion] = genome_objects_to_locations[genome_object]
 	cortical_areas.FEAGI_mass_update_2D_positions(corticals)
+
+## Deletes all mappings involving a cortical area before deleting the area itself
+func FEAGI_delete_all_mappings_involving_area_and_area(deleting: AbstractCorticalArea) -> void:
+	for recursive in deleting.recursive_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(deleting, deleting)
+	for efferent in deleting.efferent_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(deleting, efferent)
+	for afferent in deleting.afferent_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(afferent, deleting)
+	cortical_areas.remove_cortical_area(deleting.cortical_ID)
+	
+	
 
 #region Templates
 
@@ -252,8 +262,8 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	else:
 		if _pending_amalgamation != "":
 			# An amalgamation was pending, now its not (either due to confirmation OR deletion
-			amalgamation_no_longer_pending.emit(_pending_amalgamation)
 			_pending_amalgamation = ""
+			amalgamation_no_longer_pending.emit(_pending_amalgamation)
 			
 	
 

@@ -18,7 +18,7 @@ func _ready():
 func repopulate_from_cache() -> void:
 	delete_all()
 	for cortical_area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
-		append_single_item(cortical_area, cortical_area.name)
+		append_single_item(cortical_area, cortical_area.friendly_name)
 
 ## Manually set the selected cortical area through code. Causes the button to emit the selected signal
 func select_cortical_area(cortical_area: AbstractCorticalArea) -> void:
@@ -34,10 +34,10 @@ func _respond_to_deleted_cortical_area(cortical_area: AbstractCorticalArea) -> v
 	remove_by_ID(cortical_area)
 
 func _respond_to_added_cortical_area(cortical_area: AbstractCorticalArea) -> void:
-	append_single_item(cortical_area, cortical_area.name)
+	append_single_item(cortical_area, cortical_area.friendly_name)
 
 func _respond_to_updated_cortical_area(updated_cortical_area: AbstractCorticalArea) -> void:
 	var button: GenericScrollItemText = get_button_by_ID(updated_cortical_area)
-	if button.text != updated_cortical_area.name:
-		button.text = updated_cortical_area.name
+	if button.text != updated_cortical_area.friendly_name:
+		button.text = updated_cortical_area.friendly_name
 	

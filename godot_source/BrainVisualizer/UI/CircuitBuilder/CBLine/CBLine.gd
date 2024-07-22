@@ -3,7 +3,7 @@ class_name CBLine
 
 const LINE_INPUT_X_OFFSET: int = 200 # Shapes the line curvature
 const LINE_OUTPUT_X_OFFSET: int = -200 # Shapes the line curvature
-const NUM_POINTS_PER_CURVE: int = 40
+const NUM_POINTS_PER_CURVE: int = 20
 const NUM_DOTTED_LINE_DIVISIONS: int = 50
 const COLOR_CONSTANT_OFFSET_HIGHLIGHT: float = 0.4
 const COLOR_SLOPE_OFFSET_HIGHLIGHT: float = 0.4

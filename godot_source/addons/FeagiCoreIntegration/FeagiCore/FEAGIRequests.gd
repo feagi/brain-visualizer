@@ -3,6 +3,7 @@ class_name FEAGIRequests
 
 #region Genome and FEAGI general
 
+#WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
@@ -135,7 +136,7 @@ func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vecto
 	# Define Request
 	var dict_to_send: Dictionary = {}
 	for move in genome_objects_mapped_to_new_locations_as_vector2is.keys():
-		dict_to_send[(move as GenomeObject).get_ID()] = FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])
+		dict_to_send[(move as GenomeObject).genome_ID] = {"coordinate_2d": FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_relocate_members, dict_to_send)
 	
 	# Send request and await results
@@ -158,8 +159,8 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region.ID)
+	if !parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such parent ID %s to create subregion under!" % parent_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_PARENT_ID")
 	if region_name == "":
 		push_error("FEAGI Requests: Region name cannot be blank!")
@@ -173,7 +174,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"title": region_name,
-		"parent_region_id": parent_region.ID,
+		"parent_region_id": parent_region.region_ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
 		"areas": AbstractCorticalArea.cortical_area_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
@@ -198,14 +199,14 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !brain_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.ID)
+	if !brain_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
-	if !parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such parent region ID %s to place subregion under!" % parent_region.ID)
+	if !parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such parent region ID %s to place subregion under!" % parent_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_PARENT_ID")
-	if !brain_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.ID)
+	if !brain_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % brain_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	if brain_region.is_root_region():
 		push_error("FEAGI Requests: Unable to edit root region!")
@@ -216,10 +217,10 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"region_id": brain_region.ID,
-		"region_title": region_name,
+		"region_id": brain_region.region_ID,
+		"title": region_name,
 		"region_description": region_description,
-		"parent_region_id": parent_region.ID,
+		"parent_region_id": parent_region.region_ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coords_3D),
 	}
@@ -232,7 +233,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to create region of name %s!" % brain_region.name)
 		return FEAGI_response_data
-	FeagiCore.local_feagi_cache.brain_regions.FEAGI_edited_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_edit_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
 	return FEAGI_response_data
 
 func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[GenomeObject]) -> FeagiRequestOutput:
@@ -240,22 +241,22 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !target_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % target_region.ID)
+	if !target_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % target_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	for object in objects_to_move:
 		if object is BrainRegion:
 			if (object as BrainRegion).is_root_region():
 				push_error("FEAGI Requests: Unable to make Root Region a child of %s!" % target_region.name)
 				return FeagiRequestOutput.requirement_fail("CANNOT_MOVE_ROOT")
-			if (object as BrainRegion).ID == target_region.ID:
+			if (object as BrainRegion).region_ID == target_region.region_ID:
 				push_error("FEAGI Requests: Cannot make region %s child of itself!" % target_region.name)
 				return FeagiRequestOutput.requirement_fail("CANNOT_RECURSE_REGION")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {}
 	for object in objects_to_move:
-		dict_to_send[object.get_ID()] = target_region.ID
+		dict_to_send[object.genome_ID] = {"parent_region_id": target_region.region_ID}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_relocateMembers, dict_to_send)
 	
 	# Send request and await results
@@ -266,7 +267,7 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 		push_error("FEAGI Requests: Unable to move objects to region of name %s!" % target_region.name)
 		return FEAGI_response_data
 	for object in objects_to_move:
-		object.change_parent_brain_region(target_region)
+		object.FEAGI_change_parent_brain_region(target_region)
 	return FEAGI_response_data
 
 
@@ -275,8 +276,8 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !deleting_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % deleting_region.ID)
+	if !deleting_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % deleting_region.region_ID)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	if deleting_region.is_root_region():
 		push_error("FEAGI Requests: Unable to delete Root Region!")
@@ -284,7 +285,7 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"id": deleting_region.ID
+		"id": deleting_region.region_ID
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_region_region, dict_to_send)
 	
@@ -294,7 +295,7 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to delete region of name %s!" % deleting_region.name)
+		push_error("FEAGI Requests: Unable to delete region of name %s!" % deleting_region.friendly_name)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_remove_region_and_raise_internals(deleting_region)
 	return FEAGI_response_data
@@ -335,6 +336,31 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
 	return FEAGI_response_data
 
+### Requests information on multiple cortical areas
+func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var IDs: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(checking_areas)
+	var dict_to_send: Dictionary = {"cortical_id_list": IDs}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_corticalArea_multi_corticalAreaProperties, dict_to_send)
+
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab cortical area details of %d cortical areas!" % len(checking_areas))
+		return FEAGI_response_data
+	var responses: Array = FEAGI_response_data.decode_response_as_array()
+	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(checking_areas))
+	for response in responses:
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
+	return FEAGI_response_data
+	
 
 ## Adds a custom cortical area
 func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, parent_region: BrainRegion, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
@@ -345,8 +371,8 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	if cortical_name in FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names():
 		push_error("FEAGI Requests: Cannot create custom cortical area of name %s when a cortical area of this name already exists!" % cortical_name)
 		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
-	if !(parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
-		push_error("FEAGI Requests: Cannot create custom cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.ID])
+	if !(parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
+		push_error("FEAGI Requests: Cannot create custom cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.region_ID])
 		return FeagiRequestOutput.requirement_fail("REGION_NOT_EXISTS")
 	
 	print("FEAGI REQUEST: Request creating custom cortical area by name %s" % cortical_name)
@@ -357,7 +383,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
 		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
-		"brain_region_id": parent_region.ID,
+		"brain_region_id": parent_region.region_ID,
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
 	}
@@ -387,8 +413,8 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 	if cortical_name in FeagiCore.feagi_local_cache.cortical_areas.get_all_cortical_area_names():
 		push_error("FEAGI Requests: Cannot create custom cortical area of name %s when a cortical area of this name already exists!" % cortical_name)
 		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
-	if !(parent_region.ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
-		push_error("FEAGI Requests: Cannot create memory cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.ID])
+	if !(parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
+		push_error("FEAGI Requests: Cannot create memory cortical area of name %s inside non-existant region %s!" % [cortical_name, parent_region.region_ID])
 		return FeagiRequestOutput.requirement_fail("REGION_NOT_EXISTS")
 	
 	print("FEAGI REQUEST: Request creating custom memory cortical area by name %s" % cortical_name)
@@ -401,7 +427,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null],
 		"sub_group_id": "MEMORY",
-		"brain_region_id": parent_region.ID,
+		"brain_region_id": parent_region.region_ID,
 	}
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
@@ -482,13 +508,13 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	
 	var FEAGI_response_data: FeagiRequestOutput
 	
-	match(cloning_area.group):
+	match(cloning_area.cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			print("FEAGI REQUEST: Request copying memory cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)
+			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions_3D, parent_region, true, new_position_2D)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			print("FEAGI REQUEST: Request copying custom cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions, parent_region, true, new_position_2D)
+			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions_3D, parent_region, true, new_position_2D)
 		_:
 			push_error("FEAGI Requests: No procedure for cloning a cortical area of type %s" % cloning_area.type_as_string)
 			return FeagiRequestOutput.requirement_fail("TYPE_NOT_ALLOWED")
@@ -527,19 +553,44 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 
-
-## Attempts to delete a cortical area
-func delete_cortical_area(deleting_ID: StringName) -> FeagiRequestOutput:
+func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], properties: Dictionary) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !deleting_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		push_error("FEAGI Requests: Unable to delete cortical area %s that is not found in cache!" % deleting_ID)
+
+	
+	# Define Request
+	properties["cortical_id_list"] = AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea, properties)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update %d cortical area!" % len(editing_areas))
+		return FEAGI_response_data
+	for ID in AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas):
+		properties["cortical_id"] = ID
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
+	print("FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
+	return FEAGI_response_data
+
+
+## Attempts to delete a cortical area
+func delete_cortical_area(deleting_area: AbstractCorticalArea) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !deleting_area.cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		push_error("FEAGI Requests: Unable to delete cortical area %s that is not found in cache!" % deleting_area.cortical_ID)
 		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
 	
 	# Define Request
-	var dict_to_send: Dictionary = {"cortical_id": deleting_ID}
+	var dict_to_send: Dictionary = {"cortical_id": deleting_area.cortical_ID}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_GE_corticalArea, dict_to_send)
 
 	# Send request and await results
@@ -547,11 +598,37 @@ func delete_cortical_area(deleting_ID: StringName) -> FeagiRequestOutput:
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to delete cortical area of ID %s!" % deleting_ID)
+		push_error("FEAGI Requests: Unable to delete cortical area of ID %s!" % deleting_area.cortical_ID)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_ID)
-	FeagiCore.feagi_local_cache.cortical_areas.remove_cortical_area(deleting_ID)
+	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_area.cortical_ID)
+	FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting_area)
+	return FEAGI_response_data
+
+func mass_delete_cortical_areas(deleting_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var ID_list: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(deleting_areas)
+	var dict_to_send: Dictionary = {
+		"cortical_id_list": ID_list
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_corticalArea_multi_corticalArea, dict_to_send)
+
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete %d cortical areass!" % len(deleting_areas))
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully removed %s cortical areas" % len(deleting_areas))
+	for deleting in deleting_areas:
+		FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting)
 	return FEAGI_response_data
 
 
@@ -578,23 +655,20 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	return FEAGI_response_data
 
 
-## Toggle is the synaptic activity of a cortical area should be monitored
-func toggle_synaptic_monitoring(cortical_area_ID: StringName, should_monitor: bool) -> FeagiRequestOutput:
+## Toggle the synaptic activity monitoring of cortical areas
+func toggle_synaptic_monitoring(cortical_areas: Array[AbstractCorticalArea], should_monitor: bool) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !cortical_area_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		push_error("FEAGI Requests: Unable to find cortical area %s that is not found in cache!!" % cortical_area_ID)
-		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
 	if !FeagiCore.feagi_local_cache.influxdb_availability:
 		push_error("FEAGI Requests: InfluxDB is not available for toggling synaptic monitoring!")
 		return FeagiRequestOutput.requirement_fail("NO_INFLUXDB")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"ID": cortical_area_ID,
-		"state": should_monitor}
+		"cortical_id_list" : AbstractCorticalArea.array_of_cortical_areas_to_array_of_cortical_IDs(cortical_areas)
+	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_MON_neuron_membranePotential, dict_to_send)
 	
 	# Send request and await results
@@ -602,23 +676,22 @@ func toggle_synaptic_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to set synaptic monitoring on cortical area %s!" % cortical_area_ID)
+		push_error("FEAGI Requests: Unable to set synaptic monitoring on %d cortical areas!" % len(cortical_areas))
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully set synaptic monitoring on cortical area %s!" % cortical_area_ID)
-	var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
-	cortical_area.is_monitoring_synaptic_potential = should_monitor
+	print("FEAGI REQUEST: Successfully set synaptic monitoring on %d cortical areas!" % len(cortical_areas))
+	for cortical_area in cortical_areas:
+		cortical_area.is_monitoring_synaptic_potential = should_monitor
 	return FEAGI_response_data
 
 
-## Toggle is the membrane activity of a cortical area should be monitored
-func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bool) -> FeagiRequestOutput:
+## Toggle the membrane activity monitoring of cortical areas
+func toggle_membrane_monitoring(cortical_areas: Array[AbstractCorticalArea], should_monitor: bool) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !cortical_area_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		push_error("FEAGI Requests: Unable to find cortical area %s that is not found in cache!!" % cortical_area_ID)
+
 		return FeagiRequestOutput.requirement_fail("SOURCE_NOT_FOUND")
 	if !FeagiCore.feagi_local_cache.influxdb_availability:
 		push_error("FEAGI Requests: InfluxDB is not available for toggling membrane monitoring!")
@@ -626,8 +699,8 @@ func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
-		"ID": cortical_area_ID,
-		"state": should_monitor}
+		"cortical_id_list" : AbstractCorticalArea.array_of_cortical_areas_to_array_of_cortical_IDs(cortical_areas)
+	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_monitoring_neuron_membranePotential_set, dict_to_send)
 	
 	# Send request and await results
@@ -635,13 +708,35 @@ func toggle_membrane_monitoring(cortical_area_ID: StringName, should_monitor: bo
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to set membrane monitoring on cortical area %s!" % cortical_area_ID)
+		push_error("FEAGI Requests: Unable to set membrane monitoring on %d cortical areas!" % len(cortical_areas))
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully set membrane monitoring on cortical area %s!" % cortical_area_ID)
-	var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_area_ID]
-	cortical_area.is_monitoring_membrane_potential = should_monitor
+	print("FEAGI REQUEST: Successfully set membrane monitoring on %d cortical areas!" % len(cortical_areas))
+	for cortical_area in cortical_areas:
+		cortical_area.is_monitoring_membrane_potential = should_monitor
 	return FEAGI_response_data
+
+func set_cortical_areas_that_are_invisible(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var array_of_IDs = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_suppressCorticalVisibility, array_of_IDs)
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to set visibility for cortical areas!")
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully updated the visibility of cortical areas!")
+	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_set_invisible_cortical_areas(cortical_areas)
+	return FEAGI_response_data
+
 
 #endregion
 
@@ -997,18 +1092,16 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	var response: Array = FEAGI_response_data.decode_response_as_array()
 	var source_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 	var destination_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-	var properties: Array[MappingProperty] = []
 	var raw_dicts: Array[Dictionary] = []
 	raw_dicts.assign(response)
-	properties = MappingProperty.from_array_of_dict(raw_dicts)
 	
 	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
-	source_area.set_mappings_to_efferent_area(destination_area, properties)
+	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, raw_dicts)
 	return FEAGI_response_data
 
 
 ## Set (overwrite) the mappings between 2 areas
-func set_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mappings: Array[MappingProperty]) -> FeagiRequestOutput:
+func set_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mappings: Array[SingleMappingDefinition]) -> FeagiRequestOutput:
 	var source_cortical_ID = source_area.cortical_ID
 	var destination_cortical_ID = destination_area.cortical_ID
 	
@@ -1022,15 +1115,12 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!" % destination_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
-	if MappingProperty.is_mapping_property_array_invalid_for_cortical_areas(mappings, source_area, destination_area):
-		push_error("FEAGI Requests: Given mappings are invalid for creating a mapping between %s towards %s!" % [source_cortical_ID, destination_cortical_ID])
-		return FeagiRequestOutput.requirement_fail("INVALID_MAPPING")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"src_cortical_area": source_cortical_ID,
 		"dst_cortical_area": destination_cortical_ID,
-		"mapping_string": MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
+		"mapping_string": SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
 		}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_mappingProperties, dict_to_send)
 	
@@ -1048,12 +1138,11 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
 	
-	var temp_json_inbetween: Array[Dictionary] = MappingProperties.mapping_properties_to_FEAGI_formated_array(mappings)
-	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, temp_json_inbetween)
-	var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
-	mapping_set.mappings_changed.emit(mapping_set)
-	mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()
-	FeagiCore.feagi_local_cache.mapping_data.mapping_updated.emit(mapping_set)
+	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
+	#var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
+	#mapping_set.mappings_changed.emit(mapping_set)
+	#mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()
+	#FeagiCore.feagi_local_cache.mapping_data.mapping_updated.emit(mapping_set)
 	return FEAGI_response_data
 	#if FeagiCore.feagi_local_cache.mapping_data.does_mappings_exist_between_areas(source_area, destination_area):
 	#	FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID].FEAGI_updated_mappings_JSON(temp_json_inbetween)
@@ -1062,8 +1151,8 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	
 
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
-func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: MappingProperty) -> FeagiRequestOutput:
-	var current_mappings: Array[MappingProperty] = source_area.get_mappings_to(destination_area).mappings
+func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: SingleMappingDefinition) -> FeagiRequestOutput:
+	var current_mappings: Array[SingleMappingDefinition] = source_area.get_mapping_array_toward_cortical_area(destination_area)
 	current_mappings.append(mapping)
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, current_mappings)
 	return return_data
@@ -1071,14 +1160,14 @@ func append_mapping_between_corticals(source_area: AbstractCorticalArea, destina
 
 ## Append a default mapping betwseen 2 cortical areas, given the morphology to use. Assumes the current mapping information is up to date
 func append_default_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  morphology: BaseMorphology) -> FeagiRequestOutput:
-	var appending_mapping: MappingProperty = MappingProperty.create_default_mapping(morphology)
+	var appending_mapping: SingleMappingDefinition = SingleMappingDefinition.create_default_mapping(morphology)
 	var return_data: FeagiRequestOutput = await append_mapping_between_corticals(source_area, destination_area, appending_mapping)
 	return return_data
 
 
 ## delete the mappings between 2 areas
 func delete_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> FeagiRequestOutput:
-	var empty_mappings: Array[MappingProperty] = []
+	var empty_mappings: Array[SingleMappingDefinition] = []
 	var return_data: FeagiRequestOutput = await set_mappings_between_corticals(source_area, destination_area, empty_mappings)
 	return return_data
 
@@ -1087,17 +1176,20 @@ func delete_mappings_between_corticals(source_area: AbstractCorticalArea, destin
 #endregion
 
 #region Amalgamation
+#TODO move wiring mode to enum!
 ## Confirm the import of a pending amalgamation at a specific coordinate
-func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName) -> FeagiRequestOutput:
+func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName, parent_region_ID: StringName, wiring_mode: StringName) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 	print("FEAGI REQUEST: Request confirming amalgamation of ID %s" % amalgamation_ID)
 	
 	# Define Request #TODO why are the parameters in the URL
-	var dict_to_send: Dictionary = 	{}
+	var dict_to_send: Dictionary = 	{
+		"brain_region_id": parent_region_ID
+	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
-		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID
+		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID + "&rewire_mode=" + wiring_mode
 		, dict_to_send)
 	
 	# Send request and await results
@@ -1110,7 +1202,7 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
 	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
 	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	reload_genome()
+	FeagiCore.request_reload_genome()
 	return FEAGI_response_data
 	
 

@@ -35,13 +35,13 @@ func _print_since_usage_mapping(mapping: PackedStringArray) -> String:
 	var output: String = ""
 
 	if mapping[0] in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		output = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[mapping[0]].name + " -> "
+		output = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[mapping[0]].friendly_name + " -> "
 	else:
 		push_error("Unable to locate cortical area of ID %s in cache!" % mapping[0])
 		output = "UNKNOWN -> "
 	
 	if mapping[1] in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		output = output + FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[mapping[1]].name
+		output = output + FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[mapping[1]].friendly_name
 	else:
 		push_error("Unable to locate cortical area of ID %s in cache!" % mapping[1])
 		output = output + "UNKNOWN"

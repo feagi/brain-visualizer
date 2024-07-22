@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://cyt5xxp0wi6lf"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
-[ext_resource type="PackedScene" uid="uid://dukfme5u3e3fl" path="res://BrainVisualizer/UI/GenericElements/Scroll/CorticalArea_List/CorticalAreaScroll.tscn" id="2_k7lg4"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_3awq0"]
+[ext_resource type="PackedScene" uid="uid://bang2hiadhcuc" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.tscn" id="3_vrwu2"]
 
 [node name="WindowViewCorticalArea" type="VBoxContainer"]
 offset_right = 250.0
@@ -25,6 +25,7 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
 
 [node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 64)
@@ -32,9 +33,20 @@ layout_mode = 2
 theme_type_variation = &"Button_Tall"
 text = "Add Cortical Area..."
 
-[node name="CorticalAreaScroll" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("2_k7lg4")]
-custom_minimum_size = Vector2(0, 300)
+[node name="ScrollSectionGenericWithFilter" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_vrwu2")]
 layout_mode = 2
-minimum_height_for_buttons = 32
+
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter" index="1"]
+custom_minimum_size = Vector2(0, 200)
+
+[node name="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter/ScrollSectionGeneric" index="0"]
+size_flags_horizontal = 3
+
+[node name="Button2" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "Update Visabilties"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Button" to="." method="_press_add_cortical_area"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Button2" to="." method="_button_update_visabilities"]
+
+[editable path="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter"]

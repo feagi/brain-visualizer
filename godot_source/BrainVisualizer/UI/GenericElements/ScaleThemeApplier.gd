@@ -34,7 +34,6 @@ func search_for_matching_children(starting_node: Node) -> void:
 		if child is OptionButton:
 			continue # Has its own sizing system
 		
-		
 		if child is ToggleButton:
 			continue # Has its own sizing system
 		
@@ -57,15 +56,22 @@ func search_for_matching_children(starting_node: Node) -> void:
 		
 		search_for_matching_children(child) # Recursion!
 
+#TODO this is pretty terrible, but until theme scale fixes come in to godot this is what we have to do
 ## Applies custom data changes from new theme to all cached references
 func update_theme_customs(_updated_theme: Theme) -> void:
 	
 	# TextureButton
 	for tb: TextureButton in _texture_buttons:
+		if tb == null:
+			continue
 		tb.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tb, "TextureButton")
 	
 	for but: Button in _text_buttons:
+		if but == null:
+			continue
 		but.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(but, "Button")
 		
 	for te: TextureRect in _texture_rects:
+		if te == null:
+			continue
 		te.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(te, "TextureRect")

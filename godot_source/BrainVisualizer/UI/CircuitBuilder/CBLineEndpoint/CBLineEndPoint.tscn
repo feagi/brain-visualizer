@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://ctcyqnotj188l"]
+
+[ext_resource type="Texture2D" uid="uid://qmwmofqkdqja" path="res://BrainVisualizer/UI/CircuitBuilder/Resources/Ports/cb-port-full.png" id="1_dcmu5"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndpoint.gd" id="2_gpyue"]
+
+[node name="CbLineEndPoint" type="TextureRect"]
+custom_minimum_size = Vector2(16, 16)
+texture = ExtResource("1_dcmu5")
+expand_mode = 1
+script = ExtResource("2_gpyue")

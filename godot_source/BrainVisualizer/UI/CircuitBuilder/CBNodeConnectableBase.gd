@@ -20,9 +20,9 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	if !recursive_path.is_empty():
 		_recursives =  get_node(recursive_path)
 	position_offset_changed.connect(_on_node_move)
-	draw.connect(_on_node_move)
 	position_offset_changed.connect(_on_position_changed)
 	_dragged = false
+	minimum_size_changed.connect(_on_node_move)
 
 	
 	
@@ -30,20 +30,31 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:
 	# NOTE: We ask for the prefab as an input since its a waste to have every instance of this object store a copy in memory
 	var terminal: CBNodeTerminal = port_prefab.instantiate()
+	terminal.tree_exited.connect(_force_shrink)
 	match(connection_type):
 		CBNodeTerminal.TYPE.INPUT:
 			_inputs.add_child(terminal)
-			terminal.setup(CBNodeTerminal.TYPE.INPUT, text, self, input_container_offset_changed)
+			terminal.setup(connection_type, text, self, input_container_offset_changed)
 
 		CBNodeTerminal.TYPE.OUTPUT:
 			_outputs.add_child(terminal)
-			terminal.setup(CBNodeTerminal.TYPE.OUTPUT, text, self, output_container_offset_changed)
-			# nothing below, nothing to do
+			terminal.setup(connection_type, text, self, output_container_offset_changed)
 
 		CBNodeTerminal.TYPE.RECURSIVE:
 			_recursives.add_child(terminal)
-			terminal.setup(CBNodeTerminal.TYPE.RECURSIVE, text, self, recursive_container_offset_changed)
+			terminal.setup(connection_type, text, self, recursive_container_offset_changed)
 
+		CBNodeTerminal.TYPE.INPUT_OPEN:
+			_inputs.add_child(terminal)
+			terminal.setup(connection_type, text, self, input_container_offset_changed)
+
+		CBNodeTerminal.TYPE.OUTPUT_OPEN:
+			_outputs.add_child(terminal)
+			terminal.setup(connection_type, text, self, output_container_offset_changed)
+	
+	terminal.button.resized.connect(_on_node_move)
+	#terminal.active_port.resized.connect(_on_node_move)
+	#terminal.terminal_about_to_be_deleted.connect(_on_node_move)
 	return terminal
 
 func _on_node_move() -> void:
@@ -57,3 +68,6 @@ func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 
 func _on_position_changed() -> void:
 	_dragged = true
+
+func _force_shrink() -> void:
+	size = Vector2(0,0)

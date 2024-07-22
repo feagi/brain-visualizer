@@ -1,11 +1,15 @@
-[gd_scene load_steps=3 format=3 uid="uid://bq4c4j2yujcwt"]
+[gd_scene load_steps=7 format=3 uid="uid://bq4c4j2yujcwt"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.gd" id="1_cwaox"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_y8w4n"]
+[ext_resource type="PackedScene" uid="uid://bpc4cbet6k5h4" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.tscn" id="3_ewhco"]
+[ext_resource type="PackedScene" uid="uid://cxb6dif7pqgss" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings.tscn" id="4_n57ep"]
+[ext_resource type="PackedScene" uid="uid://c7ov4mq4cau4l" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.tscn" id="4_vr6mc"]
+[ext_resource type="PackedScene" uid="uid://bifi2v0y8l2bl" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings_partial.tscn" id="6_yr7ns"]
 
-[node name="ExampleWindow" type="VBoxContainer"]
-offset_right = 126.0
-offset_bottom = 40.0
+[node name="WindowMappingEditor" type="VBoxContainer"]
+offset_right = 1332.0
+offset_bottom = 703.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -27,17 +31,50 @@ layout_mode = 2
 
 [node name="ends" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+alignment = 1
 
-[node name="Source" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+[node name="Source" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
-text = "SOURCE"
 
-[node name="todo" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+[node name="Arrow" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
-size_flags_horizontal = 3
+expand_mode = 1
 
-[node name="Destination" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+[node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
-text = "DESTINATION"
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(1300, 0)
+layout_mode = 2
+text = "Established Mappings"
+
+[node name="MappingEditorMemoryMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_vr6mc")]
+visible = false
+layout_mode = 2
+
+[node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
+custom_minimum_size = Vector2(1300, 0)
+layout_mode = 2
+
+[node name="suggested" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "Suggested Mappings"
+
+[node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_yr7ns")]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+alignment = 2
+
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = " Set Mapping "
+
+[connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Source" to="." method="_source_button_picked"]
+[connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Destination" to="." method="_destination_button_picked"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Button" to="." method="_user_pressed_set_mappings"]

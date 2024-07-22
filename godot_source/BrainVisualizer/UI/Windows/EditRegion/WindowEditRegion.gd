@@ -28,10 +28,10 @@ func setup(editing_region: BrainRegion) -> void:
 		return
 	_editing_region = editing_region
 	_editing_region_parent = editing_region.current_parent_region
-	_region_name.text = editing_region.name
-	_region_ID.text = editing_region.ID
-	_region_parent.text = editing_region.current_parent_region.name
-	_region_3D_position.current_vector = editing_region.coordinates_3d
+	_region_name.text = editing_region.friendly_name
+	_region_ID.text = editing_region.region_ID
+	_region_parent.text = editing_region.current_parent_region.friendly_name
+	_region_3D_position.current_vector = editing_region.coordinates_3D
 	for areas in editing_region.contained_cortical_areas:
 		_load_internal_listing(areas)
 	for regions in editing_region.contained_regions:
@@ -40,9 +40,7 @@ func setup(editing_region: BrainRegion) -> void:
 func _load_internal_listing(genome_object: GenomeObject) -> void:
 	if genome_object == null:
 		return
-	var button: Button = BUTTON_PREFAB.instantiate()
-	button.text = genome_object.get_name()
-	_scroll_section.add_item(button, genome_object, false)
+	_scroll_section.add_text_button(genome_object, genome_object.friendly_name, Callable())
 
 func _on_press_cancel():
 	close_window()
@@ -54,6 +52,6 @@ func _on_press_open_circuit_builder(): #TODO change the spawn region to the last
 
 
 func _on_press_update():
-	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2d, _region_3D_position.current_vector) # TODO description, 2d location?
+	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2D, _region_3D_position.current_vector) # TODO description, 2d location?
 	close_window()
 

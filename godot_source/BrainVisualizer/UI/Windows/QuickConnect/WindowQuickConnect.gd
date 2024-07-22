@@ -132,18 +132,20 @@ func _setting_destination() -> void:
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
-	var mapping_hint: MappingHints = MappingHints.new(_source, _destination)
+	var mapping_defaults: MappingRestrictionDefault = FeagiCore.feagi_local_cache.mapping_restrictions.get_defaults_between_2_cortical_areas(_source, _destination)
 	_selected_morphology = null
 	_step3_label.text = " Please Select A Morphology..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
-	if mapping_hint.is_morphologies_restricted:
-		_step3_scroll.set_morphologies(mapping_hint.restricted_morphologies)
-	_step3_scroll.select_morphology(mapping_hint.default_morphology)
+	if FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(_source, _destination).has_restricted_morphologies():
+		_step3_scroll.set_morphologies(FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(_source, _destination).get_morphologies_restricted_to())
+	if mapping_defaults.try_get_default_morphology() == null:
+		return
+	_step3_scroll.select_morphology(mapping_defaults.try_get_default_morphology())
 	
 
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area
-	_step1_label.text = " Selected Source Area: [" + cortical_area.name + "]"
+	_step1_label.text = " Selected Source Area: [" + cortical_area.friendly_name + "]"
 	_step1_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	if !_finished_selecting:
 		_step2_panel.visible = true
@@ -154,7 +156,7 @@ func _set_source(cortical_area: AbstractCorticalArea) -> void:
 
 func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 	_destination = cortical_area
-	_step2_label.text = " Selected Destination Area: [" + cortical_area.name + "]"
+	_step2_label.text = " Selected Destination Area: [" + cortical_area.friendly_name + "]"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:

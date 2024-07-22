@@ -5,9 +5,23 @@ const TEX_DISABLED_ON: Texture = preload("res://BrainVisualizer/UI/GenericResour
 const TEX_DISABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_disabled.png")
 const TEX_ENABLED_ON: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on.png")
 const TEX_ENABLED_OFF: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png")
+const TEX_MIDDLE: Texture = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_mult.png")
 
 @export var enable_autoscaling_with_theme: bool = true
 
+var is_inbetween: bool:
+	get: return _is_inbetween
+	set(v):
+		_is_inbetween = v
+		if v:
+			texture_disabled = TEX_MIDDLE
+			texture_hover = TEX_MIDDLE
+			texture_normal = TEX_MIDDLE
+			texture_pressed = TEX_MIDDLE
+		else:
+			_set_enable_toggle(button_pressed)
+
+var _is_inbetween: bool
 var _cached_size: Vector2i
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -26,6 +40,7 @@ func set_toggle_no_signal(val: bool) -> void:
 	set_pressed_no_signal(val)
 
 func _set_enable_toggle(is_press: bool) -> void:
+	_is_inbetween = false
 	if is_press:
 		texture_disabled = TEX_DISABLED_ON
 		texture_hover = TEX_ENABLED_ON

@@ -28,7 +28,6 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		var child_region_IDs: Array[StringName] = []
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
-		#_available_brain_regions[parent_region_ID].init_region_relationships(child_regions)
 		for child_region in child_regions:
 			child_region.FEAGI_init_parent_relation(parent_region)
 		
@@ -41,15 +40,40 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 				continue
 			cortical_area_mapping[cortical_ID] = parent_region_ID
 	
+	
+	
 	return cortical_area_mapping
-		
+
+func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:
+	var region_dict: Dictionary
+	var arr_IO: Array[Dictionary]
+	var region: BrainRegion
+	for region_ID in region_summary_data:
+		region_dict = region_summary_data[region_ID]
+		if region_dict.has("inputs"):
+			if !(region_ID in _available_brain_regions):
+				push_error("CORE CACHE: Unable to find region %s to add partial mapping set to!")
+				continue
+			region = _available_brain_regions[region_ID]
+			arr_IO = []
+			arr_IO.assign(region_dict["inputs"])
+			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, true)
+		if region_dict.has("outputs"):
+			if !(region_ID in _available_brain_regions):
+				push_error("CORE CACHE: Unable to find region %s to add partial mapping set to!")
+				continue
+			region = _available_brain_regions[region_ID]
+			arr_IO = []
+			arr_IO.assign(region_dict["outputs"])
+			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, false)
+			
 
 ### Clears all regions from the cache
 #func FEAGI_clear_all_regions() -> void:
 #	for region_ID: StringName in _available_brain_regions.keys():
 #		FEAGI_remove_region_and_internals(region_ID)
 
-func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []):
+func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []) -> void:
 	if region_ID in _available_brain_regions.keys():
 		push_error("CORE CACHE: Unable to add another region of the ID %s!" % region_ID)
 		return
@@ -57,7 +81,7 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 	region.FEAGI_init_parent_relation(parent_region)
 	_available_brain_regions[region_ID] = region
 	for object in contained_objects:
-		object.change_parent_brain_region(region)
+		object.FEAGI_change_parent_brain_region(region)
 	region_added.emit(region)
 
 func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
@@ -92,9 +116,9 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 	var contained_objects: Array[GenomeObject] = []
 	var new_parent: BrainRegion = region.current_parent_region
 	for object: GenomeObject in region.get_all_included_genome_objects():
-		object.change_parent_brain_region(new_parent)
-	region.FEAGI_delete_this_region()
+		object.FEAGI_change_parent_brain_region(new_parent)
 	region_about_to_be_removed.emit(region)
+	region.FEAGI_delete_this_region()
 	_available_brain_regions.erase(region.region_ID)
 
 #endregion
@@ -191,12 +215,14 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	# Generate total path
 	var region_path: Array[Array] = FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(start_region, end_region)
 	var total_chain_path: Array[GenomeObject] = []
-	if is_start_cortical_area:
-		total_chain_path.append(starting_point)
+	#if is_start_cortical_area:
+	#	total_chain_path.append(starting_point)
+	total_chain_path.append(starting_point)
 	total_chain_path.append_array(region_path[0])  # ascending
 	total_chain_path.append_array(region_path[1])  # decending
-	if is_end_cortical_area:
-		total_chain_path.append(stoppping_point)
+	#if is_end_cortical_area:
+	#	total_chain_path.append(stoppping_point)
+	total_chain_path.append(stoppping_point)
 	return total_chain_path
 
 #endregion

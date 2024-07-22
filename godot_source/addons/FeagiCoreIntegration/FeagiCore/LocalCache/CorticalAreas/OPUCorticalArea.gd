@@ -27,6 +27,7 @@ func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 
 func _has_neuron_firing_parameters() -> bool:
 	return true
+
 #endregion
 
 #region Neuron Firing Parameters

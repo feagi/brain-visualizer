@@ -17,9 +17,8 @@ var established_mappings: Dictionary: # Mappings Established in the FEAGI Connec
 var _established_mappings: Dictionary
 
 
-
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
-func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array[Dictionary]):
+func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array[Dictionary]) -> void:
 	if !source.cortical_ID in _established_mappings.keys():
 		_established_mappings[source.cortical_ID] = {}
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
@@ -27,12 +26,18 @@ func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractC
 		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings_JSON(mappings_JSON)
 		mapping_updated.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
 	else:
-		## Mapping doesn't exist, create it!	
+		## Mapping doesn't exist, create it if its not empty!
+		if len(mappings_JSON) == 0:
+			return
 		_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.from_FEAGI_JSON(mappings_JSON, source, destination)
 		mapping_created.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
 
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping(source: AbstractCorticalArea, destination: AbstractCorticalArea, new_mappings: Array[SingleMappingDefinition]):
+	if len(new_mappings) == 0:
+		# No mappings between cortical areas, likely a deletion action
+		FEAGI_delete_mappings(source, destination)
+		return
 	if !source.cortical_ID in _established_mappings.keys():
 		_established_mappings[source.cortical_ID] = {}
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
@@ -62,7 +67,28 @@ func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
 			var mapping_dictionaries: Array[Dictionary] = [] # Why doesnt godot support type inference for arrays yet?
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
-			
+
+func FEAGI_delete_all_mappings() -> void:
+	for source_ID: StringName in established_mappings.keys():
+		for destination_ID: StringName in established_mappings[source_ID]:
+			var existing_mappings: InterCorticalMappingSet = _established_mappings[source_ID][destination_ID]
+			existing_mappings.FEAGI_delete_this_mapping()
+	_established_mappings = {}
+
+func FEAGI_delete_mappings(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
+	if !source.cortical_ID in _established_mappings.keys():
+		# mapping already doesnt exist, ignore
+		return
+	if !destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
+		# mapping already doesnt exist, ignore
+		return
+	var existing_mappings: InterCorticalMappingSet = _established_mappings[source.cortical_ID][destination.cortical_ID]
+	existing_mappings.FEAGI_delete_this_mapping()
+	_established_mappings[source.cortical_ID].erase(destination.cortical_ID)
+	if len(_established_mappings[source.cortical_ID]) == 0:
+		_established_mappings.erase(source.cortical_ID)
+	
+
 ## Returns true if the given cortical areas have a mapping defined in cache between them, else false
 func does_mappings_exist_between_areas(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> bool:
 	if !(source.cortical_ID in _established_mappings):

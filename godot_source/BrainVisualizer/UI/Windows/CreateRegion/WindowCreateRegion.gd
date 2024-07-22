@@ -24,20 +24,22 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	_setup_base_window(WINDOW_NAME)
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
-		var button: Button = BUTTON_PREFAB.instantiate()
-		button.text = selected.get_name()
-		_scroll_section.add_item(button, selected)
+		_scroll_section.add_text_button_with_delete(selected, selected.friendly_name, Callable())
+		
 
 func _add_button_pressed() -> void:
-	var genome_window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
-	genome_window.user_selected_object_final.connect(_add_button_response)
+	var selected: Array[GenomeObject] = []
+	selected.assign(_scroll_section.get_key_array())
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_multiple_objects_moving_to_subregion(
+		FeagiCore.feagi_local_cache.brain_regions.get_root_region(),
+		selected)
+	var genome_window:WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	genome_window.final_selection.connect(_selection_complete)
 
-func _add_button_response(genome_object: GenomeObject) -> void:
-	if genome_object == null:
-		return
-	var button: Button = BUTTON_PREFAB.instantiate()
-	button.text = genome_object.get_name()
-	_scroll_section.add_item(button, genome_object)
+func _selection_complete(array: Array[GenomeObject]) -> void:
+	_scroll_section.remove_all_items()
+	for object in array:
+		_scroll_section.add_text_button_with_delete(object, object.friendly_name, Callable())
 	
 
 func _create_region_button_pressed() -> void:
@@ -45,7 +47,11 @@ func _create_region_button_pressed() -> void:
 	var selected: Array[GenomeObject] = []
 	selected.assign(_scroll_section.get_key_array())
 	var region_name: StringName = _name_box.text
-	var coords_2D: Vector2i = Vector2i(0,0) #TODO
+	var coords_2D: Vector2i = GenomeObject.get_average_2D_location(selected)
 	var coords_3D: Vector3i = _vector.current_vector
+	if region_name == "":
+		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your Brain Region!")
+		BV.WM.spawn_popup(popup)
+		return
 	FeagiCore.requests.create_region(region, selected, region_name, coords_2D, coords_3D)
 	close_window()
