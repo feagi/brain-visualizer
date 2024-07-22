@@ -15,6 +15,8 @@ var terminal_type: TYPE:
 	get: return _terminal_type
 var active_port: CBNodePort:
 	get: return _active_port
+var button: Button:
+	get: return _button
 
 var _terminal_type: TYPE ## The type of terminal
 var _active_port: CBNodePort = null # becomes valid after setup

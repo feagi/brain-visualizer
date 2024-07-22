@@ -2,7 +2,6 @@ extends Node
 class_name WindowManager
 ## Coordinates all the visible windows
 
-const _PREFAB_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/CorticalProperties/WindowCorticalProperties.tscn")
 const _PREFAB_CREATE_MORPHOLOGY: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.tscn")
 const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.tscn")
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
@@ -19,16 +18,16 @@ const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Win
 const _PREFAB_EDIT_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.tscn")
 const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.tscn")
 const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
+const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.tscn")
 
 var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
 }
 
-## Opens a left pane allowing the user to view and edit details of a particular cortical area
-func spawn_cortical_properties(cortical_area: AbstractCorticalArea) -> void:
-	var left_bar: WindowCorticalProperties = _default_spawn_window(_PREFAB_CORTICAL_PROPERTIES, WindowCorticalProperties.WINDOW_NAME) as WindowCorticalProperties
-	left_bar.setup(cortical_area)
+func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
+	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties
+	cortical_window.setup(cortical_areas)
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_PREFAB_CREATE_MORPHOLOGY, WindowCreateMorphology.WINDOW_NAME) as WindowCreateMorphology

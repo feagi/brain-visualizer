@@ -125,16 +125,24 @@ var _selected_cortical_areas: Array[AbstractCorticalArea] = []
 func set_user_selected_cortical_areas(selected: Array[AbstractCorticalArea]) -> void:
 	pass
 
+# TEMP TODO remove this as it is a standin for broken BM functions!
 func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:
 	if object is AbstractCorticalArea:
 		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
-		if WindowCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
-			window_manager.spawn_cortical_properties(object as AbstractCorticalArea)
-	var selected: Array[GenomeObject] = [object]
-	_window_manager.spawn_quick_cortical_menu(selected)
+		var objects: Array[GenomeObject] = [object]
+		_window_manager.spawn_quick_cortical_menu(objects)
+		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
+			var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
+			window_manager.spawn_adv_cortical_properties(areas)
 
 func user_selected_single_cortical_area_appending(area: AbstractCorticalArea) -> void:
 	pass
+
+func user_selected_genome_objects(objects: Array[GenomeObject]) -> void:
+	_window_manager.spawn_quick_cortical_menu(objects)
+	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
+		if GenomeObject.get_makeup_of_array(objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
+			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(objects))
 
 func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB

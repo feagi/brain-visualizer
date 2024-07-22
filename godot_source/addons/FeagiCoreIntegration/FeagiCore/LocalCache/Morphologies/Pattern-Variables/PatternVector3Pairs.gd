@@ -42,6 +42,6 @@ func to_array_of_arrays() -> Array[Array]:
 	return [_incoming.to_FEAGI_array(), _outgoing.to_FEAGI_array()]
 
 func duplicate() -> PatternVector3Pairs:
-	return PatternVector3Pairs.new(_incoming, _outgoing)
+	return PatternVector3Pairs.new(_incoming.duplicate(), _outgoing.duplicate())
 
 

@@ -20,9 +20,9 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	if !recursive_path.is_empty():
 		_recursives =  get_node(recursive_path)
 	position_offset_changed.connect(_on_node_move)
-	draw.connect(_on_node_move)
 	position_offset_changed.connect(_on_position_changed)
 	_dragged = false
+	minimum_size_changed.connect(_on_node_move)
 
 	
 	
@@ -51,7 +51,10 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 		CBNodeTerminal.TYPE.OUTPUT_OPEN:
 			_outputs.add_child(terminal)
 			terminal.setup(connection_type, text, self, output_container_offset_changed)
-
+	
+	terminal.button.resized.connect(_on_node_move)
+	#terminal.active_port.resized.connect(_on_node_move)
+	#terminal.terminal_about_to_be_deleted.connect(_on_node_move)
 	return terminal
 
 func _on_node_move() -> void:

@@ -117,6 +117,25 @@ static func true_position_to_BV_position(true_position: Vector3, scale: Vector3)
 		(int(scale.x / 2.0) + true_position.x),
 		(int(scale.y / 2.0) + true_position.y),
 		-(int(scale.z / 2.0) + true_position.z))
+			
+static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
+	var differences: int = -1 # first one will always fail
+	var previous_value: Variant = null
+	var current_value: Variant = null
+	#TODO for vectors, to have per element diffs, branch out from here
+	for area in areas:
+		current_value = area.return_property_by_name_and_section(composition_section_name, property_name)
+		if current_value == null:
+			return false # if the property doesnt exist
+		if previous_value != current_value:
+			differences += 1
+			if differences > 0:
+				# Differences
+				return false
+			previous_value = current_value
+		continue
+	# If we got here, values are identical
+	return true
 
 ## Array of Cortical Areas to Array of Cortical IDs
 static func cortical_area_array_to_ID_array(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
@@ -173,6 +192,12 @@ static func can_all_areas_exist_in_subregion(areas: Array[AbstractCorticalArea])
 			return false
 	return true
 
+static func can_all_areas_be_deleted(areas: Array[AbstractCorticalArea]) -> bool:
+	for area in areas:
+		if !area.user_can_delete_this_area:
+			return false
+	return true
+
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
@@ -185,6 +210,27 @@ static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[Abstract
 	for e in arr:
 		output.append(e.cortical_ID)
 	return output
+
+## If all cortical areas in an array are of the same type, return that type enum, otherwise return CORTICAL_AREA_TYPE.UNKNOWN
+static func array_oc_cortical_areas_type_identification(areas: Array[AbstractCorticalArea]) -> CORTICAL_AREA_TYPE:
+	if len(areas) == 0:
+		return CORTICAL_AREA_TYPE.UNKNOWN
+	var comparison: CORTICAL_AREA_TYPE = areas[0].cortical_type
+	if len(areas) == 1:
+		return comparison
+	for i in range(1, len(areas)):
+		if areas[i].cortical_type != comparison:
+			return CORTICAL_AREA_TYPE.UNKNOWN
+	return comparison
+
+## If given a boolean property, returns true if all areas have this property true. otherwise, returns false, and returns false if property is invalid
+static func boolean_property_of_all_cortical_areas_are_true(areas: Array[AbstractCorticalArea], property: StringName) -> bool:
+	for area in areas:
+		if area.get(property) == null:
+			return false
+		if area.get(property) != true:
+			return false
+	return true
 
 ## DO NOT init this object directly! use a subclass!
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
@@ -250,9 +296,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
-		cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+		_cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
+		cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
 	if "cortical_synaptic_attractivity" in data.keys(): 
-		cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+		_cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
+		cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
@@ -278,6 +326,17 @@ func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 
 func get_neuron_change_with_new_details(new_dimension: Vector3i, new_density: float) -> int:
 	return AbstractCorticalArea.get_neuron_count(new_dimension, new_density) - neuron_count
+
+## Returns the value of a property (optionally within a section). returns null if nonexistant
+func return_property_by_name_and_section(composition_section_name: StringName, property_name: StringName) -> Variant:
+	var section_object: RefCounted = null
+	if composition_section_name != "":
+		section_object = get(composition_section_name) # Assumption is that all cortical areas in the selected array have the section
+		if section_object == null:
+			return null # if the section doesnt exist
+	else:
+		section_object = self # to allow us to grab universal properties on the [AbstractCorticalArea] directly
+	return section_object.get(property_name)
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:

@@ -56,8 +56,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			quick_connect_button.visible = false
 			clone_button.visible = false
-			details_button.visible = false
-			delete_button.visible = false
+			details_button.tooltip_text = "View Details of these Cortical Areas"
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple areas"
 			
@@ -65,12 +64,16 @@ func setup(selection: Array[GenomeObject]) -> void:
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "One or more of the selected areas cannot be moved to a region"
+			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
+				delete_button.disabled = true
+				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
+				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
-			delete_button.visible = false
+			delete_button.visible = true
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple regions"
 
@@ -78,7 +81,6 @@ func setup(selection: Array[GenomeObject]) -> void:
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
-			delete_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple objects"
 			
@@ -86,6 +88,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(filtered_areas):
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a region"
+			if !AbstractCorticalArea.can_all_areas_be_deleted(filtered_areas):
+				delete_button.disabled = true
+				delete_button.tooltip_text = "One or more of the selected objects cannot be deleted"
 			
 
 
@@ -99,10 +104,11 @@ func setup(selection: Array[GenomeObject]) -> void:
 func _button_details() -> void:
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			BV.WM.spawn_cortical_properties((_selection[0] as AbstractCorticalArea))
+			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
-			pass
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 	close_window()
 
 func _button_quick_connect() -> void:
