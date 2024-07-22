@@ -130,7 +130,8 @@ func user_selected_single_cortical_area_independently(object: GenomeObject) -> v
 	if object is AbstractCorticalArea:
 		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
 		var objects: Array[GenomeObject] = [object]
-		_window_manager.spawn_quick_cortical_menu(objects)
+		if !WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
+			_window_manager.spawn_quick_cortical_menu(objects)
 		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
 			var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
 			window_manager.spawn_adv_cortical_properties(areas)
