@@ -32,6 +32,7 @@ var POST_insight_neurons_membranePotentialStatus: StringName = '/v1/insight/neur
 var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuron/synaptic_potential_status'
 var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 var GET_morphology_morphologies: StringName = '/v1/morphology/morphologies'
+var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -42,17 +43,23 @@ var POST_genome_append: StringName = "/v1/feagi/genome/append"
 var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
+var POST_region_region: StringName = "/v1/region/region"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var PUT_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties"
 var PUT_genome_morphology: StringName = "/v1/morphology/morphology"
 var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
+var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
+var PUT_region_region: StringName = "/v1/region/region"
+var PUT_region_relocateMembers: StringName = "/v1/region/relocate_members"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var DELETE_GE_morphology: StringName = "/v1/morphology/morphology"
 var DELETE_GE_amalgamationCancellation: StringName = "/v1/genome/amalgamation_cancellation"
+var DELETE_region_region: StringName = "/v1/region/region"
+var DELETE_region_regionAndMembers: StringName = "/v1/region/region_and_members"
 
 func _init(FEAGIFullAddress: StringName) -> void:
 	# Preappend the FEAGIFullAddress to each string above

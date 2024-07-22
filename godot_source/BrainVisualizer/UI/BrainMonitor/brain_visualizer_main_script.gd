@@ -17,7 +17,7 @@ func _ready():
 	pass
 
 ## Stupid
-func move_when_changed(changed: BaseCorticalArea):
+func move_when_changed(changed: AbstractCorticalArea):
 	check_cortical(changed) # This is dum
 
 func clear_all_selections() -> void:
@@ -34,36 +34,36 @@ func generate_single_preview(initial_dimensions: Vector3, initial_position: Vect
 	return preview
 
 ## Snaps the camera to a cortical area
-func snap_camera_to_cortical_area(cortical_area: BaseCorticalArea) -> void:
+func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	var camera: BVCam = $BVCam
 	var bv_location: Vector3 = cortical_area.BV_position()
 	camera.teleport_to_look_at_without_changing_angle(bv_location)
 
-func on_cortical_area_added(cortical_area: BaseCorticalArea) -> void:
+func on_cortical_area_added(cortical_area: AbstractCorticalArea) -> void:
 	generate_cortical_area(cortical_area)
 
 
-func generate_cortical_area(cortical_area_data : BaseCorticalArea):
+func generate_cortical_area(cortical_area_data : AbstractCorticalArea):
 	var textbox = $blank_textbox.duplicate()
 	var viewport = textbox.get_node("SubViewport")
 	textbox.scale = Vector3(1,1,1)
-	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions.y, -1 * cortical_area_data.dimensions.z - cortical_area_data.coordinates_3D.z)
-	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.name))
+	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions_3D.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions_3D.y, -1 * cortical_area_data.dimensions_3D.z - cortical_area_data.coordinates_3D.z)
+	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name))
 	textbox.set_texture(viewport.get_texture())
 	textbox.set_name(cortical_area_data.cortical_ID + str("_textbox"))
 	if not textbox.get_name() in global_name_list:
 		global_name_list[textbox.get_name()] = []
 	global_name_list[textbox.get_name()].append([textbox])
-	if int(cortical_area_data.dimensions.x) * int(cortical_area_data.dimensions.y) * int(cortical_area_data.dimensions.z) < 999: # Prevent massive cortical area
-		generate_model(cortical_area_data.cortical_ID, cortical_area_data.coordinates_3D.x,cortical_area_data.coordinates_3D.y,cortical_area_data.coordinates_3D.z,cortical_area_data.dimensions.x, cortical_area_data.dimensions.z, cortical_area_data.dimensions.y)
+	if int(cortical_area_data.dimensions_3D.x) * int(cortical_area_data.dimensions_3D.y) * int(cortical_area_data.dimensions_3D.z) < 999: # Prevent massive cortical area
+		generate_model(cortical_area_data.cortical_ID, cortical_area_data.coordinates_3D.x,cortical_area_data.coordinates_3D.y,cortical_area_data.coordinates_3D.z,cortical_area_data.dimensions_3D.x, cortical_area_data.dimensions_3D.z, cortical_area_data.dimensions_3D.y)
 	else:
-		generate_one_model(cortical_area_data.cortical_ID, cortical_area_data.coordinates_3D.x,cortical_area_data.coordinates_3D.y,cortical_area_data.coordinates_3D.z,cortical_area_data.dimensions.x, cortical_area_data.dimensions.z, cortical_area_data.dimensions.y)
+		generate_one_model(cortical_area_data.cortical_ID, cortical_area_data.coordinates_3D.x,cortical_area_data.coordinates_3D.y,cortical_area_data.coordinates_3D.z,cortical_area_data.dimensions_3D.x, cortical_area_data.dimensions_3D.z, cortical_area_data.dimensions_3D.y)
 # Uncomment below for the new approach to reduce the CPU usuage
 #	var new_node = $cortical_area_box.duplicate() # Duplicate node
 #	new_node.visible = true
 #	new_node.set_name(cortical_area_data.cortical_ID)
-#	new_node.scale = cortical_area_data.dimensions
-#	new_node.transform.origin = Vector3((cortical_area_data.dimensions.x/2 + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions.z/2 + cortical_area_data.coordinates_3D.z))
+#	new_node.scale = cortical_area_data.dimensions_3D
+#	new_node.transform.origin = Vector3((cortical_area_data.dimensions_3D.x/2 + cortical_area_data.coordinates_3D.x),(cortical_area_data.dimensions_3D.y/2 + cortical_area_data.coordinates_3D.y), -1 * (cortical_area_data.dimensions_3D.z/2 + cortical_area_data.coordinates_3D.z))
 #	add_child(new_node)
 	add_child(textbox)
 
@@ -130,7 +130,7 @@ func update_all_node_from_cortical(name_input, material):
 			for x in len(global_name_list[i]):
 				global_name_list[i][x][0].set_surface_override_material(0, material)
 
-func delete_single_cortical(cortical_area_data : BaseCorticalArea):
+func delete_single_cortical(cortical_area_data : AbstractCorticalArea):
 	var name_list : Array = [] # To get cortical name
 	var cortical_text = cortical_area_data.cortical_ID + "_textbox"
 	for i in global_name_list:
@@ -168,16 +168,16 @@ func delete_example():
 
 
 #why
-func check_cortical(cortical_area_data : BaseCorticalArea):
+func check_cortical(cortical_area_data : AbstractCorticalArea):
 	# TODO: This is dumb
 	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label")
-	label.text = cortical_area_data.name # What is this even doing here? 
+	label.text = cortical_area_data.friendly_name # What is this even doing here? 
 	if global_name_list: # Pretty sure this is already exist in cache. We need to replace this with current list.
 		var coordinate_3D = global_name_list[cortical_area_data.cortical_ID][0].slice(1, 4)
 		var dimension = global_name_list[cortical_area_data.cortical_ID][0].slice(4, 8)
 		var dimension_updated = Vector3i(dimension[0], dimension[2], dimension[1]) # Okay.
 		var coordinate_3D_updated = Vector3i(coordinate_3D[0], coordinate_3D[1], coordinate_3D[2])  #Cool. We are doing vector3i instead. all right
-		if (coordinate_3D_updated != cortical_area_data.coordinates_3D) or (dimension_updated != cortical_area_data.dimensions):
+		if (coordinate_3D_updated != cortical_area_data.coordinates_3D) or (dimension_updated != cortical_area_data.dimensions_3D):
 			delete_single_cortical(cortical_area_data) # Not going to bother to try and improve this. 
 			for i in global_name_list:
 				if cortical_area_data.cortical_ID in i:

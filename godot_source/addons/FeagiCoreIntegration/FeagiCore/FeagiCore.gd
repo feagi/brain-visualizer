@@ -17,8 +17,6 @@ enum GENOME_LOAD_STATE {
 	UNKNOWN
 }
 
-
-
 #endregion
 
 signal connection_state_changed(new_state: CONNECTION_STATE, previous_state: CONNECTION_STATE)

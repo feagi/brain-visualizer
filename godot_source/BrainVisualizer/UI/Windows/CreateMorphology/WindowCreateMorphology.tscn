@@ -1,0 +1,209 @@
+[gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.gd" id="1_w1bco"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateMorphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_6i23i"]
+[ext_resource type="Texture2D" uid="uid://c4r2s8wm7tu2n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="4_0ajep"]
+[ext_resource type="PackedScene" uid="uid://lbyao7dlu4ga" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.tscn" id="4_ujsmp"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="5_6juqf"]
+[ext_resource type="Texture2D" uid="uid://v0jrtceot6kw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/patterns.png" id="5_63qii"]
+[ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
+[ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
+[ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/MultiLineTextInput.gd" id="12_koy8n"]
+
+[node name="WindowCreateMorphology" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_w1bco")
+
+[node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
+layout_mode = 2
+title = "Create Connectivity Rule"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "Select Connectivity Rule Type:"
+
+[node name="Options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+script = ExtResource("3_2s0i3")
+
+[node name="Vector" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("4_ujsmp")]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector"]
+layout_mode = 2
+
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer"]
+layout_mode = 2
+alignment = 1
+vertical = true
+
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("4_0ajep")
+expand_mode = 1
+
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+theme_type_variation = &"DetailedPanelContainerButton_MainText"
+text = "Vectors"
+horizontal_alignment = 1
+
+[node name="g2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+theme_type_variation = &"DetailedPanelContainerButton_DescriptionFont"
+bbcode_enabled = true
+text = "[p][center]Vectors use magnitude and direction[/center][/p][p][center]to define how neurons from source[/center][/p][p][center]and destination connect.[/center][/p]"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+shortcut_keys_enabled = false
+
+[node name="Pattern" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("4_ujsmp")]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern"]
+layout_mode = 2
+
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer"]
+layout_mode = 2
+alignment = 1
+vertical = true
+
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("5_63qii")
+expand_mode = 1
+
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+theme_type_variation = &"DetailedPanelContainerButton_MainText"
+text = "Patterns"
+horizontal_alignment = 1
+
+[node name="g2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+layout_mode = 2
+mouse_filter = 1
+theme_type_variation = &"DetailedPanelContainerButton_DescriptionFont"
+bbcode_enabled = true
+text = "[p][center]Patterns leverage wildcards to[/center][/p][p][center]define how source neurons reach[/center][/p][p][center]their destinations.[/center][/p]"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+shortcut_keys_enabled = false
+
+[node name="Name" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "TEX"
+
+[node name="Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+placeholder_text = " Type Rule Name Here..."
+script = ExtResource("3_6i23i")
+
+[node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_c1klg")]
+visible = false
+layout_mode = 2
+
+[node name="ElementMorphologyPatternView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("7_w3816")]
+visible = false
+layout_mode = 2
+
+[node name="ElementMorphologyCompositeView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("5_k76mc")]
+visible = false
+layout_mode = 2
+
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+text = "Description"
+
+[node name="Description_text" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+placeholder_text = " Type your custom description here..."
+script = ExtResource("12_koy8n")
+
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Back"
+
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Add"
+
+[connection signal="morphology_type_selected" from="WindowPanel/WindowMargin/WindowInternals/Options" to="." method="_step_2_input_properties"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Options/Vector" to="WindowPanel/WindowMargin/WindowInternals/Options" method="_vector_select"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Options/Pattern" to="WindowPanel/WindowMargin/WindowInternals/Options" method="_pattern_select"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Back" to="." method="_step_1_pick_type"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Add" to="." method="_on_create_morphology_pressed"]
+
+[editable path="WindowPanel/WindowMargin/WindowInternals/Options/Vector"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/Options/Pattern"]

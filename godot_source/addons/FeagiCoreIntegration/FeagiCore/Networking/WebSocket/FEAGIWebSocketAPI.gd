@@ -11,7 +11,6 @@ signal socket_state_changed(state: WebSocketPeer.State)
 signal feagi_return_ping()
 signal feagi_requesting_reset()
 signal feagi_return_other(data: Variant)
-#TODO: As we move more functionality here, we need a generic event signal, or an equivilant to [FEAGIHTTPResponses]
 
 var _cache_websocket_data: PackedByteArray # outside to void reallocation penalties
 var _socket: WebSocketPeer

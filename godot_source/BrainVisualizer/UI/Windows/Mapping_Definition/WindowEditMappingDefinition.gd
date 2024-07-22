@@ -2,8 +2,10 @@ extends BaseDraggableWindow
 class_name WindowEditMappingDefinition
 ## Window for editing the mapping definitions between 2 cortical areas
 
-var _source_area: BaseCorticalArea
-var _destination_area: BaseCorticalArea
+const WINDOW_NAME: StringName = "edit_mappings"
+
+var _source_area: AbstractCorticalArea
+var _destination_area: AbstractCorticalArea
 var _sources_dropdown: CorticalDropDown
 var _destinations_dropdown: CorticalDropDown
 var _general_mapping_details: GeneralMappingEditor
@@ -15,8 +17,8 @@ func _ready() -> void:
 	_destinations_dropdown = _window_internals.get_node("SourceAndDestination/des_box/des_dropdown")
 	_general_mapping_details = _window_internals.get_node("Mapping_Details")
 
-func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseCorticalArea = null, spawn_default_mapping_if_applicable = false):
-	_setup_base_window("edit_mappings")
+func setup(cortical_source: AbstractCorticalArea = null, cortical_destination: AbstractCorticalArea = null, spawn_default_mapping_if_applicable = false):
+	_setup_base_window(WINDOW_NAME)
 	_spawn_default_mapping_if_applicable_on_spawn = spawn_default_mapping_if_applicable
 	if cortical_source != null:
 		_sources_dropdown.set_selected_cortical_area(cortical_source)
@@ -37,18 +39,19 @@ func setup(cortical_source: BaseCorticalArea = null, cortical_destination: BaseC
 		_selected_cortical_areas_changed(cortical_source, cortical_destination)
 	
 
-func _selected_cortical_areas_changed(source: BaseCorticalArea, destination: BaseCorticalArea) -> void:
+func _selected_cortical_areas_changed(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
 	if !_are_cortical_areas_valid():
 		return
 	
-	BV.CB.set_outlining_state_of_connection(source, destination, true)
+	#BV.CB.set_outlining_state_of_connection(source, destination, true) #TODO restore
 	
 	_request_mappings_from_feagi()
 
 ## Overridden!
 func close_window():
 	if _source_area != null && _destination_area != null:
-		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		#BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false) #TODO restore
+		pass
 	super()
 
 ## Called from the source cortical area via signal whenever a mapping of it is updated
@@ -81,17 +84,18 @@ func _are_cortical_areas_valid() -> bool:
 		return false
 	return true
 
-func _source_changed(new_source: BaseCorticalArea) -> void:
+func _source_changed(new_source: AbstractCorticalArea) -> void:
 	if _source_area != null:
 		if _source_area.efferent_mapping_retrieved_from_feagi.is_connected(_retrieved_feagi_mapping_data):
 			_source_area.efferent_mapping_retrieved_from_feagi.disconnect(_retrieved_feagi_mapping_data)
-		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		#BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false) #TODO restore
 	_source_area = new_source
 	_source_area.efferent_mapping_retrieved_from_feagi.connect(_retrieved_feagi_mapping_data)
 	_selected_cortical_areas_changed(_source_area, _destination_area)
 
-func _destination_changed(new_destination: BaseCorticalArea) -> void:
+func _destination_changed(new_destination: AbstractCorticalArea) -> void:
 	if _destination_area != null:
-		BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false)
+		#BV.CB.set_outlining_state_of_connection(_source_area, _destination_area, false) #TODO restore
+		pass
 	_destination_area = new_destination
 	_selected_cortical_areas_changed(_source_area, _destination_area)

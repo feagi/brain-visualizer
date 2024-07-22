@@ -1,0 +1,44 @@
+[gd_scene load_steps=3 format=3 uid="uid://pg6obfpceakc"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.gd" id="1_7ua63"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1dl3f"]
+
+[node name="ConfigurablePopup" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_7ua63")
+window_spawn_location = null
+
+[node name="TitleBar" parent="." instance=ExtResource("2_1dl3f")]
+layout_mode = 2
+title = "EXAMPLE WINDOW"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="gap1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="Message" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2

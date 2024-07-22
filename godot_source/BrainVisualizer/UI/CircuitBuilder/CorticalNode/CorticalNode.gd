@@ -29,10 +29,10 @@ var cortical_area_ID: StringName:
 		if(_cortical_area_ref):
 			return _cortical_area_ref.cortical_ID
 		return "ERROR NOT SETUP"
-var cortical_area_ref: BaseCorticalArea:
+var cortical_area_ref: AbstractCorticalArea:
 	get: return _cortical_area_ref
 
-var _cortical_area_ref: BaseCorticalArea
+var _cortical_area_ref: AbstractCorticalArea
 var _graph: CorticalNodeGraph
 var _dragged: bool
 
@@ -54,7 +54,7 @@ func _gui_input(event):
 	BV.UI.user_selected_single_cortical_area_independently(_cortical_area_ref)
 
 ## Since we cannot use _init for scenes, use this instead to initialize data
-func setup(cortical_area: BaseCorticalArea, node_position: Vector2) -> void:
+func setup(cortical_area: AbstractCorticalArea, node_position: Vector2) -> void:
 	_cortical_area_ref = cortical_area
 	position_offset = node_position
 	title = "  " + _cortical_area_ref.name #TODO HACK FOR SPACING
@@ -86,7 +86,7 @@ func spawn_afferent_terminal(mapping_properties: MappingProperties) -> InterCort
 func get_center_position_offset() -> Vector2:
 	return position_offset + (size / 2.0)
 
-func _is_cortical_node_mapped(cortical_area: BaseCorticalArea) -> bool:
+func _is_cortical_node_mapped(cortical_area: AbstractCorticalArea) -> bool:
 	for child: Node in get_children():
 		if child.name == cortical_area.cortical_ID:
 			return true
@@ -144,18 +144,18 @@ func _user_request_delete_cortical_area() -> void:
 	###FeagiRequests.delete_cortical_area(_cortical_area_ref.cortical_ID)
 
 ## Set the color depnding on cortical type
-func _setup_node_color(cortical_type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	var style_box: StyleBoxFlat = StyleBoxFlat.new()
 	match(cortical_type):
-		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			style_box.bg_color = IPU_BOX_COLOR
-		BaseCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			style_box.bg_color = MEMORY_BOX_COLOR
-		BaseCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			style_box.bg_color = CUSTOM_BOX_COLOR
-		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			style_box.bg_color = OPU_BOX_COLOR
-		BaseCorticalArea.CORTICAL_AREA_TYPE.CORE:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			pass #TODO Define an actual color here at some point!
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
@@ -172,7 +172,7 @@ func _on_position_changed() -> void:
 	_dragged = true
 
 
-func _update_cortical_name(new_name: StringName, _this_cortical_area: BaseCorticalArea) -> void:
+func _update_cortical_name(new_name: StringName, _this_cortical_area: AbstractCorticalArea) -> void:
 	title = new_name
 
 func _shrink() -> void:

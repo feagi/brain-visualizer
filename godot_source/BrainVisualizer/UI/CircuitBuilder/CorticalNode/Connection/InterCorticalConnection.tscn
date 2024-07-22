@@ -1,10 +1,10 @@
 [gd_scene load_steps=4 format=3 uid="uid://bkxctwg5856qk"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/InterCorticalConnection.gd" id="1_wvqts"]
-[ext_resource type="Shader" path="res://BrainVisualizer/UI/CircuitBuilder/CorticalNode/Connection/CB_Line_Shader.gdshader" id="2_oj3rc"]
+[ext_resource type="Shader" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CB_Line_Shader.gdshader" id="2_q2wjm"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yq77r"]
-shader = ExtResource("2_oj3rc")
+shader = ExtResource("2_q2wjm")
 shader_parameter/baseColor = Vector4(1, 1, 1, 1)
 shader_parameter/colorHighLight = Vector4(1, 1, 1, 1)
 shader_parameter/isOutlined = false

@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3 uid="uid://d0c25iltidw0f"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.gd" id="1_ettob"]
+[ext_resource type="Shader" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CB_Line_Shader.gdshader" id="2_y4prh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o341r"]
+shader = ExtResource("2_y4prh")
+shader_parameter/baseColor = Vector4(1, 1, 1, 1)
+shader_parameter/colorHighLight = Vector4(1, 1, 1, 1)
+shader_parameter/isOutlined = false
+shader_parameter/isDashed = true
+shader_parameter/numDivisions = 100.0
+shader_parameter/linConstant = 0.0
+shader_parameter/linSlope = 0.0
+
+[node name="CBLineInterTerminal" type="GraphElement"]
+draggable = false
+selectable = false
+script = ExtResource("1_ettob")
+
+[node name="Line2D" type="Line2D" parent="."]
+material = SubResource("ShaderMaterial_o341r")
+points = PackedVector2Array(1128, 304)
+texture_mode = 2
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "0"

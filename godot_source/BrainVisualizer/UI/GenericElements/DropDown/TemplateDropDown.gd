@@ -3,9 +3,9 @@ class_name TemplateDropDown
 
 signal template_picked(template: CorticalTemplate)
 
-@export var _template_type: BaseCorticalArea.CORTICAL_AREA_TYPE
+@export var _template_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
 
-var template_type: BaseCorticalArea.CORTICAL_AREA_TYPE:
+var template_type: AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	get: return _template_type
 	set(v):
 		_template_type = v
@@ -21,17 +21,17 @@ func _ready() -> void:
 	BV.UI.theme_changed.connect(_on_theme_change)
 	_on_theme_change()
 
-func load_cortical_type_options(type: BaseCorticalArea.CORTICAL_AREA_TYPE) -> void:
+func load_cortical_type_options(type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	clear()
 	_stored_template_references = []
 	match(type):
-		BaseCorticalArea.CORTICAL_AREA_TYPE.IPU:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			for template: CorticalTemplate in FeagiCore.feagi_local_cache.IPU_templates.values():
 				if !template.is_enabled:
 					continue
 				_stored_template_references.append(template)
 				add_item(template.cortical_name)
-		BaseCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			for template: CorticalTemplate in FeagiCore.feagi_local_cache.OPU_templates.values():
 				if !template.is_enabled:
 					continue

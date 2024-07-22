@@ -1,6 +1,8 @@
 extends BaseDraggableWindow
 class_name WindowQuickConnect
 
+const WINDOW_NAME: StringName = "quick_connect"
+
 enum POSSIBLE_STATES {
 	SOURCE,
 	DESTINATION,
@@ -36,8 +38,8 @@ var _step4_button: Button
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false
 
-var _source: BaseCorticalArea = null
-var _destination: BaseCorticalArea = null
+var _source: AbstractCorticalArea = null
+var _destination: AbstractCorticalArea = null
 var _selected_morphology: BaseMorphology = null
 
 func _ready() -> void:
@@ -64,12 +66,12 @@ func _ready() -> void:
 	_step3_panel.theme_type_variation = "PanelContainer_QC_incomplete"
 	current_state = POSSIBLE_STATES.SOURCE
 
-func setup(cortical_source_if_picked: BaseCorticalArea) -> void:
-	_setup_base_window("quick_connect")
+func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
+	_setup_base_window(WINDOW_NAME)
 	if cortical_source_if_picked != null:
 		_set_source(cortical_source_if_picked)
 
-func on_user_select_cortical_area(cortial_area: BaseCorticalArea) -> void:
+func on_user_select_cortical_area(cortial_area: AbstractCorticalArea) -> void:
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:
 			_set_source(cortial_area)
@@ -139,7 +141,7 @@ func _setting_morphology() -> void:
 	_step3_scroll.select_morphology(mapping_hint.default_morphology)
 	
 
-func _set_source(cortical_area: BaseCorticalArea) -> void:
+func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area
 	_step1_label.text = " Selected Source Area: [" + cortical_area.name + "]"
 	_step1_panel.theme_type_variation = "PanelContainer_QC_Complete"
@@ -150,7 +152,7 @@ func _set_source(cortical_area: BaseCorticalArea) -> void:
 		current_state = POSSIBLE_STATES.IDLE
 
 
-func _set_destination(cortical_area: BaseCorticalArea) -> void:
+func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = " Selected Destination Area: [" + cortical_area.name + "]"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"

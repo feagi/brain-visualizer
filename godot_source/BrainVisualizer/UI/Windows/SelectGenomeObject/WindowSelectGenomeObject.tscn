@@ -1,0 +1,58 @@
+[gd_scene load_steps=4 format=3 uid="uid://cevmyu0h3jk73"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.gd" id="1_63jkm"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1e0a2"]
+[ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_e2y22"]
+
+[node name="SelectGenomeObject" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_63jkm")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_1e0a2")]
+layout_mode = 2
+title = "Select Object from Genome"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_e2y22")]
+custom_minimum_size = Vector2(600, 300)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "Please Select"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+alignment = 2
+
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Select" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Select"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Select" to="." method="_select_pressed"]

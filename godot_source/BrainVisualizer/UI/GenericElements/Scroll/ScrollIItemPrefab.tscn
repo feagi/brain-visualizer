@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://ne1rh6vrnynp"]
+
+[node name="ScrollIItemPrefab" type="Button"]
+theme_type_variation = &"Button_List"
+text = "object"
