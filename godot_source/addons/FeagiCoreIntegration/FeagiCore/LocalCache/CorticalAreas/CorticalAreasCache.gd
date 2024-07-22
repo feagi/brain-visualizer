@@ -237,67 +237,8 @@ func get_all_cortical_area_names() -> Array[StringName]:
 		output.append(cortical_area.cortical_ID)
 	return output
 
-#region Mass Operations
-## Goes over a dictionary of cortical areas and adds / removes the cached listing as needed. Should only be called from FEAGI
-func update_cortical_area_cache_from_summary(_new_listing_with_summaries: Dictionary) -> void:
-	print("FEAGI CACHE: Replacing cortical areas cache...")
-	
-	var current_cached_IDs: Array[StringName] = []
-	current_cached_IDs.assign(available_cortical_areas.keys())
-	var incoming_IDs: Array[StringName] = []
-	incoming_IDs.assign(_new_listing_with_summaries.keys())
-	var cached_IDs_to_remove: Array[StringName] = current_cached_IDs.filter(func(cached_ID): return !(cached_ID in incoming_IDs))
-	var cached_IDs_to_update: Array[StringName] = current_cached_IDs.filter(func(cached_ID): return (cached_ID in incoming_IDs))
-	var IDs_to_add: Array[StringName] = incoming_IDs.filter(func(incoming_ID): return !(incoming_ID in current_cached_IDs))
-	
-
-	# remove removed cortical areas
-	for remove: StringName in cached_IDs_to_remove:
-		remove_cortical_area(remove)
-	
-	# add added cortical areas
-	var _area_summary: Dictionary
-	for add in IDs_to_add:
-		# since we only have a input dict with the name and type of morphology, we need to generate placeholder objects
-		_area_summary = _new_listing_with_summaries[add]
-		_area_summary["cortical_id"] = add
-		add_cortical_area_from_dict(_area_summary)
-	
-	# Update updated cortical areas
-	for update in cached_IDs_to_update:
-		_area_summary = _new_listing_with_summaries[update]
-		_area_summary["cortical_id"] = update
-		update_cortical_area_from_dict(_area_summary)
-
-
-
-## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
-func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
-	for cortical_ID in IDs_to_locations.keys():
-		if !(cortical_ID in _available_cortical_areas.keys()):
-			push_error("Unable to update position of %s due to this cortical area missing in cache" % cortical_ID)
-			continue
-		_available_cortical_areas[cortical_ID].coordinates_2D = IDs_to_locations[cortical_ID]
-
-## Removes all cached cortical areas (and their connections). Should only be called during a reset
-func hard_wipe_available_cortical_areas():
-	print("CACHE: Wiping cortical areas and connections...")
-	var all_cortical_area_IDs: Array = _available_cortical_areas.keys()
-	for cortical_area_ID in all_cortical_area_IDs:
-		remove_cortical_area(cortical_area_ID)
-	print("CACHE: Wiping cortical areas and connection wipe complete!")
-#endregion
-
-#region queries
-## Returns true if a cortical area exists with a given substring of name (NOT ID)
-func exist_cortical_area_with_subname(searching_name: StringName) -> bool:
-	for cortical_area in _available_cortical_areas.values():
-		if cortical_area.name.to_lower() == searching_name.to_lower():
-			return true
-	return false
-
 ## Returns true if a cortical area exists with a given name (NOT ID)
-func exist_cortical_area_with_exact_name(searching_name: StringName) -> bool:
+func exist_cortical_area_of_name(searching_name: StringName) -> bool:
 	for cortical_area in _available_cortical_areas.values():
 		if cortical_area.friendly_name.to_lower() == searching_name.to_lower():
 			return true
@@ -337,4 +278,3 @@ func invert_selecteion(selected: Array[AbstractCorticalArea]) -> Array[AbstractC
 
 
 #endregion
-
