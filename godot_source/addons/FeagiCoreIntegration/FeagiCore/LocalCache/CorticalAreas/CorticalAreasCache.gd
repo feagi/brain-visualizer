@@ -278,4 +278,3 @@ func invert_selecteion(selected: Array[AbstractCorticalArea]) -> Array[AbstractC
 
 
 #endregion
-

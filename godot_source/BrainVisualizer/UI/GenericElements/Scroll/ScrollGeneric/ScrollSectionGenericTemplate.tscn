@@ -1,10 +1,10 @@
 [gd_scene load_steps=7 format=3 uid="uid://ckwfpanem3da6"]
 
-[ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="1_obv0x"]
+[ext_resource type="Texture2D" uid="uid://b4jkpvgo7fes3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="1_obv0x"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="2_wu2xg"]
-[ext_resource type="Texture2D" uid="uid://dryfi4tlhq5mq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_3g4xv"]
-[ext_resource type="Texture2D" uid="uid://ddg6hll5cu8vb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_0x2o7"]
-[ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_q4002"]
+[ext_resource type="Texture2D" uid="uid://dm7j5k1l27tvy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_3g4xv"]
+[ext_resource type="Texture2D" uid="uid://btuaycki4ux0h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_0x2o7"]
+[ext_resource type="Texture2D" uid="uid://df4tfd8cxsr4c" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_q4002"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="6_uj8hj"]
 
 [node name="ScrollSectionGenericTemplate" type="VBoxContainer"]

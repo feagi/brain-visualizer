@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://cst1ciwraah37"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.gd" id="1_bd7dq"]
-[ext_resource type="Texture2D" uid="uid://c7ewdn04rapbx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="2_8mpaj"]
+[ext_resource type="Texture2D" uid="uid://brbwx7axd5lji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="2_8mpaj"]
 [ext_resource type="PackedScene" uid="uid://ctcyqnotj188l" path="res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn" id="3_6cfee"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4o2lj"]

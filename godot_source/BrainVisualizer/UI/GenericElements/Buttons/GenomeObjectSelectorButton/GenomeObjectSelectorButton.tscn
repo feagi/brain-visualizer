@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://bpc4cbet6k5h4"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.gd" id="1_rwtbd"]
-[ext_resource type="Texture2D" uid="uid://b3go6kjen16je" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="2_mk553"]
-[ext_resource type="Texture2D" uid="uid://c2omybf3650ma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_qi2uw"]
+[ext_resource type="Texture2D" uid="uid://cmd2qum2418ya" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="2_mk553"]
+[ext_resource type="Texture2D" uid="uid://piwrj0vuisem" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_qi2uw"]
 
 [node name="GenomeObjectSelectorButton" type="PanelContainer"]
 offset_right = 54.0

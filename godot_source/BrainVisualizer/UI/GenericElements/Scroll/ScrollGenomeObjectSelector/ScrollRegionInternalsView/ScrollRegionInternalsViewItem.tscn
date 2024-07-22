@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsViewItem.gd" id="1_v74x2"]
 [ext_resource type="PackedScene" uid="uid://lbyao7dlu4ga" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.tscn" id="2_7h3ma"]
-[ext_resource type="Texture2D" uid="uid://ccyrqv02uu5qv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="3_lqhgv"]
+[ext_resource type="Texture2D" uid="uid://c4aoq8epoq5dr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="3_lqhgv"]
 
 [node name="ScrollRegionInternalsViewItem" type="BoxContainer"]
 offset_right = 190.0

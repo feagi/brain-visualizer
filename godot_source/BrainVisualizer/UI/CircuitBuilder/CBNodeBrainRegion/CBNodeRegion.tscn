@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c3ashc408js2c"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.gd" id="1_yxq37"]
-[ext_resource type="Texture2D" uid="uid://c2omybf3650ma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="2_oj6qo"]
+[ext_resource type="Texture2D" uid="uid://piwrj0vuisem" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="2_oj6qo"]
 
 [node name="CBNodeBrainRegion" type="GraphNode"]
 custom_minimum_size = Vector2(350, 50)
