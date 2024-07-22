@@ -1,6 +1,6 @@
 [gd_scene load_steps=28 format=3 uid="uid://c8s0gyef77enw"]
 
-[ext_resource type="Material" uid="uid://bbnd068im4lfk" path="res://Feagi-Godot-Interface/UI/Brain_Visualizer/assets/websocket_status_red.material" id="1_hotxx"]
+[ext_resource type="Material" uid="uid://bbnd068im4lfk" path="res://BrainVisualizer/UI/BrainMonitor/Resources/websocket_status_red.material" id="1_hotxx"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g1rjx"]
 resource_name = "Material"

@@ -1,6 +1,6 @@
 [gd_resource type="Theme" load_steps=30 format=3 uid="uid://dudre7anlx6ml"]
 
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_6fwwf"]
+[ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_6fwwf"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)

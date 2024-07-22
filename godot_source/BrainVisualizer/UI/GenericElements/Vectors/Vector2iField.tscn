@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.gd" id="1_2rlsy"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_v6mub"]
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_xw845"]
+[ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_xw845"]
 
 [node name="Vector2iField" type="BoxContainer"]
 offset_right = 126.0
