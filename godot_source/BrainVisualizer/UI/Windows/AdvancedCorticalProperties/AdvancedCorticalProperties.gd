@@ -149,7 +149,10 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 
 func _send_update(send_button: Button) -> void:
 	if send_button.name in _growing_cortical_update:
-		FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[send_button.name])
+		if len(_cortical_area_refs) > 1:
+			FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[send_button.name])
+		else:
+			FeagiCore.requests.update_cortical_area(_cortical_area_refs[0].cortical_ID, _growing_cortical_update[send_button.name])
 		_growing_cortical_update[send_button.name] = {}
 	send_button.disabled = true
 
