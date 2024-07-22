@@ -1,0 +1,43 @@
+[gd_scene load_steps=5 format=3 uid="uid://cst1ciwraah37"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.gd" id="1_bd7dq"]
+[ext_resource type="Texture2D" uid="uid://brbwx7axd5lji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="2_8mpaj"]
+[ext_resource type="PackedScene" uid="uid://ctcyqnotj188l" path="res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn" id="3_6cfee"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4o2lj"]
+texture = ExtResource("2_8mpaj")
+modulate_color = Color(0.182536, 0.458966, 0.680365, 1)
+
+[node name="CBRegionIONode" type="GraphElement"]
+offset_right = 112.0
+offset_bottom = 64.0
+script = ExtResource("1_bd7dq")
+metadata/_edit_horizontal_guides_ = [-229.0]
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+expand_mode = 1
+
+[node name="Path" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+text = "#"
+
+[node name="Arrow" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_4o2lj")
+text = "NAME"
+
+[node name="CbLineEndPoint" parent="HBoxContainer" instance=ExtResource("3_6cfee")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[connection signal="toggled" from="HBoxContainer/Path" to="." method="_toggle_path_button"]

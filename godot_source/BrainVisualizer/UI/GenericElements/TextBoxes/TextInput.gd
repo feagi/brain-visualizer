@@ -1,4 +1,4 @@
-extends LineEdit
+extends AbstractLineInput
 class_name TextInput
 ## Text box that user can input Strings into
 
@@ -11,39 +11,15 @@ class_name TextInput
 
 ## Only emits if user changes the text THEN focuses off the textbox
 signal text_confirmed(new_text: String)
-signal user_interacted()
 
-## If signaling up via 'text_confirmed' should be enabled. Does nothing after '_ready'
-@export var enable_signaling_on_ready: bool = true
-
-var _previous_text: String
-var _default_font_size: int
-var _default_min_size: Vector2
 
 func _ready():
-	_previous_text = text
-	toggle_signaling_up(enable_signaling_on_ready)
-	text_changed.connect(_on_interaction)
-	_default_font_size = get_theme_font_size(&"font_size")
-	if custom_minimum_size != Vector2(0,0):
-		_default_min_size = custom_minimum_size
-	
+	super()
 
-## Toggles signaling if the internal value changed, similar to setting 'editable' but without UI changes
-func toggle_signaling_up(enable: bool) -> void:
-	if enable:
-		if is_connected("focus_exited", _emit_if_text_changed): return # do not connect twice!
-		focus_exited.connect(_emit_if_text_changed)
-		return
-	if !is_connected("focus_exited", _emit_if_text_changed): return # do not disconnect twice!
-	focus_exited.disconnect(_emit_if_text_changed)
-	return
+# In this context, any string is valid
+## OVERRIDDEN: Formats the input to something acceptable for the use, or returns an empty string if this isn't possible
+func _set_input_text_valid(input_text: String) -> String:
+	return input_text
 
-func _emit_if_text_changed() -> void:
-	if text == _previous_text:
-		return
-	_previous_text = text
-	text_confirmed.emit(text)
-
-func _on_interaction(_irrelevant_text: String) -> void:
-	user_interacted.emit()
+func _proxy_emit_confirmed_value(value_as_string: String) -> void:
+	text_confirmed.emit(value_as_string)

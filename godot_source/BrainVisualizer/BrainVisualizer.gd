@@ -27,21 +27,7 @@ func _ready() -> void:
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
-		
 
-func _input(event):
-	if FeagiCore.feagi_settings == null:
-		return
-	
-	if event is InputEventKey:
-		var keyboard_event: InputEventKey = event as InputEventKey
-		if keyboard_event.keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
-			if !keyboard_event.pressed:
-				return
-			if !FeagiCore.feagi_settings.allow_developer_menu:
-				return
-			_UI_manager.show_developer_menu()
-			
 
 func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, prev_state: FeagiCore.CONNECTION_STATE) -> void:
 	match(current_state):

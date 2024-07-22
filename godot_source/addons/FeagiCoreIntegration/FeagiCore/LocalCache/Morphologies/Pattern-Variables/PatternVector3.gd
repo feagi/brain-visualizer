@@ -30,6 +30,5 @@ func to_FEAGI_array() -> Array:
 	return [x.data, y.data, z.data]
 
 func duplicate() -> PatternVector3:
-	return PatternVector3.new(self.x, self.y, self.z)
-
+	return PatternVector3.new(x.duplicate(), y.duplicate(), z.duplicate())
 

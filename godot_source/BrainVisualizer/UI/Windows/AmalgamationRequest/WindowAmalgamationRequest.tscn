@@ -1,0 +1,112 @@
+[gd_scene load_steps=6 format=3 uid="uid://dkkxhbpiojfme"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/AmalgamationRequest/WindowAmalgamationRequest.gd" id="2_wg6iy"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_1iehj"]
+[ext_resource type="PackedScene" uid="uid://bpc4cbet6k5h4" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.tscn" id="4_a0con"]
+[ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="5_2iifs"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="8_gn5it"]
+
+[node name="WindowAmalgamationRequest" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("2_wg6iy")
+window_spawn_location = null
+
+[node name="TitleBar" parent="." instance=ExtResource("8_gn5it")]
+layout_mode = 2
+title = "Import Amalgamation"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Title"
+
+[node name="AmalgamationTitle" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_length = 16
+editable = false
+script = ExtResource("4_1iehj")
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Parent Region"
+
+[node name="GenomeObjectSelectorButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" instance=ExtResource("4_a0con")]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "External Wiring Mode"
+
+[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "All Items"
+popup/item_0/id = 0
+popup/item_1/text = "System Areas Only"
+popup/item_1/id = 1
+popup/item_2/text = "None"
+popup/item_2/id = 2
+
+[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3D Coordinates"
+
+[node name="Coordinates_3D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" instance=ExtResource("5_2iifs")]
+layout_mode = 2
+
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="import" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Import"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3/cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3/import" to="." method="_import_pressed"]

@@ -1,6 +1,6 @@
-[gd_resource type="Theme" load_steps=26 format=3 uid="uid://e4w3qtf2gyyi"]
+[gd_resource type="Theme" load_steps=30 format=3 uid="uid://e4w3qtf2gyyi"]
 
-[ext_resource type="FontFile" uid="uid://d3vvvpk5psdgk" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_rrps3"]
+[ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_dte07"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -63,6 +63,17 @@ anti_aliasing = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2l4ko"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i680b"]
+bg_color = Color(0.117647, 0.14902, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dclpr"]
+bg_color = Color(0.117647, 0.14902, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ro6m6"]
+bg_color = Color(0.572549, 0.780392, 0.921569, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f6tx2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1l48k"]
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
@@ -146,7 +157,7 @@ Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 25
 Label_UniformWidth/base_type = &"Label"
 Label_UniformWidth/font_sizes/font_size = 20
-Label_UniformWidth/fonts/font = ExtResource("1_rrps3")
+Label_UniformWidth/fonts/font = ExtResource("1_dte07")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 20
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
@@ -186,6 +197,11 @@ NotificationSystemNotification_Warning/base_type = &"NotificationSystemNotificat
 NotificationSystemNotification_Warning/styles/panel = SubResource("StyleBoxFlat_al8ae")
 Panel/styles/panel = SubResource("StyleBoxFlat_3bdj3")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_2l4ko")
+PanelContainerButton/base_type = &"PanelContainer"
+PanelContainerButton/styles/panel = SubResource("StyleBoxFlat_i680b")
+PanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_dclpr")
+PanelContainerButton/styles/panel_hover = SubResource("StyleBoxFlat_ro6m6")
+PanelContainerButton/styles/panel_pressed = SubResource("StyleBoxFlat_f6tx2")
 PanelContainer_QC_Complete/base_type = &"PanelContainer"
 PanelContainer_QC_Complete/styles/panel = SubResource("StyleBoxFlat_1l48k")
 PanelContainer_QC_incomplete/base_type = &"PanelContainer"
@@ -198,6 +214,7 @@ RichTextLabel/font_sizes/bold_italics_font_size = 20
 RichTextLabel/font_sizes/italics_font_size = 20
 RichTextLabel/font_sizes/mono_font_size = 20
 RichTextLabel/font_sizes/normal_font_size = 20
+TabContainer/font_sizes/font_size = 20
 TextEdit/font_sizes/font_size = 20
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
 TextureButton/constants/size_x = 60

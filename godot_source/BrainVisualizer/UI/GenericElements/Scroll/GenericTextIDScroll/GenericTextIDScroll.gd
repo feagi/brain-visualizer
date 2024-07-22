@@ -100,7 +100,7 @@ func filter_by_button_text_whitelist(whitelist: PackedStringArray) -> void:
 
 func filter_by_IDs(whitelist: Array) -> void:
 	for child in _scroll_holder.get_children():
-		if child.ID in whitelist:
+		if child.region_ID in whitelist:
 			child.visible = true
 		else:
 			child.visible = false

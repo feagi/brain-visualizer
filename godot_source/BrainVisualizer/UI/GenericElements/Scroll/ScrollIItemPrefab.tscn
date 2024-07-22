@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ne1rh6vrnynp"]
+
+[node name="ScrollIItemPrefab" type="Button"]
+size_flags_horizontal = 3
+theme_type_variation = &"Button_List"
+text = "object"

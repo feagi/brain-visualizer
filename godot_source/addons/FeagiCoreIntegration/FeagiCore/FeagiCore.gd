@@ -17,8 +17,6 @@ enum GENOME_LOAD_STATE {
 	UNKNOWN
 }
 
-
-
 #endregion
 
 signal connection_state_changed(new_state: CONNECTION_STATE, previous_state: CONNECTION_STATE)
@@ -108,7 +106,7 @@ func disconnect_from_FEAGI() -> void:
 	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED, cache_state)
 	
 
-# (Re)loads genome from FEAGI
+# Loads genome from FEAGI
 func load_genome_from_FEAGI() -> void:
 	if connection_state != CONNECTION_STATE.CONNECTED:
 		push_error("FEAGICORE: Cannot load genome when not connected to FEAGI!")
@@ -149,6 +147,35 @@ func unload_genome() -> void:
 	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
 	_genome_load_state = GENOME_LOAD_STATE.UNKNOWN
 	genome_load_state_changed.emit(GENOME_LOAD_STATE.UNKNOWN,cache_genome_state)
+
+func request_reload_genome() -> void:
+	if connection_state != CONNECTION_STATE.CONNECTED:
+		push_error("FEAGICORE: Cannot reload genome when not connected to FEAGI!")
+		return
+	if !feagi_local_cache.genome_availability:
+		push_error("FEAGICORE: Cannot reload genome when FEAGI reports it as unavailable!")
+		return
+	if genome_load_state != GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		push_error("FEAGICORE: Cannot start a reload of the genome when it is not loaded!")
+		return
+		
+	var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
+	_genome_load_state = GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.RELOADING_GENOME_FROM_FEAGI,cache_genome_state)
+	
+	var genome_load_response: FeagiRequestOutput = await requests.reload_genome()
+	if !genome_load_response.success:
+		# The above function has done its own error handling, check if we disconnected from FEAGI
+		if connection_state != CONNECTION_STATE.DISCONNECTED:
+			cache_genome_state = _genome_load_state
+			_genome_load_state = GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED
+			genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_EXISTS_BUT_NOT_LOADED, cache_genome_state)
+		# Assuming when we disconnected, the genome state was also cleared
+		
+	cache_genome_state = _genome_load_state
+	_genome_load_state = GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY
+	genome_load_state_changed.emit(GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY, cache_genome_state)
+	
 
 ## Returns true if we can safely interact with feagi (connected and genome loaded)
 func can_interact_with_feagi() -> bool:
@@ -278,7 +305,8 @@ func _on_healthcheck_poll() -> void:
 
 
 func _recieve_genome_reset_request():
-	about_to_reload_genome.emit()
-	requests.reload_genome()
+	#about_to_reload_genome.emit()
+	#requests.reload_genome()
+	load_genome_from_FEAGI()
 
 #endregion

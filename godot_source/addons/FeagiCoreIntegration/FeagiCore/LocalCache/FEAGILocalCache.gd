@@ -2,55 +2,84 @@ extends RefCounted
 class_name FEAGILocalCache
 
 #region main
-signal genome_reloaded()
+signal cache_about_to_reload()
+signal cache_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
+var brain_regions: BrainRegionsCache
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
+var mapping_data: MappingsCache
+var mapping_restrictions: MappingRestrictions
 
 func _init():
 	cortical_areas = CorticalAreasCache.new()
 	morphologies = MorphologiesCache.new()
+	brain_regions = BrainRegionsCache.new()
+	mapping_data = MappingsCache.new()
+	mapping_restrictions = load("res://addons/FeagiCoreIntegration/FeagiCore/MappingRestrictions.tres")
 
-func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary) -> void:
+## Given several summary datas from FEAGI, we can build the entire cache at once
+func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
 	
 	print("\nFEAGI CACHE: Replacing the ENTIRE local cached genome!")
-	cortical_areas.update_cortical_area_cache_from_summary(cortical_area_summary)
+	cache_about_to_reload.emit()
+	clear_whole_genome()
+	
+	# Methdology:
+	# Add Regions first, followed by establishing relations with child regions to parent regions
+	# 	Given input data structure, we calculate a dict of corticalIDs mapped to a target region ID
+	# Create cortical area objects, using the above dict to retrieve the parent region in an efficient manner
+	# Create morphology objects
+	# Create mapping objects
+	# Create connection hint objects
+	
+	var cortical_area_IDs_mapped_to_parent_regions_IDs = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary) 
+	cortical_areas.FEAGI_load_all_cortical_areas(cortical_area_summary, cortical_area_IDs_mapped_to_parent_regions_IDs)
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
-	for source_cortical_ID: StringName in mapping_summary.keys():
-		if !(source_cortical_ID in cortical_areas.available_cortical_areas.keys()):
-			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
-			continue
-			
-		var mapping_targets: Dictionary = mapping_summary[source_cortical_ID]
-		for destination_cortical_ID: StringName in mapping_targets.keys():
-			if !(destination_cortical_ID in cortical_areas.available_cortical_areas.keys()):
-				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % destination_cortical_ID)
-				continue
-			#NOTE: Instead of verifying the morphology exists, we will allow [MappingProperty]'s  system handle it, as it has a fallback should it not be found
-			var source_area: BaseCorticalArea = cortical_areas.available_cortical_areas[source_cortical_ID]
-			var destination_area: BaseCorticalArea = cortical_areas.available_cortical_areas[destination_cortical_ID]
-			var mapping_dictionaries: Array[Dictionary] = [] # Why doesnt godot support type inference for arrays yet?
-			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
-			var mappings: Array[MappingProperty] = MappingProperty.from_array_of_dict(mapping_dictionaries)
-			source_area.set_mappings_to_efferent_area(destination_area, mappings)
+	mapping_data.FEAGI_load_all_mappings(mapping_summary)
+	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
-	genome_reloaded.emit()
+	cache_reloaded.emit()
 #endregion
 
-## Deletes the genome from cache (safely). NOTE: this triggers the genome_reloaded signal too
+## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
 	print("\nFEAGI CACHE: REMOVING the ENTIRE local cached genome!")
-	cortical_areas.update_cortical_area_cache_from_summary({})
+	mapping_data.FEAGI_delete_all_mappings()
+	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
 	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
-	genome_reloaded.emit()
+	cache_reloaded.emit()
+	return
 	
 
+## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
+func FEAGI_mass_update_2D_positions(genome_objects_to_locations: Dictionary) -> void:
+	var corticals: Dictionary = {}
+	var regions: Dictionary = {}
+	for genome_object: GenomeObject in genome_objects_to_locations.keys():
+		if genome_object is AbstractCorticalArea:
+			corticals[genome_object as AbstractCorticalArea] = genome_objects_to_locations[genome_object]
+		if genome_object is BrainRegion:
+			regions[genome_object as BrainRegion] = genome_objects_to_locations[genome_object]
+	cortical_areas.FEAGI_mass_update_2D_positions(corticals)
+
+## Deletes all mappings involving a cortical area before deleting the area itself
+func FEAGI_delete_all_mappings_involving_area_and_area(deleting: AbstractCorticalArea) -> void:
+	for recursive in deleting.recursive_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(deleting, deleting)
+	for efferent in deleting.efferent_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(deleting, efferent)
+	for afferent in deleting.afferent_mappings.keys():
+		mapping_data.FEAGI_delete_mappings(afferent, deleting)
+	cortical_areas.remove_cortical_area(deleting.cortical_ID)
+	
+	
 
 #region Templates
 
@@ -79,7 +108,7 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			ipu_device["cortical_name"],
 			ipu_device["structure"],
 			resolution,
-			BaseCorticalArea.CORTICAL_AREA_TYPE.IPU
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 		)
 	var opu_devices: Dictionary = dict["OPU"]["supported_devices"]
 	for opu_ID: StringName in opu_devices.keys():
@@ -92,7 +121,7 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			opu_device["cortical_name"],
 			opu_device["structure"],
 			resolution,
-			BaseCorticalArea.CORTICAL_AREA_TYPE.OPU
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 		)
 	
 	templates_updated.emit()
@@ -233,8 +262,8 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	else:
 		if _pending_amalgamation != "":
 			# An amalgamation was pending, now its not (either due to confirmation OR deletion
-			amalgamation_no_longer_pending.emit(_pending_amalgamation)
 			_pending_amalgamation = ""
+			amalgamation_no_longer_pending.emit(_pending_amalgamation)
 			
 	
 

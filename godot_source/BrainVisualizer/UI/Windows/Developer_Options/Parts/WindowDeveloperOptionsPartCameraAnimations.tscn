@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="2_tyb4l"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_b7a62"]
 
-
 [node name="WindowDeveloperOptionsPartCameraAnimations" type="VBoxContainer"]
 script = ExtResource("1_mwjdf")
 

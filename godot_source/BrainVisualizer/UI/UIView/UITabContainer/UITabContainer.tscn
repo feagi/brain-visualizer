@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://cfcgj3cr6avui"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/UIView/UITabContainer/UITabContainer.gd" id="1_tw4ke"]
+
+[node name="UiTabContainer" type="TabContainer"]
+drag_to_rearrange_enabled = true
+script = ExtResource("1_tw4ke")

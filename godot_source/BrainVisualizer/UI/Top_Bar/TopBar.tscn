@@ -3,22 +3,22 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://b3go6kjen16je" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
-[ext_resource type="Texture2D" uid="uid://cgrjmannf3xnp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
-[ext_resource type="Texture2D" uid="uid://dryfi4tlhq5mq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
-[ext_resource type="Texture2D" uid="uid://ddg6hll5cu8vb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
+[ext_resource type="Texture2D" uid="uid://cmd2qum2418ya" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
+[ext_resource type="Texture2D" uid="uid://b4jkpvgo7fes3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
+[ext_resource type="Texture2D" uid="uid://dm7j5k1l27tvy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
+[ext_resource type="Texture2D" uid="uid://btuaycki4ux0h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
-[ext_resource type="Texture2D" uid="uid://ejh64qo18s05" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
-[ext_resource type="Texture2D" uid="uid://c55giqp6h0ohy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
-[ext_resource type="Texture2D" uid="uid://5dvxcj5hquup" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
+[ext_resource type="Texture2D" uid="uid://df4tfd8cxsr4c" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
+[ext_resource type="Texture2D" uid="uid://wuvsw5nevytt" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
+[ext_resource type="Texture2D" uid="uid://utixcswkpwmx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
-[ext_resource type="Texture2D" uid="uid://dkd1hregsccpc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
-[ext_resource type="Texture2D" uid="uid://cs0y40ahiirdw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
-[ext_resource type="Texture2D" uid="uid://uvecoubr0yfw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
-[ext_resource type="Texture2D" uid="uid://m640tgojnce0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
-[ext_resource type="Texture2D" uid="uid://by5n2dhvru2uh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
-[ext_resource type="Texture2D" uid="uid://dgvfuc5hcn0mh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
-[ext_resource type="Texture2D" uid="uid://ci87jmke7m1wh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
+[ext_resource type="Texture2D" uid="uid://vaefjkam3ann" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
+[ext_resource type="Texture2D" uid="uid://cvgml7hymvfvd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
+[ext_resource type="Texture2D" uid="uid://b6wq3idcyi7in" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
+[ext_resource type="Texture2D" uid="uid://b6043es6a00uw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
+[ext_resource type="Texture2D" uid="uid://c40xvrrv876xu" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
+[ext_resource type="Texture2D" uid="uid://ddxosu7tm8nvn" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
+[ext_resource type="Texture2D" uid="uid://or2chfieqcnd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
@@ -192,9 +192,10 @@ layout_mode = 2
 tooltip_text = "The frequency FEAGI runs at"
 theme_type_variation = &"LineEdit_TopBar"
 alignment = 1
+expand_to_text_length = true
 script = ExtResource("3_v82xb")
-suffix = " Hz"
 min_value = 0.1
+suffix = " Hz"
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
 layout_mode = 2
