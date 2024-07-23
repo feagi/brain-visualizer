@@ -105,6 +105,8 @@ func _open_neuron_morphologies() -> void:
 func _open_create_morpology() -> void:
 	BV.WM.spawn_create_morphology()
 
+func _open_options() -> void:
+	BV.WM.spawn_options()
 
 #func _FEAGI_retireved_latency(latency_ms: int) -> void:
 #	_latency_field.current_int = latency_ms

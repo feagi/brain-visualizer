@@ -9,11 +9,11 @@ var _advanced_mode: ToggleButton
 var _autoconfigure_IO: ToggleButton
 
 func _ready() -> void:
+	super()
 	_version = _window_internals.get_node('VBoxContainer/Version')
 	_interface_dropdown = _window_internals.get_node('VBoxContainer2/OptionButton')
 	_advanced_mode = _window_internals.get_node('VBoxContainer3/ToggleButton')
 	_autoconfigure_IO = _window_internals.get_node('VBoxContainer4/ToggleButton')
-	super()
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -36,14 +36,14 @@ func _on_accept_press() -> void:
 # THis is really stupid, but temporary
 func _get_theme_index() -> int:
 	var search: Dictionary = {
-		"0.5": 0,
-		"0.75": 1,
-		"1.0": 2,
-		"1.25": 3,
-		"1.5": 4,
-		"2.0": 5,
+		0.5: 0,
+		0.75: 1,
+		1.0: 2,
+		1.25: 3,
+		1.5: 4,
+		2.0: 5,
 	}
 	#var color_mode: String = "Dark" # TODO no alternatives
-	var sizing_string: String = str(BV.UI.loaded_theme_scale.x)
+	var sizing_string: float = BV.UI.loaded_theme_scale.x
 	return search[sizing_string]
 	
