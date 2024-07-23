@@ -102,42 +102,65 @@ func _user_requesing_creation() -> void:
 	
 	match(_type_selected):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			# checks
-			if AbstractCorticalArea.get_neuron_count(_IOPU_definition.dropdown.get_selected_template().calculate_IOPU_dimension(int(_IOPU_definition.channel_count.value)), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
+			var channel_count: int = int(_IOPU_definition.channel_count.value)
+	
+			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(channel_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
 				
-			if _IOPU_definition.dropdown.get_selected_template().ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "An input cortical area of type %s already exists!" % _IOPU_definition.dropdown.get_selected_template().cortical_name, "OK")
-				BV.WM.spawn_popup(popup_definition)
-				return
+			if template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+				# Area exists, update
+				var area: IPUCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[template.ID]
+				if channel_count == 0:
+					# delete area since the calculated dimensions would be 0
+					var areas_to_delete: Array[GenomeObject] = [area]
+					BV.UI.window_manager.spawn_confirm_deletion(areas_to_delete)
+				else:
+					# update area
+					var new_dimension_property: Dictionary = {"cortical_dimensions" = FEAGIUtils.vector3i_to_array(template.calculate_IOPU_dimension(channel_count))}
+					FeagiCore.requests.update_cortical_area(area.cortical_ID, new_dimension_property)
 
-			
-			FeagiCore.requests.add_IOPU_cortical_area(
-				_IOPU_definition.dropdown.get_selected_template(),
-				int(_IOPU_definition.channel_count.value),
-				_IOPU_definition.location.current_vector,
-				false
-			)
+			else:
+				# Area doesnt exist, create (unless channel count is 0, the ignore)
+				if _IOPU_definition.channel_count.value != 0:
+					FeagiCore.requests.add_IOPU_cortical_area(
+						_IOPU_definition.dropdown.get_selected_template(),
+						int(_IOPU_definition.channel_count.value),
+						_IOPU_definition.location.current_vector,
+						false
+					)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			# checks
-			if AbstractCorticalArea.get_neuron_count(_IOPU_definition.dropdown.get_selected_template().calculate_IOPU_dimension(int(_IOPU_definition.channel_count.value)), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
+			var channel_count: int = int(_IOPU_definition.channel_count.value)
+	
+			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(channel_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
-			if _IOPU_definition.dropdown.get_selected_template().ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "An output cortical area of type %s already exists!" % _IOPU_definition.dropdown.get_selected_template().cortical_name, "OK")
-				BV.WM.spawn_popup(popup_definition)
-				return
-
 				
-			FeagiCore.requests.add_IOPU_cortical_area(
-				_IOPU_definition.dropdown.get_selected_template(),
-				int(_IOPU_definition.channel_count.value),
-				_IOPU_definition.location.current_vector,
-				false
-			)
+			if template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+				# Area exists, update
+				var area: OPUCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[template.ID]
+				if channel_count == 0:
+					# delete area since the calculated dimensions would be 0
+					var areas_to_delete: Array[GenomeObject] = [area]
+					BV.UI.window_manager.spawn_confirm_deletion(areas_to_delete)
+				else:
+					# update area
+					var new_dimension_property: Dictionary = {"cortical_dimensions" = FEAGIUtils.vector3i_to_array(template.calculate_IOPU_dimension(channel_count))}
+					FeagiCore.requests.update_cortical_area(area.cortical_ID, new_dimension_property)
+
+			else:
+				# Area doesnt exist, create (unless channel count is 0, the ignore)
+				if _IOPU_definition.channel_count.value != 0:
+					FeagiCore.requests.add_IOPU_cortical_area(
+						_IOPU_definition.dropdown.get_selected_template(),
+						int(_IOPU_definition.channel_count.value),
+						_IOPU_definition.location.current_vector,
+						false
+					)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":
