@@ -59,12 +59,12 @@ popup/item_1/text = "Dark 0.75 Scale"
 popup/item_1/id = 1
 popup/item_2/text = "Dark 1.0 Scale"
 popup/item_2/id = 2
-popup/item_3/text = "Dark 1.5 Scale"
-popup/item_3/id = 4
-popup/item_4/text = "Dark 2.0 Scale"
-popup/item_4/id = 5
-popup/item_5/text = "Dark 1.25 Scale"
-popup/item_5/id = 3
+popup/item_3/text = "Dark 1.25 Scale"
+popup/item_3/id = 3
+popup/item_4/text = "Dark 1.5 Scale"
+popup/item_4/id = 4
+popup/item_5/text = "Dark 2.0 Scale"
+popup/item_5/id = 5
 
 [node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -76,7 +76,10 @@ size_flags_horizontal = 3
 text = "Advanced Mode:"
 
 [node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer3"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+ignore_texture_size = true
+stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
 [node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
@@ -89,7 +92,10 @@ size_flags_horizontal = 3
 text = "Auto-create IO:"
 
 [node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+ignore_texture_size = true
+stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
@@ -113,3 +119,4 @@ theme_type_variation = &"Button_big"
 text = "Accept"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Accept" to="." method="_on_accept_press"]

@@ -183,6 +183,7 @@ child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateI
 
 [node name="Options" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
+size_flags_horizontal = 0
 texture = ExtResource("19_fxjdk")
 expand_mode = 3
 script = ExtResource("20_6yf7l")
