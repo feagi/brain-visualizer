@@ -72,5 +72,3 @@ initial_vector = Vector3i(40, 0, 0)
 layout_mode = 2
 texture = ExtResource("4_lkiss")
 expand_mode = 2
-
-[connection signal="template_picked" from="HBoxContainer2/TopSection/TemplateDropDown" to="." method="_drop_down_changed"]
