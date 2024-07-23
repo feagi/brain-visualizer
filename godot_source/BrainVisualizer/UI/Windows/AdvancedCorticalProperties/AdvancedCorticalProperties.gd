@@ -11,7 +11,7 @@ class_name AdvancedCorticalProperties
 const WINDOW_NAME: StringName = "adv_cortical_properties"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
-
+var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
 
 func _ready():
 	super()
@@ -49,6 +49,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_firing_parameters.visible = false
 	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
 		_init_memory()
+		_memory_section_enabled = true
 	else:
 		_section_memory.visible = false
 	if true: # currently, all cortical areas have this
@@ -81,7 +82,9 @@ func _refresh_all_relevant() -> void:
 func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool) -> void:
 	for control in controls_to_hide_in_simple_mode:
 		control.visible = is_advanced_options_visible
-	
+	if _memory_section_enabled:
+		_section_memory.visible = is_advanced_options_visible
+	_section_cortical_area_monitoring.visible = is_advanced_options_visible
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
 	if AbstractCorticalArea.do_cortical_areas_have_matching_values_for_property(_cortical_area_refs, composition_section_name, property_name):
