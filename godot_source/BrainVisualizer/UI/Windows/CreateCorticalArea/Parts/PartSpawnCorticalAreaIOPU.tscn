@@ -74,3 +74,4 @@ texture = ExtResource("4_1tced")
 expand_mode = 2
 
 [connection signal="template_picked" from="HBoxContainer2/TopSection/TemplateDropDown" to="." method="_drop_down_changed"]
+[connection signal="value_changed" from="HBoxContainer/Fields/ChannelCount" to="." method="_proxy_channel_count_changes"]

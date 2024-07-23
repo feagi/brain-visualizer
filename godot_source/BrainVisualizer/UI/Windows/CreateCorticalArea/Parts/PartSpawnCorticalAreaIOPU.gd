@@ -2,7 +2,7 @@ extends VBoxContainer
 class_name PartSpawnCorticalAreaIOPU
 
 signal calculated_dimensions_updated(new_size: Vector3i)
-
+signal location_changed_from_dropdown(new_location: Vector3i)
 
 
 var dropdown: TemplateDropDown
@@ -22,7 +22,10 @@ func _ready() -> void:
 func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal]) -> void:
 	dropdown.load_cortical_type_options(cortical_type)
 	_is_IPU_not_OPU = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
-	var move_signals: Array[Signal] = [location.user_updated_vector]
+	if dropdown.get_selected_template().ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[dropdown.get_selected_template().ID].coordinates_3D
+		location_changed_from_dropdown.emit(location.current_vector)
+	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
 	BV.UI.start_cortical_area_preview(location.current_vector, _current_dimensions_as_per_channel_count, move_signals, resize_signals, preview_close_signals)
 	if _is_IPU_not_OPU:
@@ -36,3 +39,11 @@ func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
 	calculated_dimensions_updated.emit(_current_dimensions_as_per_channel_count)
 	if cortical_template != null:
 		_iopu_image.texture = UIManager.get_icon_texture_by_ID(cortical_template.ID, _is_IPU_not_OPU)
+	if dropdown.get_selected_template().ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[dropdown.get_selected_template().ID].coordinates_3D
+		location_changed_from_dropdown.emit(location.current_vector)
+	
+
+func _proxy_channel_count_changes(_new_channel_count: int) -> void:
+	_current_dimensions_as_per_channel_count = dropdown.get_selected_template().calculate_IOPU_dimension(int(channel_count.value))
+	calculated_dimensions_updated.emit(_current_dimensions_as_per_channel_count)
