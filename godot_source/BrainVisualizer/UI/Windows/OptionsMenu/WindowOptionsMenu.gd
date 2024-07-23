@@ -13,3 +13,5 @@ func _ready() -> void:
 	_autoconfigure_IO = _window_internals.get_node('VBoxContainer4/ToggleButton')
 	super()
 
+func _on_accept_press() -> void:
+	pass
