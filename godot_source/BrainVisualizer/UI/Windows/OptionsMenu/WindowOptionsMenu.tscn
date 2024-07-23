@@ -1,0 +1,113 @@
+[gd_scene load_steps=4 format=3 uid="uid://uovm7phb0uio"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.gd" id="1_sn8x3"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="3_y5jb7"]
+
+[node name="WindowOptionsMenu" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_sn8x3")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_m61t8")]
+layout_mode = 2
+title = "Options Menu"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
+
+[node name="VBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "Version:"
+
+[node name="Version" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+editable = false
+
+[node name="VBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "Interface Mode:"
+
+[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+item_count = 5
+fit_to_longest_item = false
+popup/item_0/text = "Dark 0.5 Scale"
+popup/item_0/id = 4
+popup/item_1/text = "Dark 0.75 Scale"
+popup/item_1/id = 3
+popup/item_2/text = "Dark 1.0 Scale"
+popup/item_2/id = 0
+popup/item_3/text = "Dark 1.5 Scale"
+popup/item_3/id = 1
+popup/item_4/text = "Dark 2.0 Scale"
+popup/item_4/id = 2
+
+[node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer3"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Advanced Mode:"
+
+[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer3"]
+layout_mode = 2
+script = ExtResource("3_y5jb7")
+
+[node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Auto-configure IO:"
+
+[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
+layout_mode = 2
+script = ExtResource("3_y5jb7")
+
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Accept" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Accept"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="close_window"]
