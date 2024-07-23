@@ -2,101 +2,75 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_y0ej3"]
+[ext_resource type="Texture2D" uid="uid://exfm8ddg728v" path="res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/o__mot.png" id="4_lkiss"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
 offset_right = 471.0
 offset_bottom = 186.0
-theme_override_constants/separation = 8
+theme_type_variation = &"VBoxContainer_far"
 script = ExtResource("1_ucbj0")
 
-[node name="input_output_type" type="HBoxContainer" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="input_output_type"]
+[node name="TopLabels" type="VBoxContainer" parent="HBoxContainer2"]
+custom_minimum_size = Vector2(112, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer2/TopLabels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Device Type:"
+vertical_alignment = 1
+
+[node name="TopSection" type="VBoxContainer" parent="HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TemplateDropDown" type="OptionButton" parent="input_output_type"]
-custom_minimum_size = Vector2(310, 0)
+[node name="TemplateDropDown" type="OptionButton" parent="HBoxContainer2/TopSection"]
 layout_mode = 2
+size_flags_vertical = 3
 fit_to_longest_item = false
 script = ExtResource("2_hm4ef")
 
-[node name="location" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="location"]
+[node name="Labels" type="VBoxContainer" parent="HBoxContainer"]
+custom_minimum_size = Vector2(112, 0)
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
+
+[node name="Label" type="Label" parent="HBoxContainer/Labels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Choose a location:"
+text = "Device Count:"
+vertical_alignment = 1
 
-[node name="location" parent="location" instance=ExtResource("6_yjcxe")]
-layout_mode = 2
-initial_vector = Vector3i(40, 0, 0)
-
-[node name="Gap" type="Control" parent="."]
-custom_minimum_size = Vector2(4, 0)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="."]
-layout_mode = 2
-text = "Advanced"
-horizontal_alignment = 1
-
-[node name="PanelContainer" type="PanelContainer" parent="."]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="name" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/name"]
+[node name="Label2" type="Label" parent="HBoxContainer/Labels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Custom Name:"
+text = "Location:"
+vertical_alignment = 1
 
-[node name="name" type="LineEdit" parent="PanelContainer/VBoxContainer/name"]
-custom_minimum_size = Vector2(310, 0)
+[node name="Fields" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
-script = ExtResource("4_y0ej3")
+theme_type_variation = &"VBoxContainer_far"
 
-[node name="channel_count" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+[node name="ChannelCount" type="SpinBox" parent="HBoxContainer/Fields"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/channel_count"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Set Channel Count:"
-
-[node name="channel_count" type="SpinBox" parent="PanelContainer/VBoxContainer/channel_count"]
-custom_minimum_size = Vector2(310, 0)
-layout_mode = 2
-min_value = 1.0
 max_value = 1e+10
 value = 1.0
 alignment = 1
 
-[node name="dimensions" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+[node name="Location" parent="HBoxContainer/Fields" instance=ExtResource("6_yjcxe")]
 layout_mode = 2
+initial_vector = Vector3i(40, 0, 0)
 
-[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/dimensions"]
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Choose Dimensions:"
+texture = ExtResource("4_lkiss")
+expand_mode = 2
 
-[node name="dimensions" parent="PanelContainer/VBoxContainer/dimensions" instance=ExtResource("6_yjcxe")]
-layout_mode = 2
-label_x_text = &"W"
-label_y_text = &"H"
-label_z_text = &"D"
-int_x_min = 1
-int_y_min = 1
-int_z_min = 1
-initial_editable = false
-
-[connection signal="template_picked" from="input_output_type/TemplateDropDown" to="." method="_drop_down_changed"]
+[connection signal="template_picked" from="HBoxContainer2/TopSection/TemplateDropDown" to="." method="_drop_down_changed"]
