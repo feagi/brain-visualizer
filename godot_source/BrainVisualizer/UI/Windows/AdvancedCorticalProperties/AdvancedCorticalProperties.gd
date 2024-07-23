@@ -6,6 +6,8 @@ class_name AdvancedCorticalProperties
 
 # region Window Global
 
+@export var controls_to_hide_in_simple_mode: Array[Control] = [] #NOTE custom logic for sections, do not include those here
+
 const WINDOW_NAME: StringName = "adv_cortical_properties"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
@@ -13,6 +15,7 @@ var _growing_cortical_update: Dictionary = {}
 
 func _ready():
 	super()
+
 	
 
 ## Load in initial values of the cortical area from Cache
@@ -23,6 +26,9 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# cortical area update, which may be many depending on the selection and would cause a large
 	# lag spike. While this method is more tenous, it ultimately provides a better experience for
 	# the end user
+	
+	_toggle_visiblity_based_on_advanced_mode(BV.UI.is_in_advanced_mode)
+	BV.UI.advanced_mode_setting_changed.connect(_toggle_visiblity_based_on_advanced_mode)
 	
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
@@ -70,8 +76,12 @@ func _refresh_all_relevant() -> void:
 		_refresh_from_cache_memory()
 	if true: # currently, all cortical areas have this
 		_refresh_from_cache_psp()
-	
 
+#NOTE custom logic for sections
+func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool) -> void:
+	for control in controls_to_hide_in_simple_mode:
+		control.visible = is_advanced_options_visible
+	
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
 	if AbstractCorticalArea.do_cortical_areas_have_matching_values_for_property(_cortical_area_refs, composition_section_name, property_name):
