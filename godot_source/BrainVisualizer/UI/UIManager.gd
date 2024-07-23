@@ -106,9 +106,13 @@ func FEAGI_confirmed_genome() -> void:
 
 
 #region User Interactions
+signal advanced_mode_setting_changed(is_in_advanced_mode: bool)
 signal user_selected_single_cortical_area(area: AbstractCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
 var currently_selected_objects: Array[GenomeObject] = []
+
+var is_in_advanced_mode: bool:
+	get: return _is_in_advanced_mode
 
 func _input(event):
 	if FeagiCore.feagi_settings == null:
@@ -127,10 +131,13 @@ var selected_cortical_areas: Array[AbstractCorticalArea]:
 	get: return _selected_cortical_areas
 
 var _selected_cortical_areas: Array[AbstractCorticalArea] = []
+var _is_in_advanced_mode: bool = false
 
-
-func set_user_selected_cortical_areas(selected: Array[AbstractCorticalArea]) -> void:
-	pass
+func set_advanced_mode(is_advanced_mode: bool) -> void:
+	if is_advanced_mode == _is_in_advanced_mode:
+		return
+	_is_in_advanced_mode = is_advanced_mode
+	advanced_mode_setting_changed.emit(_is_in_advanced_mode)
 
 # TEMP TODO remove this as it is a standin for broken BM functions!
 func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:

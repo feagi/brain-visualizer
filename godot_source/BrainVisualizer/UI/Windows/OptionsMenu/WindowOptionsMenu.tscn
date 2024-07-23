@@ -51,18 +51,20 @@ text = "Interface Mode:"
 [node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-item_count = 5
+item_count = 6
 fit_to_longest_item = false
 popup/item_0/text = "Dark 0.5 Scale"
-popup/item_0/id = 4
+popup/item_0/id = 0
 popup/item_1/text = "Dark 0.75 Scale"
-popup/item_1/id = 3
+popup/item_1/id = 1
 popup/item_2/text = "Dark 1.0 Scale"
-popup/item_2/id = 0
+popup/item_2/id = 2
 popup/item_3/text = "Dark 1.5 Scale"
-popup/item_3/id = 1
+popup/item_3/id = 4
 popup/item_4/text = "Dark 2.0 Scale"
-popup/item_4/id = 2
+popup/item_4/id = 5
+popup/item_5/text = "Dark 1.25 Scale"
+popup/item_5/id = 3
 
 [node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -84,7 +86,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Auto-configure IO:"
+text = "Auto-create IO:"
 
 [node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
 layout_mode = 2
