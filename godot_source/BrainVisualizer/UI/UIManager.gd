@@ -366,3 +366,41 @@ func _proxy_notification_morphology_removed(morphology: BaseMorphology) -> void:
 	_notification_system.add_notification("Confirmed removal of connectivity rule %s!" % morphology.name)
 
 #endregion
+
+#region Icons for cortical areas
+
+const ICON_CUSTOM_INPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/custom-input.png"
+const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/custom-output.png"
+
+const KNOWN_ICON_PATHS : Dictionary = {
+	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishock.png",
+	"iv00_C" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00_C.png",
+	"i_hear" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i_hear.png",
+	"i_spos" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i_spos.png",
+	"i__acc" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__acc.png",
+	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__bat.png",
+	"i__bci" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__bci.png",
+	"i__gyr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__gyr.png",
+	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__inf.png",
+	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__pro.png",
+	"i___id" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i___id.png",
+	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/o__mot.png",
+	"___pwr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/___pwr.png",
+}
+
+## Gets the icon texture given the cortical ID
+static func get_icon_texture_by_ID(cortical_ID: StringName, fallback_is_input: bool = true) -> Texture:
+	if cortical_ID in KNOWN_ICON_PATHS:
+		return (load(KNOWN_ICON_PATHS[cortical_ID]) as Texture)
+	if fallback_is_input:
+		return  (load(ICON_CUSTOM_INPUT) as Texture)
+	else:
+		return  (load(ICON_CUSTOM_OUTPUT) as Texture)
+	
+	
+
+
+
+
+#endregion
+

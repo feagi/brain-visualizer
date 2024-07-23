@@ -2,13 +2,13 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
-[ext_resource type="Texture2D" uid="uid://exfm8ddg728v" path="res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/o__mot.png" id="4_lkiss"]
+[ext_resource type="Texture2D" uid="uid://io0bj7fr2e5b" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__inf.png" id="4_1tced"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
-offset_right = 471.0
-offset_bottom = 186.0
-theme_type_variation = &"VBoxContainer_far"
+offset_right = 489.0
+offset_bottom = 117.0
+theme_type_variation = &"VBoxContainer_farther"
 script = ExtResource("1_ucbj0")
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="."]
@@ -40,7 +40,7 @@ layout_mode = 2
 [node name="Labels" type="VBoxContainer" parent="HBoxContainer"]
 custom_minimum_size = Vector2(112, 0)
 layout_mode = 2
-theme_type_variation = &"VBoxContainer_far"
+theme_type_variation = &"VBoxContainer_farther"
 
 [node name="Label" type="Label" parent="HBoxContainer/Labels"]
 layout_mode = 2
@@ -56,7 +56,7 @@ vertical_alignment = 1
 
 [node name="Fields" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
-theme_type_variation = &"VBoxContainer_far"
+theme_type_variation = &"VBoxContainer_farther"
 
 [node name="ChannelCount" type="SpinBox" parent="HBoxContainer/Fields"]
 layout_mode = 2
@@ -70,5 +70,7 @@ initial_vector = Vector3i(40, 0, 0)
 
 [node name="TextureRect" type="TextureRect" parent="HBoxContainer"]
 layout_mode = 2
-texture = ExtResource("4_lkiss")
+texture = ExtResource("4_1tced")
 expand_mode = 2
+
+[connection signal="template_picked" from="HBoxContainer2/TopSection/TemplateDropDown" to="." method="_drop_down_changed"]
