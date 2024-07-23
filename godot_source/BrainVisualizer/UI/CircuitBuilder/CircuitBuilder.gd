@@ -297,6 +297,9 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 	BV.UI.window_manager.spawn_mapping_editor(source, destination)
 
 func _highlight_area(area: AbstractCorticalArea) -> void:
+	if area.cortical_ID in _cortical_nodes:
+		if _cortical_nodes[area.cortical_ID].selected:
+			return
 	unhighlight_all_area_nodes()
 	if area.cortical_ID in _cortical_nodes:
 		_cortical_nodes[area.cortical_ID].selected = true

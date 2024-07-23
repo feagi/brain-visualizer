@@ -184,6 +184,8 @@ func show_developer_menu():
 	_window_manager.spawn_developer_options()
 
 func action_on_selected_objects() -> void:
+	if WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
+		return
 	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
 		if GenomeObject.get_makeup_of_array(currently_selected_objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
 			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(currently_selected_objects))
@@ -194,6 +196,8 @@ func _append_selected_object(object: GenomeObject) -> void:
 	if object in currently_selected_objects:
 		return
 	currently_selected_objects.append(object)
+	if object is AbstractCorticalArea: #TODO TEMP
+		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
 	
 func _remove_selected_object(object: GenomeObject) -> void:
 	var index: int = currently_selected_objects.rfind(object) # reverse since draggin boxes adds items in forward order, so removing reverse is faster
