@@ -24,7 +24,7 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	_dragged = false
 	minimum_size_changed.connect(_on_node_move)
 
-	
+
 	
 ## Called by [CircuitBuilder] when adding a connection to the Node object
 func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:

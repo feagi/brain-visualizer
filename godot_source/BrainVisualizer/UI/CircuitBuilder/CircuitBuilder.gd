@@ -37,6 +37,8 @@ func _ready():
 	focus_entered.connect(_toggle_draggability_based_on_focus)
 	focus_exited.connect(_toggle_draggability_based_on_focus)
 	connection_request.connect(_on_connection_request)
+	node_selected.connect(_node_select)
+	node_deselected.connect(_node_deselect)
 
 
 func setup(region: BrainRegion) -> void:
@@ -226,12 +228,54 @@ func _CACHE_link_region_output_open_added(region_node: CBNodeRegion, link: Conne
 
 #region User Interactions
 signal user_request_viewing_subregion(region: BrainRegion)
+signal user_adds_object_to_selected_object_pool(object: GenomeObject)
+signal user_removes_object_from_selected_object_pool(object: GenomeObject)
+signal user_request_action_on_selected_objects()
 
+var _number_selected_objects: int = 0
+var _last_selected_object: GenomeObject = null
 
-
+func _input(event):
+	#NOTE: This fires before selection/deselection graphnode signals
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mouse_event.pressed:
+			_number_selected_objects = len(BV.UI.currently_selected_objects)
+			if _number_selected_objects == 1:
+				_last_selected_object = BV.UI.currently_selected_objects[0]
+		else:
+			if _number_selected_objects != len(BV.UI.currently_selected_objects) and len(BV.UI.currently_selected_objects) != 0:
+				user_request_action_on_selected_objects.emit()
+				return
+			if len(BV.UI.currently_selected_objects) == 1 and _last_selected_object != BV.UI.currently_selected_objects[0]:
+				user_request_action_on_selected_objects.emit()
+				return
+				
 func unhighlight_all_area_nodes() -> void:
 	for node in _cortical_nodes.values():
 		node.selected = false
+
+func _node_select(element: GraphElement) -> void:
+	if element is CBNodeRegion:
+		print("CB Selected " + (element as CBNodeRegion).representing_region.friendly_name)
+		user_adds_object_to_selected_object_pool.emit((element as CBNodeRegion).representing_region)
+		return
+	if element is CBNodeCorticalArea:
+		print("CB Selected " + (element as CBNodeCorticalArea).representing_cortical_area.friendly_name)
+		user_adds_object_to_selected_object_pool.emit((element as CBNodeCorticalArea).representing_cortical_area)
+		return
+
+func _node_deselect(element: GraphElement) -> void:
+	if element is CBNodeRegion:
+		print("CB Deselected " + (element as CBNodeRegion).representing_region.friendly_name)
+		user_removes_object_from_selected_object_pool.emit((element as CBNodeRegion).representing_region)
+		return
+	if element is CBNodeCorticalArea:
+		print("CB Deselected " + (element as CBNodeCorticalArea).representing_cortical_area.friendly_name)
+		user_removes_object_from_selected_object_pool.emit((element as CBNodeCorticalArea).representing_cortical_area)
+		return
 
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	user_request_viewing_subregion.emit(region_node.representing_region)
@@ -257,67 +301,12 @@ func _highlight_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID in _cortical_nodes:
 		_cortical_nodes[area.cortical_ID].selected = true
 
-func _gui_input(event):
-	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-		if mouse_event.is_pressed():
-			_starting_box_drag()
-			
-
-func _input(event):
-	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-		if !mouse_event.is_pressed():
-			_stopped_box_drag()
 
 #endregion
 
 #region multi-select
 
-signal genome_objects_selected(objects: Array[GenomeObject])
 
-var _is_dragging_box: bool = false
-var _names_of_selected_nodes: Array[StringName] = []
-
-func _starting_box_drag() -> void:
-	if _is_dragging_box:
-		return
-	unhighlight_all_area_nodes()
-	_names_of_selected_nodes = []
-	_is_dragging_box = true
-
-func _adding_node(node: GraphElement) -> void:
-	if !_is_dragging_box:
-		return
-	if node.name in _names_of_selected_nodes:
-		return
-	_names_of_selected_nodes.append(node.name)
-
-func _removing_node(node: GraphElement) -> void:
-	if !_is_dragging_box:
-		return
-	var index: int = _names_of_selected_nodes.find(node.name)
-	if index != -1:
-		_names_of_selected_nodes.remove_at(index)
-
-func _stopped_box_drag() -> void:
-	if !_is_dragging_box:
-		return
-	if len(_names_of_selected_nodes) == 0:
-		return
-	var genome_objs: Array[GenomeObject] = []
-	var node: Node
-	for given_name in _names_of_selected_nodes:
-		node = get_node(NodePath(given_name))
-		if node is CBNodeCorticalArea:
-			genome_objs.append(node.representing_cortical_area)
-			continue
-		if node is CBNodeRegion:
-			genome_objs.append(node.representing_region)
-			continue
-	_is_dragging_box = false
-	genome_objects_selected.emit(genome_objs)
-	BV.UI.user_selected_genome_objects(genome_objs)
 
 
 

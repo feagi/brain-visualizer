@@ -14,8 +14,6 @@ func _gui_input(event):
 	var mouse_event: InputEventMouseButton = event
 	if mouse_event.is_pressed(): return
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
-	if !_dragged:
-		BV.UI.user_selected_single_cortical_area_independently(_representing_cortical_area)
 
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: AbstractCorticalArea) -> void:
