@@ -404,6 +404,8 @@ func _refresh_from_cache_psp() -> void:
 
 func _init_monitoring() -> void:
 	_button_monitoring_send.pressed.connect(_montoring_update_button_pressed)
+	post_synaptic_toggle.disabled = !FeagiCore.feagi_local_cache.influxdb_availability
+	membrane_toggle.disabled = !FeagiCore.feagi_local_cache.influxdb_availability
 	
 func _refresh_from_cache_monitoring() -> void:
 	_update_control_with_value_from_areas(membrane_toggle, "", "is_monitoring_membrane_potential")
