@@ -146,26 +146,9 @@ func user_selected_single_cortical_area_independently(object: GenomeObject) -> v
 		var objects: Array[GenomeObject] = [object]
 		if !WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
 			_window_manager.spawn_quick_cortical_menu(objects)
-		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
+		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
 			var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
 			window_manager.spawn_adv_cortical_properties(areas)
-
-	
-	
-
-
-func user_selected_single_cortical_area_appending(area: AbstractCorticalArea) -> void:
-	pass
-
-
-## DEFUNCT REMOVE ME TODO
-func asdsaduser_selected_genome_objects(objects: Array[GenomeObject]) -> void:
-	_window_manager.spawn_quick_cortical_menu(objects)
-	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
-		if GenomeObject.get_makeup_of_array(objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
-			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(objects))
-
-
 
 func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
@@ -193,10 +176,9 @@ func show_developer_menu():
 func action_on_selected_objects() -> void:
 	if WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
 		return
-	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
+	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
 		if GenomeObject.get_makeup_of_array(currently_selected_objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
 			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(currently_selected_objects))
-			return
 	_window_manager.spawn_quick_cortical_menu(currently_selected_objects)
 
 func _append_selected_object(object: GenomeObject) -> void:
