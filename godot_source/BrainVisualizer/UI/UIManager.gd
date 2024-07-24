@@ -101,6 +101,18 @@ func FEAGI_confirmed_genome() -> void:
 	if $TempLoadingScreen != null:
 		$TempLoadingScreen.queue_free()
 	
+	# This is utter cancer
+	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
+	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
+	if option_string == "":
+		return
+	var split_strings: PackedStringArray = option_string.split(" ")
+	var color_setting: UIManager.THEME_COLORS
+	if split_strings[0] == "Dark":
+		color_setting = UIManager.THEME_COLORS.DARK
+	var zoom_value: float = split_strings[1].to_float()
+	BV.UI.request_switch_to_theme(zoom_value, color_setting)
+
 
 #endregion
 

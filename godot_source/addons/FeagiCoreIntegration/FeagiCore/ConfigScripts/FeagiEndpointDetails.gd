@@ -19,6 +19,12 @@ class_name FeagiEndpointDetails
 @export var full_http_address: StringName
 @export var full_websocket_address: StringName
 
+# This is bad, this shouldnt be here
+var is_advanced_mode: bool
+var theme_string: String
+
+
+
 # Include use of http(s) ws(s) and any port
 static func create_from(api_address: StringName, websocket_address: StringName) -> FeagiEndpointDetails:
 	var output: FeagiEndpointDetails = FeagiEndpointDetails.new()
