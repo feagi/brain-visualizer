@@ -116,7 +116,98 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Successfully updated delay between bursts to %d" % new_delay_between_bursts)
 	FeagiCore.feagi_retrieved_burst_rate(new_delay_between_bursts)
 	return FEAGI_response_data
+
+## Retrieves FEAGIs Skip Rate
+func get_skip_rate() -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
+		push_error("FEAGI Requests: Not connected to FEAGI!")
+		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
+	print("FEAGI REQUEST: Request getting skip_rate")
 	
+	# Define Request
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_corticalAreaVisualizationSkipRate)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI skip rate!")
+		return FEAGI_response_data
+	var response: String = FEAGI_response_data.decode_response_as_string()
+	print("FEAGI REQUEST: Successfully retrieved skip rate as %d" % response.to_int())
+	FeagiCore.feagi_recieved_skip_rate(response.to_int())
+	return FEAGI_response_data
+
+
+
+## Sets the skip rate
+func change_skip_rate(new_skip_rate: int) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var dict_to_send: Dictionary = 	{ "burst_duration": new_skip_rate}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_system_corticalAreaVisualizationSkipRate, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update FEAGI skip rate!")
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully updated skip rate to %d" % new_skip_rate)
+	FeagiCore.feagi_recieved_skip_rate(new_skip_rate)
+	return FEAGI_response_data
+
+## Retrieves FEAGIs Skip Rate
+func get_supression_threshold() -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
+		push_error("FEAGI Requests: Not connected to FEAGI!")
+		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
+	print("FEAGI REQUEST: Request getting supression threshold")
+	
+	# Define Request
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_corticalAreaVisualizationSupressionThreshold)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI supression threshold!")
+		return FEAGI_response_data
+	var response: String = FEAGI_response_data.decode_response_as_string()
+	print("FEAGI REQUEST: Successfully retrieved skip rate as %d" % response.to_int())
+	FeagiCore.feagi_recieved_supression_threshold(response.to_int())
+	return FEAGI_response_data
+
+
+
+## Sets the skip rate
+func change_supression_threshold(new_skip_rate: int) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var dict_to_send: Dictionary = 	{ "burst_duration": new_skip_rate}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_system_corticalAreaVisualizationSkipRate, dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update FEAGI skip rate!")
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully updated supression threshold to %d" % new_skip_rate)
+	FeagiCore.feagi_recieved_supression_threshold(new_skip_rate)
+	return FEAGI_response_data
 
 #endregion
 
