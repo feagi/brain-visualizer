@@ -390,7 +390,8 @@ func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
 	_update_control_with_value_from_areas(_button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution")
 	_update_control_with_value_from_areas(_button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp")
-
+	_line_Post_Synaptic_Potential.editable = !_button_PSP_Uniformity.button_pressed
+	_button_PSP_Uniformity.toggled.connect(func(is_on: bool): _line_Post_Synaptic_Potential.editable = !is_on )
 
 #endregion
 
