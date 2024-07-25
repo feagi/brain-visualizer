@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://uovm7phb0uio"]
+[gd_scene load_steps=5 format=3 uid="uid://uovm7phb0uio"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.gd" id="1_sn8x3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="3_y5jb7"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="4_u56br"]
 
 [node name="WindowOptionsMenu" type="VBoxContainer"]
 offset_right = 126.0
@@ -14,7 +15,7 @@ script = ExtResource("1_sn8x3")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_m61t8")]
 layout_mode = 2
-title = "Options Menu"
+title = "Brain Visualizer Settings"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -46,24 +47,24 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
-text = "Interface Mode:"
+text = "UI Magnification:"
 
 [node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 item_count = 6
 fit_to_longest_item = false
-popup/item_0/text = "Dark 0.5 Scale"
+popup/item_0/text = "0.5 Scale"
 popup/item_0/id = 0
-popup/item_1/text = "Dark 0.75 Scale"
+popup/item_1/text = "0.75 Scale"
 popup/item_1/id = 1
-popup/item_2/text = "Dark 1.0 Scale"
+popup/item_2/text = "1.0 Scale"
 popup/item_2/id = 2
-popup/item_3/text = "Dark 1.25 Scale"
+popup/item_3/text = "1.25 Scale"
 popup/item_3/id = 3
-popup/item_4/text = "Dark 1.5 Scale"
+popup/item_4/text = "1.5 Scale"
 popup/item_4/id = 4
-popup/item_5/text = "Dark 2.0 Scale"
+popup/item_5/text = "2.0 Scale"
 popup/item_5/id = 5
 
 [node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
@@ -89,7 +90,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Auto-create IO:"
+text = "Auto-create Inputs / Outputs:"
 
 [node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
 custom_minimum_size = Vector2(60, 0)
@@ -97,6 +98,38 @@ layout_mode = 2
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("3_y5jb7")
+
+[node name="VBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer5"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Visualization Skip Rate:"
+
+[node name="SkipRate" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer5"]
+layout_mode = 2
+script = ExtResource("4_u56br")
+min_value = 0
+
+[node name="VBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer6"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Visualization Supression Threshold:"
+
+[node name="Supression" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer6"]
+layout_mode = 2
+script = ExtResource("4_u56br")
+min_value = 0
+
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

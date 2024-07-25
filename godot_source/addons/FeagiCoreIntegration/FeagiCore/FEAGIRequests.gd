@@ -63,6 +63,8 @@ func reload_genome() -> FeagiRequestOutput:
 	
 	# Other stuff (asyncronous)
 	get_burst_delay()
+	get_supression_threshold()
+	get_skip_rate()
 	
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	
@@ -150,7 +152,7 @@ func change_skip_rate(new_skip_rate: int) -> FeagiRequestOutput:
 	
 	# Define Request
 	var dict_to_send: Dictionary = 	{ "burst_duration": new_skip_rate}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_system_corticalAreaVisualizationSkipRate, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_system_corticalAreaVisualizationSkipRate, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -196,7 +198,7 @@ func change_supression_threshold(new_skip_rate: int) -> FeagiRequestOutput:
 	
 	# Define Request
 	var dict_to_send: Dictionary = 	{ "burst_duration": new_skip_rate}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_system_corticalAreaVisualizationSkipRate, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_system_corticalAreaVisualizationSkipRate, dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
