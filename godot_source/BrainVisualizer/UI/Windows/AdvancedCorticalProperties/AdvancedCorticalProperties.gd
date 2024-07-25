@@ -254,6 +254,7 @@ func _init_summary() -> void:
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
 	else:
+		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
 	
