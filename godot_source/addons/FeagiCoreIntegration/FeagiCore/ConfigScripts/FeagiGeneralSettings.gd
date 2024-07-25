@@ -17,7 +17,7 @@ enum POLL_WEBSOCKET_BEHAVIOR {
 @export var seconds_between_healthcheck_pings: float = 5 ## The number of seconds to wait between healthcheck pings
 @export var enable_HTTP_healthcheck: bool ## if we should occasionally ping the FEAGI health endpoint
 @export var allow_developer_menu: bool ## if we should allow the user to open the developer menu
-@export var developer_menu_hotkey: Key = Key.KEY_QUOTELEFT ## keyboard key that opens the developer menu
+@export var developer_menu_hotkey: Key = Key.KEY_QUOTELEFT ## keyboard key that opens the developer menu # ~, sv_cheats_1, impulse 101
 @export var seconds_info_notification: float ## how long to show info notifications
 @export var seconds_warning_notification: float ## how long to show warning notifications
 @export var seconds_error_notification: float ## how long to show error notifications
