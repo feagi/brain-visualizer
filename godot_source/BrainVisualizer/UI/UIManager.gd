@@ -101,14 +101,30 @@ func FEAGI_confirmed_genome() -> void:
 	if $TempLoadingScreen != null:
 		$TempLoadingScreen.queue_free()
 	
+	# This is utter cancer
+	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
+	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
+	if option_string == "":
+		return
+	var split_strings: PackedStringArray = option_string.split(" ")
+	var color_setting: UIManager.THEME_COLORS
+	if split_strings[0] == "Dark":
+		color_setting = UIManager.THEME_COLORS.DARK
+	var zoom_value: float = split_strings[1].to_float()
+	BV.UI.request_switch_to_theme(zoom_value, color_setting)
+
 
 #endregion
 
 
 #region User Interactions
+signal advanced_mode_setting_changed(is_in_advanced_mode: bool)
 signal user_selected_single_cortical_area(area: AbstractCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
 var currently_selected_objects: Array[GenomeObject] = []
+
+var is_in_advanced_mode: bool:
+	get: return _is_in_advanced_mode
 
 func _input(event):
 	if FeagiCore.feagi_settings == null:
@@ -127,10 +143,13 @@ var selected_cortical_areas: Array[AbstractCorticalArea]:
 	get: return _selected_cortical_areas
 
 var _selected_cortical_areas: Array[AbstractCorticalArea] = []
+var _is_in_advanced_mode: bool = false
 
-
-func set_user_selected_cortical_areas(selected: Array[AbstractCorticalArea]) -> void:
-	pass
+func set_advanced_mode(is_advanced_mode: bool) -> void:
+	if is_advanced_mode == _is_in_advanced_mode:
+		return
+	_is_in_advanced_mode = is_advanced_mode
+	advanced_mode_setting_changed.emit(_is_in_advanced_mode)
 
 # TEMP TODO remove this as it is a standin for broken BM functions!
 func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:
@@ -139,26 +158,9 @@ func user_selected_single_cortical_area_independently(object: GenomeObject) -> v
 		var objects: Array[GenomeObject] = [object]
 		if !WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
 			_window_manager.spawn_quick_cortical_menu(objects)
-		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
+		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
 			var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
 			window_manager.spawn_adv_cortical_properties(areas)
-
-	
-	
-
-
-func user_selected_single_cortical_area_appending(area: AbstractCorticalArea) -> void:
-	pass
-
-
-## DEFUNCT REMOVE ME TODO
-func asdsaduser_selected_genome_objects(objects: Array[GenomeObject]) -> void:
-	_window_manager.spawn_quick_cortical_menu(objects)
-	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
-		if GenomeObject.get_makeup_of_array(objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
-			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(objects))
-
-
 
 func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
@@ -186,10 +188,9 @@ func show_developer_menu():
 func action_on_selected_objects() -> void:
 	if WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
 		return
-	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows:
+	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
 		if GenomeObject.get_makeup_of_array(currently_selected_objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
 			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(currently_selected_objects))
-			return
 	_window_manager.spawn_quick_cortical_menu(currently_selected_objects)
 
 func _append_selected_object(object: GenomeObject) -> void:

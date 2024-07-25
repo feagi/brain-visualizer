@@ -17,6 +17,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
 	_setup_base_window(WINDOW_NAME)
+	if len(selection) == 0:
+		push_error("BV UI: The quick menu was opened with 0 selected objects. This should never happen! Please note the steps to cause this error and open an issue! Closing the window...")
+		close_window()
+		return
 	focus_exited.connect(_on_focus_lost)
 	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - (CENTER_OFFSET * BV.UI.loaded_theme_scale.x)
 	if position_to_spawn.y < CENTER_OFFSET.y:

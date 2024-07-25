@@ -190,7 +190,7 @@ visible = false
 layout_mode = 2
 
 [node name="Button_Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(0, 4)
+custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]

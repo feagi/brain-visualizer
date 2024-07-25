@@ -6,13 +6,16 @@ class_name AdvancedCorticalProperties
 
 # region Window Global
 
+@export var controls_to_hide_in_simple_mode: Array[Control] = [] #NOTE custom logic for sections, do not include those here
+
 const WINDOW_NAME: StringName = "adv_cortical_properties"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
-
+var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
 
 func _ready():
 	super()
+
 	
 
 ## Load in initial values of the cortical area from Cache
@@ -23,6 +26,9 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# cortical area update, which may be many depending on the selection and would cause a large
 	# lag spike. While this method is more tenous, it ultimately provides a better experience for
 	# the end user
+	
+	_toggle_visiblity_based_on_advanced_mode(BV.UI.is_in_advanced_mode)
+	BV.UI.advanced_mode_setting_changed.connect(_toggle_visiblity_based_on_advanced_mode)
 	
 	_setup_base_window(WINDOW_NAME)
 	_cortical_area_refs = cortical_area_references
@@ -43,6 +49,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_firing_parameters.visible = false
 	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
 		_init_memory()
+		_memory_section_enabled = true
 	else:
 		_section_memory.visible = false
 	if true: # currently, all cortical areas have this
@@ -70,8 +77,14 @@ func _refresh_all_relevant() -> void:
 		_refresh_from_cache_memory()
 	if true: # currently, all cortical areas have this
 		_refresh_from_cache_psp()
-	
 
+#NOTE custom logic for sections
+func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool) -> void:
+	for control in controls_to_hide_in_simple_mode:
+		control.visible = is_advanced_options_visible
+	if _memory_section_enabled:
+		_section_memory.visible = is_advanced_options_visible
+	_section_cortical_area_monitoring.visible = is_advanced_options_visible
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
 	if AbstractCorticalArea.do_cortical_areas_have_matching_values_for_property(_cortical_area_refs, composition_section_name, property_name):
@@ -241,6 +254,7 @@ func _init_summary() -> void:
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
 	else:
+		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
 	
@@ -376,7 +390,8 @@ func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
 	_update_control_with_value_from_areas(_button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution")
 	_update_control_with_value_from_areas(_button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp")
-
+	_line_Post_Synaptic_Potential.editable = !_button_PSP_Uniformity.button_pressed
+	_button_PSP_Uniformity.toggled.connect(func(is_on: bool): _line_Post_Synaptic_Potential.editable = !is_on )
 
 #endregion
 
@@ -391,10 +406,16 @@ func _refresh_from_cache_psp() -> void:
 
 func _init_monitoring() -> void:
 	_button_monitoring_send.pressed.connect(_montoring_update_button_pressed)
+	post_synaptic_toggle.disabled = !FeagiCore.feagi_local_cache.influxdb_availability
+	membrane_toggle.disabled = !FeagiCore.feagi_local_cache.influxdb_availability
+	render_activity_toggle.pressed.connect(_button_monitoring_send.set_disabled.bind(false))
+	post_synaptic_toggle.pressed.connect(_button_monitoring_send.set_disabled.bind(false))
+	membrane_toggle.pressed.connect(_button_monitoring_send.set_disabled.bind(false))
 	
 func _refresh_from_cache_monitoring() -> void:
-	_update_control_with_value_from_areas(membrane_toggle, "", "is_monitoring_membrane_potential")
-	_update_control_with_value_from_areas(post_synaptic_toggle, "", "is_monitoring_synaptic_potential")
+	if FeagiCore.feagi_local_cache.influxdb_availability:
+		_update_control_with_value_from_areas(membrane_toggle, "", "is_monitoring_membrane_potential")
+		_update_control_with_value_from_areas(post_synaptic_toggle, "", "is_monitoring_synaptic_potential")
 	_update_control_with_value_from_areas(render_activity_toggle, "", "cortical_visibility")
 
 
