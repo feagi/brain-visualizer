@@ -407,10 +407,14 @@ func _init_monitoring() -> void:
 	_button_monitoring_send.pressed.connect(_montoring_update_button_pressed)
 	post_synaptic_toggle.disabled = !FeagiCore.feagi_local_cache.influxdb_availability
 	membrane_toggle.disabled = !FeagiCore.feagi_local_cache.influxdb_availability
+	render_activity_toggle.pressed.connect(_button_monitoring_send.set_disabled.bind(false))
+	post_synaptic_toggle.pressed.connect(_button_monitoring_send.set_disabled.bind(false))
+	membrane_toggle.pressed.connect(_button_monitoring_send.set_disabled.bind(false))
 	
 func _refresh_from_cache_monitoring() -> void:
-	_update_control_with_value_from_areas(membrane_toggle, "", "is_monitoring_membrane_potential")
-	_update_control_with_value_from_areas(post_synaptic_toggle, "", "is_monitoring_synaptic_potential")
+	if FeagiCore.feagi_local_cache.influxdb_availability:
+		_update_control_with_value_from_areas(membrane_toggle, "", "is_monitoring_membrane_potential")
+		_update_control_with_value_from_areas(post_synaptic_toggle, "", "is_monitoring_synaptic_potential")
 	_update_control_with_value_from_areas(render_activity_toggle, "", "cortical_visibility")
 
 
