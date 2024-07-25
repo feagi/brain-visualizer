@@ -22,6 +22,8 @@ enum GENOME_LOAD_STATE {
 signal connection_state_changed(new_state: CONNECTION_STATE, previous_state: CONNECTION_STATE)
 signal genome_load_state_changed(new_state: GENOME_LOAD_STATE, prev_state: GENOME_LOAD_STATE)
 signal delay_between_bursts_updated(new_delay: float)
+signal skip_rate_updated(new_skip_rate: int)
+signal skip_rate_updated_supression_threshold(new_supression_threshold: int)
 signal about_to_reload_genome()
 
 var connection_state: CONNECTION_STATE: # This refers primarily to the http api right now
@@ -32,6 +34,10 @@ var feagi_settings: FeagiGeneralSettings:
 	get: return _feagi_settings # No setter
 var delay_between_bursts: float:
 	get: return _delay_between_bursts
+var skip_rate: int:
+	get: return _skip_rate
+var supression_threshold: int:
+	get: return _supression_threshold
 
 var network: FEAGINetworking
 var requests: FEAGIRequests
@@ -44,6 +50,8 @@ var _in_use_endpoint_details: FeagiEndpointDetails = null
 var _feagi_settings: FeagiGeneralSettings = null
 
 var _delay_between_bursts: float = 0
+var _skip_rate: int = 0
+var _supression_threshold: int = 0
 
 # Zeroth Stage loading. FEAGICore initialization starts here
 func _enter_tree():
@@ -193,6 +201,13 @@ func feagi_retrieved_burst_rate(delay_bursts_apart: float) -> void:
 	_delay_between_bursts = delay_bursts_apart
 	delay_between_bursts_updated.emit(delay_bursts_apart)
 
+func feagi_recieved_skip_rate(new_skip_rate: int) -> void:
+	_skip_rate = new_skip_rate
+	skip_rate_updated.emit(new_skip_rate)
+
+func feagi_recieved_supression_threshold(new_supression_threshold: int) -> void:
+	_supression_threshold = new_supression_threshold
+	skip_rate_updated_supression_threshold.emit(new_supression_threshold)
 
 ## Respond to changing HTTP health during start procedure (not used in general healthcheck polling when already active)
 func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
