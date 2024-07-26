@@ -9,6 +9,7 @@ var _advanced_mode: ToggleButton
 var _autoconfigure_IO: ToggleButton
 var _skip_rate: IntInput
 var _supression: IntInput
+var _camera_animation_section: VerticalCollapsible
 
 func _ready() -> void:
 	super()
@@ -18,6 +19,7 @@ func _ready() -> void:
 	_autoconfigure_IO = _window_internals.get_node('VBoxContainer4/ToggleButton')
 	_skip_rate = _window_internals.get_node('VBoxContainer5/SkipRate')
 	_supression = _window_internals.get_node('VBoxContainer6/Supression')
+	_camera_animation_section = _window_internals.get_node('Camera_Animation')
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -26,6 +28,7 @@ func setup() -> void:
 	_skip_rate.current_int = FeagiCore.skip_rate
 	_supression.current_int = FeagiCore.supression_threshold
 	_version.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
+	_camera_animation_section.setup()
 
 func _on_accept_press() -> void:
 	if _interface_dropdown.get_selected_id() != -1:
