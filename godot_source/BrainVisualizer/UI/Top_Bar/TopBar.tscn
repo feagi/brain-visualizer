@@ -180,6 +180,7 @@ layout_mode = 2
 size_flags_horizontal = 1
 size_flags_vertical = 1
 child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
+start_open = true
 
 [node name="Options" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
