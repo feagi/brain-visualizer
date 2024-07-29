@@ -96,6 +96,7 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 		return
 	_cortical_nodes[area.cortical_ID].queue_free()
 	_cortical_nodes.erase(area.cortical_ID)
+	user_removes_object_from_selected_object_pool.emit(area)
 	
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	if (subregion.region_ID in subregion_nodes.keys()):
@@ -119,6 +120,7 @@ func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 		push_error("UI CB: Unable to find region %s to remove node of!" % subregion.region_ID)
 		return
 	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
+	user_removes_object_from_selected_object_pool.emit(subregion)
 	subregion_nodes[subregion.region_ID].queue_free()
 	subregion_nodes.erase(subregion.region_ID)
 
@@ -361,15 +363,6 @@ func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNo
 		IO_node.position_offset = target_node.position_offset - CBRegionIONode.CONNECTED_NODE_OFFSET
 	else:
 		IO_node.position_offset = target_node.position_offset + CBRegionIONode.CONNECTED_NODE_OFFSET
-	return IO_node
-
-func _DEPRECATED_spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBNodeRegionIO:
-	var IO_node: CBNodeRegionIO = PREFAB_NODE_REGIONIO.instantiate()
-	add_child(IO_node)
-	if is_region_input:
-		IO_node.position_offset = target_node.position_offset - CBNodeRegionIO.CONNECTED_NODE_OFFSET
-	else:
-		IO_node.position_offset = target_node.position_offset + CBNodeRegionIO.CONNECTED_NODE_OFFSET
 	return IO_node
 
 func _toggle_draggability_based_on_focus() -> void:
