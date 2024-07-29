@@ -19,11 +19,17 @@ const _PREFAB_EDIT_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windo
 const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.tscn")
 const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
 const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.tscn")
+const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.tscn")
+
 
 var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
 }
+
+func spawn_options() -> void:
+	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu
+	options_window.setup()
 
 func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
 	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties

@@ -33,8 +33,8 @@ layout_mode = 2
 tooltip_text = "transition time"
 script = ExtResource("3_b7a62")
 initial_float = 3.0
-suffix = " seconds"
 min_value = 0.1
+suffix = " seconds"
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="."]
 layout_mode = 2

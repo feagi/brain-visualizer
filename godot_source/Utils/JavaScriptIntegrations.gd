@@ -77,6 +77,28 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 		get_port();
 		""")
 	
+	var theme_setting = JavaScriptBridge.eval(""" 
+		function get_theme() {
+			var url_string = window.location.href;
+			var url = new URL(window.location.href);
+			const searchParams = new URLSearchParams(url.search);
+			const ipAddress = searchParams.get("theme_setting");
+			return ipAddress;
+		}
+		get_theme();
+		""")
+	
+	var advanced_setting = JavaScriptBridge.eval(""" 
+		function get_advanced_mode() {
+			var url_string = window.location.href;
+			var url = new URL(window.location.href);
+			const searchParams = new URLSearchParams(url.search);
+			const ipAddress = searchParams.get("is_advanced_mode");
+			return ipAddress;
+		}
+		get_advanced_mode();
+		""")
+	
 	feagi_web_port = http_port
 	feagi_socket_port = websocket_port
 	if SSL_type != null:
@@ -103,5 +125,9 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 	print("websocket: ", feagi_socket_address, " and api: ", feagi_root_web_address)
 		
 	var output: FeagiEndpointDetails = FeagiEndpointDetails.create_from(feagi_root_web_address, feagi_socket_address)
+	output.is_advanced_mode = advanced_setting == "true"
+	if theme_setting != null:
+		output.theme_string = theme_setting
+	
 	
 	return output

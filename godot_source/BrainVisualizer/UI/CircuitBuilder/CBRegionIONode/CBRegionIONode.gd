@@ -3,16 +3,8 @@ class_name CBRegionIONode
 
 const CONNECTED_NODE_OFFSET: Vector2 = Vector2(500, -50)
 
-const KNOWN_ICON_PATHS : Dictionary = {
-	"iv00_C" : "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/iv00_C.png",
-	"i_spos" : "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/i_spos.png",
-	"o__mot" : "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/o__mot.png",
-	"___pwr" : "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/knowns/___pwr.png",
-}
-const ICON_CUSTOM_INPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-input.png"
-const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/custom-output.png"
-const ICON_UNKNOWN_INPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/unknown-input.png"
-const ICON_UNKNOWN_OUTPUT: StringName = "res://BrainVisualizer/UI/CircuitBuilder/Resources/IOIcons/unknowns/unknown-output.png"
+const ICON_UNKNOWN_INPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/unknown-input.png"
+const ICON_UNKNOWN_OUTPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/unknown-output.png"
 
 var _is_region_input: bool
 var _outside: GenomeObject
@@ -94,18 +86,14 @@ func _toggle_path_button(toggled_open: bool) -> void:
 	# TODO line shenanigans
 
 func _set_icon(external_object: GenomeObject) -> void:
-	if external_object.genome_ID in KNOWN_ICON_PATHS:
-		_icon.texture = load(KNOWN_ICON_PATHS[external_object.genome_ID])
-		return
-	if external_object is AbstractCorticalArea:
+	if !(external_object is AbstractCorticalArea):
 		if _is_region_input:
-			_icon.texture = load(ICON_CUSTOM_INPUT)
+			_icon.texture = load(ICON_UNKNOWN_INPUT)
 		else:
-			_icon.texture = load(ICON_CUSTOM_OUTPUT)
+			_icon.texture = load(ICON_UNKNOWN_OUTPUT)
 		return
-	if _is_region_input:
-		_icon.texture = load(ICON_UNKNOWN_INPUT)
-	else:
-		_icon.texture = load(ICON_UNKNOWN_OUTPUT)
+	
+	_icon.texture = UIManager.get_icon_texture_by_ID(external_object.genome_ID, _is_region_input)
+	
 
 
