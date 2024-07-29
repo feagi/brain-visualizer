@@ -250,8 +250,11 @@ func _http_API_state_change_response(health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
 						# This will immediately raise the connecting flag, then either the connected flag or disconnect flag
 					if feagi_settings.load_genome_on_connect_if_available:
 						if feagi_local_cache.genome_availability:
-							print("FEAGICORE: Genome detected, loading automatically as per configuration!")
-							load_genome_from_FEAGI()
+							if feagi_local_cache.brain_readiness:
+								print("FEAGICORE: Genome detected and brain ready, loading automatically as per configuration!")
+								load_genome_from_FEAGI()
+							else:
+								print("FEAGICORE: Genome loaded but brain not ready, waiting!")
 						else:
 							print("FEAGICORE: No Genome detected in FEAGI!")
 							var cache_genome_state: GENOME_LOAD_STATE = _genome_load_state
