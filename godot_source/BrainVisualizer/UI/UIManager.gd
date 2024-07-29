@@ -54,6 +54,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
+	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
 
 
 	
@@ -68,7 +69,7 @@ func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
 	_root_UI_view.close_all_non_root_brain_region_views()
-
+	toggle_loading_screen(true)
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it
@@ -98,8 +99,7 @@ func FEAGI_confirmed_genome() -> void:
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
-	if $TempLoadingScreen != null:
-		$TempLoadingScreen.queue_free()
+	toggle_loading_screen(false)
 	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
@@ -192,6 +192,9 @@ func action_on_selected_objects() -> void:
 		if GenomeObject.get_makeup_of_array(currently_selected_objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
 			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(currently_selected_objects))
 	_window_manager.spawn_quick_cortical_menu(currently_selected_objects)
+
+func toggle_loading_screen(is_on: bool) -> void:
+	$TempLoadingScreen.visible = is_on
 
 func _append_selected_object(object: GenomeObject) -> void:
 	if object in currently_selected_objects:
