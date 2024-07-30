@@ -34,6 +34,8 @@ var GET_morphology_list_types: StringName = '/v1/morphology/list/types'
 var GET_morphology_morphologies: StringName = '/v1/morphology/morphologies'
 var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
 var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortical_visibility'
+var GET_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
+var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/system/cortical_area_visualization_suppression_threshold"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -57,7 +59,8 @@ var PUT_region_region: StringName = "/v1/region/region"
 var PUT_region_relocateMembers: StringName = "/v1/region/relocate_members"
 var PUT_corticalArea_suppressCorticalVisibility: StringName = "/v1/cortical_area/suppress_cortical_visibility"
 var PUT_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/cortical_area"
-
+var PUT_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
+var PUT_system_corticalAreaVisualizationSupressionThreshold: StringName = "v1/system/cortical_area_visualization_suppression_threshold"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
