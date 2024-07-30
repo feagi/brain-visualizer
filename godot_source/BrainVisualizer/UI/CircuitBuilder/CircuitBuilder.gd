@@ -3,8 +3,6 @@ class_name CircuitBuilder
 ## A 2D Node based representation of a specific Genome Region
 
 @export var move_time_delay_before_update_FEAGI: float = 5.0
-@export var initial_position: Vector2
-@export var initial_zoom: float
 @export var keyboard_movement_speed: Vector2 = Vector2(1,1)
 @export var keyboard_move_speed: float = 50.0
 
