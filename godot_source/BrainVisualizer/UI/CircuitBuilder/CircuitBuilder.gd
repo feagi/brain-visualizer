@@ -168,7 +168,7 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 	
-	var source_node: CBRegionIONode = _spawn_and_position_region_IO_node(true, destination_node)
+	var source_node: CBRegionIONode = _spawn_and_position_region_IO_node(true, destination_node, destination_node.get_number_inputs())
 	source_node.setup(link.parent_chain.source, link.parent_chain.destination, true)
 	
 	var source_title: StringName
@@ -196,7 +196,7 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 	
-	var destination_node: CBRegionIONode = _spawn_and_position_region_IO_node(false, source_node)
+	var destination_node: CBRegionIONode = _spawn_and_position_region_IO_node(false, source_node, source_node.get_number_outputs())
 	destination_node.setup(link.parent_chain.destination, link.parent_chain.source, false)
 	
 	var destination_title: StringName
@@ -354,13 +354,13 @@ func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNo
 			return null
 		return _subregion_nodes[(genome_object as BrainRegion).region_ID]
 
-func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase) -> CBRegionIONode:
+func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase, y_offset_index: int) -> CBRegionIONode:
 	var IO_node: CBRegionIONode = PREFAB_REGIONIO_NODE.instantiate()
 	add_child(IO_node)
 	if is_region_input:
-		IO_node.position_offset = target_node.position_offset - CBRegionIONode.CONNECTED_NODE_OFFSET
+		IO_node.position_offset = target_node.position_offset - CBRegionIONode.CONNECTED_NODE_OFFSET + Vector2(0, (y_offset_index * CBRegionIONode.CONNECTED_NODE_OFFSET.y))
 	else:
-		IO_node.position_offset = target_node.position_offset + CBRegionIONode.CONNECTED_NODE_OFFSET
+		IO_node.position_offset = target_node.position_offset + CBRegionIONode.CONNECTED_NODE_OFFSET - Vector2(0, (y_offset_index * CBRegionIONode.CONNECTED_NODE_OFFSET.y))
 	return IO_node
 
 func _toggle_draggability_based_on_focus() -> void:
