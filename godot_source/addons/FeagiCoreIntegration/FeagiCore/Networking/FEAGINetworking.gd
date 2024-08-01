@@ -26,8 +26,6 @@ func _init():
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
 	websocket_API.feagi_return_ping.connect(_on_return_ping)
 	websocket_API.feagi_requesting_reset.connect(_on_recieve_genome_reset_request)
-
-	
 	add_child(websocket_API)
 
 ## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify

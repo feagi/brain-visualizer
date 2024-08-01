@@ -21,6 +21,7 @@ var http_health: HTTP_HEALTH:
 var _API_request_worker_prefab: PackedScene = preload("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.tscn")
 var _headers_to_use: PackedStringArray
 var _http_health: HTTP_HEALTH  = HTTP_HEALTH.NO_CONNECTION
+var _retry_connection_count: int = 0
 var _polling_health_worker: APIRequestWorker = null
 
 ## Used to setup (or reset) the HTTP API for a specific FEAGI instance
@@ -47,7 +48,7 @@ func kill_all_children() -> void:
 	
 
 ## Make a call to FEAGI using HTTP. Make sure to use the returned worker reference to get the response output when complete
-func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIRequestWorker: # v2
+func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIRequestWorker:
 	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
 	add_child(worker)
 	worker.setup_and_run_from_definition(_headers_to_use, request_definition)
@@ -56,7 +57,7 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 ## Runs a (single) health check call over HTTP, updates the cache with the results (notably genome availability), and informs core about connectability
 func run_HTTP_healthcheck() -> void:
 	#NOTE: Due to the more unique usecase, we are keeping this function here instead of [FEAGIRequests]
-	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_healthCheck,)
+	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_healthCheck)
 	var health_check_worker: APIRequestWorker = make_HTTP_call(health_check_request)
 	
 	await health_check_worker.worker_done
@@ -92,7 +93,7 @@ func poll_HTTP_health() -> void:
 		FeagiCore.feagi_settings.seconds_between_healthcheck_pings,
 	)
 	
-	attempt_kill_poll_health_worker() # Kill current worker if its running
+	attempt_kill_poll_health_worker() # Kill current worker if its running (before we instantiate a new one)
 	
 	_polling_health_worker = make_HTTP_call(polling_health_check_request)
 	_polling_health_worker.worker_retrieved_latest_poll.connect(_retrieved_poll_from_HTTP_health)

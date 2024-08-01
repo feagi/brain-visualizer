@@ -1,30 +1,29 @@
 extends HTTPRequest
 class_name  APIRequestWorker
-## GET/POST/PUT/DELETE worker for [NetworkInterface]
-##
-## On initialization, toggles multiThreading, sets internals, and parents itself to a given parent (this does not need to be done seperately)
-## Sits idle but when given a network call, will run it then return the output to the given relay function._add_constant_central_force
-## After this point, will return to the queue in [NetworkInterface] if there is enough room, otherwise will destroy itself
-##
+## GET/POST/PUT/DELETE worker for [FEAGIHTTOAPI]
+## Upon initialization, will set itself up as per the given [APIRequestWorkerDefinition]
+## If endpoint is unresponsive, will attempt again as per FEAGI settings
+
 
 enum CALL_PROCESS_TYPE {
 	SINGLE,
-	POLLING
+	POLLING # polling is cancer
 }
 
 signal worker_done() ## Emitted when a worker is done including done polling)
 signal worker_retrieved_latest_poll(output_response: FeagiRequestOutput)  ## Emitted when a worker has recieved the data for its latest poll, but is still polling
+signal retrying_connection(current_retry_attempt: int, max_number_retries: int)
 
 var _timer: Timer
 var _outgoing_headers: PackedStringArray # headers to make requests with
 var _request_definition: APIRequestWorkerDefinition
 var _output_response: FeagiRequestOutput
+var _number_retries_done: int = 0
 
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(call_header: PackedStringArray, request_definition: APIRequestWorkerDefinition) -> void:
 	
 	#init
-	request_completed.connect(_call_complete)
 	_outgoing_headers = call_header
 	_request_definition = request_definition
 	timeout = request_definition.http_timeout
@@ -40,7 +39,6 @@ func setup_and_run_from_definition(call_header: PackedStringArray, request_defin
 			# polling call
 			name = "polling"
 			_timer = $Timer
-			_timer.timeout.connect(_poll_call_from_timer)
 			_timer.wait_time = request_definition.seconds_between_polls
 			_timer.start(request_definition.seconds_between_polls)
 			_make_call_to_FEAGI(request_definition.full_address, request_definition.method, request_definition.data_to_send_to_FEAGI)
@@ -97,13 +95,30 @@ func kill_worker() -> void:
 ## Called when FEAGI returns data from call (or HTTP call timed out)
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
 	
+	# NOTE: Tinstances of this object are handled soley by [FEAGIHTTPAPI], so we will allow freeing of this object by that as well! 
+	
 	# Unresponsive FEAGI 
 	if response_code == 0:
-		push_warning("FEAGI NETWORK HTTP: FEAGI did not respond on endpoint: %s" % _request_definition.full_address)
-		_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
-		worker_done.emit()
+		push_warning("FEAGI NETWORK HTTP: FEAGI did not respond %d times on endpoint: %s" % [_number_retries_done, _request_definition.full_address])
+		_number_retries_done += 1
+		if _number_retries_done > _request_definition.number_of_retries_allowed:
+			push_error("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
+			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+			worker_done.emit()
+			return
+		# Retry connection
+		retrying_connection.emit(_number_retries_done, _request_definition.number_of_retries_allowed)
+		match(_request_definition.call_type):
+			CALL_PROCESS_TYPE.SINGLE:
+				# single call
+				_make_call_to_FEAGI(_request_definition.full_address, _request_definition.method, _request_definition.data_to_send_to_FEAGI)
+			CALL_PROCESS_TYPE.POLLING:
+				# polling call
+				_timer.wait_time = _request_definition.seconds_between_polls
+				_timer.start(_request_definition.seconds_between_polls)
+				_make_call_to_FEAGI(_request_definition.full_address, _request_definition.method, _request_definition.data_to_send_to_FEAGI)
 		return
-	
+
 	# FEAGI responded with an error
 	if response_code != 200:
 		push_warning("FEAGI NETWORK HTTP: FEAGI responded from endpoint: %s with HTTP error code: %s" % [_request_definition.full_address, response_code])

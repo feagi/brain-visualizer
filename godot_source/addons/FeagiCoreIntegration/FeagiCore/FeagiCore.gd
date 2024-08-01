@@ -7,6 +7,7 @@ enum CONNECTION_STATE {
 	DISCONNECTED,
 	CONNECTING,
 	CONNECTED,
+	ATTEMPTING_RECONECTION
 }
 
 enum GENOME_LOAD_STATE {
@@ -323,8 +324,6 @@ func _on_healthcheck_poll() -> void:
 
 
 func _recieve_genome_reset_request():
-	#about_to_reload_genome.emit()
-	#requests.reload_genome()
 	load_genome_from_FEAGI()
 
 #endregion
