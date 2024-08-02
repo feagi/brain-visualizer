@@ -20,7 +20,7 @@ class_name FeagiEndpointDetails
 @export var full_websocket_address: StringName
 
 # This is bad, this shouldnt be here
-var is_advanced_mode: bool
+var is_advanced_mode: bool = true
 var theme_string: String
 
 
