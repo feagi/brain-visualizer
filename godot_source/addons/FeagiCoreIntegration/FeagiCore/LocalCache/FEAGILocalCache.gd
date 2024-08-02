@@ -144,6 +144,7 @@ signal synapse_count_current_changed(new_val: int)
 signal genome_availability_changed(new_val: int)
 signal genome_validity_changed(new_val: bool)
 signal brain_readiness_changed(new_val: bool)
+signal genome_availability_or_brain_readiness_changed(available: bool, ready: bool)
 
 var burst_engine: bool:
 	get: return _burst_engine
@@ -214,6 +215,11 @@ var _pending_amalgamation: StringName = ""
 
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
+	
+	if "genome_availability" in health and "brain_readiness" in health:
+		if health["genome_availability"] != _genome_availability or health["brain_readiness"] != _brain_readiness:
+			genome_availability_or_brain_readiness_changed.emit(health["genome_availability"], health["brain_readiness"])
+	
 	if "burst_engine" in health: 
 		burst_engine = health["burst_engine"]
 	if "influxdb_availability" in health: 

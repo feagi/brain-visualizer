@@ -144,20 +144,19 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	else:
 		# No Genome!
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
+	
+	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
 
 
 # Disconnect from FEAGI
 func disconnect_from_FEAGI() -> void:
 	print("FEAGICORE: Disconnecting from FEAGI!")
-	feagi_local_cache.clear_whole_genome() # clear genome
-	network.disconnect_networking() # disconnect network
-	
-	
-	# TODO disconnect signals
-	feagi_local_cache.set_health_dead()
+	_change_genome_state(GENOME_LOAD_STATE.UNKNOWN)
 	
 
+	
 
+#region Internal
 
 func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 	var prev_state: GENOME_LOAD_STATE = _genome_load_state
@@ -165,6 +164,10 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 		GENOME_LOAD_STATE.UNKNOWN:
 			# This will only occur if we are disconnecting from FEAGI (or connection lost), thus can come from any
 			feagi_local_cache.clear_whole_genome()
+			network.disconnect_networking()
+			if feagi_local_cache.genome_availability_or_brain_readiness_changed.is_connected(_if_brain_readiness_or_genome_availability_changes):
+				feagi_local_cache.genome_availability_or_brain_readiness_changed.disconnect(_if_brain_readiness_or_genome_availability_changes)
+			feagi_local_cache.set_health_dead()
 		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE:
 			# Can Only Come here from Unknown
 			feagi_local_cache.clear_whole_genome()
@@ -184,11 +187,15 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 	genome_load_state_changed.emit(prev_state, new_state)
 
 
+func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: bool) -> void:
+	if !available:
+		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
+		return
+	if ready:
+		_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+	else:
+		_change_genome_state(GENOME_LOAD_STATE.GENOME_PROCESSING)
 
-
-
-
-#region Internal
 
 func feagi_retrieved_burst_rate(delay_bursts_apart: float) -> void:
 	_delay_between_bursts = delay_bursts_apart
@@ -203,10 +210,7 @@ func feagi_recieved_supression_threshold(new_supression_threshold: int) -> void:
 	skip_rate_updated_supression_threshold.emit(new_supression_threshold)
 
 
-
-
 func _recieve_genome_reset_request():
-	feagi_local_cache.clear_whole_genome()
-	requests.reload_genome()
+	_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
 
 #endregion
