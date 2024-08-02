@@ -431,7 +431,7 @@ text = "Firing Threshold"
 [node name="Fire_Threshold" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold"]
 layout_mode = 2
 alignment = 2
-script = ExtResource("9_xe4wg")
+script = ExtResource("14_3jdx4")
 
 [node name="Threshold_Limit" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2

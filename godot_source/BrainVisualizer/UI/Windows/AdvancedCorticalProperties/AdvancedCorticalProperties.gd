@@ -301,7 +301,7 @@ func _enable_3D_preview(): #NOTE only currently works with single
 #region firing parameters
 
 @export var _section_firing_parameters: VerticalCollapsibleHiding
-@export var _line_Fire_Threshold: IntInput
+@export var _line_Fire_Threshold: FloatInput
 @export var _line_Threshold_Limit: IntInput
 @export var _line_neuron_excitability: IntInput
 @export var _line_Refactory_Period: IntInput
