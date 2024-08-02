@@ -6,7 +6,7 @@ func _ready():
 	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(toggle_between_states)
 	draw_disconnected() # lol
 
-func toggle_between_states(connection_state: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
+func toggle_between_states(_prev_state: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, connection_state: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
 	match(connection_state):
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
 			draw_connected()

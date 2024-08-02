@@ -119,4 +119,5 @@ func _reconnect_websocket() -> void:
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
+	_socket_health = new_health
 	FEAGI_socket_health_changed.emit(prev_health, new_health)

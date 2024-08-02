@@ -153,7 +153,8 @@ func disconnect_from_FEAGI() -> void:
 	print("FEAGICORE: Disconnecting from FEAGI!")
 	_change_genome_state(GENOME_LOAD_STATE.UNKNOWN)
 	
-
+func can_interact_with_feagi() -> bool:
+	return _genome_load_state == GENOME_LOAD_STATE.GENOME_READY
 	
 
 #region Internal

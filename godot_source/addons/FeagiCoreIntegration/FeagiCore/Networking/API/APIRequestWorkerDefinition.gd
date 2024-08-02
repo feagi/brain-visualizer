@@ -27,7 +27,7 @@ static func define_single_GET_call( define_full_address: StringName) -> APIReque
 		output.method = HTTPClient.Method.METHOD_GET
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 		if FeagiCore.feagi_settings != null:
-			output.number_of_retries_allowed = FeagiCore.feagi_settings.number_of_times_to_retry_connections
+			output.number_of_retries_allowed = FeagiCore.feagi_settings.number_of_times_to_retry_HTTP_connections
 		else:
 			push_warning("FEAGI CORE: Unable to get feagi settings to set retry count!")
 		return output
@@ -52,7 +52,7 @@ static func define_single_call(define_full_address: StringName, define_method: H
 		output.data_to_send_to_FEAGI = define_data_to_send_to_FEAGI
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 		if FeagiCore.feagi_settings != null:
-			output.number_of_retries_allowed = FeagiCore.feagi_settings.number_of_times_to_retry_connections
+			output.number_of_retries_allowed = FeagiCore.feagi_settings.number_of_times_to_retry_HTTP_connections
 		else:
 			push_warning("FEAGI CORE: Unable to get feagi settings to set retry count!")
 		return output
@@ -74,7 +74,7 @@ static func define_polling_call(
 		output.call_type = APIRequestWorker.CALL_PROCESS_TYPE.POLLING
 		output.seconds_between_polls = define_seconds_beteen_polls
 		if FeagiCore.feagi_settings != null:
-			output.number_of_retries_allowed = FeagiCore.feagi_settings.number_of_times_to_retry_connections
+			output.number_of_retries_allowed = FeagiCore.feagi_settings.number_of_times_to_retry_HTTP_connections
 		else:
 			push_warning("FEAGI CORE: Unable to get feagi settings to set retry count!")
 		return output

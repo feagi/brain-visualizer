@@ -4,7 +4,7 @@ class_name NotificationSystem
 var _notification_prefab: PackedScene = preload("res://BrainVisualizer/UI/Notifications/NotificationSystemNotification.tscn")
 
 func _ready() -> void:
-	FeagiCore.connection_state_changed.connect(_connection_state_change)
+	FeagiCore.network.connection_state_changed.connect(_connection_state_change)
 	FeagiCore.genome_load_state_changed.connect(_genome_state_change)
 	BV.UI.theme_changed.connect(update_theme)
 
