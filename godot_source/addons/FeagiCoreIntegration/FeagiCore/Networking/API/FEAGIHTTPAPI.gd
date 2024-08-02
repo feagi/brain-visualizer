@@ -10,7 +10,6 @@ enum HTTP_HEALTH {
 }
 
 signal FEAGI_http_health_changed(previous_health: HTTP_HEALTH, current_health: HTTP_HEALTH)
-signal FEAGI_returned_error(error_identifier_and_friendly_description: PackedStringArray, request_definition: APIRequestWorkerDefinition) # FEAGI responded with an error identifier (or 'UNDECODABLE' if unable to be decoded)
 signal HTTP_worker_retrying(retry_count: int, max_retry_count, worker: APIRequestWorker, request_definition: APIRequestWorkerDefinition)
 
 var address_list: FEAGIHTTPAddressList = null
@@ -21,31 +20,21 @@ var http_health: HTTP_HEALTH:
 var _API_request_worker_prefab: PackedScene = preload("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.tscn")
 var _headers_to_use: PackedStringArray
 var _http_health: HTTP_HEALTH  = HTTP_HEALTH.NO_CONNECTION
-var retrying_workers: Array[APIRequestWorker] = []
+var _retrying_workers: Array[APIRequestWorker] = []
 
 ## Used to setup (or reset) the HTTP API for a specific FEAGI instance
 func setup(feagi_root_web_address: StringName, headers: PackedStringArray) -> void:
 	_headers_to_use = headers
 	address_list = FEAGIHTTPAddressList.new(feagi_root_web_address)
-	kill_all_web_workers() # in case of a reset, make sure any stranglers are gone
+	_kill_all_web_workers() # in case of a reset, make sure any stranglers are gone
 
 ## Disconnect all HTTP systems from FEAGI
 func disconnect_http() -> void:
-	kill_all_web_workers()
+	_kill_all_web_workers()
 	if _http_health != HTTP_HEALTH.NO_CONNECTION:
 		_http_health = HTTP_HEALTH.NO_CONNECTION
 		# Do not emit in this case, if we are requesting to kill HTTP dont signal up again about it
 	address_list = null
-	
-	
-## Stop all HTTP Requests currently processing
-func kill_all_web_workers() -> void:
-	for child: Node in get_children():
-		if child is APIRequestWorker:
-			(child as APIRequestWorker).kill_worker()
-		else:
-			child.queue_free()
-	retrying_workers = []
 
 
 ## Make a call to FEAGI using HTTP. Make sure to use the returned worker reference to get the response output when complete
@@ -59,12 +48,9 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 ## Runs a (single) health check call over HTTP, updates the cache with the results (notably genome availability), and informs core about connectability
 func confirm_connectivity() -> void:
 	# NOTE: This FEAGI request does not modify anything in FEAGI state on its own, we have full control here
-	# NOTE: The signals for retrying are purposfully not connected, since we dont want to trigger those paths
-	var response_data: FeagiRequestOutput = FeagiCore.requests.single_health_check_call()
-	if response_data.has_timed_out:
-		_http_health = HTTP_HEALTH.NO_CONNECTION
-		FEAGI_http_health_changed.emit(_http_health)
-	
+	# NOTE: The signals for retrying are purposfully not connected, since we dont want to trigger those paths yet
+	var response_data: FeagiRequestOutput = await FeagiCore.requests.single_health_check_call()
+
 	if response_data.has_timed_out:
 		_request_state_change(HTTP_HEALTH.NO_CONNECTION)
 		return
@@ -80,18 +66,27 @@ func _request_state_change(new_state: HTTP_HEALTH) -> void:
 	_http_health = new_state
 	if prev_state != HTTP_HEALTH.NO_CONNECTION and new_state == HTTP_HEALTH.NO_CONNECTION:
 		# We went from some form of connection to none, close all web workers
-		kill_all_web_workers()
+		_kill_all_web_workers()
 	FEAGI_http_health_changed.emit(prev_state, new_state)
 	
-	
+
+## Stop all HTTP Requests currently processing
+func _kill_all_web_workers() -> void:
+	for child: Node in get_children():
+		if child is APIRequestWorker:
+			(child as APIRequestWorker).kill_worker()
+		else:
+			child.queue_free()
+	_retrying_workers = []
+
 ## When a worker is retrying, this function is run per retry
 func _worker_retrying(current_retry_attempt: int, max_number_retries: int, request_definition: APIRequestWorkerDefinition, retrying_worker: APIRequestWorker):
-	if len(retrying_workers) == 0:
-		push_warning("FEAGI HTTP: A HTTP worker has entered the retrying state!")
+	if len(_retrying_workers) == 0:
+		push_warning("FEAGI HTTP: A HTTP worker has entered the retrying state! Retry %d / %d" % [current_retry_attempt, max_number_retries])
 		_request_state_change(HTTP_HEALTH.RETRYING)
 	
-	if !(retrying_worker in retrying_workers):
-		retrying_workers.append(retrying_worker)
+	if !(retrying_worker in _retrying_workers):
+		_retrying_workers.append(retrying_worker)
 		retrying_worker.worker_recovered_from_retrying.connect(_retrying_worker_recovered_from_retrying)
 		retrying_worker.worker_failed_to_recover_from_retrying.connect(_retrying_worker_failed_to_recover)
 	
@@ -99,11 +94,11 @@ func _worker_retrying(current_retry_attempt: int, max_number_retries: int, reque
 	
 # Why are you locked in the bathroom?
 func _retrying_worker_recovered_from_retrying(worker: APIRequestWorker):
-	push_warning("FEAGI HTTP: A HTTP worker has recovered from the retrying state!")
-	var index: int = retrying_workers.find(worker)
+	push_warning("FEAGI HTTP: A HTTP worker has recovered from the retrying state!") # using warning to make things easier to read
+	var index: int = _retrying_workers.find(worker)
 	if index != -1:
-		retrying_workers.remove_at(index)
-	if len(retrying_workers) == 0:
+		_retrying_workers.remove_at(index)
+	if len(_retrying_workers) == 0:
 		# if there are no more recovering workers, then we have recovered!
 		_request_state_change(HTTP_HEALTH.CONNECTABLE)
 
@@ -111,7 +106,7 @@ func _retrying_worker_recovered_from_retrying(worker: APIRequestWorker):
 func _retrying_worker_failed_to_recover(worker: APIRequestWorker):
 	push_error("FEAGI HTTP: A HTTP worker has failed to recover from the retrying state!")
 	_request_state_change(HTTP_HEALTH.NO_CONNECTION)
-	var index: int = retrying_workers.find(worker)
+	var index: int = _retrying_workers.find(worker)
 	if index != -1:
-		retrying_workers.remove_at(index)
+		_retrying_workers.remove_at(index)
 
