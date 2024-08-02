@@ -3,6 +3,58 @@ class_name FEAGIRequests
 
 #region Genome and FEAGI general
 
+# WARNING: You probably don't want to call this directly!
+## Runs a single (non-polling) healthcheck update
+func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRequestOutput:
+	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_healthCheck)
+	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
+	
+	await health_check_worker.worker_done
+	
+	var response_data: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
+	if response_data.success and update_cache_with_result:
+		FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(response_data.decode_response_as_dict())
+	return response_data
+
+## Runs a continous polling worker to check on health stats. WARNING: make sure you don't start multiple of these! WARNING: Make sure the passed callable can accept the [FeagiRequestOutput] object!
+func start_polling_health_call() -> void:
+	# Requirement checking
+	var node_name: StringName = "POLLING_HEALTHCHECK_WORKER"
+	
+	
+	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
+		push_error("FEAGI Requests: Not connected to FEAGI!")
+		return
+	for node: Node in FeagiCore.network.http_API.get_children():
+		if node.name == node_name:
+			push_error("FEAGI Requests: Unable to start multiple Health polling calls!")
+			return
+	
+	# Functional Programming my beloved <3
+	var process_output_for_cache: Callable = func(polled_result: FeagiRequestOutput) : 
+		if polled_result.has_timed_out:
+			return
+		if polled_result.has_errored:
+			return
+		var health_data: Dictionary = polled_result.decode_response_as_dict()
+		FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(health_data)
+		
+	
+	var polling_health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
+		FeagiCore.network.http_API.address_list.GET_system_healthCheck,
+		HTTPClient.METHOD_GET,
+		null,
+		FeagiCore.feagi_settings.seconds_between_healthcheck_pings,
+	)
+	
+	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(polling_health_check_request)
+	health_check_worker.name = node_name
+	health_check_worker.worker_retrieved_latest_poll.connect(process_output_for_cache)
+	
+	await health_check_worker.worker_done # This only happens if HTTP connection is dead
+	return health_check_worker.retrieve_output_and_close()
+	
+
 #WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:

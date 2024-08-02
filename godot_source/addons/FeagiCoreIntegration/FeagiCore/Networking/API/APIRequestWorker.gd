@@ -10,9 +10,11 @@ enum CALL_PROCESS_TYPE {
 	POLLING # polling is cancer
 }
 
-signal worker_done() ## Emitted when a worker is done including done polling)
+signal worker_done() ## Emitted when a worker is done (including done polling but not retrying)
 signal worker_retrieved_latest_poll(output_response: FeagiRequestOutput)  ## Emitted when a worker has recieved the data for its latest poll, but is still polling
-signal retrying_connection(current_retry_attempt: int, max_number_retries: int)
+signal retrying_connection(current_retry_attempt: int, max_number_retries: int, request_definition: APIRequestWorkerDefinition, self_ref: APIRequestWorker)
+signal worker_recovered_from_retrying(self_ref: APIRequestWorker)
+signal worker_failed_to_recover_from_retrying(self_ref: APIRequestWorker)
 
 var _timer: Timer
 var _outgoing_headers: PackedStringArray # headers to make requests with
@@ -95,7 +97,7 @@ func kill_worker() -> void:
 ## Called when FEAGI returns data from call (or HTTP call timed out)
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
 	
-	# NOTE: Tinstances of this object are handled soley by [FEAGIHTTPAPI], so we will allow freeing of this object by that as well! 
+	# NOTE: Instances of this object are handled soley by [FEAGIHTTPAPI], so we will allow freeing of this object by that as well! 
 	
 	# Unresponsive FEAGI 
 	if response_code == 0:
@@ -105,20 +107,24 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			push_error("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
 			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
 			worker_done.emit()
+			worker_failed_to_recover_from_retrying.emit()
 			return
 		# Retry connection
-		retrying_connection.emit(_number_retries_done, _request_definition.number_of_retries_allowed)
+		retrying_connection.emit(_number_retries_done, _request_definition.number_of_retries_allowed, _request_definition, self)
 		match(_request_definition.call_type):
 			CALL_PROCESS_TYPE.SINGLE:
 				# single call
 				_make_call_to_FEAGI(_request_definition.full_address, _request_definition.method, _request_definition.data_to_send_to_FEAGI)
 			CALL_PROCESS_TYPE.POLLING:
 				# polling call
-				_timer.wait_time = _request_definition.seconds_between_polls
-				_timer.start(_request_definition.seconds_between_polls)
+				_timer.paused = true # don't continue trying to do regular polling
 				_make_call_to_FEAGI(_request_definition.full_address, _request_definition.method, _request_definition.data_to_send_to_FEAGI)
 		return
-
+	
+	if _number_retries_done != 0:
+		# We were retying, but not anymore
+		worker_recovered_from_retrying.emit(self)
+	
 	# FEAGI responded with an error
 	if response_code != 200:
 		push_warning("FEAGI NETWORK HTTP: FEAGI responded from endpoint: %s with HTTP error code: %s" % [_request_definition.full_address, response_code])
@@ -135,6 +141,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			return
 		CALL_PROCESS_TYPE.POLLING:
 			# we are polling
+			_timer.paused = false 
 			var polling_response: BasePollingMethod.POLLING_CONFIRMATION = _request_definition.polling_completion_check.confirm_complete(response_code, body)
 			match polling_response:
 				BasePollingMethod.POLLING_CONFIRMATION.COMPLETE:
