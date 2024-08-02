@@ -4,6 +4,15 @@ class_name FEAGINetworking
 
 # NOTE: For most signals, get them from http_API and websocket_API directly, no need for duplicates
 
+enum CONNECTION_STATE {
+	DISCONNECTED,
+	INITIAL_HTTP_PROBING,
+	INITIAL_WS_PROBIN,
+	HEALTHY,
+	RETRYING_HTTP,
+	RETRYING_WS
+}
+
 signal recieved_healthcheck_poll()
 signal ping_recieved(time_sent_ms: int, time_recieved_ms: int)
 signal genome_reset_request_recieved()
