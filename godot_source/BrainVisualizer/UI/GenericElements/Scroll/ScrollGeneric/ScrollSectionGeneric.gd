@@ -91,6 +91,8 @@ func attempt_retrieve_item(lookup_key: Variant) -> ScrollSectionGenericItem:
 func attempt_remove_item(lookup_key: Variant) -> void:
 	if !(lookup_key in _lookup.keys()):
 		push_error("UI: Unable to remove nonexistant item!")
+	if lookup_key == null:
+		return
 	if _lookup[lookup_key] != null:
 		_lookup[lookup_key].queue_free()
 	_lookup.erase(lookup_key)
