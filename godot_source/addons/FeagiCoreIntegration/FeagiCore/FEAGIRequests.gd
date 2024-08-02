@@ -85,10 +85,6 @@ func reload_genome() -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Burst Rate
 func get_burst_delay() -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY:
-		push_error("FEAGI Requests: Not connected to FEAGI!")
-		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting delay between bursts")
 	
 	# Define Request
@@ -135,10 +131,6 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Skip Rate
 func get_skip_rate() -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY:
-		push_error("FEAGI Requests: Not connected to FEAGI!")
-		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting skip_rate")
 	
 	# Define Request
@@ -181,10 +173,6 @@ func change_skip_rate(new_skip_rate: int) -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Skip Rate
 func get_supression_threshold() -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY:
-		push_error("FEAGI Requests: Not connected to FEAGI!")
-		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting supression threshold")
 	
 	# Define Request

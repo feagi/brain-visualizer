@@ -103,14 +103,14 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	if response_code == 0:
 		push_warning("FEAGI NETWORK HTTP: FEAGI did not respond %d times on endpoint: %s" % [_number_retries_done, _request_definition.full_address])
 		_number_retries_done += 1
-		if _number_retries_done > _request_definition.number_of_retries_allowed:
+		if _number_retries_done >= _request_definition.number_of_retries_allowed:
 			push_error("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
 			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
 			worker_done.emit()
 			worker_failed_to_recover_from_retrying.emit()
 			return
 		# Retry connection
-		retrying_connection.emit(_number_retries_done, _request_definition.number_of_retries_allowed, _request_definition, self)
+		retrying_connection.emit(_number_retries_done + 1, _request_definition.number_of_retries_allowed, _request_definition, self)
 		match(_request_definition.call_type):
 			CALL_PROCESS_TYPE.SINGLE:
 				# single call

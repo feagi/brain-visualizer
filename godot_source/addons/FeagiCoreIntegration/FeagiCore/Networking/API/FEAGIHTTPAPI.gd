@@ -44,6 +44,7 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 	var worker: APIRequestWorker = _API_request_worker_prefab.instantiate()
 	add_child(worker)
 	worker.setup_and_run_from_definition(_headers_to_use, request_definition)
+	worker.retrying_connection.connect(_worker_retrying)
 	return worker
 
 

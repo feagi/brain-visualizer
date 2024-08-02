@@ -38,7 +38,7 @@ func _process(_delta: float):
 			# Connection active with FEAGI
 			if _socket_health != WEBSOCKET_HEALTH.CONNECTED:
 				if _retry_count != 0:
-					push_warning("FEAGI Websocket: Recovered from the retrying state! Retry %d / %d" % [_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections]) # using warning to make things easier to read
+					push_warning("FEAGI Websocket: Recovered from the retrying state!") # using warning to make things easier to read
 					_retry_count = 0
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
@@ -72,7 +72,8 @@ func _process(_delta: float):
 				if _socket_health != WEBSOCKET_HEALTH.RETRYING:
 					_set_socket_health(WEBSOCKET_HEALTH.RETRYING)
 				FEAGI_socket_retrying_connection.emit(_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections)
-				_reconnect_websocket()
+				get_tree().create_timer(1.0).timeout.connect(_reconnect_websocket) # this is dum. what can be causing the skips though?
+				push_warning("FEAGI Websocket: Recovered from the retrying state! Retry %d / %d" % [_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections]) # using warning to make things easier to read
 				_retry_count += 1
 				return
 			else:

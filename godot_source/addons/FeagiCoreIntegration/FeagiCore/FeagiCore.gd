@@ -176,7 +176,7 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			# Can come from Unknown, No_Genome_Available, Genome_Processing, or Genome_Ready
 			about_to_reload_genome.emit()
 			feagi_local_cache.clear_whole_genome()
-			requests.reload_genome()
+			reload_genome_await()
 		GENOME_LOAD_STATE.GENOME_READY:
 			# Only path to here is from Genome_Reloading.
 			pass
@@ -185,8 +185,13 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			pass
 	
 	_genome_load_state = new_state
-	genome_load_state_changed.emit(prev_state, new_state)
+	genome_load_state_changed.emit(new_state, prev_state)
 
+# Hacky
+func reload_genome_await():
+	await requests.reload_genome()
+	_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+	
 
 func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: bool) -> void:
 	if !available:
