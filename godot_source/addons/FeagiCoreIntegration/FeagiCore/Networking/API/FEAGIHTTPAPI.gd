@@ -9,6 +9,8 @@ enum HTTP_HEALTH {
 	RETRYING
 }
 
+const HEALTH_CHECK_WORKER_NAME: StringName = "POLLING_HEALTHCHECK_WORKER"
+
 signal FEAGI_http_health_changed(previous_health: HTTP_HEALTH, current_health: HTTP_HEALTH)
 signal HTTP_worker_retrying(retry_count: int, max_retry_count, worker: APIRequestWorker, request_definition: APIRequestWorkerDefinition)
 
@@ -60,6 +62,12 @@ func confirm_connectivity() -> void:
 
 	_request_state_change(HTTP_HEALTH.CONNECTABLE)
 
+## Requests killing the health check polling worker specifically
+func kill_polling_healthcheck_worker() -> void:
+	for node in get_children():
+		if node.name == HEALTH_CHECK_WORKER_NAME:
+			(node as APIRequestWorker).kill_worker()
+			return
 
 func _request_state_change(new_state: HTTP_HEALTH) -> void:
 	var prev_state: HTTP_HEALTH = _http_health

@@ -52,7 +52,6 @@ func clear_whole_genome() -> void:
 	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
-	set_health_dead()
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()
 	return

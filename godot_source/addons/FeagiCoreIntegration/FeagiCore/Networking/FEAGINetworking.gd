@@ -38,7 +38,7 @@ func _init():
 
 ## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify.
 ## If viable, proceeds with connection. Returns if sucessful
-func attempt_loading_endpoint_details_and_connect(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
+func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	if _connection_state != CONNECTION_STATE.DISCONNECTED:
 		push_error("FEAGI NETWORK: Unable to commence a new connection when one is active in some form already!")
 		return false
