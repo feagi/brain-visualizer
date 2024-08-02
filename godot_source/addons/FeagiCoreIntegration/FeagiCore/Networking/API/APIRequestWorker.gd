@@ -124,6 +124,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	if _number_retries_done != 0:
 		# We were retying, but not anymore
 		worker_recovered_from_retrying.emit(self)
+	_number_retries_done = 0
 	
 	# FEAGI responded with an error
 	if response_code != 200:
