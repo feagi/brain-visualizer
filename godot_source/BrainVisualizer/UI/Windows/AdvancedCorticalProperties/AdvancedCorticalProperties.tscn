@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://bj1avx68qlh3o"]
+[gd_scene load_steps=33 format=3 uid="uid://bj1avx68qlh3o"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.gd" id="1_mwcmr"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_c4mg3"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://r1b6hy52k06p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png" id="6_cyt0s"]
 [ext_resource type="Texture2D" uid="uid://414bc3rpseie" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_D.png" id="7_8r6dk"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="8_2af2m"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="9_w13r1"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="9_xe4wg"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="10_ca7w6"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="11_dteg2"]
@@ -46,7 +47,7 @@ bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3nhm5"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
-[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("controls_to_hide_in_simple_mode", "_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_scroll_afferent", "_scroll_efferent", "_button_recursive", "_section_dangerzone")]
+[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("controls_to_hide_in_simple_mode", "_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_cortical_type", "_device_count_section", "_device_count", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_dimensions_label", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_scroll_afferent", "_scroll_efferent", "_button_recursive", "_section_dangerzone")]
 offset_right = 360.0
 offset_bottom = 420.0
 size_flags_horizontal = 0
@@ -59,8 +60,11 @@ _line_cortical_name = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary
 _region_button = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region/Region")
 _line_cortical_ID = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_ID/Cortical_ID")
 _line_cortical_type = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Type/Cortical_Type")
+_device_count_section = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Device Count")
+_device_count = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Device Count/IntSpinBox")
 _line_voxel_neuron_density = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Voxel_Neuron_Density/Voxel_Neuron_Density")
 _line_synaptic_attractivity = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Synaptic_Attractivity/Synaptic_Attractivity")
+_dimensions_label = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Label_Dimensions")
 _vector_dimensions_spin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size")
 _vector_dimensions_nonspin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size_ns")
 _vector_position = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Position")
@@ -218,6 +222,25 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("8_2af2m")
+
+[node name="Row_Device Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Device Count"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The type this cortical area is"
+mouse_filter = 1
+text = "Device Count"
+
+[node name="IntSpinBox" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Device Count"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+alignment = 1
+script = ExtResource("9_w13r1")
 
 [node name="Row_Voxel_Neuron_Density" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
 layout_mode = 2

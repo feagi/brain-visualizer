@@ -149,6 +149,8 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 	if control is Vector3fField:
 		(control as Vector3fField).user_updated_vector.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
 		return
+	if control is IntSpinBox:
+		(control as IntSpinBox).value_changed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
 	
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
@@ -224,8 +226,11 @@ var _preview_handler: GenericSinglePreviewHandler = null #TODO
 @export var _region_button: Button
 @export var _line_cortical_ID: TextInput
 @export var _line_cortical_type: TextInput
+@export var _device_count_section: HBoxContainer
+@export var _device_count: IntSpinBox
 @export var _line_voxel_neuron_density: IntInput
 @export var _line_synaptic_attractivity: IntInput
+@export var _dimensions_label: Label
 @export var _vector_dimensions_spin: Vector3iSpinboxField
 @export var _vector_dimensions_nonspin: Vector3iField
 @export var _vector_position: Vector3iSpinboxField
@@ -253,10 +258,16 @@ func _init_summary() -> void:
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+		
 	else:
+		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
+		if _cortical_area_refs[0].is_device_count_available:
+			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
+			_dimensions_label.text = "Dimensions Per Device"
+		
 	
 	_button_summary_send.pressed.connect(_send_update.bind(_button_summary_send))
 
@@ -281,6 +292,10 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
+		if _cortical_area_refs[0].is_device_count_available:
+			_device_count_section.visible = true
+			_update_control_with_value_from_areas(_device_count, "", "dev_count")
+			
 
 func _user_press_edit_region() -> void:
 	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_brain_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _cortical_area_refs[0].current_parent_region)
