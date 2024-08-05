@@ -123,6 +123,8 @@ func _set_control_to_value(control: Control, value: Variant) -> void:
 	if control is Vector3fField:
 		(control as Vector3fField).current_vector = value
 		return
+	if control is IntSpinBox:
+		(control as IntSpinBox).value = value
 		
 
 func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
@@ -263,27 +265,27 @@ func _init_summary() -> void:
 		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
-		_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
-		if _cortical_area_refs[0].is_device_count_available:
+		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
+			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
 			_dimensions_label.text = "Dimensions Per Device"
+		else:
+			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
 		
 	
 	_button_summary_send.pressed.connect(_send_update.bind(_button_summary_send))
 
 func _refresh_from_cache_summary() -> void:
-	_line_cortical_name.text = "Multiple Selected"
 	
 	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
-	_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
-	_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 	
 	_vector_dimensions_spin.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
 	_vector_position.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
 	
 	if len(_cortical_area_refs) != 1:
-		pass
+		_line_cortical_name.text = "Multiple Selected"
+		_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
 		#TODO connect size vector
 	else:
 		# single
@@ -292,9 +294,12 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
-		if _cortical_area_refs[0].is_device_count_available:
+		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_device_count_section.visible = true
-			_update_control_with_value_from_areas(_device_count, "", "dev_count")
+			_update_control_with_value_from_areas(_device_count, "", "device_count")
+			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
+		else:
+			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 			
 
 func _user_press_edit_region() -> void:
