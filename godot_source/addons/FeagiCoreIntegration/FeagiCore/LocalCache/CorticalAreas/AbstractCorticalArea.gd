@@ -33,7 +33,6 @@ signal cortical_neuron_per_vox_count_updated(density: int, this_cortical_area: A
 signal cortical_synaptic_attractivity_updated(attractivity: int, this_cortical_area: AbstractCorticalArea)
 signal changed_monitoring_membrane_potential(is_monitoring: bool)
 signal changed_monitoring_synaptic_potential(is_monitoring: bool)
-signal cortical_device_count_updated(new_count: int, this_cortical_area: AbstractCorticalArea)
 
 
 
@@ -63,9 +62,6 @@ var cortical_synaptic_attractivity: int:
 var neuron_count: int:
 	get: return AbstractCorticalArea.get_neuron_count(_dimensions_3D, _cortical_neuron_per_vox_count)
 
-var device_count: int: #IOPU  specific
-	get: return _device_count
-
 var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
 
 ## Has a 2D location been specified in FEAGI yet or is still unknown?
@@ -76,16 +72,13 @@ var is_coordinates_2D_available: bool:
 var is_coordinates_3D_available: bool:
 	get:  return _coordinates_3D_available
 
-var is_device_count_available: bool:
-	get: return _can_set_device_count()
-
 ## Can a user edit the name of this cortical area?
 var user_can_edit_name: bool:
 	get: return _user_can_edit_name()
 
 ## Can a user edit the dimensions of this cortical area?
-var user_can_edit_dimensions: bool:
-	get: return _user_can_edit_dimensions()
+var user_can_edit_dimensions_directly: bool:
+	get: return _user_can_edit_dimensions_directly()
 
 ## Can a user edit the dimensions of this cortical area?
 var user_can_delete_this_area: bool:
@@ -113,7 +106,6 @@ var has_memory_parameters: bool:
 # Private Properties
 var _cortical_neuron_per_vox_count: int = 1
 var _cortical_synaptic_attractivity: int = 100
-var _device_count: int = 0
 var _coordinates_2D_available: bool = false  # if coordinates_2D are available from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are available from FEAGI
 var _cortical_visiblity: bool = true
@@ -274,9 +266,6 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 	if "cortical_dimensions" in data.keys():
 		FEAGI_change_dimensions_3D(FEAGIUtils.array_to_vector3i(data["cortical_dimensions"]))
 	
-	if "dev_count" in data.keys():
-		FEAGI_set_device_count(data["dev_count"])
-	
 	if "coordinates_2d" in data.keys():
 		if data["coordinates_2d"][0] == null:
 			_coordinates_2D_available = false
@@ -337,10 +326,6 @@ func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:
 	_cortical_synaptic_attractivity = new_attractivity
 	cortical_synaptic_attractivity_updated.emit(new_attractivity, self)
 
-func FEAGI_set_device_count(new_count: int) -> void:
-	_device_count = new_count
-	cortical_device_count_updated.emit(new_count, self)
-
 func get_neuron_change_with_new_details(new_dimension: Vector3i, new_density: float) -> int:
 	return AbstractCorticalArea.get_neuron_count(new_dimension, new_density) - neuron_count
 
@@ -360,10 +345,7 @@ func _get_group() -> CORTICAL_AREA_TYPE:
 	## OVERRIDE THIS
 	return CORTICAL_AREA_TYPE.UNKNOWN
 
-func _can_set_device_count() -> bool:
-	return false
-
-func _user_can_edit_dimensions() -> bool:
+func _user_can_edit_dimensions_directly() -> bool:
 	return true
 
 func _user_can_edit_name() -> bool:
@@ -386,8 +368,6 @@ func _has_neuron_firing_parameters() -> bool:
 
 func _has_memory_parameters() -> bool:
 	return false
-
-
 
 #endregion
 

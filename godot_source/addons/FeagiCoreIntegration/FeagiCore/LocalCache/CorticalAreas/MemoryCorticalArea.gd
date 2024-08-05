@@ -28,6 +28,10 @@ func _user_can_edit_cortical_synaptic_attractivity() -> bool:
 func _user_can_clone_this_area() -> bool:
 	return true
 
+#OVERRIDDEN
+func _user_can_edit_dimensions_directly() -> bool:
+	return false
+
 func _has_memory_parameters() -> bool:
 	return true
 
