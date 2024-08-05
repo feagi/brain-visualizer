@@ -221,7 +221,7 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 
 
 #region Summary
-var _preview_handler: GenericSinglePreviewHandler = null #TODO
+var _preview_handler: GenericSinglePreviewHandler = null
 
 @export var _section_summary: VerticalCollapsibleHiding
 @export var _line_cortical_name: TextInput
@@ -314,8 +314,9 @@ func _enable_3D_preview(): #NOTE only currently works with single
 		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
 		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
-		BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, move_signals, resize_signals, preview_close_signals)
-
+		_preview_handler = BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, move_signals, resize_signals, preview_close_signals)
+		
+	
 #endregion
 
 #region firing parameters
