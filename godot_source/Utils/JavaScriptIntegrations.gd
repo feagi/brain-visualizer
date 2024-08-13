@@ -125,7 +125,8 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 	print("websocket: ", feagi_socket_address, " and api: ", feagi_root_web_address)
 		
 	var output: FeagiEndpointDetails = FeagiEndpointDetails.create_from(feagi_root_web_address, feagi_socket_address)
-	output.is_advanced_mode = advanced_setting == "true"
+	if advanced_setting != null:
+		output.is_advanced_mode = advanced_setting == "true"
 	if theme_setting != null:
 		output.theme_string = theme_setting
 	

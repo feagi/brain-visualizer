@@ -41,6 +41,12 @@ func update_output_offsets() -> void:
 	for endpoint in _output_endpoints:
 		endpoint.update_offset()
 
+func get_number_inputs() -> int:
+	return len(_input_endpoints)
+
+func get_number_outputs() -> int:
+	return len(_output_endpoints)
+
 ## Gets called from the endpoint itself when the connected line commands it to be deleted
 func _remove_input_endpoint(endpoint: CBLineEndpoint) -> void:
 	var index: int = _input_endpoints.find(endpoint)

@@ -57,6 +57,12 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 	#terminal.terminal_about_to_be_deleted.connect(_on_node_move)
 	return terminal
 
+func get_number_inputs() -> int:
+	return _inputs.get_child_count()
+
+func get_number_outputs() -> int:
+	return _outputs.get_child_count()
+
 func _on_node_move() -> void:
 	recursive_container_offset_changed.emit()
 	input_container_offset_changed.emit()
