@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://lbyao7dlu4ga"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.gd" id="1_jlr66"]
+
+[node name="PanelContainerButton" type="PanelContainer"]
+offset_right = 238.0
+offset_bottom = 81.0
+script = ExtResource("1_jlr66")

@@ -1,0 +1,56 @@
+[gd_scene load_steps=4 format=3 uid="uid://5pv3bw08pc2j"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.gd" id="1_0wmb7"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_uq1ts"]
+[ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="3_cunev"]
+
+[node name="WindowConfirmDeletion" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_0wmb7")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_uq1ts")]
+layout_mode = 2
+title = "Confirm Deletion"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+text = "DELETE_TEXT"
+autowrap_mode = 3
+
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_cunev")]
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+alignment = 2
+
+[node name="No" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "No
+"
+
+[node name="Yes" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Yes
+"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/No" to="." method="_no_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Yes" to="." method="_yes_pressed"]

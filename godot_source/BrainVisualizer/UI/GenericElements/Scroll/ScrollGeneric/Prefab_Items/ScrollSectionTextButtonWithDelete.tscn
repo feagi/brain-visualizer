@@ -1,0 +1,29 @@
+[gd_scene load_steps=6 format=3 uid="uid://c2h24k1yjitll"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_aume3"]
+[ext_resource type="Texture2D" uid="uid://w077yug12k7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_v7sdi"]
+[ext_resource type="Texture2D" uid="uid://di8630a11ncb5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_fkj1r"]
+[ext_resource type="Texture2D" uid="uid://oi3pour3qyue" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_0ads0"]
+[ext_resource type="Texture2D" uid="uid://bquoy7fdmhk7l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_nwkad"]
+
+[node name="HBoxContainer" type="HBoxContainer"]
+offset_right = 34.0
+offset_bottom = 23.0
+size_flags_horizontal = 3
+script = ExtResource("1_aume3")
+
+[node name="Text" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Button_List"
+text = "Text"
+
+[node name="Delete" type="TextureButton" parent="."]
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("1_v7sdi")
+texture_pressed = ExtResource("2_fkj1r")
+texture_hover = ExtResource("3_0ads0")
+texture_disabled = ExtResource("4_nwkad")
+ignore_texture_size = true
+stretch_mode = 0

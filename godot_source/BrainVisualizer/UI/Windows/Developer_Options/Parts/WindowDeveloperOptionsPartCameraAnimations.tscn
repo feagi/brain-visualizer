@@ -1,0 +1,102 @@
+[gd_scene load_steps=4 format=3 uid="uid://c2jdrm0arstht"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.gd" id="1_mwjdf"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="2_tyb4l"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_b7a62"]
+
+[node name="WindowDeveloperOptionsPartCameraAnimations" type="VBoxContainer"]
+script = ExtResource("1_mwjdf")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Number Saved Positions"
+
+[node name="num_animation_points" type="LineEdit" parent="HBoxContainer"]
+layout_mode = 2
+editable = false
+script = ExtResource("2_tyb4l")
+confirm_when_focus_lost = false
+
+[node name="clear" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "clear"
+
+[node name="Add" type="Button" parent="."]
+layout_mode = 2
+text = "Add Current Position"
+
+[node name="transition_time" type="LineEdit" parent="."]
+layout_mode = 2
+tooltip_text = "transition time"
+script = ExtResource("3_b7a62")
+initial_float = 3.0
+min_value = 0.1
+suffix = " seconds"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Movement Interp "
+
+[node name="move_interp" type="OptionButton" parent="HBoxContainer2"]
+layout_mode = 2
+item_count = 5
+selected = 1
+fit_to_longest_item = false
+popup/item_0/text = "Nearest"
+popup/item_0/id = 0
+popup/item_1/text = "Linear "
+popup/item_1/id = 1
+popup/item_2/text = "Cubic"
+popup/item_2/id = 2
+popup/item_3/text = "Angle Linear"
+popup/item_3/id = 3
+popup/item_4/text = "Angle Cubic"
+popup/item_4/id = 4
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rotation Interp "
+
+[node name="rot_interp" type="OptionButton" parent="HBoxContainer3"]
+layout_mode = 2
+item_count = 5
+selected = 1
+fit_to_longest_item = false
+popup/item_0/text = "Nearest"
+popup/item_0/id = 0
+popup/item_1/text = "Linear "
+popup/item_1/id = 1
+popup/item_2/text = "Cubic"
+popup/item_2/id = 2
+popup/item_3/text = "Angle Linear"
+popup/item_3/id = 3
+popup/item_4/text = "Angle Cubic"
+popup/item_4/id = 4
+
+[node name="Export" type="Button" parent="."]
+layout_mode = 2
+text = "Export Current Points"
+
+[node name="AnimationSave" type="TextEdit" parent="."]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="Play" type="Button" parent="."]
+layout_mode = 2
+text = "Play"
+
+[connection signal="pressed" from="HBoxContainer/clear" to="." method="clear_stored_data"]
+[connection signal="pressed" from="Add" to="." method="add_frame"]
+[connection signal="pressed" from="Export" to="." method="export_into_json"]
+[connection signal="pressed" from="Play" to="." method="execute_json"]

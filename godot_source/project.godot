@@ -11,20 +11,16 @@ config_version=5
 [application]
 
 config/name="FEAGI-Godot-Interface"
-run/main_scene="res://Feagi-Godot-Interface/FeagiRoot.tscn"
+run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
-FeagiCacheEvents="*res://Feagi-Godot-Interface/Core/FEAGICacheEvents.gd"
-FeagiRequests="*res://Feagi-Godot-Interface/Core/FEAGIRequests.gd"
-FeagiCache="*res://Feagi-Godot-Interface/Core/FEAGICache.gd"
-VisConfig="*res://Feagi-Godot-Interface/Core/VisConfig.gd"
-FeagiEvents="*res://Feagi-Godot-Interface/Core/FEAGIEvents.gd"
-Godot_list="*res://Feagi-Godot-Interface/UI/Resources/Shared_components/godot_list.gd"
-global_material="*res://Feagi-Godot-Interface/UI/Resources/Shared_components/godot_material.gd"
-SignalDebugHelper="*res://Feagi-Godot-Interface/Core/SignalDebugHelper.gd"
+FeagiCore="*res://addons/FeagiCoreIntegration/FeagiCore/FeagiCore.gd"
+BV="*res://BrainVisualizer/BV.gd"
+global_material="*res://BrainVisualizer/UI/BrainMonitor/godot_material.gd"
+Godot_list="*res://BrainVisualizer/UI/BrainMonitor/godot_list.gd"
 
 [debug]
 
@@ -39,9 +35,21 @@ window/size/viewport_height=720
 
 export/convert_text_resources_to_binary=false
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg")
+
+[file_customization]
+
+folder_colors={
+"res://addons/FeagiCoreIntegration/": "red",
+"res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/": "yellow",
+"res://addons/FeagiCoreIntegration/FeagiCore/Networking/": "teal"
+}
+
 [gui]
 
-theme/custom="res://Feagi-Godot-Interface/UI/Resources/theme/main_theme.tres"
+theme/custom="res://BrainVisualizer/UI/Themes/source_themes/source_dark.tres"
 
 [input]
 
@@ -68,6 +76,35 @@ control={
 command={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194327,"key_label":0,"unicode":0,"echo":false,"script":null)
+]
+}
+reset_camera={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":82,"key_label":0,"unicode":114,"echo":false,"script":null)
+]
+}
+forward={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":87,"key_label":0,"unicode":119,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194320,"key_label":0,"unicode":0,"echo":false,"script":null)
+]
+}
+left={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":65,"key_label":0,"unicode":97,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194319,"key_label":0,"unicode":0,"echo":false,"script":null)
+]
+}
+right={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":68,"key_label":0,"unicode":100,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194321,"key_label":0,"unicode":0,"echo":false,"script":null)
+]
+}
+backward={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":83,"key_label":0,"unicode":115,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194322,"key_label":0,"unicode":0,"echo":false,"script":null)
 ]
 }
 

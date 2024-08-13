@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dyagjs5244b30"]
-
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/UI/Windows/Elements/Morphology_Views/UIMorphologyImage/UIMorphologyImage.gd" id="1_73tow"]
-
-[node name="UIMorphologyImage" type="TextureRect"]
-custom_minimum_size = Vector2(256, 256)
-expand_mode = 4
-script = ExtResource("1_73tow")

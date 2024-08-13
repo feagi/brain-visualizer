@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://q825w5l05kv2"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_inugu"]
+
+[node name="HBoxContainer" type="HBoxContainer"]
+offset_right = 34.0
+offset_bottom = 23.0
+size_flags_horizontal = 3
+script = ExtResource("1_inugu")
+
+[node name="ScrollSectionTextButton" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Button_List"
+text = "Text"

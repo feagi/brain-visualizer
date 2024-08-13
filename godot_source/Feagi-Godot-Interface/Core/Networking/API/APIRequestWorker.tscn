@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://brtnqsktrugfh"]
-
-[ext_resource type="Script" path="res://Feagi-Godot-Interface/Core/Networking/API/APIRequestWorker.gd" id="1_pb220"]
-
-[node name="ApiRequestWorker" type="HTTPRequest"]
-script = ExtResource("1_pb220")
-
-[node name="Timer" type="Timer" parent="."]

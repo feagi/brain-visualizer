@@ -1,0 +1,114 @@
+[gd_scene load_steps=15 format=3 uid="uid://ct6y7211eq0w7"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorRowGenericPartial.gd" id="1_2kgmf"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_e5y5p"]
+[ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="3_26frp"]
+[ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="4_ywjv2"]
+[ext_resource type="Texture2D" uid="uid://bkmehptmh3rhh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="5_n8ivj"]
+[ext_resource type="Texture2D" uid="uid://bpewdkwkgeov7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="6_p1hfv"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="7_jxrt1"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="8_wad2m"]
+[ext_resource type="Texture2D" uid="uid://cchkky0p7lx5u" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="9_5xiw6"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="10_mpnb3"]
+[ext_resource type="Texture2D" uid="uid://b4jkpvgo7fes3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="11_cn40i"]
+[ext_resource type="Texture2D" uid="uid://dm7j5k1l27tvy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="12_4yo2a"]
+[ext_resource type="Texture2D" uid="uid://btuaycki4ux0h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="13_bhqih"]
+[ext_resource type="Texture2D" uid="uid://df4tfd8cxsr4c" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="14_naw4t"]
+
+[node name="MappingEditorRowGenericPartial" type="HBoxContainer"]
+offset_right = 1300.0
+offset_bottom = 32.0
+size_flags_horizontal = 3
+theme_type_variation = &"HBoxContainer_farther"
+script = ExtResource("1_2kgmf")
+
+[node name="Morphology_List" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+clip_text = true
+fit_to_longest_item = false
+script = ExtResource("2_e5y5p")
+
+[node name="edit" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("3_26frp")
+texture_pressed = ExtResource("4_ywjv2")
+texture_hover = ExtResource("5_n8ivj")
+texture_disabled = ExtResource("6_p1hfv")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Scalar" parent="." instance=ExtResource("7_jxrt1")]
+custom_minimum_size = Vector2(270, 0)
+layout_mode = 2
+alignment = 1
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
+
+[node name="PSP" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+tooltip_text = "Post-Synaptic Potential
+"
+alignment = 1
+script = ExtResource("8_wad2m")
+min_value = 0.0
+
+[node name="Inhibitory" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_type_variation = &"ToggleButton"
+texture_normal = ExtResource("9_5xiw6")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("10_mpnb3")
+enable_autoscaling_with_theme = false
+
+[node name="Plasticity" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_type_variation = &"ToggleButton"
+texture_normal = ExtResource("9_5xiw6")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("10_mpnb3")
+enable_autoscaling_with_theme = false
+
+[node name="Plasticity_Constant" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+tooltip_text = "Plasticity"
+alignment = 1
+script = ExtResource("8_wad2m")
+
+[node name="LTP_Multiplier" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+alignment = 1
+script = ExtResource("8_wad2m")
+
+[node name="LTD_Multiplier" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+alignment = 1
+script = ExtResource("8_wad2m")
+
+[node name="confirm" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("11_cn40i")
+texture_pressed = ExtResource("12_4yo2a")
+texture_hover = ExtResource("13_bhqih")
+texture_disabled = ExtResource("14_naw4t")
+ignore_texture_size = true
+stretch_mode = 0
+
+[connection signal="pressed" from="edit" to="." method="_on_edit_pressed"]
+[connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
+[connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
+[connection signal="pressed" from="confirm" to="." method="_pressed_add"]

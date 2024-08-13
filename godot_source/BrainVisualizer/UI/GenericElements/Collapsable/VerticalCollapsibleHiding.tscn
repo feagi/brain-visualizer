@@ -1,0 +1,49 @@
+[gd_scene load_steps=6 format=3 uid="uid://cjyix5p3tp3nr"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.gd" id="1_mfvot"]
+[ext_resource type="Texture2D" uid="uid://c4aoq8epoq5dr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="2_vsao3"]
+[ext_resource type="Texture2D" uid="uid://c8m6gwbnoiq47" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png" id="3_t8xuf"]
+[ext_resource type="Texture2D" uid="uid://r1b6hy52k06p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png" id="4_fn6xo"]
+[ext_resource type="Texture2D" uid="uid://414bc3rpseie" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_D.png" id="5_xer2x"]
+
+[node name="Section" type="PanelContainer"]
+offset_right = 123.0
+offset_bottom = 40.0
+size_flags_vertical = 0
+script = ExtResource("1_mfvot")
+
+[node name="VerticalCollapsible" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_adjacent"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VerticalCollapsible"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="gap" type="Control" parent="VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+
+[node name="Section_Title" type="Label" parent="VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SECTION"
+
+[node name="Collapsible_Toggle" type="TextureButton" parent="VerticalCollapsible/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+texture_normal = ExtResource("2_vsao3")
+texture_pressed = ExtResource("3_t8xuf")
+texture_hover = ExtResource("4_fn6xo")
+texture_disabled = ExtResource("5_xer2x")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="PanelContainer" type="PanelContainer" parent="VerticalCollapsible"]
+layout_mode = 2
+
+[node name="PutThingsHere" type="MarginContainer" parent="VerticalCollapsible/PanelContainer"]
+layout_mode = 2
+
+[connection signal="pressed" from="VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="." method="_toggle_button_pressed"]

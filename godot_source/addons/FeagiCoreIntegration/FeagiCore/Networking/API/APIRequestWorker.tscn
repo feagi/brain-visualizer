@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://brtnqsktrugfh"]
+
+[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/APIRequestWorker.gd" id="1_pb220"]
+
+[node name="ApiRequestWorker" type="HTTPRequest"]
+script = ExtResource("1_pb220")
+
+[node name="Timer" type="Timer" parent="."]
+
+[connection signal="request_completed" from="." to="." method="_call_complete"]
+[connection signal="timeout" from="Timer" to="." method="_poll_call_from_timer"]

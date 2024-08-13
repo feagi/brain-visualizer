@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://libr2yrxxt21"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/GenericTextIDScroll/GenericScrollItemText.gd" id="1_kxjwc"]
+
+[node name="GenericScrollItemText" type="Button"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -990.0
+offset_bottom = -594.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Button_List"
+text = "empty
+"
+script = ExtResource("1_kxjwc")

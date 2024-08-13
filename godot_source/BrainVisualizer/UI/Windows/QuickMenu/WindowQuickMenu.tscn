@@ -1,0 +1,120 @@
+[gd_scene load_steps=23 format=3 uid="uid://c4nh5ikljookn"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickMenu/WindowQuickMenu.gd" id="1_8td17"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_iacyx"]
+[ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="3_1l638"]
+[ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="4_t0ut2"]
+[ext_resource type="Texture2D" uid="uid://bkmehptmh3rhh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="5_f2xq8"]
+[ext_resource type="Texture2D" uid="uid://bpewdkwkgeov7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="6_evlmv"]
+[ext_resource type="Texture2D" uid="uid://rs4opa4x4xt1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_S.png" id="7_aaec5"]
+[ext_resource type="Texture2D" uid="uid://b74ajd0glyaoe" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_H.png" id="9_8220t"]
+[ext_resource type="Texture2D" uid="uid://btqqapngfgsnj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_C.png" id="10_apr2r"]
+[ext_resource type="Texture2D" uid="uid://ccx7m4tbrl4b6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_D.png" id="10_op4fb"]
+[ext_resource type="Texture2D" uid="uid://dh5voba0ytqxh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_S.png" id="11_60rj6"]
+[ext_resource type="Texture2D" uid="uid://lhnccwhvym7h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_S.png" id="11_hl6lb"]
+[ext_resource type="Texture2D" uid="uid://cw2v8ik0bhsq1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_C.png" id="12_daddx"]
+[ext_resource type="Texture2D" uid="uid://dcmsfgfvt6dc5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_C.png" id="12_j7irs"]
+[ext_resource type="Texture2D" uid="uid://cp8clcedk454o" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_H.png" id="13_2u3te"]
+[ext_resource type="Texture2D" uid="uid://dsbr0oj8jnvmq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_H.png" id="13_tbiqk"]
+[ext_resource type="Texture2D" uid="uid://y0ln4acdiosf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_D.png" id="14_03052"]
+[ext_resource type="Texture2D" uid="uid://bfhwb5tqcmeju" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_D.png" id="14_acjss"]
+[ext_resource type="Texture2D" uid="uid://w077yug12k7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="15_e2qrx"]
+[ext_resource type="Texture2D" uid="uid://di8630a11ncb5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="16_alv5k"]
+[ext_resource type="Texture2D" uid="uid://oi3pour3qyue" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="17_l48r7"]
+[ext_resource type="Texture2D" uid="uid://bquoy7fdmhk7l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="18_7ekap"]
+
+[node name="QuickCorticalMenu" type="VBoxContainer"]
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_8td17")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_iacyx")]
+layout_mode = 2
+title = "CORTICAL_NAME"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+alignment = 1
+
+[node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "View Cortical Area Details"
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("3_1l638")
+texture_pressed = ExtResource("4_t0ut2")
+texture_hover = ExtResource("5_f2xq8")
+texture_disabled = ExtResource("6_evlmv")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuickConnect" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Connect Cortical Area Towards..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("7_aaec5")
+texture_pressed = ExtResource("10_apr2r")
+texture_hover = ExtResource("9_8220t")
+texture_disabled = ExtResource("10_op4fb")
+ignore_texture_size = true
+stretch_mode = 5
+flip_v = true
+
+[node name="AddToRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Add to a region..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("11_60rj6")
+texture_pressed = ExtResource("12_j7irs")
+texture_hover = ExtResource("13_tbiqk")
+texture_disabled = ExtResource("14_03052")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Clone" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Clone Cortical Area..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("11_hl6lb")
+texture_pressed = ExtResource("12_daddx")
+texture_hover = ExtResource("13_2u3te")
+texture_disabled = ExtResource("14_acjss")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Delete" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Delete this Cortical Area..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("15_e2qrx")
+texture_pressed = ExtResource("16_alv5k")
+texture_hover = ExtResource("17_l48r7")
+texture_disabled = ExtResource("18_7ekap")
+ignore_texture_size = true
+stretch_mode = 5
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Details" to="." method="_button_details"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToRegion" to="." method="_button_add_to_region"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Delete" to="." method="_button_delete"]

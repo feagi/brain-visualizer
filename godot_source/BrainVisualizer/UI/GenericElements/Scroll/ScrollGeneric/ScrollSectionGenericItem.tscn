@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://kvolmoptsp33"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.gd" id="1_oexre"]
+
+[node name="ScrollSectionGenericItem" type="HBoxContainer"]
+offset_bottom = 161.0
+size_flags_horizontal = 3
+theme_type_variation = &"HBoxContainer_adjacent"
+script = ExtResource("1_oexre")

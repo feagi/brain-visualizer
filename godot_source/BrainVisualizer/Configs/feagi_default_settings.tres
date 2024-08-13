@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FeagiGeneralSettings" load_steps=2 format=3 uid="uid://bha88u45sahwc"]
+
+[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/FeagiGeneralSettings.gd" id="1_6xmmx"]
+
+[resource]
+script = ExtResource("1_6xmmx")
+seconds_between_latency_pings = 5.0
+seconds_between_healthcheck_pings = 5.0
+number_of_times_to_retry_HTTP_connections = 5
+number_of_times_to_retry_WS_connections = 500
+allow_developer_menu = false
+developer_menu_hotkey = 96
+seconds_info_notification = 5.0
+seconds_warning_notification = 10.0
+seconds_error_notification = 10.0

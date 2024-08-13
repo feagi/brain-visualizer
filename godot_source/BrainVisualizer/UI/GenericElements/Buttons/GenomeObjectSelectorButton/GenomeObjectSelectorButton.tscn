@@ -1,0 +1,37 @@
+[gd_scene load_steps=4 format=3 uid="uid://bpc4cbet6k5h4"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.gd" id="1_rwtbd"]
+[ext_resource type="Texture2D" uid="uid://cmd2qum2418ya" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="2_mk553"]
+[ext_resource type="Texture2D" uid="uid://piwrj0vuisem" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_qi2uw"]
+
+[node name="GenomeObjectSelectorButton" type="PanelContainer"]
+offset_right = 54.0
+offset_bottom = 23.0
+script = ExtResource("1_rwtbd")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="IconCortical" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"TextureRect_Icon"
+texture = ExtResource("2_mk553")
+expand_mode = 3
+
+[node name="IconRegion" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"TextureRect_Icon"
+texture = ExtResource("3_qi2uw")
+expand_mode = 3
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "TEXT"

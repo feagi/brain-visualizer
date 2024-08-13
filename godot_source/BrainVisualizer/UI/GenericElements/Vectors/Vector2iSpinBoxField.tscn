@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3 uid="uid://brwx50pyfywb7"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
+
+[node name="Vector2iSpingBoxField" type="BoxContainer"]
+offset_right = 184.0
+offset_bottom = 23.0
+theme_type_variation = &"BoxContainer_far"
+script = ExtResource("1_ppcmy")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelX" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
+text = "X"
+
+[node name="IntX" type="SpinBox" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+custom_arrow_step = 1.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelY" type="Label" parent="HBoxContainer2"]
+layout_mode = 2
+theme_type_variation = &"Label_UniformWidth"
+text = "Y"
+
+[node name="IntY" type="SpinBox" parent="HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+custom_arrow_step = 1.0

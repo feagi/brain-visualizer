@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Input file and line number to replace
-file_path="godot_source/Feagi-Godot-Interface/Core/NonCache-Objects/BVVersion.gd"
+file_path="godot_source/BrainVisualizer/BVVersion.gd"
 line_number="8"
 
 # Get current UNIX timestamp

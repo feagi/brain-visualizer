@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://b4cfpdwwgj8q8"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.gd" id="1_keluv"]
+
+[node name="ScrollSectionGeneric" type="ScrollContainer"]
+size_flags_horizontal = 3
+script = ExtResource("1_keluv")
+
+[node name="BoxContainer" type="BoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical = true

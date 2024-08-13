@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://ba1t0ymgdahvl"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyUsage/UIMorphologyUsage.gd" id="1_l0ja7"]
+
+[node name="UIMorphologyUsage" type="TextEdit"]
+offset_right = 145.0
+offset_bottom = 83.0
+placeholder_text = "No Usage!"
+editable = false
+script = ExtResource("1_l0ja7")
