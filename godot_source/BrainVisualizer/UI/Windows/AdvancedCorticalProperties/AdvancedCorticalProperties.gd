@@ -123,6 +123,8 @@ func _set_control_to_value(control: Control, value: Variant) -> void:
 	if control is Vector3fField:
 		(control as Vector3fField).current_vector = value
 		return
+	if control is IntSpinBox:
+		(control as IntSpinBox).value = value
 		
 
 func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
@@ -149,6 +151,8 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 	if control is Vector3fField:
 		(control as Vector3fField).user_updated_vector.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
 		return
+	if control is IntSpinBox:
+		(control as IntSpinBox).value_changed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
 	
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
@@ -217,15 +221,18 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 
 
 #region Summary
-var _preview_handler: GenericSinglePreviewHandler = null #TODO
+var _preview_handler: GenericSinglePreviewHandler = null
 
 @export var _section_summary: VerticalCollapsibleHiding
 @export var _line_cortical_name: TextInput
 @export var _region_button: Button
 @export var _line_cortical_ID: TextInput
 @export var _line_cortical_type: TextInput
+@export var _device_count_section: HBoxContainer
+@export var _device_count: IntSpinBox
 @export var _line_voxel_neuron_density: IntInput
 @export var _line_synaptic_attractivity: IntInput
+@export var _dimensions_label: Label
 @export var _vector_dimensions_spin: Vector3iSpinboxField
 @export var _vector_dimensions_nonspin: Vector3iField
 @export var _vector_position: Vector3iSpinboxField
@@ -253,26 +260,32 @@ func _init_summary() -> void:
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+		
 	else:
+		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
-		_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
+		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
+			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
+			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
+			_dimensions_label.text = "Dimensions Per Device"
+		else:
+			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
+		
 	
 	_button_summary_send.pressed.connect(_send_update.bind(_button_summary_send))
 
 func _refresh_from_cache_summary() -> void:
-	_line_cortical_name.text = "Multiple Selected"
 	
 	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
-	_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
-	_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 	
 	_vector_dimensions_spin.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
 	_vector_position.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
 	
 	if len(_cortical_area_refs) != 1:
-		pass
+		_line_cortical_name.text = "Multiple Selected"
+		_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
 		#TODO connect size vector
 	else:
 		# single
@@ -281,6 +294,13 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
+		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
+			_device_count_section.visible = true
+			_update_control_with_value_from_areas(_device_count, "", "device_count")
+			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
+		else:
+			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
+			
 
 func _user_press_edit_region() -> void:
 	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_brain_region_selection(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _cortical_area_refs[0].current_parent_region)
@@ -294,14 +314,15 @@ func _enable_3D_preview(): #NOTE only currently works with single
 		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
 		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
-		BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, move_signals, resize_signals, preview_close_signals)
-
+		_preview_handler = BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, move_signals, resize_signals, preview_close_signals)
+		
+	
 #endregion
 
 #region firing parameters
 
 @export var _section_firing_parameters: VerticalCollapsibleHiding
-@export var _line_Fire_Threshold: IntInput
+@export var _line_Fire_Threshold: FloatInput
 @export var _line_Threshold_Limit: IntInput
 @export var _line_neuron_excitability: IntInput
 @export var _line_Refactory_Period: IntInput
@@ -390,7 +411,7 @@ func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
 	_update_control_with_value_from_areas(_button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution")
 	_update_control_with_value_from_areas(_button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp")
-	_line_Post_Synaptic_Potential.editable = !_button_PSP_Uniformity.button_pressed
+	_line_Post_Synaptic_Potential.editable = !_button_MP_Driven_PSP.button_pressed
 	_button_MP_Driven_PSP.toggled.connect(func(is_on: bool): _line_Post_Synaptic_Potential.editable = !is_on )
 
 #endregion

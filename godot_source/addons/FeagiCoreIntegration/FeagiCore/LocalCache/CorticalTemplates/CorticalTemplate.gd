@@ -35,8 +35,8 @@ func _init(template_ID: StringName, template_enabled: bool, template_name: Strin
 	_resolution = FEAGIUtils.array_to_vector3i(resolution_array)
 	_cortical_type = cortical_reference_type
 
-## calculates what an IPU or OPU cortical area dimension will be given its source cortical area dimension multiplier and channel count
-func calculate_IOPU_dimension(channel_count: int) -> Vector3i:
+## calculates what an IPU or OPU cortical area dimension will be given its source cortical area dimension multiplier and device count
+func calculate_IOPU_dimension(device_count: int) -> Vector3i:
 	var dimension_multiplier: Vector3i = _resolution
-	dimension_multiplier.x = dimension_multiplier.x * channel_count
+	dimension_multiplier.x = dimension_multiplier.x * device_count
 	return dimension_multiplier

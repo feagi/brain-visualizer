@@ -22,10 +22,10 @@ func _ready():
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_set_genome_availibility)
 	FeagiCore.feagi_local_cache.genome_validity_changed.connect(_set_genome_validity)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_set_brain_readiness)
-	FeagiCore.network.websocket_API.socket_state_changed.connect(set_websocket_state)
+	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(set_websocket_state)
 
-func set_websocket_state(state: WebSocketPeer.State) -> void:
-	var is_websocket_working: bool = state == WebSocketPeer.State.STATE_OPEN
+func set_websocket_state(_prev_state: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, state: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
+	var is_websocket_working: bool = state == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED
 	_data.boolean_state = is_websocket_working
 	_refresh_summary()
 

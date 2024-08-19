@@ -7,7 +7,7 @@ signal neuron_leak_variability_updated(val: int, this_cortical_area: CoreCortica
 signal neuron_refractory_period_updated(val: int, this_cortical_area: CoreCorticalArea)
 signal neuron_consecutive_fire_count_updated(val: int, this_cortical_area: CoreCorticalArea)
 signal neuron_snooze_period_updated(val: int, this_cortical_area: CoreCorticalArea)
-signal neuron_fire_threshold_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_fire_threshold_updated(val: float, this_cortical_area: CoreCorticalArea)
 signal neuron_firing_threshold_limit_updated(val: int, this_cortical_area: CoreCorticalArea)
 signal neuron_fire_threshold_increment_updated(val: Vector3, this_cortical_area: CoreCorticalArea)
 signal neuron_excitability_updated(val: int, this_cortical_area: CoreCorticalArea)
@@ -73,7 +73,7 @@ var neuron_snooze_period: int:
 	set(v):
 		_set_neuron_snooze_period(v)
 
-var neuron_fire_threshold: int:
+var neuron_fire_threshold: float:
 	get:
 		return _neuron_fire_threshold
 	set(v):
@@ -103,7 +103,7 @@ var _neuron_leak_variability: int = 0
 var _neuron_refractory_period: int = 0
 var _neuron_consecutive_fire_count: int = 0
 var _neuron_snooze_period: int = 0
-var _neuron_fire_threshold: int = 0
+var _neuron_fire_threshold: float = 0
 var _neuron_firing_threshold_limit: int = 0
 var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
 var _neuron_excitability: int = 0
@@ -148,7 +148,7 @@ func _set_neuron_snooze_period(new_val: int) -> void:
 	_neuron_snooze_period = new_val
 	neuron_snooze_period_updated.emit(new_val, _cortical_area)
 
-func _set_neuron_fire_threshold(new_val: int) -> void:
+func _set_neuron_fire_threshold(new_val: float) -> void:
 	if new_val == _neuron_fire_threshold: 
 		return
 	_neuron_fire_threshold = new_val

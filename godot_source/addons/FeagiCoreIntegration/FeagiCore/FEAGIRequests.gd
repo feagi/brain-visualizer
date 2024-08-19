@@ -3,6 +3,20 @@ class_name FEAGIRequests
 
 #region Genome and FEAGI general
 
+# WARNING: You probably don't want to call this directly!
+## Runs a single (non-polling) healthcheck update
+func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRequestOutput:
+	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_healthCheck)
+	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
+	
+	await health_check_worker.worker_done
+	
+	var response_data: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
+	if response_data.success and update_cache_with_result:
+		FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(response_data.decode_response_as_dict())
+	return response_data
+
+
 #WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:
@@ -71,10 +85,6 @@ func reload_genome() -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Burst Rate
 func get_burst_delay() -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
-		push_error("FEAGI Requests: Not connected to FEAGI!")
-		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting delay between bursts")
 	
 	# Define Request
@@ -121,10 +131,6 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Skip Rate
 func get_skip_rate() -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
-		push_error("FEAGI Requests: Not connected to FEAGI!")
-		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting skip_rate")
 	
 	# Define Request
@@ -167,10 +173,6 @@ func change_skip_rate(new_skip_rate: int) -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Skip Rate
 func get_supression_threshold() -> FeagiRequestOutput:
-	# Requirement checking
-	if !FeagiCore.connection_state == FeagiCore.CONNECTION_STATE.CONNECTED:
-		push_error("FEAGI Requests: Not connected to FEAGI!")
-		return FeagiRequestOutput.requirement_fail("NOT_CONNECTED")
 	print("FEAGI REQUEST: Request getting supression threshold")
 	
 	# Define Request
@@ -540,7 +542,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 
 
 ## Adds a IPU / OPU cortical area. NOTE: IPUs/OPUs can ONLY be in the root region!
-func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
+func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -548,7 +550,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 	if IOPU_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: I/OPU area of ID %s already exists!!" % IOPU_template.ID)
 		return FeagiRequestOutput.requirement_fail("ID_EXISTS")
-	if channel_count < 1:
+	if device_count < 1:
 		push_error("FEAGI Requests: Channel count is too low!")
 		return FeagiRequestOutput.requirement_fail("CHANNEL_TOO_LOW")
 	if !(IOPU_template.cortical_type  in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]):
@@ -561,7 +563,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 		"cortical_id": IOPU_template.ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_type": AbstractCorticalArea.cortical_type_to_str(IOPU_template.cortical_type),
-		"channel_count": channel_count,
+		"device_count": device_count,
 		"coordinates_2d": [null, null]
 	}
 	if is_coordinate_2D_defined:
@@ -577,9 +579,9 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, channel_count: int,
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	if IOPU_template.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_input_cortical_area(IOPU_template.ID, IOPU_template, channel_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_input_cortical_area(IOPU_template.ID, IOPU_template, device_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	else: #OPU
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_output_cortical_area(IOPU_template.ID, IOPU_template, channel_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_output_cortical_area(IOPU_template.ID, IOPU_template, device_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	
 	print("FEAGI REQUEST: Successfully created custom cortical area by name %s with ID %s" % [IOPU_template.cortical_name, response["cortical_id"]])
 	return FEAGI_response_data
@@ -643,6 +645,7 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 		push_error("FEAGI Requests: Unable to update cortical area of ID %s!" % editing_ID)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
+	get_cortical_area(editing_ID)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 

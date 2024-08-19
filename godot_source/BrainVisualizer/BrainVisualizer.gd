@@ -15,40 +15,30 @@ func _ready() -> void:
 	
 	# Zeroth step is just to collect references and make connections
 	_UI_manager = $UIManager
-	FeagiCore.connection_state_changed.connect(_on_connection_state_change)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_state_change)
-	FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
+	#FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 	
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
 	
 	# Try to grab the network settings from javascript, but manually define the network settings to use as fallback if the javascript fails
-	FeagiCore.attempt_connection_via_javascript_details(default_FEAGI_network_settings)
+	FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
-
-
-func _on_connection_state_change(current_state: FeagiCore.CONNECTION_STATE, prev_state: FeagiCore.CONNECTION_STATE) -> void:
-	match(current_state):
-		FeagiCore.CONNECTION_STATE.CONNECTED:
-			# We are connected
-			pass
-		FeagiCore.CONNECTION_STATE.DISCONNECTED:
-			if prev_state == FeagiCore.CONNECTION_STATE.CONNECTED:
-				var tell_user: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("Connection Lost!", "Connection to FEAGI has been lost!")
-				_UI_manager.window_manager.spawn_popup(tell_user)
 
 func _on_genome_reloading() -> void:
 	_UI_manager.FEAGI_about_to_reset_genome()
 
 func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
 	match(current_state):
-		FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+		FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 			# Connected and ready to go
 			_UI_manager.FEAGI_confirmed_genome()
+			if !FeagiCore.about_to_reload_genome.is_connected(_on_genome_reloading):
+				FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 		_:
-			if prev_state == FeagiCore.GENOME_LOAD_STATE.GENOME_LOADED_LOCALLY:
+			if prev_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 				# had genome but now dont
 				_UI_manager.FEAGI_no_genome()
 

@@ -9,11 +9,14 @@ enum STATES {
 }
 
 var _current_state: STATES = STATES.CB_CLOSED
+var initial_y_offset: int
 
 func _ready() -> void:
+	initial_y_offset = position.y
 	split_offset = BV.UI.screen_size.x * .6
 	BV.UI.screen_size_changed.connect(_screen_size_change)
 	_screen_size_change(BV.UI.screen_size)
+
 
 func set_view(state: STATES) -> void:
 	_current_state = state
@@ -41,7 +44,7 @@ func set_view(state: STATES) -> void:
 func _screen_size_change(new_screen_size: Vector2) -> void:
 	var old_size: Vector2 = size
 	var ratio: float
-	size = new_screen_size
+	size = new_screen_size - Vector2(0,initial_y_offset)
 	match(_current_state):
 		STATES.CB_HORIZONTAL:
 			ratio = float(split_offset) / old_size.x

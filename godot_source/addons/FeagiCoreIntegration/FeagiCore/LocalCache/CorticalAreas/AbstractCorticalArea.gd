@@ -77,8 +77,8 @@ var user_can_edit_name: bool:
 	get: return _user_can_edit_name()
 
 ## Can a user edit the dimensions of this cortical area?
-var user_can_edit_dimensions: bool:
-	get: return _user_can_edit_dimensions()
+var user_can_edit_dimensions_directly: bool:
+	get: return _user_can_edit_dimensions_directly()
 
 ## Can a user edit the dimensions of this cortical area?
 var user_can_delete_this_area: bool:
@@ -285,6 +285,7 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 		var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[data["parent_region_id"]]
 		if new_region != current_parent_region:
 			FEAGI_change_parent_brain_region(new_region)
+
 			
 
 	FEAGI_apply_detail_dictionary(data)
@@ -301,6 +302,7 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "cortical_synaptic_attractivity" in data.keys(): 
 		_cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
 		cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
+	
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
@@ -343,7 +345,7 @@ func _get_group() -> CORTICAL_AREA_TYPE:
 	## OVERRIDE THIS
 	return CORTICAL_AREA_TYPE.UNKNOWN
 
-func _user_can_edit_dimensions() -> bool:
+func _user_can_edit_dimensions_directly() -> bool:
 	return true
 
 func _user_can_edit_name() -> bool:
@@ -366,8 +368,6 @@ func _has_neuron_firing_parameters() -> bool:
 
 func _has_memory_parameters() -> bool:
 	return false
-
-
 
 #endregion
 

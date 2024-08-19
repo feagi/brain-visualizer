@@ -37,8 +37,8 @@ func FEAGI_add_custom_cortical_area(cortical_ID: StringName, cortical_name: Stri
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU by ID and emits a signal that this was done. Should only be called from FEAGI!
-func FEAGI_add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: IPUCorticalArea = IPUCorticalArea.create_from_template(cortical_ID, template, channel_count, is_visible)
+func FEAGI_add_input_cortical_area(cortical_ID: StringName, template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: IPUCorticalArea = IPUCorticalArea.create_from_template(cortical_ID, template, device_count, is_visible)
 	new_area.FEAGI_change_coordinates_3D(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
@@ -59,8 +59,8 @@ func FEAGI_add_input_cortical_area_without_template(cortical_ID: StringName, cor
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type OPU by ID and emits a signal that this was done. Should only be called from FEAGI!
-func FEAGI_add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplate, channel_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: OPUCorticalArea = OPUCorticalArea.create_from_template(cortical_ID, template, channel_count, is_visible)
+func FEAGI_add_output_cortical_area(cortical_ID: StringName, template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
+	var new_area: OPUCorticalArea = OPUCorticalArea.create_from_template(cortical_ID, template, device_count, is_visible)
 	new_area.FEAGI_change_coordinates_3D(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
