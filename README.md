@@ -24,7 +24,7 @@ Feel free to reach out to us on one of our various platforms!
 - [Discord](https://discord.gg/PTVC8fyGN8)
 - [Twitter (also known as X)](https://x.com/neuraville)
 - [YouTube](https://www.youtube.com/@Neuraville)
-- [LinkedIn](https://www.linkedin.com/company/neuraville/)
+- [LinkedIn](https://www.linkedin.com/groups/12777894/)
 
 # Contributing
 Please see our general contribution guide [here](https://github.com/feagi/feagi/blob/staging/CONTRIBUTING.md).
