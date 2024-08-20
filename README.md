@@ -4,20 +4,20 @@
 
 
 The Brain Visualizer is an open-source [Godot](https://github.com/godotengine/godot)-based client of [FEAGI](https://github.com/feagi/feagi) that lets users interact with Genomes. It can both to modify various neural structures, and visualize the neuronal activity happening within.
-PICTURE
+
+<video autoplay muted src="https://github.com/user-attachments/assets/5578d618-5fee-40f5-8413-c29d2e91c951" width="320" height="240"></video>
+
 
 # Using Brain Visualizer
-[GIF of brain visualizer being used]
-Please see our tutorial for how to use Brain Visualizer here[LINK].
+Please see our tutorial for how to use Brain Visualizer [here](https://youtu.be/hH1KYexMQsA).
 
 ## Launching Brain Visualizer
 ###  ☁️ NeuroRobotics Sudio
 
-[IMAGE]
 [Neurorobotics Studio](https://www.neuraville.com/neurorobotics-studio) is our cloud-based solution for the fastest and easiest way to load FEAGI services within the FEAGI playground, including the brain visualizer!
 
 ### 🛠️Local Deployment
-Brain Visualizer can be deployed locally as part of FEAGI Playground[Docker Hub URL].
+Brain Visualizer can be deployed locally as part of FEAGI Playground.
 
 # Community
 Feel free to reach out to us on one of our various platforms!
