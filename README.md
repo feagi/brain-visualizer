@@ -27,11 +27,11 @@ Feel free to reach out to us on one of our various platforms!
 - [LinkedIn](https://www.linkedin.com/company/neuraville/)
 
 # Contributing
-Please see our general contribution guide [here](https://github.com/feagi/feagi/blob/staging/CONTRIBUTING.md)
+Please see our general contribution guide [here](https://github.com/feagi/feagi/blob/staging/CONTRIBUTING.md).
 
 For Brain Visualizer specifically, please download the appropriate Godot editor version [here](https://godotengine.org/download/archive/4.2.2-stable) and open a cloned copy of this repository with it. Keep in mind you will require an instance of FEAGI running.
 
 See our developer notes for Brain Visualizer [here](https://github.com/feagi/brain-visualizer/blob/staging/docs/Architecture.md).
 
 # License
-Brain Visualizer is distributed under the terms of the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt)
+Brain Visualizer is distributed under the terms of the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
