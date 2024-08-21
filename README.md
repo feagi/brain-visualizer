@@ -1,9 +1,9 @@
 # FEAGI Brain Visualizer
 
-![GitHub Release](https://img.shields.io/github/v/release/feagi/brain-visualizer) ![Discord](https://img.shields.io/discord/1242546683791933480) ![GitHub License](https://img.shields.io/github/license/feagi/brain-visualizer)
+[![GitHub Release](https://img.shields.io/github/v/release/feagi/brain-visualizer)](https://github.com/feagi/brain-visualizer/releases) [![Discord](https://img.shields.io/discord/1242546683791933480)](https://discord.gg/PTVC8fyGN8) [![GitHub License](https://img.shields.io/github/license/feagi/brain-visualizer)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 
 
-The Brain Visualizer is an open-source [Godot](https://github.com/godotengine/godot)-based client of [FEAGI](https://github.com/feagi/feagi) that lets users interact with Genomes. It can both to modify various neural structures, and visualize the neuronal activity happening within.
+The Brain Visualizer is an open-source [Godot](https://github.com/godotengine/godot) based client of [FEAGI](https://github.com/feagi/feagi) that lets users interact with Genomes. It can both to modify various neural structures, and visualize the neuronal activity happening within.
 
 <video autoplay muted src="https://github.com/user-attachments/assets/5578d618-5fee-40f5-8413-c29d2e91c951" width="320" height="240"></video>
 
