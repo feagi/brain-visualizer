@@ -128,8 +128,9 @@ func _update_synapse_count_current(val: int) -> void:
 	_synapse_count.text = _format_int(val)
 
 func _on_genome_about_to_reload() -> void:
-	_neuron_count.text = ""
-	_synapse_count.text = ""
+	#_neuron_count.text = ""
+	#_synapse_count.text = ""
+	pass
 
 #TODO remove this?
 func _shorten_number(num: float) -> String:
