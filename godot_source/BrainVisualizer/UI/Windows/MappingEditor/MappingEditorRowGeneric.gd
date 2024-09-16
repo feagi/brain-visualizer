@@ -45,6 +45,7 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_PSP.current_float = abs(mapping.post_synaptic_current_multiplier)
 	_inhibitory.set_toggle_no_signal(mapping.post_synaptic_current_multiplier < 0)
 	_plasticity.set_toggle_no_signal(mapping.is_plastic)
+	_plasticity_constant.current_float = mapping.plasticity_constant
 	_LTP_multiplier.current_float = mapping.LTP_multiplier
 	_LTD_multiplier.current_float = mapping.LTD_multiplier
 	_on_user_toggle_plasticity(mapping.is_plastic)
