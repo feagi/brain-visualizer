@@ -97,9 +97,6 @@ func _user_requesting_exit() -> void:
 	close_window()
 
 func _user_requesing_creation() -> void:
-	
-	
-	
 	match(_type_selected):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()

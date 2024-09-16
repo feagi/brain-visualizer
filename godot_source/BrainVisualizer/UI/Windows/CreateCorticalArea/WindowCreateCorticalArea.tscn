@@ -83,7 +83,7 @@ mouse_filter = 1
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
-text = "Input"
+text = "Sensory"
 horizontal_alignment = 1
 
 [node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("4_5clbj")]
@@ -113,7 +113,7 @@ mouse_filter = 1
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
-text = "Output"
+text = "Motor"
 horizontal_alignment = 1
 
 [node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("4_5clbj")]
