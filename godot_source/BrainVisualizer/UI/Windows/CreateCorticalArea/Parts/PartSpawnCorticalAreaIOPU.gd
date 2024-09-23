@@ -9,7 +9,7 @@ var dropdown: TemplateDropDown
 var location: Vector3iSpinboxField
 var device_count: SpinBox
 var _iopu_image: TextureRect
-var _current_dimensions_as_per_device_count: Vector3i = Vector3i(0,0,0)
+var _current_dimensions_as_per_device_count: Vector3i = Vector3i(1,1,1)
 var _is_IPU_not_OPU: bool
 
 func _ready() -> void:
@@ -27,6 +27,7 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 		location_changed_from_dropdown.emit(location.current_vector)
 	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
+	_current_dimensions_as_per_device_count = dropdown.get_selected_template().calculate_IOPU_dimension(int(device_count.value))
 	BV.UI.start_cortical_area_preview(location.current_vector, _current_dimensions_as_per_device_count, move_signals, resize_signals, preview_close_signals)
 	if _is_IPU_not_OPU:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["i__inf"])

@@ -6,6 +6,7 @@ const WINDOW_NAME: StringName = "clone_cortical"
 signal null_dimensions_signal(vector: Vector3i) #not utilized but required as an empty input for a func
 
 const NAME_APPEND: StringName = &"_copy"
+const NAME_MAX_LENGTH: int = 32 # TODO this should go to a better spot
 const OFFSET_3D: Vector3i = Vector3i(10,0,0)
 const OFFSET_2D: Vector2i = Vector2i(10,10)
 
@@ -25,7 +26,11 @@ func _ready() -> void:
 func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cloning_cortical_area = cloning_cortical_area
-	_field_cortical_name.text = cloning_cortical_area.friendly_name + NAME_APPEND
+	var new_name: StringName = cloning_cortical_area.friendly_name + NAME_APPEND
+	if len(new_name) > NAME_MAX_LENGTH:
+		new_name = cloning_cortical_area.friendly_name.left(NAME_MAX_LENGTH - NAME_APPEND.length()) + NAME_APPEND
+	_field_cortical_name.text = new_name
+	
 	_field_3d_location.current_vector = cloning_cortical_area.coordinates_3D + OFFSET_3D
 	_field_2d_location.current_vector = cloning_cortical_area.coordinates_2D + OFFSET_2D
 	
