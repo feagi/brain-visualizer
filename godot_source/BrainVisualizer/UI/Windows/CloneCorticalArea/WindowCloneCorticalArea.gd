@@ -27,7 +27,7 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_cloning_cortical_area = cloning_cortical_area
 	var new_name: StringName = cloning_cortical_area.friendly_name + NAME_APPEND
-	if len(new_name) > NAME_MAX_LENGTH:
+	if new_name.length() > NAME_MAX_LENGTH:
 		new_name = cloning_cortical_area.friendly_name.left(NAME_MAX_LENGTH - NAME_APPEND.length()) + NAME_APPEND
 	_field_cortical_name.text = new_name
 	
