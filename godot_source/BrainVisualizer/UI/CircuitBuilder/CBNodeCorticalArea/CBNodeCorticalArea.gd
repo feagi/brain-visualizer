@@ -71,7 +71,5 @@ func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -
 			pass
 	add_theme_stylebox_override("titlebar", style_box)
 
-func _on_single_left_click() -> void:
-	BV.UI.user_selected_single_cortical_area_independently(_representing_cortical_area)
 
 #endregion

@@ -41,8 +41,6 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 
 #region User Interactions
 
-func _on_single_left_click() -> void:
-	BV.UI.user_selected_single_cortical_area_independently(_representing_region)
 
 func _on_double_left_click() -> void:
 	double_clicked.emit(self)

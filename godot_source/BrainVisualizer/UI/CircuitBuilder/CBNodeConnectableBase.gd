@@ -18,14 +18,12 @@ func _gui_input(event):
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
 	if mouse_event.double_click:
 		_on_double_left_click()
-		print("double")
 		return
 	else:
 		if !mouse_event.is_pressed(): return
 		await get_tree().create_timer(0.1).timeout # wait a small moment to ensure we arent dragging
 		if _dragged: return
 		_on_single_left_click()
-		print("single")
 
 func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: NodePath) -> void:
 	dragged.connect(_on_finish_drag)
