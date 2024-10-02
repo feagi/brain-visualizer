@@ -41,21 +41,30 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 
 #region User Interactions
 
-signal double_clicked(self_ref: CBNodeRegion) ## Node was double clicked
+func _on_single_left_click() -> void:
+	BV.UI.user_selected_single_cortical_area_independently(_representing_region)
 
-func _gui_input(event):
-	var mouse_event: InputEventMouseButton
-	if event is InputEventMouseButton:
-		mouse_event = event as InputEventMouseButton
-		if mouse_event.double_click:
-			double_clicked.emit(self)
-			return
-		if mouse_event.is_pressed(): return
-		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
-			return
-		if !_dragged:
-			if _representing_region != null:
-				BV.UI.user_selected_single_cortical_area_independently(_representing_region)
+func _on_double_left_click() -> void:
+	double_clicked.emit(self)
+
+
+signal double_clicked(self_ref: CBNodeRegion) ## Node was double clicked # TEMP
+
+
+
+#func _gui_input(event):
+#	var mouse_event: InputEventMouseButton
+#	if event is InputEventMouseButton:
+#		mouse_event = event as InputEventMouseButton
+#		if mouse_event.double_click:
+#			double_clicked.emit(self)
+#			return
+#		if mouse_event.is_pressed(): return
+#		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+#			return
+#		if !_dragged:
+#			if _representing_region != null:
+#				BV.UI.user_selected_single_cortical_area_independently(_representing_region)
 
 	#	TODO TEMP
 
