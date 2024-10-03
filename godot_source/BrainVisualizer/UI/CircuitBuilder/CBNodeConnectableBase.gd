@@ -12,6 +12,18 @@ var _recursives: VBoxContainer
 var _inputs: VBoxContainer
 var _outputs: VBoxContainer
 
+func _gui_input(event):
+	if !(event is InputEventMouseButton): return
+	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
+	if mouse_event.double_click:
+		_on_double_left_click()
+		return
+	else:
+		if !mouse_event.is_pressed(): return
+		await get_tree().create_timer(0.1).timeout # wait a small moment to ensure we arent dragging
+		if _dragged: return
+		_on_single_left_click()
 
 func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: NodePath) -> void:
 	dragged.connect(_on_finish_drag)
@@ -62,6 +74,12 @@ func get_number_inputs() -> int:
 
 func get_number_outputs() -> int:
 	return _outputs.get_child_count()
+
+func _on_single_left_click() -> void:
+	pass
+
+func _on_double_left_click() -> void:
+	pass
 
 func _on_node_move() -> void:
 	recursive_container_offset_changed.emit()

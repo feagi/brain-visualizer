@@ -139,10 +139,6 @@ func _input(event):
 				return
 			show_developer_menu()
 
-var selected_cortical_areas: Array[AbstractCorticalArea]:
-	get: return _selected_cortical_areas
-
-var _selected_cortical_areas: Array[AbstractCorticalArea] = []
 var _is_in_advanced_mode: bool = false
 
 func set_advanced_mode(is_advanced_mode: bool) -> void:
@@ -202,6 +198,7 @@ func _append_selected_object(object: GenomeObject) -> void:
 	currently_selected_objects.append(object)
 	if object is AbstractCorticalArea: #TODO TEMP
 		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
+	print(object.friendly_name)
 	
 func _remove_selected_object(object: GenomeObject) -> void:
 	var index: int = currently_selected_objects.rfind(object) # reverse since draggin boxes adds items in forward order, so removing reverse is faster

@@ -236,6 +236,8 @@ var _number_selected_objects: int = 0
 var _last_selected_object: GenomeObject = null
 
 func _input(event):
+	if !visible:
+		return
 	#NOTE: This fires before selection/deselection graphnode signals
 	if event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
@@ -255,6 +257,10 @@ func _input(event):
 				
 func unhighlight_all_area_nodes() -> void:
 	for node in _cortical_nodes.values():
+		node.selected = false
+
+func unhighlight_all_region_nodes() -> void:
+	for node in _subregion_nodes.values():
 		node.selected = false
 
 func _node_select(element: GraphElement) -> void:
@@ -278,6 +284,7 @@ func _node_deselect(element: GraphElement) -> void:
 		return
 
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
+	BV.UI.currently_selected_objects = [] # HACK
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
 func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:

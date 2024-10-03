@@ -9,11 +9,11 @@ var _representing_cortical_area: AbstractCorticalArea
 
 #TODO TEMP
 # Announce if cortical area was selected with one click and open cortical properties panel on double click
-func _gui_input(event):
-	if !(event is InputEventMouseButton): return
-	var mouse_event: InputEventMouseButton = event
-	if mouse_event.is_pressed(): return
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
+#func _gui_input(event):
+#	if !(event is InputEventMouseButton): return
+#	var mouse_event: InputEventMouseButton = event
+#	if mouse_event.is_pressed(): return
+#	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
 
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -70,5 +70,6 @@ func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			pass
 	add_theme_stylebox_override("titlebar", style_box)
+
 
 #endregion
