@@ -286,6 +286,19 @@ func set_health_dead() -> void:
 	
 #endregion
 
+#region Other
+signal plasticity_queue_depth_changed(new_val: int)
 
+var plasticity_queue_depth: int:
+	get: return _plasticity_queue_depth
 
+var _plasticity_queue_depth: int = 3
+
+func update_plasticity_queue_depth(new_depth: int) -> void:
+	if new_depth == _plasticity_queue_depth:
+		return
+	_plasticity_queue_depth = new_depth
+	plasticity_queue_depth_changed.emit(new_depth)
+
+#endregion
 

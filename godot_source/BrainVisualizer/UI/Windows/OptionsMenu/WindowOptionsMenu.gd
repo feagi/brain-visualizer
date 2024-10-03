@@ -9,6 +9,7 @@ var _advanced_mode: ToggleButton
 var _autoconfigure_IO: ToggleButton
 var _skip_rate: IntInput
 var _supression: IntInput
+var _plasicity: IntInput
 var _camera_animation_section: VerticalCollapsible
 
 func _ready() -> void:
@@ -20,6 +21,7 @@ func _ready() -> void:
 	_skip_rate = _window_internals.get_node('VBoxContainer5/SkipRate')
 	_supression = _window_internals.get_node('VBoxContainer6/Supression')
 	_camera_animation_section = _window_internals.get_node('Camera_Animation')
+	_plasicity = _window_internals.get_node('VBoxContainer7/plasticity')
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -27,6 +29,7 @@ func setup() -> void:
 	_interface_dropdown.selected = _get_theme_index()
 	_skip_rate.current_int = FeagiCore.skip_rate
 	_supression.current_int = FeagiCore.supression_threshold
+	_plasicity.current_int = FeagiCore.feagi_local_cache.plasticity_queue_depth
 	_version.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_camera_animation_section.setup()
 
@@ -44,8 +47,8 @@ func _on_accept_press() -> void:
 		FeagiCore.requests.change_skip_rate(_skip_rate.current_int)
 	if FeagiCore.supression_threshold != _supression.current_int:
 		FeagiCore.requests.change_supression_threshold(_supression.current_int)
-	
-	
+	if FeagiCore.feagi_local_cache.plasticity_queue_depth != _plasicity.current_int:
+		FeagiCore.requests.update_plasticity_queue_depth(_plasicity.current_int)
 	close_window()
 
 # THis is really stupid, but temporary

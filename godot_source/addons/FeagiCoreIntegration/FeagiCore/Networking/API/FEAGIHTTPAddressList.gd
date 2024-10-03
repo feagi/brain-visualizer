@@ -36,6 +36,7 @@ var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
 var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortical_visibility'
 var GET_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/system/cortical_area_visualization_suppression_threshold"
+var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -61,6 +62,7 @@ var PUT_corticalArea_suppressCorticalVisibility: StringName = "/v1/cortical_area
 var PUT_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/cortical_area"
 var PUT_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var PUT_system_corticalAreaVisualizationSupressionThreshold: StringName = "v1/system/cortical_area_visualization_suppression_threshold"
+var PUT_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

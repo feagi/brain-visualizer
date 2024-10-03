@@ -129,6 +129,21 @@ layout_mode = 2
 script = ExtResource("4_u56br")
 min_value = 0
 
+[node name="VBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer7"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Plasticity Queue Depth:"
+
+[node name="plasticity" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer7"]
+layout_mode = 2
+script = ExtResource("4_u56br")
+initial_int = 1
+min_value = 1
+
 [node name="Camera_Animation" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("5_glyhf")]
 layout_mode = 2
 size_flags_vertical = 0
