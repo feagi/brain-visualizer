@@ -1298,7 +1298,7 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
 	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
 	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	FeagiCore.request_reload_genome()
+	FeagiCore.reload_genome_await()
 	return FEAGI_response_data
 	
 
