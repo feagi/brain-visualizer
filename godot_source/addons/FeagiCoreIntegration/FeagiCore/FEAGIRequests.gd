@@ -79,6 +79,7 @@ func reload_genome() -> FeagiRequestOutput:
 	get_burst_delay()
 	get_supression_threshold()
 	get_skip_rate()
+	get_plasticity_queue_depth()
 	
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	
@@ -129,7 +130,7 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	FeagiCore.feagi_retrieved_burst_rate(new_delay_between_bursts)
 	return FEAGI_response_data
 
-## Retrieves FEAGIs Burst Rate
+## Retrieves plasticity queue depth
 func get_plasticity_queue_depth() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Request getting plasticity queue depth")
 	
@@ -144,7 +145,7 @@ func get_plasticity_queue_depth() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI plasticity queue depth!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
-	print("FEAGI REQUEST: Successfully retrieved plasticity queue depth as %f" % response.to_float())
+	print("FEAGI REQUEST: Successfully retrieved plasticity queue depth as %d" % response.to_int())
 	
 	FeagiCore.feagi_local_cache.update_plasticity_queue_depth(response.to_int())
 	return FEAGI_response_data
@@ -162,7 +163,7 @@ func update_plasticity_queue_depth(new_depth: int) -> FeagiRequestOutput:
 	
 	# Define Request
 	var dict_to_send: Dictionary = {} # We are doing this the dumb way again
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_neuroplasticity_plasticityQueueDepth + "?queue_depth=" + str(new_depth), dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_neuroplasticity_plasticityQueueDepth + "?queue_depth=" + str(new_depth), dict_to_send)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
