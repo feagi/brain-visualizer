@@ -129,6 +129,52 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	FeagiCore.feagi_retrieved_burst_rate(new_delay_between_bursts)
 	return FEAGI_response_data
 
+## Retrieves FEAGIs Burst Rate
+func get_plasticity_queue_depth() -> FeagiRequestOutput:
+	print("FEAGI REQUEST: Request getting plasticity queue depth")
+	
+	# Define Request
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_neuroplasticity_plasticityQueueDepth)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI plasticity queue depth!")
+		return FEAGI_response_data
+	var response: String = FEAGI_response_data.decode_response_as_string()
+	print("FEAGI REQUEST: Successfully retrieved plasticity queue depth as %f" % response.to_float())
+	
+	FeagiCore.feagi_local_cache.update_plasticity_queue_depth(response.to_int())
+	return FEAGI_response_data
+
+## Set the plasticity queue depth
+func update_plasticity_queue_depth(new_depth: int) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if new_depth <= 0:
+		push_error("FEAGI Requests: Cannot set plasticity queue depth to 0 or less!")
+		return FeagiRequestOutput.requirement_fail("IMPOSSIBLE_PLASTICITY_QUEUE_DEPTH")
+	print("FEAGI REQUEST: Request setting plasticity queue depth to to %s" % str(new_depth))
+	
+	# Define Request
+	var dict_to_send: Dictionary = {} # We are doing this the dumb way again
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_neuroplasticity_plasticityQueueDepth + "?queue_depth=" + str(new_depth), dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update FEAGI plasticity queue depth!")
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully updated plasticity queue depth to %d" % new_depth)
+	FeagiCore.feagi_local_cache.update_plasticity_queue_depth(new_depth)
+	return FEAGI_response_data
+
 ## Retrieves FEAGIs Skip Rate
 func get_skip_rate() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Request getting skip_rate")
