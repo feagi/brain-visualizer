@@ -166,12 +166,16 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 
 func _send_update(send_button: Button) -> void:
 	if send_button.name in _growing_cortical_update:
+		send_button.disabled = true
 		if len(_cortical_area_refs) > 1:
 			FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[send_button.name])
 		else:
-			FeagiCore.requests.update_cortical_area(_cortical_area_refs[0].cortical_ID, _growing_cortical_update[send_button.name])
+			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_cortical_area_refs[0].cortical_ID, _growing_cortical_update[send_button.name])
+			if result.has_errored:
+				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", "FEAGI was unable to update this cortical area!"))
+				close_window()
 		_growing_cortical_update[send_button.name] = {}
-	send_button.disabled = true
+		
 
 func _enable_button(send_button: Button) -> void:
 	send_button.disabled = false

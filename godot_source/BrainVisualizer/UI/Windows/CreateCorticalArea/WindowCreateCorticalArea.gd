@@ -97,6 +97,10 @@ func _user_requesting_exit() -> void:
 	close_window()
 
 func _user_requesing_creation() -> void:
+	
+	var rand: RandomNumberGenerator = RandomNumberGenerator.new()
+	var pos_2d: Vector2 = Vector2(rand.randf_range(-100.0, 100.0), rand.randf_range(-100.0, 100.0))	
+	
 	match(_type_selected):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
@@ -126,7 +130,8 @@ func _user_requesing_creation() -> void:
 						_IOPU_definition.dropdown.get_selected_template(),
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
-						false
+						true,
+						pos_2d
 					)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
@@ -156,7 +161,8 @@ func _user_requesing_creation() -> void:
 						_IOPU_definition.dropdown.get_selected_template(),
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
-						false
+						true,
+						pos_2d
 					)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
@@ -181,7 +187,8 @@ func _user_requesing_creation() -> void:
 				_custom_definition.location.current_vector,
 				_custom_definition.dimensions.current_vector,
 				FeagiCore.feagi_local_cache.brain_regions.get_root_region(), #TODO TEMP
-				false
+				true,
+				pos_2d
 				)
 				
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
@@ -206,7 +213,8 @@ func _user_requesing_creation() -> void:
 				_memory_definition.location.current_vector,
 				Vector3i(1,1,1),
 				FeagiCore.feagi_local_cache.brain_regions.get_root_region(), #TODO temp!
-				false
+				true,
+				pos_2d
 			)
 	
 	close_window()
