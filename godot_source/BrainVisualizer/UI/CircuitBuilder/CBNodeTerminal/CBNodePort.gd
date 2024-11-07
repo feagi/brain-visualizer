@@ -26,6 +26,8 @@ func _get_position_local_to_root_node() -> Vector2:
 	var offset: Vector2 = Vector2(0,0)
 	var control: Control = self
 	while !(control is CBNodeConnectableBase):
+		if !control:
+			return offset
 		offset += control.position
 		control = control.get_parent()
 	return offset
