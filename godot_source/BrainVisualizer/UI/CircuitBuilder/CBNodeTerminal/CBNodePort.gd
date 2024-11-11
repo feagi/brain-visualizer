@@ -27,6 +27,7 @@ func _get_position_local_to_root_node() -> Vector2:
 	var control: Control = self
 	while !(control is CBNodeConnectableBase):
 		if !control:
+			push_error("Port errored!")
 			return offset # stupid
 		offset += control.position
 		control = control.get_parent()
