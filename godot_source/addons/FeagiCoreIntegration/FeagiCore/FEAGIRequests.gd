@@ -690,6 +690,7 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to update cortical area of ID %s!" % editing_ID)
+		
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
 	get_cortical_area(editing_ID)

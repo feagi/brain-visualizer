@@ -1,11 +1,10 @@
 extends Node # autoload
 class_name AutoLoad_FEAGILogger
 
+signal crash_reported(message: String) ## Signal emitted whena  crash has occured. Other objects should handle things from here
+
 enum LEVEL {DEBUG, ACTION, WARNING, ERROR, CRASH} # DEBUG is very specific minute details. ACTION is any request / response from FEAGI, WARNING is something unexpected but that can be handled. ERROR is something that causes a risk of crash, CRASH is something unrecoverable
 enum LOCATION {CORE_ETC, CACHE, NETWORK, UI_ETC, BRAIN_MONITOR, CIRCUIT_BUILDER}
-
-var is_ready: bool: 
-	get: return _is_ready
 
 var log_debug: bool = true # If debug level logs are written to the log queue at all. ALSO blocks writing debug to console
 var print_debug_to_console: bool = false # If debug logs will be printed to the console
@@ -14,9 +13,7 @@ var print_warning_to_console: bool = true # If warning logs will be printed to t
 var print_errors_crash_to_console: bool = true # If  errors / CRASH will be printed to the console
 var max_log_array_size: int = 250 # Max number of log events to store in log queue before starting to purge the oldest one. Larger sizes causes slow downs
 
-var _is_ready: bool = false # Has the initialization function been called? If not, nothing will work
 var _current_log_queue: Array[Dictionary] = [] # Actual stored log events
-var _crash_handler_callable: Callable ## Callable to UI function to run when showing a crash
 # NOTE: The UI itself should have buttons to get the log JSON from this object and save it to where relevant
 
 ## Log DEBUG events
@@ -37,16 +34,11 @@ func BVLogError(message: StringName, location: LOCATION, context_JSON: Dictionar
 
 ## Log CRASH event and intiate crashing procedure
 func BVCrash(message: StringName, location: LOCATION, context_JSON: Dictionary = {}) -> void:
-	if !_is_ready:
-		push_error("Unable to use FEAGILogger crash handler as it has not been init!")
-		return
-	BVLogGeneric(message, location, LEVEL.ERROR, context_JSON)
+	BVLogGeneric(message, location, LEVEL.CRASH, context_JSON)
+	crash_reported.emit(message)
 
 ## Generic log handler function. Handles logging to console and to console log array
 func BVLogGeneric(message: StringName, location: LOCATION, level: LEVEL = LEVEL.DEBUG, context_JSON: Dictionary = {}) -> void:
-	if !_is_ready:
-		push_error("FEAGI LOGGER: Recieved log request before Logging System Init!")
-		return
 	if level == LEVEL.DEBUG and !log_debug:
 		return # disabled
 	

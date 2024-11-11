@@ -26,6 +26,7 @@ var _subregion_nodes: Dictionary = {}
 var _representing_region: BrainRegion
 var _move_timer: Timer
 var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value is new vector2 position
+var _hack_mouse_pos: Vector2
 
 func _ready():
 	_move_timer = $Timer
@@ -244,12 +245,14 @@ func _input(event):
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
 		if mouse_event.pressed:
+			_hack_mouse_pos = mouse_event.global_position
 			_number_selected_objects = len(BV.UI.currently_selected_objects)
 			if _number_selected_objects == 1:
 				_last_selected_object = BV.UI.currently_selected_objects[0]
 		else:
 			if _number_selected_objects != len(BV.UI.currently_selected_objects) and len(BV.UI.currently_selected_objects) != 0:
-				user_request_action_on_selected_objects.emit()
+				if _hack_mouse_pos == mouse_event.global_position:
+					user_request_action_on_selected_objects.emit()
 				return
 			if len(BV.UI.currently_selected_objects) == 1 and _last_selected_object != BV.UI.currently_selected_objects[0]:
 				user_request_action_on_selected_objects.emit()
