@@ -21,7 +21,14 @@ func _on_visible_on_screen_notifier_3d_screen_entered():
 
 func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	var name_fetch = get_name().rsplit("*")
+	
+	if event is InputEventMouseMotion:
+		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
+		if cortical_area.cortical_ID != "iv00_C":
+			BV.BM.notate_highlighted_neuron(cortical_area.friendly_name, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
+	
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
+		
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
 			if get_surface_override_material(0) == global_material.selected:
 				location = Vector3(transform.origin) * Vector3(1,1,-1)
