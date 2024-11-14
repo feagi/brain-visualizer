@@ -99,6 +99,16 @@ multimesh = SubResource("MultiMesh_2hjv0")
 [node name="3d_indicator" parent="." instance=ExtResource("8_xvar0")]
 script = ExtResource("9_xa15g")
 
+[node name="coordlabel" type="Label" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -43.0
+offset_right = 60.0
+offset_bottom = -20.0
+grow_vertical = 0
+
 [connection signal="input_event" from="cortical_area_box/Area3D" to="cortical_area_box" method="_on_area_3d_input_event"]
 [connection signal="mouse_entered" from="cortical_area_box/Area3D" to="cortical_area_box" method="_on_area_3d_mouse_entered"]
 [connection signal="mouse_exited" from="cortical_area_box/Area3D" to="cortical_area_box" method="_on_area_3d_mouse_exited"]

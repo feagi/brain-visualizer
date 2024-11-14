@@ -110,6 +110,10 @@ func test(stored_value):
 		var new_position = Transform3D().translated(Vector3(voxel_data[0], voxel_data[1], -voxel_data[2]))
 		$red_voxel.multimesh.set_instance_transform(flag, new_position)
 
+func notate_highlighted_neuron(cortical_area_name: StringName, local_neuron_coordinate: Vector3i) -> void:
+	var coordLabel: Label = $coordlabel
+	coordLabel.text = cortical_area_name + " " + str(local_neuron_coordinate)
+	
 func _clear_node_name_list(node_name):
 	"""
 	clear all cortical area along with the library list/dict
