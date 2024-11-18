@@ -48,7 +48,7 @@ func generate_cortical_area(cortical_area_data : AbstractCorticalArea):
 	var viewport = textbox.get_node("SubViewport")
 	textbox.scale = Vector3(1,1,1)
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions_3D.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions_3D.y, -1 * cortical_area_data.dimensions_3D.z - cortical_area_data.coordinates_3D.z)
-	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name))
+	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name.left(15)))
 	textbox.set_texture(viewport.get_texture())
 	textbox.set_name(cortical_area_data.cortical_ID + str("_textbox"))
 	if not textbox.get_name() in global_name_list:
@@ -205,8 +205,8 @@ func delete_example():
 #why
 func check_cortical(cortical_area_data : AbstractCorticalArea):
 	# TODO: This is dumb
-	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label")
-	label.text = cortical_area_data.friendly_name # What is this even doing here? 
+	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label") # WHY ARE WE USING SUB VIEW PORTS!?
+	label.text = cortical_area_data.friendly_name.left(15) # What is this even doing here? 
 	if global_name_list: # Pretty sure this is already exist in cache. We need to replace this with current list.
 		var coordinate_3D = global_name_list[cortical_area_data.cortical_ID][0].slice(1, 4)
 		var dimension = global_name_list[cortical_area_data.cortical_ID][0].slice(4, 8)
