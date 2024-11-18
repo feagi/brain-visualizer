@@ -13,7 +13,8 @@ const IPU_CORTICAL_ID_TO_CAPABILITY_KEY: Dictionary = {
 	"i__inf" : "infrared",
 	"i_pres" : "pressure",
 	"i__pro" : "proximity",
-	"i_spos" : "servo_position"
+	"i_spos" : "servo_position",
+	"ii_inf" : "infrared_inverse"
 }
 
 signal cortical_device_count_updated(new_count: int, this_cortical_area: AbstractCorticalArea)
@@ -69,6 +70,24 @@ func FEAGI_set_device_count(new_count: int) -> void:
 func FEAGI_set_cortical_dimensions_per_device(new_dimensions: Vector3i) -> void:
 	_cortical_dimensions_per_device = new_dimensions
 	cortical_dimensions_per_device_updated.emit(new_dimensions, self)
+
+## Given an array of configurator input capability dictionaries (recieved from agent properties), get all custom names of this cortical area
+func get_custom_names(configurator_input_capabilities: Array[Dictionary], feagi_index: int) -> PackedStringArray:
+	if !has_controller_ID:
+		return []
+	var output: Array[StringName] = []
+	for configurator_input in configurator_input_capabilities:
+		if !configurator_input.has(str(controller_ID)):
+			continue
+		var devices: Dictionary = configurator_input[controller_ID]
+		for device: Dictionary in devices.values():
+			if !device.has("index"):
+				continue
+			if str(device["index"]).to_int() != feagi_index:
+				continue
+			output.append(device["custom_name"])
+	return PackedStringArray(output)
+			
 
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU

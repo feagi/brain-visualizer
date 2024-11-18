@@ -289,16 +289,29 @@ func set_health_dead() -> void:
 #region Other
 signal plasticity_queue_depth_changed(new_val: int)
 
+
+
 var plasticity_queue_depth: int:
 	get: return _plasticity_queue_depth
 
+var configuration_json: Array[Dictionary]:
+	get: return _configuration_jsons
+
 var _plasticity_queue_depth: int = 3
+var _configuration_jsons: Array[Dictionary] = []
 
 func update_plasticity_queue_depth(new_depth: int) -> void:
 	if new_depth == _plasticity_queue_depth:
 		return
 	_plasticity_queue_depth = new_depth
 	plasticity_queue_depth_changed.emit(new_depth)
+
+func clear_configuration_jsons() -> void:
+	_configuration_jsons = []
+
+## Adda  configuration json to the cache. Dictionary should be the dictionary holding inputs / output keys
+func append_configuration_json(configuration: Dictionary) -> void:
+	_configuration_jsons.append(configuration)
 
 #endregion
 
