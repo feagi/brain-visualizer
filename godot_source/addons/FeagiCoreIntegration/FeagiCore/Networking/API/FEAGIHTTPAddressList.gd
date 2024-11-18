@@ -37,6 +37,8 @@ var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortica
 var GET_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/system/cortical_area_visualization_suppression_threshold"
 var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
+var GET_agent_list: StringName = "/v1/agent/list"
+var GET_agent_properties: StringName = "/v1/agent/properties"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"

@@ -294,7 +294,7 @@ signal plasticity_queue_depth_changed(new_val: int)
 var plasticity_queue_depth: int:
 	get: return _plasticity_queue_depth
 
-var configuration_json: Array[Dictionary]:
+var configuration_jsons: Array[Dictionary]:
 	get: return _configuration_jsons
 
 var _plasticity_queue_depth: int = 3
