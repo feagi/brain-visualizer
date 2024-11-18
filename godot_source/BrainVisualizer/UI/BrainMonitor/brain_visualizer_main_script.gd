@@ -112,16 +112,16 @@ func test(stored_value):
 
 func notate_highlighted_neuron(cortical_area: AbstractCorticalArea, local_neuron_coordinate: Vector3i) -> void:
 	var coordLabel: Label = $coordlabel
-	var text: String = cortical_area.friendly_name + " " + str(local_neuron_coordinate)
+	var text: String = cortical_area.friendly_name + " " + str(local_neuron_coordinate) + " "
 	if cortical_area is IPUCorticalArea:
 		var device_index: int = (local_neuron_coordinate.x) % cortical_area.cortical_dimensions_per_device.x
-		var appending_names: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
-		for appending in appending_names:
+		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
+		for appending in appending_definitions:
 			text += "| " + appending
 	elif cortical_area is OPUCorticalArea:
 		var device_index: int = (local_neuron_coordinate.x) % cortical_area.cortical_dimensions_per_device.x
-		var appending_names: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
-		for appending in appending_names:
+		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
+		for appending in appending_definitions:
 			text += "| " + appending
 	
 	coordLabel.text = text

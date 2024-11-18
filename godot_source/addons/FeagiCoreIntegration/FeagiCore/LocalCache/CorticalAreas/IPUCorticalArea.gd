@@ -83,11 +83,11 @@ func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index:
 			continue
 		var devices: Dictionary = configurator_input[controller_ID]
 		for device: Dictionary in devices.values():
-			if !device.has("index"):
+			if !device.has("feagi_index"):
 				continue
-			if str(device["index"]).to_int() != feagi_index:
+			if str(device["feagi_index"]).to_int() != feagi_index:
 				continue
-			output.append(device["custom_name"])
+			output.append((str(configurator_capability["agent_ID"]) + ": " + str(device["custom_name"])))
 	return output
 			
 

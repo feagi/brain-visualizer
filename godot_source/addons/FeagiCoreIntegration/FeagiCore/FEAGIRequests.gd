@@ -102,6 +102,7 @@ func reload_genome() -> FeagiRequestOutput:
 			push_error("unable to return agent data for %s!" % str(agent))
 			return agent_data
 		var agent_dict: Dictionary = agent_data.decode_response_as_dict()
+		agent_dict["capabilities"]["agent_ID"] = str(agent)
 		FeagiCore.feagi_local_cache.append_configuration_json(agent_dict["capabilities"])
 	
 	
