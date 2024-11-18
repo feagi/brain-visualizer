@@ -65,7 +65,7 @@ func FEAGI_set_cortical_dimensions_per_device(new_dimensions: Vector3i) -> void:
 	cortical_dimensions_per_device_updated.emit(new_dimensions, self)
 
 ## Given an array of configurator output capability dictionaries (recieved from agent properties), get all custom names of this cortical area
-func get_custom_names(configurator_output_capabilities: Array[Dictionary], feagi_index: int) -> PackedStringArray:
+func get_custom_names(configurator_output_capabilities: Array[Dictionary], feagi_index: int) -> Array[StringName]:
 	if !has_controller_ID:
 		return []
 	var output: Array[StringName] = []
@@ -79,7 +79,7 @@ func get_custom_names(configurator_output_capabilities: Array[Dictionary], feagi
 			if str(device["index"]).to_int() != feagi_index:
 				continue
 			output.append(device["custom_name"])
-	return PackedStringArray(output)
+	return output
 
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU

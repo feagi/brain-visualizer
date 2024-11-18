@@ -110,9 +110,21 @@ func test(stored_value):
 		var new_position = Transform3D().translated(Vector3(voxel_data[0], voxel_data[1], -voxel_data[2]))
 		$red_voxel.multimesh.set_instance_transform(flag, new_position)
 
-func notate_highlighted_neuron(cortical_area_name: StringName, local_neuron_coordinate: Vector3i) -> void:
+func notate_highlighted_neuron(cortical_area: AbstractCorticalArea, local_neuron_coordinate: Vector3i) -> void:
 	var coordLabel: Label = $coordlabel
-	coordLabel.text = cortical_area_name + " " + str(local_neuron_coordinate)
+	var text: String = cortical_area.friendly_name + " " + str(local_neuron_coordinate)
+	if cortical_area is IPUCorticalArea:
+		var device_index: int = (local_neuron_coordinate.x - 1) % cortical_area.cortical_dimensions_per_device.x
+		var appending_names: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_json, device_index)
+		for appending in appending_names:
+			text += "| " + appending
+	elif cortical_area is OPUCorticalArea:
+		var device_index: int = (local_neuron_coordinate.x - 1) % cortical_area.cortical_dimensions_per_device.x
+		var appending_names: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_json, device_index)
+		for appending in appending_names:
+			text += "| " + appending
+	
+	coordLabel.text = text
 	
 func _clear_node_name_list(node_name):
 	"""

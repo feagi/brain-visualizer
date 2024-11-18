@@ -25,7 +25,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	if event is InputEventMouseMotion:
 		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
 		if cortical_area.neuron_count < 999:
-			BV.BM.notate_highlighted_neuron(cortical_area.friendly_name, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
+			BV.BM.notate_highlighted_neuron(cortical_area, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
 	
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		
