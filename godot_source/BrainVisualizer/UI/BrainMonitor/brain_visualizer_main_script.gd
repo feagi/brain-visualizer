@@ -114,16 +114,35 @@ func notate_highlighted_neuron(cortical_area: AbstractCorticalArea, local_neuron
 	var coordLabel: Label = $coordlabel
 	var text: String = cortical_area.friendly_name + " " + str(local_neuron_coordinate) + " "
 	if cortical_area is IPUCorticalArea:
-		var device_index: int = (local_neuron_coordinate.x) % cortical_area.cortical_dimensions_per_device.x
+		var device_index: int = floori((local_neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
 		for appending in appending_definitions:
 			text += "| " + appending
 	elif cortical_area is OPUCorticalArea:
-		var device_index: int = (local_neuron_coordinate.x) % cortical_area.cortical_dimensions_per_device.x
+		var device_index: int = floori((local_neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
 		for appending in appending_definitions:
 			text += "| " + appending
 	
+	if cortical_area.cortical_ID == "o_mctl":
+		var device_local_coordinate: Vector3i = Vector3i(local_neuron_coordinate.x % 4, local_neuron_coordinate.y % 3, 0)
+		var direction: String
+		match(device_local_coordinate):
+			Vector3i(0,0,0): direction = " - Move Left"
+			Vector3i(1,0,0): direction = " - Move Up"
+			Vector3i(2,0,0): direction = " - Move Down"
+			Vector3i(3,0,0): direction = " - Move Right"
+			
+			Vector3i(0,1,0): direction = " - Yaw Left"
+			Vector3i(1,1,0): direction = " - Move Forward"
+			Vector3i(2,1,0): direction = " - Move Backward"
+			Vector3i(3,1,0): direction = " - Yaw Right"
+			
+			Vector3i(0,2,0): direction = " - Roll Left"
+			Vector3i(1,2,0): direction = " - Pitch Forward"
+			Vector3i(2,2,0): direction = " - Pitch Backward"
+			Vector3i(3,2,0): direction = " - Roll Right"
+		text += direction
 	coordLabel.text = text
 	
 func _clear_node_name_list(node_name):
