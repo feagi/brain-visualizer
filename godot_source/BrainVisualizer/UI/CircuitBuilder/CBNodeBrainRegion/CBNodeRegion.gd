@@ -41,6 +41,12 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 
 #region User Interactions
 
+func _on_single_left_click() -> void:
+	(get_parent() as CircuitBuilder).unhighlight_all_nodes()
+	selected = true
+	var to_open: Array[GenomeObject] = [_representing_region]
+	BV.WM.spawn_quick_cortical_menu(to_open)
+
 
 func _on_double_left_click() -> void:
 	double_clicked.emit(self)

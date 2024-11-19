@@ -39,10 +39,6 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 	new_cb.setup(region)
 	#CURSED
 	_add_control_view_as_tab(new_cb)
-	if !new_cb.user_adds_object_to_selected_object_pool.is_connected(BV.UI._append_selected_object):
-		new_cb.user_adds_object_to_selected_object_pool.connect(BV.UI._append_selected_object)
-		new_cb.user_removes_object_from_selected_object_pool.connect(BV.UI._remove_selected_object)
-		new_cb.user_request_action_on_selected_objects.connect(BV.UI.action_on_selected_objects)
 
 ## Brings an existing CB of given region in this tab container to the top
 func bring_existing_region_CB_to_top(region: BrainRegion) -> void:
@@ -125,8 +121,7 @@ func _on_top_tab_change(_tab_index: int) -> void:
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
 	# HACK CB
 	var cb: CircuitBuilder = get_tab_IDX_as_control(_tab_index) as CircuitBuilder
-	cb.unhighlight_all_area_nodes()
-	cb.unhighlight_all_region_nodes()
+	cb.unhighlight_all_nodes()
 
 func _add_control_view_as_tab(region_view: Control) -> void:
 	if region_view is CircuitBuilder:
