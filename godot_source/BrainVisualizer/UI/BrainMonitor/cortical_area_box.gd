@@ -56,7 +56,8 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	elif event is InputEventMouseButton and event.pressed and event.button_index== MOUSE_BUTTON_LEFT:
 
 		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
-		BV.UI.user_selected_single_cortical_area_independently(cortical_area)
+		var selected: Array[GenomeObject] = [cortical_area]
+		BV.WM.spawn_quick_cortical_menu(selected)
 
 		
 		
