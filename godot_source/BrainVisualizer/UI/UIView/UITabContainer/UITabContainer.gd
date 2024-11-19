@@ -125,7 +125,6 @@ func _on_top_tab_change(_tab_index: int) -> void:
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
 	# HACK CB
 	var cb: CircuitBuilder = get_tab_IDX_as_control(_tab_index) as CircuitBuilder
-	BV.UI.currently_selected_objects = []
 	cb.unhighlight_all_area_nodes()
 	cb.unhighlight_all_region_nodes()
 

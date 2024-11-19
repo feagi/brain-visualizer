@@ -91,9 +91,6 @@ func FEAGI_confirmed_genome() -> void:
 	#TODO need a better function to add CB in general
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
 	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
-	cb.user_adds_object_to_selected_object_pool.connect(_append_selected_object)
-	cb.user_removes_object_from_selected_object_pool.connect(_remove_selected_object)
-	cb.user_request_action_on_selected_objects.connect(action_on_selected_objects)
 	
 	initial_tabs = [cb]
 	_root_UI_view.reset()
@@ -119,9 +116,7 @@ func FEAGI_confirmed_genome() -> void:
 
 #region User Interactions
 signal advanced_mode_setting_changed(is_in_advanced_mode: bool)
-signal user_selected_single_cortical_area(area: AbstractCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
-var currently_selected_objects: Array[GenomeObject] = []
 
 var is_in_advanced_mode: bool:
 	get: return _is_in_advanced_mode
@@ -147,17 +142,6 @@ func set_advanced_mode(is_advanced_mode: bool) -> void:
 	_is_in_advanced_mode = is_advanced_mode
 	advanced_mode_setting_changed.emit(_is_in_advanced_mode)
 
-# TEMP TODO remove this as it is a standin for broken BM functions!
-func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:
-	if object is AbstractCorticalArea:
-		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
-		var objects: Array[GenomeObject] = [object]
-		if !WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
-			_window_manager.spawn_quick_cortical_menu(objects)
-		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
-			var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
-			window_manager.spawn_adv_cortical_properties(areas)
-
 func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
@@ -181,30 +165,10 @@ func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: 
 func show_developer_menu():
 	_window_manager.spawn_developer_options()
 
-func action_on_selected_objects() -> void:
-	if WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
-		return
-	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
-		if GenomeObject.get_makeup_of_array(currently_selected_objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
-			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(currently_selected_objects))
-	_window_manager.spawn_quick_cortical_menu(currently_selected_objects)
+
 
 func toggle_loading_screen(is_on: bool) -> void:
 	$TempLoadingScreen.visible = is_on
-
-func _append_selected_object(object: GenomeObject) -> void:
-	if object in currently_selected_objects:
-		return
-	currently_selected_objects.append(object)
-	if object is AbstractCorticalArea: #TODO TEMP
-		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
-	print(object.friendly_name)
-	
-func _remove_selected_object(object: GenomeObject) -> void:
-	var index: int = currently_selected_objects.rfind(object) # reverse since draggin boxes adds items in forward order, so removing reverse is faster
-	if index == -1:
-		return
-	currently_selected_objects.remove_at(index)
 
 
 #endregion
