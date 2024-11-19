@@ -2,21 +2,6 @@ extends AbstractCorticalArea
 class_name IPUCorticalArea
 ## Cortical area for processing inputs
 
-const IPU_CORTICAL_ID_TO_CAPABILITY_KEY: Dictionary = {
-	"i__acc" : "accelerometer",
-	"iagpio" : "analog_input",
-	"i__bat" : "battery",
-	"iv00_C" : "camera",
-	"idgpio" : "digital_input",
-	"i__gyr" : "gyro",
-	"i___id" : "id_trainer",
-	"i__inf" : "infrared",
-	"i_pres" : "pressure",
-	"i__pro" : "proximity",
-	"i_spos" : "servo_position",
-	"ii_inf" : "infrared_inverse"
-}
-
 signal cortical_device_count_updated(new_count: int, this_cortical_area: AbstractCorticalArea)
 signal cortical_dimensions_per_device_updated(new_dims: Vector3i, this_cortical_area: AbstractCorticalArea)
 
@@ -28,12 +13,12 @@ var cortical_dimensions_per_device: Vector3i:
 	get: return _cortical_dimensions_per_device
 
 var has_controller_ID: bool:
-	get: return _genome_ID in IPU_CORTICAL_ID_TO_CAPABILITY_KEY
+	get: return _genome_ID in FeagiCore.feagi_local_cache.IPU_cortical_ID_to_capability_key
 
 var controller_ID: StringName:
 	get: 
-		if _genome_ID in IPU_CORTICAL_ID_TO_CAPABILITY_KEY:
-			return IPU_CORTICAL_ID_TO_CAPABILITY_KEY[_genome_ID]
+		if _genome_ID in FeagiCore.feagi_local_cache.IPU_cortical_ID_to_capability_key:
+			return FeagiCore.feagi_local_cache.IPU_cortical_ID_to_capability_key[_genome_ID]
 		else:
 			return &""
 

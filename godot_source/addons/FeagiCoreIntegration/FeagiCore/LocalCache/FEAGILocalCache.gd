@@ -123,7 +123,7 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 		)
 	
-	_set_IPU_OPU_to_capability_key_mappings(ipu_devices["name_to_id_mapping"], opu_devices["name_to_id_mapping"])
+	_set_IPU_OPU_to_capability_key_mappings(dict["IPU"]["name_to_id_mapping"], dict["OPU"]["name_to_id_mapping"])
 	
 	templates_updated.emit()
 
@@ -329,12 +329,12 @@ func _set_IPU_OPU_to_capability_key_mappings(IPU_mappings: Dictionary, OPU_mappi
 	_OPU_cortical_ID_to_capability_key = {}
 	
 	for IPU_ID: String in IPU_mappings.keys():
-		var IPU_cortical_IDs: String = IPU_mappings[IPU_ID]
+		var IPU_cortical_IDs: Array = IPU_mappings[IPU_ID]
 		for IPU_cortical_ID in IPU_cortical_IDs:
 			_IPU_cortical_ID_to_capability_key[IPU_cortical_ID] = IPU_ID
 		
 	for OPU_ID: String in OPU_mappings.keys():
-		var OPU_cortical_IDs: String = OPU_mappings[OPU_ID]
+		var OPU_cortical_IDs: Array = OPU_mappings[OPU_ID]
 		for OPU_cortical_ID in OPU_cortical_IDs:
 			_OPU_cortical_ID_to_capability_key[OPU_cortical_ID] = OPU_ID
 	
