@@ -8,6 +8,7 @@ var _representing_cortical_area: AbstractCorticalArea
 
 
 
+
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 	var input_path: NodePath = NodePath("Inputs")
@@ -24,7 +25,10 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 	_representing_cortical_area.friendly_name_updated.connect(CACHE_updated_cortical_area_name)
 	_representing_cortical_area.coordinates_2D_updated.connect(CACHE_updated_2D_position)
 
+
 func _on_single_left_click() -> void:
+	if _dragged:
+		return
 	(get_parent() as CircuitBuilder).unhighlight_all_nodes()
 	selected = true
 	var to_open: Array[GenomeObject] = [_representing_cortical_area]

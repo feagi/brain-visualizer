@@ -48,6 +48,12 @@ func _gui_input(event):
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 		return
 	if mouse_event.pressed:
+		for node in get_children(): # BAD
+			if !(node is GraphElement):
+				continue
+			if (node as GraphElement).get_global_rect().has_point(get_global_mouse_position()):
+				return
+		
 		if !_mouse_clicked_background:
 			_mouse_clicked_background = true
 			_mouse_clicked_prev_position = get_global_mouse_position()
@@ -293,6 +299,7 @@ func _node_deselect(element: GraphElement) -> void:
 		return
 
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
+	unhighlight_all_nodes()
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
 func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:

@@ -12,6 +12,8 @@ var _recursives: VBoxContainer
 var _inputs: VBoxContainer
 var _outputs: VBoxContainer
 
+var t_v_1: Vector2
+
 func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
@@ -20,7 +22,8 @@ func _gui_input(event):
 		_on_double_left_click()
 		return
 	else:
-		if !mouse_event.is_pressed(): return
+		if !mouse_event.is_pressed(): 
+			return
 		await get_tree().create_timer(0.1).timeout # wait a small moment to ensure we arent dragging
 		if _dragged: return
 		_on_single_left_click()
