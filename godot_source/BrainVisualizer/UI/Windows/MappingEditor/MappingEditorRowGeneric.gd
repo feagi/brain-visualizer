@@ -35,9 +35,9 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 	_PSP.editable = restrictions.allow_changing_PSP
 	_inhibitory.disabled = !restrictions.allow_changing_inhibitory
 	_plasticity.disabled = !restrictions.allow_changing_plasticity
-	_plasticity_constant.editable = restrictions.allow_changing_plasticity_constant
-	_LTP_multiplier.editable = restrictions.allow_changing_LTP
-	_LTD_multiplier.editable = restrictions.allow_changing_LTD
+	_plasticity_constant.editable = false # these 3 are false since originally plasticity is off
+	_LTP_multiplier.editable = false
+	_LTD_multiplier.editable = false
 
 func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)

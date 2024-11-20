@@ -116,7 +116,7 @@ func _source_button_picked(genome_object: GenomeObject) -> void:
 	#_source_button.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 
 func _destination_button_picked(genome_object: GenomeObject) -> void:
-	set_ends(_destination_button.current_selected, genome_object)
+	set_ends(_source_button.current_selected, genome_object)
 	#_destination_button.change_starting_exploring_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 
 func _import_partial_mapping(mapping: SingleMappingDefinition) -> void:
