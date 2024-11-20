@@ -11,6 +11,11 @@
 size_flags_vertical = 0
 script = ExtResource("1_a7y6g")
 
+[node name="Label9" type="Label" parent="."]
+custom_minimum_size = Vector2(1300, 0)
+layout_mode = 2
+text = "Established Mappings"
+
 [node name="labels_box" type="HBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 0

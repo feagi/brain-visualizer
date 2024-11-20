@@ -48,7 +48,13 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_plasticity_constant.current_float = mapping.plasticity_constant
 	_LTP_multiplier.current_float = mapping.LTP_multiplier
 	_LTD_multiplier.current_float = mapping.LTD_multiplier
-	_on_user_toggle_plasticity(mapping.is_plastic)
+	
+	if _restrictions:
+		_plasticity_constant.editable = mapping.is_plastic and _restrictions.allow_changing_plasticity_constant
+		_LTP_multiplier.editable = mapping.is_plastic and _restrictions.allow_changing_plasticity_constant
+		_LTD_multiplier.editable = mapping.is_plastic and _restrictions.allow_changing_plasticity_constant
+	else:
+		_on_user_toggle_plasticity(mapping.is_plastic)
 
 func export_mapping() -> SingleMappingDefinition:
 	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
