@@ -11,6 +11,7 @@ enum POSSIBLE_STATES {
 	IDLE
 }
 
+
 #@export var style_incomplete: StyleBoxFlat
 #@export var style_waiting: StyleBoxFlat
 #@export var style_complete: StyleBoxFlat
@@ -59,7 +60,7 @@ func _ready() -> void:
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
 	
-	BV.UI.user_selected_single_cortical_area.connect(on_user_select_cortical_area)
+	BV.BM.user_clicked_cortical_area.connect(on_user_select_cortical_area)
 	
 	_step1_panel.theme_type_variation = "PanelContainer_QC_incomplete"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_incomplete"

@@ -11,7 +11,6 @@ func _on_visible_on_screen_notifier_3d_screen_entered():
 	print(get_node("."), " entered!")
 
 
-
 # Comment this out for shader future to resume
 #func _on_area_3d_mouse_entered():
 #	var material = mesh.surface_get_material(0)
@@ -58,7 +57,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
 		var selected: Array[GenomeObject] = [cortical_area]
 		BV.WM.spawn_quick_cortical_menu(selected)
-
+		get_parent().user_clicked_cortical_area.emit(cortical_area)
 		
 		
 
