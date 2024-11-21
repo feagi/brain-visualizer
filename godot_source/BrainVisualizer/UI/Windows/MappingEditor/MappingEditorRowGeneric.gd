@@ -30,6 +30,9 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 	_defaults = defaults
 	if restrictions.has_restricted_morphologies():
 		_morphologies.overwrite_morphologies(restrictions.get_morphologies_restricted_to())
+	if restrictions.has_disallowed_morphologies():
+		for disallowed in restrictions.get_morphologies_disallowed():
+			_morphologies.remove_morphology(disallowed)
 	_morphologies.set_selected_morphology(_defaults.try_get_default_morphology())
 	_scalar.editable = restrictions.allow_changing_scalar
 	_PSP.editable = restrictions.allow_changing_PSP
