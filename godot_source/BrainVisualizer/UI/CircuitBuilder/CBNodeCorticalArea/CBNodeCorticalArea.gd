@@ -24,15 +24,15 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 	
 	_representing_cortical_area.friendly_name_updated.connect(CACHE_updated_cortical_area_name)
 	_representing_cortical_area.coordinates_2D_updated.connect(CACHE_updated_2D_position)
+	_representing_cortical_area.UI_highlighted_state_updated.connect(func(is_highlighted: bool): if is_highlighted != selected: selected = is_highlighted)
 
 
 func _on_single_left_click() -> void:
 	if _dragged:
 		return
-	(get_parent() as CircuitBuilder).unhighlight_all_nodes()
-	selected = true
-	var to_open: Array[GenomeObject] = [_representing_cortical_area]
-	BV.WM.spawn_quick_cortical_menu(to_open)
+	BV.UI.selection_system.clear_all_highlighted()
+	BV.UI.selection_system.add_to_highlighted(_representing_cortical_area)
+	BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK)
 
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
 #region CACHE Events and responses

@@ -56,9 +56,10 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 
 		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
 		var selected: Array[GenomeObject] = [cortical_area]
-		BV.WM.spawn_quick_cortical_menu(selected)
-		get_parent().user_clicked_cortical_area.emit(cortical_area)
-		
+		BV.UI.selection_system.clear_all_highlighted()
+		BV.UI.selection_system.add_to_highlighted(cortical_area)
+		BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_BRAIN_MONITOR)
+		BV.UI.selection_system.cortical_area_voxel_clicked(cortical_area, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
 		
 
 func _on_area_3d_mouse_entered():

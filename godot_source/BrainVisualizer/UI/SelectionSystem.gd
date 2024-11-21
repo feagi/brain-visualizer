@@ -38,6 +38,20 @@ signal objects_selection_event_called(objects: Array[GenomeObject], context: SOU
 signal cortical_area_voxel_selected(cortical_area_source: AbstractCorticalArea, voxel_coordinate: Vector3i)
 
 var _highlighted_genome_objects: Array[GenomeObject] = []
+var _override_use_cases: Array[OVERRIDE_USECASE] = []
+
+func add_override_usecase(usecase: OVERRIDE_USECASE) -> void:
+	if usecase in _override_use_cases:
+		#ignore
+		return
+	_override_use_cases.append(usecase)
+
+func remove_override_usecase(usecase: OVERRIDE_USECASE) -> void:
+	var index: int = _override_use_cases.find(usecase)
+	if index == -1:
+		#ignore
+		return
+	_override_use_cases.remove_at(index)
 
 func clear_all_highlighted() -> void:
 	for object in _highlighted_genome_objects:
@@ -80,8 +94,8 @@ func remove_from_highlighted(genome_object: GenomeObject) -> ERROR:
 	return ERROR.NONE
 
 ## Generic object selection function
-func select_objects(objects_to_select: Array[GenomeObject] = _highlighted_genome_objects, context: SOURCE_CONTEXT = SOURCE_CONTEXT.UNKNOWN, override_usecases: Array[OVERRIDE_USECASE] = DEFAULT_OVERRIDES) -> void:
-	objects_selection_event_called.emit(objects_to_select, context, override_usecases)
+func select_objects(context: SOURCE_CONTEXT = SOURCE_CONTEXT.UNKNOWN, objects_to_select: Array[GenomeObject] = _highlighted_genome_objects) -> void:
+	objects_selection_event_called.emit(objects_to_select, context, _override_use_cases)
 
 func cortical_area_voxel_clicked(cortical_area_source: AbstractCorticalArea, voxel_coordinate: Vector3i) -> void:
 	cortical_area_voxel_selected.emit(cortical_area_source, voxel_coordinate)

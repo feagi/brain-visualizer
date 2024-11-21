@@ -2,8 +2,6 @@ extends Node3D
 
 const camera_snap_offset: Vector3 = Vector3(0.0, 15.0, -25.0)
 
-signal user_clicked_cortical_area(area: AbstractCorticalArea)
-
 var shader_material # Wait for shader 
 var global_name_list = {}
 

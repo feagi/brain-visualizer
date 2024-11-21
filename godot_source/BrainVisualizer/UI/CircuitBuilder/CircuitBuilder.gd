@@ -41,32 +41,8 @@ func _ready():
 	node_selected.connect(_node_select)
 	node_deselected.connect(_node_deselect)
 
-func _gui_input(event):
-	if !(event is InputEventMouseButton):
-		return
-	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
-		return
-	if mouse_event.pressed:
-		for node in get_children(): # BAD
-			if !(node is GraphElement):
-				continue
-			if (node as GraphElement).get_global_rect().has_point(get_global_mouse_position()):
-				return
-		
-		if !_mouse_clicked_background:
-			_mouse_clicked_background = true
-			_mouse_clicked_prev_position = get_global_mouse_position()
-		return
-	else:
-		if _mouse_clicked_background:
-			_mouse_clicked_background = false
-			if (_mouse_clicked_prev_position - get_global_mouse_position()).length() > 1.0:
-				print("drag box detected!")
-				if len(selected_objects) == 0:
-					return
-				BV.WM.spawn_quick_cortical_menu(selected_objects)
-				
+
+			
 
 
 
@@ -112,7 +88,7 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	if (area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
 		return
-	unhighlight_all_nodes()
+	BV.UI.selection_system.clear_all_highlighted()
 	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
 	_cortical_nodes[area.cortical_ID] = cortical_node
 	add_child(cortical_node)
@@ -123,7 +99,7 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
-	unhighlight_all_nodes()
+	BV.UI.selection_system.clear_all_highlighted()
 	_cortical_nodes[area.cortical_ID].queue_free()
 	_cortical_nodes.erase(area.cortical_ID)
 	
@@ -131,7 +107,7 @@ func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	if (subregion.region_ID in subregion_nodes.keys()):
 		push_error("UI CB: Unable to add region %s node when a node of it already exists!!" % subregion.region_ID)
 		return
-	unhighlight_all_nodes()
+	BV.UI.selection_system.clear_all_highlighted()
 	var region_node: CBNodeRegion = PREFAB_NODE_BRAINREGION.instantiate()
 	_subregion_nodes[subregion.region_ID] = region_node
 	add_child(region_node)
@@ -149,7 +125,7 @@ func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.region_ID in subregion_nodes.keys()):
 		push_error("UI CB: Unable to find region %s to remove node of!" % subregion.region_ID)
 		return
-	unhighlight_all_nodes()
+	BV.UI.selection_system.clear_all_highlighted()
 	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
 	subregion_nodes[subregion.region_ID].queue_free()
 	subregion_nodes.erase(subregion.region_ID)
@@ -261,45 +237,53 @@ func _CACHE_link_region_output_open_added(region_node: CBNodeRegion, link: Conne
 #region User Interactions
 signal user_request_viewing_subregion(region: BrainRegion)
 
-var selected_objects: Array[GenomeObject] = []
+func _gui_input(event):
+	if !(event is InputEventMouseButton):
+		return
+	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if mouse_event.pressed:
+		for node in get_children(): # BAD
+			if !(node is GraphElement):
+				continue
+			if (node as GraphElement).get_global_rect().has_point(get_global_mouse_position()):
+				return
+		
+		if !_mouse_clicked_background:
+			_mouse_clicked_background = true
+			_mouse_clicked_prev_position = get_global_mouse_position()
+		return
+	else:
+		if _mouse_clicked_background:
+			_mouse_clicked_background = false
+			if (_mouse_clicked_prev_position - get_global_mouse_position()).length() > 1.0:
+				print("drag box detected!")
+				BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG)
 
-
-
-func unhighlight_all_nodes() -> void:
-	for node in _cortical_nodes.values():
-		node.selected = false
-	for node in _subregion_nodes.values():
-		node.selected = false
-	selected_objects = []
 
 func _node_select(element: GraphElement) -> void:
 	if element is CBNodeRegion:
 		print("CB Selected " + (element as CBNodeRegion).representing_region.friendly_name)
-		selected_objects.append(element.representing_region)
-		
+		BV.UI.selection_system.add_to_highlighted((element as CBNodeRegion).representing_region)
 		return
 	if element is CBNodeCorticalArea:
 		print("CB Selected " + (element as CBNodeCorticalArea).representing_cortical_area.friendly_name)
-		selected_objects.append(element.representing_cortical_area)
+		BV.UI.selection_system.add_to_highlighted((element as CBNodeCorticalArea).representing_cortical_area)
 		return
 
 func _node_deselect(element: GraphElement) -> void:
 	if element is CBNodeRegion:
 		print("CB Deselected " + (element as CBNodeRegion).representing_region.friendly_name)
-		var index: int = selected_objects.find(element.representing_region)
-		if index != -1:
-			selected_objects.remove_at(index)
-		
+		BV.UI.selection_system.remove_from_highlighted((element as CBNodeRegion).representing_region)
 		return
 	if element is CBNodeCorticalArea:
 		print("CB Deselected " + (element as CBNodeCorticalArea).representing_cortical_area.friendly_name)
-		var index: int = selected_objects.find(element.representing_cortical_area)
-		if index != -1:
-			selected_objects.remove_at(index)
+		BV.UI.selection_system.remove_from_highlighted((element as CBNodeCorticalArea).representing_cortical_area)
 		return
 
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
-	unhighlight_all_nodes()
+	BV.UI.selection_system.clear_all_highlighted()
 	user_request_viewing_subregion.emit(region_node.representing_region)
 
 func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:

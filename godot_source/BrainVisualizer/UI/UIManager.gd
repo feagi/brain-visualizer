@@ -19,6 +19,9 @@ var top_bar: TopBar:
 	get: return _top_bar
 var root_UI_view: UIView:
 	get: return _root_UI_view
+var selection_system: SelectionSystem:
+	get: return _selection_system
+	
 
 
 var _top_bar: TopBar
@@ -27,6 +30,7 @@ var _window_manager: WindowManager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
+var _selection_system: SelectionSystem
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -41,6 +45,7 @@ func _ready():
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
+	_selection_system = SelectionSystem.new()
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -55,6 +60,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
+	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 
 	
@@ -170,6 +176,9 @@ func show_developer_menu():
 func toggle_loading_screen(is_on: bool) -> void:
 	$TempLoadingScreen.visible = is_on
 
+func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
+	if len(override_usecases) == 0:
+		BV.WM.spawn_quick_cortical_menu(objects)
 
 #endregion
 
