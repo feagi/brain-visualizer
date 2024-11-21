@@ -48,3 +48,5 @@ func _button_update_visabilities() -> void:
 
 func _press_cortical(cortical_area: AbstractCorticalArea) -> void:
 	BV.UI.snap_camera_to_cortical_area(cortical_area)
+	BV.UI.selection_system.clear_all_highlighted()
+	BV.UI.selection_system.add_to_highlighted(cortical_area)
