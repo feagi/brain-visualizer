@@ -15,6 +15,7 @@ var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not
 
 func _ready():
 	super()
+	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
 
 	
 
@@ -66,7 +67,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	# Establish connections from core to the UI elements
 	#TODO
-	
+
+func close_window() -> void:
+	super()
+	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
+
 func _refresh_all_relevant() -> void:
 	_refresh_from_cache_summary() # all cortical areas have these
 	_refresh_from_cache_monitoring()

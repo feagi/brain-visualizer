@@ -177,8 +177,12 @@ func toggle_loading_screen(is_on: bool) -> void:
 	$TempLoadingScreen.visible = is_on
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
-	if len(override_usecases) == 0:
-		BV.WM.spawn_quick_cortical_menu(objects)
+	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+		_window_manager.spawn_quick_cortical_menu(objects)
+	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES in override_usecases:
+		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
+		if len(cortical_areas) != 0:
+			_window_manager.spawn_adv_cortical_properties(cortical_areas)
 
 #endregion
 
