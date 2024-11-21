@@ -12,6 +12,7 @@ signal output_link_added(link: ConnectionChainLink)
 signal input_link_removed(link: ConnectionChainLink)
 signal output_link_removed(link: ConnectionChainLink)
 signal about_to_be_deleted() # Each inherited class calls this in its own way
+signal highlighted_state_updated(is_highlighted: bool) ## UI use, for letting UIs know if this object is highlighted or not
 
 enum ARRAY_MAKEUP {
 	SINGLE_CORTICAL_AREA,
@@ -57,6 +58,9 @@ var input_chain_links: Array[ConnectionChainLink]:
 var output_chain_links: Array[ConnectionChainLink]:
 	get: return _output_chain_links
 
+var is_highlighted: bool:
+	get: return _is_highlighted
+
 var _genome_ID: StringName
 var _friendly_name: StringName
 var _coordinates_2D: Vector2i
@@ -65,6 +69,7 @@ var _dimensions_3D: Vector3i
 var _parent_region: BrainRegion
 var _input_chain_links: Array[ConnectionChainLink]
 var _output_chain_links: Array[ConnectionChainLink]
+var _is_highlighted: bool = false
 
 #region Static Functions
 
@@ -233,6 +238,12 @@ func FEAGI_output_remove_link(link: ConnectionChainLink) -> void:
 ##
 func is_sibling(possible_sibling: GenomeObject) -> bool:
 	return GenomeObject.are_siblings(self, possible_sibling)
+
+func set_highlighted_state(highlighted: bool) -> void:
+	if highlighted == _is_highlighted:
+		return
+	_is_highlighted = highlighted
+	highlighted_state_updated.emit(highlighted)
 
 func _init_self_to_brain_region(parent_region: BrainRegion) -> void:
 	_parent_region = parent_region
