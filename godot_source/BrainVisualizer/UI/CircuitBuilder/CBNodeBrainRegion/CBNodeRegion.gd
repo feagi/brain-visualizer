@@ -21,6 +21,7 @@ func setup(region_ref: BrainRegion) -> void:
 	
 	_representing_region.friendly_name_updated.connect(CACHE_updated_region_name)
 	_representing_region.coordinates_2D_updated.connect(CACHE_updated_2D_position)
+	_representing_region.UI_highlighted_state_updated.connect(func(is_highlighted: bool): if is_highlighted != selected: selected = is_highlighted)
 	# NOTE: Deletion of the of the region (node) is handled by CB
 
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
@@ -40,6 +41,12 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 #endregion
 
 #region User Interactions
+
+func _on_single_left_click() -> void:
+	BV.UI.selection_system.clear_all_highlighted()
+	BV.UI.selection_system.add_to_highlighted(_representing_region)
+	BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK)
+
 
 
 func _on_double_left_click() -> void:

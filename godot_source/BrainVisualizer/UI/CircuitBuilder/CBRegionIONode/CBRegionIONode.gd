@@ -37,6 +37,7 @@ func setup(outside_object: GenomeObject, inside_object: GenomeObject, is_region_
 	outside_object.friendly_name_updated.connect(_outside_name_updated)
 	outside_object.parent_region_updated.connect(_path_updated)
 	inside_object.parent_region_updated.connect(_path_updated)
+	_toggle_path_button(true)
 	
 	
 

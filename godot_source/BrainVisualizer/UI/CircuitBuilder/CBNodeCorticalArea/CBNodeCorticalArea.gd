@@ -7,13 +7,7 @@ var representing_cortical_area: AbstractCorticalArea:
 var _representing_cortical_area: AbstractCorticalArea
 
 
-#TODO TEMP
-# Announce if cortical area was selected with one click and open cortical properties panel on double click
-#func _gui_input(event):
-#	if !(event is InputEventMouseButton): return
-#	var mouse_event: InputEventMouseButton = event
-#	if mouse_event.is_pressed(): return
-#	if mouse_event.button_index != MOUSE_BUTTON_LEFT: return
+
 
 ## Called by CB right after instantiation
 func setup(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -30,7 +24,16 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 	
 	_representing_cortical_area.friendly_name_updated.connect(CACHE_updated_cortical_area_name)
 	_representing_cortical_area.coordinates_2D_updated.connect(CACHE_updated_2D_position)
-	
+	_representing_cortical_area.UI_highlighted_state_updated.connect(func(is_highlighted: bool): if is_highlighted != selected: selected = is_highlighted)
+
+
+func _on_single_left_click() -> void:
+	if _dragged:
+		return
+	BV.UI.selection_system.clear_all_highlighted()
+	BV.UI.selection_system.add_to_highlighted(_representing_cortical_area)
+	BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK)
+
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
 #region CACHE Events and responses
 

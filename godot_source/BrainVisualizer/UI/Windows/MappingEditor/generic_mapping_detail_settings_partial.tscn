@@ -7,6 +7,10 @@
 size_flags_vertical = 0
 script = ExtResource("1_5ifud")
 
+[node name="suggested" type="Label" parent="."]
+layout_mode = 2
+text = "Suggested Mappings"
+
 [node name="ScrollSectionGeneric" parent="." instance=ExtResource("6_aedcw")]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2

@@ -48,7 +48,7 @@ func generate_cortical_area(cortical_area_data : AbstractCorticalArea):
 	var viewport = textbox.get_node("SubViewport")
 	textbox.scale = Vector3(1,1,1)
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions_3D.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions_3D.y, -1 * cortical_area_data.dimensions_3D.z - cortical_area_data.coordinates_3D.z)
-	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name))
+	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name.left(15)))
 	textbox.set_texture(viewport.get_texture())
 	textbox.set_name(cortical_area_data.cortical_ID + str("_textbox"))
 	if not textbox.get_name() in global_name_list:
@@ -110,9 +110,40 @@ func test(stored_value):
 		var new_position = Transform3D().translated(Vector3(voxel_data[0], voxel_data[1], -voxel_data[2]))
 		$red_voxel.multimesh.set_instance_transform(flag, new_position)
 
-func notate_highlighted_neuron(cortical_area_name: StringName, local_neuron_coordinate: Vector3i) -> void:
+func notate_highlighted_neuron(cortical_area: AbstractCorticalArea, local_neuron_coordinate: Vector3i) -> void:
 	var coordLabel: Label = $coordlabel
-	coordLabel.text = cortical_area_name + " " + str(local_neuron_coordinate)
+	var text: String = cortical_area.friendly_name + " " + str(local_neuron_coordinate) + " "
+	if cortical_area is IPUCorticalArea:
+		var device_index: int = floori((local_neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
+		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
+		for appending in appending_definitions:
+			text += "| " + appending
+	elif cortical_area is OPUCorticalArea:
+		var device_index: int = floori((local_neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
+		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
+		for appending in appending_definitions:
+			text += "| " + appending
+	
+	if cortical_area.cortical_ID == "o_mctl":
+		var device_local_coordinate: Vector3i = Vector3i(local_neuron_coordinate.x % 4, local_neuron_coordinate.y % 3, 0)
+		var direction: String
+		match(device_local_coordinate):
+			Vector3i(0,0,0): direction = " - Move Left"
+			Vector3i(1,0,0): direction = " - Move Up"
+			Vector3i(2,0,0): direction = " - Move Down"
+			Vector3i(3,0,0): direction = " - Move Right"
+			
+			Vector3i(0,1,0): direction = " - Yaw Left"
+			Vector3i(1,1,0): direction = " - Move Forward"
+			Vector3i(2,1,0): direction = " - Move Backward"
+			Vector3i(3,1,0): direction = " - Yaw Right"
+			
+			Vector3i(0,2,0): direction = " - Roll Left"
+			Vector3i(1,2,0): direction = " - Pitch Forward"
+			Vector3i(2,2,0): direction = " - Pitch Backward"
+			Vector3i(3,2,0): direction = " - Roll Right"
+		text += direction
+	coordLabel.text = text
 	
 func _clear_node_name_list(node_name):
 	"""
@@ -174,8 +205,8 @@ func delete_example():
 #why
 func check_cortical(cortical_area_data : AbstractCorticalArea):
 	# TODO: This is dumb
-	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label")
-	label.text = cortical_area_data.friendly_name # What is this even doing here? 
+	var label: Label = get_node(cortical_area_data.cortical_ID + "_textbox/SubViewport/Label") # WHY ARE WE USING SUB VIEW PORTS!?
+	label.text = cortical_area_data.friendly_name.left(15) # What is this even doing here? 
 	if global_name_list: # Pretty sure this is already exist in cache. We need to replace this with current list.
 		var coordinate_3D = global_name_list[cortical_area_data.cortical_ID][0].slice(1, 4)
 		var dimension = global_name_list[cortical_area_data.cortical_ID][0].slice(4, 8)

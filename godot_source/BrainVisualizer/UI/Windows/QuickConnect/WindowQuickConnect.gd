@@ -11,6 +11,7 @@ enum POSSIBLE_STATES {
 	IDLE
 }
 
+
 #@export var style_incomplete: StyleBoxFlat
 #@export var style_waiting: StyleBoxFlat
 #@export var style_complete: StyleBoxFlat
@@ -59,7 +60,10 @@ func _ready() -> void:
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
 	
-	BV.UI.user_selected_single_cortical_area.connect(on_user_select_cortical_area)
+	
+	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
+	BV.UI.selection_system.objects_selection_event_called.connect(_on_user_selection)
+	
 	
 	_step1_panel.theme_type_variation = "PanelContainer_QC_incomplete"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_incomplete"
@@ -71,12 +75,18 @@ func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
 	if cortical_source_if_picked != null:
 		_set_source(cortical_source_if_picked)
 
-func on_user_select_cortical_area(cortial_area: AbstractCorticalArea) -> void:
+func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, _override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
+	if len(objects) != 1:
+		return
+	if objects[0] is BrainRegion:
+		return
+	var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
+	
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:
-			_set_source(cortial_area)
+			_set_source(cortical_area)
 		POSSIBLE_STATES.DESTINATION:
-			_set_destination(cortial_area)
+			_set_destination(cortical_area)
 		_:
 			return
 
@@ -199,3 +209,6 @@ func _set_completion_state():
 	_finished_selecting = true
 	_step4_button.visible = true
 		
+func close_window():
+	super()
+	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)

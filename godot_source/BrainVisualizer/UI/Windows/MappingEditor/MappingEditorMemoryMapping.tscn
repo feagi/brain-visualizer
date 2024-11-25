@@ -6,6 +6,10 @@
 [node name="MappingEditorMemoryMapping" type="VBoxContainer"]
 script = ExtResource("1_evrjv")
 
+[node name="label" type="Label" parent="."]
+layout_mode = 2
+text = "Memory Mapping Settings"
+
 [node name="labels_box" type="HBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 0

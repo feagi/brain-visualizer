@@ -123,6 +123,8 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 		)
 	
+	_set_IPU_OPU_to_capability_key_mappings(dict["IPU"]["name_to_id_mapping"], dict["OPU"]["name_to_id_mapping"])
+	
 	templates_updated.emit()
 
 func clear_templates() -> void:
@@ -289,16 +291,53 @@ func set_health_dead() -> void:
 #region Other
 signal plasticity_queue_depth_changed(new_val: int)
 
+
+
 var plasticity_queue_depth: int:
 	get: return _plasticity_queue_depth
 
+var configuration_jsons: Array[Dictionary]:
+	get: return _configuration_jsons
+
+var IPU_cortical_ID_to_capability_key: Dictionary:
+	get: return _IPU_cortical_ID_to_capability_key
+
+var OPU_cortical_ID_to_capability_key: Dictionary:
+	get: return _OPU_cortical_ID_to_capability_key
+
 var _plasticity_queue_depth: int = 3
+var _configuration_jsons: Array[Dictionary] = []
+var _OPU_cortical_ID_to_capability_key: Dictionary = {}
+var _IPU_cortical_ID_to_capability_key: Dictionary = {}
 
 func update_plasticity_queue_depth(new_depth: int) -> void:
 	if new_depth == _plasticity_queue_depth:
 		return
 	_plasticity_queue_depth = new_depth
 	plasticity_queue_depth_changed.emit(new_depth)
+
+func clear_configuration_jsons() -> void:
+	_configuration_jsons = []
+
+## Add a configuration json to the cache. Dictionary should be the dictionary holding inputs / output keys
+func append_configuration_json(configuration: Dictionary) -> void:
+	_configuration_jsons.append(configuration)
+
+## given the name_to_ID_mapping for IPU/OPU from FEAGI, store it in cache for later use
+func _set_IPU_OPU_to_capability_key_mappings(IPU_mappings: Dictionary, OPU_mappings: Dictionary) -> void:
+	_IPU_cortical_ID_to_capability_key = {}
+	_OPU_cortical_ID_to_capability_key = {}
+	
+	for IPU_ID: String in IPU_mappings.keys():
+		var IPU_cortical_IDs: Array = IPU_mappings[IPU_ID]
+		for IPU_cortical_ID in IPU_cortical_IDs:
+			_IPU_cortical_ID_to_capability_key[IPU_cortical_ID] = IPU_ID
+		
+	for OPU_ID: String in OPU_mappings.keys():
+		var OPU_cortical_IDs: Array = OPU_mappings[OPU_ID]
+		for OPU_cortical_ID in OPU_cortical_IDs:
+			_OPU_cortical_ID_to_capability_key[OPU_cortical_ID] = OPU_ID
+	
 
 #endregion
 

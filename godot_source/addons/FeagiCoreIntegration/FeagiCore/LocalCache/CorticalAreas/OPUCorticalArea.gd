@@ -11,7 +11,15 @@ var device_count: int:
 var cortical_dimensions_per_device: Vector3i:
 	get: return _cortical_dimensions_per_device
 
+var has_controller_ID: bool:
+	get: return _genome_ID in FeagiCore.feagi_local_cache.OPU_cortical_ID_to_capability_key
 
+var controller_ID: StringName:
+	get: 
+		if _genome_ID in FeagiCore.feagi_local_cache.OPU_cortical_ID_to_capability_key:
+			return FeagiCore.feagi_local_cache.OPU_cortical_ID_to_capability_key[_genome_ID]
+		else:
+			return &""
 
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, visiblity: bool = true):
 	var parent_region: BrainRegion = null
@@ -46,6 +54,26 @@ func FEAGI_set_device_count(new_count: int) -> void:
 func FEAGI_set_cortical_dimensions_per_device(new_dimensions: Vector3i) -> void:
 	_cortical_dimensions_per_device = new_dimensions
 	cortical_dimensions_per_device_updated.emit(new_dimensions, self)
+
+## Given an array of configurator capability dictionaries (recieved from agent properties), get all custom names of this cortical area
+func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index: int) -> Array[StringName]:
+	if !has_controller_ID:
+		return []
+	var output: Array[StringName] = []
+	for configurator_capability in configurator_capabilities:
+		if !configurator_capability.has("output"):
+			continue
+		var configurator_output: Dictionary = configurator_capability["output"]
+		if !configurator_output.has(str(controller_ID)):
+			continue
+		var devices: Dictionary = configurator_output[controller_ID]
+		for device: Dictionary in devices.values():
+			if !device.has("feagi_index"):
+				continue
+			if str(device["feagi_index"]).to_int() != feagi_index:
+				continue
+			output.append((str(configurator_capability["agent_ID"]) + ": " + str(device["custom_name"])))
+	return output
 
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU

@@ -25,6 +25,7 @@ func reload_genome() -> FeagiRequestOutput:
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
 	var region_request:APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_region_regionsMembers)
 	var templates_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalTypes)
+	var agent_list_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_list)
 	
 	# Get Cortical Area Data
 	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
@@ -80,6 +81,30 @@ func reload_genome() -> FeagiRequestOutput:
 	get_supression_threshold()
 	get_skip_rate()
 	get_plasticity_queue_depth()
+	
+	# Get agent list
+	FeagiCore.feagi_local_cache.clear_configuration_jsons()
+	var agent_list_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_list_request)
+	await agent_list_worker.worker_done
+	var agent_list_data: FeagiRequestOutput = agent_list_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(agent_list_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI agent summary data!")
+		return agent_list_data
+	var agents: Array = agent_list_data.decode_response_as_array()
+	for agent in agents:
+		if str(agent).begins_with("bv_"):
+			continue
+		var agent_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_properties + "?agent_id=" + str(agent))
+		var agent_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_request)
+		await agent_worker.worker_done
+		var agent_data: FeagiRequestOutput = agent_worker.retrieve_output_and_close()
+		if _return_if_HTTP_failed_and_automatically_handle(agent_data):
+			push_error("unable to return agent data for %s!" % str(agent))
+			return agent_data
+		var agent_dict: Dictionary = agent_data.decode_response_as_dict()
+		agent_dict["capabilities"]["agent_ID"] = str(agent)
+		FeagiCore.feagi_local_cache.append_configuration_json(agent_dict["capabilities"])
+	
 	
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	

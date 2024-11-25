@@ -9,20 +9,19 @@ script = ExtResource("1_y5wpv")
 cortical_source_type = 5
 cortical_destination_type = 2
 name_of_default_morphology = &"memory"
-default_name = 1
 
 [sub_resource type="Resource" id="Resource_yns2e"]
 script = ExtResource("1_y5wpv")
 cortical_source_type = 5
 cortical_destination_type = 5
 name_of_default_morphology = &"projector"
-default_name = 0
 
 [sub_resource type="Resource" id="Resource_c4o8i"]
 script = ExtResource("2_ojjbj")
 cortical_source_type = 2
 cortical_destination_type = 5
 restricted_to_morphology_of_names = Array[StringName]([&"projector"])
+disallowed_morphology_names = Array[StringName]([])
 max_number_mappings = -1
 allow_changing_scalar = false
 allow_changing_PSP = true
@@ -31,13 +30,13 @@ allow_changing_plasticity = true
 allow_changing_plasticity_constant = true
 allow_changing_LTP = true
 allow_changing_LTD = true
-restriction_name = 0
 
 [sub_resource type="Resource" id="Resource_4dtq8"]
 script = ExtResource("2_ojjbj")
 cortical_source_type = 5
 cortical_destination_type = 2
 restricted_to_morphology_of_names = Array[StringName]([&"memory"])
+disallowed_morphology_names = Array[StringName]([])
 max_number_mappings = 1
 allow_changing_scalar = false
 allow_changing_PSP = false
@@ -46,13 +45,13 @@ allow_changing_plasticity = false
 allow_changing_plasticity_constant = false
 allow_changing_LTP = false
 allow_changing_LTD = false
-restriction_name = 1
 
 [sub_resource type="Resource" id="Resource_alfs1"]
 script = ExtResource("2_ojjbj")
 cortical_source_type = 5
 cortical_destination_type = 5
 restricted_to_morphology_of_names = Array[StringName]([])
+disallowed_morphology_names = Array[StringName]([&"memory"])
 max_number_mappings = -1
 allow_changing_scalar = true
 allow_changing_PSP = true
@@ -61,7 +60,6 @@ allow_changing_plasticity = true
 allow_changing_plasticity_constant = true
 allow_changing_LTP = true
 allow_changing_LTD = true
-restriction_name = 0
 
 [resource]
 script = ExtResource("1_qysk5")

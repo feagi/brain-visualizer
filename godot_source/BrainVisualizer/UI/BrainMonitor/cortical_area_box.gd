@@ -11,7 +11,6 @@ func _on_visible_on_screen_notifier_3d_screen_entered():
 	print(get_node("."), " entered!")
 
 
-
 # Comment this out for shader future to resume
 #func _on_area_3d_mouse_entered():
 #	var material = mesh.surface_get_material(0)
@@ -25,7 +24,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	if event is InputEventMouseMotion:
 		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
 		if cortical_area.neuron_count < 999:
-			BV.BM.notate_highlighted_neuron(cortical_area.friendly_name, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
+			BV.BM.notate_highlighted_neuron(cortical_area, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
 	
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift"):
 		
@@ -56,9 +55,11 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	elif event is InputEventMouseButton and event.pressed and event.button_index== MOUSE_BUTTON_LEFT:
 
 		var cortical_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[name_fetch[0]]
-		BV.UI.user_selected_single_cortical_area_independently(cortical_area)
-
-		
+		var selected: Array[GenomeObject] = [cortical_area]
+		BV.UI.selection_system.clear_all_highlighted()
+		BV.UI.selection_system.add_to_highlighted(cortical_area)
+		BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_BRAIN_MONITOR)
+		BV.UI.selection_system.cortical_area_voxel_clicked(cortical_area, (Vector3i(transform.origin) * Vector3i(1,1,-1)) - cortical_area.coordinates_3D)
 		
 
 func _on_area_3d_mouse_entered():

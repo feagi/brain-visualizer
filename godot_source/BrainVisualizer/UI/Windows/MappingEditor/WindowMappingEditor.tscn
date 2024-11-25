@@ -46,24 +46,28 @@ expand_mode = 1
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(1300, 0)
+[node name="Invalid" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
-text = "Established Mappings"
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Invalid"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Please ensure both ends of the connection are valid!"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="MappingEditorMemoryMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_vr6mc")]
 visible = false
 layout_mode = 2
 
 [node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
+visible = false
 custom_minimum_size = Vector2(1300, 0)
 layout_mode = 2
 
-[node name="suggested" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
-layout_mode = 2
-text = "Suggested Mappings"
-
 [node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_yr7ns")]
+visible = false
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
@@ -71,10 +75,12 @@ layout_mode = 2
 alignment = 2
 
 [node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = " Set Mapping "
 
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Source" to="." method="_source_button_picked"]
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Destination" to="." method="_destination_button_picked"]
+[connection signal="import_mapping_hint" from="WindowPanel/WindowMargin/WindowInternals/GenericMappingDetailSettingsPartial" to="." method="_import_partial_mapping"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Button" to="." method="_user_pressed_set_mappings"]

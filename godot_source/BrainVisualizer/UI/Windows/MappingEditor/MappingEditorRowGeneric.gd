@@ -30,14 +30,17 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 	_defaults = defaults
 	if restrictions.has_restricted_morphologies():
 		_morphologies.overwrite_morphologies(restrictions.get_morphologies_restricted_to())
+	if restrictions.has_disallowed_morphologies():
+		for disallowed in restrictions.get_morphologies_disallowed():
+			_morphologies.remove_morphology(disallowed)
 	_morphologies.set_selected_morphology(_defaults.try_get_default_morphology())
 	_scalar.editable = restrictions.allow_changing_scalar
 	_PSP.editable = restrictions.allow_changing_PSP
 	_inhibitory.disabled = !restrictions.allow_changing_inhibitory
 	_plasticity.disabled = !restrictions.allow_changing_plasticity
-	_plasticity_constant.editable = restrictions.allow_changing_plasticity_constant
-	_LTP_multiplier.editable = restrictions.allow_changing_LTP
-	_LTD_multiplier.editable = restrictions.allow_changing_LTD
+	_plasticity_constant.editable = false # these 3 are false since originally plasticity is off
+	_LTP_multiplier.editable = false
+	_LTD_multiplier.editable = false
 
 func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)
@@ -48,7 +51,13 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_plasticity_constant.current_float = mapping.plasticity_constant
 	_LTP_multiplier.current_float = mapping.LTP_multiplier
 	_LTD_multiplier.current_float = mapping.LTD_multiplier
-	_on_user_toggle_plasticity(mapping.is_plastic)
+	
+	if _restrictions:
+		_plasticity_constant.editable = mapping.is_plastic and _restrictions.allow_changing_plasticity_constant
+		_LTP_multiplier.editable = mapping.is_plastic and _restrictions.allow_changing_plasticity_constant
+		_LTD_multiplier.editable = mapping.is_plastic and _restrictions.allow_changing_plasticity_constant
+	else:
+		_on_user_toggle_plasticity(mapping.is_plastic)
 
 func export_mapping() -> SingleMappingDefinition:
 	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
