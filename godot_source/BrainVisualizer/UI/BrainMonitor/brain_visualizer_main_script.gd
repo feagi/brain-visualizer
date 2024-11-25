@@ -2,8 +2,11 @@ extends Node3D
 
 const camera_snap_offset: Vector3 = Vector3(0.0, 15.0, -25.0)
 
+signal voxel_selected_to_list(area: AbstractCorticalArea, local_coord: Vector3i, added: bool)
+
 var shader_material # Wait for shader 
 var global_name_list = {}
+var limit_neuron_selection_to_cortical_area: AbstractCorticalArea = null
 
 var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/BrainMonitor/Previews/BrainMonitorSinglePreview.tscn")
 

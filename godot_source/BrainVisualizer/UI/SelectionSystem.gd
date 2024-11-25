@@ -21,6 +21,7 @@ enum SOURCE_CONTEXT {
 enum OVERRIDE_USECASE {
 	QUICK_CONNECT,
 	CORTICAL_PROPERTIES,
+	QUICK_CONNECT_NEURON
 }
 
 
@@ -35,7 +36,8 @@ signal highlighted_region_removed(region: BrainRegion)
 
 # Selection allows us to act upon a group of [GenomeObject]s globally
 signal objects_selection_event_called(objects: Array[GenomeObject], context: SOURCE_CONTEXT, override_usecases: Array[OVERRIDE_USECASE])
-signal cortical_area_voxel_selected(cortical_area_source: AbstractCorticalArea, voxel_coordinate: Vector3i)
+signal cortical_area_voxel_selected(cortical_area_source: AbstractCorticalArea, voxel_local_coordinate: Vector3i)
+
 
 var _highlighted_genome_objects: Array[GenomeObject] = []
 var _override_use_cases: Array[OVERRIDE_USECASE] = []
@@ -97,5 +99,5 @@ func remove_from_highlighted(genome_object: GenomeObject) -> ERROR:
 func select_objects(context: SOURCE_CONTEXT = SOURCE_CONTEXT.UNKNOWN, objects_to_select: Array[GenomeObject] = _highlighted_genome_objects) -> void:
 	objects_selection_event_called.emit(objects_to_select, context, _override_use_cases)
 
-func cortical_area_voxel_clicked(cortical_area_source: AbstractCorticalArea, voxel_coordinate: Vector3i) -> void:
-	cortical_area_voxel_selected.emit(cortical_area_source, voxel_coordinate)
+func cortical_area_voxel_clicked(cortical_area_source: AbstractCorticalArea, voxel_local_coordinate: Vector3i) -> void:
+	cortical_area_voxel_selected.emit(cortical_area_source, voxel_local_coordinate)
