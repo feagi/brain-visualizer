@@ -24,13 +24,13 @@ var current_state: POSSIBLE_STATES:
 
 var _source_panel: PanelContainer
 var _source_label: RichTextLabel
-var _source_edit_button: Button
+var _source_edit_button: TextureButton
 var _destination_panel: PanelContainer
 var _destination_label: RichTextLabel
-var _destination_edit_button: Button
+var _destination_edit_button: TextureButton
 var _mapping_panel: PanelContainer
 var _mapping_label: RichTextLabel
-var _mapping_edit_button: Button
+var _mapping_edit_button: TextureButton
 
 var _establish_button: Button
 
@@ -71,7 +71,7 @@ func setup(mode: MODE, optional_initial_cortical_area: AbstractCorticalArea) -> 
 	_setup_base_window(WINDOW_NAME)
 	_mode = mode
 	BV.BM.clear_all_selections()
-	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON)
+	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	_start_edit_source_config(optional_initial_cortical_area)
 
 
@@ -265,4 +265,4 @@ func _define_pattern_morphology_label() -> void:
 		
 func close_window():
 	super()
-	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON)
+	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)

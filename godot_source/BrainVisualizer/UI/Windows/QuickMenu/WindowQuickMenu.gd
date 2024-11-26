@@ -13,9 +13,17 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
 	var quick_connect_button: TextureButton = _window_internals.get_node('HBoxContainer/QuickConnect')
+	var quick_connect_CA_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_CA_N")
+	var quick_connect_N_CA_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_CA")
+	var quick_connect_N_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_N")
 	var move_to_region_button: TextureButton = _window_internals.get_node('HBoxContainer/AddToRegion')
 	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
+	
+	quick_connect_CA_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.CORTICAL_AREA_TO_NEURONS))
+	quick_connect_N_CA_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.NEURONS_TO_CORTICAL_AREA))
+	quick_connect_N_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.NEURON_TO_NEURON))
+	
 	_setup_base_window(WINDOW_NAME)
 	if len(selection) == 0:
 		push_error("BV UI: The quick menu was opened with 0 selected objects. This should never happen! Please note the steps to cause this error and open an issue! Closing the window...")
@@ -50,6 +58,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			quick_connect_button.visible = false
 			clone_button.visible = false
+			quick_connect_CA_N_button.visible = false
+			quick_connect_N_CA_button.visible = false
+			quick_connect_N_N_button.visible = false
 			details_button.tooltip_text = "View Brain Region Details"
 			move_to_region_button.tooltip_text = "Add to a Brain Region..."
 			delete_button.tooltip_text = "Delete this Brain Region..."
@@ -60,6 +71,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			quick_connect_button.visible = false
 			clone_button.visible = false
+			quick_connect_CA_N_button.visible = false
+			quick_connect_N_CA_button.visible = false
+			quick_connect_N_N_button.visible = false
 			details_button.tooltip_text = "View Details of these Cortical Areas"
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple areas"
@@ -78,6 +92,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 			clone_button.visible = false
 			details_button.visible = false
 			delete_button.visible = true
+			quick_connect_CA_N_button.visible = false
+			quick_connect_N_CA_button.visible = false
+			quick_connect_N_N_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple regions"
 
@@ -85,6 +102,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
+			quick_connect_CA_N_button.visible = false
+			quick_connect_N_CA_button.visible = false
+			quick_connect_N_N_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple objects"
 			
@@ -117,6 +137,10 @@ func _button_details() -> void:
 
 func _button_quick_connect() -> void:
 	BV.WM.spawn_quick_connect((_selection[0] as AbstractCorticalArea))
+	close_window()
+
+func _button_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE) -> void:
+	BV.WM.spawn_quick_connect_neuron(mode, _selection[0] as AbstractCorticalArea)
 	close_window()
 
 func _button_clone() -> void:

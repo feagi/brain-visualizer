@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://c4nh5ikljookn"]
+[gd_scene load_steps=35 format=3 uid="uid://c4nh5ikljookn"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickMenu/WindowQuickMenu.gd" id="1_8td17"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_iacyx"]
@@ -12,16 +12,28 @@
 [ext_resource type="Texture2D" uid="uid://ccx7m4tbrl4b6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Quick_connect_D.png" id="10_op4fb"]
 [ext_resource type="Texture2D" uid="uid://dh5voba0ytqxh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_S.png" id="11_60rj6"]
 [ext_resource type="Texture2D" uid="uid://lhnccwhvym7h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_S.png" id="11_hl6lb"]
+[ext_resource type="Texture2D" uid="uid://5743u4y5gxu4" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_cortical_block_S.png" id="11_yhdx7"]
 [ext_resource type="Texture2D" uid="uid://cw2v8ik0bhsq1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_C.png" id="12_daddx"]
+[ext_resource type="Texture2D" uid="uid://cbetrl78730qa" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_cortical_block_C.png" id="12_dr8nv"]
 [ext_resource type="Texture2D" uid="uid://dcmsfgfvt6dc5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_C.png" id="12_j7irs"]
 [ext_resource type="Texture2D" uid="uid://cp8clcedk454o" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_H.png" id="13_2u3te"]
+[ext_resource type="Texture2D" uid="uid://cpq6n8afkf6n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_cortical_block_H.png" id="13_b3c6k"]
 [ext_resource type="Texture2D" uid="uid://dsbr0oj8jnvmq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_H.png" id="13_tbiqk"]
 [ext_resource type="Texture2D" uid="uid://y0ln4acdiosf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/add-to-region_D.png" id="14_03052"]
 [ext_resource type="Texture2D" uid="uid://bfhwb5tqcmeju" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_D.png" id="14_acjss"]
+[ext_resource type="Texture2D" uid="uid://dl5lhbyqxte8p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_cortical_block_D.png" id="14_gwbaj"]
+[ext_resource type="Texture2D" uid="uid://bf7efr4aext71" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_cortical_S.png" id="15_4liqj"]
 [ext_resource type="Texture2D" uid="uid://w077yug12k7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="15_e2qrx"]
 [ext_resource type="Texture2D" uid="uid://di8630a11ncb5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="16_alv5k"]
+[ext_resource type="Texture2D" uid="uid://clq5dbd1r787h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_cortical_C.png" id="16_onbkl"]
 [ext_resource type="Texture2D" uid="uid://oi3pour3qyue" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="17_l48r7"]
+[ext_resource type="Texture2D" uid="uid://fn1yc4jwwg82" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_cortical_H.png" id="17_oc825"]
 [ext_resource type="Texture2D" uid="uid://bquoy7fdmhk7l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="18_7ekap"]
+[ext_resource type="Texture2D" uid="uid://do66e6icwu76v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_cortical_D.png" id="18_ycwpx"]
+[ext_resource type="Texture2D" uid="uid://dv5gxqyn33wfw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_S.png" id="19_hi26y"]
+[ext_resource type="Texture2D" uid="uid://c7565e862kmpv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_C.png" id="20_oi7hc"]
+[ext_resource type="Texture2D" uid="uid://c3jt8mttbkkri" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_H.png" id="21_o0jxf"]
+[ext_resource type="Texture2D" uid="uid://v6x28vstw6uk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_D.png" id="22_yp6aw"]
 
 [node name="QuickCorticalMenu" type="VBoxContainer"]
 size_flags_horizontal = 0
@@ -72,7 +84,45 @@ texture_hover = ExtResource("9_8220t")
 texture_disabled = ExtResource("10_op4fb")
 ignore_texture_size = true
 stretch_mode = 5
-flip_v = true
+
+[node name="QuickConnect_CA_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Connect Cortical Area Towards Neurons...."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("11_yhdx7")
+texture_pressed = ExtResource("12_dr8nv")
+texture_hover = ExtResource("13_b3c6k")
+texture_disabled = ExtResource("14_gwbaj")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuickConnect_N_CA" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Connect Cortical Area Neurons Towards..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("15_4liqj")
+texture_pressed = ExtResource("16_onbkl")
+texture_hover = ExtResource("17_oc825")
+texture_disabled = ExtResource("18_ycwpx")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuickConnect_N_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Connect A Cortical Area Neuron Towards A Neuron..."
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("19_hi26y")
+texture_pressed = ExtResource("20_oi7hc")
+texture_hover = ExtResource("21_o0jxf")
+texture_disabled = ExtResource("22_yp6aw")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="AddToRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
