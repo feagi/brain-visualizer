@@ -26,6 +26,9 @@ func move_when_changed(changed: AbstractCorticalArea):
 func clear_all_selections() -> void:
 	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
 		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+	for node in get_children(): # cancer
+		if node.name.contains("*"):
+			node.clear()
 
 
 #TODO TEMP

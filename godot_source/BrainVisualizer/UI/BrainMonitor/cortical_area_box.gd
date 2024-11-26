@@ -89,3 +89,6 @@ func _on_area_3d_mouse_exited():
 func _input(_event):
 	if Input.is_action_just_pressed("del"):
 		set_surface_override_material(0, global_material.deselected)
+
+func clear():
+	set_surface_override_material(0, global_material.deselected)
