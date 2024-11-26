@@ -34,7 +34,7 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 layout_mode = 2
 
 [node name="source" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(512, 192)
 layout_mode = 2
 
 [node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/source"]
@@ -64,7 +64,7 @@ custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
 [node name="destination" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(512, 192)
 layout_mode = 2
 
 [node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/destination"]
@@ -94,7 +94,7 @@ custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
 [node name="confirm" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(512, 192)
 layout_mode = 2
 
 [node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/confirm"]
@@ -136,4 +136,5 @@ text = "Establish the Connection"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/source/step1/TextureButton" to="." method="_start_edit_source_config"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/destination/step2/TextureButton" to="." method="_start_edit_destination_config"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="establish_connection_button"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/confirm/step3/TextureButton" to="." method="_mapping_establish_check_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="_establish"]

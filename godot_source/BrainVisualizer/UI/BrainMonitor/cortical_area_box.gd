@@ -29,7 +29,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 	if event is InputEventMouseButton and event.pressed and Input.is_action_pressed("shift") and (BV.BM.limit_neuron_selection_to_cortical_area == null or BV.BM.limit_neuron_selection_to_cortical_area == cortical_area):
 		var added: bool
 		if event.button_index == 1 and get_surface_override_material(0) == global_material.selected and event.pressed == true:
-			added = true
+			added = false
 			if get_surface_override_material(0) == global_material.selected:
 				location = Vector3(transform.origin) * Vector3(1,1,-1)
 				for item in Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]]:
@@ -37,7 +37,7 @@ func _on_area_3d_input_event(_camera, event, _position, _normal, _shape_idx):
 						Godot_list.godot_list["data"]["direct_stimulation"][name_fetch[0]].erase(item)
 			set_surface_override_material(0, global_material.deselected)
 		elif event.button_index == 1 == true: # lol
-			added = false
+			added = true
 			if get_surface_override_material(0) == global_material.white:
 				location = Vector3(transform.origin) * Vector3(1,1,-1)
 				if Godot_list.godot_list["data"]["direct_stimulation"].get(name_fetch[0]):

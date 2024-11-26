@@ -64,7 +64,6 @@ func _ready() -> void:
 	
 	
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON)
-	#BV.UI.selection_system.objects_selection_event_called.connect(_on_user_selection)
 
 
 func setup(mode: MODE, optional_initial_cortical_area: AbstractCorticalArea) -> void:
@@ -88,6 +87,11 @@ func _start_edit_source_config(optional_limit_to_cortical_area: AbstractCortical
 	if optional_limit_to_cortical_area != null:
 		_source = optional_limit_to_cortical_area
 		BV.BM.limit_neuron_selection_to_cortical_area = optional_limit_to_cortical_area
+		if _mode == MODE.CORTICAL_AREA_TO_NEURONS:
+			_update_label_of_source_or_destination(true)
+			_end_edit_source_config()
+			_start_edit_destination_config()
+			return
 	BV.BM.voxel_selected_to_list.connect(_retrieved_source_neuron_list_change)
 	_update_label_of_source_or_destination(true)
 
@@ -125,7 +129,8 @@ func _retrieved_source_neuron_list_change(area: AbstractCorticalArea, local_coor
 func _end_edit_source_config() -> void:
 	BV.BM.clear_all_selections()
 	_source_panel.theme_type_variation = "PanelContainer_QC_Complete"
-	BV.BM.voxel_selected_to_list.disconnect(_retrieved_source_neuron_list_change)
+	if BV.BM.voxel_selected_to_list.is_connected(_retrieved_source_neuron_list_change):
+		BV.BM.voxel_selected_to_list.disconnect(_retrieved_source_neuron_list_change)
 	BV.BM.limit_neuron_selection_to_cortical_area = null
 
 
@@ -142,16 +147,20 @@ func _start_edit_destination_config(optional_limit_to_cortical_area: AbstractCor
 	if optional_limit_to_cortical_area != null:
 		_destination = optional_limit_to_cortical_area
 		BV.BM.limit_neuron_selection_to_cortical_area = optional_limit_to_cortical_area
+		if _mode == MODE.NEURONS_TO_CORTICAL_AREA:
+			_update_label_of_source_or_destination(false)
+			_end_edit_destination_config()
+			return
 	BV.BM.voxel_selected_to_list.connect(_retrieved_destination_neuron_list_change)
 	_update_label_of_source_or_destination(false)
 
 
 func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local_coord: Vector3i, added: bool) -> void:
-	if _source == null:
-		_source = area
+	if _destination == null:
+		_destination = area
 		BV.BM.limit_neuron_selection_to_cortical_area = area
-	if _source != area:
-		push_error("FEAGI Quick Neuron Connect: Source area does not match expected!")
+	if _destination != area:
+		push_error("FEAGI Quick Neuron Connect: Destination area does not match expected!")
 		return
 	_source_edit_button.disabled = false
 	if _mode == MODE.NEURONS_TO_CORTICAL_AREA:
@@ -179,7 +188,8 @@ func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local
 func _end_edit_destination_config() -> void:
 	BV.BM.clear_all_selections()
 	_destination_panel.theme_type_variation = "PanelContainer_QC_Complete"
-	BV.BM.voxel_selected_to_list.disconnect(_retrieved_destination_neuron_list_change)
+	if BV.BM.voxel_selected_to_list.is_connected(_retrieved_destination_neuron_list_change):
+		BV.BM.voxel_selected_to_list.disconnect(_retrieved_destination_neuron_list_change)
 	BV.BM.limit_neuron_selection_to_cortical_area = null
 
 
@@ -222,7 +232,7 @@ func _update_label_of_source_or_destination(is_source: bool) -> void:
 		elif len(_destination_neuron_local_coords) == 0:
 			text = "Cortical area: %s\nPlease select neurons!"  % _destination.friendly_name
 		else:
-			text = "Cortical area: %s\nNeurons:\n"
+			text = "Cortical area: %s\nNeurons:\n" % _destination.friendly_name
 			for vector in _destination_neuron_local_coords:
 				text += "[%d,%d,%d]\n" % [vector.x, vector.y, vector.z]
 		_destination_label.text = text
@@ -246,7 +256,7 @@ func _has_enough_information_for_mapping() -> bool:
 
 func _define_pattern_morphology_label() -> void:
 	var text: String = "Source: %s, Destination: %s\n" % [_source.friendly_name, _destination.friendly_name]
-	text += "Connectivity Rule Type: Pattern"
+	text += "Connectivity Rule Type: Pattern\n"
 	match _mode:
 		MODE.CORTICAL_AREA_TO_NEURONS:
 			for vec in _destination_neuron_local_coords:
