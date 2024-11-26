@@ -113,16 +113,16 @@ func _retrieved_source_neuron_list_change(area: AbstractCorticalArea, local_coor
 		return # we dont care about neurons
 	
 	if added:
-		if local_coord + area.coordinates_3D in _source_neuron_local_coords:
+		if local_coord in _source_neuron_local_coords:
 			pass
 		else:
-			_source_neuron_local_coords.append(local_coord + area.coordinates_3D)
+			_source_neuron_local_coords.append(local_coord)
 			if _mode == MODE.NEURON_TO_NEURON:
 				_update_label_of_source_or_destination(true)
 				_end_edit_source_config() # only need 1 neuron
 				return
 	else:
-		var search: int = _source_neuron_local_coords.find(local_coord + area.coordinates_3D)
+		var search: int = _source_neuron_local_coords.find(local_coord)
 		if search != -1:
 			_source_neuron_local_coords.remove_at(search)
 		return
@@ -176,16 +176,16 @@ func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local
 		return # we dont care about neurons
 	
 	if added:
-		if local_coord + area.coordinates_3D in _destination_neuron_local_coords:
+		if local_coord in _destination_neuron_local_coords:
 			pass
 		else:
-			_destination_neuron_local_coords.append(local_coord + area.coordinates_3D)
+			_destination_neuron_local_coords.append(local_coord)
 			if _mode == MODE.NEURON_TO_NEURON:
 				_update_label_of_source_or_destination(false)
 				_end_edit_destination_config() # only need 1 neuron
 				return
 	else:
-		var search: int = _destination_neuron_local_coords.find(local_coord + area.coordinates_3D)
+		var search: int = _destination_neuron_local_coords.find(local_coord)
 		if search != -1:
 			_destination_neuron_local_coords.remove_at(search)
 		return
