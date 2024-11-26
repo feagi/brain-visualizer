@@ -55,6 +55,11 @@ func generate_cortical_area(cortical_area_data : AbstractCorticalArea):
 	textbox.scale = Vector3(1,1,1)
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions_3D.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions_3D.y, -1 * cortical_area_data.dimensions_3D.z - cortical_area_data.coordinates_3D.z)
 	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name.left(15)))
+	
+	if cortical_area_data.cortical_ID in UIManager.KNOWN_ICON_PATHS:
+		textbox.get_node("SubViewport/TextureRect").texture = load(UIManager.KNOWN_ICON_PATHS[cortical_area_data.cortical_ID])
+	else:
+		textbox.get_node("SubViewport/TextureRect").queue_free()
 	textbox.set_texture(viewport.get_texture())
 	textbox.set_name(cortical_area_data.cortical_ID + str("_textbox"))
 	if not textbox.get_name() in global_name_list:
