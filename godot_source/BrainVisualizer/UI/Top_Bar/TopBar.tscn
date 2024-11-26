@@ -200,7 +200,7 @@ layout_mode = 2
 [node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
-text = "Refresh Rate"
+text = "Refresh Rate (Hz)"
 vertical_alignment = 1
 
 [node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
@@ -211,7 +211,6 @@ alignment = 1
 expand_to_text_length = true
 script = ExtResource("3_v82xb")
 min_value = 0.1
-suffix = " Hz"
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
