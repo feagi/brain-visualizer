@@ -44,6 +44,7 @@ var _destination: AbstractCorticalArea = null
 var _destination_neuron_local_coords: Array[Vector3i] = []
 
 var _mode: MODE
+var _establishing: bool = false
 
 func _ready() -> void:
 	super()
@@ -211,12 +212,6 @@ func _mapping_establish_check_pressed() -> void:
 	_define_pattern_morphology_label()
 	_establish_button.disabled = false
 
-func _establish() -> void:
-	if !_has_enough_information_for_mapping():
-		return
-	close_window()
-
-
 
 func _update_label_of_source_or_destination(is_source: bool) -> void:
 	var text: String
@@ -265,23 +260,81 @@ func _has_enough_information_for_mapping() -> bool:
 
 func _define_pattern_morphology_label() -> void:
 	var text: String = "Source: %s, Destination: %s\n" % [_source.friendly_name, _destination.friendly_name]
-	text += "Connectivity Rule Type: Pattern\n"
-	match _mode:
-		MODE.CORTICAL_AREA_TO_NEURONS:
-			for vec in _destination_neuron_local_coords:
-				text += "[*, *, *] -> [%d, %d, %d]\n" % [vec.x, vec.y, vec.z]
-		MODE.NEURONS_TO_CORTICAL_AREA:
-			for vec in _source_neuron_local_coords:
-				text += "[%d, %d, %d] -> [*, *, *]\n" % [vec.x, vec.y, vec.z]
-		MODE.NEURON_TO_NEURON:
-			text += "[%d, %d, %d] -> [%d, %d, %d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, _destination_neuron_local_coords[0].x, _destination_neuron_local_coords[0].y, _destination_neuron_local_coords[0].z]
-		_:
-		# HOW
-			return
+	if _source is MemoryCorticalArea:
+		text += "Connectivity Rule Type: Projector\n"
+		text += "Using Default Projector Settings"
+	elif _destination is MemoryCorticalArea:
+		text += "Connectivity Rule Type: Memory\n"
+		text += "Using Default Memory Settings"
+	else:
+		text += "Connectivity Rule Type: Pattern\n"
+		match _mode:
+			MODE.CORTICAL_AREA_TO_NEURONS:
+				for vec in _destination_neuron_local_coords:
+					text += "[*, *, *] -> [%d, %d, %d]\n" % [vec.x, vec.y, vec.z]
+			MODE.NEURONS_TO_CORTICAL_AREA:
+				for vec in _source_neuron_local_coords:
+					text += "[%d, %d, %d] -> [*, *, *]\n" % [vec.x, vec.y, vec.z]
+			MODE.NEURON_TO_NEURON:
+				text += "[%d, %d, %d] -> [%d, %d, %d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, _destination_neuron_local_coords[0].x, _destination_neuron_local_coords[0].y, _destination_neuron_local_coords[0].z]
+			_:
+			# HOW
+				return
 	_mapping_label.text = text
 
 
+func _establish() -> void:
+	if _establishing: # prevent multiple click spam
+		return
+	if !_has_enough_information_for_mapping():
+		close_window()
+		return
+	
+	_establishing = true
+	if _source is MemoryCorticalArea:
+		# establish a mapping using projector
+		var projector_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["projector"]
+		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, projector_morphology)
+	elif _destination is MemoryCorticalArea:
+		# emmory
+		var memory_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["memory"]
+		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, memory_morphology)
+	else:
+		# create a new pattern morphology, then use it in a new mapping
+		var morphology_name: StringName = _source.cortical_ID + "_" + _destination.cortical_ID
+		var pairs: Array[PatternVector3Pairs]
+		match(_mode):
+			MODE.CORTICAL_AREA_TO_NEURONS:
+				for vec in _destination_neuron_local_coords:
+					var incoming: PatternVector3 = PatternVector3.new(PatternVal.new("*"), PatternVal.new("*"), PatternVal.new("*"))
+					var outgoing: PatternVector3 = PatternVector3.new(PatternVal.new(vec.x), PatternVal.new(vec.y), PatternVal.new(vec.z))
+					morphology_name += "[*,*,*]->[%d,%d,%d]\n" % [vec.x, vec.y, vec.z]
+					pairs.append(PatternVector3Pairs.new(incoming, outgoing))
+			MODE.NEURONS_TO_CORTICAL_AREA:
+				for vec in _source_neuron_local_coords:
+					var incoming: PatternVector3 = PatternVector3.new(PatternVal.new(vec.x), PatternVal.new(vec.y), PatternVal.new(vec.z))
+					var outgoing: PatternVector3 = PatternVector3.new(PatternVal.new("*"), PatternVal.new("*"), PatternVal.new("*"))
+					morphology_name += "[%d,%d,%d]->[*,*,*]\n" % [vec.x, vec.y, vec.z]
+					pairs.append(PatternVector3Pairs.new(incoming, outgoing))
+			MODE.NEURON_TO_NEURON:
+				var incoming: PatternVector3 = PatternVector3.new(PatternVal.new(_source_neuron_local_coords[0].x), PatternVal.new(_source_neuron_local_coords[0].y), PatternVal.new(_source_neuron_local_coords[0].z))
+				var outgoing: PatternVector3 = PatternVector3.new(PatternVal.new(_destination_neuron_local_coords[0].x), PatternVal.new(_destination_neuron_local_coords[0].y), PatternVal.new(_destination_neuron_local_coords[0].z))
+				morphology_name += "[%d,%d,%d]->[%d,%d,%d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, _destination_neuron_local_coords[0].x, _destination_neuron_local_coords[0].y, _destination_neuron_local_coords[0].z]
+				pairs.append(PatternVector3Pairs.new(incoming, outgoing))
+		morphology_name = morphology_name.left(16) # limit length
+		while morphology_name in FeagiCore.feagi_local_cache.morphologies.available_morphologies:
+			morphology_name += "2"
+		var response: FeagiRequestOutput = await FeagiCore.requests.add_pattern_morphology(morphology_name, pairs)
 		
+		if !response.success:
+			push_error("FEAGI: Failed to create morphology needed for quick connect!")
+			close_window()
+			return
+		var new_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name]
+		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, new_morphology)
+	close_window()
+
+
 func close_window():
 	super()
 	BV.BM.clear_all_selections()
