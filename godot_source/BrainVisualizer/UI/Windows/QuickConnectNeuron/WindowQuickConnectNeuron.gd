@@ -76,6 +76,8 @@ func setup(mode: MODE, optional_initial_cortical_area: AbstractCorticalArea) -> 
 
 func _start_edit_source_config(optional_limit_to_cortical_area: AbstractCorticalArea = null) -> void:
 	BV.BM.clear_all_selections()
+	if _destination_panel.theme_type_variation == "PanelContainer_QC_waiting":
+		_end_edit_destination_config()
 	_source_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	_source = null
 	_source_neuron_local_coords = []
@@ -128,7 +130,9 @@ func _retrieved_source_neuron_list_change(area: AbstractCorticalArea, local_coor
 
 func _end_edit_source_config() -> void:
 	BV.BM.clear_all_selections()
+	BV.BM.limit_neuron_selection_to_cortical_area = null
 	_source_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	_mapping_edit_button.disabled = !_has_enough_information_for_mapping()
 	if BV.BM.voxel_selected_to_list.is_connected(_retrieved_source_neuron_list_change):
 		BV.BM.voxel_selected_to_list.disconnect(_retrieved_source_neuron_list_change)
 	BV.BM.limit_neuron_selection_to_cortical_area = null
@@ -136,6 +140,8 @@ func _end_edit_source_config() -> void:
 
 func _start_edit_destination_config(optional_limit_to_cortical_area: AbstractCorticalArea = null) -> void:
 	BV.BM.clear_all_selections()
+	if _source_panel.theme_type_variation == "PanelContainer_QC_waiting":
+		_end_edit_source_config()
 	_destination_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	_destination = null
 	_destination_neuron_local_coords = []
@@ -187,7 +193,9 @@ func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local
 
 func _end_edit_destination_config() -> void:
 	BV.BM.clear_all_selections()
+	BV.BM.limit_neuron_selection_to_cortical_area = null
 	_destination_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	_mapping_edit_button.disabled = !_has_enough_information_for_mapping()
 	if BV.BM.voxel_selected_to_list.is_connected(_retrieved_destination_neuron_list_change):
 		BV.BM.voxel_selected_to_list.disconnect(_retrieved_destination_neuron_list_change)
 	BV.BM.limit_neuron_selection_to_cortical_area = null
@@ -199,6 +207,7 @@ func _mapping_establish_check_pressed() -> void:
 	if !_has_enough_information_for_mapping():
 		return
 	_end_edit_source_config()
+	_end_edit_destination_config()
 	_define_pattern_morphology_label()
 	_establish_button.disabled = false
 
@@ -275,4 +284,5 @@ func _define_pattern_morphology_label() -> void:
 		
 func close_window():
 	super()
+	BV.BM.clear_all_selections()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
