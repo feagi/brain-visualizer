@@ -40,6 +40,7 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_8td17")
+window_spawn_location = null
 
 [node name="TitleBar" parent="." instance=ExtResource("2_iacyx")]
 layout_mode = 2
@@ -114,7 +115,7 @@ stretch_mode = 5
 [node name="QuickConnect_N_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "Connect A Cortical Area Neuron Towards A Neuron..."
+tooltip_text = "Connect A Cortical Area Neuron Towards Neurons..."
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("19_hi26y")

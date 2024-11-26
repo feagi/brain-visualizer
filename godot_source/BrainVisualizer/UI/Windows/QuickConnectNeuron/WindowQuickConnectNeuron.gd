@@ -8,7 +8,7 @@ const INVALID_COORD: Vector3i = Vector3i(-1,-1,-1)
 enum MODE {
 	CORTICAL_AREA_TO_NEURONS,
 	NEURONS_TO_CORTICAL_AREA,
-	NEURON_TO_NEURON
+	NEURON_TO_NEURONS
 }
 
 enum POSSIBLE_STATES {
@@ -117,7 +117,7 @@ func _retrieved_source_neuron_list_change(area: AbstractCorticalArea, local_coor
 			pass
 		else:
 			_source_neuron_local_coords.append(local_coord)
-			if _mode == MODE.NEURON_TO_NEURON:
+			if _mode == MODE.NEURON_TO_NEURONS:
 				_update_label_of_source_or_destination(true)
 				_end_edit_source_config() # only need 1 neuron
 				return
@@ -180,10 +180,6 @@ func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local
 			pass
 		else:
 			_destination_neuron_local_coords.append(local_coord)
-			if _mode == MODE.NEURON_TO_NEURON:
-				_update_label_of_source_or_destination(false)
-				_end_edit_destination_config() # only need 1 neuron
-				return
 	else:
 		var search: int = _destination_neuron_local_coords.find(local_coord)
 		if search != -1:
@@ -252,8 +248,8 @@ func _has_enough_information_for_mapping() -> bool:
 		MODE.NEURONS_TO_CORTICAL_AREA:
 			return len(_source_neuron_local_coords) != 0
 			
-		MODE.NEURON_TO_NEURON:
-			return len(_source_neuron_local_coords) == 1 and len(_destination_neuron_local_coords) == 1
+		MODE.NEURON_TO_NEURONS:
+			return len(_source_neuron_local_coords) == 1 and len(_destination_neuron_local_coords) > 0
 		_:
 		# HOW
 			return false
@@ -275,8 +271,9 @@ func _define_pattern_morphology_label() -> void:
 			MODE.NEURONS_TO_CORTICAL_AREA:
 				for vec in _source_neuron_local_coords:
 					text += "[%d, %d, %d] -> [*, *, *]\n" % [vec.x, vec.y, vec.z]
-			MODE.NEURON_TO_NEURON:
-				text += "[%d, %d, %d] -> [%d, %d, %d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, _destination_neuron_local_coords[0].x, _destination_neuron_local_coords[0].y, _destination_neuron_local_coords[0].z]
+			MODE.NEURON_TO_NEURONS:
+				for vec in _destination_neuron_local_coords:
+					text += "[%d, %d, %d] -> [%d, %d, %d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, vec.x, vec.y, vec.z]
 			_:
 			# HOW
 				return
@@ -316,11 +313,12 @@ func _establish() -> void:
 					var outgoing: PatternVector3 = PatternVector3.new(PatternVal.new("*"), PatternVal.new("*"), PatternVal.new("*"))
 					morphology_name += "[%d,%d,%d]->[*,*,*]\n" % [vec.x, vec.y, vec.z]
 					pairs.append(PatternVector3Pairs.new(incoming, outgoing))
-			MODE.NEURON_TO_NEURON:
-				var incoming: PatternVector3 = PatternVector3.new(PatternVal.new(_source_neuron_local_coords[0].x), PatternVal.new(_source_neuron_local_coords[0].y), PatternVal.new(_source_neuron_local_coords[0].z))
-				var outgoing: PatternVector3 = PatternVector3.new(PatternVal.new(_destination_neuron_local_coords[0].x), PatternVal.new(_destination_neuron_local_coords[0].y), PatternVal.new(_destination_neuron_local_coords[0].z))
-				morphology_name += "[%d,%d,%d]->[%d,%d,%d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, _destination_neuron_local_coords[0].x, _destination_neuron_local_coords[0].y, _destination_neuron_local_coords[0].z]
-				pairs.append(PatternVector3Pairs.new(incoming, outgoing))
+			MODE.NEURON_TO_NEURONS:
+				for vec in _destination_neuron_local_coords:
+					var incoming: PatternVector3 = PatternVector3.new(PatternVal.new(_source_neuron_local_coords[0].x), PatternVal.new(_source_neuron_local_coords[0].y), PatternVal.new(_source_neuron_local_coords[0].z))
+					var outgoing: PatternVector3 = PatternVector3.new(PatternVal.new(vec.x), PatternVal.new(vec.y), PatternVal.new(vec.z))
+					morphology_name += "[%d,%d,%d]->[%d,%d,%d]\n" % [_source_neuron_local_coords[0].x, _source_neuron_local_coords[0].y, _source_neuron_local_coords[0].z, vec.x, vec.y, vec.z]
+					pairs.append(PatternVector3Pairs.new(incoming, outgoing))
 		morphology_name = morphology_name.left(16) # limit length
 		while morphology_name in FeagiCore.feagi_local_cache.morphologies.available_morphologies:
 			morphology_name += "2"
