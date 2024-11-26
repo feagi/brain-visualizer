@@ -54,6 +54,11 @@ func setup(selection: Array[GenomeObject]) -> void:
 			if !area.can_exist_in_subregion:
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Brain Region"
+			if area is MemoryCorticalArea:
+				quick_connect_CA_N_button.visible = false
+				quick_connect_N_CA_button.visible = false
+				quick_connect_N_N_button.visible = false
+				
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			quick_connect_button.visible = false
