@@ -2,8 +2,11 @@ extends Node3D
 
 const camera_snap_offset: Vector3 = Vector3(0.0, 15.0, -25.0)
 
+signal voxel_selected_to_list(area: AbstractCorticalArea, local_coord: Vector3i, added: bool)
+
 var shader_material # Wait for shader 
 var global_name_list = {}
+var limit_neuron_selection_to_cortical_area: AbstractCorticalArea = null
 
 var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/BrainMonitor/Previews/BrainMonitorSinglePreview.tscn")
 
@@ -23,6 +26,9 @@ func move_when_changed(changed: AbstractCorticalArea):
 func clear_all_selections() -> void:
 	for key in Godot_list.godot_list["data"]["direct_stimulation"]:
 		Godot_list.godot_list["data"]["direct_stimulation"][key] = []
+	for node in get_children(): # cancer
+		if node.name.contains("*"):
+			node.clear()
 
 
 #TODO TEMP
@@ -49,6 +55,11 @@ func generate_cortical_area(cortical_area_data : AbstractCorticalArea):
 	textbox.scale = Vector3(1,1,1)
 	textbox.transform.origin = Vector3(cortical_area_data.coordinates_3D.x + (cortical_area_data.dimensions_3D.x/1.5), cortical_area_data.coordinates_3D.y +1 + cortical_area_data.dimensions_3D.y, -1 * cortical_area_data.dimensions_3D.z - cortical_area_data.coordinates_3D.z)
 	textbox.get_node("SubViewport/Label").set_text(str(cortical_area_data.friendly_name.left(15)))
+	
+	if cortical_area_data.cortical_ID in UIManager.KNOWN_ICON_PATHS:
+		textbox.get_node("SubViewport/TextureRect").texture = load(UIManager.KNOWN_ICON_PATHS[cortical_area_data.cortical_ID])
+	else:
+		textbox.get_node("SubViewport/TextureRect").queue_free()
 	textbox.set_texture(viewport.get_texture())
 	textbox.set_name(cortical_area_data.cortical_ID + str("_textbox"))
 	if not textbox.get_name() in global_name_list:
