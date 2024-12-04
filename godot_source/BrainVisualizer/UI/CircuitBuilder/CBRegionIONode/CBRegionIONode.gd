@@ -96,5 +96,3 @@ func _set_icon(external_object: GenomeObject) -> void:
 	
 	_icon.texture = UIManager.get_icon_texture_by_ID(external_object.genome_ID, _is_region_input)
 	
-
-

@@ -154,5 +154,3 @@ func _format_int(number: int) -> String:
 		if digit_count % 3 == 0 and i != 0:
 			formatted_str = "," + formatted_str
 	return formatted_str
-
-
