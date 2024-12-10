@@ -22,5 +22,3 @@ func draw_connected():
 	$Cube.set_surface_override_material(0, global_material.websocket_status_red)
 	$Cube001.set_surface_override_material(0, global_material.websocket_status_red)
 	$Cube002.set_surface_override_material(0, global_material.websocket_status_red)
-
-
