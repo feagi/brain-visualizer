@@ -39,6 +39,7 @@ var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/s
 var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
 var GET_agent_list: StringName = "/v1/agent/list"
 var GET_agent_properties: StringName = "/v1/agent/properties"
+var GET_input_vision: StringName = "/v1/input/vision"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -51,6 +52,7 @@ var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neur
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
 var POST_region_region: StringName = "/v1/region/region"
 var POST_corticalArea_multi_corticalAreaProperties: StringName = "/v1/cortical_area/multi/cortical_area_properties"
+var POST_input_vision: StringName = "/v1/input/vision"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"

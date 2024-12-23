@@ -60,4 +60,3 @@ func _ready():
 func _emit_new_vector(_dont_care: int) -> void:
 	user_updated_vector.emit(current_vector)
 	
-

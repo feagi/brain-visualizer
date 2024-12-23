@@ -266,6 +266,14 @@ layout_mode = 2
 max_value = 1.0
 step = 0.01
 
+[node name="Apply" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+visible = false
+layout_mode = 2
+text = "Apply Settings"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/IOPUs/Selection/Vision" to="." method="_vision_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Apply" to="." method="_apply_pressed"]
+
 [editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General"]
 [editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments"]
 [editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements"]

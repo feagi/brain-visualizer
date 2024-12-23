@@ -37,34 +37,33 @@ func _ready() -> void:
 	_color_option_gray.button_group = _button_group
 
 ## Given a formatted dictionary from feagi related to vision tuning parameters, 
-func load_from_FEAGI(vision_details_preprocessed: Dictionary) -> void:
-	if vision_details_preprocessed.has("central_vision_resolution"):
-		if vision_details_preprocessed["central_vision_resolution"] is Vector2i:
-			_central_vision_res.current_vector = vision_details_preprocessed["central_vision_resolution"]
-		else:
-			push_error("WindowIOPUTuner_Vision: central_vision_resolution is not a Vector2i! Was this not preprocessed?")
-			_central_vision_res.editable = false
+func load_from_FEAGI(vision_details: Dictionary) -> void:
+	
+	# first remove all null values
+	var keys: Array = vision_details.keys()
+	for key in keys:
+		if vision_details[key] == null:
+			vision_details.erase(key)
+	
+	if vision_details.has("central_vision_resolution"):
+		_central_vision_res.current_vector = Vector2i(vision_details["central_vision_resolution"][0], vision_details["central_vision_resolution"][1])
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing central_vision_resolution!")
 		_central_vision_res.editable = false
 	
-	if vision_details_preprocessed.has("peripheral_vision_resolution"):
-		if vision_details_preprocessed["peripheral_vision_resolution"] is Vector2i:
-			_peripheral_vision_res.current_vector = vision_details_preprocessed["peripheral_vision_resolution"]
-		else:
-			push_error("WindowIOPUTuner_Vision: peripheral_vision_resolution is not a Vector2i! Was this not preprocessed?")
-			_peripheral_vision_res.editable = false
+	if vision_details.has("peripheral_vision_resolution"):
+		_peripheral_vision_res.current_vector = Vector2i(vision_details["peripheral_vision_resolution"][0], vision_details["peripheral_vision_resolution"][1])
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing peripheral_vision_resolution!")
 		_peripheral_vision_res.editable = false
 	
-	if vision_details_preprocessed.has("flicker_period"):
-		_flicker_period.current_int = vision_details_preprocessed["flicker_period"]
+	if vision_details.has("flicker_period"):
+		_flicker_period.current_int = vision_details["flicker_period"]
 	else:
 		_flicker_period.editable = false
 	
-	if vision_details_preprocessed.has("color_vision"):
-		if vision_details_preprocessed["color_vision"]:
+	if vision_details.has("color_vision"):
+		if vision_details["color_vision"]:
 			_color_option_color.button_pressed = true
 		else:
 			_color_option_gray.button_pressed = true
@@ -72,52 +71,43 @@ func load_from_FEAGI(vision_details_preprocessed: Dictionary) -> void:
 		_color_option_color.disabled = true
 		_color_option_gray.disabled = true
 	
-	if vision_details_preprocessed.has("eccentricity"):
-		if vision_details_preprocessed["eccentricity"] is Vector2:
-			_eccentricity_x.value = vision_details_preprocessed["eccentricity"].x
-			_eccentricity_y.value = vision_details_preprocessed["eccentricity"].y
-		else:
-			push_error("WindowIOPUTuner_Vision: eccentricity is not a Vector2! Was this not preprocessed?")
-			_eccentricity_x.editable = false
-			_eccentricity_y.editable = false
+	if vision_details.has("eccentricity"):
+		_eccentricity_x.value = vision_details["eccentricity"][0]
+		_eccentricity_y.value = vision_details["eccentricity"][0]
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing eccentricity!")
 		_eccentricity_x.editable = false
 		_eccentricity_y.editable = false
 	
-	if vision_details_preprocessed.has("modulation"):
-		if vision_details_preprocessed["modulation"] is Vector2:
-			_modulation_x.value = vision_details_preprocessed["modulation"].x
-			_modulation_y.value = vision_details_preprocessed["modulation"].y
-		else:
-			push_error("WindowIOPUTuner_Vision: modulation is not a Vector2! Was this not preprocessed?")
-			_modulation_x.editable = false
-			_modulation_y.editable = false
+	if vision_details.has("modulation"):
+		_modulation_x.value = vision_details["modulation"][0]
+		_modulation_y.value = vision_details["modulation"][0]
+
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing modulation!")
 		_modulation_x.editable = false
 		_modulation_y.editable = false
 	
-	if vision_details_preprocessed.has("brightness"):
-		_brightness.value = vision_details_preprocessed["brightness"]
+	if vision_details.has("brightness"):
+		_brightness.value = vision_details["brightness"]
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing brightness!")
 		_brightness.editable = false
 
-	if vision_details_preprocessed.has("contrast"):
-		_contrast.value = vision_details_preprocessed["contrast"]
+	if vision_details.has("contrast"):
+		_contrast.value = vision_details["contrast"]
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing contrast!")
 		_contrast.editable = false
 
-	if vision_details_preprocessed.has("shadows"):
-		_shadows.value = vision_details_preprocessed["shadows"]
+	if vision_details.has("shadows"):
+		_shadows.value = vision_details["shadows"]
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing shadows!")
 		_shadows.editable = false
 
-	if vision_details_preprocessed.has("pixel_change_limit"):
-		_pixel_change.value = vision_details_preprocessed["pixel_change_limit"]
+	if vision_details.has("pixel_change_limit"):
+		_pixel_change.value = vision_details["pixel_change_limit"]
 	else:
 		push_error("WindowIOPUTuner_Vision: Missing pixel_change_limit!")
 		_pixel_change.editable = false

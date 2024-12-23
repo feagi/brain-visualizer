@@ -21,6 +21,7 @@ const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Wi
 const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
 const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.tscn")
 const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.tscn")
+const _PREFAB_IOPUTUNER: PackedScene = preload("res://BrainVisualizer/UI/Windows/IOPUTuner/WindowIOPUTuner.tscn")
 
 
 var loaded_windows: Dictionary
@@ -108,6 +109,10 @@ func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: String
 		return # no need to keep opening this window
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_PREFAB_IMPORT_AMALGAMATION, WindowAmalgamationRequest.WINDOW_NAME) as WindowAmalgamationRequest
 	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size)
+
+func spawn_IOUPU_tuner_window() -> void:
+	var IOPU_Tuner: WindowIOPUTuner = _default_spawn_window(_PREFAB_IOPUTUNER, WindowIOPUTuner.WINDOW_NAME) as WindowIOPUTuner
+	IOPU_Tuner.setup()
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():
