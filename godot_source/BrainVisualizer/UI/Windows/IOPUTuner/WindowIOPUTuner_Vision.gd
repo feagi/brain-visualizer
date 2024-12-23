@@ -52,64 +52,38 @@ func load_from_FEAGI(vision_details: Dictionary) -> void:
 	
 	if vision_details.has("central_vision_resolution"):
 		_central_vision_res.current_vector = Vector2i(vision_details["central_vision_resolution"][0], vision_details["central_vision_resolution"][1])
-	else:
-		push_error("WindowIOPUTuner_Vision: Missing central_vision_resolution!")
-		_central_vision_res.editable = false
 	
 	if vision_details.has("peripheral_vision_resolution"):
 		_peripheral_vision_res.current_vector = Vector2i(vision_details["peripheral_vision_resolution"][0], vision_details["peripheral_vision_resolution"][1])
-	else:
-		push_error("WindowIOPUTuner_Vision: Missing peripheral_vision_resolution!")
-		_peripheral_vision_res.editable = false
 	
 	if vision_details.has("flicker_period"):
 		_flicker_period.current_int = vision_details["flicker_period"]
-	else:
-		_flicker_period.editable = false
 	
 	if vision_details.has("color_vision"):
 		if vision_details["color_vision"]:
 			_color_option_color.button_pressed = true
 		else:
 			_color_option_gray.button_pressed = true
-	else:
-		_color_option_color.disabled = true
-		_color_option_gray.disabled = true
 	
 	if vision_details.has("eccentricity"):
 		_eccentricity_x.value = vision_details["eccentricity"][0]
 		_eccentricity_y.value = vision_details["eccentricity"][0]
-	else:
-		_eccentricity_x.editable = false
-		_eccentricity_y.editable = false
 	
 	if vision_details.has("modulation"):
 		_modulation_x.value = vision_details["modulation"][0]
 		_modulation_y.value = vision_details["modulation"][0]
-
-	else:
-		_modulation_x.editable = false
-		_modulation_y.editable = false
 	
 	if vision_details.has("brightness"):
 		_brightness.value = vision_details["brightness"]
-	else:
-		_brightness.editable = false
 
 	if vision_details.has("contrast"):
 		_contrast.value = vision_details["contrast"]
-	else:
-		_contrast.editable = false
 
 	if vision_details.has("shadows"):
 		_shadows.value = vision_details["shadows"]
-	else:
-		_shadows.editable = false
 
 	if vision_details.has("pixel_change_limit"):
 		_pixel_change.value = vision_details["pixel_change_limit"]
-	else:
-		_pixel_change.editable = false
 
 ## Returns a dictionary to send to FEAGI for vision turning, already formatted properly
 func export_for_FEAGI() -> Dictionary:

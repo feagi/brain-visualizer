@@ -124,11 +124,13 @@ layout_mode = 2
 
 [node name="Color" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Color"
 flat = true
 
 [node name="Grayscale" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "GrayScale
 "
 flat = true
