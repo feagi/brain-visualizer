@@ -1,0 +1,272 @@
+[gd_scene load_steps=8 format=3 uid="uid://c2v3sdmn413oa"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/IOPUTuner/WindowIOPUTuner.gd" id="1_cfuck"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_aad77"]
+[ext_resource type="PackedScene" uid="uid://cjyix5p3tp3nr" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn" id="3_bol5n"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/IOPUTuner/WindowIOPUTuner_Vision.gd" id="3_nkbkm"]
+[ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.tscn" id="5_luqsm"]
+[ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="6_gr7co"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="7_7r32a"]
+
+[node name="WindowIOPUTuner" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_cfuck")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_aad77")]
+layout_mode = 2
+title = "Input / Output Tuning"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="IOPUs" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(128, 384)
+layout_mode = 2
+
+[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/IOPUs"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Vision" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/IOPUs/Selection"]
+layout_mode = 2
+text = "Vision"
+
+[node name="SpecificSettings" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+
+[node name="Nothing" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Nothing"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Please Select an Option!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Vision" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+visible = false
+layout_mode = 2
+script = ExtResource("3_nkbkm")
+
+[node name="General" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("3_bol5n")]
+layout_mode = 2
+section_text = &"General"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Central Vision resolution"
+
+[node name="Vector2iField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer" instance=ExtResource("5_luqsm")]
+layout_mode = 2
+int_x_max = 1024
+int_y_max = 1024
+int_x_min = 1
+int_y_min = 1
+initial_vector = Vector2i(1, 1)
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Peripheral Vision Resolution "
+
+[node name="Vector2iField2" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2" instance=ExtResource("5_luqsm")]
+layout_mode = 2
+int_x_max = 1024
+int_y_max = 1024
+int_x_min = 1
+int_y_min = 1
+initial_vector = Vector2i(1, 1)
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Flicker Period
+"
+
+[node name="flicker" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("6_gr7co")
+alignment = 1
+script = ExtResource("7_7r32a")
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Color" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+text = "Color"
+flat = true
+
+[node name="Grayscale" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+text = "GrayScale
+"
+flat = true
+
+[node name="Adjustments" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("3_bol5n")]
+layout_mode = 2
+section_text = &"Central/Peripheral adjustments"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Eccentricity (X) "
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Eccentricity (Y) "
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="HBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Modulation (X) "
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="HBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer7"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Modulation (Y)"
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer7"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="Enhancements" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("3_bol5n")]
+layout_mode = 2
+section_text = &"Enchancements"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Brightness"
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Contrast"
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="HBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Shadows"
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="Thresholds" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("3_bol5n")]
+layout_mode = 2
+section_text = &"Thresholds"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pixel Change"
+
+[node name="HSlider" type="HSlider" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds"]
