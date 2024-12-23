@@ -28,7 +28,7 @@ func _ready() -> void:
 	_modulation_x = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6/HSlider
 	_modulation_y = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer7/HSlider
 	_brightness = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/HSlider
-	_contrast = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5
+	_contrast = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5/HSlider
 	_shadows = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6/HSlider
 	_pixel_change = $Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/HSlider
 	
@@ -44,6 +44,11 @@ func load_from_FEAGI(vision_details: Dictionary) -> void:
 	for key in keys:
 		if vision_details[key] == null:
 			vision_details.erase(key)
+		elif vision_details[key] is Array:
+			if len(vision_details[key]) == 0:
+				vision_details.erase(key)
+			elif vision_details[key][0] == null:
+				vision_details.erase(key)
 	
 	if vision_details.has("central_vision_resolution"):
 		_central_vision_res.current_vector = Vector2i(vision_details["central_vision_resolution"][0], vision_details["central_vision_resolution"][1])
@@ -75,7 +80,6 @@ func load_from_FEAGI(vision_details: Dictionary) -> void:
 		_eccentricity_x.value = vision_details["eccentricity"][0]
 		_eccentricity_y.value = vision_details["eccentricity"][0]
 	else:
-		push_error("WindowIOPUTuner_Vision: Missing eccentricity!")
 		_eccentricity_x.editable = false
 		_eccentricity_y.editable = false
 	
@@ -84,32 +88,27 @@ func load_from_FEAGI(vision_details: Dictionary) -> void:
 		_modulation_y.value = vision_details["modulation"][0]
 
 	else:
-		push_error("WindowIOPUTuner_Vision: Missing modulation!")
 		_modulation_x.editable = false
 		_modulation_y.editable = false
 	
 	if vision_details.has("brightness"):
 		_brightness.value = vision_details["brightness"]
 	else:
-		push_error("WindowIOPUTuner_Vision: Missing brightness!")
 		_brightness.editable = false
 
 	if vision_details.has("contrast"):
 		_contrast.value = vision_details["contrast"]
 	else:
-		push_error("WindowIOPUTuner_Vision: Missing contrast!")
 		_contrast.editable = false
 
 	if vision_details.has("shadows"):
 		_shadows.value = vision_details["shadows"]
 	else:
-		push_error("WindowIOPUTuner_Vision: Missing shadows!")
 		_shadows.editable = false
 
 	if vision_details.has("pixel_change_limit"):
 		_pixel_change.value = vision_details["pixel_change_limit"]
 	else:
-		push_error("WindowIOPUTuner_Vision: Missing pixel_change_limit!")
 		_pixel_change.editable = false
 
 ## Returns a dictionary to send to FEAGI for vision turning, already formatted properly

@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=25 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
@@ -22,6 +22,7 @@
 [ext_resource type="Texture2D" uid="uid://mbdjdpep1hpy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png" id="19_fxjdk"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="20_6yf7l"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
+[ext_resource type="Texture2D" uid="uid://dedyobqpiapjq" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00_C.png" id="21_542yq"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 
 [node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
@@ -194,7 +195,19 @@ texture_pressed = ExtResource("19_fxjdk")
 texture_hover = ExtResource("19_fxjdk")
 texture_disabled = ExtResource("19_fxjdk")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
+[node name="Tuning" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Brain Visualizer Settings"
+texture = ExtResource("21_542yq")
+expand_mode = 3
+script = ExtResource("20_6yf7l")
+texture_normal = ExtResource("21_542yq")
+texture_pressed = ExtResource("21_542yq")
+texture_hover = ExtResource("21_542yq")
+texture_disabled = ExtResource("21_542yq")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
 
 [node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
@@ -212,7 +225,7 @@ expand_to_text_length = true
 script = ExtResource("3_v82xb")
 min_value = 0.1
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
 
 [node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
@@ -230,7 +243,7 @@ editable = false
 expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
 layout_mode = 2
 
 [node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
@@ -248,7 +261,7 @@ editable = false
 expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]
@@ -259,5 +272,6 @@ layout_mode = 2
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
+[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Tuning" to="." method="_open_tuning"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]
