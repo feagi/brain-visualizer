@@ -1,15 +1,21 @@
-[gd_scene load_steps=7 format=3 uid="uid://uovm7phb0uio"]
+[gd_scene load_steps=13 format=3 uid="uid://uovm7phb0uio"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.gd" id="1_sn8x3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu_General.gd" id="3_g33ho"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="3_y5jb7"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="4_u56br"]
 [ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsible.tscn" id="5_glyhf"]
 [ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="6_8gkj8"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu_Vision.gd" id="7_tri27"]
+[ext_resource type="PackedScene" uid="uid://cjyix5p3tp3nr" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn" id="8_dx5bi"]
+[ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.tscn" id="10_vgmew"]
+[ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="11_l7ybt"]
+[ext_resource type="PackedScene" uid="uid://lavpe4aaitvu" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.tscn" id="12_gaeu8"]
 
 [node name="WindowOptionsMenu" type="VBoxContainer"]
-offset_right = 126.0
-offset_bottom = 40.0
+offset_right = 424.0
+offset_bottom = 316.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -30,34 +36,73 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 
-[node name="VBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer"]
+[node name="SettingSelector" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(128, 256)
+layout_mode = 2
+
+[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="General" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+layout_mode = 2
+text = "General
+"
+
+[node name="Vision" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+layout_mode = 2
+text = "Vision"
+
+[node name="SpecificSettings" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+
+[node name="Nothing" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Nothing"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Please Select an Option!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="General" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+visible = false
+layout_mode = 2
+script = ExtResource("3_g33ho")
+
+[node name="VBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Version:"
 
-[node name="Version" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer"]
+[node name="Version" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 editable = false
 
-[node name="VBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="VBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "UI Magnification:"
 
-[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer2"]
+[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-item_count = 6
 fit_to_longest_item = false
+item_count = 6
 popup/item_0/text = "0.5 Scale"
-popup/item_0/id = 0
 popup/item_1/text = "0.75 Scale"
 popup/item_1/id = 1
 popup/item_2/text = "1.0 Scale"
@@ -69,111 +114,247 @@ popup/item_4/id = 4
 popup/item_5/text = "2.0 Scale"
 popup/item_5/id = 5
 
-[node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Advanced Mode:"
 
-[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer3"]
+[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3"]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
-[node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Auto-create Inputs / Outputs:"
 
-[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer4"]
+[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4"]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
-[node name="VBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="VBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer5"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer5"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Visualization Skip Rate:"
 
-[node name="SkipRate" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer5"]
+[node name="SkipRate" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer5"]
 layout_mode = 2
 script = ExtResource("4_u56br")
 min_value = 0
 
-[node name="VBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="VBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer6"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer6"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Visualization Supression Threshold:"
 
-[node name="Supression" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer6"]
+[node name="Supression" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer6"]
 layout_mode = 2
 script = ExtResource("4_u56br")
 min_value = 0
 
-[node name="VBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="VBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer7"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer7"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Plasticity Queue Depth:"
 
-[node name="plasticity" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/VBoxContainer7"]
+[node name="plasticity" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer7"]
 layout_mode = 2
 script = ExtResource("4_u56br")
 initial_int = 1
 min_value = 1
 
-[node name="Camera_Animation" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("5_glyhf")]
+[node name="Camera_Animation" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General" instance=ExtResource("5_glyhf")]
 layout_mode = 2
 size_flags_vertical = 0
 start_open = false
 prefab_to_spawn = ExtResource("6_8gkj8")
 section_text = &"Camera Animation"
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Vision" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+visible = false
+layout_mode = 2
+script = ExtResource("7_tri27")
+
+[node name="General" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+layout_mode = 2
+section_text = &"General"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Central Vision resolution"
+
+[node name="Vector2iField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer" instance=ExtResource("10_vgmew")]
+layout_mode = 2
+int_x_max = 1024
+int_y_max = 1024
+int_x_min = 1
+int_y_min = 1
+initial_vector = Vector2i(1, 1)
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Peripheral Vision Resolution "
+
+[node name="Vector2iField2" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2" instance=ExtResource("10_vgmew")]
+layout_mode = 2
+int_x_max = 1024
+int_y_max = 1024
+int_x_min = 1
+int_y_min = 1
+initial_vector = Vector2i(1, 1)
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Flicker Period
+"
+
+[node name="flicker" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_l7ybt")
+alignment = 1
+script = ExtResource("4_u56br")
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+layout_mode = 2
+
+[node name="Color" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Color"
+flat = true
+
+[node name="Grayscale" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "GrayScale
+"
+flat = true
+
+[node name="Adjustments" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+layout_mode = 2
+section_text = &"Central/Peripheral adjustments"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="Eccentricity_X" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Eccentricity (X)"
+
+[node name="Eccentricity_Y" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Eccentricity (Y)"
+
+[node name="Modulation_X" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Modulation (X)"
+
+[node name="Modulation_Y" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Modulation (Y)"
+
+[node name="Enhancements" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+layout_mode = 2
+section_text = &"Enchancements"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="Brightness" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Brightness"
+
+[node name="Contrast" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Constrast"
+
+[node name="Shadows" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Shadows"
+
+[node name="Thresholds" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+layout_mode = 2
+section_text = &"Thresholds"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+layout_mode = 2
+
+[node name="PixelChange" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+layout_mode = 2
+initial_label_text = &"Pixel Change"
+
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Accept" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Accept" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Accept"
 
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="close_window"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Accept" to="." method="_on_accept_press"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection/General" to="." method="_select_section" binds= ["General"]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection/Vision" to="." method="_select_section" binds= ["Vision"]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons/Cancel" to="." method="close_window"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons/Accept" to="." method="_apply_pressed"]
+
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements"]
+[editable path="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds"]

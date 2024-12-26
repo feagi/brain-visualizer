@@ -3,65 +3,76 @@ class_name WindowOptionsMenu
 
 const WINDOW_NAME: StringName = "options_menu"
 
-var _version: LineEdit
-var _interface_dropdown: OptionButton
-var _advanced_mode: ToggleButton
-var _autoconfigure_IO: ToggleButton
-var _skip_rate: IntInput
-var _supression: IntInput
-var _plasicity: IntInput
-var _camera_animation_section: VerticalCollapsible
+var _section_none: VBoxContainer
+var _section_general: WindowOptionsMenu_General
+var _section_vision: WindowOptionsMenu_Vision
+
+var _action_buttons: HBoxContainer
+
+var _waiting: bool
 
 func _ready() -> void:
 	super()
-	_version = _window_internals.get_node('VBoxContainer/Version')
-	_interface_dropdown = _window_internals.get_node('VBoxContainer2/OptionButton')
-	_advanced_mode = _window_internals.get_node('VBoxContainer3/ToggleButton')
-	_autoconfigure_IO = _window_internals.get_node('VBoxContainer4/ToggleButton')
-	_skip_rate = _window_internals.get_node('VBoxContainer5/SkipRate')
-	_supression = _window_internals.get_node('VBoxContainer6/Supression')
-	_camera_animation_section = _window_internals.get_node('Camera_Animation')
-	_plasicity = _window_internals.get_node('VBoxContainer7/plasticity')
 	
+	_section_none = _window_internals.get_node("HBoxContainer/SpecificSettings/Nothing")
+	_section_general = _window_internals.get_node("HBoxContainer/SpecificSettings/General")
+	_section_vision = _window_internals.get_node("HBoxContainer/SpecificSettings/Vision")
+	_action_buttons = _window_internals.get_node("HBoxContainer/SpecificSettings/Buttons")
+	
+
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
-	_advanced_mode.set_toggle_no_signal(BV.UI.is_in_advanced_mode)
-	_interface_dropdown.selected = _get_theme_index()
-	_skip_rate.current_int = FeagiCore.skip_rate
-	_supression.current_int = FeagiCore.supression_threshold
-	_plasicity.current_int = FeagiCore.feagi_local_cache.plasticity_queue_depth
-	_version.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
-	_camera_animation_section.setup()
 
-func _on_accept_press() -> void:
-	if _interface_dropdown.get_selected_id() != -1:
-		var option_string: String = _interface_dropdown.get_item_text(_interface_dropdown.get_selected_id())
-		var split_strings: PackedStringArray = option_string.split(" ")
-		var color_setting: UIManager.THEME_COLORS
-		if split_strings[1] == "Dark":
-			color_setting = UIManager.THEME_COLORS.DARK
-		var zoom_value: float = split_strings[0].to_float()
-		BV.UI.request_switch_to_theme(zoom_value, color_setting)
-	BV.UI.set_advanced_mode(_advanced_mode.button_pressed)
-	if FeagiCore.skip_rate != _skip_rate.current_int:
-		FeagiCore.requests.change_skip_rate(_skip_rate.current_int)
-	if FeagiCore.supression_threshold != _supression.current_int:
-		FeagiCore.requests.change_supression_threshold(_supression.current_int)
-	if FeagiCore.feagi_local_cache.plasticity_queue_depth != _plasicity.current_int:
-		FeagiCore.requests.update_plasticity_queue_depth(_plasicity.current_int)
-	close_window()
+	if not FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID("iv00_C"):
+		var vision_button: Button = _window_internals.get_node("HBoxContainer/SettingSelector/Selection/Vision")
+		vision_button.disabled = true
+		vision_button.tooltip_text = "No Vision Cortical Areas Found!"
 
-# THis is really stupid, but temporary
-func _get_theme_index() -> int:
-	var search: Dictionary = {
-		0.5: 0,
-		0.75: 1,
-		1.0: 2,
-		1.25: 3,
-		1.5: 4,
-		2.0: 5,
-	}
-	#var color_mode: String = "Dark" # TODO no alternatives
-	var sizing_string: float = BV.UI.loaded_theme_scale.x
-	return search[sizing_string]
+## Buttons in the tscn have their pressed signal binded, with an added argument of the name of the section (by node name) to open
+func _select_section(section_name: String) -> void:
+	var setting_holders: Node = _window_internals.get_node("HBoxContainer/SpecificSettings")
+	if !setting_holders.has_node(section_name):
+		push_error("Invalid section name %s selected!" % section_name)
+		return
+	var section: Node = setting_holders.get_node(section_name)
 	
+	if section is WindowOptionsMenu_General:
+		_action_buttons.visible = true
+		_section_none.visible = false
+		_section_general.visible = true
+		_section_vision.visible = false
+		# dont need to load anything
+		return
+	if section is WindowOptionsMenu_Vision:
+		if _waiting:
+			return # prevent feagi spam
+		_waiting = true
+		_action_buttons.visible = true
+		_section_none.visible = false
+		_section_general.visible = false
+		_section_vision.visible = true
+		
+		var feagi_response: FeagiRequestOutput = await FeagiCore.requests.retrieve_vision_tuning_parameters()
+		_waiting = false
+		if not feagi_response.success:
+			BV.NOTIF.add_notification("Unable to get Vision Turning Parameters", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+			close_window()
+		_section_vision.load_from_FEAGI(feagi_response.decode_response_as_dict())
+
+func _apply_pressed() -> void:
+	
+	if _section_general.visible:
+		_section_general.apply_settings()
+		BV.NOTIF.add_notification("Updated local Settings!", NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
+		return
+	
+	if _section_vision.visible:
+		_waiting = true
+		## Send vision data
+		var response: FeagiRequestOutput = await FeagiCore.requests.send_vision_tuning_parameters(_section_vision.export_for_FEAGI())
+		if response.success:
+			BV.NOTIF.add_notification("Updated Visual Parameters!", NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
+		else:
+			BV.NOTIF.add_notification("Unable to update Visual Parameters!", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		_waiting = false
+		return

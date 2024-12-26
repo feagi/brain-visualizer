@@ -5,7 +5,7 @@ const WINDOW_NAME: StringName = "IOPU_tuner"
 
 var _vision_button: Button
 var _no_section: VBoxContainer
-var _vision: WindowIOPUTuner_Vision
+var _vision: WindowOptionsMenu_Vision
 var _apply_button: Button
 
 var _waiting: bool

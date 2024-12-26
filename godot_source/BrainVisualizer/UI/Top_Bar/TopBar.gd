@@ -117,9 +117,6 @@ func _smaller_scale() -> void:
 func _bigger_scale() -> void:
 	_set_scale(1)
 
-func _open_tuning() -> void:
-	BV.WM.spawn_IOUPU_tuner_window()
-
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 

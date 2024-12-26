@@ -1,19 +1,19 @@
 extends VBoxContainer
-class_name WindowIOPUTuner_Vision
+class_name WindowOptionsMenu_Vision
 
 var _central_vision_res: Vector2iField
 var _peripheral_vision_res: Vector2iField
 var _flicker_period: IntInput
 var _color_option_color: CheckBox
 var _color_option_gray: CheckBox
-var _eccentricity_x: HSlider
-var _eccentricity_y: HSlider
-var _modulation_x: HSlider
-var _modulation_y: HSlider
-var _brightness: HSlider
-var _contrast: HSlider
-var _shadows: HSlider
-var _pixel_change: HSlider
+var _eccentricity_x: SliderPercentage
+var _eccentricity_y: SliderPercentage
+var _modulation_x: SliderPercentage
+var _modulation_y: SliderPercentage
+var _brightness: SliderPercentage
+var _contrast: SliderPercentage
+var _shadows: SliderPercentage
+var _pixel_change: SliderPercentage
 
 var _button_group: ButtonGroup
 
@@ -23,14 +23,14 @@ func _ready() -> void:
 	_flicker_period = $General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3/flicker
 	_color_option_color = $General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/Color
 	_color_option_gray = $General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/Grayscale
-	_eccentricity_x = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/HSlider
-	_eccentricity_y = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5/HSlider
-	_modulation_x = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6/HSlider
-	_modulation_y = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer7/HSlider
-	_brightness = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/HSlider
-	_contrast = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer5/HSlider
-	_shadows = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer6/HSlider
-	_pixel_change = $Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4/HSlider
+	_eccentricity_x = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Eccentricity_X
+	_eccentricity_y = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Eccentricity_Y
+	_modulation_x = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Modulation_X
+	_modulation_y = $Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Modulation_Y
+	_brightness = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Brightness
+	_contrast = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Contrast
+	_shadows = $Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/Shadows
+	_pixel_change = $Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/PixelChange
 	
 	_button_group = ButtonGroup.new()
 	_color_option_color.button_group = _button_group
