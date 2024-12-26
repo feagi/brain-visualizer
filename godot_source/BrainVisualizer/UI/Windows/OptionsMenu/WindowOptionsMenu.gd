@@ -3,7 +3,6 @@ class_name WindowOptionsMenu
 
 const WINDOW_NAME: StringName = "options_menu"
 
-var _section_none: VBoxContainer
 var _section_general: WindowOptionsMenu_General
 var _section_vision: WindowOptionsMenu_Vision
 
@@ -14,7 +13,6 @@ var _waiting: bool
 func _ready() -> void:
 	super()
 	
-	_section_none = _window_internals.get_node("HBoxContainer/SpecificSettings/Nothing")
 	_section_general = _window_internals.get_node("HBoxContainer/SpecificSettings/General")
 	_section_vision = _window_internals.get_node("HBoxContainer/SpecificSettings/Vision")
 	_action_buttons = _window_internals.get_node("HBoxContainer/SpecificSettings/Buttons")
@@ -38,7 +36,6 @@ func _select_section(section_name: String) -> void:
 	
 	if section is WindowOptionsMenu_General:
 		_action_buttons.visible = true
-		_section_none.visible = false
 		_section_general.visible = true
 		_section_vision.visible = false
 		# dont need to load anything
@@ -48,7 +45,6 @@ func _select_section(section_name: String) -> void:
 			return # prevent feagi spam
 		_waiting = true
 		_action_buttons.visible = true
-		_section_none.visible = false
 		_section_general.visible = false
 		_section_vision.visible = true
 		

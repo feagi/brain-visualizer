@@ -60,19 +60,7 @@ text = "Vision"
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
 
-[node name="Nothing" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Nothing"]
-layout_mode = 2
-size_flags_vertical = 3
-text = "Please Select an Option!"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="General" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
-visible = false
 layout_mode = 2
 script = ExtResource("3_g33ho")
 
