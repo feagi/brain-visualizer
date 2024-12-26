@@ -163,4 +163,3 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 					worker_done.emit()
 					_timer.stop()
 					return
-
