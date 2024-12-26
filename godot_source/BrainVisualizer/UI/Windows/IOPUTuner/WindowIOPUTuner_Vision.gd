@@ -67,11 +67,11 @@ func load_from_FEAGI(vision_details: Dictionary) -> void:
 	
 	if vision_details.has("eccentricity"):
 		_eccentricity_x.value = vision_details["eccentricity"][0]
-		_eccentricity_y.value = vision_details["eccentricity"][0]
+		_eccentricity_y.value = vision_details["eccentricity"][1]
 	
 	if vision_details.has("modulation"):
 		_modulation_x.value = vision_details["modulation"][0]
-		_modulation_y.value = vision_details["modulation"][0]
+		_modulation_y.value = vision_details["modulation"][1]
 	
 	if vision_details.has("brightness"):
 		_brightness.value = vision_details["brightness"]
