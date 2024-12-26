@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://lavpe4aaitvu"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.gd" id="1_b4aqv"]
+
+[node name="SliderPercentage" type="HBoxContainer"]
+script = ExtResource("1_b4aqv")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Label"
+
+[node name="HSlider" type="HSlider" parent="."]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 4
+step = 0.1
+
+[node name="SpinBox" type="SpinBox" parent="."]
+layout_mode = 2
+suffix = "%"
+
+[connection signal="value_changed" from="HSlider" to="SpinBox" method="set_value_no_signal"]
+[connection signal="value_changed" from="SpinBox" to="HSlider" method="set_value_no_signal"]
