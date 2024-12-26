@@ -28,9 +28,6 @@ var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
 var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
 
-var brain_readiness
-var genome_updated
-
 func _process(_delta: float):
 	_socket.poll()
 	match(_socket.get_ready_state()):
@@ -62,10 +59,8 @@ func _process(_delta: float):
 					return
 				if dict.has("status"):
 					var dict_status = dict["status"]
-					if dict_status.has("brain_readiness"):
-						brain_readiness = dict_status["brain_readiness"]
-					if dict_status.has("genome_updated"):
-						genome_updated = dict_status["genome_updated"]
+					print(dict_status)
+					FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
 				if dict.has("activations"):
 					feagi_return_other.emit(dict["activations"])
 
