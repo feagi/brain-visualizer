@@ -19,9 +19,10 @@ var percentage: float:
 			return _slider.value
 		return 0.0
 	set(v):
-		v = clampf(v, 0.0, 100.0)
-		_set_slider_no_signal(v)
-		_set_spinbox_no_signal(v)
+		if _slider:
+			v = clampf(v, 0.0, 100.0)
+			_set_slider_no_signal(v)
+			_set_spinbox_no_signal(v)
 
 ## Value of percentage from 0.0 - 1.0
 var value: float:
@@ -30,15 +31,19 @@ var value: float:
 			return _slider.value / 100.0
 		return 0.0
 	set(v):
-		v = clampf(v, 0.0, 1.0)
-		_set_slider_no_signal(v * 100.0)
-		_set_spinbox_no_signal(v * 100.0)
+		if _slider:
+			v = clampf(v, 0.0, 1.0)
+			_set_slider_no_signal(v * 100.0)
+			_set_spinbox_no_signal(v * 100.0)
 
 var label_text: StringName:
 	get: 
 		if _label:
 			return _label.text
 		return &""
+	set(v):
+		if _label:
+			_label.text = v
 
 func _ready() -> void:
 	_label = $Label

@@ -197,6 +197,9 @@ script = ExtResource("7_tri27")
 layout_mode = 2
 section_text = &"General"
 
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/HBoxContainer" index="1"]
+text = "General"
+
 [node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
 layout_mode = 2
 
@@ -267,6 +270,9 @@ flat = true
 layout_mode = 2
 section_text = &"Central/Peripheral adjustments"
 
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/HBoxContainer" index="1"]
+text = "Adjustments"
+
 [node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
 layout_mode = 2
 
@@ -290,6 +296,9 @@ initial_label_text = &"Modulation (Y)"
 layout_mode = 2
 section_text = &"Enchancements"
 
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/HBoxContainer" index="1"]
+text = "Enhancements"
+
 [node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
 layout_mode = 2
 
@@ -308,6 +317,9 @@ initial_label_text = &"Shadows"
 [node name="Thresholds" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
 layout_mode = 2
 section_text = &"Thresholds"
+
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/HBoxContainer" index="1"]
+text = "Thresholds"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
 layout_mode = 2
