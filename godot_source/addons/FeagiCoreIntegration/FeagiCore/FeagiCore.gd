@@ -99,18 +99,12 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	if !was_connection_sucessful:
 		return
 	
-	# Start the polling health worker
+	# Start the health worker
 	network.http_API.kill_polling_healthcheck_worker() # Ensure theres only 1 worker
 	
-	var polling_health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_polling_call(
+	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
 		FeagiCore.network.http_API.address_list.GET_system_healthCheck,
-		HTTPClient.METHOD_GET,
-		null,
-		FeagiCore.feagi_settings.seconds_between_healthcheck_pings,
 	)
-	
-	_polling_health_check_worker = FeagiCore.network.http_API.make_HTTP_call(polling_health_check_request)
-	_polling_health_check_worker.name = FeagiCore.network.http_API.HEALTH_CHECK_WORKER_NAME
 	
 	var process_output_for_cache: Callable = func(polled_result: FeagiRequestOutput) :  # Functional Programming my beloved
 		if polled_result.has_timed_out:
@@ -120,9 +114,9 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		var health_data: Dictionary = polled_result.decode_response_as_dict()
 		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 	
-	# NOTE: Nothing in core will respond to the events here since we are not connected to them yet!
-	_polling_health_check_worker.worker_retrieved_latest_poll.connect(process_output_for_cache)
-	await _polling_health_check_worker.worker_retrieved_latest_poll
+	_polling_health_check_worker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
+
+	await _polling_health_check_worker.worker_done
 	
 	# confirm we have the required keys
 	var raw_output: FeagiRequestOutput = _polling_health_check_worker.retrieve_output_and_continue()
@@ -132,6 +126,7 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		_polling_health_check_worker = null
 		network.disconnect_networking()
 		return
+	process_output_for_cache.call(raw_output)
 	
 	if feagi_local_cache.genome_availability:
 		if feagi_local_cache.brain_readiness:

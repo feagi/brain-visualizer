@@ -44,15 +44,15 @@ func _process(_delta: float):
 			
 			while _socket.get_available_packet_count():
 				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
-				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
-					print("FEAGI Websocket: Recieved Request from FEAGI to reset genome!")
-					feagi_requesting_reset.emit()
-				elif _cache_websocket_data.get_string_from_utf8() == SOCKET_GENEOME_UPDATE_LATENCY: # TODO DELETE
+				var dict: Dictionary = str_to_var(_cache_websocket_data.get_string_from_ascii()) 
+				if !dict:
+					push_error("FEAGI: Unable to parse WS Data!")
 					return
-				else:
-					# assume its visualization data
-					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
-					feagi_return_other.emit(temp)
+				if dict.has("status"):
+					var dict_status = dict["status"]
+					FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+				if dict.has("activations"):
+					feagi_return_other.emit(dict["activations"])
 
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request

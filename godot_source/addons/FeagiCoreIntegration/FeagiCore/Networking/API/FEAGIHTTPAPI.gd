@@ -118,4 +118,3 @@ func _retrying_worker_failed_to_recover(worker: APIRequestWorker):
 	var index: int = _retrying_workers.find(worker)
 	if index != -1:
 		_retrying_workers.remove_at(index)
-
