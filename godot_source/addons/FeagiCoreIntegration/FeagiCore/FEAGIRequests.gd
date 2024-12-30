@@ -835,7 +835,7 @@ func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> F
 	var dict_to_send: Dictionary = {
 		"area_list": ID_list
 	}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_corticalArea_multi_corticalArea, dict_to_send)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_reset, dict_to_send)
 
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
