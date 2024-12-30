@@ -563,6 +563,8 @@ func _user_pressed_delete_button() -> void:
 	close_window()
 
 func _user_pressed_reset_button() -> void:
-	pass # TODO
+	FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
+	BV.NOTIF.add_notification("Reseting cortical areas...")
+	close_window()
 
 #endregion

@@ -67,6 +67,7 @@ var PUT_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/c
 var PUT_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var PUT_system_corticalAreaVisualizationSupressionThreshold: StringName = "v1/system/cortical_area_visualization_suppression_threshold"
 var PUT_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
+var PUT_corticalArea_reset: StringName = "/v1/cortical_area/reset"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"
