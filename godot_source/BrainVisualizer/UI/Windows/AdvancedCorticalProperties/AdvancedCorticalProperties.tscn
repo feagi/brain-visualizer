@@ -1020,6 +1020,25 @@ texture_disabled = ExtResource("24_m25xf")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="Reset" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"]
+layout_mode = 2
+
+[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reset Cortical Area"
+
+[node name="ResetButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("21_rudp3")
+texture_pressed = ExtResource("22_gf55e")
+texture_hover = ExtResource("23_4pkn4")
+texture_disabled = ExtResource("24_m25xf")
+ignore_texture_size = true
+stretch_mode = 0
+
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Summary" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region/Region" to="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters" method="_user_press_edit_region"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing" method="_toggle_button_pressed"]
@@ -1041,3 +1060,4 @@ stretch_mode = 0
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E/Add" to="." method="_user_pressed_add_efferent_button"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/DangerZone" method="_toggle_button_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete/DeleteButton" to="." method="_user_pressed_delete_button"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset/ResetButton" to="." method="_user_pressed_reset_button"]

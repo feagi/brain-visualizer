@@ -562,5 +562,7 @@ func _user_pressed_delete_button() -> void:
 	BV.WM.spawn_confirm_deletion(genome_objects)
 	close_window()
 
+func _user_pressed_reset_button() -> void:
+	pass # TODO
 
 #endregion
