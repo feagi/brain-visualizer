@@ -1,7 +1,7 @@
 extends TabContainer
 class_name UITabContainer
 
-const PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
+var PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
@@ -17,6 +17,7 @@ func _ready():
 	_tab_bar = get_tab_bar()
 	_tab_bar.select_with_rmb = true
 	_tab_bar.tab_close_pressed.connect(_on_user_close_tab)
+	PREFAB_CIRCUITBUILDER = load("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 	tab_changed.connect(_on_top_tab_change)
 
 func setup(inital_tabs: Array[Control]) -> void:
