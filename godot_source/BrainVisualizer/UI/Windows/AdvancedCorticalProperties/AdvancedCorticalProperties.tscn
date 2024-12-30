@@ -898,7 +898,7 @@ layout_mode = 2
 [node name="Label_Afferent" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_A"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Afferent (inputs)"
+text = "Incoming Connections"
 
 [node name="Add" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_A"]
 custom_minimum_size = Vector2(40, 40)
@@ -922,7 +922,7 @@ layout_mode = 2
 [node name="Label_Efferent" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Efferent (outputs)"
+text = "Outgoing Connections"
 
 [node name="Add" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E"]
 custom_minimum_size = Vector2(40, 40)
