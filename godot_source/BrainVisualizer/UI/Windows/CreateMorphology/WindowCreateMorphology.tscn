@@ -19,6 +19,7 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_w1bco")
+window_spawn_location = Vector2i(400, 200)
 
 [node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
 layout_mode = 2
