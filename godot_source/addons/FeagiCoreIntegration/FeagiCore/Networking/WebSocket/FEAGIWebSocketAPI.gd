@@ -51,9 +51,11 @@ func _process(_delta: float):
 				if dict.has("status"):
 					var dict_status = dict["status"]
 					FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+					if dict_status.has("genome_changed"):
+						feagi_requesting_reset.emit()
 				if dict.has("activations"):
 					feagi_return_other.emit(dict["activations"])
-
+				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
 			pass
