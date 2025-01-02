@@ -149,7 +149,7 @@ func _button_quick_connect() -> void:
 
 func _button_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE) -> void:
 	if len(_selection) == 0:
-		BV.NOTIF.add_notification("Please select something!")
+		BV.WM.spawn_quick_connect_neuron(mode)
 	else:
 		BV.WM.spawn_quick_connect_neuron(mode, _selection[0] as AbstractCorticalArea)
 	close_window()
