@@ -378,12 +378,14 @@ func _refresh_from_cache_firing_parameters() -> void:
 @export var _line_initial_neuron_lifespan: IntInput
 @export var _line_lifespan_growth_rate: IntInput
 @export var _line_longterm_memory_threshold: IntInput
+@export var _line_temporal_depth: IntInput
 @export var _button_memory_send: Button
 
 func _init_memory() -> void:
 	_connect_control_to_update_button(_line_initial_neuron_lifespan, "neuron_init_lifespan", _button_memory_send)
 	_connect_control_to_update_button(_line_lifespan_growth_rate, "neuron_lifespan_growth_rate", _button_memory_send)
 	_connect_control_to_update_button(_line_longterm_memory_threshold, "neuron_longterm_mem_threshold", _button_memory_send)
+	_connect_control_to_update_button(_line_temporal_depth, "temporal_depth", _button_memory_send)
 	
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
 
@@ -391,7 +393,7 @@ func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_line_initial_neuron_lifespan, "memory_parameters", "initial_neuron_lifespan")
 	_update_control_with_value_from_areas(_line_lifespan_growth_rate, "memory_parameters", "lifespan_growth_rate")
 	_update_control_with_value_from_areas(_line_longterm_memory_threshold, "memory_parameters", "longterm_memory_threshold")
-
+	_update_control_with_value_from_areas(_line_temporal_depth, "memory_parameters", "temporal_depth")
 
 #endregion
 
@@ -560,9 +562,9 @@ func _user_pressed_delete_button() -> void:
 	BV.WM.spawn_confirm_deletion(genome_objects)
 	close_window()
 
+func _user_pressed_reset_button() -> void:
+	FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
+	BV.NOTIF.add_notification("Reseting cortical areas...")
+	close_window()
 
 #endregion
-
-
-
-

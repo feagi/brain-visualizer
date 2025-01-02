@@ -42,9 +42,6 @@ func _ready():
 	node_deselected.connect(_node_deselect)
 
 
-			
-
-
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
@@ -368,4 +365,3 @@ func _toggle_draggability_based_on_focus() -> void:
 			(child as CBNodeConnectableBase).draggable = are_nodes_draggable
 			continue
 #endregion
-

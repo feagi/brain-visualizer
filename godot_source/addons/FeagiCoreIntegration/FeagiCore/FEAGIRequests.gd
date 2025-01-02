@@ -823,6 +823,32 @@ func mass_delete_cortical_areas(deleting_areas: Array[AbstractCorticalArea]) -> 
 		FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting)
 	return FEAGI_response_data
 
+# Send Request to reset cortical areas
+func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var ID_list: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas)
+	var dict_to_send: Dictionary = {
+		"area_list": ID_list
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_reset, dict_to_send)
+
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to reset %d cortical areass!" % len(cortical_areas))
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully reset %s cortical areas" % len(cortical_areas))
+	return FEAGI_response_data
+	
+	
 
 ## Refresh templates for IPU/OPU generation. Note that this is technically already done on genome load
 func get_cortical_templates() -> FeagiRequestOutput:
