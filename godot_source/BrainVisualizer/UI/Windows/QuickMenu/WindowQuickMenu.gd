@@ -141,20 +141,32 @@ func _button_details() -> void:
 	close_window()
 
 func _button_quick_connect() -> void:
-	BV.WM.spawn_quick_connect((_selection[0] as AbstractCorticalArea))
+	if len(_selection) == 0:
+		BV.NOTIF.add_notification("Please select something!")
+	else:
+		BV.WM.spawn_quick_connect((_selection[0] as AbstractCorticalArea))
 	close_window()
 
 func _button_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE) -> void:
-	BV.WM.spawn_quick_connect_neuron(mode, _selection[0] as AbstractCorticalArea)
+	if len(_selection) == 0:
+		BV.NOTIF.add_notification("Please select something!")
+	else:
+		BV.WM.spawn_quick_connect_neuron(mode, _selection[0] as AbstractCorticalArea)
 	close_window()
 
 func _button_clone() -> void:
-	BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
+	if len(_selection) == 0:
+		BV.NOTIF.add_notification("Please select something!")
+	else:
+		BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
 	close_window()
 
 func _button_add_to_region() -> void:
-	var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
-	BV.WM.spawn_move_to_region(_selection, parent_region)
+	if len(_selection) == 0:
+		BV.NOTIF.add_notification("Please select something!")
+	else:
+		var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
+		BV.WM.spawn_move_to_region(_selection, parent_region)
 	close_window()
 
 func _button_delete() -> void:
