@@ -5,4 +5,4 @@ class_name BVVersion
 static var manual_version: float:
 	get: return 0.2
 static var brain_visualizer_timestamp: int: # set by github actions
-	get: return 1698409888
+	get: return 1736200503
