@@ -91,8 +91,10 @@ func get_recursive_UITabContainer_children(appending_search: Array[UITabContaine
 		output.append(_get_primary_child() as UITabContainer)
 		return output
 	# this is a split view, append the outputs of both views under the split
-	output.append((_get_primary_child() as UIView).get_recursive_UITabContainer_children(output))
-	output.append((_get_secondary_child()).get_recursive_UITabContainer_children(output))
+	if _get_primary_child():
+		output.append((_get_primary_child() as UIView).get_recursive_UITabContainer_children(output))
+	if _get_secondary_child():
+		output.append((_get_secondary_child()).get_recursive_UITabContainer_children(output))
 	return output
 
 #endregion
