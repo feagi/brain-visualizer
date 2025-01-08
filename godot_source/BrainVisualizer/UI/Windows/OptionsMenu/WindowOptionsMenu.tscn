@@ -329,7 +329,6 @@ layout_mode = 2
 initial_label_text = &"Pixel Change"
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
-visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
