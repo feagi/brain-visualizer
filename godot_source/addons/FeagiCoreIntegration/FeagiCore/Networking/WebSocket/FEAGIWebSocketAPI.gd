@@ -17,6 +17,8 @@ signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_he
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
 signal feagi_requesting_reset()
 signal feagi_return_other(data: Variant)
+signal feagi_return_rgb(data: Variant)
+signal feagi_return_size(data: Variant)
 
 var socket_health: WEBSOCKET_HEALTH:
 	get: return _socket_health
@@ -55,6 +57,10 @@ func _process(_delta: float):
 						feagi_requesting_reset.emit()
 				if dict.has("activations"):
 					feagi_return_other.emit(dict["activations"])
+				if dict.has('size'):
+					feagi_return_size.emit(dict["size"])
+				if dict.has("rgb"):
+						feagi_return_rgb.emit(str_to_var(dict["rgb"]))
 				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
