@@ -7,17 +7,20 @@ signal voxel_selected_to_list(area: AbstractCorticalArea, local_coord: Vector3i,
 var shader_material # Wait for shader 
 var global_name_list = {}
 var limit_neuron_selection_to_cortical_area: AbstractCorticalArea = null
-
+var frame_size
 var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/BrainMonitor/Previews/BrainMonitorSinglePreview.tscn")
 
 func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
 	FeagiCore.network.websocket_API.feagi_return_other.connect(test)
+	FeagiCore.network.websocket_API.feagi_return_rgb.connect(get_rgb)
+	FeagiCore.network.websocket_API.feagi_return_size.connect(get_size)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(delete_single_cortical)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(move_when_changed)
 	FeagiCore.about_to_reload_genome.connect(clear_all_selections)
 	pass
+	
 
 ## Stupid
 func move_when_changed(changed: AbstractCorticalArea):
@@ -29,6 +32,17 @@ func clear_all_selections() -> void:
 	for node in get_children(): # cancer
 		if node.name.contains("*"):
 			node.clear()
+
+func get_rgb(data):
+	var frame_data = PackedByteArray(data)
+	var image = Image.new()
+	image.set_data(frame_size[1], frame_size[0], false, Image.FORMAT_RGB8, frame_data)
+	var texture = ImageTexture.create_from_image(image)
+	#$"../../TextureRect".texture = texture # I just add texturerect node to BrainVisualizer. 
+	#$"../../TextureRect".size = Vector2(frame_size[0], frame_size[1])
+
+func get_size(data):
+	frame_size = data
 
 
 #TODO TEMP
@@ -231,4 +245,3 @@ func check_cortical(cortical_area_data : AbstractCorticalArea):
 			generate_cortical_area(cortical_area_data)
 			# Actual fix here
 			Godot_list.godot_list["data"]["direct_stimulation"][cortical_area_data.cortical_ID] = [] # Now this is something I wrote. 
-			
