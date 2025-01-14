@@ -44,17 +44,21 @@ func _process(_delta: float):
 			
 			while _socket.get_available_packet_count():
 				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
-				var dict: Dictionary = str_to_var(_cache_websocket_data.get_string_from_ascii()) 
-				if !dict:
-					push_error("FEAGI: Unable to parse WS Data!")
-					return
-				if dict.has("status"):
-					var dict_status = dict["status"]
-					FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
-					if dict_status.has("genome_changed"):
-						feagi_requesting_reset.emit()
-				if dict.has("activations"):
-					feagi_return_other.emit(dict["activations"])
+				
+				# dumb support for wrapped jsons right now
+				if _cache_websocket_data[0] == 1: # json wrapped! Ignore version as I doubt that will ever change
+					_cache_websocket_data = _cache_websocket_data.slice(2)
+					var dict: Dictionary = str_to_var(_cache_websocket_data.get_string_from_ascii()) 
+					if !dict:
+						push_error("FEAGI: Unable to parse WS Data!")
+						return
+					if dict.has("status"):
+						var dict_status = dict["status"]
+						FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+						if dict_status.has("genome_changed"):
+							feagi_requesting_reset.emit()
+					if dict.has("activations"):
+						feagi_return_other.emit(dict["activations"])
 				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
