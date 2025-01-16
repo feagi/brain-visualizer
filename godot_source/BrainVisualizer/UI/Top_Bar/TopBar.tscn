@@ -194,7 +194,11 @@ texture_pressed = ExtResource("19_fxjdk")
 texture_hover = ExtResource("19_fxjdk")
 texture_disabled = ExtResource("19_fxjdk")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
+[node name="preview" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
 
 [node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
@@ -212,7 +216,7 @@ expand_to_text_length = true
 script = ExtResource("3_v82xb")
 min_value = 0.1
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
 layout_mode = 2
 
 [node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
@@ -230,7 +234,7 @@ editable = false
 expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
 layout_mode = 2
 
 [node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
@@ -248,7 +252,7 @@ editable = false
 expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4" instance=ExtResource("10_3567y")]
+[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]
