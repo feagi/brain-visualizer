@@ -16,7 +16,7 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_health: WEBSOCKET_HEALTH)
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
 signal feagi_requesting_reset()
-signal feagi_return_other(data: Variant)
+signal feagi_return_other(data: PackedByteArray)
 
 var socket_health: WEBSOCKET_HEALTH:
 	get: return _socket_health
@@ -59,15 +59,8 @@ func _process(_delta: float):
 							if dict_status.has("genome_changed"):
 								feagi_requesting_reset.emit()
 					7: # ActivatedNeuronLocation
+						feagi_return_other.emit(_cache_websocket_data)
 						# TODO we really shouldnt be doing processing in here
-						# This array processing is slow. However to resolve this, we need to PR godot to create a proper method to handle this
-						var activations: Array[Array] = []
-						var offset: int = 2 # skip header
-						var max_offset: int = len(_cache_websocket_data)
-						while offset < max_offset:
-							activations.append([_cache_websocket_data.decode_s16(offset), _cache_websocket_data.decode_s16(offset + 2), _cache_websocket_data.decode_s16(offset + 4)])
-							offset += 6
-						feagi_return_other.emit(activations)
 				
 				
 
