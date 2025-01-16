@@ -16,12 +16,14 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_health: WEBSOCKET_HEALTH)
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
 signal feagi_requesting_reset()
-signal feagi_return_other(data: PackedByteArray)
+signal feagi_return_neuron_activation_data(ActivatedNeuronLocation: PackedByteArray)
+signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
+
 
 var socket_health: WEBSOCKET_HEALTH:
 	get: return _socket_health
 
-var _cache_websocket_data: PackedByteArray # outside to try to avoid reallocation penalties # NOTE: Godot doesnt seem to care and reallocates anyways lol
+#var _cache_websocket_data: PackedByteArray # outside to try to avoid reallocation penalties # NOTE: Godot doesnt seem to care and reallocates anyways lol
 var _socket_web_address: StringName = ""
 var _socket: WebSocketPeer
 var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
@@ -43,13 +45,14 @@ func _process(_delta: float):
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
 			while _socket.get_available_packet_count():
-				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
+				var retrieved_ws_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
 				
+				print(retrieved_ws_data[0])
 				## respond as per type
-				match(_cache_websocket_data[0]):
+				match(retrieved_ws_data[0]):
 					1: # JSON wrapper
-						_cache_websocket_data = _cache_websocket_data.slice(2)
-						var dict: Dictionary = str_to_var(_cache_websocket_data.get_string_from_ascii()) 
+						retrieved_ws_data = retrieved_ws_data.slice(2)
+						var dict: Dictionary = str_to_var(retrieved_ws_data.get_string_from_ascii()) 
 						if !dict:
 							push_error("FEAGI: Unable to parse WS Data!")
 							return
@@ -59,8 +62,12 @@ func _process(_delta: float):
 							if dict_status.has("genome_changed"):
 								feagi_requesting_reset.emit()
 					7: # ActivatedNeuronLocation
-						feagi_return_other.emit(_cache_websocket_data)
-						# TODO we really shouldnt be doing processing in here
+						feagi_return_neuron_activation_data.emit(retrieved_ws_data)
+					8:
+						feagi_return_visual_data.emit(retrieved_ws_data)
+					
+					_: # Unknown
+						push_error("Unknown data type %d recieved!" % retrieved_ws_data[0])
 				
 				
 
@@ -72,7 +79,7 @@ func _process(_delta: float):
 			# Closed Connection to FEAGI
 			if  _socket.get_available_packet_count() > 0:
 				# There was some remenant data
-				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+				_socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 			#TODO FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii())) # Add to erase neurons
 			if _is_purposfully_disconnecting:
 				_is_purposfully_disconnecting = false

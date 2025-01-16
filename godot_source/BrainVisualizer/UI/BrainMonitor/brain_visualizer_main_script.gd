@@ -13,7 +13,7 @@ var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/Brai
 func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
-	FeagiCore.network.websocket_API.feagi_return_other.connect(test)
+	FeagiCore.network.websocket_API.feagi_return_neuron_activation_data.connect(test)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(delete_single_cortical)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(move_when_changed)
 	FeagiCore.about_to_reload_genome.connect(clear_all_selections)
