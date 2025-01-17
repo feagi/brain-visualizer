@@ -46,28 +46,7 @@ func _process(_delta: float):
 			
 			while _socket.get_available_packet_count():
 				var retrieved_ws_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
-				
-				print(retrieved_ws_data[0])
-				## respond as per type
-				match(retrieved_ws_data[0]):
-					1: # JSON wrapper
-						retrieved_ws_data = retrieved_ws_data.slice(2)
-						var dict: Dictionary = str_to_var(retrieved_ws_data.get_string_from_ascii()) 
-						if !dict:
-							push_error("FEAGI: Unable to parse WS Data!")
-							return
-						if dict.has("status"):
-							var dict_status = dict["status"]
-							FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
-							if dict_status.has("genome_changed"):
-								feagi_requesting_reset.emit()
-					7: # ActivatedNeuronLocation
-						feagi_return_neuron_activation_data.emit(retrieved_ws_data)
-					8:
-						feagi_return_visual_data.emit(retrieved_ws_data)
-					
-					_: # Unknown
-						push_error("Unknown data type %d recieved!" % retrieved_ws_data[0])
+				_process_wrapped_byte_structure(retrieved_ws_data)
 				
 				
 
@@ -129,6 +108,42 @@ func websocket_send(data: Variant) -> void:
 		push_warning("FEAGI Websocket: Unable to send data to closed socket!")
 		return
 	_socket.send((data.to_ascii_buffer()).compress(1)) # for some reason, using the enum instead of the number causes this break
+
+func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
+	print(bytes[0])
+	## respond as per type
+	match(bytes[0]):
+		1: # JSON wrapper
+			bytes = bytes.slice(2)
+			var dict: Dictionary = str_to_var(bytes.get_string_from_ascii()) 
+			if !dict:
+				push_error("FEAGI: Unable to parse WS Data!")
+				return
+			if dict.has("status"):
+				var dict_status = dict["status"]
+				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+				if dict_status.has("genome_changed"):
+					feagi_requesting_reset.emit()
+		7: # ActivatedNeuronLocation
+			# ignore version for now
+			feagi_return_neuron_activation_data.emit(bytes)
+		8: # SingleRawImage
+			# ignore version for now
+			feagi_return_visual_data.emit(bytes)
+		9: # multi structure
+			# ignore version for now
+			var number_contained_structures: int = bytes[2]
+			var structure_start_index: int = 0 # cached
+			var structure_length: int = 0 # cached
+			var header_offset: int = 3 # cached, lets us know where to read from the subheader
+			for structure_index in number_contained_structures:
+				structure_start_index = bytes.decode_u32(header_offset)
+				structure_length = bytes.decode_u32(header_offset + 4)
+				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
+				header_offset += 8
+			
+		_: # Unknown
+			push_error("Unknown data type %d recieved!" % bytes[0])
 
 func _reconnect_websocket() -> void:
 	_socket = null # enforce dereference
