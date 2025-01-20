@@ -110,7 +110,6 @@ func websocket_send(data: Variant) -> void:
 	_socket.send((data.to_ascii_buffer()).compress(1)) # for some reason, using the enum instead of the number causes this break
 
 func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
-	print(bytes[0])
 	## respond as per type
 	match(bytes[0]):
 		1: # JSON wrapper

@@ -5,6 +5,7 @@ class_name TopBar
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
 signal request_UI_mode(mode: TempSplit.STATES)
+signal use_pressed_preview_button()
 
 var _theme_custom_scaler: ScaleThemeApplier = ScaleThemeApplier.new()
 var _refresh_rate_field: FloatInput # bburst engine
@@ -15,11 +16,6 @@ var _synapse_count: TextInput
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
-
-# TEMP
-var _preview_res: Vector2i
-var _preview_image: Image = Image.new()
-var _preview_image_texture: ImageTexture = ImageTexture.new()
 
 
 func _ready():
@@ -52,7 +48,6 @@ func _ready():
 	_theme_updated(BV.UI.loaded_theme)
 	FeagiCore.about_to_reload_genome.connect(_on_genome_about_to_reload)
 	toggle_buttons_interactability(false)
-	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_temp_show_texture)
 
 
 ## Toggle button interactability of top bar (ignoring those that are not relevant to FEAGI directly)
@@ -123,6 +118,9 @@ func _smaller_scale() -> void:
 func _bigger_scale() -> void:
 	_set_scale(1)
 
+func _preview_button_pressed() -> void:
+	use_pressed_preview_button.emit()
+
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 
@@ -160,17 +158,3 @@ func _format_int(number: int) -> String:
 		if digit_count % 3 == 0 and i != 0:
 			formatted_str = "," + formatted_str
 	return formatted_str
-
-func _temp_show_texture(bytes: PackedByteArray) -> void:
-	var resolution: Vector2i = Vector2i(bytes.decode_u16(2), bytes.decode_u16(4))
-	if resolution == Vector2i(0,0):
-		return
-	if resolution != _preview_res:
-		_preview_res = resolution
-		_preview_image = Image.create_empty(resolution.x, resolution.y, false, Image.FORMAT_RGB8)
-		_preview_image_texture.set_image(_preview_image)
-		($DetailsPanel/MarginContainer/Details/Place_child_nodes_here/preview as TextureRect).texture = _preview_image_texture
-	_preview_image.set_data(resolution.x, resolution.y, false, Image.FORMAT_RGB8, bytes.slice(6))
-	_preview_image_texture.update(_preview_image)
-	
-	
