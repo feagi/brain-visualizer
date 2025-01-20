@@ -27,6 +27,7 @@ func _ready():
 
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
+	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 	
 
 func _update_preview_texture_from_raw_data(bytes: PackedByteArray) -> void:

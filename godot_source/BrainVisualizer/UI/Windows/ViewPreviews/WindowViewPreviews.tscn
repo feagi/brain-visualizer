@@ -24,10 +24,12 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
+size_flags_horizontal = 0
 size_flags_vertical = 0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2
@@ -40,10 +42,13 @@ text = "0 X 0 (Nothing Playing)"
 [node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
 theme_type_variation = &"NotificationSystemNotification"
 
 [node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer"]
 layout_mode = 2
+size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4

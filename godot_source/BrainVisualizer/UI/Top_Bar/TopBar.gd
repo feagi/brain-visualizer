@@ -5,7 +5,6 @@ class_name TopBar
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
 signal request_UI_mode(mode: TempSplit.STATES)
-signal use_pressed_preview_button()
 
 var _theme_custom_scaler: ScaleThemeApplier = ScaleThemeApplier.new()
 var _refresh_rate_field: FloatInput # bburst engine
@@ -119,7 +118,7 @@ func _bigger_scale() -> void:
 	_set_scale(1)
 
 func _preview_button_pressed() -> void:
-	use_pressed_preview_button.emit()
+	BV.WM.spawn_view_previews()
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
