@@ -1,0 +1,91 @@
+[gd_scene load_steps=3 format=3 uid="uid://cvwxel4o8q6nm"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.gd" id="1_0vkno"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_e7575"]
+
+[node name="WindowViewPreviews" type="VBoxContainer"]
+offset_right = 126.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_0vkno")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_e7575")]
+layout_mode = 2
+title = "View Previews"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+text = "Streaming Resolution: "
+
+[node name="resolution" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+layout_mode = 2
+text = "0 X 0 (Nothing Playing)"
+
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_type_variation = &"NotificationSystemNotification"
+
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer/MarginContainer"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="sizes" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+
+[node name="1x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "1X"
+
+[node name="2x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "2X"
+
+[node name="4x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "4X"
+
+[node name="8x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "8X"
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/1x" to="." method="_scale_button_pressed" binds= [1]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/2x" to="." method="_scale_button_pressed" binds= [2]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/4x" to="." method="_scale_button_pressed" binds= [4]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/8x" to="." method="_scale_button_pressed" binds= [8]]

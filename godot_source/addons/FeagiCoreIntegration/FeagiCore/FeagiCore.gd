@@ -212,6 +212,7 @@ func feagi_recieved_supression_threshold(new_supression_threshold: int) -> void:
 
 
 func _recieve_genome_reset_request():
-	_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_READY:
+		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
 
 #endregion

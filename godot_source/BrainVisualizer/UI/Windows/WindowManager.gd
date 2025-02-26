@@ -21,6 +21,7 @@ const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Wi
 const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
 const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.tscn")
 const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.tscn")
+const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.tscn")
 
 
 var loaded_windows: Dictionary
@@ -102,7 +103,11 @@ func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRe
 func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject]) -> void:
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME) as QuickCorticalMenu
 	quick_cortical_menu.setup(selected_objects)
-	
+
+func spawn_view_previews() -> void:
+	var view_previews: WindowViewPreviews = _default_spawn_window(_PREFAB_VIEW_PREVIEWS, WindowViewPreviews.WINDOW_NAME) as WindowViewPreviews
+	view_previews.setup()
+
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
 	if "import_amalgamation" in loaded_windows:
 		return # no need to keep opening this window

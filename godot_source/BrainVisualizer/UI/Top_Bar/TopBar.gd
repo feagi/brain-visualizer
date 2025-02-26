@@ -117,6 +117,9 @@ func _smaller_scale() -> void:
 func _bigger_scale() -> void:
 	_set_scale(1)
 
+func _preview_button_pressed() -> void:
+	BV.WM.spawn_view_previews()
+
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 

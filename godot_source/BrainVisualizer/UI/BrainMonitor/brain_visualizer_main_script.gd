@@ -13,7 +13,7 @@ var _prefab_single_preview: PackedScene = preload("res://BrainVisualizer/UI/Brai
 func _ready():
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(on_cortical_area_added)
 #	shader_material = $cortical_area_box.mesh.material # EXPERIMENT
-	FeagiCore.network.websocket_API.feagi_return_other.connect(test)
+	FeagiCore.network.websocket_API.feagi_return_neuron_activation_data.connect(test)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(delete_single_cortical)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(move_when_changed)
 	FeagiCore.about_to_reload_genome.connect(clear_all_selections)
@@ -108,7 +108,17 @@ func generate_model(name_input, x_input, y_input, z_input, width_input, depth_in
 					new.transform.origin = Vector3(x_gain+int(x_input), y_gain+int(y_input), -1 * (z_gain+int(z_input)))
 					counter += 1
 
-func test(stored_value):
+func test(retrieved_data: PackedByteArray):
+	
+		# This array processing is slow. However to resolve this, we need to PR godot to create a proper method to handle this
+	var stored_value: Array[Array] = []
+	var offset: int = 2 # skip header
+	var max_offset: int = len(retrieved_data)
+	while offset < max_offset:
+		stored_value.append([retrieved_data.decode_s16(offset), retrieved_data.decode_s16(offset + 2), retrieved_data.decode_s16(offset + 4)])
+		offset += 6
+	
+	
 	if stored_value == null: # Checks if it's null. When it is, it clear red voxels
 		$red_voxel.multimesh.instance_count = 0
 		$red_voxel.multimesh.visible_instance_count = 0
