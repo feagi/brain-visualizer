@@ -1,5 +1,5 @@
 # Brain Visualizer
-This is the brain visualizer that shows the activity of robots, simulation robots, or any device activity. It's a dashboard for FEAGI.
+Brain Visualizer is FEAGI's interactive interface for building and connecting brain structures. It offers real-time 3D visualization of neuronal activity, allowing users to manually stimulate neurons and explore neuronal circuits in detail.
 
 # Deployment Options
 ## Deploy as a Docker container
@@ -24,5 +24,5 @@ This needs to have godot bridge and FEAGI running before launching the brain vis
 Please see here: https://github.com/feagi/feagi-connector/tree/staging/embodiments/godot-bridge/DEPLOY.md
 
 # To run FEAGI 
-Please see here: https://github.com/feagi/feagi/wiki/Deployment
+Please see here: https://github.com/feagi/feagi/wiki/Deployment/README.md
 
