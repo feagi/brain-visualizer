@@ -3,10 +3,10 @@ Brain Visualizer is FEAGI's interactive interface for building and connecting br
 
 # Deployment Options
 ## Deploy as a Docker container
-Please see here: https://github.com/feagi/feagi/wiki/Deployment/_edit#dependencies
+Please see here: https://github.com/feagi/feagi/wiki/Deployment/#dependencies
 
 ## Deploy as a cloud instance
-Please see here: https://github.com/feagi/feagi/wiki/Deployment/_edit#dependencies-2
+Please see here: https://github.com/feagi/feagi/wiki/Deployment/#dependencies-2
 
 ## Deploy Brain visualizer locally
 This needs to have godot bridge and FEAGI running before launching the brain visualizer. To launch brain visualizer:
