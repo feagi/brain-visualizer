@@ -11,7 +11,7 @@ Please see here: https://github.com/feagi/feagi/wiki/Deployment/#dependencies-2
 ## Deploy Brain visualizer locally
 This needs to have godot bridge and FEAGI running before launching the brain visualizer. To launch brain visualizer:
 1) Run in terminal/CMD: `git clone https://github.com/feagi/brain-visualizer.git`
-2) Open the Godot program (you can get it at https://godotengine.org/download/)
+2) Open the Godot program (you can get it at [Godot 4.4](https://godotengine.org/download/archive/4.4-stable/))
 3) Drag the project.godot file from `brain-visualizer\godot_source\` to Godot.
 4) Double check the project in the Godot project manager. It should pop in the list. Double click on it.
 5) Once it's loaded, click on the play icon in the top right.
