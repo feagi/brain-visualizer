@@ -24,5 +24,5 @@ This needs to have godot bridge and FEAGI running before launching the brain vis
 Please see here: https://github.com/feagi/feagi-connector/tree/staging/embodiments/godot-bridge/README.md
 
 # To run FEAGI 
-Please see here: https://github.com/feagi/feagi/wiki/Deployment/README.md
+Please see here: https://github.com/feagi/feagi/wiki/Deployment
 
