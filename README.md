@@ -19,6 +19,9 @@ Please see our tutorial for how to use Brain Visualizer [here](https://youtu.be/
 ### 🛠️Local Deployment
 Brain Visualizer can be deployed locally as part of FEAGI Playground.
 
+### To run Brain Visualizer as a standalone
+Please see here: [DEPLOY.md](DEPLOY.md)
+
 # Community
 Feel free to reach out to us on one of our various platforms!
 - [Discord](https://discord.gg/PTVC8fyGN8)
