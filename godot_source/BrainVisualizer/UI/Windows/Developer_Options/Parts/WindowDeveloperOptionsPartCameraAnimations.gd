@@ -1,7 +1,7 @@
 extends VBoxContainer
 class_name WindowDeveloperOptionsPartCameraAnimations # Microsoft would be proud
 
-var _camera: BVCam
+var _camera: Camera3D
 var _stored_positions: Array[Vector3] = []
 var _stored_rotations: Array[Quaternion] = []
 var _stored_times: Array[float] = []

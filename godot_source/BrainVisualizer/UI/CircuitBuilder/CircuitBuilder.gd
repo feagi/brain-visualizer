@@ -85,7 +85,6 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	if (area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
 		return
-	BV.UI.selection_system.clear_all_highlighted()
 	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
 	_cortical_nodes[area.cortical_ID] = cortical_node
 	add_child(cortical_node)

@@ -41,11 +41,8 @@ func _enter_tree():
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
-	_brain_monitor = $BrainMonitor
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
-	_root_UI_view = $CB_Holder/UIView
-	_selection_system = SelectionSystem.new()
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -60,7 +57,6 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
-	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 
 	
@@ -99,9 +95,6 @@ func FEAGI_confirmed_genome() -> void:
 	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	
 	initial_tabs = [cb]
-	_root_UI_view.reset()
-	_root_UI_view.set_this_as_root_view()
-	_root_UI_view.setup_as_single_tab(initial_tabs)
 	toggle_loading_screen(false)
 	
 	# This is utter cancer
@@ -151,20 +144,6 @@ func set_advanced_mode(is_advanced_mode: bool) -> void:
 func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
 	#TODO change behavior depending on BV / CB
 	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
-
-
-## Starts a preview cort a cortical area
-func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
-	position_signals: Array[Signal], dimensions_signals: Array[Signal], close_signals: Array[Signal],
- 	color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> GenericSinglePreviewHandler:
-	
-	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
-	add_child(preview_handler)
-	preview_handler.start_BM_preview(initial_dimensions, initial_position, color, is_rendering)
-	preview_handler.connect_BM_preview(position_signals, dimensions_signals, close_signals)
-	return preview_handler
-	# when moving this to BM, add a signal here to closing all handlers and append that signal to the above close array!
-	
 
 
 ## Open the developer menu

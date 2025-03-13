@@ -16,4 +16,3 @@ func _ready() -> void:
 func cortical_type_selected(_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal]) -> void:
 	var move_signals: Array[Signal] = [location.user_updated_vector]
 	var resize_signals: Array[Signal] = [dimensions.user_updated_vector]
-	BV.UI.start_cortical_area_preview(location.current_vector, dimensions.current_vector, move_signals, resize_signals, preview_close_signals)

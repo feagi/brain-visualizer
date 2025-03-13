@@ -12,7 +12,6 @@ var _wiring_selector: OptionButton
 
 var _amalgamation_ID: StringName
 var _circuit_size: Vector3i
-var _preview_holder: GenericSinglePreviewHandler
 
 
 func _ready() -> void:

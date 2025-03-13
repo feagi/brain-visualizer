@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=15 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" uid="uid://dkpx8psa1xbfm" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -6,7 +6,6 @@
 [ext_resource type="Resource" uid="uid://bha88u45sahwc" path="res://BrainVisualizer/Configs/feagi_default_settings.tres" id="2_iu6jq"]
 [ext_resource type="Resource" uid="uid://bbmq3e8wtka4s" path="res://BrainVisualizer/Configs/endpoint_settings.tres" id="3_m3l25"]
 [ext_resource type="Script" uid="uid://7e5yxb2a5mne" path="res://BrainVisualizer/UI/UIManager.gd" id="4_qdn3k"]
-[ext_resource type="PackedScene" uid="uid://ci836c2xixpea" path="res://BrainVisualizer/UI/BrainMonitor/BrainMonitor.tscn" id="6_8wmkm"]
 [ext_resource type="Script" uid="uid://xuo7sffioktt" path="res://BrainVisualizer/UI/CircuitBuilder/TempSplit.gd" id="6_r3y8u"]
 [ext_resource type="PackedScene" uid="uid://bpam2w7i6dg8w" path="res://BrainVisualizer/UI/UIView/UIView.tscn" id="7_ee4d5"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
@@ -35,8 +34,6 @@ default_FEAGI_network_settings = ExtResource("3_m3l25")
 
 [node name="UIManager" type="Node" parent="."]
 script = ExtResource("4_qdn3k")
-
-[node name="BrainMonitor" parent="UIManager" instance=ExtResource("6_8wmkm")]
 
 [node name="CB_Holder" type="SplitContainer" parent="UIManager"]
 visible = false

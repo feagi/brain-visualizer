@@ -140,6 +140,8 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				structure_length = bytes.decode_u32(header_offset + 4)
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
+		10: # SVO neuron activations
+			pass # TODO
 			
 		_: # Unknown
 			push_error("Unknown data type %d recieved!" % bytes[0])

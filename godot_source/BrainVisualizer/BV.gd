@@ -11,12 +11,8 @@ var BV: BrainVisualizer:
 var UI: UIManager:
 	get: return get_node("/root/BrainVisualizer/UIManager") as UIManager
 
-var BM: Node:
-	get: return get_node("/root/BrainVisualizer/UIManager/BrainMonitor")
-
 var NOTIF: NotificationSystem:
 	get: return get_node("/root/BrainVisualizer/UIManager/NotificationSystem") as NotificationSystem
 
 var WM: WindowManager:
 	get: return get_node("/root/BrainVisualizer/UIManager/WindowManager") as WindowManager
-
