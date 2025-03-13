@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cvwxel4o8q6nm"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.gd" id="1_0vkno"]
+[ext_resource type="Script" uid="uid://cos1fgiamv3bi" path="res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.gd" id="1_0vkno"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_e7575"]
 
 [node name="WindowViewPreviews" type="VBoxContainer"]

@@ -1,15 +1,15 @@
 [gd_scene load_steps=16 format=3 uid="uid://ci836c2xixpea"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/brain_visualizer_main_script.gd" id="1_jof7u"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/BVCam.gd" id="2_tgd5b"]
+[ext_resource type="Script" uid="uid://b0f2q6yac3dl3" path="res://BrainVisualizer/UI/BrainMonitor/brain_visualizer_main_script.gd" id="1_jof7u"]
+[ext_resource type="Script" uid="uid://bamja7ouoi0ry" path="res://BrainVisualizer/UI/BrainMonitor/BVCam.gd" id="2_tgd5b"]
 [ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_afw7a"]
 [ext_resource type="Texture2D" uid="uid://c7l76vkvl76ev" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/___pwr.png" id="4_assex"]
 [ext_resource type="Material" uid="uid://deu6gaedxwp2s" path="res://BrainVisualizer/UI/BrainMonitor/Resources/cortical_area.material" id="4_qnrq4"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/cortical_area_box.gd" id="5_tbl53"]
+[ext_resource type="Script" uid="uid://ch4yrbns5bsga" path="res://BrainVisualizer/UI/BrainMonitor/cortical_area_box.gd" id="5_tbl53"]
 [ext_resource type="Material" uid="uid://clcu84y1o6gix" path="res://BrainVisualizer/UI/BrainMonitor/Resources/red.material" id="6_cljop"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/FullScreenControl.gd" id="7_p6uww"]
+[ext_resource type="Script" uid="uid://danfwsok7yr0v" path="res://BrainVisualizer/UI/BrainMonitor/FullScreenControl.gd" id="7_p6uww"]
 [ext_resource type="PackedScene" uid="uid://c8s0gyef77enw" path="res://BrainVisualizer/UI/BrainMonitor/3d_indicator.tscn" id="8_xvar0"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/BrainMonitor/3d_indicator.gd" id="9_xa15g"]
+[ext_resource type="Script" uid="uid://dhmmuqeaan64l" path="res://BrainVisualizer/UI/BrainMonitor/3d_indicator.gd" id="9_xa15g"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_hqsij"]
 

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://brwx50pyfywb7"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
+[ext_resource type="Script" uid="uid://da4h0uohgf0uh" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
 
 [node name="Vector2iSpingBoxField" type="BoxContainer"]
 offset_right = 184.0

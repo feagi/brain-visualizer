@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://vm8thgnbjojc"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaCustom.gd" id="1_ita8s"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_k6lwm"]
+[ext_resource type="Script" uid="uid://b0clqju1k15n7" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaCustom.gd" id="1_ita8s"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_k6lwm"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_wwnb4"]
 
 [node name="Definition_Custom" type="VBoxContainer"]

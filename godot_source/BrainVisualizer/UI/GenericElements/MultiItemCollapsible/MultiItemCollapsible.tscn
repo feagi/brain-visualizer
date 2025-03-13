@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bmc8qgeccqy5m"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.gd" id="1_55acr"]
+[ext_resource type="Script" uid="uid://d4j5cl6qv4b1y" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.gd" id="1_55acr"]
 [ext_resource type="Texture2D" uid="uid://ce0ruhfkmtbaf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_toggle_right.png" id="2_h8720"]
 
 [node name="MultiItemCollapsible" type="BoxContainer"]

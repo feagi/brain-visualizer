@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cmfh6gb04wy3i"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.gd" id="1_75y4c"]
+[ext_resource type="Script" uid="uid://jxb6d6r1jtvo" path="res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.gd" id="1_75y4c"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_74usq"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)

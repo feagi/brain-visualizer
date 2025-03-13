@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c6w8yrqjhicjn"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsView.gd" id="1_kt4lb"]
+[ext_resource type="Script" uid="uid://d21of7b70imt4" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsView.gd" id="1_kt4lb"]
 
 [node name="ScrollRegionInternalsView" type="PanelContainer"]
 custom_minimum_size = Vector2(300, 0)

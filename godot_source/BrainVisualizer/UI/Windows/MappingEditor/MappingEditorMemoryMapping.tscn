@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c7ov4mq4cau4l"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.gd" id="1_evrjv"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="2_vtoir"]
+[ext_resource type="Script" uid="uid://bq1is02n2pkrg" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.gd" id="1_evrjv"]
+[ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="2_vtoir"]
 
 [node name="MappingEditorMemoryMapping" type="VBoxContainer"]
 script = ExtResource("1_evrjv")

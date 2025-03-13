@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://kvolmoptsp33"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.gd" id="1_oexre"]
+[ext_resource type="Script" uid="uid://dgtdk6df6icss" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.gd" id="1_oexre"]
 
 [node name="ScrollSectionGenericItem" type="HBoxContainer"]
 offset_bottom = 161.0

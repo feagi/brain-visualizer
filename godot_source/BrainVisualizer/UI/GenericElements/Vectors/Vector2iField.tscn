@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://bua3t8kprcx3n"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.gd" id="1_2rlsy"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_v6mub"]
+[ext_resource type="Script" uid="uid://dad5bkqcp7cm7" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.gd" id="1_2rlsy"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_v6mub"]
 [ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="3_xw845"]
 
 [node name="Vector2iField" type="BoxContainer"]

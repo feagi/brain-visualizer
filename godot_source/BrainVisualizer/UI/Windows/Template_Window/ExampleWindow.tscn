@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://uovm7phb0uio"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Template_Window/BaseDraggableWindow.gd" id="1_rc4ci"]
+[ext_resource type="Script" uid="uid://bxgk3f23evfha" path="res://BrainVisualizer/UI/Windows/Template_Window/BaseDraggableWindow.gd" id="1_rc4ci"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
 
 [node name="ExampleWindow" type="VBoxContainer"]

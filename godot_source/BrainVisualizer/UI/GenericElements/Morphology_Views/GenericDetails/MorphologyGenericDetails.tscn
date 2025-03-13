@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://geytg8x6c7no"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.gd" id="1_1ma3u"]
+[ext_resource type="Script" uid="uid://dxv0xrs3xmbyk" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.gd" id="1_1ma3u"]
 
 [node name="MorphologyGenericDetails" type="VBoxContainer"]
 script = ExtResource("1_1ma3u")

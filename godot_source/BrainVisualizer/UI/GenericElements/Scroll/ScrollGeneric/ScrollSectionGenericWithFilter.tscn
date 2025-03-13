@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bang2hiadhcuc"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.gd" id="1_5vbem"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.gd" id="1_dnnmd"]
+[ext_resource type="Script" uid="uid://cjmejw7n0d113" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.gd" id="1_5vbem"]
+[ext_resource type="Script" uid="uid://u0lilit85skx" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.gd" id="1_dnnmd"]
 
 [node name="ScrollSectionGenericWithFilter" type="VBoxContainer"]
 script = ExtResource("1_5vbem")

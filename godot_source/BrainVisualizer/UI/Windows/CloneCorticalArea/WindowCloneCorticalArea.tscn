@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://b2knwu28hl12b"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CloneCorticalArea/WindowCloneCorticalArea.gd" id="2_8fxof"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="5_6v723"]
+[ext_resource type="Script" uid="uid://bp4dpwx14ihku" path="res://BrainVisualizer/UI/Windows/CloneCorticalArea/WindowCloneCorticalArea.gd" id="2_8fxof"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="5_6v723"]
 [ext_resource type="PackedScene" uid="uid://brwx50pyfywb7" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinBoxField.tscn" id="6_sl08t"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_t2gp1"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="10_smykg"]

@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://cav0qsdij6r3j"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.gd" id="1_1ef3e"]
+[ext_resource type="Script" uid="uid://drb42tdubcl04" path="res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.gd" id="1_1ef3e"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_shuhl"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_x0h7e"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_x0h7e"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="5_ysyug"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="11_fciic"]
 

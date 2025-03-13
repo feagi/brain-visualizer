@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://5pv3bw08pc2j"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.gd" id="1_0wmb7"]
+[ext_resource type="Script" uid="uid://d14vltibbfq3b" path="res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.gd" id="1_0wmb7"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_uq1ts"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="3_cunev"]
 
