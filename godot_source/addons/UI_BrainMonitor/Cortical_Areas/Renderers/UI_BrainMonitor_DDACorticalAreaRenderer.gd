@@ -20,15 +20,15 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Set initial properties
 	update_friendly_name(area.friendly_name)
-	update_position(area.coordinates_3D)
 	update_dimensions(area.dimensions_3D)
+	update_position(area.coordinates_3D)
 	
 
 func update_friendly_name(new_name: String) -> void:
 	print(new_name) # TODO
 
 func update_position(new_position: Vector3i) -> void:
-	_child_mesh_instance.position = new_position
+	_child_mesh_instance.position = new_position + Vector3i(_child_box_mesh.size / 2)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	_child_box_mesh.size = new_dimensions

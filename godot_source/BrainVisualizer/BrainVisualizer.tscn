@@ -13,8 +13,8 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
 shader = ExtResource("7_wiv4s")
-shader_parameter/HorizonColor = Color(0, 0.098, 0.219, 1)
-shader_parameter/SkyColor = Color(0, 0.223, 0.447, 1)
+shader_parameter/HorizonColor = Color(1.68458e-07, 0.195409, 0.393445, 1)
+shader_parameter/SkyColor = Color(0.0951993, 0.544281, 0.999948, 1)
 shader_parameter/Clamp = Vector3(0.2, 0.1, 0.5)
 
 [sub_resource type="Sky" id="Sky_btdg3"]

@@ -13,6 +13,7 @@ func setup(cortical_area: AbstractCorticalArea) -> void:
 	_representing_cortial_area = cortical_area
 	name = "CA_" + cortical_area.cortical_ID
 	_renderer = _create_renderer_depending_on_cortical_area_type(_representing_cortial_area)
+	add_child(_renderer)
 	_renderer.setup(_representing_cortial_area)
 	
 	# setup signals to update properties automatically
