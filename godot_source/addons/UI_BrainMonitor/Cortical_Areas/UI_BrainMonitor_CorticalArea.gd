@@ -9,14 +9,10 @@ var _moused_over_neuron_coordinates: Array[Vector3i] = []
 var _representing_cortial_area: AbstractCorticalArea
 var _renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer
 
-static func create_renderer_depending_on_cortical_area_type(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
-	# TODO this is temporary, later add actual selection mechanism
-	return UI_BrainMonitor_DDACorticalAreaRenderer.new()
-
 func setup(cortical_area: AbstractCorticalArea) -> void:
 	_representing_cortial_area = cortical_area
 	name = "CA_" + cortical_area.cortical_ID
-	_renderer = create_renderer_depending_on_cortical_area_type(_representing_cortial_area)
+	_renderer = _create_renderer_depending_on_cortical_area_type(_representing_cortial_area)
 	_renderer.setup(_representing_cortial_area)
 	
 	# setup signals to update properties automatically
@@ -30,3 +26,7 @@ func get_cortical_area() -> AbstractCorticalArea:
 	return _representing_cortial_area
 
 #endregion
+
+func _create_renderer_depending_on_cortical_area_type(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
+	# TODO this is temporary, later add actual selection mechanism
+	return UI_BrainMonitor_DDACorticalAreaRenderer.new()

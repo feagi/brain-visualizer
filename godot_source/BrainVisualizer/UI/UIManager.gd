@@ -96,6 +96,12 @@ func FEAGI_confirmed_genome() -> void:
 	initial_tabs = [cb]
 	toggle_loading_screen(false)
 	
+	# temp BM
+	var holder: UI_Capsules_Capsule = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
+	$test.add_child(holder)
+	var brain_monitor: UI_BrainMonitor_3DScene = holder.get_holding_UI() as UI_BrainMonitor_3DScene
+	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
 	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
@@ -107,6 +113,9 @@ func FEAGI_confirmed_genome() -> void:
 		color_setting = UIManager.THEME_COLORS.DARK
 	var zoom_value: float = split_strings[1].to_float()
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
+	
+
+	
 
 
 #endregion

@@ -44,4 +44,3 @@ func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_st
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:
 	_UI_manager.window_manager.spawn_amalgamation_window(amalgamation_id, genome_title, dimensions)
-

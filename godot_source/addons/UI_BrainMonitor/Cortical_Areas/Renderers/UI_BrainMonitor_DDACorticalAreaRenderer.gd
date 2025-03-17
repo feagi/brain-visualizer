@@ -2,7 +2,7 @@ extends UI_BrainMonitor_AbstractCorticalAreaRenderer
 class_name UI_BrainMonitor_DDACorticalAreaRenderer
 ## Renders a cortical area using the DDA Shader on a Box Mesh
 
-const DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/CorticalAreaMesh/Renderers/DDA_CA_mat.tres"
+const DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA_CA_mat.tres"
 
 var _child_mesh_instance: MeshInstance3D
 var _child_box_mesh: BoxMesh

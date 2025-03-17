@@ -35,6 +35,8 @@ default_FEAGI_network_settings = ExtResource("3_m3l25")
 [node name="UIManager" type="Node" parent="."]
 script = ExtResource("4_qdn3k")
 
+[node name="test" type="Node" parent="UIManager"]
+
 [node name="CB_Holder" type="SplitContainer" parent="UIManager"]
 visible = false
 offset_top = 103.0

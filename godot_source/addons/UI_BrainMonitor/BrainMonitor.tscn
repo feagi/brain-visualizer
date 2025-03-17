@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://cleddxpmi6qqq"]
+
+[ext_resource type="Script" uid="uid://brflijlpscp6e" path="res://addons/UI_BrainMonitor/UI_BrainMonitor_3DScene.gd" id="1_88g63"]
+
+[node name="BrainMonitor" type="SubViewportContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+script = ExtResource("1_88g63")
+
+[node name="SubViewport" type="SubViewport" parent="."]
+handle_input_locally = false
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="Center" type="Node3D" parent="SubViewport"]
+
+[node name="PancakeCam" type="Camera3D" parent="SubViewport/Center"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.21754)
