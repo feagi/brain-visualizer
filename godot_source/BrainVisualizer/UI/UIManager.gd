@@ -25,7 +25,6 @@ var selection_system: SelectionSystem:
 
 
 var _top_bar: TopBar
-var _brain_monitor # lol
 var _window_manager: WindowManager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
@@ -140,10 +139,6 @@ func set_advanced_mode(is_advanced_mode: bool) -> void:
 		return
 	_is_in_advanced_mode = is_advanced_mode
 	advanced_mode_setting_changed.emit(_is_in_advanced_mode)
-
-func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
-	#TODO change behavior depending on BV / CB
-	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
 
 
 ## Open the developer menu

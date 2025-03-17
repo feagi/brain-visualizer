@@ -110,14 +110,6 @@ var _coordinates_2D_available: bool = false  # if coordinates_2D are available f
 var _coordinates_3D_available: bool = false  # if coordinates_3D are available from FEAGI
 var _cortical_visiblity: bool = true
 
-#TODO this shouldn't be here
-## BV uses an alternate space for its coordinates currently, this acts as a translation
-static func true_position_to_BV_position(true_position: Vector3, scale: Vector3) -> Vector3:
-	return Vector3(
-		(int(scale.x / 2.0) + true_position.x),
-		(int(scale.y / 2.0) + true_position.y),
-		-(int(scale.z / 2.0) + true_position.z))
-			
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
 	var differences: int = -1 # first one will always fail
 	var previous_value: Variant = null
@@ -372,11 +364,6 @@ func _has_memory_parameters() -> bool:
 #endregion
 
 
-#TODO this shouldn't be here
-## Get 3D coordinates that BV uses currently
-func BV_position() -> Vector3:
-	return AbstractCorticalArea.true_position_to_BV_position(_coordinates_3D, _dimensions_3D)
-
 # Functionality and references to how this cortical area is mapped / connected to other cortical areas / regions
 #region Mapping
 
@@ -452,4 +439,3 @@ var post_synaptic_potential_paramamters: CorticalPropertyPostSynapticPotentialPa
 var is_monitoring_membrane_potential: bool
 var is_monitoring_synaptic_potential: bool
 #endregion
-
