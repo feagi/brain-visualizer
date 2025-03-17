@@ -1,6 +1,6 @@
 extends Node3D
-class_name UI_BrainMonitor_AbstractCorticalAreaMesh
-## Base Abstract class for Cortical Area rendering in Brain Monitor. 
+class_name UI_BrainMonitor_CorticalArea
+## Class for rendering cortical areas in the Brain monitor
 # NOTE: We will leave adding, removing, or changing parent region to the Brain Monitor itself, since those interactions affect multiple objects
 
 var _selected_neuron_coordinates: Array[Vector3i] = [] ## Neurons that are selected for use in manual firing
