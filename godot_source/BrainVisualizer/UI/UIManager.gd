@@ -31,6 +31,7 @@ var _notification_system: NotificationSystem
 var _version_label: Label
 var _selection_system: SelectionSystem
 
+
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
@@ -42,6 +43,8 @@ func _ready():
 	_top_bar = $TopBar
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
+	_root_UI_view = $CB_Holder/UIView
+	_selection_system = SelectionSystem.new()
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -56,7 +59,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
-
+	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	
 
@@ -94,6 +97,9 @@ func FEAGI_confirmed_genome() -> void:
 	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	
 	initial_tabs = [cb]
+	_root_UI_view.reset()
+	_root_UI_view.set_this_as_root_view()
+	_root_UI_view.setup_as_single_tab(initial_tabs)
 	toggle_loading_screen(false)
 	
 	# temp BM

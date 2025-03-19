@@ -122,7 +122,7 @@ func _on_top_tab_change(_tab_index: int) -> void:
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
 	# HACK CB
 	var cb: CircuitBuilder = get_tab_IDX_as_control(_tab_index) as CircuitBuilder
-	BV.UI.selection_system.clear_all_highlighted()
+	#BV.UI.selection_system.clear_all_highlighted()
 
 func _add_control_view_as_tab(region_view: Control) -> void:
 	if region_view is CircuitBuilder:
