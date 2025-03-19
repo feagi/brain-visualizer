@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://twsuaivpxtsf"]
+
+[ext_resource type="Shader" uid="uid://b14v820eq3gsa" path="res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/RayMarch.gdshader" id="1_js4cr"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_js4cr")
+shader_parameter/voxel_count_x = 3
+shader_parameter/voxel_count_y = 3
+shader_parameter/voxel_count_z = 3
+shader_parameter/voxel_opacity = 0.063
+shader_parameter/voxel_color = Color(0.172451, 0.315246, 0.861982, 1)
+shader_parameter/shared_SVO_depth = 0

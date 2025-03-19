@@ -2,7 +2,7 @@ extends UI_BrainMonitor_AbstractCorticalAreaRenderer
 class_name UI_BrainMonitor_DDACorticalAreaRenderer
 ## Renders a cortical area using the DDA Shader on a Box Mesh
 
-const DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA_CA_mat.tres"
+const DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/DDA_CA_mat.tres"
 
 var _child_mesh_instance: MeshInstance3D
 var _child_box_mesh: BoxMesh
@@ -28,9 +28,13 @@ func update_friendly_name(new_name: String) -> void:
 	print(new_name) # TODO
 
 func update_position(new_position: Vector3i) -> void:
-	_child_mesh_instance.position = new_position + Vector3i(_child_box_mesh.size / 2)
+	new_position.z = -new_position.z # Since Godot is LH but FEAGI works in RH
+	_child_mesh_instance.position = new_position + Vector3i(_child_mesh_instance.scale / 2)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
-	_child_box_mesh.size = new_dimensions
+	_child_mesh_instance.scale = new_dimensions
+	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
+	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
+	_DDA_mat.set_shader_parameter("voxel_count_z", new_dimensions.z)
 
 # TODO other controls

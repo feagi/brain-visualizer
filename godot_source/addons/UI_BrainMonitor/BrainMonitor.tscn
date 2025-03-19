@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cleddxpmi6qqq"]
 
 [ext_resource type="Script" uid="uid://brflijlpscp6e" path="res://addons/UI_BrainMonitor/UI_BrainMonitor_3DScene.gd" id="1_88g63"]
-[ext_resource type="Script" path="res://addons/UI_BrainMonitor/free_look_camera.gd" id="2_tf547"]
+[ext_resource type="Script" uid="uid://6hi2j3sagaxk" path="res://addons/UI_BrainMonitor/free_look_camera.gd" id="2_tf547"]
 
 [node name="BrainMonitor" type="SubViewportContainer"]
 anchors_preset = 15
