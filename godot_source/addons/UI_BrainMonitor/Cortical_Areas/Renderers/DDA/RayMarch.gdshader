@@ -15,7 +15,7 @@ uniform int voxel_count_y : hint_range(1, 2500) = 3;
 uniform int voxel_count_z : hint_range(1, 2500) = 3;
 uniform float voxel_opacity : hint_range(0.0, 1.0) = 0.2;
 uniform vec3 voxel_color : source_color = vec3(0.0, 0.2, 0.0);
-uniform int shared_SVO_depth: hint_range(1, SVO_MAX_DEPTH); // All SVOs use the same depth factor. Thjis is the depth of the SVO tree (root included)
+uniform int shared_SVO_depth: hint_range(1, SVO_MAX_DEPTH); // All SVOs use the same depth factor. This is the depth of the SVO tree (root included)
 uniform sampler2D activation_SVO : hint_default_black;
 
 varying vec3 local_vert_space_m05_05; // Goes from -0.5 -> 0.5  across the actual mesh surface of the cube
@@ -128,11 +128,11 @@ void fragment()
 
 	/// Calculate final pixel color
 	final_color.a = wall_transparency;
-	//if(neuron_activation_has_hit)
-	//{
-	//	final_color.rgb = vec3(0.0);
-	//	final_color.a = 1.0;
-	//}
+	if(neuron_activation_has_hit)
+	{
+		final_color.rgb = vec3(0.0);
+		final_color.a = 1.0;
+	}
 
 
 

@@ -20,6 +20,7 @@ func setup(cortical_area: AbstractCorticalArea) -> void:
 	cortical_area.friendly_name_updated.connect(_renderer.update_friendly_name)
 	cortical_area.coordinates_3D_updated.connect(_renderer.update_position)
 	cortical_area.dimensions_3D_updated.connect(_renderer.update_dimensions)
+	cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 	
 
 #region Helper Functions

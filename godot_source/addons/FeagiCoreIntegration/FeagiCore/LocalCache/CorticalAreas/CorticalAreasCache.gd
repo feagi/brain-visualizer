@@ -262,7 +262,7 @@ func try_to_get_cortical_area_by_ID(ID: StringName) -> AbstractCorticalArea:
 	else:
 		return null
 
-func invert_selecteion(selected: Array[AbstractCorticalArea]) -> Array[AbstractCorticalArea]:
+func invert_selection(selected: Array[AbstractCorticalArea]) -> Array[AbstractCorticalArea]:
 	var output: Array[AbstractCorticalArea]
 	output.assign(_available_cortical_areas.values())
 	var search: int

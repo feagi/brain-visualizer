@@ -43,6 +43,3 @@ func clear_all_neuron_selection() -> void:
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void: # NOTE: The data is an SVO TODO document this!
 	assert(false, "Not Implemented!")
-
-func clear_visualization_data() -> void:
-	assert(false, "Not Implemented!")

@@ -15,8 +15,8 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 
 signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_health: WEBSOCKET_HEALTH)
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
+signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
 signal feagi_requesting_reset()
-signal feagi_return_neuron_activation_data(ActivatedNeuronLocation: PackedByteArray)
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
 
 
@@ -125,7 +125,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					feagi_requesting_reset.emit()
 		7: # ActivatedNeuronLocation
 			# ignore version for now
-			feagi_return_neuron_activation_data.emit(bytes)
+			push_warning("ActivatedNeuronLocation data type is deprecated!")
 		8: # SingleRawImage
 			# ignore version for now
 			feagi_return_visual_data.emit(bytes)
@@ -141,7 +141,15 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
 		10: # SVO neuron activations
-			pass # TODO
+			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
+			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
+			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
+			
+			# TODO I dont like this
+			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+			if area:
+				area.FEAGI_set_SVO_visualization_data(SVO_data)
+
 			
 		_: # Unknown
 			push_error("Unknown data type %d recieved!" % bytes[0])
