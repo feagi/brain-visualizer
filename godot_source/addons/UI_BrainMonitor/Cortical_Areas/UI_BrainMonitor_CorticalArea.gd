@@ -3,8 +3,6 @@ class_name UI_BrainMonitor_CorticalArea
 ## Class for rendering cortical areas in the Brain monitor
 # NOTE: We will leave adding, removing, or changing parent region to the Brain Monitor itself, since those interactions affect multiple objects
 
-var _selected_neuron_coordinates: Array[Vector3i] = [] ## Neurons that are selected for use in manual firing
-var _moused_over_neuron_coordinates: Array[Vector3i] = []
 
 var _representing_cortial_area: AbstractCorticalArea
 var _renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer

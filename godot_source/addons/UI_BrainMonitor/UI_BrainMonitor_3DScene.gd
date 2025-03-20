@@ -7,8 +7,11 @@ var representing_region: BrainRegion:
 	get: return _representing_region
 
 var _node_3D_root: Node3D
+var _world_3D: World3D # used for physics stuff
 var _representing_region: BrainRegion
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
+var _pancake_cam: UI_BrainMonitor_PancakeCamera
+
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -16,6 +19,14 @@ static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 func _ready() -> void:
 	_node_3D_root = $SubViewport/Center
+	
+	
+	# TODO check mode (PC)
+	_pancake_cam = $SubViewport/Center/PancakeCam
+	if _pancake_cam:
+		_pancake_cam.BM_input_events.connect(_process_user_input)
+		_world_3D = _pancake_cam.get_world_3d()
+	
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
@@ -24,6 +35,15 @@ func setup(region: BrainRegion) -> void:
 	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
 		_add_cortical_area(area)
 
+
+
+func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
+	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
+	for bm_input_event in bm_input_events: # multiple events can happen at once
+		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
+			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+			if not hit.is_empty():
+				print(hit)
 
 
 #region Cache Responses

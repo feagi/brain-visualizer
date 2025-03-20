@@ -96,7 +96,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
 				
 				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging)
-				BM_input_events.emit(bm_click_event)
+				var bm_click_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_click_event]
+				BM_input_events.emit(bm_click_events)
 			return
 
 		elif event is InputEventMouseMotion:
@@ -107,14 +108,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 			var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
 			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(start_pos, end_pos, held_bm_buttons)
-			BM_input_events.emit(bm_hover_event)
+			var bm_hover_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_hover_event]
+			BM_input_events.emit(bm_hover_events)
 			return
 		
 
 func _process(delta):
 	if not current:
 		return
-	
+		get_world_3d()
 	
 	match(movement_mode):
 		MODE.ANIMATION:
