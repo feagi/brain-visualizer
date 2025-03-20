@@ -29,10 +29,10 @@ func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 func set_cortical_area_selection(is_selected: bool) -> void:
 	assert(false, "Not Implemented!")
 
-func set_neuron_highlighting(neuron_coordinate: Vector3i, is_highlighted: bool) -> void:
+func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 	assert(false, "Not Implemented!")
 	
-func set_neuron_selection(neuron_coordinate: Vector3i, is_selected: bool) -> void:
+func set_neuron_selections(neuron_coordinates: Array[Vector3i]) -> void:
 	assert(false, "Not Implemented!")
 
 func clear_all_neuron_highlighting() -> void:

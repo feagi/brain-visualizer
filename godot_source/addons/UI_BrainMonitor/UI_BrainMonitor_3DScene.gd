@@ -17,6 +17,7 @@ var _representing_region: BrainRegion
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
+var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
 
 
 
@@ -46,6 +47,7 @@ func setup(region: BrainRegion) -> void:
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
 	var currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
+	var currently_mousing_over_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
 	
 	for bm_input_event in bm_input_events: # multiple events can happen at once
 		
@@ -64,10 +66,20 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue # this shouldn't be possible
 			var hit_world_location: Vector3 = hit["position"]
 			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
-			if hit_parent_parent:
-				currently_moused_over_volumes.append(hit_parent_parent)
 			var neuron_coordinate_mousing_over: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
+			if not hit_parent_parent:
+				continue # this shouldnt be possible
+			
+			currently_moused_over_volumes.append(hit_parent_parent)
+			if hit_parent_parent in currently_mousing_over_neurons:
+				if neuron_coordinate_mousing_over not in currently_mousing_over_neurons[hit_parent_parent]:
+					currently_mousing_over_neurons[hit_parent_parent].append(neuron_coordinate_mousing_over)
+			else:
+				var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
+				currently_mousing_over_neurons[hit_parent_parent] = typed_arr
+			
 			_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
+			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
@@ -94,8 +106,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 		if currently_moused_over_volume not in _previously_moused_over_volumes:
 			currently_moused_over_volume.set_mouse_over_volume_state(true)
 	_previously_moused_over_volumes = currently_moused_over_volumes
-
-
+	
+	# highlight neurons that are moused over (and unhighlight what wasnt)
+	currently_mousing_over_neurons.merge(_previously_moused_over_cortical_area_neurons, false)
+	for cortical_area in currently_mousing_over_neurons.keys():
+		cortical_area.set_highlighted_neurons(currently_mousing_over_neurons[cortical_area])
+		if len(currently_mousing_over_neurons[cortical_area]) == 0:
+			currently_mousing_over_neurons.erase(cortical_area)
+	for cortical_area in currently_mousing_over_neurons:
+		var typed_arr: Array[UI_BrainMonitor_CorticalArea] = []
+		currently_mousing_over_neurons[cortical_area] = typed_arr
 
 
 #region Cache Responses
