@@ -63,7 +63,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	var calculated_depth: int = ceili(log(float(max_dim_size)) / log(2.0)) # since log is with base e, ln(a) / ln(2) = log_base_2(a)
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 	update_position(_cortical_location)
-	
+	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
@@ -103,10 +103,10 @@ func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
 		return
 	_DDA_mat.next_pass = _outline_mat
 	if mouse_over && selected:
-		_outline_mat.set_shader_parameter("outline_color", cortical_area_outline_both_color)
+		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_both_color.r, cortical_area_outline_both_color.g, cortical_area_outline_both_color.b, cortical_area_outline_both_alpha))
 	elif mouse_over:
-		_outline_mat.set_shader_parameter("outline_color", cortical_area_outline_mouse_over_color)
+		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_mouse_over_color.r, cortical_area_outline_mouse_over_color.g, cortical_area_outline_mouse_over_color.b, cortical_area_outline_mouse_over_alpha))
 	else:
-		_outline_mat.set_shader_parameter("outline_color", cortical_area_outline_select_color)
+		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_select_color.r, cortical_area_outline_select_color.g, cortical_area_outline_select_color.b, cortical_area_outline_select_alpha))
 
 # TODO other controls
