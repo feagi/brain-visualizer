@@ -71,12 +71,17 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
+	const EPSILON: float = 1e-6;
 	world_godot_position -= _static_body.position
-	var dimensions_cortical: Vector3i = Vector3i(roundi(_static_body.scale.x), roundi(_static_body.scale.y), roundi(_static_body.scale.z))
-	var world_pos_int: Vector3i = Vector3i(floori(world_godot_position.x), floori(world_godot_position.y), floori(world_godot_position.z))
+	world_godot_position += _static_body.scale / 2
+	var world_godot_position_floored: Vector3i = Vector3i(floori(world_godot_position.x  - EPSILON), floori(world_godot_position.y  - EPSILON), floori(world_godot_position.z))
+	world_godot_position_floored.z = _cortical_dimensions.z - world_godot_position_floored.z - EPSILON # flip
+	world_godot_position_floored = Vector3(
+		clampi(world_godot_position_floored.x, 0, _cortical_dimensions.x),
+		clampi(world_godot_position_floored.y, 0, _cortical_dimensions.y),
+		clampi(world_godot_position_floored.z, 0, _cortical_dimensions.z)
+		) # lots of floating point shenanigans here!
+	return world_godot_position_floored
 	
-	return world_pos_int - Vector3i(floori(_static_body.scale.x / 2), floori(_static_body.scale.y / 2), floori(_static_body.scale.z / 2))
-
-
-
+	
 # TODO other controls
