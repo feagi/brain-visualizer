@@ -3,15 +3,21 @@ class_name UI_BrainMonitor_3DScene
 ## Handles running the scene of Brain monitor, which shows a single instance of a brain region
 const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 
+@export var multi_select_key: Key = KEY_SHIFT
+
 var representing_region: BrainRegion:
 	get: return _representing_region
 
 var _node_3D_root: Node3D
-var _world_3D: World3D # used for physics stuff
-var _representing_region: BrainRegion
 var _pancake_cam: UI_BrainMonitor_PancakeCamera
+var _UI_layer_for_BM: UI_BrainMonitor_Overlay = null
+
+
+var _representing_region: BrainRegion
+var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
+
 
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
@@ -20,7 +26,7 @@ static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 func _ready() -> void:
 	_node_3D_root = $SubViewport/Center
-	
+	_UI_layer_for_BM = $SubViewport/BM_UI
 	
 	# TODO check mode (PC)
 	_pancake_cam = $SubViewport/Center/PancakeCam
@@ -48,6 +54,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
+				_UI_layer_for_BM.clear() # temp!
+				
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
@@ -58,6 +66,25 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
 			if hit_parent_parent:
 				currently_moused_over_volumes.append(hit_parent_parent)
+			var neuron_coordinate_mousing_over: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
+			_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
+		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
+			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+			if hit.is_empty():
+				# Clicking over nothing
+				print("Nothing!")
+				
+				continue
+				
+			var hit_body: StaticBody3D = hit[&"collider"]
+			var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
+			if not hit_parent:
+				continue # this shouldn't be possible
+			var hit_world_location: Vector3 = hit["position"]
+			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
+			if hit_parent_parent:
+				currently_moused_over_volumes.append(hit_parent_parent)
+			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
 	for previously_moused_over_volume in _previously_moused_over_volumes:

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://cleddxpmi6qqq"]
+[gd_scene load_steps=4 format=3 uid="uid://cleddxpmi6qqq"]
 
 [ext_resource type="Script" uid="uid://brflijlpscp6e" path="res://addons/UI_BrainMonitor/UI_BrainMonitor_3DScene.gd" id="1_88g63"]
 [ext_resource type="Script" uid="uid://dey6h8fr3d2t" path="res://addons/UI_BrainMonitor/Cameras/UI_BrainMonitor_PancakeCamera.gd" id="2_tf547"]
+[ext_resource type="Script" uid="uid://5ytl4ngu1hh" path="res://addons/UI_BrainMonitor/UI_BrainMonitor_Overlay.gd" id="3_l3fsc"]
 
 [node name="BrainMonitor" type="SubViewportContainer"]
 anchors_preset = 15
@@ -22,3 +23,24 @@ render_target_update_mode = 4
 [node name="PancakeCam" type="Camera3D" parent="SubViewport/Center"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00380516, -0.0229286, 1.24534)
 script = ExtResource("2_tf547")
+
+[node name="BM_UI" type="BoxContainer" parent="SubViewport"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 2
+vertical = true
+script = ExtResource("3_l3fsc")
+
+[node name="Bottom_Row" type="BoxContainer" parent="SubViewport/BM_UI"]
+layout_mode = 2
+alignment = 2
+
+[node name="MouseContext" type="Label" parent="SubViewport/BM_UI/Bottom_Row"]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="SubViewport/BM_UI/Bottom_Row"]
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
