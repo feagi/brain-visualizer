@@ -3,21 +3,27 @@ class_name UI_BrainMonitor_DDACorticalAreaRenderer
 ## Renders a cortical area using the DDA Shader on a Box Mesh. Makes use of textures instead of buffers which is slower, but is supported by WebGL
 
 const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/DDABody.tscn")
-const DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/DDA_CA_mat.tres"
+const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/WebGL_RayMarch.tres"
+const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/BadMeshOutlineMat.tres"
+
 
 
 var _static_body: StaticBody3D
 var _DDA_mat: ShaderMaterial
+var _outline_mat: ShaderMaterial
 var _activation_image_dimensions: Vector2i = Vector2i(-1,-1) # ensures the first run will not have matching dimensions
 var _activation_image: Image
 var _activation_image_texture: ImageTexture
 var _friendly_name_label: Label3D
 var _cortical_dimensions: Vector3i
 var _cortical_location: Vector3i # FEAGI space
+var _is_moused_over: bool
+var _is_selected: bool
 
 func setup(area: AbstractCorticalArea) -> void:
 	_static_body = PREFAB.instantiate()
-	_DDA_mat = load(DDA_MAT_PATH).duplicate()
+	_DDA_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
+	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
 	(_static_body.get_node("MeshInstance3D") as MeshInstance3D).material_override = _DDA_mat
 	add_child(_static_body)
 	
@@ -83,5 +89,24 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
 	
-	
+func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
+	_is_moused_over = is_highlighted
+	_set_cortical_area_outline(_is_moused_over, _is_selected)
+
+func set_cortical_area_selection(is_selected: bool) -> void:
+	_is_selected = is_selected
+	_set_cortical_area_outline(_is_moused_over, _is_selected)
+
+func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
+	if not (mouse_over || selected):
+		_DDA_mat.next_pass = null
+		return
+	_DDA_mat.next_pass = _outline_mat
+	if mouse_over && selected:
+		_outline_mat.set_shader_parameter("outline_color", cortical_area_outline_both_color)
+	elif mouse_over:
+		_outline_mat.set_shader_parameter("outline_color", cortical_area_outline_mouse_over_color)
+	else:
+		_outline_mat.set_shader_parameter("outline_color", cortical_area_outline_select_color)
+
 # TODO other controls

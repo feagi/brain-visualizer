@@ -4,12 +4,12 @@ class_name UI_BrainMonitor_AbstractCorticalAreaRenderer
 
 #NOTE All neuron selection / mouse events go up via signals, which will then call functions here to set highlighting to ensure predictable states!
 
-signal cortical_area_moused_over()
-signal cortical_area_moused_off()
-signal cortical_area_clicked()
-signal neuron_coordinate_moused_over(neuron_coordinate: Vector3i)
-signal neuron_coordinate_moused_off(neuron_coordinate: Vector3i)
-signal neuron_coordinate_clicked(neuron_coordinate: Vector3i)
+@export var cortical_area_outline_mouse_over_color: Color = Color.AQUA
+@export var cortical_area_outline_mouse_over_alpha: float = 0.7
+@export var cortical_area_outline_select_color: Color = Color.ALICE_BLUE
+@export var cortical_area_outline_select_alpha: float = 0.8
+@export var cortical_area_outline_both_color: Color = Color.WHITE_SMOKE
+@export var cortical_area_outline_both_alpha: float = 0.9
 
 func setup(area: AbstractCorticalArea) -> void:
 	assert(false, "Not Implemented!")

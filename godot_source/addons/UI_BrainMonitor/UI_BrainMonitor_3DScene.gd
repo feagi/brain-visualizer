@@ -50,8 +50,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if not hit_parent:
 				return # this shouldn't be possible
 			var hit_world_location: Vector3 = hit["position"]
-			print(hit_world_location)
-			print(hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location))
+			hit_parent.set_cortical_area_mouse_over_highlighting(true)
 			
 
 

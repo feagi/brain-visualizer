@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://twsuaivpxtsf"]
 
-[ext_resource type="Shader" uid="uid://b14v820eq3gsa" path="res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/RayMarch.gdshader" id="1_js4cr"]
+[ext_resource type="Shader" uid="uid://b14v820eq3gsa" path="res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/WebGLRayMarch.gdshader" id="1_js4cr"]
 
 [resource]
 render_priority = 0
