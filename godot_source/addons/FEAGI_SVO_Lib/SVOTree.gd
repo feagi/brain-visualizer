@@ -35,7 +35,7 @@ static func create_SVOTree(target_minimum_dimensions: Vector3i) -> SVOTree:
 ## Inits a SVO tree. Probably should not be used directly (use the above)
 func _init(depth: int, representing_dimensions: Vector3i) -> void:
 	# Set general vars
-	_max_depth = depth
+	_max_depth = max(depth, 1)
 	_user_dimension_limit = representing_dimensions
 	_tree_dimension_limit = 2 ** depth
 	_image = Image.create_empty(1, 1, false,Image.FORMAT_RF)

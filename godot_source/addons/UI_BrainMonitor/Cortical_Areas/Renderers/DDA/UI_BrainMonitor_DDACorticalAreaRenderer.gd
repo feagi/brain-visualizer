@@ -11,10 +11,14 @@ const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Area
 var _static_body: StaticBody3D
 var _DDA_mat: ShaderMaterial
 var _outline_mat: ShaderMaterial
+var _friendly_name_label: Label3D
+
 var _activation_image_dimensions: Vector2i = Vector2i(-1,-1) # ensures the first run will not have matching dimensions
 var _activation_image: Image
 var _activation_image_texture: ImageTexture
-var _friendly_name_label: Label3D
+var _highlight_SVO: SVOTree
+var _highlight_image: Image
+var _highlight_image_texture: ImageTexture
 var _cortical_dimensions: Vector3i
 var _cortical_location: Vector3i # FEAGI space
 var _is_moused_over: bool
@@ -33,6 +37,7 @@ func setup(area: AbstractCorticalArea) -> void:
 
 	# Set initial properties
 	_activation_image_texture = ImageTexture.new()
+	_highlight_image_texture = ImageTexture.new()
 	_cortical_location = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
@@ -64,6 +69,8 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 	update_position(_cortical_location)
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
+	
+	_highlight_SVO = SVOTree.create_SVOTree(new_dimensions)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
@@ -96,6 +103,20 @@ func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 func set_cortical_area_selection(is_selected: bool) -> void:
 	_is_selected = is_selected
 	_set_cortical_area_outline(_is_moused_over, _is_selected)
+
+func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
+	# This only gets called if something changes. For now lets just rebuild the SVO each time
+	if len(neuron_coordinates) == 0:
+		_highlight_SVO.reset_tree()
+	else:
+		for neuron_coordinate in neuron_coordinates:
+			_highlight_SVO.add_node(neuron_coordinate)
+	_activation_image_texture.set_image(_highlight_SVO.export_as_shader_image())
+	_DDA_mat.set_shader_parameter("highlight_SVO", _activation_image_texture)
+
+	pass
+
+
 
 func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
 	if not (mouse_over || selected):

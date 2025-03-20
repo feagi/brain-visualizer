@@ -17,6 +17,7 @@ uniform float voxel_opacity : hint_range(0.0, 1.0) = 0.2;
 uniform vec3 voxel_color : source_color = vec3(0.0, 0.2, 0.0);
 uniform int shared_SVO_depth: hint_range(1, SVO_MAX_DEPTH); // All SVOs use the same depth factor. This is the depth of the SVO tree (root included)
 uniform sampler2D activation_SVO : hint_default_black;
+uniform sampler2D highlight_SVO: hint_default_black;
 
 varying vec3 local_vert_space_m05_05; // Goes from -0.5 -> 0.5  across the actual mesh surface of the cube
 //varying vec3 local_vert_space_0_1; // Goes from 0.0 -> 1.0 across the actual mesh surface of the cube
@@ -114,7 +115,11 @@ void fragment()
 	vec3 neuron_activation_hit_offset_svon;
 	bool neuron_activation_has_hit = get_01_model_distance_to_voxel_DDA(activation_SVO, neuron_activation_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_activation_hit_offset_svon, neuron_activation_hit_normal_svon);
 
-
+	// Neuron Highlighting SVO
+	SVOInternalNode neuron_highlight_root_SVO = read_SVO_node(highlight_SVO, 0u, 0u);
+	vec3 neuron_highlight_hit_normal_svon;
+	vec3 neuron_highlight_hit_offset_svon;
+	bool neuron_highlight_has_hit = get_01_model_distance_to_voxel_DDA(highlight_SVO, neuron_highlight_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_highlight_hit_offset_svon, neuron_highlight_hit_normal_svon);
 
 
 
@@ -128,6 +133,12 @@ void fragment()
 
 	/// Calculate final pixel color
 	final_color.a = wall_transparency;
+	if(neuron_highlight_has_hit)
+	{
+		final_color.r = 1.0;
+		final_color.a = 1.0;
+	}
+
 	if(neuron_activation_has_hit)
 	{
 		final_color.rgb = vec3(0.0);
