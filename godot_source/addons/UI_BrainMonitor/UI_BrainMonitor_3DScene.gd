@@ -5,6 +5,8 @@ const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brai
 
 @export var multi_select_key: Key = KEY_SHIFT
 
+signal clicked_cortical_area(area: AbstractCorticalArea) ## Clicked cortical area (regardless of context)
+
 var representing_region: BrainRegion:
 	get: return _representing_region
 
@@ -96,6 +98,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
 			if hit_parent_parent:
 				currently_moused_over_volumes.append(hit_parent_parent)
+				var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
+				BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)

@@ -12,4 +12,4 @@ func clear() -> void:
 	_mouse_context_label.text = ""
 
 func mouse_over_single_cortical_area(cortical_are: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
-	_mouse_context_label.text = cortical_are.friendly_name + " - " + str(neuron_coordinate)
+	_mouse_context_label.text = cortical_are.friendly_name + "  " + str(neuron_coordinate)
