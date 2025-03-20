@@ -10,6 +10,7 @@ enum CLICK_BUTTON {
 
 var ray_start_point: Vector3
 var ray_end_point: Vector3
+var controller_ID: int = 0 # if there are multiple controllers, this can be used to differentiate between them
 
 func _init() -> void:
 	assert(false, "'UI_BrainMonitor_InputEvent_Abstract' cannot be instantiated directly!")

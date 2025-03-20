@@ -58,7 +58,6 @@ func _unhandled_input(event: InputEvent) -> void:
 						rotation.y -= event.relative.x / 1000 * FPS_sensitivity
 						rotation.x -= event.relative.y / 1000 * FPS_sensitivity
 						rotation.x = clamp(rotation.x, PI/-2, PI/2)
-				
 				if event is InputEventMouseButton:
 					match event.button_index:
 						MOUSE_BUTTON_RIGHT:
@@ -67,6 +66,9 @@ func _unhandled_input(event: InputEvent) -> void:
 							_fps_velocity = clamp(_fps_velocity * FPS_SPEED_SCALE, FPS_MIN_SPEED, FPS_MAX_SPEED)
 						MOUSE_BUTTON_WHEEL_DOWN:
 							_fps_velocity = clamp(_fps_velocity / FPS_SPEED_SCALE, FPS_MIN_SPEED, FPS_MAX_SPEED)
+				if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+					return # disable sending inputs while looking around
+				
 			MODE.TANK:
 				pass # TODO
 		

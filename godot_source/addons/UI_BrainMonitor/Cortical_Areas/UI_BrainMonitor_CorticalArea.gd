@@ -26,6 +26,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 
 
+func set_mouse_over_volume_state(is_moused_over: bool) -> void:
+	_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
+
+
+
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
 	# TODO this is temporary, later add actual selection mechanism
 	return UI_BrainMonitor_DDACorticalAreaRenderer.new()

@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, wireframe;
+render_mode unshaded, blend_add;
 // A simple way to handle outlines as a pass, TODO replace me with something nicer
 
 
