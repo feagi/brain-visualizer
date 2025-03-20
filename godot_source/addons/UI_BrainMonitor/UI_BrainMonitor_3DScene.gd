@@ -36,14 +36,22 @@ func setup(region: BrainRegion) -> void:
 		_add_cortical_area(area)
 
 
-
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
 	for bm_input_event in bm_input_events: # multiple events can happen at once
 		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
-			if not hit.is_empty():
-				print(hit)
+			if hit.is_empty():
+				return
+				
+			var hit_body: StaticBody3D = hit[&"collider"]
+			var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
+			if not hit_parent:
+				return # this shouldn't be possible
+			var hit_world_location: Vector3 = hit["position"]
+			print(hit_world_location)
+			print(hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location))
+			
 
 
 #region Cache Responses

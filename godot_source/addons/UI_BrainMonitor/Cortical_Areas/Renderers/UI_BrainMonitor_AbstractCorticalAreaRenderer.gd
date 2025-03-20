@@ -43,3 +43,12 @@ func clear_all_neuron_selection() -> void:
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void: # NOTE: The data is an SVO TODO document this!
 	assert(false, "Not Implemented!")
+
+func does_world_position_map_to_neuron_coordinate(world_position: Vector3) -> bool:
+	assert(false, "Not Implemented!")
+	return false
+
+## Helper function that converts a world coordinate to neuron coordinate
+func world_godot_position_to_neuron_coordinate(world_position: Vector3) -> Vector3i:
+	assert(false, "Not Implemented!")
+	return Vector3i(-1,-1,-1)

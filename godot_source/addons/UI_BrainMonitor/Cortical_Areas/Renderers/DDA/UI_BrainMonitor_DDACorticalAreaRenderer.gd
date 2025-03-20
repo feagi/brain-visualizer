@@ -12,8 +12,8 @@ var _activation_image_dimensions: Vector2i = Vector2i(-1,-1) # ensures the first
 var _activation_image: Image
 var _activation_image_texture: ImageTexture
 var _friendly_name_label: Label3D
-
-# TODO shader stuff
+var _cortical_dimensions: Vector3i
+var _cortical_location: Vector3i # FEAGI space
 
 func setup(area: AbstractCorticalArea) -> void:
 	_static_body = PREFAB.instantiate()
@@ -22,35 +22,42 @@ func setup(area: AbstractCorticalArea) -> void:
 	add_child(_static_body)
 	
 	_friendly_name_label = Label3D.new()
-	_friendly_name_label.font_size = 128
+	_friendly_name_label.font_size = 192
 	add_child(_friendly_name_label)
 
 	# Set initial properties
 	_activation_image_texture = ImageTexture.new()
+	_cortical_location = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
-	update_position(area.coordinates_3D)
+	# Dimensions updates position itself as well
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = new_name
 
 func update_position(new_position: Vector3i) -> void:
-	new_position.z = -new_position.z # Since Godot is LH but FEAGI works in RH
-	_static_body.position = new_position + Vector3i(_static_body.scale / 2)
-	_friendly_name_label.position = new_position + Vector3i(_static_body.scale.x / 2, _static_body.scale.y * 1.1, _static_body.scale.z / 2)
+	_cortical_location = new_position
+
+	var lower_left_front_corner_offset: Vector3 = _static_body.scale / 2.0
+	lower_left_front_corner_offset.z = -lower_left_front_corner_offset.z
+	var offset: Vector3 = lower_left_front_corner_offset
+	new_position.z = -new_position.z
+	_static_body.position = Vector3(new_position) + offset
+	_friendly_name_label.position = _static_body.position + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
+	_cortical_dimensions = new_dimensions
 	_static_body.scale = new_dimensions
+	
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
 	_DDA_mat.set_shader_parameter("voxel_count_z", new_dimensions.z)
-	
 	var max_dim_size: int = max(new_dimensions.x, new_dimensions.y, new_dimensions.z)
 	var calculated_depth: int = ceili(log(float(max_dim_size)) / log(2.0)) # since log is with base e, ln(a) / ln(2) = log_base_2(a)
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
+	update_position(_cortical_location)
 	
-	_friendly_name_label.position = Vector3i(_static_body.position) + Vector3i(_static_body.scale.x / 2, _static_body.scale.y * 1.1, _static_body.scale.z / 2)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
@@ -63,6 +70,12 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 		_activation_image_texture.update(_activation_image)
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
+func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
+	world_godot_position -= _static_body.position
+	var dimensions_cortical: Vector3i = Vector3i(roundi(_static_body.scale.x), roundi(_static_body.scale.y), roundi(_static_body.scale.z))
+	var world_pos_int: Vector3i = Vector3i(floori(world_godot_position.x), floori(world_godot_position.y), floori(world_godot_position.z))
+	
+	return world_pos_int - Vector3i(floori(_static_body.scale.x / 2), floori(_static_body.scale.y / 2), floori(_static_body.scale.z / 2))
 
 
 
