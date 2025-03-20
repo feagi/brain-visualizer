@@ -1,5 +1,5 @@
 extends Node # autoload
-class_name AutoLoad_FEAGILogger
+class_name AutoLoad_BVLogger
 
 signal crash_reported(message: String) ## Signal emitted whena  crash has occured. Other objects should handle things from here
 

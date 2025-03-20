@@ -9,8 +9,9 @@ var representing_region: BrainRegion:
 var _node_3D_root: Node3D
 var _world_3D: World3D # used for physics stuff
 var _representing_region: BrainRegion
-var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
 var _pancake_cam: UI_BrainMonitor_PancakeCamera
+var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
+var _currently_moused_over_neurons_by_coordinate
 
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
