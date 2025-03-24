@@ -86,8 +86,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				# Clicking over nothing
-				print("Nothing!")
-				
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
@@ -116,6 +114,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	for cortical_area in currently_mousing_over_neurons.keys():
 		cortical_area.set_highlighted_neurons(currently_mousing_over_neurons[cortical_area])
 		if len(currently_mousing_over_neurons[cortical_area]) == 0:
+			print(cortical_area)
+			cortical_area.set_highlighted_neurons([])
 			currently_mousing_over_neurons.erase(cortical_area)
 	for cortical_area in currently_mousing_over_neurons:
 		var typed_arr: Array[UI_BrainMonitor_CorticalArea] = []
