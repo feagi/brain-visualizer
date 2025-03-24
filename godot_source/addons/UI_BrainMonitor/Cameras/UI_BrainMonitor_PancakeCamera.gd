@@ -2,6 +2,7 @@ extends Camera3D
 class_name UI_BrainMonitor_PancakeCamera
 ## Camera interface for Brain Monitor on a flat monitor (non-vr)
 
+
 const MIN_DRAG_SQUARE_DISTANCE: float = 2.0
 const RAYCAST_LENGTH: float = 10000
 
@@ -10,6 +11,8 @@ const FPS_SPEED_SCALE : float = 1.17
 const FPS_DEFAULT_SPEED: float = 5
 const FPS_MAX_SPEED: float = 1000
 const FPS_MIN_SPEED: float = 0.2
+
+@export var key_to_select_neurons: Key = KEY_SHIFT
 
 enum MODE {
 	FPS, # Originally based off the MIT work of Marc Nahr: https://github.com/MarcPhi/godot-free-look-camera (TODO give proper credit on github)
@@ -74,9 +77,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 		
 		# BM Interactions
+		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)
+		if Input.is_key_pressed(key_to_select_neurons):
+			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS)
+		
 		if event is InputEventMouseButton:
 			var mouse_button_event: InputEventMouseButton = event as InputEventMouseButton
 			var bm_button: UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON = _mouse_button_to_BM_CLICK_BUTTON(mouse_button_event.button_index)
+			
 			if bm_button !=  UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.NONE:
 				var bm_pressed: bool = mouse_button_event.pressed
 				var bm_mouse_position: Vector2 = mouse_button_event.position
@@ -97,7 +105,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 				var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
 				
-				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging)
+				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging)
 				var bm_click_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_click_event]
 				BM_input_events.emit(bm_click_events)
 			return
@@ -105,11 +113,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event is InputEventMouseMotion:
 			var mouse_motion_event: InputEventMouseMotion = event as InputEventMouseMotion
 			var bm_mouse_position: Vector2 = mouse_motion_event.position
-			var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(mouse_motion_event.button_mask)
 			
 			var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 			var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
-			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(start_pos, end_pos, held_bm_buttons)
+			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(held_bm_buttons, start_pos, end_pos)
 			var bm_hover_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_hover_event]
 			BM_input_events.emit(bm_hover_events)
 			return

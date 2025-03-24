@@ -4,13 +4,15 @@ class_name UI_BrainMonitor_InputEvent_Abstract
 
 enum CLICK_BUTTON {
 	NONE, # never used, essentially a placeholder
-	MAIN,
-	SECONDARY
+	MAIN, # Normal Selection
+	SECONDARY, # alternate selection
+	HOLD_TO_SELECT_NEURONS # Alternate key to hold when selecting neurons
 }
 
 var ray_start_point: Vector3
 var ray_end_point: Vector3
 var controller_ID: int = 0 # if there are multiple controllers, this can be used to differentiate between them
+var all_buttons_being_held: Array[CLICK_BUTTON] = [] # All buttons being held at time of input
 
 func _init() -> void:
 	assert(false, "'UI_BrainMonitor_InputEvent_Abstract' cannot be instantiated directly!")

@@ -16,7 +16,8 @@ var _representing_cortial_area: AbstractCorticalArea
 var _renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer
 
 var _is_volume_moused_over: bool
-var _moused_over_neuron_coordinates: Array[Vector3i] = [] # wouldnt a dictionary be faster?
+var _hovered_neuron_coordinates: Array[Vector3i] = [] # wouldnt a dictionary be faster?
+var _selected_neuron_coordinates: Array[Vector3i] = []
 
 
 func setup(defined_cortical_area: AbstractCorticalArea) -> void:
@@ -33,18 +34,40 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 
 
-func set_mouse_over_volume_state(is_moused_over: bool) -> void:
+func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	_is_volume_moused_over = is_moused_over
 	_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 
 func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
-		_moused_over_neuron_coordinates = neuron_coordinates
+		_hovered_neuron_coordinates = neuron_coordinates
 		_renderer.set_highlighted_neurons(neuron_coordinates)
 
-func clear_mouse_over_state_for_all_neurons() -> void:
-	if len(_moused_over_neuron_coordinates) != 0:
-		_moused_over_neuron_coordinates = []
-		_renderer.set_highlighted_neurons(_moused_over_neuron_coordinates)
+func clear_hover_state_for_all_neurons() -> void:
+	if len(_hovered_neuron_coordinates) != 0:
+		_hovered_neuron_coordinates = []
+		_renderer.set_highlighted_neurons(_hovered_neuron_coordinates)
+
+func set_neuron_selection_state(neuron_coordinate: Vector3i, is_selected: bool) -> void:
+	var index: int = _selected_neuron_coordinates.find(neuron_coordinate)
+	if (index != -1 && is_selected):
+		return #nothing to change
+	if is_selected:
+		_selected_neuron_coordinates.append(neuron_coordinate)
+	else:
+		_selected_neuron_coordinates.remove_at(index)
+	_renderer.set_neuron_selections(_selected_neuron_coordinates)
+
+func toggle_neuron_selection_state(neuron_coordinate: Vector3i) -> void:
+	var index: int = _selected_neuron_coordinates.find(neuron_coordinate)
+	if index == -1:
+		_selected_neuron_coordinates.append(neuron_coordinate)
+	else:
+		_selected_neuron_coordinates.remove_at(index)
+	_renderer.set_neuron_selections(_selected_neuron_coordinates)
+	
+
+func get_neuron_selection_states() -> Array[Vector3i]:
+	return _selected_neuron_coordinates
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
 	# TODO this is temporary, later add actual selection mechanism

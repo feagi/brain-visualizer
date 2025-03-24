@@ -6,6 +6,7 @@ const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brai
 @export var multi_select_key: Key = KEY_SHIFT
 
 signal clicked_cortical_area(area: AbstractCorticalArea) ## Clicked cortical area (regardless of context)
+signal cortical_area_selected_neurons_changed(area: AbstractCorticalArea, selected_neuron_cordinates: Array[Vector3i])
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -94,20 +95,25 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue # this shouldn't be possible
 			var hit_world_location: Vector3 = hit["position"]
 			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
+			var neuron_coordinate_clicked: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
 			if hit_parent_parent:
 				currently_moused_over_volumes.append(hit_parent_parent)
 				var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
 				if bm_input_event.button_pressed:
-					BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
+					if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
+						hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
+					else:
+						BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
+						clicked_cortical_area.emit(hit_parent_parent.cortical_area)
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
 	for previously_moused_over_volume in _previously_moused_over_volumes:
 		if previously_moused_over_volume not in currently_moused_over_volumes:
-			previously_moused_over_volume.set_mouse_over_volume_state(false)
+			previously_moused_over_volume.set_hover_over_volume_state(false)
 	for currently_moused_over_volume in currently_moused_over_volumes:
 		if currently_moused_over_volume not in _previously_moused_over_volumes:
-			currently_moused_over_volume.set_mouse_over_volume_state(true)
+			currently_moused_over_volume.set_hover_over_volume_state(true)
 	_previously_moused_over_volumes = currently_moused_over_volumes
 	
 	# highlight neurons that are moused over (and unhighlight what wasnt)
@@ -116,7 +122,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 		var typed_arr: Array[UI_BrainMonitor_CorticalArea] = []
 		if len(currently_mousing_over_neurons[cortical_area]) == 0:
 			# Cortical area has nothing hovering over it, tell the renderer to clear it
-			cortical_area.clear_mouse_over_state_for_all_neurons()
+			cortical_area.clear_hover_state_for_all_neurons()
 			currently_mousing_over_neurons.erase(cortical_area)
 		else:
 			# cortical area has things hovering over it, tell renderer to show it
