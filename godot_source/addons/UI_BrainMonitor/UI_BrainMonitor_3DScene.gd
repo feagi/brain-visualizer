@@ -7,7 +7,7 @@ const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brai
 
 signal clicked_cortical_area(area: AbstractCorticalArea) ## Clicked cortical area (regardless of context)
 signal cortical_area_selected_neurons_changed(area: AbstractCorticalArea, selected_neuron_cordinates: Array[Vector3i])
-signal requesting_to_fire_selected_neurons(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) # NOTE: Array is of type Array[Vector3i[
+signal requesting_to_fire_selected_neurons(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) # NOTE: Array is of type Array[Vector3i]
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -45,8 +45,13 @@ func setup(region: BrainRegion) -> void:
 	name = "BM_" + region.region_ID
 
 	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
-		_add_cortical_area(area)
-
+		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
+		area.about_to_be_deleted.connect(rendering_area.queue_free)
+		area.coordinates_3D_updated.connect(rendering_area.set_new_position)
+	
+	
+	
+	
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
@@ -151,7 +156,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 
 # NOTE: Cortical area movements, resizes, and renames are handled by the [UI_BrainMonitor_CorticalArea]s themselves!
 
-func _add_cortical_area(area: AbstractCorticalArea) -> void:
+func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
 	if area.cortical_ID in _cortical_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
 		return
@@ -159,6 +164,7 @@ func _add_cortical_area(area: AbstractCorticalArea) -> void:
 	_node_3D_root.add_child(rendering_area)
 	rendering_area.setup(area)
 	_cortical_visualizations_by_ID[area.cortical_ID] = rendering_area
+	return rendering_area
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID not in _cortical_visualizations_by_ID:

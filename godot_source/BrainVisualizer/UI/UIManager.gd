@@ -107,6 +107,7 @@ func FEAGI_confirmed_genome() -> void:
 	$test.add_child(holder)
 	var brain_monitor: UI_BrainMonitor_3DScene = holder.get_holding_UI() as UI_BrainMonitor_3DScene
 	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
@@ -120,8 +121,17 @@ func FEAGI_confirmed_genome() -> void:
 	var zoom_value: float = split_strings[1].to_float()
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	
-
+# TEMP - > for sending activation firings to FEAGI
+func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
+	var dict_to_send: Dictionary = {'data': {'direct_stimulation' : {}}}
+	for area_ID in area_IDs_and_neuron_coordinates:
+		var arr: Array[Array] = []
+		for vector in area_IDs_and_neuron_coordinates[area_ID]:
+			arr.append([vector.x, vector.y, vector.z])
+		dict_to_send["data"]["direct_stimulation"][area_ID] = arr
 	
+	FeagiCore.network.websocket_API.websocket_send(JSON.stringify(dict_to_send))
+
 
 
 #endregion

@@ -33,6 +33,9 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	defined_cortical_area.dimensions_3D_updated.connect(_renderer.update_dimensions)
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 
+## Sets new position (in FEAGI space)
+func set_new_position(new_position: Vector3i) -> void:
+	_renderer.update_position(new_position)
 
 func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	_is_volume_moused_over = is_moused_over
