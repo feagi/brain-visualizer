@@ -102,6 +102,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if bm_input_event.button_pressed:
 					if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
 						hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
+						cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
 					else:
 						BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
 						clicked_cortical_area.emit(hit_parent_parent.cortical_area)

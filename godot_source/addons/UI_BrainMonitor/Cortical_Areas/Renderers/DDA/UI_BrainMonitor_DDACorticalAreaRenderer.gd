@@ -6,7 +6,7 @@ const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Cortical_Areas
 const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/WebGL_RayMarch.tres"
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/BadMeshOutlineMat.tres"
 
-
+# TODO right now, particularly for selection, we recreate the SVO tree entirely every time a single node is added / removed. This is slow, and we should be adding / removing SVO nodes instead
 
 var _static_body: StaticBody3D
 var _DDA_mat: ShaderMaterial
@@ -19,6 +19,9 @@ var _activation_image_texture: ImageTexture
 var _highlight_SVO: SVOTree
 var _highlight_image: Image
 var _highlight_image_texture: ImageTexture
+var _selection_SVO: SVOTree
+var _selection_image: Image
+var _selection_image_texture: ImageTexture
 var _cortical_dimensions: Vector3i
 var _cortical_location: Vector3i # FEAGI space
 var _is_moused_over: bool
@@ -38,6 +41,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Set initial properties
 	_activation_image_texture = ImageTexture.new()
 	_highlight_image_texture = ImageTexture.new()
+	_selection_image_texture = ImageTexture.new()
 	_cortical_location = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
@@ -71,6 +75,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
 	_highlight_SVO = SVOTree.create_SVOTree(new_dimensions)
+	_selection_SVO = SVOTree.create_SVOTree(new_dimensions)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
@@ -114,8 +119,14 @@ func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 	_activation_image_texture.set_image(_highlight_SVO.export_as_shader_image())
 	_DDA_mat.set_shader_parameter("highlight_SVO", _activation_image_texture)
 
-	pass
-
+func set_neuron_selections(neuron_coordinates: Array[Vector3i]) -> void:
+	_selection_SVO.reset_tree()
+	for neuron_coordinate in neuron_coordinates:
+		# since We give the neuron coordinate in FEAGI space, but DDA renders in godot space, we need to convert this but flipping the Z axis
+		neuron_coordinate.z = _cortical_dimensions.z - neuron_coordinate.z - 1
+		_selection_SVO.add_node(neuron_coordinate)
+	_selection_image_texture.set_image(_selection_SVO.export_as_shader_image())
+	_DDA_mat.set_shader_parameter("selection_SVO", _selection_image_texture)
 
 
 func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
@@ -129,5 +140,6 @@ func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_mouse_over_color.r, cortical_area_outline_mouse_over_color.g, cortical_area_outline_mouse_over_color.b, cortical_area_outline_mouse_over_alpha))
 	else:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_select_color.r, cortical_area_outline_select_color.g, cortical_area_outline_select_color.b, cortical_area_outline_select_alpha))
+
 
 # TODO other controls
