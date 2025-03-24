@@ -1,6 +1,7 @@
-extends Node
+extends UI_BrainMonitor_AbstractInteractableVolumeRenderer
 class_name UI_BrainMonitor_AbstractCorticalAreaRenderer
 ## Base class for all rendering methods for cortical areas. Essentially just a fancy interface
+
 
 #NOTE All neuron selection / mouse events go up via signals, which will then call functions here to set highlighting to ensure predictable states!
 
@@ -15,12 +16,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	assert(false, "Not Implemented!")
 
 func update_friendly_name(new_name: String) -> void:
-	assert(false, "Not Implemented!")
-
-func update_position(new_position: Vector3i) -> void:
-	assert(false, "Not Implemented!")
-
-func update_dimensions(new_dimensions: Vector3i) -> void:
 	assert(false, "Not Implemented!")
 
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:

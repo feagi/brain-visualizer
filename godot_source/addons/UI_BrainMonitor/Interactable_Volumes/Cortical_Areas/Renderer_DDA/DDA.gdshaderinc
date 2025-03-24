@@ -2,7 +2,7 @@
 #define DDA_MAX_ITERATIONS 128
 
 
-#include "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/SVO.gdshaderinc"
+#include "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/SVO.gdshaderinc"
 
 vec3 singleDDAStep(vec3 intial_ray_position_svon,  vec3 normalized_ray_direction, vec3 next_SVO_boundary)
 {

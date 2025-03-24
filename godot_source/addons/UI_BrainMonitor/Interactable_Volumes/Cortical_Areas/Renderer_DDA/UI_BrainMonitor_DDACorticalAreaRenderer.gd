@@ -2,9 +2,9 @@ extends UI_BrainMonitor_AbstractCorticalAreaRenderer
 class_name UI_BrainMonitor_DDACorticalAreaRenderer
 ## Renders a cortical area using the DDA Shader on a Box Mesh. Makes use of textures instead of buffers which is slower, but is supported by WebGL
 
-const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/DDABody.tscn")
-const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/WebGL_RayMarch.tres"
-const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/BadMeshOutlineMat.tres"
+const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/CorticalArea_DDA_Body.tscn")
+const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/WebGL_RayMarch.tres"
+const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 
 # TODO right now, particularly for selection, we recreate the SVO tree entirely every time a single node is added / removed. This is slow, and we should be adding / removing SVO nodes instead
 
@@ -22,8 +22,6 @@ var _highlight_image_texture: ImageTexture
 var _selection_SVO: SVOTree
 var _selection_image: Image
 var _selection_image_texture: ImageTexture
-var _cortical_dimensions: Vector3i
-var _cortical_location: Vector3i # FEAGI space
 var _is_moused_over: bool
 var _is_selected: bool
 
@@ -42,36 +40,35 @@ func setup(area: AbstractCorticalArea) -> void:
 	_activation_image_texture = ImageTexture.new()
 	_highlight_image_texture = ImageTexture.new()
 	_selection_image_texture = ImageTexture.new()
-	_cortical_location = area.coordinates_3D # such that when calling Update dimensions, the location is correct
+	_position_FEAGI_space = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
+	#update_position_with_new_FEAGI_coordinate(area.coordinates_3D)
 	# Dimensions updates position itself as well
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = new_name
 
-func update_position(new_position: Vector3i) -> void:
-	_cortical_location = new_position
-
-	var lower_left_front_corner_offset: Vector3 = _static_body.scale / 2.0
-	lower_left_front_corner_offset.z = -lower_left_front_corner_offset.z
-	var offset: Vector3 = lower_left_front_corner_offset
-	new_position.z = -new_position.z
-	_static_body.position = Vector3(new_position) + offset
-	_friendly_name_label.position = _static_body.position + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
+func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Vector3i) -> void:
+	super(new_FEAGI_coordinate_position)
+	
+	_static_body.position = _position_godot_space
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
-	_cortical_dimensions = new_dimensions
-	_static_body.scale = new_dimensions
+	super(new_dimensions)
 	
+	_static_body.scale = _dimensions
+	_static_body.position = _position_godot_space
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
+
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
 	_DDA_mat.set_shader_parameter("voxel_count_z", new_dimensions.z)
 	var max_dim_size: int = max(new_dimensions.x, new_dimensions.y, new_dimensions.z)
 	var calculated_depth: int = ceili(log(float(max_dim_size)) / log(2.0)) # since log is with base e, ln(a) / ln(2) = log_base_2(a)
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
-	update_position(_cortical_location)
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
 	_highlight_SVO = SVOTree.create_SVOTree(new_dimensions)
@@ -93,11 +90,11 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 	world_godot_position -= _static_body.position
 	world_godot_position += _static_body.scale / 2
 	var world_godot_position_floored: Vector3i = Vector3i(floori(world_godot_position.x  - EPSILON), floori(world_godot_position.y  - EPSILON), floori(world_godot_position.z))
-	world_godot_position_floored.z = _cortical_dimensions.z - world_godot_position_floored.z - EPSILON # flip
+	world_godot_position_floored.z = _dimensions.z - world_godot_position_floored.z - EPSILON # flip
 	world_godot_position_floored = Vector3(
-		clampi(world_godot_position_floored.x, 0, _cortical_dimensions.x),
-		clampi(world_godot_position_floored.y, 0, _cortical_dimensions.y),
-		clampi(world_godot_position_floored.z, 0, _cortical_dimensions.z)
+		clampi(world_godot_position_floored.x, 0, _dimensions.x),
+		clampi(world_godot_position_floored.y, 0, _dimensions.y),
+		clampi(world_godot_position_floored.z, 0, _dimensions.z)
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
 	
@@ -114,7 +111,7 @@ func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 	_highlight_SVO.reset_tree()
 	for neuron_coordinate in neuron_coordinates:
 		# since We give the neuron coordinate in FEAGI space, but DDA renders in godot space, we need to convert this but flipping the Z axis
-		neuron_coordinate.z = _cortical_dimensions.z - neuron_coordinate.z - 1
+		neuron_coordinate.z = _dimensions.z - neuron_coordinate.z - 1
 		_highlight_SVO.add_node(neuron_coordinate)
 	_highlight_image_texture.set_image(_highlight_SVO.export_as_shader_image())
 	_DDA_mat.set_shader_parameter("highlight_SVO", _highlight_image_texture)
@@ -123,7 +120,7 @@ func set_neuron_selections(neuron_coordinates: Array[Vector3i]) -> void:
 	_selection_SVO.reset_tree()
 	for neuron_coordinate in neuron_coordinates:
 		# since We give the neuron coordinate in FEAGI space, but DDA renders in godot space, we need to convert this but flipping the Z axis
-		neuron_coordinate.z = _cortical_dimensions.z - neuron_coordinate.z - 1
+		neuron_coordinate.z = _dimensions.z - neuron_coordinate.z - 1
 		_selection_SVO.add_node(neuron_coordinate)
 	_selection_image_texture.set_image(_selection_SVO.export_as_shader_image())
 	_DDA_mat.set_shader_parameter("selection_SVO", _selection_image_texture)

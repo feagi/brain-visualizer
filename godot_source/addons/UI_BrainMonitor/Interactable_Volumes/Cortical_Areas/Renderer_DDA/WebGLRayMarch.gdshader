@@ -2,9 +2,9 @@ shader_type spatial;
 //render_mode unshaded; // for debugging
 render_mode unshaded;
 
-#include "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/SVO.gdshaderinc"
-#include "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/ByteFunctions.gdshaderinc"
-#include "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/DDA.gdshaderinc"
+#include "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/SVO.gdshaderinc"
+#include "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/ByteFunctions.gdshaderinc"
+#include "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/DDA.gdshaderinc"
 
 #define MAX_DISTANCE 1000.0 // maximum distance to ray march (float)
 #define ERROR_COLOR vec4(1.0,0.2,0.6,1)

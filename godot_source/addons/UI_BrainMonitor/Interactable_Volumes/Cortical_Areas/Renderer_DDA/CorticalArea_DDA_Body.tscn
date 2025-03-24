@@ -4,7 +4,7 @@
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_q3hpt"]
 
-[node name="DdaBody" type="StaticBody3D"]
+[node name="CorticalArea_DDA_Body" type="StaticBody3D"]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("BoxMesh_82px7")

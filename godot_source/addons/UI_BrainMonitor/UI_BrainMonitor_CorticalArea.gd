@@ -29,7 +29,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# setup signals to update properties automatically
 	defined_cortical_area.friendly_name_updated.connect(_renderer.update_friendly_name)
-	defined_cortical_area.coordinates_3D_updated.connect(_renderer.update_position)
+	defined_cortical_area.coordinates_3D_updated.connect(_renderer.update_position_with_new_FEAGI_coordinate)
 	defined_cortical_area.dimensions_3D_updated.connect(_renderer.update_dimensions)
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 

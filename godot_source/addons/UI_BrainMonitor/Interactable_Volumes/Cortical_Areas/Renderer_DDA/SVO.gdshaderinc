@@ -1,6 +1,6 @@
 // Functions related to SVO transversal
 
-#include "res://addons/UI_BrainMonitor/Cortical_Areas/Renderers/DDA/ByteFunctions.gdshaderinc"
+#include "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/ByteFunctions.gdshaderinc"
 
 #define SVO_MAX_DEPTH 32u // How deep a SVO can go. If you are exceeding this... what are you doing...
 #define SVO_LAST_LEAF_IDENTIFIER 16777215u // This value in the "child leaf index offset" section ofa  node read from the SVO tree indicates that the children do not exist as nodes, only as this nodes bitmap reference
