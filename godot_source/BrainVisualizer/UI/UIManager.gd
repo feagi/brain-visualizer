@@ -22,7 +22,7 @@ var root_UI_view: UIView:
 var selection_system: SelectionSystem:
 	get: return _selection_system
 	
-
+var temp_root_bm: UI_BrainMonitor_3DScene
 
 var _top_bar: TopBar
 var _window_manager: WindowManager
@@ -108,6 +108,7 @@ func FEAGI_confirmed_genome() -> void:
 	var brain_monitor: UI_BrainMonitor_3DScene = holder.get_holding_UI() as UI_BrainMonitor_3DScene
 	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
+	temp_root_bm = brain_monitor
 	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)

@@ -35,7 +35,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
-	_renderer.update_position(new_position)
+	_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 
 func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	_is_volume_moused_over = is_moused_over

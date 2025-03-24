@@ -11,6 +11,7 @@ var _custom_definition: PartSpawnCorticalAreaCustom
 var _memory_definition: PartSpawnCorticalAreaMemory
 var _buttons: HBoxContainer
 var _type_selected: AbstractCorticalArea.CORTICAL_AREA_TYPE
+var _BM_preview: UI_BrainMonitor_InteractivePreview
 
 
 func _ready() -> void:

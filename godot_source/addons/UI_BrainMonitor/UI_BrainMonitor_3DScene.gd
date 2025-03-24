@@ -69,6 +69,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
+			if hit_body.get_parent() is not UI_BrainMonitor_AbstractCorticalAreaRenderer:
+				return
 			var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
 			if not hit_parent:
 				continue # this shouldn't be possible
@@ -109,6 +111,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
+			if hit_body.get_parent() is not UI_BrainMonitor_AbstractCorticalAreaRenderer:
+				return
 			var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
 			if not hit_parent:
 				continue # this shouldn't be possible

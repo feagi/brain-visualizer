@@ -14,7 +14,8 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 
 	var lower_left_front_corner_offset: Vector3 = Vector3(_dimensions) / 2.0
 	lower_left_front_corner_offset.z = -lower_left_front_corner_offset.z # flip Z direction
-	_position_godot_space = Vector3(_position_FEAGI_space) + lower_left_front_corner_offset
+	new_FEAGI_coordinate_position.z = -new_FEAGI_coordinate_position.z
+	_position_godot_space = Vector3(new_FEAGI_coordinate_position) + lower_left_front_corner_offset
 
 func update_position_with_new_godot_coordinate(new_godot_coordinate_position: Vector3) -> void:
 	_position_godot_space = new_godot_coordinate_position
@@ -35,5 +36,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Godot center position also changed if we are using the front left bottom corner as 0,0,0
 	var lower_left_front_corner_offset: Vector3 = Vector3(_dimensions) / 2.0
 	lower_left_front_corner_offset.z = -lower_left_front_corner_offset.z # flip Z direction
-	_position_godot_space = Vector3(_position_FEAGI_space) + lower_left_front_corner_offset
+	var new_FEAGI_space: Vector3i = _position_FEAGI_space
+	new_FEAGI_space.z = -new_FEAGI_space.z
+	_position_godot_space = Vector3(new_FEAGI_space) + lower_left_front_corner_offset
 	

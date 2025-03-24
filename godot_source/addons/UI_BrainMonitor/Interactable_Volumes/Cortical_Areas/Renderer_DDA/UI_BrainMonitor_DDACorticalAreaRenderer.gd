@@ -43,7 +43,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	_position_FEAGI_space = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
-	#update_position_with_new_FEAGI_coordinate(area.coordinates_3D)
 	# Dimensions updates position itself as well
 
 func update_friendly_name(new_name: String) -> void:

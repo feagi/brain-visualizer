@@ -13,6 +13,15 @@ func setup(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_
 	add_child(_renderer)
 	_renderer.setup(initial_FEAGI_position, initial_dimensions, show_voxels)
 
+## If you wish to externally connect signals to this, you can pass them in as arrays
+func connect_UI_signals(move_signals: Array[Signal], resize_signals: Array[Signal], close_signals: Array[Signal]) -> void:
+	for move_signal in move_signals:
+		move_signal.connect(set_new_position)
+	for resize_signal in resize_signals:
+		resize_signal.connect(set_new_dimensions)
+	for close_signal in close_signals:
+		close_signal.connect(queue_free)
+
 func set_new_position(new_position_FEAGI_space: Vector3i) -> void:
 	_renderer.update_position_with_new_FEAGI_coordinate(new_position_FEAGI_space)
 
