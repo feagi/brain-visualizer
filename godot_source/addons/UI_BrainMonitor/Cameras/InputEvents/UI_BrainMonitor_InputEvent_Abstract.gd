@@ -6,7 +6,8 @@ enum CLICK_BUTTON {
 	NONE, # never used, essentially a placeholder
 	MAIN, # Normal Selection
 	SECONDARY, # alternate selection
-	HOLD_TO_SELECT_NEURONS # Alternate key to hold when selecting neurons
+	HOLD_TO_SELECT_NEURONS, # Alternate key to hold when selecting neurons
+	FIRE_SELECTED_NEURONS, # Key that is presed when we want to fire neurons
 }
 
 var ray_start_point: Vector3

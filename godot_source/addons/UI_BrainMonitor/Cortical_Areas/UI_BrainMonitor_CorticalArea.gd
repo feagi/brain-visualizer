@@ -17,7 +17,7 @@ var _renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer
 
 var _is_volume_moused_over: bool
 var _hovered_neuron_coordinates: Array[Vector3i] = [] # wouldnt a dictionary be faster?
-var _selected_neuron_coordinates: Array[Vector3i] = []
+var _selected_neuron_coordinates: Array[Vector3i] = [] #TODO we should clear this and the hover on dimension changes!
 
 
 func setup(defined_cortical_area: AbstractCorticalArea) -> void:

@@ -13,6 +13,7 @@ const FPS_MAX_SPEED: float = 1000
 const FPS_MIN_SPEED: float = 0.2
 
 @export var key_to_select_neurons: Key = KEY_SHIFT
+@export var key_to_fire_selected_neurons: Key = KEY_SPACE
 
 enum MODE {
 	FPS, # Originally based off the MIT work of Marc Nahr: https://github.com/MarcPhi/godot-free-look-camera (TODO give proper credit on github)
@@ -121,6 +122,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			BM_input_events.emit(bm_hover_events)
 			return
 		
+	if event is InputEventKey:
+		if (event.keycode == key_to_fire_selected_neurons):
+			var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
+			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
+			
+			var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
+			var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
+			var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
+			var bm_fire_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
+			var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
+			BM_input_events.emit(bm_fire_events)
+			return
+			
 
 func _process(delta):
 	if not current:

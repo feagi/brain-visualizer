@@ -7,6 +7,7 @@ const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brai
 
 signal clicked_cortical_area(area: AbstractCorticalArea) ## Clicked cortical area (regardless of context)
 signal cortical_area_selected_neurons_changed(area: AbstractCorticalArea, selected_neuron_cordinates: Array[Vector3i])
+signal requesting_to_fire_selected_neurons(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) # NOTE: Array is of type Array[Vector3i[
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -84,6 +85,20 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
+			
+			# special case when firing neurons
+			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS: # special case when firing neurons
+				if bm_input_event.button_pressed:
+					var dict: Dictionary[StringName, Array] = {}
+					for BM_cortical_area in _cortical_visualizations_by_ID.values():
+						var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
+						if !selected_neurons.is_empty():
+							dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
+					requesting_to_fire_selected_neurons.emit(dict)
+				return
+			
+			
+			
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				# Clicking over nothing
