@@ -20,6 +20,8 @@ var _UI_layer_for_BM: UI_BrainMonitor_Overlay = null
 var _representing_region: BrainRegion
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
+var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
+
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
 
@@ -48,8 +50,6 @@ func setup(region: BrainRegion) -> void:
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 
 	region.cortical_area_added_to_region.connect(_add_cortical_area)
-	
-	
 	
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
@@ -150,6 +150,30 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 		currently_mousing_over_neurons[cortical_area] = typed_arr
 	_previously_moused_over_cortical_area_neurons = currently_mousing_over_neurons
 
+#region Interaction
+
+## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
+func create_preview(initial_FEAGI_soace_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool) -> UI_BrainMonitor_InteractivePreview:
+	var preview: UI_BrainMonitor_InteractivePreview = UI_BrainMonitor_InteractivePreview.new()
+	add_child(preview)
+	preview.setup(initial_FEAGI_soace_position, initial_dimensions, show_voxels)
+	_active_previews.append(preview)
+	preview.tree_exiting.connect(_preview_closing)
+	return preview
+
+## Closes all currently active previews
+func clear_all_open_previews() -> void:
+	var previews_duplicated: Array[UI_BrainMonitor_InteractivePreview] = _active_previews.duplicate()
+	for active_preview in previews_duplicated:
+		active_preview.queue_free()
+
+## Called when the preview is about to be free'd for any reason
+func _preview_closing(preview: UI_BrainMonitor_InteractivePreview):
+	_active_previews.erase(preview)
+
+
+#endregion
+
 
 #region Cache Responses
 
@@ -176,7 +200,5 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
-
-
 
 #endregion

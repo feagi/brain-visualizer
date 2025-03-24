@@ -1,4 +1,4 @@
-extends Node3D
+extends Node
 class_name UI_BrainMonitor_CorticalArea
 ## Class for rendering cortical areas in the Brain monitor
 # NOTE: We will leave adding, removing, or changing parent region to the Brain Monitor itself, since those interactions affect multiple objects
