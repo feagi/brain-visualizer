@@ -22,7 +22,7 @@ var _highlight_image_texture: ImageTexture
 var _selection_SVO: SVOTree
 var _selection_image: Image
 var _selection_image_texture: ImageTexture
-var _is_moused_over: bool
+var _is_hovered_over: bool
 var _is_selected: bool
 
 func setup(area: AbstractCorticalArea) -> void:
@@ -60,7 +60,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	super(new_dimensions)
 	
 	_static_body.scale = _dimensions
-	_static_body.position = _position_godot_space
+	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
 	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
@@ -99,12 +99,12 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 	return world_godot_position_floored
 	
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
-	_is_moused_over = is_highlighted
-	_set_cortical_area_outline(_is_moused_over, _is_selected)
+	_is_hovered_over = is_highlighted
+	_set_cortical_area_outline(_is_hovered_over, _is_selected)
 
 func set_cortical_area_selection(is_selected: bool) -> void:
 	_is_selected = is_selected
-	_set_cortical_area_outline(_is_moused_over, _is_selected)
+	_set_cortical_area_outline(_is_hovered_over, _is_selected)
 
 func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 	# This only gets called if something changes. For now lets just rebuild the SVO each time

@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://5hsf4w3wucyh"]
+
+[ext_resource type="Shader" uid="uid://b7iv2atwef678" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Interactive_Previews/PreviewShaderSimple.gdshader" id="1_prw2a"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_prw2a")
+shader_parameter/color = Color(0.4, 0.4, 0.8, 0.5)
