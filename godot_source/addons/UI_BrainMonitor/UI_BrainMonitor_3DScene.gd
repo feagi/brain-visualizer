@@ -97,7 +97,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if hit_parent_parent:
 				currently_moused_over_volumes.append(hit_parent_parent)
 				var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
-				BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
+				if bm_input_event.button_pressed:
+					BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
@@ -112,14 +113,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	# highlight neurons that are moused over (and unhighlight what wasnt)
 	currently_mousing_over_neurons.merge(_previously_moused_over_cortical_area_neurons, false)
 	for cortical_area in currently_mousing_over_neurons.keys():
-		cortical_area.set_highlighted_neurons(currently_mousing_over_neurons[cortical_area])
-		if len(currently_mousing_over_neurons[cortical_area]) == 0:
-			print(cortical_area)
-			cortical_area.set_highlighted_neurons([])
-			currently_mousing_over_neurons.erase(cortical_area)
-	for cortical_area in currently_mousing_over_neurons:
 		var typed_arr: Array[UI_BrainMonitor_CorticalArea] = []
+		if len(currently_mousing_over_neurons[cortical_area]) == 0:
+			# Cortical area has nothing hovering over it, tell the renderer to clear it
+			cortical_area.clear_mouse_over_state_for_all_neurons()
+			currently_mousing_over_neurons.erase(cortical_area)
+		else:
+			# cortical area has things hovering over it, tell renderer to show it
+			cortical_area.set_highlighted_neurons(currently_mousing_over_neurons[cortical_area])
 		currently_mousing_over_neurons[cortical_area] = typed_arr
+	_previously_moused_over_cortical_area_neurons = currently_mousing_over_neurons
 
 
 #region Cache Responses
