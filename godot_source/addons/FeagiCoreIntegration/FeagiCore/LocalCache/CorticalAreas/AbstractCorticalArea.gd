@@ -319,6 +319,11 @@ func FEAGI_set_cortical_neuron_per_vox_count(new_density: int) -> void:
 func FEAGI_set_SVO_visualization_data(SVO_byte_structure: PackedByteArray) -> void:
 	_SVO_neuron_activations = SVO_byte_structure
 	recieved_new_neuron_activation_data.emit(SVO_byte_structure)
+
+func FEAGI_set_no_visualizeation_data() -> void:
+	if len(_SVO_neuron_activations) != 7:
+		_SVO_neuron_activations = PackedByteArray([1,0,1,0, 0 ,255,255,255])
+		recieved_new_neuron_activation_data.emit(_SVO_neuron_activations)
 	
 
 func FEAGI_set_cortical_synaptic_attractivity(new_attractivity: int) -> void:

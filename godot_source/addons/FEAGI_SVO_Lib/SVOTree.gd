@@ -73,7 +73,7 @@ func export_as_shader_image() -> Image:
 	# We have to calculate the byte structure: structure is the following (where each node is 4 bytes)
 	# Node (inclusive byte ranges):
 	#	Byte 0: Bitmask of active children (0-7),
-	#	Byte 2-3: uint24 node count offset to first child node (if applicable), reverse byte order. If this node was a parent of a leaf (which is not exported, only represented by bitmask), then this value will be 0xFFFFFF
+	#	Byte 1-3: uint24 node count offset to first child node (if applicable), reverse byte order. If this node was a parent of a leaf (which is not exported, only represented by bitmask), then this value will be 0xFFFFFF
 	# NOTE: leaf nodes are skipped in the output array, as we only need the bitmask of their parent node to ensure their existance (leaf nodes cannot have child nodes)
 	# example structure, where the number represents the child index from the parent and the letter is a reference to the node
 	# ( Root ) a

@@ -30,6 +30,9 @@ var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
 var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
 
+# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
+var _cortical_areas_to_visualize_clear: Array
+
 func _process(_delta: float):
 	_socket.poll()
 	match(_socket.get_ready_state()):
@@ -46,8 +49,14 @@ func _process(_delta: float):
 			
 			while _socket.get_available_packet_count():
 				var retrieved_ws_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
+				
+				# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
+				_cortical_areas_to_visualize_clear = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+				
 				_process_wrapped_byte_structure(retrieved_ws_data)
 				
+				for area in _cortical_areas_to_visualize_clear:
+					area.FEAGI_set_no_visualizeation_data()
 				
 
 				
@@ -149,6 +158,11 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
 			if area:
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
+				
+				# BUTT UGLY HACK
+				var index: int = _cortical_areas_to_visualize_clear.find(area)
+				if index != -1:
+					_cortical_areas_to_visualize_clear.remove_at(index)
 
 			
 		_: # Unknown

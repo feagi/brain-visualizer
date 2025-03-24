@@ -152,6 +152,7 @@ void fragment()
 
 	if(neuron_activation_has_hit)
 	{
+		//final_color.rgb += vec3(0.3, -0.3, 0.3);
 		final_color.rgb = vec3(0.0);
 		final_color.a = 1.0;
 	}
