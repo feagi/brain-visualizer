@@ -46,9 +46,8 @@ func setup(region: BrainRegion) -> void:
 
 	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
-		area.about_to_be_deleted.connect(rendering_area.queue_free)
-		area.coordinates_3D_updated.connect(rendering_area.set_new_position)
-	
+
+	region.cortical_area_added_to_region.connect(_add_cortical_area)
 	
 	
 	
@@ -164,6 +163,8 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	_node_3D_root.add_child(rendering_area)
 	rendering_area.setup(area)
 	_cortical_visualizations_by_ID[area.cortical_ID] = rendering_area
+	area.about_to_be_deleted.connect(_remove_cortical_area.bind(area))
+	area.coordinates_3D_updated.connect(rendering_area.set_new_position)
 	return rendering_area
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
@@ -171,8 +172,11 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
 	var rendering_area: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[area.cortical_ID]
+	_previously_moused_over_volumes.erase(rendering_area)
+	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
+
 
 
 #endregion
