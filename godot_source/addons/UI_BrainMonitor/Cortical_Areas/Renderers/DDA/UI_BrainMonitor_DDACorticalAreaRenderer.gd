@@ -116,8 +116,8 @@ func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 		# since We give the neuron coordinate in FEAGI space, but DDA renders in godot space, we need to convert this but flipping the Z axis
 		neuron_coordinate.z = _cortical_dimensions.z - neuron_coordinate.z - 1
 		_highlight_SVO.add_node(neuron_coordinate)
-	_activation_image_texture.set_image(_highlight_SVO.export_as_shader_image())
-	_DDA_mat.set_shader_parameter("highlight_SVO", _activation_image_texture)
+	_highlight_image_texture.set_image(_highlight_SVO.export_as_shader_image())
+	_DDA_mat.set_shader_parameter("highlight_SVO", _highlight_image_texture)
 
 func set_neuron_selections(neuron_coordinates: Array[Vector3i]) -> void:
 	_selection_SVO.reset_tree()
