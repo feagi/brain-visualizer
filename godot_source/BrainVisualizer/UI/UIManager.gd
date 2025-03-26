@@ -76,6 +76,7 @@ func FEAGI_about_to_reset_genome() -> void:
 	#_root_UI_view.close_all_non_root_brain_region_views()
 	#toggle_loading_screen(true)
 	if _temp_bm_holder:
+		(_temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene).clear_all_open_previews()
 		_temp_bm_holder.queue_free()
 	
 
