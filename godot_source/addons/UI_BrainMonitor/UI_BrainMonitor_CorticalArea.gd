@@ -67,7 +67,11 @@ func toggle_neuron_selection_state(neuron_coordinate: Vector3i) -> void:
 	else:
 		_selected_neuron_coordinates.remove_at(index)
 	_renderer.set_neuron_selections(_selected_neuron_coordinates)
-	
+
+func clear_all_neuron_selection_states() -> void:
+	if len(_selected_neuron_coordinates) != 0:
+		_selected_neuron_coordinates =  []
+		_renderer.set_neuron_selections(_selected_neuron_coordinates)
 
 func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates

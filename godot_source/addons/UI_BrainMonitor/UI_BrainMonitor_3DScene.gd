@@ -8,6 +8,7 @@ const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brai
 signal clicked_cortical_area(area: AbstractCorticalArea) ## Clicked cortical area (regardless of context)
 signal cortical_area_selected_neurons_changed(area: AbstractCorticalArea, selected_neuron_cordinates: Array[Vector3i])
 signal requesting_to_fire_selected_neurons(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) # NOTE: Array is of type Array[Vector3i]
+signal requesting_to_clear_all_selected_neurons()
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -98,16 +99,18 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			
-			# special case when firing neurons
-			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS: # special case when firing neurons
-				if bm_input_event.button_pressed:
-					var dict: Dictionary[StringName, Array] = {}
-					for BM_cortical_area in _cortical_visualizations_by_ID.values():
-						var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
-						if !selected_neurons.is_empty():
-							dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
-					requesting_to_fire_selected_neurons.emit(dict)
+			# special cases for actions
+			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when firing neurons
+				var dict: Dictionary[StringName, Array] = {}
+				for BM_cortical_area in _cortical_visualizations_by_ID.values():
+					var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
+					if !selected_neurons.is_empty():
+						dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
+				requesting_to_fire_selected_neurons.emit(dict)
 				return
+			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when clearing all neurons
+				for bm_cortical_area in _cortical_visualizations_by_ID.values():
+					bm_cortical_area.clear_all_neuron_selection_states() # slow but I dont care right now
 			
 			
 			
