@@ -130,6 +130,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			if dict.has("status"):
 				var dict_status = dict["status"]
 				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+				print(dict_status)
 				if dict_status.has("genome_changed"):
 					feagi_requesting_reset.emit()
 		7: # ActivatedNeuronLocation

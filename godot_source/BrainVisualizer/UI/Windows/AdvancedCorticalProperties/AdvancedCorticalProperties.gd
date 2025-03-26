@@ -268,6 +268,7 @@ func _init_summary() -> void:
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+
 		
 	else:
 		# Single
@@ -316,7 +317,15 @@ func _user_press_edit_region() -> void:
 func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
 	_add_to_dict_to_send(selected_objects[0].genome_ID, _button_summary_send, "parent_region_id")
 
-	
+
+func _enable_3D_preview(): #NOTE only currently works with single
+		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
+		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
+		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
+		var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false) # show voxels?
+		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
+		
+
 #endregion
 
 #region firing parameters

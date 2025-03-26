@@ -46,11 +46,17 @@ func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	name = "BM_" + region.region_ID
 
-	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
-		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
-
-	region.cortical_area_added_to_region.connect(_add_cortical_area)
 	
+	
+	# WARNING for the time being, we will have BM be globa instead of region specific
+	# for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
+	# 	var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
+	# region.cortical_area_added_to_region.connect(_add_cortical_area)
+	# TEMP
+	for area: AbstractCorticalArea in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
+	
+
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state

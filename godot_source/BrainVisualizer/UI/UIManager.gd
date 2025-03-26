@@ -30,6 +30,7 @@ var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
 var _selection_system: SelectionSystem
+var _temp_bm_holder: UI_Capsules_Capsule
 
 
 func _enter_tree():
@@ -72,8 +73,11 @@ func _ready():
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
-	_root_UI_view.close_all_non_root_brain_region_views()
-	toggle_loading_screen(true)
+	#_root_UI_view.close_all_non_root_brain_region_views()
+	#toggle_loading_screen(true)
+	if _temp_bm_holder:
+		_temp_bm_holder.queue_free()
+	
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it
@@ -103,9 +107,9 @@ func FEAGI_confirmed_genome() -> void:
 	toggle_loading_screen(false)
 	
 	# temp BM
-	var holder: UI_Capsules_Capsule = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
-	$test.add_child(holder)
-	var brain_monitor: UI_BrainMonitor_3DScene = holder.get_holding_UI() as UI_BrainMonitor_3DScene
+	_temp_bm_holder = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
+	$test.add_child(_temp_bm_holder)
+	var brain_monitor: UI_BrainMonitor_3DScene = _temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene
 	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	temp_root_bm = brain_monitor

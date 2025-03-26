@@ -32,7 +32,7 @@ func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: 
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimchange_signal]
 	_region_button.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION)
-	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
+	#BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
 
 
 func _import_pressed():
