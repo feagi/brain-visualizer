@@ -29,6 +29,7 @@ var _socket: WebSocketPeer
 var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
 var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
+var _temp_genome_ID: float = 0.0
 
 # BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
 var _cortical_areas_to_visualize_clear: Array
@@ -130,9 +131,14 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			if dict.has("status"):
 				var dict_status = dict["status"]
 				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
-				print(dict_status)
-				if dict_status.has("genome_changed"):
-					feagi_requesting_reset.emit()
+				if dict_status.has("genome_timestamp"):
+					if (!is_zero_approx(_temp_genome_ID - dict_status["genome_timestamp"])):
+						if !is_zero_approx(_temp_genome_ID):
+							print("reset")
+							feagi_requesting_reset.emit()
+						_temp_genome_ID = dict_status["genome_timestamp"]
+						
+					
 		7: # ActivatedNeuronLocation
 			# ignore version for now
 			push_warning("ActivatedNeuronLocation data type is deprecated!")
