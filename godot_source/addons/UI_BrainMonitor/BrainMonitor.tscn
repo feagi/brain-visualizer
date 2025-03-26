@@ -36,7 +36,6 @@ script = ExtResource("3_l3fsc")
 
 [node name="Bottom_Row" type="BoxContainer" parent="SubViewport/BM_UI"]
 layout_mode = 2
-alignment = 2
 
 [node name="MouseContext" type="Label" parent="SubViewport/BM_UI/Bottom_Row"]
 layout_mode = 2
