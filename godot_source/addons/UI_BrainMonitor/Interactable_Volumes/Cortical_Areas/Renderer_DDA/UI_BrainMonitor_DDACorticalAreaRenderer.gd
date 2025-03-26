@@ -91,9 +91,9 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 	var world_godot_position_floored: Vector3i = Vector3i(floori(world_godot_position.x  - EPSILON), floori(world_godot_position.y  - EPSILON), floori(world_godot_position.z))
 	world_godot_position_floored.z = _dimensions.z - world_godot_position_floored.z - EPSILON # flip
 	world_godot_position_floored = Vector3(
-		clampi(world_godot_position_floored.x, 0, _dimensions.x),
-		clampi(world_godot_position_floored.y, 0, _dimensions.y),
-		clampi(world_godot_position_floored.z, 0, _dimensions.z)
+		clampi(world_godot_position_floored.x, 0, _dimensions.x - 1),
+		clampi(world_godot_position_floored.y, 0, _dimensions.y - 1),
+		clampi(world_godot_position_floored.z, 0, _dimensions.z - 1)
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
 	
