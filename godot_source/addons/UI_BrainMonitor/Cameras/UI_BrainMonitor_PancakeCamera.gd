@@ -28,6 +28,8 @@ const ANIMATION_TIMER_NAME: NodePath = "AnimTimer"
 @export var key_to_fire_selected_neurons: Key = KEY_SPACE
 @export var key_to_clear_all_neurons: Key = KEY_DELETE
 @export var key_tank_fast_camera: Key = KEY_SHIFT
+@export var key_tank_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
+@export var key_tank_pan_button: MouseButton = MOUSE_BUTTON_LEFT
 
 enum MODE {
 	FPS, # Originally based off the MIT work of Marc Nahr: https://github.com/MarcPhi/godot-free-look-camera (TODO give proper credit on github)
@@ -88,7 +90,15 @@ func _unhandled_input(event: InputEvent) -> void:
 					return # disable sending inputs while looking around
 				
 			MODE.TANK:
-				pass
+				if event is InputEventMouseMotion:
+					if Input.is_mouse_button_pressed(key_tank_turn_button):
+						rotation.x += event.relative.y * -TANK_CAMERA_ROTATION_SPEED
+						rotation.y += event.relative.x * -TANK_CAMERA_ROTATION_SPEED
+						return
+					
+					if Input.is_mouse_button_pressed(key_tank_pan_button):
+						var move: Vector3 = Vector3(event.relative.x * -TANK_CAMERA_PAN_SPEED, event.relative.y * TANK_CAMERA_PAN_SPEED, 0)
+						translate(move)
 		
 		# BM Interactions
 		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)
@@ -137,26 +147,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 	if event is InputEventKey:
 		
-		match(movement_mode):
-			MODE.FPS:
-				var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
-				var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
-				var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
-				var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
-				if Input.is_key_pressed(key_to_fire_selected_neurons):
-					held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
-				if Input.is_key_pressed(key_to_clear_all_neurons):
-					held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
-				
-				var bm_fire_event: UI_BrainMonitor_InputEvent_Click
-				
-				if (event.keycode == key_to_fire_selected_neurons):
-					bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
-				elif (event.keycode == key_to_clear_all_neurons):
-					bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false)
+		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
+		var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
+		var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
+		var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
+		if Input.is_key_pressed(key_to_fire_selected_neurons):
+			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
+		if Input.is_key_pressed(key_to_clear_all_neurons):
+			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
+		
+		var bm_fire_event: UI_BrainMonitor_InputEvent_Click
+		
+		if (event.keycode == key_to_fire_selected_neurons):
+			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
+		elif (event.keycode == key_to_clear_all_neurons):
+			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false)
 
-				var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
-				BM_input_events.emit(bm_fire_events)
+		var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
+		
+		
+		
+		match(movement_mode):
+			
+			MODE.ANIMATION:
+				return
+			
+			MODE.FPS:
+				pass
+				
 			MODE.TANK:
 				var dir: Vector3 = Vector3(0,0,0)
 
@@ -178,6 +196,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				
 				dir = dir.normalized() * speed
 				translate(dir)
+				
+		
+		BM_input_events.emit(bm_fire_events)
 
 
 func _process(delta):
