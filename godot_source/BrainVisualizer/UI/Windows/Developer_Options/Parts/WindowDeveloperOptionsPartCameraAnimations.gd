@@ -7,7 +7,8 @@ var _stored_rotations: Array[Quaternion] = []
 var _stored_times: Array[float] = []
 
 func _ready() -> void:
-	_camera = BV.BM.get_node("BVCam")
+	#_camera = #BV.BM.get_node("BVCam")
+	pass
 
 func clear_stored_data() -> void:
 	var counter: IntInput = $HBoxContainer/num_animation_points
