@@ -99,7 +99,13 @@ func _unhandled_input(event: InputEvent) -> void:
 					if Input.is_mouse_button_pressed(key_tank_pan_button):
 						var move: Vector3 = Vector3(event.relative.x * -TANK_CAMERA_PAN_SPEED, event.relative.y * TANK_CAMERA_PAN_SPEED, 0)
 						translate(move)
-		
+				elif event is InputEventMouseButton:
+					match event.button_index:
+						MOUSE_BUTTON_WHEEL_DOWN:
+							translate(Vector3(0,0,TANK_CAMERA_MOVEMENT_SPEED))
+						MOUSE_BUTTON_WHEEL_UP:
+							translate(Vector3(0,0,-TANK_CAMERA_MOVEMENT_SPEED))
+						
 		# BM Interactions
 		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)
 		if Input.is_key_pressed(key_to_select_neurons):
