@@ -7,7 +7,7 @@ void vertex() {
 
 void fragment() {
 	ALBEDO = vec3(0.2, 0.2, 0.6);
-	ALPHA = 0.3 + 0.08 * sin(TIME * 4.0);
+	ALPHA = 0.7 + 0.16 * sin(TIME * 4.0);
 }
 
 //void light() {
