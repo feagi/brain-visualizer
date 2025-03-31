@@ -67,6 +67,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_DDA_mat.set_shader_parameter("voxel_count_z", new_dimensions.z)
 	var max_dim_size: int = max(new_dimensions.x, new_dimensions.y, new_dimensions.z)
 	var calculated_depth: int = ceili(log(float(max_dim_size)) / log(2.0)) # since log is with base e, ln(a) / ln(2) = log_base_2(a)
+	calculated_depth = maxi(calculated_depth, 1)
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	

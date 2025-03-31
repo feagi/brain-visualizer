@@ -133,6 +133,10 @@ func _add_node(node_location: Vector3i) -> void:
 		
 		node_location %= size
 		current_depth += 1
+	
+	if _tree_dimension_limit == 1:
+		# only time this is called is a 1x1x1 node and we are adding a node
+		_root_node.child_bitmask = 1
 
 ## Resizes the _image and the _image_data PackedByteArray as per node count
 func _recompute_texture_memory(number_of_nodes_to_hold: int) -> void:

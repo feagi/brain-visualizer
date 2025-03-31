@@ -46,8 +46,7 @@ bool get_01_model_distance_to_voxel_DDA(sampler2D SVO_texture, SVOInternalNode r
 		// Reset for another transversal through the DDA
 		node = root_node;
 		current_SVO_boundary_check_svon = vec3(0.5);
-		node_is_last_before_final_leafs = false;
-
+		node_is_last_before_final_leafs = is_SVONode_parent_of_leaf(node);
 
 		// Loop for navigating the SVO tree at our current location
 		for( uint current_SVO_node_depth = 1u; current_SVO_node_depth < SVO_MAX_DEPTH; current_SVO_node_depth++)

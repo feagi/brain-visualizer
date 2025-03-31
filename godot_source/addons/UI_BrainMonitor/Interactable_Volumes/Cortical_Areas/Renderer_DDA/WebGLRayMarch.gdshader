@@ -100,14 +100,13 @@ void fragment()
 	vec3 voxel_counts_per_dim = vec3(float(voxel_count_x),float(voxel_count_y) ,float(voxel_count_z));
 
 	// Get Ray variations
-    vec3 ray_origin_m = (inverse(MODEL_MATRIX) * vec4(CAMERA_POSITION_WORLD, 1)).xyz; // CORRECT
-    vec3 ray_direction_mn = normalize(local_vert_space_m05_05 - ray_origin_m); // CORRECT
-	vec3 ray_direction_svon = normalize(local_vert_0_1_space_to_SVO_space(ray_direction_mn, voxel_counts_per_dim, shared_SVO_depth)); // ?
+    vec3 ray_origin_m = (inverse(MODEL_MATRIX) * vec4(CAMERA_POSITION_WORLD, 1)).xyz;
+    vec3 ray_direction_mn = normalize(local_vert_space_m05_05 - ray_origin_m);
+	vec3 ray_direction_svon = normalize(local_vert_0_1_space_to_SVO_space(ray_direction_mn, voxel_counts_per_dim, shared_SVO_depth));
 
 	// Get Space variations
 	vec3 mesh_surface_position_mn = local_vert_space_m05_05 + vec3(0.5);
 	vec3 mesh_surface_position_svon = local_vert_0_1_space_to_SVO_space(mesh_surface_position_mn, voxel_counts_per_dim, shared_SVO_depth);
-
 
 	/// Calculate SVO hits
 	// Neuron Activation SVO
