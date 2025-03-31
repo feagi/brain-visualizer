@@ -107,6 +107,10 @@ backward={
 ]
 }
 
+[input_devices]
+
+pointing/emulate_mouse_from_touch=false
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
