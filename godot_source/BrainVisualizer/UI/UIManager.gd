@@ -31,6 +31,8 @@ var _notification_system: NotificationSystem
 var _version_label: Label
 var _selection_system: SelectionSystem
 var _temp_bm_holder: UI_Capsules_Capsule
+var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
+var _temp_bm_camera_rot: Vector3
 
 
 func _enter_tree():
@@ -77,6 +79,8 @@ func FEAGI_about_to_reset_genome() -> void:
 	#toggle_loading_screen(true)
 	if _temp_bm_holder:
 		(_temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene).clear_all_open_previews()
+		_temp_bm_camera_pos = temp_root_bm.get_node("SubViewport/Center/PancakeCam").position
+		_temp_bm_camera_rot = temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation
 		_temp_bm_holder.queue_free()
 	
 
@@ -114,6 +118,9 @@ func FEAGI_confirmed_genome() -> void:
 	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	temp_root_bm = brain_monitor
+	if _temp_bm_camera_pos.length() > 0.01:
+		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos
+		temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation = _temp_bm_camera_rot
 	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
