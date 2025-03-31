@@ -12,6 +12,8 @@ const WINDOW_NAME: StringName = "adv_cortical_properties"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
 var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
+var _preview: UI_BrainMonitor_InteractivePreview
+
 
 func _ready():
 	super()
@@ -222,7 +224,14 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 	for i: int in masimum:
 		collapsibles[i].is_open = expanded[i]
 
-
+func _setup_bm_prevew() -> void:
+	if _preview:
+		return
+	_preview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false)
+	var moves: Array[Signal] = [_vector_position.user_updated_vector]
+	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+	_preview.connect_UI_signals(moves, resizes, closes)
 
 
 
@@ -274,6 +283,8 @@ func _init_summary() -> void:
 		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
+		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
+		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
