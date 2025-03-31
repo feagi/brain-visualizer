@@ -71,6 +71,8 @@ func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool
 	size = Vector2i(0,0) # Force shrink to minimum possible size
 
 func _user_requested_update_morphology() -> void:
+	if !_loaded_morphology:
+		return
 	BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % _loaded_morphology.name)
 	_UI_morphology_definition.request_feagi_apply_morphology_settings(_loaded_morphology.name)
 
