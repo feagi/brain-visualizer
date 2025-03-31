@@ -60,13 +60,18 @@ func set_neuron_selection_state(neuron_coordinate: Vector3i, is_selected: bool) 
 		_selected_neuron_coordinates.remove_at(index)
 	_renderer.set_neuron_selections(_selected_neuron_coordinates)
 
-func toggle_neuron_selection_state(neuron_coordinate: Vector3i) -> void:
+# flips the neuron coordinate selection state, and returns the new state (if its selected now)
+func toggle_neuron_selection_state(neuron_coordinate: Vector3i) -> bool:
 	var index: int = _selected_neuron_coordinates.find(neuron_coordinate)
+	var is_selected: bool
 	if index == -1:
 		_selected_neuron_coordinates.append(neuron_coordinate)
+		is_selected = true
 	else:
 		_selected_neuron_coordinates.remove_at(index)
+		is_selected = false
 	_renderer.set_neuron_selections(_selected_neuron_coordinates)
+	return is_selected
 
 func clear_all_neuron_selection_states() -> void:
 	if len(_selected_neuron_coordinates) != 0:

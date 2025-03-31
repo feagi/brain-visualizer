@@ -6,7 +6,8 @@ const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brai
 @export var multi_select_key: Key = KEY_SHIFT
 
 signal clicked_cortical_area(area: AbstractCorticalArea) ## Clicked cortical area (regardless of context)
-signal cortical_area_selected_neurons_changed(area: AbstractCorticalArea, selected_neuron_cordinates: Array[Vector3i])
+signal cortical_area_selected_neurons_changed(area: AbstractCorticalArea, selected_neuron_coordinates: Array[Vector3i])
+signal cortical_area_selected_neurons_changed_delta(area: AbstractCorticalArea, selected_neuron_coordinate: Vector3i, is_added: bool)
 signal requesting_to_fire_selected_neurons(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) # NOTE: Array is of type Array[Vector3i]
 signal requesting_to_clear_all_selected_neurons()
 
@@ -22,6 +23,7 @@ var _representing_region: BrainRegion
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
 var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
+var _restrict_neuron_selection_to: AbstractCorticalArea = null
 
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -133,12 +135,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
 				if bm_input_event.button_pressed:
 					if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
-						hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
+						var is_neuron_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
 						cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
+						cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
 					else:
 						if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-							BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
-							clicked_cortical_area.emit(hit_parent_parent.cortical_area)
+							
+							BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
+							BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
+							#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
+							#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
@@ -165,6 +171,17 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	_previously_moused_over_cortical_area_neurons = currently_mousing_over_neurons
 
 #region Interaction
+
+func clear_all_selected_cortical_area_neurons() -> void:
+	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
+		area.clear_all_neuron_selection_states()
+
+func set_further_neuron_selection_restriction_to_cortical_area(restrict_to: AbstractCorticalArea) -> void:
+	if restrict_to.cortical_ID in _cortical_visualizations_by_ID:
+		_restrict_neuron_selection_to = restrict_to
+
+func remove_neuron_cortical_are_selection_restrictions() -> void:
+	_restrict_neuron_selection_to = null
 
 ## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
 func create_preview(initial_FEAGI_soace_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool) -> UI_BrainMonitor_InteractivePreview:
