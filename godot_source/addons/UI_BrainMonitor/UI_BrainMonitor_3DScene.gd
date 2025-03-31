@@ -196,7 +196,9 @@ func create_preview(initial_FEAGI_soace_position: Vector3i, initial_dimensions: 
 func clear_all_open_previews() -> void:
 	var previews_duplicated: Array[UI_BrainMonitor_InteractivePreview] = _active_previews.duplicate()
 	for active_preview in previews_duplicated:
-		active_preview.queue_free()
+		if active_preview:
+			active_preview.queue_free()
+	_active_previews = []
 
 ## Called when the preview is about to be free'd for any reason
 func _preview_closing(preview: UI_BrainMonitor_InteractivePreview):
