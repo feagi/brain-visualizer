@@ -66,6 +66,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if !allow_user_control:
 		return
 	
+	if event is InputEventPanGesture:
+		translate(Vector3(event.delta.x,0, event.delta.y)) # lmao amirs gunnna mad
+		
+		
 	if event is InputEventMouse:
 		
 		# Camera Movement
@@ -140,6 +144,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				BM_input_events.emit(bm_click_events)
 			return
 
+
 		elif event is InputEventMouseMotion:
 			var mouse_motion_event: InputEventMouseMotion = event as InputEventMouseMotion
 			var bm_mouse_position: Vector2 = mouse_motion_event.position
@@ -150,6 +155,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var bm_hover_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_hover_event]
 			BM_input_events.emit(bm_hover_events)
 			return
+			
 		
 	if event is InputEventKey:
 		
