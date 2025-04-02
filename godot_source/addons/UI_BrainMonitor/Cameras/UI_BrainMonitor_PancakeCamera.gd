@@ -30,6 +30,7 @@ const ANIMATION_TIMER_NAME: NodePath = "AnimTimer"
 @export var key_tank_fast_camera: Key = KEY_SHIFT
 @export var key_tank_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
 @export var key_tank_pan_button: MouseButton = MOUSE_BUTTON_LEFT
+@export var key_tank_reset_position: Key = KEY_R
 
 enum MODE {
 	FPS, # Originally based off the MIT work of Marc Nahr: https://github.com/MarcPhi/godot-free-look-camera (TODO give proper credit on github)
@@ -50,6 +51,8 @@ var _fps_velocity: float = FPS_DEFAULT_SPEED
 
 var _mouse_position_when_any_click_started: Vector2 = Vector2(-1, -1)
 var _click_down_count: int = 0
+
+
 
 
 
@@ -157,6 +160,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 	if event is InputEventKey:
 		
+		
+		
 		match(movement_mode):
 			
 			MODE.ANIMATION:
@@ -169,7 +174,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var dir: Vector3 = Vector3(0,0,0)
 
 				if Input.is_key_pressed(KEY_R):
-					#reset_camera()
+					reset_camera()
 					return
 				if Input.is_action_pressed("forward"):
 					dir += Vector3(0,0,-1)
@@ -246,6 +251,9 @@ func point_camera_at(position_to_look_at: Vector3) -> void:
 func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -> void:
 	position = _get_endpoint_position(position_to_point_at, CAMERA_TELEPORT_FROM_DISTANCE)
 
+func reset_camera() -> void:
+	position = _initial_position
+	rotation = _initial_euler_rotation
 
 func _mouse_button_to_BM_CLICK_BUTTON(mouse_button: MouseButton) -> UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON:
 	match(mouse_button):
