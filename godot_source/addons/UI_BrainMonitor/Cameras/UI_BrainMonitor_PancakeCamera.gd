@@ -66,8 +66,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if !allow_user_control:
 		return
 	
-	if event is InputEventPanGesture:
-		translate(Vector3(event.delta.x,0, event.delta.y)) # lmao amirs gunnna mad
 		
 		
 	if event is InputEventMouse:
@@ -109,7 +107,7 @@ func _unhandled_input(event: InputEvent) -> void:
 							translate(Vector3(0,0,TANK_CAMERA_MOVEMENT_SPEED))
 						MOUSE_BUTTON_WHEEL_UP:
 							translate(Vector3(0,0,-TANK_CAMERA_MOVEMENT_SPEED))
-						
+
 		# BM Interactions
 		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)
 		if Input.is_key_pressed(key_to_select_neurons):
@@ -211,6 +209,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				
 		
 		BM_input_events.emit(bm_fire_events)
+
+	if event is InputEventPanGesture:
+		
+		match(movement_mode):
+			MODE.ANIMATION:
+				pass
+			MODE.FPS:
+				pass
+			MODE.TANK:
+				translate(Vector3(event.delta.x,0, event.delta.y)) # why doesnt this inherit from mouse?
 
 
 func _process(delta):
