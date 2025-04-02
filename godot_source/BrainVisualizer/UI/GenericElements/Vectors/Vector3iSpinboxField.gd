@@ -82,4 +82,3 @@ func _emit_new_vector(_dont_care: Variant) -> void:
 
 func _emit_user_interaction(_dont_care: Variant):
 	user_interacted.emit()
-

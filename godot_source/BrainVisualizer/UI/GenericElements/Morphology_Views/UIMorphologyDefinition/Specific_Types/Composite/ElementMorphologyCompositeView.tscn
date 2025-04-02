@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://dbmhqblcfnapj"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.gd" id="1_nh6j0"]
+[ext_resource type="Script" uid="uid://djahbmebhqcr7" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.gd" id="1_nh6j0"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="1_op66g"]
 [ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.tscn" id="3_i80nu"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="5_1jdcn"]
+[ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="5_1jdcn"]
 
 [node name="ElementMorphologyCompositeView" type="VBoxContainer"]
 size_flags_horizontal = 4

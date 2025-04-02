@@ -28,11 +28,12 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
 	_current_dimensions_as_per_device_count = dropdown.get_selected_template().calculate_IOPU_dimension(int(device_count.value))
-	BV.UI.start_cortical_area_preview(location.current_vector, _current_dimensions_as_per_device_count, move_signals, resize_signals, preview_close_signals)
 	if _is_IPU_not_OPU:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["i__inf"])
 	else:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["o__mot"])
+	var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false) # show voxels?
+	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 
 
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:

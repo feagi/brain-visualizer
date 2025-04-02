@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3 uid="uid://ddn8pt45rca4n"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.gd" id="1_q5gkp"]
+[ext_resource type="Script" uid="uid://dqrp2pr8ehjbc" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.gd" id="1_q5gkp"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://BrainVisualizer/UI/GenericElements/Scroll/Scroll_Vertical.tscn" id="2_cj4db"]
 [ext_resource type="Texture2D" uid="uid://b4jkpvgo7fes3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_ftdb2"]
 [ext_resource type="PackedScene" uid="uid://dsf0flbf8igka" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.tscn" id="3_k6hof"]

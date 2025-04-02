@@ -16,7 +16,7 @@ func _ready() -> void:
 	# Zeroth step is just to collect references and make connections
 	_UI_manager = $UIManager
 	FeagiCore.genome_load_state_changed.connect(_on_genome_state_change)
-	#FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
+	FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 	
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
@@ -44,4 +44,3 @@ func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_st
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:
 	_UI_manager.window_manager.spawn_amalgamation_window(amalgamation_id, genome_title, dimensions)
-

@@ -12,7 +12,6 @@ var _wiring_selector: OptionButton
 
 var _amalgamation_ID: StringName
 var _circuit_size: Vector3i
-var _preview_holder: GenericSinglePreviewHandler
 
 
 func _ready() -> void:
@@ -29,11 +28,13 @@ func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: 
 	_amalgamation_ID = amalgamation_ID
 	_circuit_size = circuit_size
 	_field_title.text = genome_title
-	var closed_signals: Array[Signal] = [close_window_requested]
+	var closed_signals: Array[Signal] = [close_window_requested, FeagiCore.about_to_reload_genome]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimchange_signal]
 	_region_button.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION)
-	BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
+	var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(Vector3i(0,0,0), circuit_size, false)
+	preview.connect_UI_signals(move_signals, resize_signals, closed_signals)
+	#BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
 
 
 func _import_pressed():

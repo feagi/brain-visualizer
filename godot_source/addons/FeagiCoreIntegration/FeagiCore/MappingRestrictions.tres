@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="MappingRestrictions" load_steps=9 format=3 uid="uid://d0ba2vskmumy"]
 
-[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictions.gd" id="1_qysk5"]
-[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictionDefault.gd" id="1_y5wpv"]
-[ext_resource type="Script" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictionCorticalMorphology.gd" id="2_ojjbj"]
+[ext_resource type="Script" uid="uid://ct5pwwaebc6tf" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictions.gd" id="1_qysk5"]
+[ext_resource type="Script" uid="uid://cjlm52ix508hl" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictionDefault.gd" id="1_y5wpv"]
+[ext_resource type="Script" uid="uid://ccienfgg1v2hf" path="res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictionCorticalMorphology.gd" id="2_ojjbj"]
 
 [sub_resource type="Resource" id="Resource_84m7c"]
 script = ExtResource("1_y5wpv")

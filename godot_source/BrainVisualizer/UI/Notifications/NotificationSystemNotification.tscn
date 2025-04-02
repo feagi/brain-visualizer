@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://yhp0vgqrk6ia"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Notifications/NotificationSystemNotification.gd" id="1_3jel5"]
+[ext_resource type="Script" uid="uid://c0kjjpxiej6ho" path="res://BrainVisualizer/UI/Notifications/NotificationSystemNotification.gd" id="1_3jel5"]
 [ext_resource type="Texture2D" uid="uid://bkasact0sryov" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_S.png" id="1_7skoh"]
 [ext_resource type="Texture2D" uid="uid://3kqnu1mjw75n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_C.png" id="2_s5grv"]
 [ext_resource type="Texture2D" uid="uid://chpvi6373gytw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_H.png" id="3_43p67"]

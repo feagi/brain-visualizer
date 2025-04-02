@@ -1,6 +1,6 @@
 [gd_scene load_steps=11 format=3 uid="uid://jjxpbkym537m"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.gd" id="1_xsnx8"]
+[ext_resource type="Script" uid="uid://bt4hvlcblfybq" path="res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.gd" id="1_xsnx8"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_now4c"]
 [ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="3_tq10i"]
 [ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="4_1wwy8"]

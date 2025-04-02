@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://bq4c4j2yujcwt"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.gd" id="1_cwaox"]
+[ext_resource type="Script" uid="uid://ndrapxomkjhp" path="res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.gd" id="1_cwaox"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_y8w4n"]
 [ext_resource type="PackedScene" uid="uid://bpc4cbet6k5h4" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.tscn" id="3_ewhco"]
 [ext_resource type="PackedScene" uid="uid://cxb6dif7pqgss" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings.tscn" id="4_n57ep"]

@@ -1,0 +1,7 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://byn5davl4pxcp"]
+
+[ext_resource type="Shader" uid="uid://cs3ce4kqeres3" path="res://addons/UI_BrainMonitor/Anchor/ArrowShader.gdshader" id="1_7c2ge"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_7c2ge")

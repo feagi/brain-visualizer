@@ -10,17 +10,16 @@ config_version=5
 
 [application]
 
-config/name="FEAGI-Godot-Interface"
+config/name="Brain-Visualizer"
+config/description="User UI for FEAGI"
 run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
-config/features=PackedStringArray("4.3", "Forward Plus")
+config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 FeagiCore="*res://addons/FeagiCoreIntegration/FeagiCore/FeagiCore.gd"
 BV="*res://BrainVisualizer/BV.gd"
-global_material="*res://BrainVisualizer/UI/BrainMonitor/godot_material.gd"
-Godot_list="*res://BrainVisualizer/UI/BrainMonitor/godot_list.gd"
 
 [debug]
 

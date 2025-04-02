@@ -1,8 +1,8 @@
 [gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.gd" id="1_w1bco"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateMorphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_6i23i"]
+[ext_resource type="Script" uid="uid://b76krgy0y45vn" path="res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.gd" id="1_w1bco"]
+[ext_resource type="Script" uid="uid://b21ym0wrmksji" path="res://BrainVisualizer/UI/Windows/CreateMorphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_6i23i"]
 [ext_resource type="Texture2D" uid="uid://bh1o5bvnyonef" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="4_0ajep"]
 [ext_resource type="PackedScene" uid="uid://lbyao7dlu4ga" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.tscn" id="4_ujsmp"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="5_6juqf"]
@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/MultiLineTextInput.gd" id="12_koy8n"]
+[ext_resource type="Script" uid="uid://bdii5h3dsyuhi" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/MultiLineTextInput.gd" id="12_koy8n"]
 
 [node name="WindowCreateMorphology" type="VBoxContainer"]
 offset_right = 126.0

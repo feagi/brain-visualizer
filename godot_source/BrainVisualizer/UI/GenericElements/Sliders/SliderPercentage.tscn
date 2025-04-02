@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://lavpe4aaitvu"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.gd" id="1_b4aqv"]
+[ext_resource type="Script" uid="uid://c6x2vn3bub440" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.gd" id="1_b4aqv"]
 
 [node name="SliderPercentage" type="HBoxContainer"]
 script = ExtResource("1_b4aqv")

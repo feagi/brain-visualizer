@@ -12,6 +12,8 @@ const WINDOW_NAME: StringName = "adv_cortical_properties"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
 var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
+var _preview: UI_BrainMonitor_InteractivePreview
+
 
 func _ready():
 	super()
@@ -222,7 +224,14 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 	for i: int in masimum:
 		collapsibles[i].is_open = expanded[i]
 
-
+func _setup_bm_prevew() -> void:
+	if _preview:
+		return
+	_preview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false)
+	var moves: Array[Signal] = [_vector_position.user_updated_vector]
+	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+	_preview.connect_UI_signals(moves, resizes, closes)
 
 
 
@@ -230,7 +239,6 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 
 
 #region Summary
-var _preview_handler: GenericSinglePreviewHandler = null
 
 @export var _section_summary: VerticalCollapsibleHiding
 @export var _line_cortical_name: TextInput
@@ -269,11 +277,14 @@ func _init_summary() -> void:
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+
 		
 	else:
 		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
+		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
+		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
@@ -289,8 +300,6 @@ func _refresh_from_cache_summary() -> void:
 	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
 	
-	_vector_dimensions_spin.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
-	_vector_position.user_updated_vector.connect(func(_irrelevant): if !is_instance_valid(_preview_handler): _enable_3D_preview())
 	
 	if len(_cortical_area_refs) != 1:
 		_line_cortical_name.text = "Multiple Selected"
@@ -319,13 +328,15 @@ func _user_press_edit_region() -> void:
 func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
 	_add_to_dict_to_send(selected_objects[0].genome_ID, _button_summary_send, "parent_region_id")
 
+
 func _enable_3D_preview(): #NOTE only currently works with single
 		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
 		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
-		_preview_handler = BV.UI.start_cortical_area_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, move_signals, resize_signals, preview_close_signals)
+		var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false) # show voxels?
+		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 		
-	
+
 #endregion
 
 #region firing parameters

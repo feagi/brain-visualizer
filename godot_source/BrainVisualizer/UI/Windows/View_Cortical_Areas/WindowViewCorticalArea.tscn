@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://cyt5xxp0wi6lf"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
+[ext_resource type="Script" uid="uid://c443lcmd2y0ko" path="res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.gd" id="1_ypq52"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_3awq0"]
 [ext_resource type="PackedScene" uid="uid://bang2hiadhcuc" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.tscn" id="3_vrwu2"]
 
@@ -38,6 +38,7 @@ layout_mode = 2
 
 [node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter" index="1"]
 custom_minimum_size = Vector2(0, 200)
+horizontal_scroll_mode = 0
 
 [node name="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter/ScrollSectionGeneric" index="0"]
 size_flags_horizontal = 3

@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://c2h24k1yjitll"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_aume3"]
+[ext_resource type="Script" uid="uid://i6krre7sl3n1" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_aume3"]
 [ext_resource type="Texture2D" uid="uid://w077yug12k7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_v7sdi"]
 [ext_resource type="Texture2D" uid="uid://di8630a11ncb5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_fkj1r"]
 [ext_resource type="Texture2D" uid="uid://oi3pour3qyue" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_0ads0"]

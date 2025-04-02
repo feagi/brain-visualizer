@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://c2jdrm0arstht"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.gd" id="1_mwjdf"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="2_tyb4l"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_b7a62"]
+[ext_resource type="Script" uid="uid://ddh0gu43bfxal" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.gd" id="1_mwjdf"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="2_tyb4l"]
+[ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_b7a62"]
 
 [node name="WindowDeveloperOptionsPartCameraAnimations" type="VBoxContainer"]
 script = ExtResource("1_mwjdf")

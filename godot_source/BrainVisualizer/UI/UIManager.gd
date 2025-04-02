@@ -22,15 +22,18 @@ var root_UI_view: UIView:
 var selection_system: SelectionSystem:
 	get: return _selection_system
 	
-
+var temp_root_bm: UI_BrainMonitor_3DScene
 
 var _top_bar: TopBar
-var _brain_monitor # lol
 var _window_manager: WindowManager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
 var _selection_system: SelectionSystem
+var _temp_bm_holder: UI_Capsules_Capsule
+var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
+var _temp_bm_camera_rot: Vector3
+
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -41,7 +44,6 @@ func _enter_tree():
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
-	_brain_monitor = $BrainMonitor
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
@@ -62,7 +64,6 @@ func _ready():
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
-
 	
 
 #endregion
@@ -74,8 +75,14 @@ func _ready():
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
-	_root_UI_view.close_all_non_root_brain_region_views()
-	toggle_loading_screen(true)
+	#_root_UI_view.close_all_non_root_brain_region_views()
+	#toggle_loading_screen(true)
+	if _temp_bm_holder:
+		(_temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene).clear_all_open_previews()
+		_temp_bm_camera_pos = temp_root_bm.get_node("SubViewport/Center/PancakeCam").position
+		_temp_bm_camera_rot = temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation
+		_temp_bm_holder.queue_free()
+	
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it
@@ -104,6 +111,17 @@ func FEAGI_confirmed_genome() -> void:
 	_root_UI_view.setup_as_single_tab(initial_tabs)
 	toggle_loading_screen(false)
 	
+	# temp BM
+	_temp_bm_holder = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
+	$test.add_child(_temp_bm_holder)
+	var brain_monitor: UI_BrainMonitor_3DScene = _temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene
+	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
+	temp_root_bm = brain_monitor
+	if _temp_bm_camera_pos.length() > 0.01:
+		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos
+		temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation = _temp_bm_camera_rot
+	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
 	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
@@ -115,6 +133,18 @@ func FEAGI_confirmed_genome() -> void:
 		color_setting = UIManager.THEME_COLORS.DARK
 	var zoom_value: float = split_strings[1].to_float()
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
+	
+# TEMP - > for sending activation firings to FEAGI
+func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
+	var dict_to_send: Dictionary = {'data': {'direct_stimulation' : {}}}
+	for area_ID in area_IDs_and_neuron_coordinates:
+		var arr: Array[Array] = []
+		for vector in area_IDs_and_neuron_coordinates[area_ID]:
+			arr.append([vector.x, vector.y, vector.z])
+		dict_to_send["data"]["direct_stimulation"][area_ID] = arr
+	
+	FeagiCore.network.websocket_API.websocket_send(JSON.stringify(dict_to_send))
+
 
 
 #endregion
@@ -147,24 +177,6 @@ func set_advanced_mode(is_advanced_mode: bool) -> void:
 		return
 	_is_in_advanced_mode = is_advanced_mode
 	advanced_mode_setting_changed.emit(_is_in_advanced_mode)
-
-func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
-	#TODO change behavior depending on BV / CB
-	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
-
-
-## Starts a preview cort a cortical area
-func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
-	position_signals: Array[Signal], dimensions_signals: Array[Signal], close_signals: Array[Signal],
- 	color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> GenericSinglePreviewHandler:
-	
-	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
-	add_child(preview_handler)
-	preview_handler.start_BM_preview(initial_dimensions, initial_position, color, is_rendering)
-	preview_handler.connect_BM_preview(position_signals, dimensions_signals, close_signals)
-	return preview_handler
-	# when moving this to BM, add a signal here to closing all handlers and append that signal to the above close array!
-	
 
 
 ## Open the developer menu
