@@ -40,9 +40,10 @@ script = ExtResource("3_l3fsc")
 [node name="Bottom_Row" type="BoxContainer" parent="SubViewport/BM_UI"]
 layout_mode = 2
 
-[node name="MouseContext" type="Label" parent="SubViewport/BM_UI/Bottom_Row"]
+[node name="Control" type="Control" parent="SubViewport/BM_UI/Bottom_Row"]
+custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 
-[node name="Control" type="Control" parent="SubViewport/BM_UI/Bottom_Row"]
-custom_minimum_size = Vector2(4, 0)
+[node name="MouseContext" type="Label" parent="SubViewport/BM_UI/Bottom_Row"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
