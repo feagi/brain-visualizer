@@ -38,6 +38,8 @@ func set_new_position(new_position: Vector3i) -> void:
 	_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 
 func set_hover_over_volume_state(is_moused_over: bool) -> void:
+	if is_moused_over == _is_volume_moused_over:
+		return
 	_is_volume_moused_over = is_moused_over
 	_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 

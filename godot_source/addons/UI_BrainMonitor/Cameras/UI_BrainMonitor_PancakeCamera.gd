@@ -157,26 +157,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 	if event is InputEventKey:
 		
-		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
-		var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
-		var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
-		var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
-		if Input.is_key_pressed(key_to_fire_selected_neurons):
-			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
-		if Input.is_key_pressed(key_to_clear_all_neurons):
-			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
-		
-		var bm_fire_event: UI_BrainMonitor_InputEvent_Click
-		
-		if (event.keycode == key_to_fire_selected_neurons):
-			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
-		elif (event.keycode == key_to_clear_all_neurons):
-			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false)
-
-		var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
-		
-		
-		
 		match(movement_mode):
 			
 			MODE.ANIMATION:
@@ -206,9 +186,28 @@ func _unhandled_input(event: InputEvent) -> void:
 				
 				dir = dir.normalized() * speed
 				translate(dir)
-				
 		
+		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
+		var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
+		var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
+		var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
+		if Input.is_key_pressed(key_to_fire_selected_neurons):
+			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
+		if Input.is_key_pressed(key_to_clear_all_neurons):
+			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
+		
+		var bm_fire_event: UI_BrainMonitor_InputEvent_Click
+		
+		if (event.keycode == key_to_fire_selected_neurons):
+			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
+		elif (event.keycode == key_to_clear_all_neurons):
+			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false)
+		else:
+			return
+
+		var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
 		BM_input_events.emit(bm_fire_events)
+
 
 	if event is InputEventPanGesture:
 		
