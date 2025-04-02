@@ -35,7 +35,8 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	var closing_signals: Array[Signal] = [close_window_requested]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimensions_signal]
-	#BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, move_signals, resize_signals, closing_signals)
+	var preview: UI_BrainMonitor_InteractivePreview =  BV.UI.temp_root_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false)
+	preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
 
 
 func _clone_pressed():
