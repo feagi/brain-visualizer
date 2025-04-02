@@ -113,19 +113,22 @@ void fragment()
 	SVOInternalNode neuron_activation_root_SVO = read_SVO_node(activation_SVO, 0u, 0u);
 	vec3 neuron_activation_hit_normal_svon;
 	vec3 neuron_activation_hit_offset_svon;
-	bool neuron_activation_has_hit = get_01_model_distance_to_voxel_DDA(activation_SVO, neuron_activation_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_activation_hit_offset_svon, neuron_activation_hit_normal_svon);
+	vec3 neuron_activation_hit_coordinate_svon;
+	bool neuron_activation_has_hit = get_01_model_distance_to_voxel_DDA(activation_SVO, neuron_activation_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_activation_hit_offset_svon, neuron_activation_hit_normal_svon, neuron_activation_hit_coordinate_svon);
 
 	// Neuron Highlighting SVO
 	SVOInternalNode neuron_highlight_root_SVO = read_SVO_node(highlight_SVO, 0u, 0u);
 	vec3 neuron_highlight_hit_normal_svon;
 	vec3 neuron_highlight_hit_offset_svon;
-	bool neuron_highlight_has_hit = get_01_model_distance_to_voxel_DDA(highlight_SVO, neuron_highlight_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_highlight_hit_offset_svon, neuron_highlight_hit_normal_svon);
+	vec3 neuron_highlight_hit_coordinate_svon;
+	bool neuron_highlight_has_hit = get_01_model_distance_to_voxel_DDA(highlight_SVO, neuron_highlight_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_highlight_hit_offset_svon, neuron_highlight_hit_normal_svon, neuron_highlight_hit_coordinate_svon);
 
 	// Neuron Selection SVO
 	SVOInternalNode neuron_selection_root_SVO = read_SVO_node(selection_SVO, 0u, 0u);
 	vec3 neuron_selection_hit_normal_svon;
 	vec3 neuron_selection_hit_offset_svon;
-	bool neuron_selection_has_hit = get_01_model_distance_to_voxel_DDA(selection_SVO, neuron_selection_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_selection_hit_offset_svon, neuron_selection_hit_normal_svon);
+	vec3 neuron_selection_hit_coordinate_svon;
+	bool neuron_selection_has_hit = get_01_model_distance_to_voxel_DDA(selection_SVO, neuron_selection_root_SVO, mesh_surface_position_svon, ray_direction_svon, neuron_selection_hit_offset_svon, neuron_selection_hit_normal_svon, neuron_selection_hit_coordinate_svon);
 
 
 
@@ -139,7 +142,7 @@ void fragment()
 	final_color.a = wall_transparency;
 	if(neuron_highlight_has_hit)
 	{
-		final_color.r = 1.0;
+		final_color.b = 1.0;
 		final_color.a = 1.0;
 	}
 
@@ -152,7 +155,10 @@ void fragment()
 	if(neuron_activation_has_hit)
 	{
 		//final_color.rgb += vec3(0.3, -0.3, 0.3);
-		final_color.rgb = vec3(1.0, 0.0, 0.0);
+		vec3 local_hit_space_mn = local_SVO_space_to_vert_0_1_space(neuron_activation_hit_coordinate_svon, voxel_counts_per_dim, shared_SVO_depth);
+		float z_offset_color = local_hit_space_mn.z;
+		
+		final_color.rgb = vec3(z_offset_color, 0.0, 0.0);
 		final_color.a = 1.0;
 	}
 

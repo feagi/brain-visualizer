@@ -24,7 +24,7 @@ vec3 singleDDAStep(vec3 intial_ray_position_svon,  vec3 normalized_ray_direction
 
 
 // Returns true if ray hits a voxel in the given SVO, and outputs the delta distance in SVO space as well as its normal. Otherwise returns false and the out's are invalid
-bool get_01_model_distance_to_voxel_DDA(sampler2D SVO_texture, SVOInternalNode root_node, vec3 SVO_0_1_space_ray_enter_point, vec3 ray_direction_normalized, out vec3 SVO_distance_from_voxel_hit, out vec3 voxel_hit_normal)
+bool get_01_model_distance_to_voxel_DDA(sampler2D SVO_texture, SVOInternalNode root_node, vec3 SVO_0_1_space_ray_enter_point, vec3 ray_direction_normalized, out vec3 SVO_distance_from_voxel_hit, out vec3 voxel_hit_normal, out vec3 SVO_coordinate_hit)
 {
 	const float EPSILON = 1e-6;
 
@@ -34,8 +34,9 @@ bool get_01_model_distance_to_voxel_DDA(sampler2D SVO_texture, SVOInternalNode r
 	vec3 SVO_current_point = SVO_0_1_space_ray_enter_point + (ray_direction_normalized * EPSILON); // Slightly inside the volume // TODO ray direciton needs to be modified to SVO space
 	vec3 ray_signed_direction = sign(ray_direction_normalized);
 	bool node_is_last_before_final_leafs = is_SVONode_parent_of_leaf(node);
-	voxel_hit_normal = vec3(0.0);
+	voxel_hit_normal = vec3(0.0); // TODO
 	SVO_distance_from_voxel_hit = vec3(0.0);
+	SVO_coordinate_hit = vec3(0.0);
 
 	bool node_exists_UNUSED; // Unused var just neede for out
 	uint previous_child_index = SVO_NO_LEAF_INDEX;
@@ -59,6 +60,7 @@ bool get_01_model_distance_to_voxel_DDA(sampler2D SVO_texture, SVOInternalNode r
 				if(node_is_last_before_final_leafs)
 				{
 					// HIT end leaf!
+					SVO_coordinate_hit = SVO_current_point;
 					SVO_distance_from_voxel_hit = SVO_current_point - SVO_0_1_space_ray_enter_point; // TODO convert this?
 					return true;
 				}

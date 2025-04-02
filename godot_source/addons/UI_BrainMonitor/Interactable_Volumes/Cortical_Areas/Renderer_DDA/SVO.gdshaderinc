@@ -61,10 +61,10 @@ vec3 local_vert_0_1_space_to_SVO_space(vec3 local_vert_space_0_1, vec3 voxel_cou
 	// NOTE: SVO_tree_depth must be 1 or greater, otherwise weird results will occur
 }
 
-// Converts 0-1 mesh space to 0.0 - 1.0 SVO space, but for the size of the Sparse Voxel Octet tree cube, this means any non-2^n mesh will not reach 1.0
+// Converts 0-1 SVO space  to 0.0 - 1.0 mesh space, but for the size of the Sparse Voxel Octet tree cube, this means any non-2^n mesh will not reach 1.0
 vec3 local_SVO_space_to_vert_0_1_space(vec3 local_SVO_space, vec3 voxel_counts, int SVO_tree_depth)
 {
-	return (local_SVO_space * vec3(float(SVO_tree_depth))) / voxel_counts;
+	return (local_SVO_space * pow(2.0, float(SVO_tree_depth))) / voxel_counts;
 }
 
 // Returns true if a given node is a parent of leaf_nodes
