@@ -241,6 +241,12 @@ func _process(delta):
 			else:
 				translate(direction * _fps_velocity * delta)
 
+func point_camera_at(position_to_look_at: Vector3) -> void:
+	look_at(position_to_look_at, Vector3.UP)
+
+func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -> void:
+	position = _get_endpoint_position(position_to_point_at, CAMERA_TELEPORT_FROM_DISTANCE)
+
 
 func _mouse_button_to_BM_CLICK_BUTTON(mouse_button: MouseButton) -> UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON:
 	match(mouse_button):
@@ -261,3 +267,7 @@ func _mouse_bitmask_to_selection_array(bits: int) -> Array[UI_BrainMonitor_Input
 	if ((bits >> 1) & 1) == 1:
 		output.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY)
 	return output
+
+func _get_endpoint_position(start_position: Vector3, linear_distance: float) -> Vector3:
+	var offset: Vector3 = (quaternion * (Vector3.FORWARD)) * -linear_distance
+	return start_position + offset

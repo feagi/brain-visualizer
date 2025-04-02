@@ -47,7 +47,7 @@ func _button_update_visabilities() -> void:
 	close_window()
 
 func _press_cortical(cortical_area: AbstractCorticalArea) -> void:
-	#BV.UI.snap_camera_to_cortical_area(cortical_area)
+	BV.UI.temp_root_bm._pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(cortical_area.coordinates_3D) + (cortical_area.dimensions_3D / 2.0))
 	#BV.UI.selection_system.clear_all_highlighted()
 	#BV.UI.selection_system.add_to_highlighted(cortical_area)
 	pass
