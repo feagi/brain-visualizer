@@ -51,7 +51,7 @@ func setup(region: BrainRegion) -> void:
 
 	
 	
-	# WARNING for the time being, we will have BM be globa instead of region specific
+	# WARNING for the time being, we will have BM be global instead of region specific
 	# for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
 	# 	var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 	# region.cortical_area_added_to_region.connect(_add_cortical_area)
