@@ -78,6 +78,7 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
 	if retrieved_image_dimensions != _activation_image_dimensions:
 		_activation_image_dimensions = retrieved_image_dimensions
+		_activation_image = null # force free # TODO this may be very slow, try removing me later
 		_activation_image = Image.create_from_data(_activation_image_dimensions.x, _activation_image_dimensions.y, false, Image.Format.FORMAT_RF, visualization_data.slice(4))
 		_activation_image_texture.set_image(_activation_image)
 	else:

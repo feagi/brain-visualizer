@@ -14,6 +14,9 @@ config/name="Brain-Visualizer"
 config/description="User UI for FEAGI"
 run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
+boot_splash/bg_color=Color(2.06962e-06, 0.264005, 0.51313, 1)
+boot_splash/fullsize=false
+boot_splash/image="uid://bmiod0cp5k8ns"
 config/icon="res://icon.svg"
 
 [autoload]
