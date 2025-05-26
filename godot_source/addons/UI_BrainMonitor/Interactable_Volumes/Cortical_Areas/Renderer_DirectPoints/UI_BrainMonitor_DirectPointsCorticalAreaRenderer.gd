@@ -11,6 +11,7 @@ var _static_body: StaticBody3D
 var _multi_mesh_instance: MultiMeshInstance3D
 var _multi_mesh: MultiMesh
 var _outline_mesh_instance: MeshInstance3D
+var _volume_mesh_instance: MeshInstance3D  # Reference to the cortical area volume mesh
 var _outline_mat: ShaderMaterial
 var _friendly_name_label: Label3D
 
@@ -62,6 +63,23 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	_multi_mesh_instance.multimesh = _multi_mesh
 	
+	# Create translucent cortical area volume mesh (like DDA renderer)
+	_volume_mesh_instance = MeshInstance3D.new()
+	_volume_mesh_instance.name = "CorticalAreaVolume"
+	var volume_box_mesh = BoxMesh.new()
+	volume_box_mesh.size = Vector3.ONE
+	_volume_mesh_instance.mesh = volume_box_mesh
+	
+	# Create translucent material for the cortical area volume
+	var volume_material = StandardMaterial3D.new()
+	volume_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	volume_material.albedo_color = Color(0.5, 0.8, 1.0, 0.1)  # Light blue, very translucent
+	volume_material.emission_enabled = true
+	volume_material.emission_color = Color(0.3, 0.6, 0.9, 0.05)  # Subtle glow
+	volume_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Show both sides
+	_volume_mesh_instance.material_override = volume_material
+	_static_body.add_child(_volume_mesh_instance)
+	
 	# Create outline mesh for cortical area bounds
 	_outline_mesh_instance = MeshInstance3D.new()
 	_outline_mesh_instance.name = "CorticalAreaOutline"
@@ -75,15 +93,18 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create friendly name label
 	_friendly_name_label = Label3D.new()
-	_friendly_name_label.name = "AreaNameLabel"
+	_friendly_name_label.name = "FriendlyNameLabel"
 	_friendly_name_label.font_size = 192
-	_friendly_name_label.modulate = Color.WHITE
 	add_child(_friendly_name_label)
 
 	# Set initial properties
 	_position_FEAGI_space = area.coordinates_3D
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
+	
+	# Show outline by default for cortical area boundaries
+	_outline_mesh_instance.visible = true
+	_update_cortical_area_outline()
 	
 	# Connect to direct neural points signal
 	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)
@@ -97,6 +118,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	_static_body.position = _position_godot_space
 	_outline_mesh_instance.position = Vector3.ZERO  # Relative to static body
+	_volume_mesh_instance.position = Vector3.ZERO  # Relative to static body
 	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
@@ -119,6 +141,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update outline material scaling
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
+	
+	# Update volume mesh size
+	_volume_mesh_instance.scale = _dimensions
 	
 	print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)
 
@@ -278,11 +303,8 @@ func clear_all_neuron_selection() -> void:
 
 func _update_cortical_area_outline() -> void:
 	"""Update the cortical area outline visibility and color"""
-	var show_outline = _is_hovered_over or _is_selected
-	_outline_mesh_instance.visible = show_outline
-	
-	if not show_outline:
-		return
+	# Always show outline - either default, hovered, or selected
+	_outline_mesh_instance.visible = true
 	
 	var color: Color
 	var alpha: float
@@ -293,9 +315,13 @@ func _update_cortical_area_outline() -> void:
 	elif _is_hovered_over:
 		color = cortical_area_outline_mouse_over_color
 		alpha = cortical_area_outline_mouse_over_alpha
-	else:
+	elif _is_selected:
 		color = cortical_area_outline_select_color
 		alpha = cortical_area_outline_select_alpha
+	else:
+		# Default outline when not hovered or selected - translucent boundary
+		color = Color.CYAN  # Light blue boundary color
+		alpha = 0.15  # Very translucent but visible
 	
 	_outline_mat.set_shader_parameter("outline_color", Vector4(color.r, color.g, color.b, alpha))
 

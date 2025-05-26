@@ -533,6 +533,11 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 	
+	# Additional safety check for HTTP API initialization
+	if FeagiCore.network.http_API == null or FeagiCore.network.http_API.address_list == null:
+		push_error("FEAGI Requests: HTTP API not properly initialized!")
+		return FeagiRequestOutput.requirement_fail("HTTP_API_NOT_READY")
+	
 	# Define Request
 	var IDs: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(checking_areas)
 	var dict_to_send: Dictionary = {"cortical_id_list": IDs}

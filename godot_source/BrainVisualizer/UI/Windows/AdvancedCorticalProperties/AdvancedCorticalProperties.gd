@@ -62,7 +62,9 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_refresh_all_relevant()
 	
 	# Request the newest state from feagi, and dont continue until then
-	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	# Only call this if FEAGI is connected and ready
+	if FeagiCore.can_interact_with_feagi():
+		await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
 	
 	# refresh all relevant sections again
 	_refresh_all_relevant()
