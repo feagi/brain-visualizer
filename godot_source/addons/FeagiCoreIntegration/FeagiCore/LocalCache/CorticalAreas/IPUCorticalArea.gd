@@ -33,6 +33,24 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 static func create_from_template(ID: StringName, template: CorticalTemplate, new_device_count: int, visiblity: bool = true) -> IPUCorticalArea:
 	return IPUCorticalArea.new(ID, template.cortical_name, template.calculate_IOPU_dimension(new_device_count), visiblity)
 
+## Helper function to safely convert dimensions data that might be Array or Dictionary
+func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector3i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 3D coordinates
+		if dict_data.has("x") and dict_data.has("y") and dict_data.has("z"):
+			return Vector3i(int(dict_data["x"]), int(dict_data["y"]), int(dict_data["z"]))
+		elif dict_data.has("width") and dict_data.has("height") and dict_data.has("depth"):
+			return Vector3i(int(dict_data["width"]), int(dict_data["height"]), int(dict_data["depth"]))
+		else:
+			push_error("IPU CORTICAL AREA: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector3i(1, 1, 1)  # Default fallback
+	else:
+		push_error("IPU CORTICAL AREA: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector3i(1, 1, 1)  # Default fallback
+
 ## Updates all cortical details in here from a dict from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if data == {}:
@@ -43,7 +61,7 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		FEAGI_set_device_count(data["dev_count"])
 	
 	if "cortical_dimensions_per_device" in data.keys():
-		FEAGI_set_cortical_dimensions_per_device(FEAGIUtils.array_to_vector3i(data["cortical_dimensions_per_device"]))
+		FEAGI_set_cortical_dimensions_per_device(_safe_convert_to_vector3i(data["cortical_dimensions_per_device"], "cortical_dimensions_per_device"))
 
 	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 	return

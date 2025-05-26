@@ -91,6 +91,42 @@ func FEAGI_add_memory_cortical_area(cortical_ID: StringName, cortical_name: Stri
 	print("FEAGI CACHE: Added memory cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)
 
+## Helper function to safely convert dimensions data that might be Array or Dictionary
+func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector3i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 3D coordinates
+		if dict_data.has("x") and dict_data.has("y") and dict_data.has("z"):
+			return Vector3i(int(dict_data["x"]), int(dict_data["y"]), int(dict_data["z"]))
+		elif dict_data.has("width") and dict_data.has("height") and dict_data.has("depth"):
+			return Vector3i(int(dict_data["width"]), int(dict_data["height"]), int(dict_data["depth"]))
+		else:
+			push_error("FEAGI CACHE: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector3i(1, 1, 1)  # Default fallback
+	else:
+		push_error("FEAGI CACHE: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector3i(1, 1, 1)  # Default fallback
+
+## Helper function to safely convert 2D coordinate data that might be Array or Dictionary  
+func _safe_convert_to_vector2i(data: Variant, field_name: String = "") -> Vector2i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector2i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 2D coordinates
+		if dict_data.has("x") and dict_data.has("y"):
+			return Vector2i(int(dict_data["x"]), int(dict_data["y"]))
+		elif dict_data.has("width") and dict_data.has("height"):
+			return Vector2i(int(dict_data["width"]), int(dict_data["height"]))
+		else:
+			push_error("FEAGI CACHE: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector2i(0, 0)  # Default fallback
+	else:
+		push_error("FEAGI CACHE: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector2i(0, 0)  # Default fallback
+
 ## Adds a cortical area as per the FEAGI dictionary. Skips over any templates for IPU and OPU and directly creates the object
 func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_region: BrainRegion, override_cortical_ID: StringName = "") -> void:
 	if override_cortical_ID != &"":
@@ -105,19 +141,30 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 	var visibility: bool = true
 	if "visible" in feagi_dictionary.keys():
 		visibility = feagi_dictionary["visible"]
-	var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(feagi_dictionary["cortical_dimensions"])
-	var position_3D: Vector3i = FEAGIUtils.array_to_vector3i(feagi_dictionary["coordinates_3d"])
+	var dimensions: Vector3i = _safe_convert_to_vector3i(feagi_dictionary["cortical_dimensions"], "cortical_dimensions")
+	var position_3D: Vector3i = _safe_convert_to_vector3i(feagi_dictionary["coordinates_3d"], "coordinates_3d")
 	var position_2D: Vector2i = Vector2i(0,0)
 	var position_2D_defined: bool = false
 	if "coordinates_2d" in feagi_dictionary.keys():
-		position_2D_defined = feagi_dictionary["coordinates_2d"][0] != null
+		var coords_2d_data = feagi_dictionary["coordinates_2d"]
+		# Handle both array and dictionary formats for checking if coordinates are defined
+		if coords_2d_data is Array:
+			position_2D_defined = coords_2d_data[0] != null
+		elif coords_2d_data is Dictionary:
+			# If it's a dictionary, assume coordinates are defined unless explicitly null
+			position_2D_defined = coords_2d_data != null and coords_2d_data.size() > 0
+		else:
+			position_2D_defined = coords_2d_data != null
+			
 		if position_2D_defined:
-			position_2D =  FEAGIUtils.array_to_vector2i(feagi_dictionary["coordinates_2d"])
+			position_2D = _safe_convert_to_vector2i(coords_2d_data, "coordinates_2d")
 
 	match type:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			FEAGI_add_core_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			FEAGI_add_custom_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT:
 			FEAGI_add_custom_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			if !brain_region.is_root_region():

@@ -20,7 +20,7 @@ var _hovered: bool = false
 var _disabled: bool = false
 
 func _init():
-	disabled = disabled # The wonders of OOP!
+	pass
 
 func _ready() -> void:
 	mouse_entered.connect(_mouse_entered)
@@ -60,23 +60,33 @@ func _mouse_exited() -> void:
 func _set_appropriate_texture(is_disabled: bool, is_hovering: bool, is_clicking: bool) -> void:
 	if is_disabled:
 		if texture_disabled == null:
-			push_error("Missing texture_disabled for ButtonTextureRectScaling")
+			# If no disabled texture, fall back to normal texture
+			if texture_normal != null:
+				texture = texture_normal
+			return
 		else:
 			texture = texture_disabled
 		return
 	if is_hovering:
 		if is_clicking:
 			if texture_pressed == null:
-				push_error("Missing texture_pressed for ButtonTextureRectScaling")
+				# If no pressed texture, fall back to normal texture  
+				if texture_normal != null:
+					texture = texture_normal
+				return
 			else:
 				texture = texture_pressed
 			return
 		if texture_hover == null:
-			push_error("Missing texture_hover for ButtonTextureRectScaling")
+			# If no hover texture, fall back to normal texture
+			if texture_normal != null:
+				texture = texture_normal
+			return
 		else:
 			texture = texture_hover
 		return
 	if texture_normal == null:
-		push_error("Missing texture_normal for ButtonTextureRectScaling")
+		# If no normal texture is set, we can't display anything - just return
+		return
 	else:
 		texture = texture_normal

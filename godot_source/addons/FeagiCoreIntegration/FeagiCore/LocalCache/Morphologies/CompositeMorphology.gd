@@ -17,7 +17,7 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, feagi_d
 
 ## Called by FEAGI when updating a morphology definition (when type is consistent)
 func feagi_update(parameter_value: Dictionary, retrieved_internal_class: MORPHOLOGY_INTERNAL_CLASS) -> void:
-	source_seed = FEAGIUtils.array_to_vector3i(parameter_value["src_seed"])
+	source_seed = BaseMorphology._safe_convert_to_vector3i(parameter_value["src_seed"], "src_seed")
 	var raw_source_pattern_array: Array[Array] = []
 	raw_source_pattern_array.assign(parameter_value["src_pattern"]) # manual array casting
 	source_pattern = FEAGIUtils.array_of_arrays_to_vector2i_array(raw_source_pattern_array)

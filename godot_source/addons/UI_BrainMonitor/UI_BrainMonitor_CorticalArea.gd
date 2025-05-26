@@ -36,8 +36,9 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 	
 	# Connect new direct points data (Type 11) - if renderer supports it
-	if _renderer.has_method("_on_received_direct_neural_points"):
-		defined_cortical_area.recieved_new_direct_neural_points.connect(_renderer._on_received_direct_neural_points)
+	# Commented out for now to avoid interference with SVO rendering
+	# if _renderer.has_method("_on_received_direct_neural_points"):
+	# 	defined_cortical_area.recieved_new_direct_neural_points.connect(_renderer._on_received_direct_neural_points)
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
@@ -90,11 +91,19 @@ func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
-	# Use DirectPoints renderer for optimal performance (Type 11 data format)
-	# Falls back to DDA renderer if DirectPoints renderer is not available
-	if ClassDB.class_exists("UI_BrainMonitor_DirectPointsCorticalAreaRenderer"):
-		print("Using DirectPoints renderer for cortical area: ", defined_cortical_area.cortical_ID)
-		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
-	else:
-		print("DirectPoints renderer not available, using DDA renderer for: ", defined_cortical_area.cortical_ID)
-		return UI_BrainMonitor_DDACorticalAreaRenderer.new()
+	# Try to create DirectPoints renderer first (optimal performance with Type 11 data)
+	# Fall back to DDA renderer if DirectPoints renderer fails
+	
+	# For now, let's just use DDA renderer to ensure basic functionality works
+	# TODO: Re-enable DirectPoints renderer once it's properly tested
+	print("Using DDA renderer for cortical area: ", defined_cortical_area.cortical_ID)
+	return UI_BrainMonitor_DDACorticalAreaRenderer.new()
+	
+	# Commented out DirectPoints renderer for now
+	# try:
+	#     var direct_points_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+	#     print("Using DirectPoints renderer for cortical area: ", defined_cortical_area.cortical_ID)
+	#     return direct_points_renderer
+	# except:
+	#     print("DirectPoints renderer failed, using DDA renderer for: ", defined_cortical_area.cortical_ID)
+	#     return UI_BrainMonitor_DDACorticalAreaRenderer.new()

@@ -1,6 +1,24 @@
 extends RefCounted
 class_name FEAGILocalCache
 
+## Helper function to safely convert dimensions data that might be Array or Dictionary
+func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector3i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 3D coordinates
+		if dict_data.has("x") and dict_data.has("y") and dict_data.has("z"):
+			return Vector3i(int(dict_data["x"]), int(dict_data["y"]), int(dict_data["z"]))
+		elif dict_data.has("width") and dict_data.has("height") and dict_data.has("depth"):
+			return Vector3i(int(dict_data["width"]), int(dict_data["height"]), int(dict_data["depth"]))
+		else:
+			push_error("FEAGI LOCAL CACHE: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector3i(1, 1, 1)  # Default fallback
+	else:
+		push_error("FEAGI LOCAL CACHE: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector3i(1, 1, 1)  # Default fallback
+
 #region main
 signal cache_about_to_reload()
 signal cache_reloaded()
@@ -96,34 +114,57 @@ var _OPU_templates: Dictionary = {}
 
 ## Retrieved template updats from FEAGI
 func update_templates_from_FEAGI(dict: Dictionary) -> void:
-	var ipu_devices: Dictionary = dict["IPU"]["supported_devices"]
-	for ipu_ID: StringName in ipu_devices.keys():
-		var ipu_device: Dictionary = ipu_devices[ipu_ID]
-		var resolution: Array[int] = [] # Gotta love godot unable to infer types
-		resolution.assign(ipu_device["resolution"])
-		_IPU_templates[ipu_ID] = CorticalTemplate.new(
-			ipu_ID,
-			ipu_device["enabled"],
-			ipu_device["cortical_name"],
-			ipu_device["structure"],
-			resolution,
-			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
-		)
-	var opu_devices: Dictionary = dict["OPU"]["supported_devices"]
-	for opu_ID: StringName in opu_devices.keys():
-		var opu_device: Dictionary = opu_devices[opu_ID]
-		var resolution: Array[int] = [] # Gotta love godot unable to infer types
-		resolution.assign(opu_device["resolution"])
-		_OPU_templates[opu_ID] = CorticalTemplate.new(
-			opu_ID,
-			opu_device["enabled"],
-			opu_device["cortical_name"],
-			opu_device["structure"],
-			resolution,
-			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
-		)
+	# Safely access IPU devices
+	if dict.has("IPU") and dict["IPU"] is Dictionary and dict["IPU"].has("supported_devices"):
+		var ipu_devices: Dictionary = dict["IPU"]["supported_devices"]
+		for ipu_ID: StringName in ipu_devices.keys():
+			var ipu_device: Dictionary = ipu_devices[ipu_ID]
+			var resolution: Array[int] = [] # Gotta love godot unable to infer types
+			resolution.assign(ipu_device["resolution"])
+			_IPU_templates[ipu_ID] = CorticalTemplate.new(
+				ipu_ID,
+				ipu_device["enabled"],
+				ipu_device["cortical_name"],
+				ipu_device["structure"],
+				resolution,
+				AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+			)
+	else:
+		push_warning("FEAGI LOCAL CACHE: IPU templates data not found or invalid in update dictionary")
 	
-	_set_IPU_OPU_to_capability_key_mappings(dict["IPU"]["name_to_id_mapping"], dict["OPU"]["name_to_id_mapping"])
+	# Safely access OPU devices
+	if dict.has("OPU") and dict["OPU"] is Dictionary and dict["OPU"].has("supported_devices"):
+		var opu_devices: Dictionary = dict["OPU"]["supported_devices"]
+		for opu_ID: StringName in opu_devices.keys():
+			var opu_device: Dictionary = opu_devices[opu_ID]
+			var resolution: Array[int] = [] # Gotta love godot unable to infer types
+			resolution.assign(opu_device["resolution"])
+			_OPU_templates[opu_ID] = CorticalTemplate.new(
+				opu_ID,
+				opu_device["enabled"],
+				opu_device["cortical_name"],
+				opu_device["structure"],
+				resolution,
+				AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+			)
+	else:
+		push_warning("FEAGI LOCAL CACHE: OPU templates data not found or invalid in update dictionary")
+	
+	# Safely access name to ID mappings
+	var ipu_mapping: Dictionary = {}
+	var opu_mapping: Dictionary = {}
+	
+	if dict.has("IPU") and dict["IPU"] is Dictionary and dict["IPU"].has("name_to_id_mapping"):
+		ipu_mapping = dict["IPU"]["name_to_id_mapping"]
+	else:
+		push_warning("FEAGI LOCAL CACHE: IPU name_to_id_mapping not found in update dictionary")
+		
+	if dict.has("OPU") and dict["OPU"] is Dictionary and dict["OPU"].has("name_to_id_mapping"):
+		opu_mapping = dict["OPU"]["name_to_id_mapping"]
+	else:
+		push_warning("FEAGI LOCAL CACHE: OPU name_to_id_mapping not found in update dictionary")
+	
+	_set_IPU_OPU_to_capability_key_mappings(ipu_mapping, opu_mapping)
 	
 	templates_updated.emit()
 
@@ -257,7 +298,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 
 		var amal_ID: StringName = dict["amalgamation_id"]
 		var amal_name: StringName = dict["genome_title"]
-		var dimensions: Vector3i = FEAGIUtils.array_to_vector3i(dict["circuit_size"])
+		var dimensions: Vector3i = _safe_convert_to_vector3i(dict["circuit_size"], "circuit_size")
 		
 		if _pending_amalgamation == amal_ID:
 			# we already know about this amalgamation, ignore

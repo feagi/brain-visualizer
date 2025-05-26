@@ -18,6 +18,7 @@ enum CORTICAL_AREA_TYPE {
 	CORE,
 	MEMORY,
 	CUSTOM,
+	INTERCONNECT,
 	OPU,
 	UNKNOWN
 }
@@ -165,7 +166,7 @@ static func cortical_type_human_readable_str_to_type(cortical_type_raw: String) 
 		"core":
 			return CORTICAL_AREA_TYPE.CORE
 		"interconnect":
-			return CORTICAL_AREA_TYPE.CUSTOM
+			return CORTICAL_AREA_TYPE.INTERCONNECT
 		"memory":
 			return CORTICAL_AREA_TYPE.MEMORY
 		_:
@@ -249,6 +250,42 @@ func FEAGI_delete_cortical_area() -> void:
 	about_to_be_deleted.emit()
 	# [CorticalAreasCache] then deletes this object
 
+## Helper function to safely convert dimensions data that might be Array or Dictionary
+func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector3i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 3D coordinates
+		if dict_data.has("x") and dict_data.has("y") and dict_data.has("z"):
+			return Vector3i(int(dict_data["x"]), int(dict_data["y"]), int(dict_data["z"]))
+		elif dict_data.has("width") and dict_data.has("height") and dict_data.has("depth"):
+			return Vector3i(int(dict_data["width"]), int(dict_data["height"]), int(dict_data["depth"]))
+		else:
+			push_error("ABSTRACT CORTICAL AREA: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector3i(1, 1, 1)  # Default fallback
+	else:
+		push_error("ABSTRACT CORTICAL AREA: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector3i(1, 1, 1)  # Default fallback
+
+## Helper function to safely convert 2D coordinate data that might be Array or Dictionary  
+func _safe_convert_to_vector2i(data: Variant, field_name: String = "") -> Vector2i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector2i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 2D coordinates
+		if dict_data.has("x") and dict_data.has("y"):
+			return Vector2i(int(dict_data["x"]), int(dict_data["y"]))
+		elif dict_data.has("width") and dict_data.has("height"):
+			return Vector2i(int(dict_data["width"]), int(dict_data["height"]))
+		else:
+			push_error("ABSTRACT CORTICAL AREA: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector2i(0, 0)  # Default fallback
+	else:
+		push_error("ABSTRACT CORTICAL AREA: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector2i(0, 0)  # Default fallback
+
 ## Applies every detail from the dictionary from FEAGI
 func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 	if data == {}:
@@ -265,19 +302,33 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 	if "cortical_visibility" in data.keys():
 		FEAGI_set_cortical_visibility(data["cortical_visibility"])
 	if "cortical_dimensions" in data.keys():
-		FEAGI_change_dimensions_3D(FEAGIUtils.array_to_vector3i(data["cortical_dimensions"]))
+		FEAGI_change_dimensions_3D(_safe_convert_to_vector3i(data["cortical_dimensions"], "cortical_dimensions"))
 	
 	if "coordinates_2d" in data.keys():
-		if data["coordinates_2d"][0] == null:
-			_coordinates_2D_available = false
+		var coords_2d_data = data["coordinates_2d"]
+		# Handle both array and dictionary formats for checking if coordinates are defined
+		if coords_2d_data is Array:
+			if coords_2d_data[0] == null:
+				_coordinates_2D_available = false
+			else:
+				FEAGI_change_coordinates_2D(_safe_convert_to_vector2i(coords_2d_data, "coordinates_2d"))
+		elif coords_2d_data is Dictionary:
+			# If it's a dictionary, assume coordinates are defined unless explicitly null
+			if coords_2d_data != null and coords_2d_data.size() > 0:
+				FEAGI_change_coordinates_2D(_safe_convert_to_vector2i(coords_2d_data, "coordinates_2d"))
+			else:
+				_coordinates_2D_available = false
 		else:
-			FEAGI_change_coordinates_2D(FEAGIUtils.array_to_vector2i(data["coordinates_2d"]))
+			if coords_2d_data == null:
+				_coordinates_2D_available = false
+			else:
+				FEAGI_change_coordinates_2D(_safe_convert_to_vector2i(coords_2d_data, "coordinates_2d"))
 
 	if "coordinates_3d" in data.keys():
 		if data["coordinates_3d"] == null:
 			_coordinates_3D_available = false
 		else:
-			FEAGI_change_coordinates_3D(FEAGIUtils.array_to_vector3i(data["coordinates_3d"]))
+			FEAGI_change_coordinates_3D(_safe_convert_to_vector3i(data["coordinates_3d"], "coordinates_3d"))
 	
 	if "parent_region_id" in data.keys():
 		if !(data["parent_region_id"] in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
