@@ -158,6 +158,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
 		10: # SVO neuron activations (legacy support)
+			print("⚡ DPR RENDERER: Received legacy Type 10 (SVO) data (", bytes.size(), " bytes) - clearing points for compatibility")
 			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
 			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
 			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
@@ -172,20 +173,119 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				if index != -1:
 					_cortical_areas_to_visualize_clear.remove_at(index)
 		
-		11: # Direct Neural Points (NEW - optimized format)
-			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
-			var points_data: PackedByteArray = bytes.slice(8) # Direct point data
-			FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
+		11: # Direct Neural Points (Type 11 - handle both formats)
+			print("⚡ DPR RENDERER: Processing Type 11 (Direct Neural Points) data (", bytes.size(), " bytes)")
 			
-			# Update cortical area with direct points data
-			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
-			if area:
-				area.FEAGI_set_direct_points_visualization_data(points_data)
+			# Determine if this is brain visualizer plugin format or standard feagi_bytes format
+			# Brain visualizer format: Header(2) + CorticalID(6) + PointData
+			# Standard feagi_bytes format: Header(2) + NumAreas(4) + SecondaryHeaders + DataSection
+			
+			var is_brain_visualizer_format = false
+			
+			if bytes.size() >= 8:
+				# Check if bytes 2-7 look like a valid cortical ID (ASCII characters)
+				var potential_cortical_id = bytes.slice(2, 8)
+				var looks_like_cortical_id = true
 				
-				# BUTT UGLY HACK
-				var index: int = _cortical_areas_to_visualize_clear.find(area)
-				if index != -1:
-					_cortical_areas_to_visualize_clear.remove_at(index)
+				for i in range(6):
+					var byte_val = potential_cortical_id[i]
+					# Valid cortical ID contains printable ASCII (0x20-0x7E) or null padding
+					if byte_val != 0 and (byte_val < 0x20 or byte_val > 0x7E):
+						looks_like_cortical_id = false
+						break
+				
+				# Also check if bytes 2-5 could be a valid number of areas (little endian uint32)
+				if bytes.size() >= 6:
+					var potential_num_areas = bytes.decode_u32(2)
+					# If num_areas is reasonable (1-1000) and doesn't look like cortical ID, it's feagi_bytes format
+					if potential_num_areas >= 1 and potential_num_areas <= 1000 and not looks_like_cortical_id:
+						is_brain_visualizer_format = false
+					else:
+						is_brain_visualizer_format = looks_like_cortical_id
+			
+			if is_brain_visualizer_format:
+				# Brain visualizer plugin format: Header(2) + CorticalID(6) + PointData
+				print("   📋 Using brain visualizer Type 11 format")
+				var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
+				var points_data: PackedByteArray = bytes.slice(8) # Direct point data
+				FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
+				
+				# Update cortical area with direct points data
+				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+				if area:
+					area.FEAGI_set_direct_points_visualization_data(points_data)
+					
+					# BUTT UGLY HACK
+					var index: int = _cortical_areas_to_visualize_clear.find(area)
+					if index != -1:
+						_cortical_areas_to_visualize_clear.remove_at(index)
+			else:
+				# Standard feagi_bytes Type 11 format: Header(2) + NumAreas(4) + SecondaryHeaders + DataSection
+				print("   📋 Using standard feagi_bytes Type 11 format")
+				
+				if bytes.size() < 6:
+					print("   ❌ Invalid feagi_bytes Type 11 data - too short")
+					return
+				
+				var num_areas = bytes.decode_u32(2)
+				print("   📊 Processing ", num_areas, " cortical areas")
+				
+				# Parse secondary headers
+				var secondary_header_offset = 6
+				
+				for area_index in range(num_areas):
+					if secondary_header_offset + 14 > bytes.size():
+						print("   ❌ Invalid secondary header ", area_index)
+						break
+					
+					# Extract cortical ID (6 bytes, ASCII, null-terminated)
+					var cortical_id_bytes = bytes.slice(secondary_header_offset, secondary_header_offset + 6)
+					var cortical_ID: StringName = cortical_id_bytes.get_string_from_ascii().strip_edges()
+					
+					# Extract data offset and neuron count (4 bytes each)
+					var data_offset = bytes.decode_u32(secondary_header_offset + 6)
+					var neuron_count = bytes.decode_u32(secondary_header_offset + 10)
+					
+					secondary_header_offset += 14
+					
+					print("   🧠 Area: ", cortical_ID, ", neurons: ", neuron_count, ", offset: ", data_offset)
+					
+					# Calculate absolute offset in the data section
+					var data_section_start = 6 + (num_areas * 14)
+					var absolute_offset = data_section_start + data_offset
+					
+					# Calculate size of this area's data (16 bytes per neuron: x,y,z,potential as float32)
+					var area_data_size = neuron_count * 16
+					
+					if absolute_offset + area_data_size > bytes.size():
+						print("   ❌ Insufficient data for area ", cortical_ID)
+						continue
+					
+					# Extract the point data for this cortical area
+					var points_data = bytes.slice(absolute_offset, absolute_offset + area_data_size)
+					
+					# Convert to brain visualizer format for compatibility with existing DPR renderer
+					# Format: [count(uint32)] + [x,y,z,potential(float32)] * count
+					var converted_data = PackedByteArray()
+					converted_data.resize(4 + area_data_size)
+					converted_data.encode_u32(0, neuron_count)
+					
+					# Copy coordinate and potential data
+					for i in range(area_data_size):
+						converted_data[4 + i] = points_data[i]
+					
+					# Send to DPR renderer
+					FEAGI_sent_direct_neural_points.emit(cortical_ID, converted_data)
+					
+					# Update cortical area
+					var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+					if area:
+						area.FEAGI_set_direct_points_visualization_data(converted_data)
+						
+						# BUTT UGLY HACK
+						var index: int = _cortical_areas_to_visualize_clear.find(area)
+						if index != -1:
+							_cortical_areas_to_visualize_clear.remove_at(index)
 
 			
 		_: # Unknown
