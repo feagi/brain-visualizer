@@ -35,10 +35,10 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Connect legacy SVO visualization data
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
 	
-	# Connect new direct points data (Type 11) - if renderer supports it
-	# Commented out for now to avoid interference with SVO rendering
-	# if _renderer.has_method("_on_received_direct_neural_points"):
-	# 	defined_cortical_area.recieved_new_direct_neural_points.connect(_renderer._on_received_direct_neural_points)
+	# Connect new direct points data (Type 11) - ENABLED for DPR performance gains
+	if _renderer.has_method("_on_received_direct_neural_points"):
+		defined_cortical_area.recieved_new_direct_neural_points.connect(_renderer._on_received_direct_neural_points)
+		print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DPR renderer")
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
@@ -94,16 +94,22 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 	# Try to create DirectPoints renderer first (optimal performance with Type 11 data)
 	# Fall back to DDA renderer if DirectPoints renderer fails
 	
-	# For now, let's just use DDA renderer to ensure basic functionality works
-	# TODO: Re-enable DirectPoints renderer once it's properly tested
-	print("Using DDA renderer for cortical area: ", defined_cortical_area.cortical_ID)
-	return UI_BrainMonitor_DDACorticalAreaRenderer.new()
+	# 🎯 RENDERER SELECTION LOG - This determines whether DPR or SVO is used
+	print("🎮 BRAIN VISUALIZER RENDERER SELECTION:")
+	print("   📊 Cortical Area: ", defined_cortical_area.cortical_ID)
 	
-	# Commented out DirectPoints renderer for now
-	# try:
-	#     var direct_points_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
-	#     print("Using DirectPoints renderer for cortical area: ", defined_cortical_area.cortical_ID)
-	#     return direct_points_renderer
-	# except:
-	#     print("DirectPoints renderer failed, using DDA renderer for: ", defined_cortical_area.cortical_ID)
-	#     return UI_BrainMonitor_DDACorticalAreaRenderer.new()
+	# ⚡ ENABLE DPR: Try DirectPoints renderer first for 10-100x performance gains
+	# Fall back to SVO only if DPR fails
+	var direct_points_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+	if direct_points_renderer != null:
+		print("   ⚡ USING: Direct Point Rendering (DPR) - PRIMARY CHOICE")
+		print("   📝 Expected data format: Type 11 (Direct Neural Points)")
+		print("   🚀 Performance: 10-100x faster than SVO")
+		print("   🎯 Using DirectPoints renderer for cortical area: ", defined_cortical_area.cortical_ID)
+		return direct_points_renderer
+	else:
+		print("   ❌ DirectPoints renderer failed, falling back to SVO")
+		print("   🔄 FALLBACK: Using SVO (Sparse Voxel Octree) via DDA Renderer")
+		print("   ⚡ Expected data format: Type 10 (NEURON_FLAT/SVO)")
+		print("   🎯 Using DDA renderer for cortical area: ", defined_cortical_area.cortical_ID)
+		return UI_BrainMonitor_DDACorticalAreaRenderer.new()

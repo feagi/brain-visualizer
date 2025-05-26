@@ -58,7 +58,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	neuron_material.emission_color = Color.CYAN
 	neuron_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	neuron_material.alpha = 0.8
-	_multi_mesh.mesh.material_set(0, neuron_material)
+	_multi_mesh.mesh.surface_set_material(0, neuron_material)
 	
 	_multi_mesh_instance.multimesh = _multi_mesh
 	
@@ -125,13 +125,15 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility
 	# The main rendering now uses _on_received_direct_neural_points
-	print("DirectPoints voxel renderer received legacy SVO data (", visualization_data.size(), " bytes) - converting to direct points")
+	print("⚡ DPR RENDERER: Received legacy Type 10 (SVO) data (", visualization_data.size(), " bytes) - clearing points for compatibility")
 	
 	# For now, clear all points if we receive SVO data
 	_clear_all_neurons()
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle Type 11 direct neural points data"""
+	print("⚡ DPR RENDERER: Processing Type 11 (Direct Neural Points) data (", points_data.size(), " bytes)")
+	
 	if points_data.size() < 4:
 		_clear_all_neurons()
 		return
@@ -146,12 +148,12 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	# Limit points for performance
 	var actual_point_count = min(point_count, _max_neurons)
 	if actual_point_count != point_count:
-		print("DirectPoints: Limiting to ", actual_point_count, " voxels for performance (received ", point_count, ")")
+		print("   ⚠️ DPR: Limiting to ", actual_point_count, " voxels for performance (received ", point_count, ")")
 	
 	# Each point is 16 bytes: x(4), y(4), z(4), potential(4) as float32
 	var expected_data_size = 4 + (actual_point_count * 16)
 	if points_data.size() < expected_data_size:
-		print("DirectPoints: Insufficient data - expected ", expected_data_size, " bytes, got ", points_data.size())
+		print("   ❌ DPR: Insufficient data - expected ", expected_data_size, " bytes, got ", points_data.size())
 		_clear_all_neurons()
 		return
 	
@@ -189,7 +191,7 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		
 		data_offset += 16
 	
-	print("DirectPoints: Rendered ", actual_point_count, " neuron voxels with direct point data")
+	print("   ✅ DPR: Rendered ", actual_point_count, " neuron voxels with direct point data")
 
 func _potential_to_color(potential: float) -> Color:
 	"""Convert neuron potential to visualization color"""
