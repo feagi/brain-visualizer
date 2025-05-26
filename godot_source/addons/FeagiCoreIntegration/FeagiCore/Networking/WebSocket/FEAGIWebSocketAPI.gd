@@ -16,6 +16,7 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_health: WEBSOCKET_HEALTH)
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
 signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
+signal FEAGI_sent_direct_neural_points(cortical_ID: StringName, points_data: PackedByteArray)
 signal feagi_requesting_reset()
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
 
@@ -156,7 +157,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				structure_length = bytes.decode_u32(header_offset + 4)
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
-		10: # SVO neuron activations
+		10: # SVO neuron activations (legacy support)
 			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
 			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
 			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
@@ -165,6 +166,21 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
 			if area:
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
+				
+				# BUTT UGLY HACK
+				var index: int = _cortical_areas_to_visualize_clear.find(area)
+				if index != -1:
+					_cortical_areas_to_visualize_clear.remove_at(index)
+		
+		11: # Direct Neural Points (NEW - optimized format)
+			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
+			var points_data: PackedByteArray = bytes.slice(8) # Direct point data
+			FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
+			
+			# Update cortical area with direct points data
+			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+			if area:
+				area.FEAGI_set_direct_points_visualization_data(points_data)
 				
 				# BUTT UGLY HACK
 				var index: int = _cortical_areas_to_visualize_clear.find(area)

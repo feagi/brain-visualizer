@@ -31,7 +31,13 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	defined_cortical_area.friendly_name_updated.connect(_renderer.update_friendly_name)
 	defined_cortical_area.coordinates_3D_updated.connect(_renderer.update_position_with_new_FEAGI_coordinate)
 	defined_cortical_area.dimensions_3D_updated.connect(_renderer.update_dimensions)
+	
+	# Connect legacy SVO visualization data
 	defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
+	
+	# Connect new direct points data (Type 11) - if renderer supports it
+	if _renderer.has_method("_on_received_direct_neural_points"):
+		defined_cortical_area.recieved_new_direct_neural_points.connect(_renderer._on_received_direct_neural_points)
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
@@ -84,5 +90,11 @@ func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
-	# TODO this is temporary, later add actual selection mechanism
-	return UI_BrainMonitor_DDACorticalAreaRenderer.new()
+	# Use DirectPoints renderer for optimal performance (Type 11 data format)
+	# Falls back to DDA renderer if DirectPoints renderer is not available
+	if ClassDB.class_exists("UI_BrainMonitor_DirectPointsCorticalAreaRenderer"):
+		print("Using DirectPoints renderer for cortical area: ", defined_cortical_area.cortical_ID)
+		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+	else:
+		print("DirectPoints renderer not available, using DDA renderer for: ", defined_cortical_area.cortical_ID)
+		return UI_BrainMonitor_DDACorticalAreaRenderer.new()
