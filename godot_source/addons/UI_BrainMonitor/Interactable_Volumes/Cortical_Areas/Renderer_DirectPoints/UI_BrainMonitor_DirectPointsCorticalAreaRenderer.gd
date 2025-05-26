@@ -148,16 +148,14 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
-	# This method handles legacy SVO data for backward compatibility
-	# The main rendering now uses _on_received_direct_neural_points
-	print("⚡ DPR RENDERER: Received legacy Type 10 (SVO) data (", visualization_data.size(), " bytes) - clearing points for compatibility")
-	
-	# For now, clear all points if we receive SVO data
+	# This method should not be called for DirectPoints renderers in pure DPR mode
+	# If this is called, it indicates a signal connection issue
+	if visualization_data.size() > 0:
+		push_warning("DPR RENDERER: Unexpected legacy visualization data received - check signal connections")
 	_clear_all_neurons()
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle Type 11 direct neural points data"""
-	print("⚡ DPR RENDERER: Processing Type 11 (Direct Neural Points) data (", points_data.size(), " bytes)")
 	
 	if points_data.size() < 4:
 		_clear_all_neurons()
@@ -215,8 +213,6 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		_multi_mesh.set_instance_color(i, color)
 		
 		data_offset += 16
-	
-	print("   ✅ DPR: Rendered ", actual_point_count, " neuron voxels with direct point data")
 
 func _potential_to_color(potential: float) -> Color:
 	"""Convert neuron potential to visualization color"""

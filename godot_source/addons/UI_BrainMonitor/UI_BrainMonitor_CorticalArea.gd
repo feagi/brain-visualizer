@@ -37,11 +37,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	if _renderer.has_method("_on_received_direct_neural_points"):
 		# DirectPoints renderer: ONLY connect Type 11 (Direct Neural Points) signal for DPR performance
 		defined_cortical_area.recieved_new_direct_neural_points.connect(_renderer._on_received_direct_neural_points)
-		print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DPR renderer - PURE DPR MODE")
+		print("🔗 ", defined_cortical_area.cortical_ID, ": DPR Mode (Type 11)")
 	else:
 		# DDA renderer: ONLY connect legacy Type 10 (SVO) signal for backward compatibility
 		defined_cortical_area.recieved_new_neuron_activation_data.connect(_renderer.update_visualization_data)
-		print("🔗 CONNECTED: Type 10 (SVO) signal for DDA renderer - LEGACY SVO MODE")
+		print("🔗 ", defined_cortical_area.cortical_ID, ": SVO Mode (Type 10)")
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
