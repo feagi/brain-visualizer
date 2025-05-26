@@ -147,35 +147,44 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			# ignore version for now
 			feagi_return_visual_data.emit(bytes)
 		9: # multi structure
-			# ignore version for now
 			var number_contained_structures: int = bytes[2]
 			var structure_start_index: int = 0 # cached
 			var structure_length: int = 0 # cached
 			var header_offset: int = 3 # cached, lets us know where to read from the subheader
+			
 			for structure_index in number_contained_structures:
 				structure_start_index = bytes.decode_u32(header_offset)
 				structure_length = bytes.decode_u32(header_offset + 4)
-				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
+				
+				# DEBUG: Validate slice bounds
+				if structure_start_index >= bytes.size():
+					header_offset += 8
+					continue
+				if structure_start_index + structure_length > bytes.size():
+					header_offset += 8
+					continue
+				
+				var sliced_bytes = bytes.slice(structure_start_index, structure_start_index + structure_length)
+				_process_wrapped_byte_structure(sliced_bytes)
 				header_offset += 8
 		10: # SVO neuron activations (legacy support)
-			print("⚡ DPR RENDERER: Received legacy Type 10 (SVO) data (", bytes.size(), " bytes) - clearing points for compatibility")
-			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
-			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
-			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
-			
-			# TODO I dont like this
-			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
-			if area:
-				area.FEAGI_set_SVO_visualization_data(SVO_data)
+			if bytes.size() >= 2:
+				var cortical_id_bytes = bytes.slice(2, 8)
+				var cortical_ID: StringName = cortical_id_bytes.get_string_from_ascii()
+				var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
+				FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
 				
-				# BUTT UGLY HACK
-				var index: int = _cortical_areas_to_visualize_clear.find(area)
-				if index != -1:
-					_cortical_areas_to_visualize_clear.remove_at(index)
+				# TODO I dont like this
+				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+				if area:
+					area.FEAGI_set_SVO_visualization_data(SVO_data)
+					
+					# BUTT UGLY HACK
+					var index: int = _cortical_areas_to_visualize_clear.find(area)
+					if index != -1:
+						_cortical_areas_to_visualize_clear.remove_at(index)
 		
 		11: # Direct Neural Points (Type 11 - handle both formats)
-			print("⚡ DPR RENDERER: Processing Type 11 (Direct Neural Points) data (", bytes.size(), " bytes)")
-			
 			# Determine if this is brain visualizer plugin format or standard feagi_bytes format
 			# Brain visualizer format: Header(2) + CorticalID(6) + PointData
 			# Standard feagi_bytes format: Header(2) + NumAreas(4) + SecondaryHeaders + DataSection
@@ -205,7 +214,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			
 			if is_brain_visualizer_format:
 				# Brain visualizer plugin format: Header(2) + CorticalID(6) + PointData
-				print("   📋 Using brain visualizer Type 11 format")
 				var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
 				var points_data: PackedByteArray = bytes.slice(8) # Direct point data
 				FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
@@ -221,21 +229,17 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 						_cortical_areas_to_visualize_clear.remove_at(index)
 			else:
 				# Standard feagi_bytes Type 11 format: Header(2) + NumAreas(4) + SecondaryHeaders + DataSection
-				print("   📋 Using standard feagi_bytes Type 11 format")
 				
 				if bytes.size() < 6:
-					print("   ❌ Invalid feagi_bytes Type 11 data - too short")
 					return
 				
 				var num_areas = bytes.decode_u32(2)
-				print("   📊 Processing ", num_areas, " cortical areas")
 				
 				# Parse secondary headers
 				var secondary_header_offset = 6
 				
 				for area_index in range(num_areas):
 					if secondary_header_offset + 14 > bytes.size():
-						print("   ❌ Invalid secondary header ", area_index)
 						break
 					
 					# Extract cortical ID (6 bytes, ASCII, null-terminated)
@@ -248,8 +252,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					
 					secondary_header_offset += 14
 					
-					print("   🧠 Area: ", cortical_ID, ", neurons: ", neuron_count, ", offset: ", data_offset)
-					
 					# Calculate absolute offset in the data section
 					var data_section_start = 6 + (num_areas * 14)
 					var absolute_offset = data_section_start + data_offset
@@ -258,7 +260,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					var area_data_size = neuron_count * 16
 					
 					if absolute_offset + area_data_size > bytes.size():
-						print("   ❌ Insufficient data for area ", cortical_ID)
 						continue
 					
 					# Extract the point data for this cortical area
