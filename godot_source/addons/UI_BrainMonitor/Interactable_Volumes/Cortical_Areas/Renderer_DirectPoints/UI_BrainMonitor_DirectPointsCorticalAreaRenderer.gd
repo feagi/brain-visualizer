@@ -180,10 +180,10 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		
 		# Apply inverse cortical area scaling to maintain consistent voxel size
 		# This ensures voxels are same size regardless of cortical area dimensions
-		var normalized_scale = Vector3.ONE * 1
+		var normalized_scale = Vector3.ONE
 		normalized_scale.x /= _dimensions.x
 		normalized_scale.y /= _dimensions.y  
-		normalized_scale.z /= _dimensions.z
+		normalized_scale.z /= _dimensions.z * -1
 		
 		transform = transform.scaled(normalized_scale)
 		
