@@ -73,59 +73,97 @@ func _ready():
 #region FEAGI Interactions
 ## Called from above when we are about to reset genome, may want to clear some things...
 func FEAGI_about_to_reset_genome() -> void:
+	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_about_to_reset_genome() called - preparing for genome reload")
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
 	#_root_UI_view.close_all_non_root_brain_region_views()
 	#toggle_loading_screen(true)
 	if _temp_bm_holder:
+		print("UIMANAGER: [3D_SCENE_DEBUG] Clearing existing 3D scene and saving camera position")
 		(_temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene).clear_all_open_previews()
 		_temp_bm_camera_pos = temp_root_bm.get_node("SubViewport/Center/PancakeCam").position
 		_temp_bm_camera_rot = temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation
+		print("UIMANAGER: [3D_SCENE_DEBUG] Saved camera position: ", _temp_bm_camera_pos, " rotation: ", _temp_bm_camera_rot)
 		_temp_bm_holder.queue_free()
+		print("UIMANAGER: [3D_SCENE_DEBUG] 3D scene cleared and queued for deletion")
 	
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it
 func FEAGI_no_genome() -> void:
-	print("UI: Disabling FEAGI UI elements due to no genome")
+	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_no_genome() called - disabling 3D scene")
+	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling FEAGI UI elements due to no genome")
 	window_manager.force_close_all_windows()
 	top_bar.toggle_buttons_interactability(false)
 
 
 ## Called from above when we confirmed genome to feagi, enable UI elements that connect to it
 func FEAGI_confirmed_genome() -> void:
-	print("UI: Enabling FEAGI UI elements now that genome is confirmed")
+	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_confirmed_genome() called - starting 3D scene initialization")
+	print("UIMANAGER: [3D_SCENE_DEBUG] Enabling FEAGI UI elements now that genome is confirmed")
 	top_bar.toggle_buttons_interactability(true)
+	
+	print("UIMANAGER: [3D_SCENE_DEBUG] Checking if root brain region is available...")
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
+		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No root region detected - 3D scene cannot initialize!")
 		push_error("UI: Unable to init root region for CB and BM since no root region was detected!")
 		return
 	
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Root region available - proceeding with initialization")
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	print("UIMANAGER: [3D_SCENE_DEBUG] Root region details: ", root_region)
+	
 	var initial_tabs: Array[Control]
+	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Circuit Builder...")
 	#TODO need a better function to add CB in general
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
-	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	cb.setup(root_region)
 	
 	initial_tabs = [cb]
+	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up root UI view...")
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Circuit Builder setup complete")
+	
+	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling loading screen...")
 	toggle_loading_screen(false)
 	
 	# temp BM
+	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Brain Monitor 3D scene...")
 	_temp_bm_holder = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
+	if _temp_bm_holder == null:
+		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: Failed to create brain monitor capsule!")
+		return
+	
+	print("UIMANAGER: [3D_SCENE_DEBUG] Adding brain monitor to scene tree...")
 	$test.add_child(_temp_bm_holder)
+	
+	print("UIMANAGER: [3D_SCENE_DEBUG] Getting brain monitor UI component...")
 	var brain_monitor: UI_BrainMonitor_3DScene = _temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene
-	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	if brain_monitor == null:
+		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: Failed to get brain monitor UI component!")
+		return
+	
+	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with root region...")
+	brain_monitor.setup(root_region)
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	temp_root_bm = brain_monitor
+	
+	print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position if available...")
 	if _temp_bm_camera_pos.length() > 0.01:
+		print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position: ", _temp_bm_camera_pos, " rotation: ", _temp_bm_camera_rot)
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation = _temp_bm_camera_rot
 	
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Brain Monitor 3D scene setup complete")
+	
 	# This is utter cancer
+	print("UIMANAGER: [3D_SCENE_DEBUG] Applying advanced mode and theme settings...")
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
 	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
 	if option_string == "":
+		print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE - no theme to apply")
 		return
 	var split_strings: PackedStringArray = option_string.split(" ")
 	var color_setting: UIManager.THEME_COLORS
@@ -134,6 +172,8 @@ func FEAGI_confirmed_genome() -> void:
 	var zoom_value: float = split_strings[1].to_float()
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE with theme applied")
+
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
 	var dict_to_send: Dictionary = {'data': {'direct_stimulation' : {}}}

@@ -91,15 +91,20 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		push_error("FEAGICORE: Cannot initiate a new connection when one is already active!")
 		return
 	
-	print("FEAGICORE: Connecting to FEAGI!")
+	print("FEAGICORE: [3D_SCENE_DEBUG] Starting connection to FEAGI...")
 	_in_use_endpoint_details = feagi_endpoint_details
 	
 	# Attempt a connection to FEAGI
+	print("FEAGICORE: [3D_SCENE_DEBUG] Attempting network connection...")
 	var was_connection_sucessful: bool = await network.attempt_connection(feagi_endpoint_details)
 	if !was_connection_sucessful:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Network connection FAILED - 3D scene will not load")
 		return
 	
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Network connection successful")
+	
 	# Start the health worker
+	print("FEAGICORE: [3D_SCENE_DEBUG] Starting health check worker...")
 	network.http_API.kill_polling_healthcheck_worker() # Ensure theres only 1 worker
 	
 	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
@@ -108,10 +113,13 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	
 	var process_output_for_cache: Callable = func(polled_result: FeagiRequestOutput) :  # Functional Programming my beloved
 		if polled_result.has_timed_out:
+			print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️ Health check timed out")
 			return
 		if polled_result.has_errored:
+			print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check errored")
 			return
 		var health_data: Dictionary = polled_result.decode_response_as_dict()
+		print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check successful, updating cache...")
 		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 	
 	_polling_health_check_worker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
@@ -119,25 +127,35 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	await _polling_health_check_worker.worker_done
 	
 	# confirm we have the required keys
+	print("FEAGICORE: [3D_SCENE_DEBUG] Processing health check response...")
 	var raw_output: FeagiRequestOutput = _polling_health_check_worker.retrieve_output_and_continue()
 	var processed_response: Dictionary = raw_output.decode_response_as_dict()
 	if !("genome_availability" in processed_response) or !("brain_readiness" in processed_response):
-		push_error("FEAGICORE: Healthcheck is missing keys for brain readiness or genome availability! Halting connection!")
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check missing required keys (genome_availability/brain_readiness) - 3D scene will not load")
 		_polling_health_check_worker = null
 		network.disconnect_networking()
 		return
+	
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check contains required keys")
 	process_output_for_cache.call(raw_output)
+	
+	print("FEAGICORE: [3D_SCENE_DEBUG] Evaluating genome state...")
+	print("FEAGICORE: [3D_SCENE_DEBUG] - genome_availability: ", feagi_local_cache.genome_availability)
+	print("FEAGICORE: [3D_SCENE_DEBUG] - brain_readiness: ", feagi_local_cache.brain_readiness)
 	
 	if feagi_local_cache.genome_availability:
 		if feagi_local_cache.brain_readiness:
 			# genome ready to be downloaded:
+			print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Both genome_availability and brain_readiness are true - initiating genome reload")
 			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
 			return
 		else:
 			# Genome in the middle of processing
+			print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️ Genome available but brain not ready - waiting for processing to complete")
 			_change_genome_state(GENOME_LOAD_STATE.GENOME_PROCESSING)
 	else:
 		# No Genome!
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ No genome available - 3D scene cannot load")
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
 	
 	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
@@ -156,9 +174,12 @@ func can_interact_with_feagi() -> bool:
 
 func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 	var prev_state: GENOME_LOAD_STATE = _genome_load_state
+	print("FEAGICORE: [3D_SCENE_DEBUG] Genome state transition: ", GENOME_LOAD_STATE.keys()[prev_state], " -> ", GENOME_LOAD_STATE.keys()[new_state])
+	
 	match(new_state):
 		GENOME_LOAD_STATE.UNKNOWN:
 			# This will only occur if we are disconnecting from FEAGI (or connection lost), thus can come from any
+			print("FEAGICORE: [3D_SCENE_DEBUG] State UNKNOWN: Clearing genome and disconnecting")
 			feagi_local_cache.clear_whole_genome()
 			network.disconnect_networking()
 			if feagi_local_cache.genome_availability_or_brain_readiness_changed.is_connected(_if_brain_readiness_or_genome_availability_changes):
@@ -166,17 +187,21 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			feagi_local_cache.set_health_dead()
 		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE:
 			# Can Only Come here from Unknown
+			print("FEAGICORE: [3D_SCENE_DEBUG] State NO_GENOME_AVAILABLE: No genome found - 3D scene cannot load")
 			feagi_local_cache.clear_whole_genome()
 		GENOME_LOAD_STATE.GENOME_RELOADING:
 			# Can come from Unknown, No_Genome_Available, Genome_Processing, or Genome_Ready
+			print("FEAGICORE: [3D_SCENE_DEBUG] State GENOME_RELOADING: Starting genome download...")
 			about_to_reload_genome.emit()
 			feagi_local_cache.clear_whole_genome()
 			reload_genome_await()
 		GENOME_LOAD_STATE.GENOME_READY:
 			# Only path to here is from Genome_Reloading.
+			print("FEAGICORE: [3D_SCENE_DEBUG] State GENOME_READY: ✅ Genome loaded successfully - 3D scene should now initialize")
 			pass
 		GENOME_LOAD_STATE.GENOME_PROCESSING:
 			# Can come from Unknown or from Genome_Ready
+			print("FEAGICORE: [3D_SCENE_DEBUG] State GENOME_PROCESSING: FEAGI is processing - waiting for completion")
 			pass
 	
 	_genome_load_state = new_state
@@ -189,12 +214,17 @@ func reload_genome_await():
 	
 
 func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: bool) -> void:
+	print("FEAGICORE: [3D_SCENE_DEBUG] Genome/brain state changed - genome_availability: ", available, ", brain_readiness: ", ready)
+	
 	if !available:
+		print("FEAGICORE: [3D_SCENE_DEBUG] Genome no longer available - transitioning to NO_GENOME_AVAILABLE")
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
 		return
 	if ready:
+		print("FEAGICORE: [3D_SCENE_DEBUG] Brain is ready - transitioning to GENOME_READY")
 		_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
 	else:
+		print("FEAGICORE: [3D_SCENE_DEBUG] Brain not ready - transitioning to GENOME_PROCESSING")
 		_change_genome_state(GENOME_LOAD_STATE.GENOME_PROCESSING)
 
 
