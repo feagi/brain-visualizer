@@ -170,23 +170,17 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		var potential = points_data.decode_float(data_offset + 12)
 		
 		# Convert FEAGI coordinates to Godot space
-		var feagi_pos = Vector3(x, y, _dimensions.z - z - 1)  # Flip Z axis for Godot
-		
-		# Position neurons at their actual coordinates within the cortical area
-		# The static_body is already scaled, so use coordinates directly
-		var godot_pos = feagi_pos
+		# Account for scaled static_body - FEAGI coords (0 to dimensions-1) need to be centered
+		var feagi_pos = Vector3(x, y, z)
+		var centered_pos = feagi_pos - (Vector3(_dimensions) / 2.0) + Vector3(0.5, 0.5, 0.5)
 		
 		# Create transform for this neuron instance
 		var transform = Transform3D()
-		transform.origin = godot_pos  # Use direct coordinates
-		
-		# Scale based on potential (0.5 to 1.5 scale range)
-		var scale_factor = 0.5 + (potential * 1.0)
-		scale_factor = clamp(scale_factor, 0.1, 2.0)
+		transform.origin = centered_pos  # Use centered coordinates for proper alignment
 		
 		# Apply inverse cortical area scaling to maintain consistent voxel size
 		# This ensures voxels are same size regardless of cortical area dimensions
-		var normalized_scale = Vector3.ONE * scale_factor
+		var normalized_scale = Vector3.ONE * 1
 		normalized_scale.x /= _dimensions.x
 		normalized_scale.y /= _dimensions.y  
 		normalized_scale.z /= _dimensions.z
