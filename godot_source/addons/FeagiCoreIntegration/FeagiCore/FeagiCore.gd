@@ -120,6 +120,7 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 			return
 		var health_data: Dictionary = polled_result.decode_response_as_dict()
 		print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check successful, updating cache...")
+		print("FEAGICORE: [3D_SCENE_DEBUG] Health check data received: ", health_data)
 		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 	
 	_polling_health_check_worker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
@@ -130,6 +131,7 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	print("FEAGICORE: [3D_SCENE_DEBUG] Processing health check response...")
 	var raw_output: FeagiRequestOutput = _polling_health_check_worker.retrieve_output_and_continue()
 	var processed_response: Dictionary = raw_output.decode_response_as_dict()
+	print("FEAGICORE: [3D_SCENE_DEBUG] Processed health check response: ", processed_response)
 	if !("genome_availability" in processed_response) or !("brain_readiness" in processed_response):
 		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check missing required keys (genome_availability/brain_readiness) - 3D scene will not load")
 		_polling_health_check_worker = null
@@ -209,9 +211,31 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 
 # Hacky
 func reload_genome_await():
-	await requests.reload_genome()
-	_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+	print("FEAGICORE: [3D_SCENE_DEBUG] reload_genome_await() called - starting genome reload process...")
+	var start_time = Time.get_time_dict_from_system()
+	var timeout_seconds = 30.0  # 30 second timeout
 	
+	# Create a timer to track progress
+	var timer = Timer.new()
+	timer.wait_time = 5.0  # Report every 5 seconds
+	var start_ticks = Time.get_ticks_msec()
+	timer.timeout.connect(func(): 
+		var elapsed_ms = Time.get_ticks_msec() - start_ticks
+		var elapsed_seconds = elapsed_ms / 1000.0
+		print("FEAGICORE: [3D_SCENE_DEBUG] ⏳ Genome reload still in progress... (", int(elapsed_seconds), "s elapsed)")
+	)
+	add_child(timer)
+	timer.start()
+	
+	print("FEAGICORE: [3D_SCENE_DEBUG] Calling requests.reload_genome()...")
+	await requests.reload_genome()
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ requests.reload_genome() completed successfully")
+	
+	timer.queue_free()  # Clean up timer
+	
+	print("FEAGICORE: [3D_SCENE_DEBUG] Transitioning to GENOME_READY state...")
+	_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Successfully transitioned to GENOME_READY")
 
 func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: bool) -> void:
 	print("FEAGICORE: [3D_SCENE_DEBUG] Genome/brain state changed - genome_availability: ", available, ", brain_readiness: ", ready)

@@ -20,6 +20,8 @@ func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRe
 #WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful
 func reload_genome() -> FeagiRequestOutput:
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] reload_genome() called - starting genome data retrieval...")
+	
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
@@ -28,84 +30,108 @@ func reload_genome() -> FeagiRequestOutput:
 	var agent_list_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_list)
 	
 	# Get Cortical Area Data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
 	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
 	await cortical_worker.worker_done
 	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(cortical_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 1: Cortical area data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI cortical summary data!")
 		return cortical_data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 1 complete: Cortical area data retrieved")
 
 	# Get Morphologies
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 2/7: Requesting morphology data...")
 	var morphologies_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(morphologies_request)
 	await morphologies_worker.worker_done
 	var morphologies_data: FeagiRequestOutput = morphologies_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(morphologies_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 2: Morphology data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI morphology summary data!")
 		return morphologies_data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 2 complete: Morphology data retrieved")
 
 	# Get Mapping Data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 3/7: Requesting mapping data...")
 	var mapping_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(mappings_request)
 	await mapping_worker.worker_done
 	var mapping_data: FeagiRequestOutput = mapping_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(mapping_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 3: Mapping data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI mapping summary data!")
 		return mapping_data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 3 complete: Mapping data retrieved")
 	
 	# Get Region Data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 4/7: Requesting region data...")
 	var region_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(region_request)
 	await region_worker.worker_done
 	var region_data: FeagiRequestOutput = region_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(region_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 4: Region data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI region data!")
 		return region_data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 4 complete: Region data retrieved")
 	
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 5/7: Replacing genome cache with new data...")
 	FeagiCore.feagi_local_cache.replace_whole_genome(
 		cortical_data.decode_response_as_dict(),
 		morphologies_data.decode_response_as_dict(),
 		mapping_data.decode_response_as_dict(),
 		region_data.decode_response_as_dict()
 	)
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 5 complete: Genome cache updated")
 	
 	# Get Template Data
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 6/7: Requesting template data...")
 	var template_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(templates_request)
 	await template_worker.worker_done
 	var template_data: FeagiRequestOutput = template_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(template_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6: Template data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI template summary data!")
 		return template_data
 	var raw_templates: Dictionary = template_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 6 complete: Template data retrieved")
 	
 	# Other stuff (asyncronous)
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Starting asynchronous requests for burst settings...")
 	get_burst_delay()
 	get_supression_threshold()
 	get_skip_rate()
 	get_plasticity_queue_depth()
 	
 	# Get agent list
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 7/7: Processing agent data...")
 	FeagiCore.feagi_local_cache.clear_configuration_jsons()
 	var agent_list_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_list_request)
 	await agent_list_worker.worker_done
 	var agent_list_data: FeagiRequestOutput = agent_list_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(agent_list_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 7: Agent list request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI agent summary data!")
 		return agent_list_data
 	var agents: Array = agent_list_data.decode_response_as_array()
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Found ", agents.size(), " agents, processing individual agent data...")
 	for agent in agents:
 		if str(agent).begins_with("bv_"):
 			continue
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] Processing agent: ", agent)
 		var agent_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_properties + "?agent_id=" + str(agent))
 		var agent_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_request)
 		await agent_worker.worker_done
 		var agent_data: FeagiRequestOutput = agent_worker.retrieve_output_and_close()
 		if _return_if_HTTP_failed_and_automatically_handle(agent_data):
+			print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ Failed to get data for agent: ", agent)
 			push_error("unable to return agent data for %s!" % str(agent))
 			return agent_data
 		var agent_dict: Dictionary = agent_data.decode_response_as_dict()
 		agent_dict["capabilities"]["agent_ID"] = str(agent)
 		FeagiCore.feagi_local_cache.append_configuration_json(agent_dict["capabilities"])
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 7 complete: Agent data processed")
 	
-	
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ ALL STEPS COMPLETE: Genome reload finished successfully!")
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	
 
