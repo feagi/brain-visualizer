@@ -62,7 +62,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	_multi_mesh_instance.multimesh = _multi_mesh
 	
-	# Create outline mesh for cortical area bounds
+	# Create outline mesh for cortical area hover/selection (keep existing functionality)
 	_outline_mesh_instance = MeshInstance3D.new()
 	_outline_mesh_instance.name = "CorticalAreaOutline"
 	var box_mesh = BoxMesh.new()
@@ -78,6 +78,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.name = "AreaNameLabel"
 	_friendly_name_label.font_size = 192
 	_friendly_name_label.modulate = Color.WHITE
+	_friendly_name_label.visible = false  # Hidden when used as secondary renderer
 	add_child(_friendly_name_label)
 
 	# Set initial properties
@@ -88,7 +89,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Connect to direct neural points signal
 	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)
 	
-	print("DirectPoints voxel renderer setup completed for area: ", area.cortical_ID)
+	print("DirectPoints voxel renderer setup completed for area: ", area.cortical_ID, " (secondary renderer for individual neurons)")
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = new_name
@@ -125,15 +126,13 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility
 	# The main rendering now uses _on_received_direct_neural_points
-	print("⚡ DPR RENDERER: Received legacy Type 10 (SVO) data (", visualization_data.size(), " bytes) - clearing points for compatibility")
+	print("DirectPoints voxel renderer received legacy SVO data (", visualization_data.size(), " bytes) - converting to direct points")
 	
 	# For now, clear all points if we receive SVO data
 	_clear_all_neurons()
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle Type 11 direct neural points data"""
-	print("⚡ DPR RENDERER: Processing Type 11 (Direct Neural Points) data (", points_data.size(), " bytes)")
-	
 	if points_data.size() < 4:
 		_clear_all_neurons()
 		return
@@ -148,12 +147,12 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	# Limit points for performance
 	var actual_point_count = min(point_count, _max_neurons)
 	if actual_point_count != point_count:
-		print("   ⚠️ DPR: Limiting to ", actual_point_count, " voxels for performance (received ", point_count, ")")
+		print("DirectPoints: Limiting to ", actual_point_count, " voxels for performance (received ", point_count, ")")
 	
 	# Each point is 16 bytes: x(4), y(4), z(4), potential(4) as float32
 	var expected_data_size = 4 + (actual_point_count * 16)
 	if points_data.size() < expected_data_size:
-		print("   ❌ DPR: Insufficient data - expected ", expected_data_size, " bytes, got ", points_data.size())
+		print("DirectPoints: Insufficient data - expected ", expected_data_size, " bytes, got ", points_data.size())
 		_clear_all_neurons()
 		return
 	
@@ -207,7 +206,7 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		
 		data_offset += 16
 	
-	print("   ✅ DPR: Rendered ", actual_point_count, " neuron voxels with direct point data")
+	print("DirectPoints: Rendered ", actual_point_count, " neuron voxels with direct point data")
 
 func _potential_to_color(potential: float) -> Color:
 	"""Convert neuron potential to visualization color"""
@@ -294,26 +293,8 @@ func clear_all_neuron_selection() -> void:
 
 func _update_cortical_area_outline() -> void:
 	"""Update the cortical area outline visibility and color"""
-	var show_outline = _is_hovered_over or _is_selected
-	_outline_mesh_instance.visible = show_outline
-	
-	if not show_outline:
-		return
-	
-	var color: Color
-	var alpha: float
-	
-	if _is_hovered_over and _is_selected:
-		color = cortical_area_outline_both_color
-		alpha = cortical_area_outline_both_alpha
-	elif _is_hovered_over:
-		color = cortical_area_outline_mouse_over_color
-		alpha = cortical_area_outline_mouse_over_alpha
-	else:
-		color = cortical_area_outline_select_color
-		alpha = cortical_area_outline_select_alpha
-	
-	_outline_mat.set_shader_parameter("outline_color", Vector4(color.r, color.g, color.b, alpha))
+	# Outline handled by DDA renderer - keep this hidden for secondary renderer
+	_outline_mesh_instance.visible = false
 
 func _update_neuron_highlighting() -> void:
 	"""Update highlighting for specific neurons"""
