@@ -50,7 +50,15 @@ func _process(_delta: float):
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
 			while _socket.get_available_packet_count():
-				var retrieved_ws_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
+				var raw_packet = _socket.get_packet()
+				print("FEAGI DEBUG: Received raw packet size: ", raw_packet.size(), " bytes")
+				var retrieved_ws_data = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
+				print("FEAGI DEBUG: After decompression size: ", retrieved_ws_data.size(), " bytes")
+				
+				# DEBUG: Check if decompression failed
+				if retrieved_ws_data.size() == 0:
+					push_error("FEAGI WebSocket: Decompression failed - received empty data!")
+					continue
 				
 				# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
 				_cortical_areas_to_visualize_clear = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
