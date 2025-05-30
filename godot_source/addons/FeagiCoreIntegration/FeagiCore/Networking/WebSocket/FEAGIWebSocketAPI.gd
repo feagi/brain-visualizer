@@ -129,9 +129,16 @@ func websocket_send(data: Variant) -> void:
 	_socket.send((data.to_ascii_buffer()).compress(1)) # for some reason, using the enum instead of the number causes this break
 
 func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
+	# DEBUG: Log the structure ID detection
+	var structure_id = bytes[0] if bytes.size() > 0 else -1
+	print("🔍 FEAGI HEADER DEBUG: Received ", bytes.size(), " bytes")
+	print("   📊 Structure ID (bytes[0]): ", structure_id, " (0x", "%02X" % structure_id, ")")
+	print("   📋 First 8 bytes: ", bytes.slice(0, min(8, bytes.size())))
+	
 	## respond as per type
 	match(bytes[0]):
 		1: # JSON wrapper
+			print("   ➡️  ROUTING: JSON wrapper (Type 1)")
 			bytes = bytes.slice(2)
 			var dict: Dictionary = str_to_var(bytes.get_string_from_ascii()) 
 			if !dict:
@@ -149,25 +156,32 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 						
 					
 		7: # ActivatedNeuronLocation
+			print("   ➡️  ROUTING: ActivatedNeuronLocation (Type 7) - DEPRECATED")
 			# ignore version for now
 			push_warning("ActivatedNeuronLocation data type is deprecated!")
 		8: # SingleRawImage
+			print("   ➡️  ROUTING: SingleRawImage (Type 8)")
 			# ignore version for now
 			feagi_return_visual_data.emit(bytes)
 		9: # multi structure
+			print("   ➡️  ROUTING: Multi-structure container (Type 9)")
 			# ignore version for now
 			var number_contained_structures: int = bytes[2]
+			print("   📦 Contains ", number_contained_structures, " sub-structures")
 			var structure_start_index: int = 0 # cached
 			var structure_length: int = 0 # cached
 			var header_offset: int = 3 # cached, lets us know where to read from the subheader
 			for structure_index in number_contained_structures:
 				structure_start_index = bytes.decode_u32(header_offset)
 				structure_length = bytes.decode_u32(header_offset + 4)
+				print("   📦 Sub-structure[", structure_index, "]: offset=", structure_start_index, " length=", structure_length)
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
 		10: # SVO neuron activations (legacy support)
+			print("   ➡️  ROUTING: SVO neuron activations (Type 10 - NEURON_FLAT) → DDA Renderer")
 			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
 			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
+			print("   🧠 Cortical ID: '", cortical_ID, "', SVO data size: ", SVO_data.size(), " bytes")
 			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
 			
 			# TODO I dont like this
@@ -181,8 +195,10 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					_cortical_areas_to_visualize_clear.remove_at(index)
 		
 		11: # Direct Neural Points (NEW - optimized format)
+			print("   ➡️  ROUTING: Direct Neural Points (Type 11 - NEURON_CATEGORIES) → DirectPoints Renderer")
 			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
 			var points_data: PackedByteArray = bytes.slice(8) # Direct point data
+			print("   🧠 Cortical ID: '", cortical_ID, "', Points data size: ", points_data.size(), " bytes")
 			FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
 			
 			# Update cortical area with direct points data
@@ -197,6 +213,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 
 			
 		_: # Unknown
+			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
 			push_error("Unknown data type %d recieved!" % bytes[0])
 
 func _reconnect_websocket() -> void:
