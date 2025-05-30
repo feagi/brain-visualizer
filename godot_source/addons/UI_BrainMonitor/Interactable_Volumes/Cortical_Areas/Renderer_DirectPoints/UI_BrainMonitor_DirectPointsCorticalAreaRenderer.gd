@@ -156,6 +156,8 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		_clear_all_neurons()
 		return
 	
+	print("FEAGI DEBUG: Starting to decode ", actual_point_count, " neurons from Type 11 data")
+	
 	# Update MultiMesh instance count
 	_multi_mesh.instance_count = actual_point_count
 	_current_neuron_count = actual_point_count
@@ -169,10 +171,18 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		var z = points_data.decode_float(data_offset + 8)
 		var potential = points_data.decode_float(data_offset + 12)
 		
+		# Debug output for first few neurons
+		if i < 5:
+			print("FEAGI DEBUG: Neuron[", i, "] raw data: x=", x, ", y=", y, ", z=", z, ", potential=", potential)
+		
 		# Convert FEAGI coordinates to Godot space
 		# Account for scaled static_body - FEAGI coords (0 to dimensions-1) need to be centered
 		var feagi_pos = Vector3(x, y, z)
 		var centered_pos = feagi_pos - (Vector3(_dimensions) / 2.0) + Vector3(0.5, 0.5, 0.5)
+		
+		# Debug output for first few neurons after coordinate conversion
+		if i < 5:
+			print("FEAGI DEBUG: Neuron[", i, "] after centering: ", centered_pos, " (dimensions: ", _dimensions, ")")
 		
 		# Create transform for this neuron instance
 		var transform = Transform3D()
