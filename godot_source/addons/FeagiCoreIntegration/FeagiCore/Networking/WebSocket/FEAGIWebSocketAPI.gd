@@ -32,9 +32,6 @@ var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
 var _temp_genome_ID: float = 0.0
 
-# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
-var _cortical_areas_to_visualize_clear: Array
-
 func _process(_delta: float):
 	_socket.poll()
 	match(_socket.get_ready_state()):
@@ -60,15 +57,7 @@ func _process(_delta: float):
 					push_error("FEAGI WebSocket: Decompression failed - received empty data!")
 					continue
 				
-				# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
-				_cortical_areas_to_visualize_clear = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
-				
 				_process_wrapped_byte_structure(retrieved_ws_data)
-				
-				for area in _cortical_areas_to_visualize_clear:
-					area.FEAGI_set_no_visualizeation_data()
-				
-
 				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
@@ -135,6 +124,11 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 	print("   📊 Structure ID (bytes[0]): ", structure_id, " (0x", "%02X" % structure_id, ")")
 	print("   📋 First 8 bytes: ", bytes.slice(0, min(8, bytes.size())))
 	
+	# SAFETY CHECK: Ensure we have data before processing
+	if bytes.size() == 0:
+		push_error("FEAGI: Cannot process empty byte array!")
+		return
+	
 	## respond as per type
 	match(bytes[0]):
 		1: # JSON wrapper
@@ -172,8 +166,8 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			var structure_length: int = 0 # cached
 			var header_offset: int = 3 # cached, lets us know where to read from the subheader
 			for structure_index in number_contained_structures:
-				structure_start_index = bytes.decode_u32(header_offset)
-				structure_length = bytes.decode_u32(header_offset + 4)
+				structure_start_index = bytes.decode_u32(header_offset)        # Little Endian by default
+				structure_length = bytes.decode_u32(header_offset + 4)        # Little Endian by default
 				print("   📦 Sub-structure[", structure_index, "]: offset=", structure_start_index, " length=", structure_length)
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
@@ -188,28 +182,54 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
 			if area:
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
-				
-				# BUTT UGLY HACK
-				var index: int = _cortical_areas_to_visualize_clear.find(area)
-				if index != -1:
-					_cortical_areas_to_visualize_clear.remove_at(index)
 		
 		11: # Direct Neural Points (NEW - optimized format)
 			print("   ➡️  ROUTING: Direct Neural Points (Type 11 - NEURON_CATEGORIES) → DirectPoints Renderer")
-			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
-			var points_data: PackedByteArray = bytes.slice(8) # Direct point data
-			print("   🧠 Cortical ID: '", cortical_ID, "', Points data size: ", points_data.size(), " bytes")
-			FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
+			# Type 11 structure: [ID][Version][NumAreas:4bytes][Area1_Header+Data][Area2_Header+Data]...
+			# Each area: [CorticalID:6bytes][Index:4bytes][Count:4bytes][NeuronData:Count*16bytes]
 			
-			# Update cortical area with direct points data
-			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
-			if area:
-				area.FEAGI_set_direct_points_visualization_data(points_data)
+			var num_areas = bytes.decode_u32(2)  # Number of areas at offset 2 (Little Endian)
+			print("   📊 Number of cortical areas: ", num_areas)
+			
+			# Process each cortical area individually
+			var current_offset = 6  # Start after [ID:1][Version:1][NumAreas:4]
+			
+			for area_idx in range(num_areas):
+				# Parse area header: [CorticalID:6bytes][Index:4bytes][Count:4bytes]
+				if current_offset + 14 > bytes.size():  # Need at least 14 bytes for header
+					print("   ❌ ERROR: Insufficient data for area header at offset ", current_offset)
+					break
 				
-				# BUTT UGLY HACK
-				var index: int = _cortical_areas_to_visualize_clear.find(area)
-				if index != -1:
-					_cortical_areas_to_visualize_clear.remove_at(index)
+				var cortical_ID: StringName = bytes.slice(current_offset, current_offset + 6).get_string_from_ascii()
+				var area_index = bytes.decode_u32(current_offset + 6)
+				var neuron_count = bytes.decode_u32(current_offset + 10)
+				current_offset += 14  # Move past header
+				
+				# Calculate neuron data size: neuron_count * 16 bytes per neuron
+				var neuron_data_size = neuron_count * 16
+				
+				if current_offset + neuron_data_size > bytes.size():
+					print("   ❌ ERROR: Insufficient data for neuron data. Need ", neuron_data_size, " bytes at offset ", current_offset)
+					break
+				
+				# Extract ONLY the neuron data for this specific area
+				var points_data: PackedByteArray = bytes.slice(current_offset, current_offset + neuron_data_size)
+				current_offset += neuron_data_size  # Move to next area
+				
+				print("   🧠 Area[", area_idx, "] Cortical ID: '", cortical_ID, "', Index: ", area_index, ", Neuron count: ", neuron_count)
+				print("   📊 Area[", area_idx, "] Neuron data size: ", points_data.size(), " bytes (", neuron_count, " * 16 = ", neuron_data_size, ")")
+				
+				# Emit signal for this specific area
+				FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
+				
+				# Update cortical area with correct neuron data
+				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+				if area:
+					area.FEAGI_set_direct_points_visualization_data(points_data)
+				else:
+					print("   ⚠️  WARNING: Cortical area '", cortical_ID, "' not found in cache")
+			
+			print("   ✅ Processed ", num_areas, " cortical areas successfully")
 
 			
 		_: # Unknown
