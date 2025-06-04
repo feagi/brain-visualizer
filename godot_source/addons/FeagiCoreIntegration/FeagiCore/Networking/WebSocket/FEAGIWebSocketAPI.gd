@@ -185,39 +185,79 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 		
 		11: # Direct Neural Points (NEW - optimized format)
 			print("   ➡️  ROUTING: Direct Neural Points (Type 11 - NEURON_CATEGORIES) → DirectPoints Renderer")
-			# Type 11 structure: [ID][Version][NumAreas:4bytes][Area1_Header+Data][Area2_Header+Data]...
-			# Each area: [CorticalID:6bytes][Index:4bytes][Count:4bytes][NeuronData:Count*16bytes]
+			# Type 11 structure: [ID:1][Version:1][NumAreas:4][SecondaryHeaders][AllNeuronData]
+			# SecondaryHeaders: For each area: [CorticalID:6][DataOffset:4][NeuronCount:4]
+			# AllNeuronData: All neuron data concatenated at the end
 			
 			var num_areas = bytes.decode_u32(2)  # Number of areas at offset 2 (Little Endian)
 			print("   📊 Number of cortical areas: ", num_areas)
 			
-			# Process each cortical area individually
-			var current_offset = 6  # Start after [ID:1][Version:1][NumAreas:4]
+			# Calculate where neuron data section starts
+			var secondary_headers_size = num_areas * 14  # Each area: 6+4+4 bytes
+			var neuron_data_section_start = 6 + secondary_headers_size  # After [ID:1][Version:1][NumAreas:4][SecondaryHeaders]
+			
+			# For summary tracking
+			var total_neurons_processed = 0
+			var successful_areas = 0
+			
+			# Process each cortical area using the secondary headers
+			var header_offset = 6  # Start after [ID:1][Version:1][NumAreas:4]
+			
+			print("   🔍 DEBUG: Starting to process ", num_areas, " areas...")
+			print("   🔍 DEBUG: Neuron data section starts at offset: ", neuron_data_section_start)
+			print("   🔍 DEBUG: Total byte array size: ", bytes.size(), " bytes")
 			
 			for area_idx in range(num_areas):
-				# Parse area header: [CorticalID:6bytes][Index:4bytes][Count:4bytes]
-				if current_offset + 14 > bytes.size():  # Need at least 14 bytes for header
-					print("   ❌ ERROR: Insufficient data for area header at offset ", current_offset)
+				print("   🔍 DEBUG: Processing area [", area_idx, "] at header_offset: ", header_offset)
+				
+				# Parse area header: [CorticalID:6bytes][DataOffset:4bytes][NeuronCount:4bytes]
+				if header_offset + 14 > bytes.size():  # Need at least 14 bytes for header
+					print("   ❌ ERROR: Insufficient data for area header at offset ", header_offset)
+					print("   📏 Need 14 bytes, have ", bytes.size() - header_offset, " bytes remaining")
 					break
 				
-				var cortical_ID: StringName = bytes.slice(current_offset, current_offset + 6).get_string_from_ascii()
-				var area_index = bytes.decode_u32(current_offset + 6)
-				var neuron_count = bytes.decode_u32(current_offset + 10)
-				current_offset += 14  # Move past header
+				var cortical_ID: StringName = bytes.slice(header_offset, header_offset + 6).get_string_from_ascii()
+				var data_offset = bytes.decode_u32(header_offset + 6)  # Offset into neuron data section
+				var neuron_count = bytes.decode_u32(header_offset + 10)
+				header_offset += 14  # Move to next header
 				
-				# Calculate neuron data size: neuron_count * 16 bytes per neuron
-				var neuron_data_size = neuron_count * 16
+				print("   🔍 DEBUG: Area [", area_idx, "] parsed - ID:'", cortical_ID, "', data_offset:", data_offset, ", count:", neuron_count)
 				
-				if current_offset + neuron_data_size > bytes.size():
-					print("   ❌ ERROR: Insufficient data for neuron data. Need ", neuron_data_size, " bytes at offset ", current_offset)
+				# Calculate absolute offset in the byte array
+				var absolute_data_offset = neuron_data_section_start + data_offset
+				var neuron_data_size = neuron_count * 16  # 16 bytes per neuron
+				
+				print("   🔍 DEBUG: Area [", area_idx, "] calculated - absolute_offset:", absolute_data_offset, ", data_size:", neuron_data_size)
+				
+				# Validate data bounds
+				if absolute_data_offset + neuron_data_size > bytes.size():
+					print("   ❌ ERROR: Insufficient data for neuron data. Need ", neuron_data_size, " bytes at absolute offset ", absolute_data_offset)
+					print("   📏 Total byte array size: ", bytes.size(), " bytes")
+					print("   📏 End offset would be: ", absolute_data_offset + neuron_data_size)
 					break
 				
-				# Extract ONLY the neuron data for this specific area
-				var points_data: PackedByteArray = bytes.slice(current_offset, current_offset + neuron_data_size)
-				current_offset += neuron_data_size  # Move to next area
+				# Extract ONLY the neuron data for this specific area from the correct offset
+				var points_data: PackedByteArray = bytes.slice(absolute_data_offset, absolute_data_offset + neuron_data_size)
 				
-				print("   🧠 Area[", area_idx, "] Cortical ID: '", cortical_ID, "', Index: ", area_index, ", Neuron count: ", neuron_count)
-				print("   📊 Area[", area_idx, "] Neuron data size: ", points_data.size(), " bytes (", neuron_count, " * 16 = ", neuron_data_size, ")")
+				print("   🔍 DEBUG: Area [", area_idx, "] extracted data slice successfully - size:", points_data.size())
+				
+				# 🆕 DETAILED COORDINATE DEBUGGING - Print ALL coordinates for this area
+				print("   🎯 COORDINATE DEBUG: Area '", cortical_ID, "' - ALL ", neuron_count, " neurons:")
+				for neuron_idx in range(neuron_count):
+					var neuron_offset = neuron_idx * 16  # Each neuron is 16 bytes
+					if neuron_offset + 16 <= points_data.size():
+						var x = points_data.decode_u32(neuron_offset)      # X coordinate (uint32)
+						var y = points_data.decode_u32(neuron_offset + 4)  # Y coordinate (uint32) 
+						var z = points_data.decode_u32(neuron_offset + 8)  # Z coordinate (uint32)
+						var potential = points_data.decode_float(neuron_offset + 12)  # Potential (float32)
+						print("     🧠 Neuron[", neuron_idx, "]: (", x, ", ", y, ", ", z, ") potential=", potential)
+					else:
+						print("     ❌ ERROR: Insufficient data for neuron[", neuron_idx, "] at offset ", neuron_offset)
+				
+				# Success tracking
+				total_neurons_processed += neuron_count
+				successful_areas += 1
+				print("     - ", cortical_ID, ": ", neuron_count, " neurons")
 				
 				# Emit signal for this specific area
 				FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
@@ -226,10 +266,11 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
 				if area:
 					area.FEAGI_set_direct_points_visualization_data(points_data)
+					print("   ✅ DEBUG: Area [", area_idx, "] data sent to cortical area successfully")
 				else:
 					print("   ⚠️  WARNING: Cortical area '", cortical_ID, "' not found in cache")
 			
-			print("   ✅ Processed ", num_areas, " cortical areas successfully")
+			print("   ✅ CLIENT RESULT: ", successful_areas, " areas with ", total_neurons_processed, " total neurons processed successfully")
 
 			
 		_: # Unknown

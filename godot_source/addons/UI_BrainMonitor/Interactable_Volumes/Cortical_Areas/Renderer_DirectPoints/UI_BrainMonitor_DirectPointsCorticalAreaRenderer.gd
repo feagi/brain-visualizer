@@ -169,22 +169,23 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	
 	# Process each neuron point - data starts immediately (no header)
 	var data_offset = 0  # Start at beginning since WebSocket processor already removed headers
+	var first_neuron_coords = Vector3.ZERO  # Track first neuron for debugging
+	
 	for i in range(actual_point_count):
-		# Extract point data (x, y, z, potential as float32)
-		var x = points_data.decode_float(data_offset)
-		var y = points_data.decode_float(data_offset + 4)
-		var z = points_data.decode_float(data_offset + 8)
-		var potential = points_data.decode_float(data_offset + 12)
+		# Extract point data: x,y,z as uint32, potential as float32 (FIXED DATA TYPES)
+		var x = points_data.decode_u32(data_offset)      # ✅ FIXED: uint32 coordinates
+		var y = points_data.decode_u32(data_offset + 4)  # ✅ FIXED: uint32 coordinates
+		var z = points_data.decode_u32(data_offset + 8)  # ✅ FIXED: uint32 coordinates
+		var potential = points_data.decode_float(data_offset + 12) # ✅ CORRECT: float32 potential
 		
-		# COMPREHENSIVE DEBUG: Show all neuron coordinates and transformations
-		print("🧠 NEURON[", i, "] RAW FEAGI COORDS: x=", x, ", y=", y, ", z=", z, ", potential=", potential)
+		# Track first neuron for debugging summary
+		if i == 0:
+			first_neuron_coords = Vector3(float(x), float(y), float(z))
 		
 		# Convert FEAGI coordinates to Godot space
 		# Account for scaled static_body - FEAGI coords (0 to dimensions-1) need to be centered
-		var feagi_pos = Vector3(x, y, z)
+		var feagi_pos = Vector3(float(x), float(y), float(z))  # Convert uint32 to float for Vector3
 		var centered_pos = feagi_pos - (Vector3(_dimensions) / 2.0) + Vector3(0.5, 0.5, 0.5)
-		
-		print("🧠 NEURON[", i, "] CENTERED COORDS: ", centered_pos, " (feagi_pos=", feagi_pos, ", dimensions=", _dimensions, ")")
 		
 		# Create transform for this neuron instance
 		var transform = Transform3D()
@@ -199,20 +200,21 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		
 		transform = transform.scaled(normalized_scale)
 		
-		print("🧠 NEURON[", i, "] FINAL TRANSFORM: origin=", transform.origin, " scale=", Vector3(normalized_scale))
-		
 		# Set instance transform
 		_multi_mesh.set_instance_transform(i, transform)
 		
 		# Set instance color based on potential
 		var color = _potential_to_color(potential)
 		_multi_mesh.set_instance_color(i, color)
-		print("🧠 NEURON[", i, "] COLOR: ", color, " (from potential=", potential, ")")
 		
 		data_offset += 16
 	
-	print("🧠 RENDER COMPLETE: ", actual_point_count, " neuron voxels rendered")
-	print("🧠 MULTIMESH STATUS: instance_count=", _multi_mesh.instance_count, " visible=", _multi_mesh_instance.visible)
+	# Clean summary output
+	if actual_point_count > 0:
+		print("🧠 RENDERED: ", actual_point_count, " neurons (sample coords: ", first_neuron_coords, ")")
+	else:
+		print("🧠 RENDERED: 0 neurons (no data)")
+	print("🧠 MULTIMESH: visible=", _multi_mesh_instance.visible, " instance_count=", _multi_mesh.instance_count)
 
 func _potential_to_color(potential: float) -> Color:
 	"""Convert neuron potential to visualization color"""
