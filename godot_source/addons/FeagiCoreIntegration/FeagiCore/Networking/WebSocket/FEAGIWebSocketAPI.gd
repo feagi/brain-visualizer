@@ -48,9 +48,7 @@ func _process(_delta: float):
 			
 			while _socket.get_available_packet_count():
 				var raw_packet = _socket.get_packet()
-				print("FEAGI DEBUG: Received raw packet size: ", raw_packet.size(), " bytes")
 				var retrieved_ws_data = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
-				print("FEAGI DEBUG: After decompression size: ", retrieved_ws_data.size(), " bytes")
 				
 				# DEBUG: Check if decompression failed
 				if retrieved_ws_data.size() == 0:
@@ -120,9 +118,6 @@ func websocket_send(data: Variant) -> void:
 func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 	# DEBUG: Log the structure ID detection
 	var structure_id = bytes[0] if bytes.size() > 0 else -1
-	print("🔍 FEAGI HEADER DEBUG: Received ", bytes.size(), " bytes")
-	print("   📊 Structure ID (bytes[0]): ", structure_id, " (0x", "%02X" % structure_id, ")")
-	print("   📋 First 8 bytes: ", bytes.slice(0, min(8, bytes.size())))
 	
 	# SAFETY CHECK: Ensure we have data before processing
 	if bytes.size() == 0:
@@ -132,7 +127,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 	## respond as per type
 	match(bytes[0]):
 		1: # JSON wrapper
-			print("   ➡️  ROUTING: JSON wrapper (Type 1)")
 			bytes = bytes.slice(2)
 			var dict: Dictionary = str_to_var(bytes.get_string_from_ascii()) 
 			if !dict:
@@ -150,32 +144,25 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 						
 					
 		7: # ActivatedNeuronLocation
-			print("   ➡️  ROUTING: ActivatedNeuronLocation (Type 7) - DEPRECATED")
 			# ignore version for now
 			push_warning("ActivatedNeuronLocation data type is deprecated!")
 		8: # SingleRawImage
-			print("   ➡️  ROUTING: SingleRawImage (Type 8)")
 			# ignore version for now
 			feagi_return_visual_data.emit(bytes)
 		9: # multi structure
-			print("   ➡️  ROUTING: Multi-structure container (Type 9)")
 			# ignore version for now
 			var number_contained_structures: int = bytes[2]
-			print("   📦 Contains ", number_contained_structures, " sub-structures")
 			var structure_start_index: int = 0 # cached
 			var structure_length: int = 0 # cached
 			var header_offset: int = 3 # cached, lets us know where to read from the subheader
 			for structure_index in number_contained_structures:
 				structure_start_index = bytes.decode_u32(header_offset)        # Little Endian by default
 				structure_length = bytes.decode_u32(header_offset + 4)        # Little Endian by default
-				print("   📦 Sub-structure[", structure_index, "]: offset=", structure_start_index, " length=", structure_length)
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
 				header_offset += 8
 		10: # SVO neuron activations (legacy support)
-			print("   ➡️  ROUTING: SVO neuron activations (Type 10 - NEURON_FLAT) → DDA Renderer")
 			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
 			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
-			print("   🧠 Cortical ID: '", cortical_ID, "', SVO data size: ", SVO_data.size(), " bytes")
 			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
 			
 			# TODO I dont like this
@@ -184,13 +171,11 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
 		
 		11: # Direct Neural Points (NEW - optimized format)
-			print("   ➡️  ROUTING: Direct Neural Points (Type 11 - NEURON_CATEGORIES) → DirectPoints Renderer")
 			# Type 11 structure: [ID:1][Version:1][NumAreas:4][SecondaryHeaders][AllNeuronData]
 			# SecondaryHeaders: For each area: [CorticalID:6][DataOffset:4][NeuronCount:4]
 			# AllNeuronData: All neuron data concatenated at the end
 			
 			var num_areas = bytes.decode_u32(2)  # Number of areas at offset 2 (Little Endian)
-			print("   📊 Number of cortical areas: ", num_areas)
 			
 			# Calculate where neuron data section starts
 			var secondary_headers_size = num_areas * 14  # Each area: 6+4+4 bytes
@@ -203,12 +188,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			# Process each cortical area using the secondary headers
 			var header_offset = 6  # Start after [ID:1][Version:1][NumAreas:4]
 			
-			print("   🔍 DEBUG: Starting to process ", num_areas, " areas...")
-			print("   🔍 DEBUG: Neuron data section starts at offset: ", neuron_data_section_start)
-			print("   🔍 DEBUG: Total byte array size: ", bytes.size(), " bytes")
-			
 			for area_idx in range(num_areas):
-				print("   🔍 DEBUG: Processing area [", area_idx, "] at header_offset: ", header_offset)
 				
 				# Parse area header: [CorticalID:6bytes][DataOffset:4bytes][NeuronCount:4bytes]
 				if header_offset + 14 > bytes.size():  # Need at least 14 bytes for header
@@ -221,13 +201,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				var neuron_count = bytes.decode_u32(header_offset + 10)
 				header_offset += 14  # Move to next header
 				
-				print("   🔍 DEBUG: Area [", area_idx, "] parsed - ID:'", cortical_ID, "', data_offset:", data_offset, ", count:", neuron_count)
-				
 				# Calculate absolute offset in the byte array
 				var absolute_data_offset = neuron_data_section_start + data_offset
 				var neuron_data_size = neuron_count * 16  # 16 bytes per neuron
-				
-				print("   🔍 DEBUG: Area [", area_idx, "] calculated - absolute_offset:", absolute_data_offset, ", data_size:", neuron_data_size)
 				
 				# Validate data bounds
 				if absolute_data_offset + neuron_data_size > bytes.size():
@@ -239,10 +215,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				# Extract ONLY the neuron data for this specific area from the correct offset
 				var points_data: PackedByteArray = bytes.slice(absolute_data_offset, absolute_data_offset + neuron_data_size)
 				
-				print("   🔍 DEBUG: Area [", area_idx, "] extracted data slice successfully - size:", points_data.size())
-				
-				# 🆕 DETAILED COORDINATE DEBUGGING - Print ALL coordinates for this area
-				print("   🎯 COORDINATE DEBUG: Area '", cortical_ID, "' - ALL ", neuron_count, " neurons:")
 				for neuron_idx in range(neuron_count):
 					var neuron_offset = neuron_idx * 16  # Each neuron is 16 bytes
 					if neuron_offset + 16 <= points_data.size():
@@ -250,14 +222,12 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 						var y = points_data.decode_u32(neuron_offset + 4)  # Y coordinate (uint32) 
 						var z = points_data.decode_u32(neuron_offset + 8)  # Z coordinate (uint32)
 						var potential = points_data.decode_float(neuron_offset + 12)  # Potential (float32)
-						print("     🧠 Neuron[", neuron_idx, "]: (", x, ", ", y, ", ", z, ") potential=", potential)
 					else:
 						print("     ❌ ERROR: Insufficient data for neuron[", neuron_idx, "] at offset ", neuron_offset)
 				
 				# Success tracking
 				total_neurons_processed += neuron_count
 				successful_areas += 1
-				print("     - ", cortical_ID, ": ", neuron_count, " neurons")
 				
 				# Emit signal for this specific area
 				FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
@@ -266,11 +236,8 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
 				if area:
 					area.FEAGI_set_direct_points_visualization_data(points_data)
-					print("   ✅ DEBUG: Area [", area_idx, "] data sent to cortical area successfully")
 				else:
 					print("   ⚠️  WARNING: Cortical area '", cortical_ID, "' not found in cache")
-			
-			print("   ✅ CLIENT RESULT: ", successful_areas, " areas with ", total_neurons_processed, " total neurons processed successfully")
 
 			
 		_: # Unknown

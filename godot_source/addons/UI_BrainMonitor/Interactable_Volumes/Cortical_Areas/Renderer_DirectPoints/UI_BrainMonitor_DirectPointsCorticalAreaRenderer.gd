@@ -158,11 +158,6 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	if actual_point_count != point_count:
 		print("DirectPoints: Limiting to ", actual_point_count, " voxels for performance (received ", point_count, ")")
 	
-	print("🧠 FEAGI NEURON DECODE DEBUG: Starting to decode ", actual_point_count, " neurons from Type 11 data")
-	print("🧠 CORTICAL AREA: dimensions: ", _dimensions, " position: ", _position_FEAGI_space)
-	print("🧠 STATIC BODY: position=", _static_body.position, " scale=", _static_body.scale)
-	print("🧠 DATA: Raw neuron data size: ", points_data.size(), " bytes (", point_count, " neurons)")
-	
 	# Update MultiMesh instance count
 	_multi_mesh.instance_count = actual_point_count
 	_current_neuron_count = actual_point_count
@@ -209,12 +204,6 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		
 		data_offset += 16
 	
-	# Clean summary output
-	if actual_point_count > 0:
-		print("🧠 RENDERED: ", actual_point_count, " neurons (sample coords: ", first_neuron_coords, ")")
-	else:
-		print("🧠 RENDERED: 0 neurons (no data)")
-	print("🧠 MULTIMESH: visible=", _multi_mesh_instance.visible, " instance_count=", _multi_mesh.instance_count)
 
 func _potential_to_color(potential: float) -> Color:
 	"""Convert neuron potential to visualization color"""
