@@ -51,6 +51,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		defined_cortical_area.recieved_new_direct_neural_points.connect(_directpoints_renderer._on_received_direct_neural_points)
 		print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DirectPoints renderer")
 	
+	# Connect bulk direct points data for optimized processing
+	if _directpoints_renderer.has_method("_on_received_direct_neural_points_bulk"):
+		defined_cortical_area.recieved_new_direct_neural_points_bulk.connect(_directpoints_renderer._on_received_direct_neural_points_bulk)
+		print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")
+	
 	print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")
 
 ## Sets new position (in FEAGI space)

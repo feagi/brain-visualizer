@@ -17,6 +17,7 @@ signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_he
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
 signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
 signal FEAGI_sent_direct_neural_points(cortical_ID: StringName, points_data: PackedByteArray)
+signal FEAGI_sent_direct_neural_points_bulk(cortical_ID: StringName, x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array)
 signal feagi_requesting_reset()
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
 
@@ -182,34 +183,23 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
 				return
 			
-			# Process each decoded cortical area
+			# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
 			for cortical_id in decoded_result.areas.keys():
 				var area_data = decoded_result.areas[cortical_id]
 				
-				# Convert bulk arrays back to individual neuron data for compatibility
-				var points_data = PackedByteArray()
-				var num_neurons = area_data.x_array.size()
+				# Emit bulk arrays directly - ZERO conversion overhead!
+				FEAGI_sent_direct_neural_points_bulk.emit(
+					cortical_id,
+					area_data.x_array,    # PackedInt32Array - direct from decoder
+					area_data.y_array,    # PackedInt32Array - direct from decoder  
+					area_data.z_array,    # PackedInt32Array - direct from decoder
+					area_data.p_array     # PackedFloat32Array - direct from decoder
+				)
 				
-				if num_neurons > 0:
-					# Pre-allocate for efficiency
-					points_data.resize(num_neurons * 16)
-					var offset = 0
-					
-					# Pack neuron data as x,y,z,p per neuron (16 bytes each)
-					for i in range(num_neurons):
-						points_data.encode_u32(offset, area_data.x_array[i])
-						points_data.encode_u32(offset + 4, area_data.y_array[i])
-						points_data.encode_u32(offset + 8, area_data.z_array[i])
-						points_data.encode_float(offset + 12, area_data.p_array[i])
-						offset += 16
-				
-				# Emit signal for this specific area
-				FEAGI_sent_direct_neural_points.emit(cortical_id, points_data)
-				
-				# Update cortical area with neuron data
+				# Update cortical area with bulk arrays
 				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id)
 				if area:
-					area.FEAGI_set_direct_points_visualization_data(points_data)
+					area.FEAGI_set_direct_points_bulk_data(area_data.x_array, area_data.y_array, area_data.z_array, area_data.p_array)
 				else:
 					print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache")
 

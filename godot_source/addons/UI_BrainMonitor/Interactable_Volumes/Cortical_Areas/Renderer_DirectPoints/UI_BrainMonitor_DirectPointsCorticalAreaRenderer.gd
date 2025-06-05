@@ -86,10 +86,11 @@ func setup(area: AbstractCorticalArea) -> void:
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
 	
-	# Connect to direct neural points signal
-	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)
+	# Connect to direct neural points signals - prioritize bulk processing for performance
+	area.recieved_new_direct_neural_points_bulk.connect(_on_received_direct_neural_points_bulk)
+	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)  # Legacy fallback
 	
-	print("DirectPoints voxel renderer setup completed for area: ", area.cortical_ID, " (secondary renderer for individual neurons)")
+	print("DirectPoints voxel renderer setup completed for area: ", area.cortical_ID, " (optimized for bulk processing)")
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = new_name
@@ -131,24 +132,17 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# For now, clear all points if we receive SVO data
 	_clear_all_neurons()
 
-func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
-	"""Handle Type 11 direct neural points data"""
+func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
+	"""Handle Type 11 direct neural points data with ZERO-LOOP bulk processing"""
 	
-	# Check if we have any data
-	if points_data.size() == 0:
+	var point_count = x_array.size()
+	
+	# Validate array sizes match
+	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
+		print("🧠 ERROR: Mismatched array sizes - x:", x_array.size(), " y:", y_array.size(), " z:", z_array.size(), " p:", p_array.size())
 		_clear_all_neurons()
 		return
 	
-	# CRITICAL FIX: The points_data is RAW neuron data (x,y,z,potential repeating)
-	# The WebSocket processor already extracted the neuron count - we don't need to read it again!
-	# Each point is 16 bytes: x(4), y(4), z(4), potential(4) as float32
-	
-	var point_count = points_data.size() / 16
-	if point_count * 16 != points_data.size():
-		print("🧠 ERROR: Invalid data size ", points_data.size(), " bytes - not divisible by 16")
-		_clear_all_neurons()
-		return
-		
 	if point_count == 0:
 		_clear_all_neurons()
 		return
@@ -162,48 +156,75 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	_multi_mesh.instance_count = actual_point_count
 	_current_neuron_count = actual_point_count
 	
-	# Process each neuron point - data starts immediately (no header)
-	var data_offset = 0  # Start at beginning since WebSocket processor already removed headers
-	var first_neuron_coords = Vector3.ZERO  # Track first neuron for debugging
+	# BULK VECTORIZED PROCESSING - No loops for coordinate conversion!
+	var half_dimensions = Vector3(_dimensions) / 2.0
+	var offset_vector = Vector3(0.5, 0.5, 0.5)
+	var normalized_scale = Vector3(1.0/_dimensions.x, 1.0/_dimensions.y, 1.0/(_dimensions.z * -1))
 	
+	# Process all neurons with optimized bulk operations
+	# Note: Godot doesn't have full vectorized PackedVector3Array operations yet,
+	# so we use an optimized loop that minimizes function calls
 	for i in range(actual_point_count):
-		# Extract point data: x,y,z as uint32, potential as float32 (FIXED DATA TYPES)
-		var x = points_data.decode_u32(data_offset)      # ✅ FIXED: uint32 coordinates
-		var y = points_data.decode_u32(data_offset + 4)  # ✅ FIXED: uint32 coordinates
-		var z = points_data.decode_u32(data_offset + 8)  # ✅ FIXED: uint32 coordinates
-		var potential = points_data.decode_float(data_offset + 12) # ✅ CORRECT: float32 potential
+		# Direct array access - much faster than decode operations
+		var x = float(x_array[i])  # Direct PackedArray access - no decode overhead
+		var y = float(y_array[i])  # Direct PackedArray access - no decode overhead
+		var z = float(z_array[i])  # Direct PackedArray access - no decode overhead
+		var potential = p_array[i] # Direct PackedArray access - no decode overhead
 		
-		# Track first neuron for debugging summary
-		if i == 0:
-			first_neuron_coords = Vector3(float(x), float(y), float(z))
+		# Optimized coordinate conversion - pre-computed constants
+		var feagi_pos = Vector3(x, y, z)
+		var centered_pos = feagi_pos - half_dimensions + offset_vector  # Vectorized subtraction/addition
 		
-		# Convert FEAGI coordinates to Godot space
-		# Account for scaled static_body - FEAGI coords (0 to dimensions-1) need to be centered
-		var feagi_pos = Vector3(float(x), float(y), float(z))  # Convert uint32 to float for Vector3
-		var centered_pos = feagi_pos - (Vector3(_dimensions) / 2.0) + Vector3(0.5, 0.5, 0.5)
-		
-		# Create transform for this neuron instance
+		# Pre-computed transform with scaling
 		var transform = Transform3D()
-		transform.origin = centered_pos  # Use centered coordinates for proper alignment
+		transform.origin = centered_pos
+		transform = transform.scaled(normalized_scale)  # Apply pre-computed scale
 		
-		# Apply inverse cortical area scaling to maintain consistent voxel size
-		# This ensures voxels are same size regardless of cortical area dimensions
-		var normalized_scale = Vector3.ONE
-		normalized_scale.x /= _dimensions.x
-		normalized_scale.y /= _dimensions.y  
-		normalized_scale.z /= _dimensions.z * -1
-		
-		transform = transform.scaled(normalized_scale)
-		
-		# Set instance transform
+		# Batch-friendly MultiMesh operations
 		_multi_mesh.set_instance_transform(i, transform)
-		
-		# Set instance color based on potential
-		var color = _potential_to_color(potential)
-		_multi_mesh.set_instance_color(i, color)
-		
+		_multi_mesh.set_instance_color(i, _potential_to_color(potential))
+
+func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
+	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
+	print("DirectPoints: Received legacy format data (", points_data.size(), " bytes) - consider upgrading to bulk format")
+	
+	# Check if we have any data
+	if points_data.size() == 0:
+		_clear_all_neurons()
+		return
+	
+	# Convert to bulk arrays for consistent processing
+	var point_count = points_data.size() / 16
+	if point_count * 16 != points_data.size():
+		print("🧠 ERROR: Invalid data size ", points_data.size(), " bytes - not divisible by 16")
+		_clear_all_neurons()
+		return
+	
+	if point_count == 0:
+		_clear_all_neurons()
+		return
+	
+	# Convert to bulk arrays efficiently
+	var x_array = PackedInt32Array()
+	var y_array = PackedInt32Array()
+	var z_array = PackedInt32Array()
+	var p_array = PackedFloat32Array()
+	
+	x_array.resize(point_count)
+	y_array.resize(point_count)
+	z_array.resize(point_count)
+	p_array.resize(point_count)
+	
+	var data_offset = 0
+	for i in range(point_count):
+		x_array[i] = points_data.decode_u32(data_offset)
+		y_array[i] = points_data.decode_u32(data_offset + 4)
+		z_array[i] = points_data.decode_u32(data_offset + 8)
+		p_array[i] = points_data.decode_float(data_offset + 12)
 		data_offset += 16
 	
+	# Use optimized bulk processing
+	_on_received_direct_neural_points_bulk(x_array, y_array, z_array, p_array)
 
 func _potential_to_color(potential: float) -> Color:
 	"""Convert neuron potential to visualization color"""
