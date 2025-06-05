@@ -170,76 +170,49 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			if area:
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
 		
-		11: # Direct Neural Points (NEW - optimized format)
-			# Type 11 structure: [ID:1][Version:1][NumAreas:4][SecondaryHeaders][AllNeuronData]
-			# SecondaryHeaders: For each area: [CorticalID:6][DataOffset:4][NeuronCount:4]
-			# AllNeuronData: All neuron data concatenated at the end
+		11: # Direct Neural Points (NEW - feagi-data-processing format with bulk arrays)
+			# Type 11 structure: [Type:1][Version:1][NumAreas:2][AreaHeaders][NeuronData]
+			# AreaHeaders: [CorticalID:6][DataOffset:4][DataLength:4] per area = 14 bytes per area
+			# NeuronData: [X array][Y array][Z array][P array] per area
 			
-			var num_areas = bytes.decode_u32(2)  # Number of areas at offset 2 (Little Endian)
+			# Use the new optimized decoder
+			var decoded_result = _decode_type_11_optimized(bytes, 0)
 			
-			# Calculate where neuron data section starts
-			var secondary_headers_size = num_areas * 14  # Each area: 6+4+4 bytes
-			var neuron_data_section_start = 6 + secondary_headers_size  # After [ID:1][Version:1][NumAreas:4][SecondaryHeaders]
+			if !decoded_result.success:
+				print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
+				return
 			
-			# For summary tracking
-			var total_neurons_processed = 0
-			var successful_areas = 0
-			
-			# Process each cortical area using the secondary headers
-			var header_offset = 6  # Start after [ID:1][Version:1][NumAreas:4]
-			
-			for area_idx in range(num_areas):
+			# Process each decoded cortical area
+			for cortical_id in decoded_result.areas.keys():
+				var area_data = decoded_result.areas[cortical_id]
 				
-				# Parse area header: [CorticalID:6bytes][DataOffset:4bytes][NeuronCount:4bytes]
-				if header_offset + 14 > bytes.size():  # Need at least 14 bytes for header
-					print("   ❌ ERROR: Insufficient data for area header at offset ", header_offset)
-					print("   📏 Need 14 bytes, have ", bytes.size() - header_offset, " bytes remaining")
-					break
+				# Convert bulk arrays back to individual neuron data for compatibility
+				var points_data = PackedByteArray()
+				var num_neurons = area_data.x_array.size()
 				
-				var cortical_ID: StringName = bytes.slice(header_offset, header_offset + 6).get_string_from_ascii()
-				var data_offset = bytes.decode_u32(header_offset + 6)  # Offset into neuron data section
-				var neuron_count = bytes.decode_u32(header_offset + 10)
-				header_offset += 14  # Move to next header
-				
-				# Calculate absolute offset in the byte array
-				var absolute_data_offset = neuron_data_section_start + data_offset
-				var neuron_data_size = neuron_count * 16  # 16 bytes per neuron
-				
-				# Validate data bounds
-				if absolute_data_offset + neuron_data_size > bytes.size():
-					print("   ❌ ERROR: Insufficient data for neuron data. Need ", neuron_data_size, " bytes at absolute offset ", absolute_data_offset)
-					print("   📏 Total byte array size: ", bytes.size(), " bytes")
-					print("   📏 End offset would be: ", absolute_data_offset + neuron_data_size)
-					break
-				
-				# Extract ONLY the neuron data for this specific area from the correct offset
-				var points_data: PackedByteArray = bytes.slice(absolute_data_offset, absolute_data_offset + neuron_data_size)
-				
-				for neuron_idx in range(neuron_count):
-					var neuron_offset = neuron_idx * 16  # Each neuron is 16 bytes
-					if neuron_offset + 16 <= points_data.size():
-						var x = points_data.decode_u32(neuron_offset)      # X coordinate (uint32)
-						var y = points_data.decode_u32(neuron_offset + 4)  # Y coordinate (uint32) 
-						var z = points_data.decode_u32(neuron_offset + 8)  # Z coordinate (uint32)
-						var potential = points_data.decode_float(neuron_offset + 12)  # Potential (float32)
-					else:
-						print("     ❌ ERROR: Insufficient data for neuron[", neuron_idx, "] at offset ", neuron_offset)
-				
-				# Success tracking
-				total_neurons_processed += neuron_count
-				successful_areas += 1
+				if num_neurons > 0:
+					# Pre-allocate for efficiency
+					points_data.resize(num_neurons * 16)
+					var offset = 0
+					
+					# Pack neuron data as x,y,z,p per neuron (16 bytes each)
+					for i in range(num_neurons):
+						points_data.encode_u32(offset, area_data.x_array[i])
+						points_data.encode_u32(offset + 4, area_data.y_array[i])
+						points_data.encode_u32(offset + 8, area_data.z_array[i])
+						points_data.encode_float(offset + 12, area_data.p_array[i])
+						offset += 16
 				
 				# Emit signal for this specific area
-				FEAGI_sent_direct_neural_points.emit(cortical_ID, points_data)
+				FEAGI_sent_direct_neural_points.emit(cortical_id, points_data)
 				
-				# Update cortical area with correct neuron data
-				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+				# Update cortical area with neuron data
+				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id)
 				if area:
 					area.FEAGI_set_direct_points_visualization_data(points_data)
 				else:
-					print("   ⚠️  WARNING: Cortical area '", cortical_ID, "' not found in cache")
+					print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache")
 
-			
 		_: # Unknown
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
 			push_error("Unknown data type %d recieved!" % bytes[0])
@@ -254,3 +227,150 @@ func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
 	_socket_health = new_health
 	FEAGI_socket_health_changed.emit(prev_health, new_health)
+
+# Ultra-optimized Type 11 decoder for feagi-data-processing format
+func _decode_type_11_optimized(buffer: PackedByteArray, offset: int) -> Dictionary:
+	"""
+	Decode Type 11 (NeuronCategoricalXYZP) from feagi-data-processing format
+	Using bulk array operations for maximum performance
+	
+	Format:
+	1. Global Header: [Type:1][Version:1][NumAreas:2] = 4 bytes
+	2. Area Headers: [CorticalID:6][DataOffset:4][DataLength:4] per area = 14 bytes per area  
+	3. Neuron Data: [X array][Y array][Z array][P array] per area
+	
+	Returns: {
+		"success": bool,
+		"areas": {
+			"cortical_id": {
+				"x_array": PackedInt32Array,
+				"y_array": PackedInt32Array,
+				"z_array": PackedInt32Array,
+				"p_array": PackedFloat32Array
+			}
+		},
+		"total_neurons": int,
+		"error": String (if success=false)
+	}
+	"""
+	var result = {
+		"success": false,
+		"areas": {},
+		"total_neurons": 0,
+		"error": ""
+	}
+	
+	var buffer_size = buffer.size()
+	var pos = offset
+	
+	# Check minimum size for global header
+	if pos + 4 > buffer_size:
+		result.error = "Buffer too small for global header (need 4 bytes)"
+		return result
+	
+	# Read global header
+	var structure_type = buffer[pos]
+	var version = buffer[pos + 1]
+	var num_areas = buffer.decode_u16(pos + 2)  # Little endian uint16
+	pos += 4
+	
+	# Validate header
+	if structure_type != 11:
+		result.error = "Invalid structure type: %d (expected 11)" % structure_type
+		return result
+	
+	if version != 1:
+		result.error = "Unsupported version: %d (expected 1)" % version
+		return result
+	
+	if num_areas == 0:
+		result.error = "No cortical areas in data"
+		return result
+	
+	# Check size for area headers
+	var area_headers_size = num_areas * 14  # 6 + 4 + 4 bytes per area
+	if pos + area_headers_size > buffer_size:
+		result.error = "Buffer too small for area headers (need %d bytes)" % area_headers_size
+		return result
+	
+	# Read area headers
+	var area_headers = []
+	for i in range(num_areas):
+		# Read cortical ID (6 bytes) - convert to string efficiently
+		var cortical_id = buffer.slice(pos, pos + 6).get_string_from_ascii()
+		pos += 6
+		
+		# Read data offset and length (8 bytes total)
+		var data_offset = buffer.decode_u32(pos)      # Little endian uint32
+		var data_length = buffer.decode_u32(pos + 4)  # Little endian uint32
+		pos += 8
+		
+		area_headers.append({
+			"cortical_id": cortical_id,
+			"data_offset": data_offset,
+			"data_length": data_length
+		})
+	
+	# Process each area's neuron data with true bulk operations
+	var total_neurons = 0
+	
+	for header in area_headers:
+		var cortical_id = header.cortical_id
+		var data_offset = header.data_offset
+		var data_length = header.data_length
+		
+		# Validate data range
+		if data_offset + data_length > buffer_size:
+			result.error = "Area %s data range exceeds buffer (offset=%d, length=%d, buffer_size=%d)" % [cortical_id, data_offset, data_length, buffer_size]
+			return result
+		
+		# Calculate number of neurons in this area
+		if data_length % 16 != 0:
+			result.error = "Area %s data length %d not divisible by 16" % [cortical_id, data_length]
+			return result
+		
+		var num_neurons = data_length / 16
+		if num_neurons == 0:
+			# Empty area - skip but don't error
+			result.areas[cortical_id] = {
+				"x_array": PackedInt32Array(),
+				"y_array": PackedInt32Array(),
+				"z_array": PackedInt32Array(),
+				"p_array": PackedFloat32Array()
+			}
+			continue
+		
+		# Extract arrays with ZERO loops - direct bulk conversion
+		var array_byte_size = num_neurons * 4  # Each array has num_neurons * 4 bytes
+		var data_pos = data_offset
+		
+		# X array: Direct byte-to-int32 conversion (NO LOOPS!)
+		var x_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
+		var x_array = x_bytes.to_int32_array()
+		data_pos += array_byte_size
+		
+		# Y array: Direct byte-to-int32 conversion (NO LOOPS!)
+		var y_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
+		var y_array = y_bytes.to_int32_array()
+		data_pos += array_byte_size
+		
+		# Z array: Direct byte-to-int32 conversion (NO LOOPS!)
+		var z_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
+		var z_array = z_bytes.to_int32_array()
+		data_pos += array_byte_size
+		
+		# P array: Direct byte-to-float32 conversion (NO LOOPS!)
+		var p_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
+		var p_array = p_bytes.to_float32_array()
+		
+		result.areas[cortical_id] = {
+			"x_array": x_array,      # PackedInt32Array - direct from bytes
+			"y_array": y_array,      # PackedInt32Array - direct from bytes
+			"z_array": z_array,      # PackedInt32Array - direct from bytes
+			"p_array": p_array       # PackedFloat32Array - direct from bytes
+		}
+		total_neurons += num_neurons
+	
+	result.success = true
+	result.total_neurons = total_neurons
+	return result
