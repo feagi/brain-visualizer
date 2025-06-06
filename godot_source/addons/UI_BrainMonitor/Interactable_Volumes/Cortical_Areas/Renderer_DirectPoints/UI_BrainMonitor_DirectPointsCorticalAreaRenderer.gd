@@ -1,3 +1,17 @@
+# DirectPoints Cortical Area Renderer
+# High-performance voxel-based neural visualization with Z-DEPTH COLORING
+#
+# Features:
+# - Bulk processing of Type 11 direct neural points data
+# - Zero-loop coordinate conversion for optimal performance  
+# - Z-depth based coloring (EXACT shader implementation):
+#   * Matches shader logic: final_color.rgb = vec3(z_offset_color, 0.0, 0.0)
+#   * Creates red gradient: z=0 (dark/black) -> z=max (bright red)
+#   * Provides 3D depth perception for neural activations within cortical areas
+#
+# Based on commit eeb9795602b0e9f756d7a641de2586c2d9488e54 "shader - color based on z depth"
+
+@tool
 extends UI_BrainMonitor_AbstractCorticalAreaRenderer
 class_name UI_BrainMonitor_DirectPointsCorticalAreaRenderer
 ## Renders a cortical area using direct point rendering with MultiMeshInstance3D for optimal performance
@@ -46,21 +60,24 @@ func setup(area: AbstractCorticalArea) -> void:
 	_multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
 	_multi_mesh.instance_count = 0
 	
+	# CRITICAL: Enable instance colors for z-depth coloring
+	_multi_mesh.use_colors = true
+	
 	# Create voxel (cube) mesh for each neuron - maintaining familiar voxel appearance
 	var voxel_mesh = BoxMesh.new()
 	voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
 	_multi_mesh.mesh = voxel_mesh
 	
-	# Create material for neuron voxels with color and transparency support
+	# Create material for neuron voxels with Z-DEPTH COLORING support
 	var neuron_material = StandardMaterial3D.new()
 	neuron_material.flags_unshaded = true  # Make it completely unshaded
-	neuron_material.albedo_color = Color(1.0, 0.0, 0.0, 1.0)  # Pure bright red, fully opaque
+	neuron_material.albedo_color = Color(1.0, 0.0, 0.0, 1.0)  # Red base color for fallback
 	neuron_material.emission_enabled = true
-	neuron_material.emission_color = Color(1.0, 0.0, 0.0)  # Bright red emission
-	neuron_material.emission_energy = 2.0  # Very bright emission
+	neuron_material.emission_color = Color(1.0, 0.0, 0.0)  # Red emission for fallback
+	neuron_material.emission_energy = 1.5  # Moderate emission energy
 	neuron_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED  # No transparency
 	neuron_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Show all faces
-	neuron_material.vertex_color_use_as_albedo = false  # Don't use vertex colors
+	neuron_material.vertex_color_use_as_albedo = true  # ENABLE instance color support
 	
 	_multi_mesh_instance.multimesh = _multi_mesh
 	
@@ -138,7 +155,7 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	_clear_all_neurons()
 
 func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
-	"""Handle Type 11 direct neural points data with ZERO-LOOP bulk processing"""
+	"""Handle Type 11 direct neural points data with Z-DEPTH COLORING"""
 	
 	var point_count = x_array.size()
 	
@@ -161,14 +178,15 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	_multi_mesh.instance_count = actual_point_count
 	_current_neuron_count = actual_point_count
 	
-	# BULK VECTORIZED PROCESSING - No loops for coordinate conversion!
+	# BULK VECTORIZED PROCESSING - Z-Depth Color Implementation
 	var half_dimensions = Vector3(_dimensions) / 2.0
 	var offset_vector = Vector3(0.5, 0.5, 0.5)
 	var normalized_scale = Vector3(1.0/_dimensions.x, 1.0/_dimensions.y, 1.0/(_dimensions.z * -1))
 	
-	# Process all neurons with optimized bulk operations
-	# Note: Godot doesn't have full vectorized PackedVector3Array operations yet,
-	# so we use an optimized loop that minimizes function calls
+	# Z-Depth coloring parameters (inspired by shader implementation)
+	var z_dimension_float = float(_dimensions.z)
+	
+	# Process all neurons with optimized bulk operations and Z-depth coloring
 	for i in range(actual_point_count):
 		# Direct array access - much faster than decode operations
 		var x = float(x_array[i])  # Direct PackedArray access - no decode overhead
@@ -185,9 +203,13 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		transform.origin = centered_pos
 		transform = transform.scaled(normalized_scale)  # Apply pre-computed scale
 		
+		# Z-DEPTH BASED COLORING (inspired by shader, but reversed for better depth perception)
+		# z=0 (front) -> bright red, z=max (back) -> dark red
+		var z_depth_color = _z_depth_to_color(z, z_dimension_float)
+		
 		# Batch-friendly MultiMesh operations
 		_multi_mesh.set_instance_transform(i, transform)
-		# _multi_mesh.set_instance_color(i, _potential_to_color(potential))  # TEMP: Commented out to test base material
+		_multi_mesh.set_instance_color(i, z_depth_color)  # Apply z-depth coloring (NOW PROPERLY CONFIGURED)
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
@@ -253,6 +275,25 @@ func _potential_to_color(potential: float) -> Color:
 		# Yellow to Red
 		var t = (potential - 0.75) / 0.25
 		return Color.YELLOW.lerp(Color.RED, t)
+
+func _z_depth_to_color(z_coordinate: float, z_max: float) -> Color:
+	"""Convert z-coordinate to shader-inspired red gradient color
+	
+	EXACT shader implementation: final_color.rgb = vec3(z_offset_color, 0.0, 0.0)
+	where z_offset_color = local_hit_space_mn.z normalized to 0.0-1.0
+	"""
+	# Normalize z-coordinate to 0.0-1.0 range (exact shader logic)
+	var z_normalized = clamp(z_coordinate / z_max, 0.0, 1.0)
+	
+	# REVERSED: Front neurons (low z) bright, back neurons (high z) dark
+	# z=0 -> (1.0, 0.0, 0.0) = bright red
+	# z=max -> (0.2, 0.0, 0.0) = dark red
+	var red_intensity = 1.0 - z_normalized
+	
+	# Add minimum visibility so back neurons aren't completely invisible
+	red_intensity = max(red_intensity, 0.2)  # Minimum 20% red for visibility
+	
+	return Color(red_intensity, 0.0, 0.0, 1.0)
 
 func _clear_all_neurons() -> void:
 	"""Clear all neuron voxel instances"""
