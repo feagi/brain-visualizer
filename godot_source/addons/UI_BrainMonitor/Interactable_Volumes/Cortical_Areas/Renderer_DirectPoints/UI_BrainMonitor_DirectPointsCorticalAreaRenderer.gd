@@ -53,14 +53,19 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create material for neuron voxels with color and transparency support
 	var neuron_material = StandardMaterial3D.new()
-	neuron_material.albedo_color = Color.CYAN
+	neuron_material.flags_unshaded = true  # Make it completely unshaded
+	neuron_material.albedo_color = Color(1.0, 0.0, 0.0, 1.0)  # Pure bright red, fully opaque
 	neuron_material.emission_enabled = true
-	neuron_material.emission_color = Color.CYAN
-	neuron_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	neuron_material.alpha = 0.8
-	_multi_mesh.mesh.surface_set_material(0, neuron_material)
+	neuron_material.emission_color = Color(1.0, 0.0, 0.0)  # Bright red emission
+	neuron_material.emission_energy = 2.0  # Very bright emission
+	neuron_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED  # No transparency
+	neuron_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Show all faces
+	neuron_material.vertex_color_use_as_albedo = false  # Don't use vertex colors
 	
 	_multi_mesh_instance.multimesh = _multi_mesh
+	
+	# Set material override on the MultiMeshInstance3D
+	_multi_mesh_instance.material_override = neuron_material
 	
 	# Create outline mesh for cortical area hover/selection (keep existing functionality)
 	_outline_mesh_instance = MeshInstance3D.new()
@@ -182,7 +187,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		
 		# Batch-friendly MultiMesh operations
 		_multi_mesh.set_instance_transform(i, transform)
-		_multi_mesh.set_instance_color(i, _potential_to_color(potential))
+		# _multi_mesh.set_instance_color(i, _potential_to_color(potential))  # TEMP: Commented out to test base material
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
