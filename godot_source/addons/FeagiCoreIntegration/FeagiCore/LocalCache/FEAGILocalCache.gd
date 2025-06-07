@@ -29,14 +29,12 @@ var brain_regions: BrainRegionsCache
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
 var mapping_data: MappingsCache
-var mapping_restrictions: MappingRestrictions
 
 func _init():
 	cortical_areas = CorticalAreasCache.new()
 	morphologies = MorphologiesCache.new()
 	brain_regions = BrainRegionsCache.new()
 	mapping_data = MappingsCache.new()
-	mapping_restrictions = load("res://addons/FeagiCoreIntegration/FeagiCore/MappingRestrictions.tres")
 
 ## Given several summary datas from FEAGI, we can build the entire cache at once
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
@@ -52,6 +50,7 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	# Create morphology objects
 	# Create mapping objects
 	# Create connection hint objects
+	# Load mapping restrictions from server
 	
 	var cortical_area_IDs_mapped_to_parent_regions_IDs = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary) 
 	cortical_areas.FEAGI_load_all_cortical_areas(cortical_area_summary, cortical_area_IDs_mapped_to_parent_regions_IDs)
@@ -59,9 +58,17 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	mapping_data.FEAGI_load_all_mappings(mapping_summary)
 	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
 	
+	# Load mapping restrictions from server (async call)
+	_load_mapping_restrictions_async()
+	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()
-#endregion
+
+# Helper function to load mapping restrictions asynchronously
+func _load_mapping_restrictions_async() -> void:
+	var success = await MappingRestrictionsAPI.load_mapping_restrictions()
+	if not success:
+		push_warning("FEAGI CACHE: Failed to load mapping restrictions from server")
 
 ## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
@@ -70,6 +77,10 @@ func clear_whole_genome() -> void:
 	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
+	
+	# Clear mapping restrictions cache
+	MappingRestrictionsAPI.clear_cache()
+	
 	print("FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()
 	return

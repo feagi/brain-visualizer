@@ -60,6 +60,7 @@ func _ready() -> void:
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
 	
+	_step3_scroll.morphology_selected.connect(_set_morphology)
 	
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	BV.UI.selection_system.objects_selection_event_called.connect(_on_user_selection)
@@ -142,16 +143,26 @@ func _setting_destination() -> void:
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
-	var mapping_defaults: MappingRestrictionDefault = FeagiCore.feagi_local_cache.mapping_restrictions.get_defaults_between_2_cortical_areas(_source, _destination)
+	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
 	_selected_morphology = null
 	_step3_label.text = " Please Select A Morphology..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
-	if FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(_source, _destination).has_restricted_morphologies():
-		_step3_scroll.set_morphologies(FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(_source, _destination).get_morphologies_restricted_to())
-	if mapping_defaults.try_get_default_morphology() == null:
-		return
-	_step3_scroll.select_morphology(mapping_defaults.try_get_default_morphology())
 	
+	# ✅ CRITICAL FIX: Make the morphology container visible so the list appears
+	_step3_morphology_container.visible = true
+	
+	# Get restrictions with proper null checking
+	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
+	if restrictions != null and restrictions.has_restricted_morphologies():
+		# Use restricted morphologies
+		_step3_scroll.set_morphologies(restrictions.get_morphologies_restricted_to())
+	else:
+		# No restrictions - populate with all available morphologies from cache
+		_step3_scroll.repopulate_from_cache()
+	
+	# Auto-select default morphology if available
+	if mapping_defaults != null and mapping_defaults.try_get_default_morphology() != null:
+		_step3_scroll.select_morphology(mapping_defaults.try_get_default_morphology())
 
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area

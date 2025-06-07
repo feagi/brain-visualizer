@@ -28,16 +28,29 @@ func _ready() -> void:
 func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults: MappingRestrictionDefault) -> void:
 	_restrictions = restrictions
 	_defaults = defaults
-	if restrictions.has_restricted_morphologies():
-		_morphologies.overwrite_morphologies(restrictions.get_morphologies_restricted_to())
-	if restrictions.has_disallowed_morphologies():
-		for disallowed in restrictions.get_morphologies_disallowed():
-			_morphologies.remove_morphology(disallowed)
-	_morphologies.set_selected_morphology(_defaults.try_get_default_morphology())
-	_scalar.editable = restrictions.allow_changing_scalar
-	_PSP.editable = restrictions.allow_changing_PSP
-	_inhibitory.disabled = !restrictions.allow_changing_inhibitory
-	_plasticity.disabled = !restrictions.allow_changing_plasticity
+	
+	# Add null checking for all restrictions method calls
+	if restrictions != null:
+		if restrictions.has_restricted_morphologies():
+			_morphologies.overwrite_morphologies(restrictions.get_morphologies_restricted_to())
+		if restrictions.has_disallowed_morphologies():
+			for disallowed in restrictions.get_morphologies_disallowed():
+				_morphologies.remove_morphology(disallowed)
+		_scalar.editable = restrictions.allow_changing_scalar
+		_PSP.editable = restrictions.allow_changing_PSP
+		_inhibitory.disabled = !restrictions.allow_changing_inhibitory
+		_plasticity.disabled = !restrictions.allow_changing_plasticity
+	else:
+		# Default behavior when no restrictions
+		_scalar.editable = true
+		_PSP.editable = true
+		_inhibitory.disabled = false
+		_plasticity.disabled = false
+	
+	# Set default morphology if available
+	if defaults != null:
+		_morphologies.set_selected_morphology(defaults.try_get_default_morphology())
+	
 	_plasticity_constant.editable = false # these 3 are false since originally plasticity is off
 	_LTP_multiplier.editable = false
 	_LTD_multiplier.editable = false

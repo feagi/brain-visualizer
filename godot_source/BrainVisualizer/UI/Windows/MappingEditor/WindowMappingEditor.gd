@@ -77,16 +77,13 @@ func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: 
 	_arrow.texture = TEXTURE_ARROW_VALID
 	_arrow.tooltip_text = ""
 	
-	var restrictions: MappingRestrictionCorticalMorphology = FeagiCore.feagi_local_cache.mapping_restrictions.get_restrictions_between_2_cortical_areas(source, destination)
-	if restrictions == null:
-		push_error("FEAGI Mapping Editor: Unable to load restrictions between %s and %s!" % [source.genome_ID, destination.genome_ID])
-		set_ends(null, null)
-		return
-	var defaults: MappingRestrictionDefault = FeagiCore.feagi_local_cache.mapping_restrictions.get_defaults_between_2_cortical_areas(source, destination)
-	if defaults == null:
-		push_error("FEAGI Mapping Editor: Unable to load defaults between %s and %s!" % [source.genome_ID, destination.genome_ID])
-		set_ends(null, null)
-		return
+	# Use new cached API with fast local lookups
+	var restrictions: MappingRestrictionCorticalMorphology = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(source, destination)
+	var defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(source, destination)
+	
+	# No need to error on null restrictions/defaults - this is normal for unmatched area types
+	# The UI will handle null values gracefully
+	
 	var current_mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
 	
 	if destination is MemoryCorticalArea:
@@ -98,7 +95,6 @@ func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: 
 		_generic_mapping_settings.visible = true
 		_memory_mapping_setting.visible = false
 		_generic_mapping_settings.load_mappings(current_mappings, restrictions, defaults)
-	
 
 
 func _user_pressed_set_mappings() -> void:
