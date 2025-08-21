@@ -153,7 +153,7 @@ func get_burst_delay() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Request getting delay between bursts")
 	
 	# Define Request
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_burstEngine_stimulationPeriod)
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_burstEngine_simulationTimestep)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -180,7 +180,7 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Request setting delay between bursts to %d" % new_delay_between_bursts)
 	
 	# Define Request
-	var dict_to_send: Dictionary = 	{ "burst_duration": new_delay_between_bursts}
+	var dict_to_send: Dictionary = 	{ "simulation_timestep": new_delay_between_bursts}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_feagi_burstEngine, dict_to_send)
 	
 	# Send request and await results
@@ -560,8 +560,10 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	print("FEAGI REQUEST: HTTP response received for %s - checking for errors..." % checking_cortical_ID)
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
+		var raw_response = FEAGI_response_data.decode_response_as_string()
 		push_error("FEAGI Requests: Unable to grab cortical area details of %s! Error: %s - %s" % [checking_cortical_ID, error_details[0], error_details[1]])
 		print("FEAGI REQUEST: ❌ HTTP request failed for %s - Error code: %s, Description: %s" % [checking_cortical_ID, error_details[0], error_details[1]])
+		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
 		return FEAGI_response_data
 	
 	print("FEAGI REQUEST: HTTP response OK for %s - decoding response..." % checking_cortical_ID)
@@ -824,14 +826,19 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	# Define Request
 	properties["cortical_id"] = editing_ID  # ensure
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
+	print("FEAGI REQUEST: Making PUT request to %s for cortical area %s with data: %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID, properties])
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to update cortical area of ID %s!" % editing_ID)
-		
+		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
+		var raw_response = FEAGI_response_data.decode_response_as_string()
+		push_error("FEAGI Requests: Unable to update cortical area of ID %s! Error: %s - %s" % [editing_ID, error_details[0], error_details[1]])
+		print("FEAGI REQUEST: ❌ PUT request failed for %s - Error code: %s, Description: %s" % [editing_ID, error_details[0], error_details[1]])
+		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
+		print("FEAGI REQUEST: ❌ Request data sent: %s" % properties)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
 	get_cortical_area(editing_ID)
@@ -1548,12 +1555,13 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 ## Used for error automated error handling of HTTP requests, outputs booleans to set up easy early returns
 func _return_if_HTTP_failed_and_automatically_handle(output: FeagiRequestOutput, optional_input_for_debugging: APIRequestWorkerDefinition = null) -> bool:
 	if output.has_timed_out:
-		print("TODO generic timeout handling")
+		print("FEAGI REQUEST: ⏰ Request timed out")
 		return true
 	if output.has_errored:
-		print("TODO generic error handling")
+		var error_details = output.decode_response_as_generic_error_code()
+		print("FEAGI REQUEST: ❌ HTTP error - Code: %s, Message: %s" % [error_details[0], error_details[1]])
 		if OS.is_debug_build() and optional_input_for_debugging != null:
-			push_error("FEAGI Requests: Error at endpoint %s" % optional_input_for_debugging.full_address)
+			push_error("FEAGI Requests: Error at endpoint %s - %s: %s" % [optional_input_for_debugging.full_address, error_details[0], error_details[1]])
 			
 		
 		return true

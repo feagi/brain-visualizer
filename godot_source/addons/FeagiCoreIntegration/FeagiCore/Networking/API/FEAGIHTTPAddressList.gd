@@ -26,7 +26,7 @@ var GET_corticalArea_corticalTypes: StringName = "/v1/cortical_area/cortical_typ
 var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"
 var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/mappings"
 var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"
-var GET_burstEngine_stimulationPeriod: StringName = "/v1/burst_engine/stimulation_period"
+var GET_burstEngine_simulationTimestep: StringName = "/v1/burst_engine/simulation_timestep"
 var GET_system_healthCheck: StringName = "/v1/system/health_check"
 var POST_insight_neurons_membranePotentialStatus: StringName = '/v1/insight/neurons/membrane_potential_status'
 var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuron/synaptic_potential_status'
@@ -42,7 +42,7 @@ var GET_agent_properties: StringName = "/v1/agent/properties"
 var GET_input_vision: StringName = "/v1/input/vision"
 
 # Post Requests
-var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
+var POST_feagi_burstEngine: StringName = "/v1/burst_engine/simulation_timestep"
 var POST_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_cortical_area"
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"

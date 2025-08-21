@@ -70,8 +70,14 @@ func decode_response_as_generic_error_code() -> PackedStringArray:
 	var friendly_description: StringName = "UNDECODABLE"
 	var feagi_error_response = JSON.parse_string(response_body.get_string_from_utf8()) # should be dictionary but may be null
 	if feagi_error_response is Dictionary:
-		if "code" in feagi_error_response.keys():
+		# Try FEAGI's current format first
+		if "error_code" in feagi_error_response.keys():
+			error_code = feagi_error_response["error_code"]
+		elif "code" in feagi_error_response.keys():
 			error_code = feagi_error_response["code"]
-		if "description" in feagi_error_response.keys():
+		
+		if "message" in feagi_error_response.keys():
+			friendly_description = feagi_error_response["message"]
+		elif "description" in feagi_error_response.keys():
 			friendly_description = feagi_error_response["description"]
 	return PackedStringArray([error_code, friendly_description])

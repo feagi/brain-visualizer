@@ -178,12 +178,59 @@ func _send_update(send_button: Button) -> void:
 	if send_button.name in _growing_cortical_update:
 		send_button.disabled = true
 		if len(_cortical_area_refs) > 1:
-			FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[send_button.name])
-		else:
-			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_cortical_area_refs[0].cortical_ID, _growing_cortical_update[send_button.name])
+			var area_names = []
+			for area in _cortical_area_refs:
+				area_names.append(area.cortical_ID)
+			var update_data = _growing_cortical_update[send_button.name]
+			print("UI: Attempting to update %d cortical areas %s with data: %s" % [len(_cortical_area_refs), area_names, update_data])
+			
+			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_areas(_cortical_area_refs, update_data)
 			if result.has_errored:
-				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", "FEAGI was unable to update this cortical area!"))
+				# Get detailed error information
+				var error_details = result.decode_response_as_generic_error_code()
+				var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+				
+				# Log detailed error information
+				push_error("UI: Failed to update cortical areas %s. %s" % [area_names, error_message])
+				print("UI: Update failed for cortical areas %s" % area_names)
+				print("UI: - Update data sent: %s" % update_data)
+				print("UI: - Error details: %s" % error_message)
+				print("UI: - Has timed out: %s" % result.has_timed_out)
+				print("UI: - Failed requirement: %s" % result.failed_requirement)
+				print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+				
+				# Show popup with more detailed error message
+				var detailed_popup_message = "FEAGI was unable to update cortical areas %s.\n\n%s\n\nCheck console for full details." % [area_names, error_message]
+				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 				close_window()
+			else:
+				print("UI: Successfully updated cortical areas %s" % area_names)
+		else:
+			var cortical_id = _cortical_area_refs[0].cortical_ID
+			var update_data = _growing_cortical_update[send_button.name]
+			print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, update_data])
+			
+			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, update_data)
+			if result.has_errored:
+				# Get detailed error information
+				var error_details = result.decode_response_as_generic_error_code()
+				var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+				
+				# Log detailed error information
+				push_error("UI: Failed to update cortical area '%s'. %s" % [cortical_id, error_message])
+				print("UI: Update failed for cortical area '%s'" % cortical_id)
+				print("UI: - Update data sent: %s" % update_data)
+				print("UI: - Error details: %s" % error_message)
+				print("UI: - Has timed out: %s" % result.has_timed_out)
+				print("UI: - Failed requirement: %s" % result.failed_requirement)
+				print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+				
+				# Show popup with more detailed error message
+				var detailed_popup_message = "FEAGI was unable to update cortical area '%s'.\n\n%s\n\nCheck console for full details." % [cortical_id, error_message]
+				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+				close_window()
+			else:
+				print("UI: Successfully updated cortical area '%s'" % cortical_id)
 		_growing_cortical_update[send_button.name] = {}
 		
 

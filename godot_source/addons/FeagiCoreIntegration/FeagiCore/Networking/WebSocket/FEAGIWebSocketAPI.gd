@@ -273,11 +273,41 @@ func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
 	else:
 		print("   ❌ Failed to fetch cortical area '", cortical_id, "' from FEAGI: ", result.failed_requirement)
 
+func _get_cortical_area_case_insensitive(cortical_id: StringName) -> AbstractCorticalArea:
+	# First try exact match (most common case)
+	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id)
+	if area:
+		return area
+	
+	# Check case mapping cache
+	var lowercase_id = cortical_id.to_lower()
+	if lowercase_id in _case_mapping_cache:
+		var cached_id = _case_mapping_cache[lowercase_id]
+		area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cached_id)
+		if area:
+			return area
+		else:
+			# Cached mapping is stale, remove it
+			_case_mapping_cache.erase(lowercase_id)
+	
+	# Do case-insensitive search and cache the result
+	for cached_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		if cached_id.to_lower() == lowercase_id:
+			_case_mapping_cache[lowercase_id] = cached_id
+			area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cached_id]
+			# Only log the first time we discover a case mismatch
+			if cortical_id != cached_id:
+				print("   🔄 Case mismatch detected: neuron data '%s' → cached area '%s' (cached for future lookups)" % [cortical_id, cached_id])
+			return area
+	
+	return null
+
 func _on_genome_reloaded() -> void:
 	# Reset missing cortical area tracking when genome reloads
 	# This allows areas to be fetched again if they're still missing after reload
 	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
 	_missing_cortical_areas.clear()
+	_case_mapping_cache.clear()  # Clear case mapping cache too
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
