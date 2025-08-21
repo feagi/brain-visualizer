@@ -1,6 +1,9 @@
 extends RefCounted
 class_name FEAGILocalCache
 
+# Import the MappingRestrictionsAPI
+const MappingRestrictionsAPI = preload("res://addons/FeagiCoreIntegration/FeagiCore/ConfigScripts/MappingRestrictions.gd")
+
 ## Helper function to safely convert dimensions data that might be Array or Dictionary
 func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
 	if data is Array:

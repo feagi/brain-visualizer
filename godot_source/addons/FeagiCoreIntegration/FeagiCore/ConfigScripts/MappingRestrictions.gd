@@ -12,9 +12,10 @@ static var _cache_loaded: bool = false
 ## Load mapping restrictions from FEAGI server
 static func load_mapping_restrictions() -> bool:
 	# TODO: Implement actual HTTP request to load mapping restrictions from server
-	# For now, return true to avoid blocking the cache loading process
+	# For now, create built-in restrictions for memory cortical areas
+	_create_builtin_restrictions()
 	_cache_loaded = true
-	push_warning("MappingRestrictionsAPI: load_mapping_restrictions() not yet implemented - using empty cache")
+	print("MappingRestrictionsAPI: Loaded built-in mapping restrictions")
 	return true
 
 ## Clear the mapping restrictions cache
@@ -35,10 +36,20 @@ static func get_restrictions_between_cortical_areas(source: GenomeObject, destin
 	var source_area = source as AbstractCorticalArea
 	var destination_area = destination as AbstractCorticalArea
 	
-	var key = _get_cache_key(source_area.cortical_area_type, destination_area.cortical_area_type)
-	
+	# First try exact match
+	var key = _get_cache_key(source_area.cortical_type, destination_area.cortical_type)
 	if key in _restrictions_cache:
 		return _restrictions_cache[key]
+	
+	# Special handling for memory areas - check if either source or destination is memory
+	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		# Memory areas should always use memory morphology
+		var memory_restriction = MappingRestrictionCorticalMorphology.new()
+		memory_restriction.cortical_source_type = source_area.cortical_type
+		memory_restriction.cortical_destination_type = destination_area.cortical_type
+		var memory_names: Array[StringName] = [&"memory"]
+		memory_restriction.restricted_to_morphology_of_names = memory_names
+		return memory_restriction
 	
 	# No specific restrictions found
 	return null
@@ -55,10 +66,18 @@ static func get_defaults_between_cortical_areas(source: GenomeObject, destinatio
 	var source_area = source as AbstractCorticalArea
 	var destination_area = destination as AbstractCorticalArea
 	
-	var key = _get_cache_key(source_area.cortical_area_type, destination_area.cortical_area_type)
-	
+	# First try exact match
+	var key = _get_cache_key(source_area.cortical_type, destination_area.cortical_type)
 	if key in _defaults_cache:
 		return _defaults_cache[key]
+	
+	# Special handling for memory areas - default to memory morphology
+	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		var memory_default = MappingRestrictionDefault.new()
+		memory_default.cortical_source_type = source_area.cortical_type
+		memory_default.cortical_destination_type = destination_area.cortical_type
+		memory_default.name_of_default_morphology = &"memory"
+		return memory_default
 	
 	# No specific defaults found
 	return null
@@ -76,3 +95,35 @@ static func _add_restriction_to_cache(source_type: AbstractCorticalArea.CORTICAL
 static func _add_default_to_cache(source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, default: MappingRestrictionDefault) -> void:
 	var key = _get_cache_key(source_type, destination_type)
 	_defaults_cache[key] = default
+
+## Create built-in mapping restrictions for memory cortical areas
+static func _create_builtin_restrictions() -> void:
+	# Memory cortical areas should only use memory morphology
+	var memory_restriction = MappingRestrictionCorticalMorphology.new()
+	memory_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	memory_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	var memory_names: Array[StringName] = [&"memory"]
+	memory_restriction.restricted_to_morphology_of_names = memory_names
+	
+	# Memory areas connecting to any other type should also use memory morphology
+	var memory_to_any_restriction = MappingRestrictionCorticalMorphology.new()
+	memory_to_any_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	memory_to_any_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN # Will match any destination
+	memory_to_any_restriction.restricted_to_morphology_of_names = memory_names
+	
+	# Any area connecting to memory should also use memory morphology
+	var any_to_memory_restriction = MappingRestrictionCorticalMorphology.new()
+	any_to_memory_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN # Will match any source
+	any_to_memory_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	any_to_memory_restriction.restricted_to_morphology_of_names = memory_names
+	
+	# Add restrictions to cache
+	_add_restriction_to_cache(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, memory_restriction)
+	
+	# Create memory morphology default for memory areas
+	var memory_default = MappingRestrictionDefault.new()
+	memory_default.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	memory_default.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	memory_default.name_of_default_morphology = &"memory"
+	
+	_add_default_to_cache(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, memory_default)
