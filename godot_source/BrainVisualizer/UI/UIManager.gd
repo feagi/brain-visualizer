@@ -310,7 +310,6 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 func _update_screen_size():
 	_screen_size = get_viewport().get_visible_rect().size
 	screen_size_changed.emit(screen_size)
-	print("UI: Window Size Change Detected!")
 
 ## Used to reposition notifications so they dont intersect with top bar
 func _top_bar_resized() -> void:

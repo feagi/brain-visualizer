@@ -22,7 +22,7 @@ func FEAGI_add_core_cortical_area(cortical_ID: StringName, cortical_name: String
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
-	print("FEAGI CACHE: Added core cortical area %s" % cortical_ID)
+	print("FEAGI CACHE: ✅ Added core cortical area %s (cache size: %d)" % [cortical_ID, _available_cortical_areas.size()])
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type custom by ID and emits a signal that this was done. Should only be called from FEAGI!
@@ -33,7 +33,7 @@ func FEAGI_add_custom_cortical_area(cortical_ID: StringName, cortical_name: Stri
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
 	_available_cortical_areas[cortical_ID] = new_area
-	print("FEAGI CACHE: Added custom cortical area %s" % cortical_ID)
+	print("FEAGI CACHE: ✅ Added custom cortical area %s (cache size: %d)" % [cortical_ID, _available_cortical_areas.size()])
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU by ID and emits a signal that this was done. Should only be called from FEAGI!
@@ -177,7 +177,7 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			FEAGI_add_memory_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		_:
-			push_error("FEAGI CACHE: Unable to spawn cortical area of unknown type! Skipping!")
+			push_error("FEAGI CACHE: Unable to spawn cortical area of unknown type %s! Skipping!" % type)
 
 ## Updates a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func FEAGI_update_cortical_area_from_dict(all_cortical_area_properties: Dictionary) -> void:
@@ -202,7 +202,7 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 		return
 	_available_cortical_areas[removed_cortical_ID].FEAGI_delete_cortical_area()
 	cortical_area_about_to_be_removed.emit(_available_cortical_areas[removed_cortical_ID])
-	print("FEAGI CACHE: Removing cortical area %s" % removed_cortical_ID)
+	print("FEAGI CACHE: 🗑️ Removing individual cortical area %s (called from: %s)" % [removed_cortical_ID, get_stack()[1].source])
 	_available_cortical_areas.erase(removed_cortical_ID)
 	
 #endregion
@@ -239,7 +239,9 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 
 ## Removes all cached cortical areas (and their connections). Should only be called during a reset
 func FEAGI_hard_wipe_available_cortical_areas():
-	print("CACHE: Wiping cortical areas")
+	var area_count = _available_cortical_areas.size()
+	var area_names = _available_cortical_areas.keys()
+	print("CACHE: Wiping %d cortical areas: %s" % [area_count, area_names])
 	for cortical_ID in _available_cortical_areas:
 		var area: AbstractCorticalArea = _available_cortical_areas[cortical_ID]
 		area.FEAGI_delete_cortical_area()

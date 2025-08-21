@@ -34,7 +34,9 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "neuron_mp_charge_accumulation" in data.keys(): 
 		neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
 	if "neuron_excitability" in data.keys():
-		neuron_excitability = data["neuron_excitability"]
+		# Convert from 0-1 range to 0-100 percentage for UI display
+		var excitability_float = float(data["neuron_excitability"])
+		neuron_excitability = int(round(excitability_float * 100.0))
 	return
 
 var neuron_mp_charge_accumulation: bool:

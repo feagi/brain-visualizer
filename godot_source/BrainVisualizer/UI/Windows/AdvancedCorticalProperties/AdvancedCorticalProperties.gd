@@ -168,6 +168,9 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 		value = FEAGIUtils.vector3i_to_array(value)
 	elif value is Vector3:
 		value = FEAGIUtils.vector3_to_array(value)
+	elif key_name == "neuron_excitability":
+		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
+		value = float(value) / 100.0
 	_growing_cortical_update[send_button.name][key_name] = value
 	send_button.disabled = false
 

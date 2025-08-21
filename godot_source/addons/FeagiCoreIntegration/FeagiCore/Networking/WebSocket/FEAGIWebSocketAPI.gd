@@ -33,6 +33,18 @@ var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
 var _temp_genome_ID: float = 0.0
 
+# Missing cortical area handling
+var _missing_cortical_areas: Dictionary = {}  # cortical_id -> {last_warning_time, fetch_attempted}
+const MISSING_AREA_WARNING_INTERVAL: float = 10.0  # Only warn every 10 seconds per area
+
+# Case-insensitive cortical area mapping cache
+var _case_mapping_cache: Dictionary = {}  # lowercase_id -> actual_cached_id
+
+func _ready():
+	# Reset missing area tracking when genome reloads
+	if FeagiCore.feagi_local_cache:
+		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
+
 func _process(_delta: float):
 	_socket.poll()
 	match(_socket.get_ready_state()):
@@ -197,11 +209,12 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				)
 				
 				# Update cortical area with bulk arrays
-				var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id)
+				var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+				
 				if area:
 					area.FEAGI_set_direct_points_bulk_data(area_data.x_array, area_data.y_array, area_data.z_array, area_data.p_array)
 				else:
-					print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache")
+					_handle_missing_cortical_area(cortical_id)
 
 		_: # Unknown
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
@@ -212,6 +225,59 @@ func _reconnect_websocket() -> void:
 	_socket =  WebSocketPeer.new()
 	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
 	_socket.connect_to_url(_socket_web_address)
+
+func _handle_missing_cortical_area(cortical_id: StringName) -> void:
+	var current_time = Time.get_time_dict_from_system()
+	var current_timestamp = current_time.hour * 3600 + current_time.minute * 60 + current_time.second
+	
+	# Initialize tracking for this cortical area if not seen before
+	if cortical_id not in _missing_cortical_areas:
+		_missing_cortical_areas[cortical_id] = {
+			"last_warning_time": 0.0,
+			"fetch_attempted": false
+		}
+	
+	var area_info = _missing_cortical_areas[cortical_id]
+	var time_since_last_warning = current_timestamp - area_info.last_warning_time
+	
+	# Only show warning if enough time has passed
+	if time_since_last_warning >= MISSING_AREA_WARNING_INTERVAL:
+		print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache (will retry fetching) - cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
+		area_info.last_warning_time = current_timestamp
+		
+		# Attempt to fetch the missing cortical area from FEAGI (only once per area)
+		# But skip if genome is currently reloading or processing, as it will be wiped anyway
+		if not area_info.fetch_attempted and FeagiCore.can_interact_with_feagi():
+			var genome_state = FeagiCore.genome_load_state
+			if genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING or genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_PROCESSING:
+				print("   ⏸️  Skipping fetch for '", cortical_id, "' - genome is reloading/processing")
+				return
+			area_info.fetch_attempted = true
+			print("   🔄 Attempting to fetch missing cortical area '", cortical_id, "' from FEAGI...")
+			_fetch_missing_cortical_area_async(cortical_id)
+
+func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
+	# Fetch the cortical area details from FEAGI
+	var result = await FeagiCore.requests.get_cortical_area(cortical_id)
+	if not result.has_errored:
+		print("   ✅ Successfully fetched missing cortical area '", cortical_id, "' from FEAGI")
+		
+		# Verify it's actually in the cache now
+		await get_tree().process_frame  # Wait one frame for any pending operations
+		if cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+			print("   ✅ Confirmed: '", cortical_id, "' is now in cache")
+			_missing_cortical_areas.erase(cortical_id)
+		else:
+			push_error("   ❌ CRITICAL: '", cortical_id, "' was fetched but is NOT in cache! Cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
+			# Don't erase from tracking so it can be retried
+	else:
+		print("   ❌ Failed to fetch cortical area '", cortical_id, "' from FEAGI: ", result.failed_requirement)
+
+func _on_genome_reloaded() -> void:
+	# Reset missing cortical area tracking when genome reloads
+	# This allows areas to be fetched again if they're still missing after reload
+	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
+	_missing_cortical_areas.clear()
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
