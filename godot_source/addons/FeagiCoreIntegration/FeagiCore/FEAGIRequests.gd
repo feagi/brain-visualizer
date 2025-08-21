@@ -562,7 +562,14 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully retrieved details of cortical area %s" % checking_cortical_ID)
-	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
+	
+	# Handle nested properties structure - FEAGI returns {"properties": {...}}
+	var properties_dict: Dictionary = response
+	if "properties" in response:
+		properties_dict = response["properties"]
+		properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
+	
+	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
 	return FEAGI_response_data
 
 ### Requests information on multiple cortical areas
@@ -587,7 +594,14 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	var responses: Array = FEAGI_response_data.decode_response_as_array()
 	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(checking_areas))
 	for response in responses:
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(response)
+		# Handle nested properties structure for multi-area responses
+		var properties_dict: Dictionary = response
+		if "properties" in response and response["properties"] is Dictionary:
+			properties_dict = response["properties"]
+			# Add cortical_id if it exists in the root response
+			if "cortical_id" in response:
+				properties_dict["cortical_id"] = response["cortical_id"]
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
 	return FEAGI_response_data
 	
 
@@ -630,6 +644,11 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_custom_cortical_area( response["cortical_id"], cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, parent_region)
 	print("FEAGI REQUEST: Successfully created custom cortical area by name %s with ID %s" % [cortical_name, response["cortical_id"]])
+	
+	# Automatically fetch detailed properties for the newly created cortical area
+	await get_cortical_area(response["cortical_id"])
+	print("FEAGI REQUEST: Fetched detailed properties for newly created cortical area %s" % response["cortical_id"])
+	
 	return FEAGI_response_data
 
 
@@ -672,6 +691,11 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_memory_cortical_area( response["cortical_id"], cortical_name, coordinates_3D, dimensions, is_coordinate_2D_defined, coordinates_2D, parent_region)
 	print("FEAGI REQUEST: Successfully created custom memory cortical area by name %s with ID %s" % [cortical_name, response["cortical_id"]])
+	
+	# Automatically fetch detailed properties for the newly created cortical area
+	await get_cortical_area(response["cortical_id"])
+	print("FEAGI REQUEST: Fetched detailed properties for newly created memory cortical area %s" % response["cortical_id"])
+	
 	return FEAGI_response_data
 
 
@@ -718,6 +742,11 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_output_cortical_area(IOPU_template.ID, IOPU_template, device_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	
 	print("FEAGI REQUEST: Successfully created custom cortical area by name %s with ID %s" % [IOPU_template.cortical_name, response["cortical_id"]])
+	
+	# Automatically fetch detailed properties for the newly created cortical area
+	await get_cortical_area(response["cortical_id"])
+	print("FEAGI REQUEST: Fetched detailed properties for newly created IOPU cortical area %s" % response["cortical_id"])
+	
 	return FEAGI_response_data
 
 

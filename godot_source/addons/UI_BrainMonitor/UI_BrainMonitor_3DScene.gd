@@ -59,6 +59,10 @@ func setup(region: BrainRegion) -> void:
 	for area: AbstractCorticalArea in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 	
+	# Connect to cache signals to handle dynamic cortical area additions/removals
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_add_cortical_area)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_remove_cortical_area)
+	
 
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
