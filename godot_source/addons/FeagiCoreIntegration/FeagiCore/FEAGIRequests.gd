@@ -6,6 +6,19 @@ class_name FEAGIRequests
 # WARNING: You probably don't want to call this directly!
 ## Runs a single (non-polling) healthcheck update
 func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRequestOutput:
+	# Check if network components are properly initialized
+	if not FeagiCore.network:
+		push_error("FEAGI Requests: FeagiCore.network is null")
+		return FeagiRequestOutput.requirement_fail("NETWORK_NULL")
+	
+	if not FeagiCore.network.http_API:
+		push_error("FEAGI Requests: FeagiCore.network.http_API is null")
+		return FeagiRequestOutput.requirement_fail("HTTP_API_NULL")
+	
+	if not FeagiCore.network.http_API.address_list:
+		push_error("FEAGI Requests: FeagiCore.network.http_API.address_list is null")
+		return FeagiRequestOutput.requirement_fail("ADDRESS_LIST_NULL")
+	
 	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_healthCheck)
 	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
 	

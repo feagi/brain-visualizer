@@ -48,6 +48,9 @@ var _delay_between_bursts: float = 0
 var _skip_rate: int = 0
 var _supression_threshold: int = 0
 
+# Timer for periodic simulation_timestep checks
+var _simulation_timestep_timer: Timer
+
 
 
 # FEAGICore initialization starts here before any external action
@@ -141,6 +144,9 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check contains required keys")
 	process_output_for_cache.call(raw_output)
 	
+	# Start periodic HTTP health check for simulation_timestep (websocket doesn't have it)
+	_start_periodic_simulation_timestep_check()
+	
 	print("FEAGICORE: [3D_SCENE_DEBUG] Evaluating genome state...")
 	print("FEAGICORE: [3D_SCENE_DEBUG] - genome_availability: ", feagi_local_cache.genome_availability)
 	print("FEAGICORE: [3D_SCENE_DEBUG] - brain_readiness: ", feagi_local_cache.brain_readiness)
@@ -161,6 +167,46 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
 	
 	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
+
+func _start_periodic_simulation_timestep_check() -> void:
+	"""Start periodic HTTP health check to get simulation_timestep (websocket doesn't provide it)"""
+	# Check if network components are ready
+	if not network or not network.http_API or not requests:
+		push_warning("FEAGI CORE: Network not ready - skipping simulation_timestep periodic check")
+		return
+
+	if _simulation_timestep_timer:
+		_simulation_timestep_timer.queue_free()
+
+	_simulation_timestep_timer = Timer.new()
+	_simulation_timestep_timer.name = "SimulationTimestepTimer"
+	_simulation_timestep_timer.wait_time = 5.0  # Check every 5 seconds
+	_simulation_timestep_timer.timeout.connect(_fetch_simulation_timestep)
+	add_child(_simulation_timestep_timer)
+	_simulation_timestep_timer.start()
+
+	# Also fetch it immediately
+	_fetch_simulation_timestep()
+
+func _fetch_simulation_timestep() -> void:
+	"""Fetch simulation_timestep from HTTP health check"""
+	# Check if requests object is available
+	if not requests:
+		push_error("FEAGI CORE: requests object is null - cannot fetch simulation_timestep")
+		return
+
+	var response = await requests.single_health_check_call(true)
+	if not response.success:
+		var error_details = ""
+		if response.has_timed_out:
+			error_details = "Request timed out"
+		elif response.has_errored:
+			error_details = "HTTP error occurred"
+		elif response.failed_requirement:
+			error_details = "Requirement failed: " + str(response.failed_requirement_key)
+		else:
+			error_details = "Unknown error"
+		push_warning("FEAGI CORE: Failed to fetch simulation_timestep from HTTP health check: " + error_details)
 
 
 # Disconnect from FEAGI
