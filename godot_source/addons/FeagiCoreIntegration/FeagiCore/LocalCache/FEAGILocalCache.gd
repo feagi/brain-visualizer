@@ -274,27 +274,48 @@ var _pending_amalgamation: StringName = ""
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	
 	if "genome_availability" in health and "brain_readiness" in health:
-		if health["genome_availability"] != _genome_availability or health["brain_readiness"] != _brain_readiness:
-			genome_availability_or_brain_readiness_changed.emit(health["genome_availability"], health["brain_readiness"])
+		var genome_avail = health["genome_availability"]
+		var brain_ready = health["brain_readiness"]
+		if genome_avail != null and brain_ready != null:
+			if bool(genome_avail) != _genome_availability or bool(brain_ready) != _brain_readiness:
+				genome_availability_or_brain_readiness_changed.emit(bool(genome_avail), bool(brain_ready))
 	
 	if "burst_engine" in health: 
-		burst_engine = health["burst_engine"]
+		var value = health["burst_engine"]
+		if value != null:
+			burst_engine = bool(value)
 	if "influxdb_availability" in health: 
-		influxdb_availability = health["influxdb_availability"]
+		var value = health["influxdb_availability"]
+		if value != null:
+			influxdb_availability = bool(value)
 	if "neuron_count_max" in health: 
-		neuron_count_max = int(health["neuron_count_max"])
+		var value = health["neuron_count_max"]
+		if value != null:
+			neuron_count_max = int(value)
 	if "synapse_count_max" in health: 
-		synapse_count_max = int(health["synapse_count_max"])
+		var value = health["synapse_count_max"]
+		if value != null:
+			synapse_count_max = int(value)
 	if "neuron_count" in health: 
-		neuron_count_current = int(health["neuron_count"])
+		var value = health["neuron_count"]
+		if value != null:
+			neuron_count_current = int(value)
 	if "synapse_count" in health: 
-		synapse_count_current = int(health["synapse_count"])
+		var value = health["synapse_count"]
+		if value != null:
+			synapse_count_current = int(value)
 	if "genome_availability" in health: 
-		genome_availability = health["genome_availability"]
+		var value = health["genome_availability"]
+		if value != null:
+			genome_availability = bool(value)
 	if "genome_validity" in health: 
-		genome_validity = health["genome_validity"]
+		var value = health["genome_validity"]
+		if value != null:
+			genome_validity = bool(value)
 	if "brain_readiness" in health: 
-		brain_readiness = health["brain_readiness"]
+		var value = health["brain_readiness"]
+		if value != null:
+			brain_readiness = bool(value)
 	
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
