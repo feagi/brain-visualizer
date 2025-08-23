@@ -600,7 +600,12 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			push_warning("FEAGI REQUEST: Parent region '%s' not found for cortical area '%s', using root region" % [parent_region_id, checking_cortical_ID])
 			parent_region_id = BrainRegion.ROOT_REGION_ID
 		
-		var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[parent_region_id]
+		var parent_region_data = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[parent_region_id]
+		if not parent_region_data is BrainRegion:
+			push_error("FEAGI REQUEST: Parent region '%s' is not a BrainRegion object (type: %s), cannot create cortical area '%s'" % [parent_region_id, type_string(typeof(parent_region_data)), checking_cortical_ID])
+			return FeagiRequestOutput.requirement_fail("INVALID_PARENT_REGION")
+		
+		var parent_region: BrainRegion = parent_region_data as BrainRegion
 		print("FEAGI REQUEST: About to call FEAGI_add_cortical_area_from_dict for %s" % checking_cortical_ID)
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, checking_cortical_ID)
 		print("FEAGI REQUEST: Finished calling FEAGI_add_cortical_area_from_dict for %s" % checking_cortical_ID)
