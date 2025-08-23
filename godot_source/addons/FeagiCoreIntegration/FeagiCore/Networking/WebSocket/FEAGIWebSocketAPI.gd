@@ -227,6 +227,7 @@ func _reconnect_websocket() -> void:
 	_socket.connect_to_url(_socket_web_address)
 
 func _handle_missing_cortical_area(cortical_id: StringName) -> void:
+	print("🔍 DEBUG: _handle_missing_cortical_area() called for '%s'" % cortical_id)
 	var current_time = Time.get_time_dict_from_system()
 	var current_timestamp = current_time.hour * 3600 + current_time.minute * 60 + current_time.second
 	
@@ -257,6 +258,13 @@ func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 			_fetch_missing_cortical_area_async(cortical_id)
 
 func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
+	print("🔍 DEBUG: _fetch_missing_cortical_area_async() called for '%s'" % cortical_id)
+	# Double-check if the area is actually missing before fetching
+	if cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		print("   ℹ️ Cortical area '", cortical_id, "' is already in cache, skipping fetch")
+		_missing_cortical_areas.erase(cortical_id)
+		return
+	
 	# Fetch the cortical area details from FEAGI
 	var result = await FeagiCore.requests.get_cortical_area(cortical_id)
 	if not result.has_errored:
@@ -271,7 +279,9 @@ func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
 			push_error("   ❌ CRITICAL: '", cortical_id, "' was fetched but is NOT in cache! Cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
 			# Don't erase from tracking so it can be retried
 	else:
-		print("   ❌ Failed to fetch cortical area '", cortical_id, "' from FEAGI: ", result.failed_requirement)
+		print("   ❌ Failed to fetch cortical area '", cortical_id, "' from FEAGI - this may be expected if the area doesn't exist")
+		# Don't retry immediately for areas that return 400 errors
+		_missing_cortical_areas.erase(cortical_id)
 
 func _get_cortical_area_case_insensitive(cortical_id: StringName) -> AbstractCorticalArea:
 	# First try exact match (most common case)

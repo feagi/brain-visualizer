@@ -35,6 +35,11 @@ func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRe
 func reload_genome() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] reload_genome() called - starting genome data retrieval...")
 	
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
 	var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
@@ -541,6 +546,8 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 
 ## Requests an update of a cortical area's properties a single time
 func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
+	print("🔍 DEBUG: get_cortical_area() called for '%s'" % checking_cortical_ID)
+	print("🔍 DEBUG: Call stack: ", get_stack())
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -601,10 +608,20 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 
 ### Requests information on multiple cortical areas
 func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Basic FeagiCore checks first
+	if !FeagiCore:
+		push_error("FEAGI Requests: FeagiCore is null!")
+		return FeagiRequestOutput.requirement_fail("FEAGICORE_NULL")
+	
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Additional network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
 	
 	# Define Request
 	var IDs: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(checking_areas)
@@ -732,6 +749,11 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Additional network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
 	if IOPU_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: I/OPU area of ID %s already exists!!" % IOPU_template.ID)
 		return FeagiRequestOutput.requirement_fail("ID_EXISTS")
@@ -825,6 +847,12 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	
 	# Define Request
 	properties["cortical_id"] = editing_ID  # ensure
+	
+	# Double-check network components right before use (race condition protection)
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
 	print("FEAGI REQUEST: Making PUT request to %s for cortical area %s with data: %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID, properties])
 	
@@ -841,7 +869,6 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 		print("FEAGI REQUEST: ❌ Request data sent: %s" % properties)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
-	get_cortical_area(editing_ID)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 
@@ -1551,6 +1578,31 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 
 #endregion
 
+
+## Check if network components are properly initialized
+func _check_network_components_ready() -> FeagiRequestOutput:
+	if !FeagiCore.network:
+		push_error("FEAGI Requests: Network component is null!")
+		return FeagiRequestOutput.requirement_fail("NETWORK_NULL")
+	if !FeagiCore.network.http_API:
+		push_error("FEAGI Requests: HTTP API component is null!")
+		return FeagiRequestOutput.requirement_fail("HTTP_API_NULL")
+	if !FeagiCore.network.http_API.address_list:
+		push_error("FEAGI Requests: Address list is null!")
+		return FeagiRequestOutput.requirement_fail("ADDRESS_LIST_NULL")
+	return null  # null means all checks passed
+
+## Safe wrapper for making HTTP calls with network component validation
+func _make_safe_http_call(request_definition: APIRequestWorkerDefinition) -> APIRequestWorker:
+	# Check network components right before making the call
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		# Return a fake worker that immediately fails
+		var fake_worker = APIRequestWorker.new()
+		# We can't easily create a failed worker, so we'll let the caller handle the null check
+		return null
+	
+	return FeagiCore.network.http_API.make_HTTP_call(request_definition)
 
 ## Used for error automated error handling of HTTP requests, outputs booleans to set up easy early returns
 func _return_if_HTTP_failed_and_automatically_handle(output: FeagiRequestOutput, optional_input_for_debugging: APIRequestWorkerDefinition = null) -> bool:

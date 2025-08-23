@@ -62,7 +62,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_refresh_all_relevant()
 	
 	# Request the newest state from feagi, and dont continue until then
-	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	# Only if FeagiCore is ready and network components are initialized
+	if FeagiCore and FeagiCore.requests and FeagiCore.can_interact_with_feagi() and FeagiCore.network and FeagiCore.network.http_API and FeagiCore.network.http_API.address_list:
+		await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	else:
+		print("UI: Advanced Cortical Properties - Skipping FEAGI update request as network is not ready")
 	
 	# refresh all relevant sections again
 	_refresh_all_relevant()
@@ -175,6 +179,11 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 	send_button.disabled = false
 
 func _send_update(send_button: Button) -> void:
+	# Check if FeagiCore and requests are available
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot send update - FeagiCore or requests not available")
+		return
+	
 	if send_button.name in _growing_cortical_update:
 		send_button.disabled = true
 		if len(_cortical_area_refs) > 1:
@@ -513,6 +522,11 @@ func _refresh_from_cache_monitoring() -> void:
 
 
 func _montoring_update_button_pressed() -> void:
+	# Check if FeagiCore and requests are available
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot send monitoring update - FeagiCore or requests not available")
+		return
+	
 	#TODO this only works for single areas, improve
 	FeagiCore.requests.toggle_membrane_monitoring(_cortical_area_refs, membrane_toggle.button_pressed)
 	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_area_refs, post_synaptic_toggle.button_pressed)
@@ -562,7 +576,7 @@ func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
 		false
 	)
-	var delete_request: Callable = FeagiCore.requests.delete_mappings_between_corticals.bind(area, _cortical_area_refs[0])
+	var delete_request: Callable = _safe_delete_afferent_mapping.bind(area, _cortical_area_refs[0])
 	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
 		"Delete these mappings?",
 		"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
@@ -581,7 +595,7 @@ func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
 		false
 	)
-	var delete_request: Callable = FeagiCore.requests.delete_mappings_between_corticals.bind(_cortical_area_refs[0], area)
+	var delete_request: Callable = _safe_delete_efferent_mapping.bind(_cortical_area_refs[0], area)
 	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
 		"Delete these mappings?",
 		"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
@@ -624,8 +638,29 @@ func _user_pressed_delete_button() -> void:
 	close_window()
 
 func _user_pressed_reset_button() -> void:
+	# Check if FeagiCore and requests are available
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot reset cortical areas - FeagiCore or requests not available")
+		return
+	
 	FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
 	BV.NOTIF.add_notification("Reseting cortical areas...")
 	close_window()
+
+#endregion
+
+#region Safe FEAGI Request Wrappers
+
+func _safe_delete_afferent_mapping(source_area: AbstractCorticalArea, dest_area: AbstractCorticalArea) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot delete afferent mapping - FeagiCore or requests not available")
+		return
+	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+
+func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area: AbstractCorticalArea) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot delete efferent mapping - FeagiCore or requests not available")
+		return
+	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
 
 #endregion
