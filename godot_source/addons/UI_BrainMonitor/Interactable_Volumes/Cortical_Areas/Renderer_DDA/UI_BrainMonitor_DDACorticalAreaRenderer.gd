@@ -29,7 +29,9 @@ func setup(area: AbstractCorticalArea) -> void:
 	_static_body = PREFAB.instantiate()
 	_DDA_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
 	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
+	
 	(_static_body.get_node("MeshInstance3D") as MeshInstance3D).material_override = _DDA_mat
+	
 	add_child(_static_body)
 	
 	_friendly_name_label = Label3D.new()
@@ -40,6 +42,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_activation_image_texture = ImageTexture.new()
 	_highlight_image_texture = ImageTexture.new()
 	_selection_image_texture = ImageTexture.new()
+	
 	_position_FEAGI_space = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)

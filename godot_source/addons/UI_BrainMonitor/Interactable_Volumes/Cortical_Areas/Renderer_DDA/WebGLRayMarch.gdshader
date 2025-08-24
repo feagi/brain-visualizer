@@ -132,24 +132,58 @@ void fragment()
 
 
 
-	/// Calculate wall count color for "background"
-	ivec3 number_walls_per_direction = get_number_wall_intersections(local_vert_space_m05_05, individual_voxel_size, ray_direction_mn); // TODO -> floating point error causing errors counting, investigate
-	float wall_transparency = (float(number_walls_per_direction.x) * voxel_opacity) + (float(number_walls_per_direction.y) * voxel_opacity) + (float(number_walls_per_direction.z) * voxel_opacity); // TODO this looks bad
+	/// Calculate wall count color for "background" - OUTER SHELL ONLY
+	ivec3 number_walls_per_direction = get_number_wall_intersections(local_vert_space_m05_05, individual_voxel_size, ray_direction_mn);
+	
+	// Calculate if we're near the outer boundary (shell rendering)
+	vec3 abs_position = abs(local_vert_space_m05_05); // Distance from center
+	float max_distance = max(max(abs_position.x, abs_position.y), abs_position.z); // Distance to nearest face
+	
+	// SMART TRANSPARENCY: Only reduce opacity when there's actual layer accumulation
+	float dim_x = float(voxel_count_x);
+	float dim_y = float(voxel_count_y);
+	float dim_z = float(voxel_count_z);
+	
+	// Calculate base transparency
+	float base_transparency = (float(number_walls_per_direction.x) + float(number_walls_per_direction.y) + float(number_walls_per_direction.z)) * voxel_opacity;
+	
+	// Only reduce transparency if ALL dimensions are >= 2 (to avoid affecting thin areas)
+	float thickness_factor = 1.0; // Default: keep full opacity
+	
+	if (dim_x >= 2.0 && dim_y >= 2.0 && dim_z >= 2.0) {
+		// All dimensions are thick enough to cause layer accumulation
+		float max_dimension = max(max(dim_x, dim_y), dim_z);
+		
+		if (max_dimension > 20.0) {
+			// Very thick areas (like 30x30x30 or 50x50x10): Very transparent
+			thickness_factor = 0.02; // 2% opacity
+		} else if (max_dimension > 10.0) {
+			// Medium thick areas: Moderately transparent
+			thickness_factor = 0.1; // 10% opacity
+		}
+		// else: keep full opacity for smaller thick areas
+	}
+	// else: keep full opacity for thin areas (like 64x64x1, 1000000x1x1, etc.)
+	
+	float wall_transparency = base_transparency * thickness_factor;
 
 
 
-	/// Calculate final pixel color
+	/// Calculate final pixel color - PRESERVE SHELL TRANSPARENCY
 	final_color.a = wall_transparency;
+	
 	if(neuron_highlight_has_hit)
 	{
 		final_color.b = 1.0;
-		final_color.a = 1.0;
+		// Keep shell transparency instead of forcing alpha = 1.0
+		final_color.a = max(wall_transparency, 0.8); // Slightly more visible when highlighted
 	}
 
 	if(neuron_selection_has_hit)
 	{
 		final_color.g = 1.0;
-		final_color.a = 1.0;
+		// Keep shell transparency instead of forcing alpha = 1.0
+		final_color.a = max(wall_transparency, 0.8); // Slightly more visible when selected
 	}
 
 	if(neuron_activation_has_hit)
@@ -159,7 +193,8 @@ void fragment()
 		float z_offset_color = local_hit_space_mn.z;
 		
 		final_color.rgb = vec3(z_offset_color, 0.0, 0.0);
-		final_color.a = 1.0;
+		// Keep shell transparency instead of forcing alpha = 1.0
+		final_color.a = max(wall_transparency, 0.6); // More visible when neurons are active
 	}
 
 

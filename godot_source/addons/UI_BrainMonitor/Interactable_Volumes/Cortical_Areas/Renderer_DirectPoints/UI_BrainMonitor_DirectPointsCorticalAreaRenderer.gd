@@ -169,7 +169,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	"""Handle Type 11 direct neural points data with Z-DEPTH COLORING"""
 	
 	var point_count = x_array.size()
-	print("🔥 DirectPoints: Received new neuron data with %d points - restarting timer" % point_count)
+	# Received new neuron data - restarting timer
 	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
@@ -322,29 +322,28 @@ func _start_visibility_timer() -> void:
 		return
 	
 	var simulation_timestep = FeagiCore.feagi_local_cache.simulation_timestep
-	print("🔥 DirectPoints: Starting visibility timer with cached simulation_timestep: %s seconds" % simulation_timestep)
+	# Starting visibility timer with cached simulation_timestep
 	
 	# Stop existing timer if running
 	if _visibility_timer.time_left > 0:
-		print("🔥 DirectPoints: Stopped existing timer")
+		# Stopped existing timer
 		_visibility_timer.stop()
 	
 	# Record when neurons started displaying (using engine ticks for precision)
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
-	print("🔥 DirectPoints: Neurons started displaying at time: %s seconds" % _neuron_display_start_time)
+	# Neurons started displaying
 	
 	# Start timer with simulation_timestep duration
 	_visibility_timer.wait_time = simulation_timestep
 	_visibility_timer.start()
-	print("🔥 DirectPoints: Timer started with wait_time: %s seconds" % simulation_timestep)
+	# Timer started with simulation_timestep duration
 
 func _on_visibility_timeout() -> void:
 	"""Called when the visibility timer expires - clear all neurons"""
 	var current_time = Time.get_ticks_msec() / 1000.0
 	var actual_duration = current_time - _neuron_display_start_time
 	
-	print("🔥 DirectPoints: Visibility timer expired - clearing neurons via timeout")
-	print("🔥 DirectPoints: Neurons were visible for ACTUAL duration: %s seconds (started at: %s, cleared at: %s)" % [actual_duration, _neuron_display_start_time, current_time])
+	# Visibility timer expired - clearing neurons via timeout
 	_clear_all_neurons()
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
