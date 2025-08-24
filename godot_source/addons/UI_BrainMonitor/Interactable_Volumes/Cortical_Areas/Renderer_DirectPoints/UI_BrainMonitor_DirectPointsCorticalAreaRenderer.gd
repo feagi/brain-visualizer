@@ -38,6 +38,10 @@ var _max_neurons: int = 10000  # Performance limit
 var _highlighted_neurons: Array[Vector3i] = []
 var _selected_neurons: Array[Vector3i] = []
 
+# Timer for neuron firing visibility timeout
+var _visibility_timer: Timer
+var _neuron_display_start_time: float = 0.0
+
 func setup(area: AbstractCorticalArea) -> void:
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
@@ -112,6 +116,13 @@ func setup(area: AbstractCorticalArea) -> void:
 	area.recieved_new_direct_neural_points_bulk.connect(_on_received_direct_neural_points_bulk)
 	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)  # Legacy fallback
 	
+	# Setup visibility timer for neuron firing timeout
+	_visibility_timer = Timer.new()
+	_visibility_timer.name = "NeuronVisibilityTimer"
+	_visibility_timer.one_shot = true
+	_visibility_timer.timeout.connect(_on_visibility_timeout)
+	add_child(_visibility_timer)
+	
 	print("DirectPoints voxel renderer setup completed for area: ", area.cortical_ID, " (optimized for bulk processing)")
 
 func update_friendly_name(new_name: String) -> void:
@@ -158,6 +169,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	"""Handle Type 11 direct neural points data with Z-DEPTH COLORING"""
 	
 	var point_count = x_array.size()
+	print("🔥 DirectPoints: Received new neuron data with %d points - restarting timer" % point_count)
 	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
@@ -210,6 +222,9 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		# Batch-friendly MultiMesh operations
 		_multi_mesh.set_instance_transform(i, transform)
 		_multi_mesh.set_instance_color(i, z_depth_color)  # Apply z-depth coloring (NOW PROPERLY CONFIGURED)
+	
+	# Start visibility timer to clear neurons after simulation_timestep
+	_start_visibility_timer()
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
@@ -299,6 +314,38 @@ func _clear_all_neurons() -> void:
 	"""Clear all neuron voxel instances"""
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
+
+func _start_visibility_timer() -> void:
+	"""Start the visibility timer using simulation_timestep from cache"""
+	if not FeagiCore or not FeagiCore.feagi_local_cache:
+		print("🔥 DirectPoints: Cannot start timer - FeagiCore or cache not available")
+		return
+	
+	var simulation_timestep = FeagiCore.feagi_local_cache.simulation_timestep
+	print("🔥 DirectPoints: Starting visibility timer with cached simulation_timestep: %s seconds" % simulation_timestep)
+	
+	# Stop existing timer if running
+	if _visibility_timer.time_left > 0:
+		print("🔥 DirectPoints: Stopped existing timer")
+		_visibility_timer.stop()
+	
+	# Record when neurons started displaying (using engine ticks for precision)
+	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
+	print("🔥 DirectPoints: Neurons started displaying at time: %s seconds" % _neuron_display_start_time)
+	
+	# Start timer with simulation_timestep duration
+	_visibility_timer.wait_time = simulation_timestep
+	_visibility_timer.start()
+	print("🔥 DirectPoints: Timer started with wait_time: %s seconds" % simulation_timestep)
+
+func _on_visibility_timeout() -> void:
+	"""Called when the visibility timer expires - clear all neurons"""
+	var current_time = Time.get_ticks_msec() / 1000.0
+	var actual_duration = current_time - _neuron_display_start_time
+	
+	print("🔥 DirectPoints: Visibility timer expired - clearing neurons via timeout")
+	print("🔥 DirectPoints: Neurons were visible for ACTUAL duration: %s seconds (started at: %s, cleared at: %s)" % [actual_duration, _neuron_display_start_time, current_time])
+	_clear_all_neurons()
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
 	"""Convert world position to neuron coordinate"""

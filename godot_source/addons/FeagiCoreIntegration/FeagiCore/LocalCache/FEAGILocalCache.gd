@@ -202,6 +202,7 @@ signal genome_availability_changed(new_val: int)
 signal genome_validity_changed(new_val: bool)
 signal brain_readiness_changed(new_val: bool)
 signal genome_availability_or_brain_readiness_changed(available: bool, ready: bool)
+signal simulation_timestep_changed(new_timestep: float)
 
 var burst_engine: bool:
 	get: return _burst_engine
@@ -258,6 +259,13 @@ var brain_readiness: bool:
 			_brain_readiness = v
 			brain_readiness_changed.emit(v)
 
+var simulation_timestep: float:
+	get: return _simulation_timestep
+	set(v):
+		if v != _simulation_timestep:
+			_simulation_timestep = v
+			simulation_timestep_changed.emit(v)
+
 var _burst_engine: bool
 var _influxdb_availability: bool
 var _neuron_count_max: int = -1
@@ -267,6 +275,7 @@ var _synapse_count_current: int = -1
 var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
+var _simulation_timestep: float = 0.05  # Default 50ms
 
 var _pending_amalgamation: StringName = ""
 
@@ -316,6 +325,29 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var value = health["brain_readiness"]
 		if value != null:
 			brain_readiness = bool(value)
+	
+	# Handle simulation_timestep or burst_frequency
+	if "simulation_timestep" in health:
+		var value = health["simulation_timestep"]
+		if value != null:
+			print("🔥 FEAGI CACHE: Found 'simulation_timestep' field with value: %s" % value)
+			simulation_timestep = float(value)
+			simulation_timestep_changed.emit(simulation_timestep)
+	elif "burst_frequency" in health:
+		var value = health["burst_frequency"]
+		if value != null:
+			print("🔥 FEAGI CACHE: Found 'burst_frequency' field with value: %s Hz" % value)
+			var frequency = float(value)
+			if frequency > 0.0:
+				# Convert frequency to timestep (1/frequency)
+				var timestep = 1.0 / frequency
+				print("🔥 FEAGI CACHE: Converted burst_frequency %s Hz to simulation_timestep %s seconds" % [frequency, timestep])
+				simulation_timestep = timestep
+				simulation_timestep_changed.emit(simulation_timestep)
+			else:
+				print("🔥 FEAGI CACHE: Invalid burst_frequency: %s - keeping current timestep" % frequency)
+		else:
+			print("🔥 FEAGI CACHE: 'simulation_timestep' field NOT FOUND in health data")
 	
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
