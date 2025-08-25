@@ -128,9 +128,19 @@ var _OPU_templates: Dictionary = {}
 
 ## Retrieved template updats from FEAGI
 func update_templates_from_FEAGI(dict: Dictionary) -> void:
+	print("🔍 TEMPLATE CACHE: Updating templates from FEAGI with keys: %s" % dict.keys())
+	
+	# Handle nested structure: data might be under "types" key
+	var template_data: Dictionary = dict
+	if dict.has("types") and dict["types"] is Dictionary:
+		template_data = dict["types"]
+		print("🔍 TEMPLATE CACHE: Found nested 'types' structure, using nested data")
+	
 	# Safely access IPU devices
-	if dict.has("IPU") and dict["IPU"] is Dictionary and dict["IPU"].has("supported_devices"):
-		var ipu_devices: Dictionary = dict["IPU"]["supported_devices"]
+	if template_data.has("IPU") and template_data["IPU"] is Dictionary and template_data["IPU"].has("supported_devices"):
+		var ipu_devices: Dictionary = template_data["IPU"]["supported_devices"]
+		print("🔍 TEMPLATE CACHE: Found %d IPU devices: %s" % [ipu_devices.size(), ipu_devices.keys()])
+		
 		for ipu_ID: StringName in ipu_devices.keys():
 			var ipu_device: Dictionary = ipu_devices[ipu_ID]
 			var resolution: Array[int] = [] # Gotta love godot unable to infer types
@@ -143,12 +153,15 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 				resolution,
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 			)
+			print("🔍 TEMPLATE CACHE: Added IPU template '%s' (%s) - enabled: %s" % [ipu_device["cortical_name"], ipu_ID, ipu_device["enabled"]])
 	else:
 		push_warning("FEAGI LOCAL CACHE: IPU templates data not found or invalid in update dictionary")
 	
 	# Safely access OPU devices
-	if dict.has("OPU") and dict["OPU"] is Dictionary and dict["OPU"].has("supported_devices"):
-		var opu_devices: Dictionary = dict["OPU"]["supported_devices"]
+	if template_data.has("OPU") and template_data["OPU"] is Dictionary and template_data["OPU"].has("supported_devices"):
+		var opu_devices: Dictionary = template_data["OPU"]["supported_devices"]
+		print("🔍 TEMPLATE CACHE: Found %d OPU devices: %s" % [opu_devices.size(), opu_devices.keys()])
+		
 		for opu_ID: StringName in opu_devices.keys():
 			var opu_device: Dictionary = opu_devices[opu_ID]
 			var resolution: Array[int] = [] # Gotta love godot unable to infer types
@@ -161,20 +174,24 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 				resolution,
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 			)
+			print("🔍 TEMPLATE CACHE: Added OPU template '%s' (%s) - enabled: %s" % [opu_device["cortical_name"], opu_ID, opu_device["enabled"]])
 	else:
 		push_warning("FEAGI LOCAL CACHE: OPU templates data not found or invalid in update dictionary")
+	
+	print("🔍 TEMPLATE CACHE: Final template counts - IPU: %d, OPU: %d" % [_IPU_templates.size(), _OPU_templates.size()])
+	templates_updated.emit()
 	
 	# Safely access name to ID mappings
 	var ipu_mapping: Dictionary = {}
 	var opu_mapping: Dictionary = {}
 	
-	if dict.has("IPU") and dict["IPU"] is Dictionary and dict["IPU"].has("name_to_id_mapping"):
-		ipu_mapping = dict["IPU"]["name_to_id_mapping"]
+	if template_data.has("IPU") and template_data["IPU"] is Dictionary and template_data["IPU"].has("name_to_id_mapping"):
+		ipu_mapping = template_data["IPU"]["name_to_id_mapping"]
 	else:
 		push_warning("FEAGI LOCAL CACHE: IPU name_to_id_mapping not found in update dictionary")
 		
-	if dict.has("OPU") and dict["OPU"] is Dictionary and dict["OPU"].has("name_to_id_mapping"):
-		opu_mapping = dict["OPU"]["name_to_id_mapping"]
+	if template_data.has("OPU") and template_data["OPU"] is Dictionary and template_data["OPU"].has("name_to_id_mapping"):
+		opu_mapping = template_data["OPU"]["name_to_id_mapping"]
 	else:
 		push_warning("FEAGI LOCAL CACHE: OPU name_to_id_mapping not found in update dictionary")
 	

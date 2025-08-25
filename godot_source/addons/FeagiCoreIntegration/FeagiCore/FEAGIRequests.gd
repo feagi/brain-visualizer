@@ -110,6 +110,8 @@ func reload_genome() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI template summary data!")
 		return template_data
 	var raw_templates: Dictionary = template_data.decode_response_as_dict()
+	print("🔍 FEAGI REQUEST: Template API response keys: %s" % raw_templates.keys())
+	print("🔍 FEAGI REQUEST: Full template response: %s" % raw_templates)
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 6 complete: Template data retrieved")
 	
@@ -600,7 +602,16 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			push_warning("FEAGI REQUEST: Parent region '%s' not found for cortical area '%s', using root region" % [parent_region_id, checking_cortical_ID])
 			parent_region_id = BrainRegion.ROOT_REGION_ID
 		
+		# Check if parent region exists in cache
+		if not FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.has(parent_region_id):
+			push_error("FEAGI REQUEST: Parent region '%s' not found in cache, cannot create cortical area '%s'" % [parent_region_id, checking_cortical_ID])
+			return FeagiRequestOutput.requirement_fail("PARENT_REGION_NOT_FOUND")
+		
 		var parent_region_data = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[parent_region_id]
+		if parent_region_data == null:
+			push_error("FEAGI REQUEST: Parent region '%s' is null in cache, cannot create cortical area '%s'" % [parent_region_id, checking_cortical_ID])
+			return FeagiRequestOutput.requirement_fail("PARENT_REGION_NULL")
+		
 		if not parent_region_data is BrainRegion:
 			push_error("FEAGI REQUEST: Parent region '%s' is not a BrainRegion object (type: %s), cannot create cortical area '%s'" % [parent_region_id, type_string(typeof(parent_region_data)), checking_cortical_ID])
 			return FeagiRequestOutput.requirement_fail("INVALID_PARENT_REGION")
