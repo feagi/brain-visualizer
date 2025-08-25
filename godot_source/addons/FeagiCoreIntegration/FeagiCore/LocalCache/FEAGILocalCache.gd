@@ -347,24 +347,23 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	if "simulation_timestep" in health:
 		var value = health["simulation_timestep"]
 		if value != null:
-			print("🔥 FEAGI CACHE: Found 'simulation_timestep' field with value: %s" % value)
-			simulation_timestep = float(value)
-			simulation_timestep_changed.emit(simulation_timestep)
+			var new_timestep = float(value)
+			if new_timestep != simulation_timestep:
+				print("🔥 FEAGI CACHE: Updated simulation_timestep from %s to %s seconds" % [simulation_timestep, new_timestep])
+				simulation_timestep = new_timestep
+				simulation_timestep_changed.emit(simulation_timestep)
 	elif "burst_frequency" in health:
 		var value = health["burst_frequency"]
 		if value != null:
-			print("🔥 FEAGI CACHE: Found 'burst_frequency' field with value: %s Hz" % value)
 			var frequency = float(value)
 			if frequency > 0.0:
 				# Convert frequency to timestep (1/frequency)
 				var timestep = 1.0 / frequency
-				print("🔥 FEAGI CACHE: Converted burst_frequency %s Hz to simulation_timestep %s seconds" % [frequency, timestep])
-				simulation_timestep = timestep
-				simulation_timestep_changed.emit(simulation_timestep)
-			else:
-				print("🔥 FEAGI CACHE: Invalid burst_frequency: %s - keeping current timestep" % frequency)
-		else:
-			print("🔥 FEAGI CACHE: 'simulation_timestep' field NOT FOUND in health data")
+				if timestep != simulation_timestep:
+					print("🔥 FEAGI CACHE: Converted burst_frequency %s Hz to simulation_timestep %s seconds" % [frequency, timestep])
+					simulation_timestep = timestep
+					simulation_timestep_changed.emit(simulation_timestep)
+			# Silently ignore invalid burst_frequency (0.0) to avoid spam
 	
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
