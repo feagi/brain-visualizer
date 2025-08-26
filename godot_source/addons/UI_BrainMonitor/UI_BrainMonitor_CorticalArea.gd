@@ -116,12 +116,19 @@ func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
-	# Use DDA renderer for translucent voxel structure visualization
-	# DDA provides the shader-based translucent cortical area meshes
-	
 	print("🎮 BRAIN VISUALIZER RENDERER SELECTION:")
 	print("   📊 Cortical Area: ", defined_cortical_area.cortical_ID)
-	print("   🔄 USING: DDA Renderer (Sparse Voxel Octree)")
-	print("   📝 Expected data format: Type 10 (NEURON_FLAT/SVO)")
-	print("   🎯 Features: Translucent voxel structure, shader-based rendering")
-	return UI_BrainMonitor_DDACorticalAreaRenderer.new()
+	print("   🔍 Cortical Type: ", defined_cortical_area.cortical_type)
+	
+	# Special case: Memory cortical areas use sphere rendering
+	if defined_cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		print("   🔮 USING: Memory Sphere Renderer")
+		print("   📝 Expected data format: Type 11 (Direct Points)")
+		print("   🎯 Features: Sphere mesh, memory-specific visualization")
+		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+	else:
+		# Use DDA renderer for all other cortical area types
+		print("   🔄 USING: DDA Renderer (Sparse Voxel Octree)")
+		print("   📝 Expected data format: Type 10 (NEURON_FLAT/SVO)")
+		print("   🎯 Features: Translucent voxel structure, shader-based rendering")
+		return UI_BrainMonitor_DDACorticalAreaRenderer.new()

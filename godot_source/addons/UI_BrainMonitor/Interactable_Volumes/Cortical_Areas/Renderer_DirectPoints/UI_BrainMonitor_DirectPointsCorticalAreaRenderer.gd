@@ -28,6 +28,9 @@ var _outline_mesh_instance: MeshInstance3D
 var _outline_mat: ShaderMaterial
 var _friendly_name_label: Label3D
 
+# Cortical area properties
+var _cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
+
 # State tracking
 var _is_hovered_over: bool = false
 var _is_selected: bool = false
@@ -43,6 +46,9 @@ var _visibility_timer: Timer
 var _neuron_display_start_time: float = 0.0
 
 func setup(area: AbstractCorticalArea) -> void:
+	# Store cortical area type for later use
+	_cortical_area_type = area.cortical_type
+	
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
 	_static_body.name = "DirectPointsBody"
@@ -50,8 +56,14 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create collision shape for the cortical area volume
 	var collision_shape = CollisionShape3D.new()
-	var box_shape = BoxShape3D.new()
-	collision_shape.shape = box_shape
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		var sphere_shape = SphereShape3D.new()
+		sphere_shape.radius = 1.5  # Match the 3x larger visual sphere
+		collision_shape.shape = sphere_shape
+		print("   🔮 Created 3x larger sphere collision for memory cortical area")
+	else:
+		var box_shape = BoxShape3D.new()
+		collision_shape.shape = box_shape
 	_static_body.add_child(collision_shape)
 	
 	# Create MultiMeshInstance3D for efficient neuron rendering
@@ -88,15 +100,33 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Set material override on the MultiMeshInstance3D
 	_multi_mesh_instance.material_override = neuron_material
 	
-	# Create outline mesh for cortical area hover/selection (keep existing functionality)
+	# Create outline mesh for cortical area hover/selection
 	_outline_mesh_instance = MeshInstance3D.new()
 	_outline_mesh_instance.name = "CorticalAreaOutline"
-	var box_mesh = BoxMesh.new()
-	box_mesh.size = Vector3.ONE
-	_outline_mesh_instance.mesh = box_mesh
+	
+	# Use sphere mesh for memory cortical areas, box mesh for others
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		var sphere_mesh = SphereMesh.new()
+		sphere_mesh.radius = 1.5  # 3x larger: 0.5 * 3 = 1.5
+		sphere_mesh.height = 3.0  # 3x larger: 1.0 * 3 = 3.0
+		sphere_mesh.radial_segments = 16  # Good balance of quality vs performance
+		sphere_mesh.rings = 8
+		_outline_mesh_instance.mesh = sphere_mesh
+		print("   🔮 Created 3x larger sphere outline for memory cortical area")
+	else:
+		var box_mesh = BoxMesh.new()
+		box_mesh.size = Vector3.ONE
+		_outline_mesh_instance.mesh = box_mesh
+	# Use the same material system for all cortical areas (memory and non-memory)
 	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
 	_outline_mesh_instance.material_override = _outline_mat
-	_outline_mesh_instance.visible = false  # Hidden by default
+	
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		_outline_mesh_instance.visible = true  # Always visible for memory spheres
+		print("   🔮 Memory sphere uses same material system as cubes, always visible")
+	else:
+		_outline_mesh_instance.visible = false  # Hidden by default for other types
+	
 	_static_body.add_child(_outline_mesh_instance)
 	
 	# Create friendly name label
@@ -104,7 +134,12 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.name = "AreaNameLabel"
 	_friendly_name_label.font_size = 192
 	_friendly_name_label.modulate = Color.WHITE
-	_friendly_name_label.visible = false  # Hidden when used as secondary renderer
+	# Memory areas should show their label since they're the primary renderer
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		_friendly_name_label.visible = true  # Show label for memory areas
+		print("   🔮 Memory sphere label set to visible")
+	else:
+		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
 	add_child(_friendly_name_label)
 
 	# Set initial properties
@@ -152,8 +187,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Update friendly name position
 	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
 	
-	# Update outline material scaling
-	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
+	# Update outline material scaling (only for non-memory areas that use shader materials)
+	if _outline_mat != null:
+		_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
 	print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)
 
@@ -403,8 +439,11 @@ func clear_all_neuron_selection() -> void:
 
 func _update_cortical_area_outline() -> void:
 	"""Update the cortical area outline visibility and color"""
-	# Outline handled by DDA renderer - keep this hidden for secondary renderer
-	_outline_mesh_instance.visible = false
+	# Memory areas should always stay visible, others handled by DDA renderer
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		_outline_mesh_instance.visible = true  # Always visible for memory spheres
+	else:
+		_outline_mesh_instance.visible = false  # Outline handled by DDA renderer for others
 
 func _update_neuron_highlighting() -> void:
 	"""Update highlighting for specific neurons"""
