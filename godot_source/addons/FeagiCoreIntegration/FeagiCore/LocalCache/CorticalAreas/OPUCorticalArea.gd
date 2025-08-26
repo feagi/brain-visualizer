@@ -81,6 +81,9 @@ func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index:
 	for configurator_capability in configurator_capabilities:
 		if !configurator_capability.has("output"):
 			continue
+		# Check if output is actually a Dictionary (not a boolean)
+		if configurator_capability["output"] is not Dictionary:
+			continue
 		var configurator_output: Dictionary = configurator_capability["output"]
 		if !configurator_output.has(str(controller_ID)):
 			continue

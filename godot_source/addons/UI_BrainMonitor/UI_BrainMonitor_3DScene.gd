@@ -107,14 +107,13 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			# special cases for actions
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when firing neurons
-				print("🔥 3D SCENE: Processing FIRE_SELECTED_NEURONS event")
+				# Process FIRE_SELECTED_NEURONS event
 				var dict: Dictionary[StringName, Array] = {}
 				for BM_cortical_area in _cortical_visualizations_by_ID.values():
 					var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
 					if !selected_neurons.is_empty():
 						dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
-						print("🔥 3D SCENE: Found %d selected neurons in area %s" % [selected_neurons.size(), BM_cortical_area.cortical_area.cortical_ID])
-				print("🔥 3D SCENE: Emitting requesting_to_fire_selected_neurons signal with %d areas" % dict.size())
+				# Emit signal to fire selected neurons
 				requesting_to_fire_selected_neurons.emit(dict)
 				return
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when clearing all neurons

@@ -176,7 +176,7 @@ func FEAGI_confirmed_genome() -> void:
 
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
-	print("🔥 NEURON FIRING: Attempting to send activations for %d cortical areas" % area_IDs_and_neuron_coordinates.size())
+	# Sending neuron activations to FEAGI
 	
 	# Check if network components are available
 	if not FeagiCore:
@@ -195,9 +195,10 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 		for vector in area_IDs_and_neuron_coordinates[area_ID]:
 			arr.append([vector.x, vector.y, vector.z])
 		dict_to_send["data"]["direct_stimulation"][area_ID] = arr
-		print("🔥 NEURON FIRING: Area %s has %d selected neurons" % [area_ID, area_IDs_and_neuron_coordinates[area_ID].size()])
+		# Area has selected neurons
+		pass
 	
-	print("🔥 NEURON FIRING: Sending data: %s" % JSON.stringify(dict_to_send))
+	# Send activation data to FEAGI
 	FeagiCore.network.websocket_API.websocket_send(JSON.stringify(dict_to_send))
 
 

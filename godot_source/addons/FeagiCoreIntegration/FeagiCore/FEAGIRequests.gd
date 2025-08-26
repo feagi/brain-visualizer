@@ -110,8 +110,7 @@ func reload_genome() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI template summary data!")
 		return template_data
 	var raw_templates: Dictionary = template_data.decode_response_as_dict()
-	print("🔍 FEAGI REQUEST: Template API response keys: %s" % raw_templates.keys())
-	print("🔍 FEAGI REQUEST: Full template response: %s" % raw_templates)
+	# Template data loaded successfully
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 6 complete: Template data retrieved")
 	
@@ -548,8 +547,7 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 
 ## Requests an update of a cortical area's properties a single time
 func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
-	print("🔍 DEBUG: get_cortical_area() called for '%s'" % checking_cortical_ID)
-	print("🔍 DEBUG: Call stack: ", get_stack())
+	# Fetching cortical area details
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")

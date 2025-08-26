@@ -204,10 +204,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var bm_fire_event: UI_BrainMonitor_InputEvent_Click
 		
 		if (event.keycode == key_to_fire_selected_neurons):
-			print("🔥 SPACE KEY: Detected space key press (pressed: %s)" % event.pressed)
 			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
 		elif (event.keycode == key_to_clear_all_neurons):
-			print("🔥 DELETE KEY: Detected delete key press (pressed: %s)" % event.pressed)
 			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false)
 		else:
 			return

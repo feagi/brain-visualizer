@@ -128,7 +128,7 @@ var _OPU_templates: Dictionary = {}
 
 ## Retrieved template updats from FEAGI
 func update_templates_from_FEAGI(dict: Dictionary) -> void:
-	print("🔍 TEMPLATE CACHE: Updating templates from FEAGI with keys: %s" % dict.keys())
+	print("🔍 TEMPLATE CACHE: Updating templates from FEAGI")
 	
 	# Handle nested structure: data might be under "types" key
 	var template_data: Dictionary = dict
@@ -139,7 +139,6 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 	# Safely access IPU devices
 	if template_data.has("IPU") and template_data["IPU"] is Dictionary and template_data["IPU"].has("supported_devices"):
 		var ipu_devices: Dictionary = template_data["IPU"]["supported_devices"]
-		print("🔍 TEMPLATE CACHE: Found %d IPU devices: %s" % [ipu_devices.size(), ipu_devices.keys()])
 		
 		for ipu_ID: StringName in ipu_devices.keys():
 			var ipu_device: Dictionary = ipu_devices[ipu_ID]
@@ -153,14 +152,12 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 				resolution,
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 			)
-			print("🔍 TEMPLATE CACHE: Added IPU template '%s' (%s) - enabled: %s" % [ipu_device["cortical_name"], ipu_ID, ipu_device["enabled"]])
 	else:
 		push_warning("FEAGI LOCAL CACHE: IPU templates data not found or invalid in update dictionary")
 	
 	# Safely access OPU devices
 	if template_data.has("OPU") and template_data["OPU"] is Dictionary and template_data["OPU"].has("supported_devices"):
 		var opu_devices: Dictionary = template_data["OPU"]["supported_devices"]
-		print("🔍 TEMPLATE CACHE: Found %d OPU devices: %s" % [opu_devices.size(), opu_devices.keys()])
 		
 		for opu_ID: StringName in opu_devices.keys():
 			var opu_device: Dictionary = opu_devices[opu_ID]
@@ -174,7 +171,6 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 				resolution,
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 			)
-			print("🔍 TEMPLATE CACHE: Added OPU template '%s' (%s) - enabled: %s" % [opu_device["cortical_name"], opu_ID, opu_device["enabled"]])
 	else:
 		push_warning("FEAGI LOCAL CACHE: OPU templates data not found or invalid in update dictionary")
 	
