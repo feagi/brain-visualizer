@@ -19,6 +19,7 @@ class_name UI_BrainMonitor_DirectPointsCorticalAreaRenderer
 
 const NEURON_VOXEL_MESH: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/NeuronVoxel.tscn")
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
+const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
 
 # Rendering components
 var _static_body: StaticBody3D
@@ -117,14 +118,18 @@ func setup(area: AbstractCorticalArea) -> void:
 		var box_mesh = BoxMesh.new()
 		box_mesh.size = Vector3.ONE
 		_outline_mesh_instance.mesh = box_mesh
-	# Use the same material system for all cortical areas (memory and non-memory)
-	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
-	_outline_mesh_instance.material_override = _outline_mat
-	
+	# Use different materials for memory vs non-memory cortical areas
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		# Use custom jello material for memory spheres
+		var jello_mat = load(MEMORY_JELLO_MAT_PATH).duplicate()
+		_outline_mesh_instance.material_override = jello_mat
 		_outline_mesh_instance.visible = true  # Always visible for memory spheres
-		print("   🔮 Memory sphere uses same material system as cubes, always visible")
+		_outline_mat = null  # Memory areas don't use the outline shader material
+		print("   🔮 Memory sphere uses custom jello material, always visible")
 	else:
+		# Use standard outline material for other cortical areas
+		_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
+		_outline_mesh_instance.material_override = _outline_mat
 		_outline_mesh_instance.visible = false  # Hidden by default for other types
 	
 	_static_body.add_child(_outline_mesh_instance)
