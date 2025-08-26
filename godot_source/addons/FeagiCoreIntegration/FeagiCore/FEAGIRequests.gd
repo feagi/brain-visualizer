@@ -176,14 +176,31 @@ func get_burst_delay() -> FeagiRequestOutput:
 
 ## Set the burst rate
 func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
+	print("🔥 FEAGI REQUEST: update_burst_delay called with %s seconds" % new_delay_between_bursts)
+	
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
+		print("🔥 FEAGI REQUEST: ERROR - can_interact_with_feagi() returned false!")
+		print("🔥 FEAGI REQUEST: Current genome state: %s" % FeagiCore.GENOME_LOAD_STATE.keys()[FeagiCore.genome_load_state])
+		print("🔥 FEAGI REQUEST: Required state: GENOME_READY")
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	print("🔥 FEAGI REQUEST: can_interact_with_feagi() check passed")
+	
+	# Check network components are ready
+	var network_check_result = _check_network_components_ready()
+	if network_check_result != null:
+		print("🔥 FEAGI REQUEST: ERROR - network components not ready! Result: %s" % network_check_result)
+		push_error("FEAGI Requests: Network components not ready for update_burst_delay!")
+		return network_check_result
+	print("🔥 FEAGI REQUEST: network components check passed")
+	
 	if new_delay_between_bursts <= 0.0:
+		print("🔥 FEAGI REQUEST: ERROR - delay <= 0.0: %s" % new_delay_between_bursts)
 		push_error("FEAGI Requests: Cannot set delay between bursts to 0 or less!")
 		return FeagiRequestOutput.requirement_fail("IMPOSSIBLE_BURST_DELAY")
-	print("FEAGI REQUEST: Request setting delay between bursts to %d" % new_delay_between_bursts)
+	print("🔥 FEAGI REQUEST: All checks passed, proceeding with API call...")
+	print("FEAGI REQUEST: Request setting delay between bursts to %s" % new_delay_between_bursts)
 	
 	# Define Request
 	var dict_to_send: Dictionary = 	{ "simulation_timestep": new_delay_between_bursts}
@@ -1595,15 +1612,26 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 
 ## Check if network components are properly initialized
 func _check_network_components_ready() -> FeagiRequestOutput:
+	print("🔥 NETWORK CHECK: Checking network components...")
+	print("🔥 NETWORK CHECK: FeagiCore.network = %s" % FeagiCore.network)
 	if !FeagiCore.network:
+		print("🔥 NETWORK CHECK: ERROR - Network component is null!")
 		push_error("FEAGI Requests: Network component is null!")
 		return FeagiRequestOutput.requirement_fail("NETWORK_NULL")
+	
+	print("🔥 NETWORK CHECK: FeagiCore.network.http_API = %s" % FeagiCore.network.http_API)
 	if !FeagiCore.network.http_API:
+		print("🔥 NETWORK CHECK: ERROR - HTTP API component is null!")
 		push_error("FEAGI Requests: HTTP API component is null!")
 		return FeagiRequestOutput.requirement_fail("HTTP_API_NULL")
+	
+	print("🔥 NETWORK CHECK: FeagiCore.network.http_API.address_list = %s" % FeagiCore.network.http_API.address_list)
 	if !FeagiCore.network.http_API.address_list:
+		print("🔥 NETWORK CHECK: ERROR - Address list is null!")
 		push_error("FEAGI Requests: Address list is null!")
 		return FeagiRequestOutput.requirement_fail("ADDRESS_LIST_NULL")
+	
+	print("🔥 NETWORK CHECK: All components ready!")
 	return null  # null means all checks passed
 
 ## Safe wrapper for making HTTP calls with network component validation
