@@ -167,10 +167,32 @@ void fragment()
 	
 	float wall_transparency = base_transparency * thickness_factor;
 
-
+	// EDGE DETECTION: Add thin light gray lines only on the 12 cube edges
+	float edge_thickness = 0.01; // Very thin edge lines
+	bool is_on_edge = false;
+	
+	// Check if we're near any of the 12 cube edges (where 2 faces meet)
+	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face
+	
+	// Count how many faces we're close to
+	int faces_close_to = 0;
+	if (distance_to_faces.x <= edge_thickness) faces_close_to++;
+	if (distance_to_faces.y <= edge_thickness) faces_close_to++;
+	if (distance_to_faces.z <= edge_thickness) faces_close_to++;
+	
+	// We're on an edge if we're close to exactly 2 faces (edge) or 3 faces (corner)
+	if (faces_close_to >= 2) {
+		is_on_edge = true;
+	}
 
 	/// Calculate final pixel color - PRESERVE SHELL TRANSPARENCY
 	final_color.a = wall_transparency;
+	
+	// Apply edge color only on the actual edges
+	if (is_on_edge) {
+		final_color.rgb = vec3(0.7, 0.7, 0.7); // Light gray edges
+		final_color.a = max(wall_transparency, 0.5); // 50% opacity for edges
+	}
 	
 	if(neuron_highlight_has_hit)
 	{
