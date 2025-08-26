@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloSphere.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/jello_strength = 0.25
+shader_parameter/jello_frequency = 3.0
+shader_parameter/jello_speed = 2.0
+shader_parameter/albedo_color = Color(0.8, 0.2, 0.1, 0.8)
+shader_parameter/emission_color = Color(1.0, 0.3, 0.2, 1)
+shader_parameter/emission_energy = 0.8
+shader_parameter/rim_power = 2.0
+shader_parameter/rim_intensity = 1.2
+shader_parameter/metallic = 0.0
+shader_parameter/roughness = 0.4
