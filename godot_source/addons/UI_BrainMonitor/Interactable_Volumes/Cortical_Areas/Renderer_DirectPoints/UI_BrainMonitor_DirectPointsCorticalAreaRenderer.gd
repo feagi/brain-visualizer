@@ -82,6 +82,12 @@ func setup(area: AbstractCorticalArea) -> void:
 		cylinder_shape.radius = 3.0  # 3x larger base radius
 		collision_shape.shape = cylinder_shape
 		print("   ⚡ Created 3x larger cylinder collision for power cortical area")
+	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
+		var box_shape = BoxShape3D.new()
+		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Larger depth for better click detection
+		collision_shape.shape = box_shape
+		print("   🖼️ Created billboard collision for PNG icon cortical area: ", area.cortical_ID)
+		print("   📏 Collision size: ", box_shape.size)
 	else:
 		var box_shape = BoxShape3D.new()
 		collision_shape.shape = box_shape
@@ -179,6 +185,13 @@ func setup(area: AbstractCorticalArea) -> void:
 		_create_tesla_coil_spikes()
 		
 		print("   ⚡ Power cone uses custom red material with firing animation and tesla coil spikes, always visible")
+	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
+		# Create PNG icon billboard for special cortical areas
+		_create_png_icon_billboard(area)
+		# Still need outline mesh for PNG areas (invisible but needed for structure)
+		_outline_mesh_instance.mesh = BoxMesh.new()
+		_outline_mesh_instance.visible = false  # Hidden for PNG areas
+		print("   🖼️ PNG icon area setup complete for: ", area.cortical_ID)
 	else:
 		# Use standard outline material for other cortical areas
 		_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -192,13 +205,19 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.name = "AreaNameLabel"
 	_friendly_name_label.font_size = 192
 	_friendly_name_label.modulate = Color.WHITE
-	# Memory and power areas should show their label since they're primary renderers
+	# Memory, power, and PNG icon areas should show their label since they're primary renderers
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_friendly_name_label.visible = true  # Show label for memory areas
 		print("   🔮 Memory sphere label set to visible")
 	elif area.cortical_ID == "_power":
 		_friendly_name_label.visible = true  # Show label for power areas
 		print("   ⚡ Power cone label set to visible")
+	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
+		_friendly_name_label.visible = true  # Show label for PNG icon areas
+		print("   🖼️ PNG icon area label set to visible for: ", area.cortical_ID)
+		# Position label above the PNG icon (3x3 units, so 2.5 units above center)
+		_friendly_name_label.position = Vector3(0.0, 2.5, 0.0)
+		print("   📍 PNG icon label positioned at: ", _friendly_name_label.position)
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
 	add_child(_friendly_name_label)
@@ -228,7 +247,14 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	_static_body.position = _position_godot_space
 	_outline_mesh_instance.position = Vector3.ZERO  # Relative to static body
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
+	
+	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
+	if not _should_use_png_icon_by_id(_cortical_area_id):
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
+	else:
+		# PNG icon areas keep their custom label positioning (above the icon)
+		_friendly_name_label.position = Vector3(0.0, 2.5, 0.0)
+		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	super(new_dimensions)
@@ -237,16 +263,26 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space
 	
-	# Update collision shape size
+	# Update collision shape size (but preserve custom sizes for special areas)
 	var collision_shape = _static_body.get_child(0) as CollisionShape3D
 	if collision_shape and collision_shape.shape is BoxShape3D:
-		(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
+		# PNG icon areas keep their custom collision size
+		if _should_use_png_icon_by_id(_cortical_area_id):
+			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # Maintain PNG icon collision
+			print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size)
+		else:
+			(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
 	
 	# Update outline mesh size
 	_outline_mesh_instance.scale = _dimensions
 	
-	# Update friendly name position
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
+	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
+	if not _should_use_png_icon_by_id(_cortical_area_id):
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
+	else:
+		# PNG icon areas keep their custom label positioning (above the icon)
+		_friendly_name_label.position = Vector3(0.0, 2.5, 0.0)
+		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 	
 	# Update outline material scaling (only for non-memory areas that use shader materials)
 	if _outline_mat != null:
@@ -642,6 +678,189 @@ func _create_tesla_coil_spikes() -> void:
 		_static_body.add_child(spike)
 	
 	print("   ⚡ Created ", spike_count, " tesla coil spikes!")
+
+## Check if a cortical area should use PNG icon rendering
+func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
+	# Add more cortical area IDs here that should use PNG icons
+	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	return area.cortical_ID in png_icon_areas
+
+## Check if a cortical area ID should use PNG icon rendering (helper for when we only have ID)
+func _should_use_png_icon_by_id(cortical_id: StringName) -> bool:
+	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	return cortical_id in png_icon_areas
+
+## Create PNG icon billboard for special cortical areas
+func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
+	print("   🖼️ Creating PNG icon billboard for: ", area.cortical_ID)
+	
+	# Create a billboard mesh instance for the PNG icon
+	var icon_mesh_instance = MeshInstance3D.new()
+	icon_mesh_instance.name = "IconBillboard"
+	
+	# Create a quad mesh for the billboard
+	var quad_mesh = QuadMesh.new()
+	quad_mesh.size = Vector2(3.0, 3.0)  # 3x3 units billboard
+	icon_mesh_instance.mesh = quad_mesh
+	
+	# Load PNG icon texture (with placeholder fallback)
+	var icon_texture = _load_png_icon_texture(area.cortical_ID)
+	
+	# Create material for the billboard
+	var icon_material = StandardMaterial3D.new()
+	icon_material.albedo_texture = icon_texture
+	icon_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	icon_material.flags_unshaded = true
+	icon_material.flags_do_not_use_vertex_lighting = true
+	icon_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
+	icon_material.no_depth_test = true  # Always visible
+	icon_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
+	icon_material.albedo_color = Color.WHITE  # Ensure full color visibility
+	
+	print("   🎨 Created billboard material with transparency and billboard mode")
+	
+	# Add glow effect for special areas
+	if area.cortical_ID == "_death":
+		icon_material.emission_enabled = true
+		icon_material.emission_color = Color(1.0, 0.2, 0.2)  # Red glow for death
+		icon_material.emission_energy = 0.5
+	
+	icon_mesh_instance.material_override = icon_material
+	icon_mesh_instance.visible = true  # Always visible
+	
+	# Position slightly above the cortical area center
+	icon_mesh_instance.position = Vector3(0, 2.0, 0)
+	
+	_static_body.add_child(icon_mesh_instance)
+	
+	print("   ✅ PNG icon billboard created:")
+	print("     📍 Position: ", icon_mesh_instance.position)
+	print("     📏 Quad size: ", quad_mesh.size)
+	print("     🖼️ Texture: ", icon_texture.resource_path if icon_texture else "placeholder")
+	print("     👁️ Visible: ", icon_mesh_instance.visible)
+	print("     🎨 Material: ", icon_material != null)
+
+## Load PNG icon texture for cortical area
+func _load_png_icon_texture(cortical_id: StringName) -> Texture2D:
+	print("   🔍 Loading PNG icon for: ", cortical_id)
+	
+	# Try different loading approaches for better compatibility
+	var texture: Texture2D = null
+	var icon_path = "res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/" + cortical_id + ".png"
+	
+	print("   📂 Checking path: ", icon_path)
+	
+	# Method 1: Try ResourceLoader.load with full error checking
+	if ResourceLoader.exists(icon_path):
+		print("   ✅ File exists, attempting to load...")
+		var resource = ResourceLoader.load(icon_path)
+		if resource != null:
+			texture = resource as Texture2D
+			if texture != null:
+				print("   🎉 Successfully loaded PNG as Texture2D!")
+				print("   📏 Texture size: ", texture.get_size())
+				return texture
+			else:
+				print("   ❌ Resource loaded but not a Texture2D: ", typeof(resource))
+		else:
+			print("   ❌ ResourceLoader.load returned null")
+	else:
+		print("   ❌ File does not exist at path: ", icon_path)
+	
+	# Method 2: Try alternative path format
+	var alt_path = "res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/" + cortical_id + ".png"
+	print("   🔄 Trying alternative loading method...")
+	
+	# Method 3: For _death specifically, try multiple path variations
+	if cortical_id == "_death":
+		print("   💀 Attempting _death icon load with multiple methods...")
+		
+		# Try different path formats (including the path from import file)
+		var test_paths = [
+			"res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/_death.png",
+			"res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/_death.png",  # Path from import file
+			"res://.godot/imported/_death.png-ddb253cf3ef212e1e0fdb39499230091.ctex",  # Direct imported path
+			"res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/death.png"
+		]
+		
+		for test_path in test_paths:
+			print("   🔍 Testing path: ", test_path)
+			if ResourceLoader.exists(test_path):
+				print("   ✅ Path exists!")
+				var test_resource = ResourceLoader.load(test_path)
+				if test_resource != null:
+					print("   📦 Resource loaded, type: ", test_resource.get_class())
+					if test_resource is Texture2D:
+						print("   🎉 Found working Texture2D!")
+						return test_resource
+				else:
+					print("   ❌ Resource load returned null")
+			else:
+				print("   ❌ Path does not exist")
+		
+		# Try using preload (compile-time loading)
+		print("   🔄 Attempting preload method...")
+		# Note: This might cause an error if file doesn't exist, but we'll catch it
+	
+	print("   ❌ All loading methods failed, creating placeholder")
+	return _create_placeholder_icon_texture(cortical_id)
+
+## Create placeholder texture for cortical areas without custom icons
+func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
+	print("   🎨 Creating placeholder texture for: ", cortical_id)
+	
+	# Create a simple colored image as placeholder
+	var image = Image.create(128, 128, false, Image.FORMAT_RGBA8)
+	
+	# Choose placeholder color based on cortical area
+	var placeholder_color: Color
+	match cortical_id:
+		"_death":
+			placeholder_color = Color(1.0, 0.0, 0.0, 1.0)  # Bright red for death
+		"_health":
+			placeholder_color = Color(0.0, 1.0, 0.0, 1.0)  # Bright green for health
+		"_energy":
+			placeholder_color = Color(1.0, 1.0, 0.0, 1.0)  # Bright yellow for energy
+		"_status":
+			placeholder_color = Color(0.0, 0.0, 1.0, 1.0)  # Bright blue for status
+		_:
+			placeholder_color = Color(1.0, 0.0, 1.0, 1.0)  # Bright magenta for unknown
+	
+	# Fill the image with the placeholder color
+	image.fill(placeholder_color)
+	
+	# Add a simple border
+	for x in range(128):
+		for y in range(128):
+			if x < 4 or x >= 124 or y < 4 or y >= 124:
+				image.set_pixel(x, y, Color.WHITE)
+	
+	# Add text indication (skull-like pattern for death, cross for others)
+	if cortical_id == "_death":
+		# Create a simple skull pattern
+		# Eyes
+		for x in range(45, 55):
+			for y in range(45, 55):
+				image.set_pixel(x, y, Color.BLACK)
+		for x in range(75, 85):
+			for y in range(45, 55):
+				image.set_pixel(x, y, Color.BLACK)
+		# Mouth
+		for x in range(55, 75):
+			for y in range(75, 85):
+				image.set_pixel(x, y, Color.BLACK)
+	else:
+		# Simple cross pattern for other types
+		for i in range(20, 108):
+			image.set_pixel(64, i, Color.WHITE)  # Vertical line
+			image.set_pixel(i, 64, Color.WHITE)  # Horizontal line
+	
+	# Create texture from image
+	var texture = ImageTexture.new()
+	texture.set_image(image)
+	
+	print("   ✅ Created placeholder texture with color: ", placeholder_color)
+	return texture
 
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""

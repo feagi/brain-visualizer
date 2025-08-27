@@ -31,8 +31,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	name = "CA_" + defined_cortical_area.cortical_ID
 	
 	# Create renderers based on cortical area type
-	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or _representing_cortial_area.cortical_ID == "_power":
-		# Memory and Power areas use only DirectPoints renderer (no DDA cube)
+	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
+		_representing_cortial_area.cortical_ID == "_power" or
+		_representing_cortial_area.cortical_ID == "_death" or
+		_should_use_png_icon(_representing_cortial_area)):
+		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 		add_child(_directpoints_renderer)
 		_directpoints_renderer.setup(_representing_cortial_area)
@@ -674,3 +677,9 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		pulse_tween.tween_interval(0.2)
 	
 	print("     ✨ Created ", num_pulses, " recursive animated pulses")
+
+## Check if a cortical area should use PNG icon rendering
+func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
+	# Add more cortical area IDs here that should use PNG icons
+	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	return area.cortical_ID in png_icon_areas
