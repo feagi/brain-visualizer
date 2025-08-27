@@ -120,11 +120,16 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 	print("   📊 Cortical Area: ", defined_cortical_area.cortical_ID)
 	print("   🔍 Cortical Type: ", defined_cortical_area.cortical_type)
 	
-	# Special case: Memory cortical areas use sphere rendering
+	# Special cases: Memory and Power cortical areas use DirectPoints rendering
 	if defined_cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		print("   🔮 USING: Memory Sphere Renderer")
 		print("   📝 Expected data format: Type 11 (Direct Points)")
 		print("   🎯 Features: Sphere mesh, memory-specific visualization")
+		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+	elif defined_cortical_area.cortical_ID == "_power":
+		print("   ⚡ USING: Power Cone Renderer")
+		print("   📝 Expected data format: Type 11 (Direct Points)")
+		print("   🎯 Features: Cone mesh, power-specific visualization with firing animation")
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 	else:
 		# Use DDA renderer for all other cortical area types

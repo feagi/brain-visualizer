@@ -20,6 +20,7 @@ class_name UI_BrainMonitor_DirectPointsCorticalAreaRenderer
 const NEURON_VOXEL_MESH: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/NeuronVoxel.tscn")
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
+const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 
 # Rendering components
 var _static_body: StaticBody3D
@@ -31,6 +32,7 @@ var _friendly_name_label: Label3D
 
 # Cortical area properties
 var _cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
+var _cortical_area_id: String
 
 # State tracking
 var _is_hovered_over: bool = false
@@ -46,9 +48,14 @@ var _selected_neurons: Array[Vector3i] = []
 var _visibility_timer: Timer
 var _neuron_display_start_time: float = 0.0
 
+# Power cone firing animation
+var _power_material: ShaderMaterial
+var _firing_tween: Tween
+
 func setup(area: AbstractCorticalArea) -> void:
-	# Store cortical area type for later use
+	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
+	_cortical_area_id = area.cortical_ID
 	
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
@@ -62,6 +69,12 @@ func setup(area: AbstractCorticalArea) -> void:
 		sphere_shape.radius = 1.5  # Match the 3x larger visual sphere
 		collision_shape.shape = sphere_shape
 		print("   🔮 Created 3x larger sphere collision for memory cortical area")
+	elif area.cortical_ID == "_power":
+		var cylinder_shape = CylinderShape3D.new()
+		cylinder_shape.height = 6.0  # 3x larger cone height
+		cylinder_shape.radius = 3.0  # 3x larger base radius
+		collision_shape.shape = cylinder_shape
+		print("   ⚡ Created 3x larger cylinder collision for power cortical area")
 	else:
 		var box_shape = BoxShape3D.new()
 		collision_shape.shape = box_shape
@@ -105,7 +118,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_outline_mesh_instance = MeshInstance3D.new()
 	_outline_mesh_instance.name = "CorticalAreaOutline"
 	
-	# Use sphere mesh for memory cortical areas, box mesh for others
+	# Use different meshes based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		var sphere_mesh = SphereMesh.new()
 		sphere_mesh.radius = 1.5  # 3x larger: 0.5 * 3 = 1.5
@@ -114,11 +127,20 @@ func setup(area: AbstractCorticalArea) -> void:
 		sphere_mesh.rings = 8
 		_outline_mesh_instance.mesh = sphere_mesh
 		print("   🔮 Created 3x larger sphere outline for memory cortical area")
+	elif area.cortical_ID == "_power":
+		var cone_mesh = CylinderMesh.new()
+		cone_mesh.top_radius = 0.0  # Point at the top for cone shape
+		cone_mesh.bottom_radius = 3.0  # 3x larger: 1.0 * 3 = 3.0
+		cone_mesh.height = 6.0  # 3x larger: 2.0 * 3 = 6.0
+		cone_mesh.radial_segments = 16  # Smoother cone for larger size
+		cone_mesh.rings = 1  # Simple cone structure
+		_outline_mesh_instance.mesh = cone_mesh
+		print("   ⚡ Created 3x larger neon blue cone outline for power cortical area")
 	else:
 		var box_mesh = BoxMesh.new()
 		box_mesh.size = Vector3.ONE
 		_outline_mesh_instance.mesh = box_mesh
-	# Use different materials for memory vs non-memory cortical areas
+	# Use different materials based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Use custom jello material for memory spheres
 		var jello_mat = load(MEMORY_JELLO_MAT_PATH).duplicate()
@@ -126,6 +148,17 @@ func setup(area: AbstractCorticalArea) -> void:
 		_outline_mesh_instance.visible = true  # Always visible for memory spheres
 		_outline_mat = null  # Memory areas don't use the outline shader material
 		print("   🔮 Memory sphere uses custom jello material, always visible")
+	elif area.cortical_ID == "_power":
+		# Use custom neon blue material for power cone
+		_power_material = load(POWER_NEON_MAT_PATH).duplicate()
+		_outline_mesh_instance.material_override = _power_material
+		_outline_mesh_instance.visible = true  # Always visible for power cone
+		_outline_mat = null  # Power areas don't use the outline shader material
+		
+		# Create tween for firing animation
+		_firing_tween = create_tween()
+		
+		print("   ⚡ Power cone uses custom neon blue material with firing animation, always visible")
 	else:
 		# Use standard outline material for other cortical areas
 		_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -139,10 +172,13 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.name = "AreaNameLabel"
 	_friendly_name_label.font_size = 192
 	_friendly_name_label.modulate = Color.WHITE
-	# Memory areas should show their label since they're the primary renderer
+	# Memory and power areas should show their label since they're primary renderers
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_friendly_name_label.visible = true  # Show label for memory areas
 		print("   🔮 Memory sphere label set to visible")
+	elif area.cortical_ID == "_power":
+		_friendly_name_label.visible = true  # Show label for power areas
+		print("   ⚡ Power cone label set to visible")
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
 	add_child(_friendly_name_label)
@@ -212,6 +248,10 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	var point_count = x_array.size()
 	# Received new neuron data - restarting timer
 	
+	# Trigger power cone firing animation if this is the power cortical area
+	if point_count > 0:
+		_trigger_power_firing_animation()
+	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
 		print("🧠 ERROR: Mismatched array sizes - x:", x_array.size(), " y:", y_array.size(), " z:", z_array.size(), " p:", p_array.size())
@@ -275,6 +315,9 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	if points_data.size() == 0:
 		_clear_all_neurons()
 		return
+	
+	# Trigger power cone firing animation if this is the power cortical area
+	_trigger_power_firing_animation()
 	
 	# Convert to bulk arrays for consistent processing
 	var point_count = points_data.size() / 16
@@ -444,9 +487,11 @@ func clear_all_neuron_selection() -> void:
 
 func _update_cortical_area_outline() -> void:
 	"""Update the cortical area outline visibility and color"""
-	# Memory areas should always stay visible, others handled by DDA renderer
+	# Memory and power areas should always stay visible, others handled by DDA renderer
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_outline_mesh_instance.visible = true  # Always visible for memory spheres
+	elif _cortical_area_id == "_power":
+		_outline_mesh_instance.visible = true  # Always visible for power cone
 	else:
 		_outline_mesh_instance.visible = false  # Outline handled by DDA renderer for others
 
@@ -461,4 +506,33 @@ func _update_neuron_selection() -> void:
 	"""Update selection for specific neurons"""
 	# TODO: Implement neuron-specific selection
 	# Similar to highlighting, would modify MultiMesh instance properties
-	pass 
+	pass
+
+func _trigger_power_firing_animation() -> void:
+	"""Trigger the red glow animation from bottom to tip of power cone"""
+	if _cortical_area_id != "_power" or _power_material == null:
+		return
+	
+	print("   ⚡ Triggering power cone firing animation!")
+	
+	# Create a new tween for this animation
+	_firing_tween = create_tween()
+	
+	# Reset firing progress to 0
+	_power_material.set_shader_parameter("firing_progress", 0.0)
+	
+	# Animate firing progress from 0.0 to 1.0 over 0.5 seconds
+	_firing_tween.tween_method(
+		func(progress: float): _power_material.set_shader_parameter("firing_progress", progress),
+		0.0,
+		1.0,
+		0.5
+	)
+	
+	# After animation completes, fade out the effect
+	_firing_tween.tween_method(
+		func(progress: float): _power_material.set_shader_parameter("firing_progress", progress),
+		1.0,
+		0.0,
+		0.3
+	) 
