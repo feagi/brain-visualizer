@@ -21,6 +21,7 @@ const NEURON_VOXEL_MESH: PackedScene = preload("res://addons/UI_BrainMonitor/Int
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
+const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
 
 # Rendering components
 var _static_body: StaticBody3D
@@ -51,6 +52,12 @@ var _neuron_display_start_time: float = 0.0
 # Power cone firing animation
 var _power_material: ShaderMaterial
 var _firing_tween: Tween
+
+# Tesla coil electrical spikes for power cone hover effect
+var _tesla_coil_spikes: Array[MeshInstance3D] = []
+var _tesla_coil_material: ShaderMaterial
+var _is_tesla_coil_active: bool = false
+var _tesla_coil_tweens: Array[Tween] = []  # Store active tweens to stop them later
 
 func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
@@ -168,7 +175,10 @@ func setup(area: AbstractCorticalArea) -> void:
 		# Create tween for firing animation
 		_firing_tween = create_tween()
 		
-		print("   ⚡ Power cone uses custom neon blue material with firing animation, always visible")
+		# Create tesla coil electrical spikes for hover effect
+		_create_tesla_coil_spikes()
+		
+		print("   ⚡ Power cone uses custom red material with firing animation and tesla coil spikes, always visible")
 	else:
 		# Use standard outline material for other cortical areas
 		_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -472,8 +482,14 @@ func does_world_position_map_to_neuron_coordinate(world_position: Vector3) -> bo
 			local_pos.z >= -half_scale.z and local_pos.z <= half_scale.z)
 
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
+	print("   🔍 DEBUG: set_cortical_area_mouse_over_highlighting called with is_highlighted=", is_highlighted, " for area: ", _cortical_area_id)
 	_is_hovered_over = is_highlighted
 	_update_cortical_area_outline()
+	
+	# Activate tesla coil effect for power areas on hover
+	if _cortical_area_id == "_power":
+		print("   🔍 DEBUG: Power area detected, calling _set_tesla_coil_active")
+		_set_tesla_coil_active(is_highlighted)
 
 func set_cortical_area_selection(is_selected: bool) -> void:
 	_is_selected = is_selected
@@ -545,4 +561,166 @@ func _trigger_power_firing_animation() -> void:
 		1.0,
 		0.0,
 		0.3
-	) 
+	)
+
+func _create_tesla_coil_spikes() -> void:
+	"""Create electrical spikes that emanate from the power cone tip"""
+	if _cortical_area_id != "_power":
+		return
+	
+	print("   ⚡ Creating tesla coil electrical spikes for power cone!")
+	
+	# Load tesla coil material
+	_tesla_coil_material = load(TESLA_COIL_MAT_PATH).duplicate()
+	
+	# Create multiple electrical spikes around the cone tip
+	var spike_count = 8  # Number of electrical spikes
+	var cone_height = 6.0  # Match the cone height
+	var tip_position = Vector3(0, cone_height / 2.0, 0)  # Top of the cone
+	
+	for i in range(spike_count):
+		var spike = MeshInstance3D.new()
+		spike.name = "TeslaSpike_" + str(i)
+		
+		# Create lightning-like electrical spark
+		var spike_mesh = CylinderMesh.new()
+		spike_mesh.top_radius = 0.01  # Very thin at tip (lightning end)
+		spike_mesh.bottom_radius = 0.08  # Thicker at base (near cone tip)
+		spike_mesh.height = randf_range(1.5, 3.5)  # Random lengths for variety
+		spike_mesh.radial_segments = 6
+		spike_mesh.rings = 3  # More rings for better lightning shape
+		
+		spike.mesh = spike_mesh
+		
+		# Create electrical lightning material
+		var lightning_material = StandardMaterial3D.new()
+		lightning_material.albedo_color = Color(0.8, 0.9, 1.0, 0.9)  # Blue-white electrical color
+		lightning_material.emission_enabled = true
+		lightning_material.emission_color = Color(0.9, 0.95, 1.0)  # Bright electrical glow
+		lightning_material.emission_energy = 3.0  # Very bright
+		lightning_material.flags_unshaded = true
+		lightning_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		lightning_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD  # Additive for glow effect
+		spike.material_override = lightning_material
+		
+		# Position lightning sparks shooting out from cone tip in random directions
+		var base_angle = (i / float(spike_count)) * TAU  # Evenly distribute around tip
+		var random_angle_offset = randf_range(-0.5, 0.5)  # Add randomness
+		var final_angle = base_angle + random_angle_offset
+		
+		# Random direction with some upward bias (like real tesla coil)
+		var horizontal_radius = randf_range(0.8, 1.5)
+		var vertical_offset = randf_range(-0.3, 1.2)  # Mostly upward, some sideways
+		
+		var spark_direction = Vector3(
+			cos(final_angle) * horizontal_radius,
+			vertical_offset,
+			sin(final_angle) * horizontal_radius
+		).normalized()
+		
+		# Position at cone tip and point in spark direction
+		spike.position = tip_position
+		spike.look_at(tip_position + spark_direction * 2.0, Vector3.UP)
+		
+		# Add slight random rotation for more natural lightning look
+		spike.rotation_degrees += Vector3(
+			randf_range(-15, 15),
+			randf_range(-30, 30), 
+			randf_range(-15, 15)
+		)
+		
+		print("   🔍 DEBUG: Created spike ", i, " at position: ", spike.position, " with height: ", spike_mesh.height)
+		
+		# Start invisible - only show on hover
+		spike.visible = false
+		
+		_tesla_coil_spikes.append(spike)
+		_static_body.add_child(spike)
+	
+	print("   ⚡ Created ", spike_count, " tesla coil spikes!")
+
+func _set_tesla_coil_active(active: bool) -> void:
+	"""Activate or deactivate the tesla coil electrical spikes"""
+	print("   🔍 DEBUG: _set_tesla_coil_active called with active=", active)
+	print("   🔍 DEBUG: _cortical_area_id=", _cortical_area_id)
+	print("   🔍 DEBUG: _tesla_coil_spikes.size()=", _tesla_coil_spikes.size())
+	
+	if _cortical_area_id != "_power":
+		print("   ❌ Not a power area, skipping tesla coil")
+		return
+		
+	if _tesla_coil_spikes.is_empty():
+		print("   ❌ No tesla coil spikes created, skipping")
+		return
+	
+	_is_tesla_coil_active = active
+	
+	if active:
+		print("   ⚡ ACTIVATING tesla coil spikes - electrical arcs ON!")
+		
+		# Clear any existing tweens first
+		_tesla_coil_tweens.clear()
+		
+		# Calculate tip position (same as in _create_tesla_coil_spikes)
+		var cone_height = 6.0  # Same as the cone height
+		var tip_position = Vector3(0, cone_height / 2.0, 0)  # Top of the cone
+		
+		# Show all spikes with electrical flickering animation
+		for i in range(_tesla_coil_spikes.size()):
+			var spike = _tesla_coil_spikes[i]
+			spike.visible = true
+			
+			# Create electrical flickering effect
+			var flicker_tween = create_tween()
+			flicker_tween.set_loops()  # Infinite flickering
+			_tesla_coil_tweens.append(flicker_tween)  # Store for later cleanup
+			
+			# Random flickering pattern - on/off with varying intensity
+			var flicker_speed = randf_range(0.05, 0.15)  # Fast flickering
+			var random_freq = randf_range(20, 40)  # Capture random frequency
+			flicker_tween.tween_method(
+				func(intensity: float): 
+					var material = spike.material_override as StandardMaterial3D
+					if material:
+						# Flicker between full brightness and dim
+						var time_value = Time.get_ticks_msec() / 1000.0  # Convert to seconds
+						var flicker_value = sin(time_value * random_freq) * 0.5 + 0.5
+						material.emission_energy = 1.0 + flicker_value * 3.0
+						# Occasionally make it invisible for crackling effect
+						spike.visible = randf() > 0.1,  # 90% visible, 10% invisible for crackling
+				0.0,
+				1.0,
+				flicker_speed
+			)
+			
+			# Add subtle random movement for electrical instability
+			var movement_tween = create_tween()
+			movement_tween.set_loops()
+			_tesla_coil_tweens.append(movement_tween)  # Store for later cleanup
+			var movement_speed = randf_range(0.3, 0.8)
+			var base_position = tip_position  # Capture tip_position in local scope
+			var spike_index = i  # Capture loop index
+			movement_tween.tween_method(
+				func(t: float):
+					var noise_offset = Vector3(
+						sin(t * 10 + spike_index) * 0.1,
+						cos(t * 8 + spike_index) * 0.05,
+						sin(t * 12 + spike_index) * 0.1
+					)
+					spike.position = base_position + noise_offset,
+				0.0,
+				TAU,
+				movement_speed
+			)
+	else:
+		print("   ⚡ DEACTIVATING tesla coil spikes - electrical arcs OFF!")
+		
+		# Stop all active tweens to prevent infinite animation
+		for tween in _tesla_coil_tweens:
+			if tween != null and tween.is_valid():
+				tween.kill()
+		_tesla_coil_tweens.clear()
+		
+		# Hide all spikes
+		for spike in _tesla_coil_spikes:
+			spike.visible = false 
