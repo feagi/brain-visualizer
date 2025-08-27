@@ -15,6 +15,7 @@ var _synapse_count: TextInput
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
+var _activity_rendering_toggle: TextureButton
 
 
 func _ready():
@@ -26,6 +27,13 @@ func _ready():
 	
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
+	
+	_activity_rendering_toggle = $ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle
+	print("🔍 DEBUG: Activity rendering toggle found: ", _activity_rendering_toggle != null)
+	if _activity_rendering_toggle:
+		print("🔍 DEBUG: Toggle visible: ", _activity_rendering_toggle.visible)
+		print("🔍 DEBUG: Toggle size: ", _activity_rendering_toggle.size)
+		print("🔍 DEBUG: Toggle position: ", _activity_rendering_toggle.position)
 	
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
@@ -140,6 +148,79 @@ func _bigger_scale() -> void:
 
 func _preview_button_pressed() -> void:
 	BV.WM.spawn_view_previews()
+
+func _placeholder_toggle_changed(button_pressed: bool) -> void:
+	print("🔗 Global Neural Connections toggle changed to: ", button_pressed)
+	_toggle_cortical_activity_rendering(button_pressed)
+
+func _toggle_cortical_activity_rendering(enabled: bool) -> void:
+	print("🔗 Setting global neural connections visibility to: ", enabled)
+	_toggle_global_neural_connections(enabled)
+
+func _toggle_global_neural_connections(enabled: bool) -> void:
+	print("🔗 Toggling global neural connections: ", enabled)
+	
+	# Find the brain monitor scene
+	var brain_monitor = _find_brain_monitor_scene()
+	if not brain_monitor:
+		print("🔗 ❌ Could not find brain monitor scene")
+		return
+	
+	# Get all cortical area objects in the 3D scene
+	var cortical_area_objects = _find_all_cortical_area_objects(brain_monitor)
+	if cortical_area_objects.is_empty():
+		print("🔗 ❌ No cortical area objects found in brain monitor")
+		return
+	
+	print("🔗 Found ", cortical_area_objects.size(), " cortical area objects")
+	
+	# Toggle connections for all cortical areas
+	for cortical_area_obj in cortical_area_objects:
+		if enabled:
+			# Show connections (simulate hover) with global mode
+			cortical_area_obj.set_hover_over_volume_state(true, true)  # true for hover, true for global mode
+		else:
+			# Hide connections (simulate unhover)
+			cortical_area_obj.set_hover_over_volume_state(false, false)  # false for hover, false for global mode
+	
+	if enabled:
+		print("🔗 ✅ Global neural connections ENABLED for ", cortical_area_objects.size(), " areas")
+	else:
+		print("🔗 ❌ Global neural connections DISABLED for ", cortical_area_objects.size(), " areas")
+
+func _find_brain_monitor_scene() -> Node:
+	# Try to find the brain monitor scene in the scene tree
+	# Look for UI_BrainMonitor_3DScene or similar
+	var root = get_tree().root
+	return _recursive_find_node_by_class(root, "UI_BrainMonitor_3DScene")
+
+func _recursive_find_node_by_class(node: Node, target_class_name: String) -> Node:
+	# Check if current node matches
+	if node.get_script() and node.get_script().get_global_name() == target_class_name:
+		return node
+	
+	# Check children recursively
+	for child in node.get_children():
+		var result = _recursive_find_node_by_class(child, target_class_name)
+		if result:
+			return result
+	
+	return null
+
+func _find_all_cortical_area_objects(brain_monitor: Node) -> Array:
+	# Find all UI_BrainMonitor_CorticalArea objects in the brain monitor
+	var cortical_areas = []
+	_recursive_find_cortical_areas(brain_monitor, cortical_areas)
+	return cortical_areas
+
+func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
+	# Check if current node is a cortical area
+	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
+		cortical_areas.append(node)
+	
+	# Check children recursively
+	for child in node.get_children():
+		_recursive_find_cortical_areas(child, cortical_areas)
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme

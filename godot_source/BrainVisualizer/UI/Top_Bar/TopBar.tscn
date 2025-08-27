@@ -21,6 +21,10 @@
 [ext_resource type="Texture2D" uid="uid://or2chfieqcnd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
 [ext_resource type="Texture2D" uid="uid://mbdjdpep1hpy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png" id="19_fxjdk"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="20_6yf7l"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="22_eye_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="23_eye_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="24_eye_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="25_eye_d"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 [ext_resource type="Texture2D" uid="uid://dedyobqpiapjq" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00_C.png" id="21_n6kq0"]
@@ -169,6 +173,28 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
+[node name="ActivityRenderingPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ActivityRenderingPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="ActivityRenderingToggle" type="TextureButton" parent="ActivityRenderingPanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Toggle Global Neural Connections - Show/Hide neural connection curves for all cortical areas"
+theme_type_variation = &"TextureButton_TopBar"
+toggle_mode = true
+texture_normal = ExtResource("22_eye_s")
+texture_pressed = ExtResource("23_eye_c")
+texture_hover = ExtResource("24_eye_h")
+texture_disabled = ExtResource("25_eye_d")
+ignore_texture_size = true
+stretch_mode = 0
+
 [node name="DetailsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
@@ -271,6 +297,7 @@ layout_mode = 2
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
+[connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Previews" to="." method="_preview_button_pressed"]
 

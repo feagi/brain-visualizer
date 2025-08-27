@@ -86,8 +86,8 @@ func set_new_position(new_position: Vector3i) -> void:
 	if _directpoints_renderer != null:
 		_directpoints_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 
-func set_hover_over_volume_state(is_moused_over: bool) -> void:
-	print("🖱️ HOVER STATE CHANGE for ", _representing_cortial_area.cortical_ID, ": ", is_moused_over)
+func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = false) -> void:
+	print("🖱️ HOVER STATE CHANGE for ", _representing_cortial_area.cortical_ID, ": ", is_moused_over, " (global: ", is_global_mode, ")")
 	
 	if is_moused_over == _is_volume_moused_over:
 		print("   🔄 Same hover state, skipping")
@@ -100,8 +100,8 @@ func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	
 	# Show/hide neural connection curves on hover
 	if is_moused_over:
-		print("   🔗 Calling _show_neural_connections()")
-		_show_neural_connections()
+		print("   🔗 Calling _show_neural_connections() with global mode: ", is_global_mode)
+		_show_neural_connections(is_global_mode)
 	else:
 		print("   🔗 Calling _hide_neural_connections()")
 		_hide_neural_connections()
@@ -185,7 +185,7 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 		return UI_BrainMonitor_DDACorticalAreaRenderer.new()
 
 ## Show 3D curves connecting this cortical area to all its destinations
-func _show_neural_connections() -> void:
+func _show_neural_connections(is_global_mode: bool = false) -> void:
 	if _are_connections_visible:
 		print("   🔄 Connections already visible, skipping")
 		return  # Already showing connections
@@ -227,7 +227,7 @@ func _show_neural_connections() -> void:
 		print("   📍 Destination position: ", destination_position)
 		
 		if destination_position != Vector3.ZERO:  # Valid position found
-			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, false)
+			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, false, is_global_mode)
 			_connection_curves.append(curve_node)
 			add_child(curve_node)
 			curves_created += 1
@@ -249,7 +249,7 @@ func _show_neural_connections() -> void:
 			print("   📍 Source position: ", source_area_position)
 			
 			if source_area_position != Vector3.ZERO:  # Valid position found
-				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, true)
+				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, true, is_global_mode)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -271,7 +271,7 @@ func _show_neural_connections() -> void:
 			print("   🎯 Processing RECURSIVE connection in: ", recursive_area.cortical_ID)
 			
 			# Create a self-looping curve
-			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID)
+			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID, is_global_mode)
 			_connection_curves.append(loop_node)
 			add_child(loop_node)
 			curves_created += 1
@@ -351,7 +351,7 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	return Vector3.ZERO
 
 ## Create a 3D curve connecting two points
-func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, is_incoming: bool = false) -> Node3D:
+func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, is_incoming: bool = false, is_global_mode: bool = false) -> Node3D:
 	var direction_text = "OUTGOING to" if not is_incoming else "INCOMING from"
 	print("     🎨 Creating 3D curve ", direction_text, " ", connection_id, ": ", start_pos, " → ", end_pos)
 	
@@ -373,7 +373,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	
 	# Create curve segments - more segments = smoother curve
 	var num_segments = 12  # Good balance between smoothness and performance
-	var segment_material = _create_curve_material(is_incoming)
+	var segment_material = _create_curve_material(is_incoming, is_global_mode)
 	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
@@ -443,10 +443,15 @@ func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: 
 	return mesh_instance
 
 ## Create material for curve segments
-func _create_curve_material(is_incoming: bool = false) -> StandardMaterial3D:
+func _create_curve_material(is_incoming: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
-	if is_incoming:
+	if is_global_mode:
+		# Global mode - Gray color for all connections
+		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
+		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
+		print("     ⚪ Using GRAY material for GLOBAL mode connection")
+	elif is_incoming:
 		# Incoming connections - Green/Lime color
 		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
 		material.emission_color = Color(0.1, 0.8, 0.2)
@@ -550,7 +555,7 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 	print("     ✨ Created ", num_pulses, " animated pulses")
 
 ## Create a recursive (self-looping) connection
-func _create_recursive_loop(center_pos: Vector3, area_id: StringName) -> Node3D:
+func _create_recursive_loop(center_pos: Vector3, area_id: StringName, is_global_mode: bool = false) -> Node3D:
 	print("     🔄 Creating recursive loop for: ", area_id, " at position: ", center_pos)
 	
 	# Create a container for the loop
@@ -574,7 +579,7 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName) -> Node3D:
 		loop_points.append(loop_point)
 	
 	# Create loop segments
-	var loop_material = _create_recursive_material()
+	var loop_material = _create_recursive_material(is_global_mode)
 	for i in range(num_segments):
 		var point1 = loop_points[i]
 		var point2 = loop_points[i + 1]
@@ -588,17 +593,25 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName) -> Node3D:
 	return loop_node
 
 ## Create material for recursive connections
-func _create_recursive_material() -> StandardMaterial3D:
+func _create_recursive_material(is_global_mode: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
-	# Recursive connections - Purple/Magenta color
-	material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
+	
+	if is_global_mode:
+		# Global mode - Gray color for recursive connections
+		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
+		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
+		print("     ⚪ Using GRAY material for GLOBAL mode RECURSIVE connection")
+	else:
+		# Recursive connections - Purple/Magenta color
+		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
+		material.emission_color = Color(0.8, 0.2, 0.8)
+		print("     🟣 Using MAGENTA material for RECURSIVE connection")
+	
 	material.emission_enabled = true
-	material.emission_color = Color(0.8, 0.2, 0.8)
 	material.emission_energy = 2.5
 	material.flags_unshaded = true
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	print("     🟣 Using MAGENTA material for RECURSIVE connection")
 	return material
 
 ## Create pulse animation for recursive loops
