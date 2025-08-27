@@ -25,26 +25,39 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	_representing_cortial_area = defined_cortical_area
 	name = "CA_" + defined_cortical_area.cortical_ID
 	
-	# Create DDA renderer for translucent voxel structure
-	_dda_renderer = _create_renderer_depending_on_cortical_area_type(_representing_cortial_area)
-	add_child(_dda_renderer)
-	_dda_renderer.setup(_representing_cortial_area)
+	# Create renderers based on cortical area type
+	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or _representing_cortial_area.cortical_ID == "_power":
+		# Memory and Power areas use only DirectPoints renderer (no DDA cube)
+		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+		add_child(_directpoints_renderer)
+		_directpoints_renderer.setup(_representing_cortial_area)
+		print("   🎯 Using ONLY DirectPoints renderer for: ", _representing_cortial_area.cortical_ID)
+		print("   🚫 NO DDA renderer created - should have no cube!")
+	else:
+		# Standard areas use DDA renderer for translucent voxel structure
+		_dda_renderer = _create_renderer_depending_on_cortical_area_type(_representing_cortial_area)
+		add_child(_dda_renderer)
+		_dda_renderer.setup(_representing_cortial_area)
+		
+		# Create DirectPoints renderer for individual neuron firing
+		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
+		add_child(_directpoints_renderer)
+		_directpoints_renderer.setup(_representing_cortial_area)
+		print("   🎯 Using BOTH DDA and DirectPoints renderers for: ", _representing_cortial_area.cortical_ID)
 	
-	# Create DirectPoints renderer for individual neuron firing
-	_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
-	add_child(_directpoints_renderer)
-	_directpoints_renderer.setup(_representing_cortial_area)
+	# setup signals to update properties automatically for renderers
+	if _dda_renderer != null:
+		defined_cortical_area.friendly_name_updated.connect(_dda_renderer.update_friendly_name)
+		defined_cortical_area.coordinates_3D_updated.connect(_dda_renderer.update_position_with_new_FEAGI_coordinate)
+		defined_cortical_area.dimensions_3D_updated.connect(_dda_renderer.update_dimensions)
 	
-	# setup signals to update properties automatically for both renderers
-	defined_cortical_area.friendly_name_updated.connect(_dda_renderer.update_friendly_name)
-	defined_cortical_area.coordinates_3D_updated.connect(_dda_renderer.update_position_with_new_FEAGI_coordinate)
-	defined_cortical_area.dimensions_3D_updated.connect(_dda_renderer.update_dimensions)
-	
-	defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
-	defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
+	if _directpoints_renderer != null:
+		defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+		defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
 	
 	# Connect legacy SVO visualization data to DDA renderer (for translucent structure)
-	defined_cortical_area.recieved_new_neuron_activation_data.connect(_dda_renderer.update_visualization_data)
+	if _dda_renderer != null:
+		defined_cortical_area.recieved_new_neuron_activation_data.connect(_dda_renderer.update_visualization_data)
 	
 	# Connect direct points data to DirectPoints renderer (for individual firing neurons)
 	if _directpoints_renderer.has_method("_on_received_direct_neural_points"):
@@ -60,26 +73,34 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
-	_dda_renderer.update_position_with_new_FEAGI_coordinate(new_position)
-	_directpoints_renderer.update_position_with_new_FEAGI_coordinate(new_position)
+	if _dda_renderer != null:
+		_dda_renderer.update_position_with_new_FEAGI_coordinate(new_position)
+	if _directpoints_renderer != null:
+		_directpoints_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 
 func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	if is_moused_over == _is_volume_moused_over:
 		return
 	_is_volume_moused_over = is_moused_over
-	_dda_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
-	_directpoints_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
+	if _dda_renderer != null:
+		_dda_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
+	if _directpoints_renderer != null:
+		_directpoints_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 
 func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 		_hovered_neuron_coordinates = neuron_coordinates
-		_dda_renderer.set_highlighted_neurons(neuron_coordinates)
-		_directpoints_renderer.set_highlighted_neurons(neuron_coordinates)
+		if _dda_renderer != null:
+			_dda_renderer.set_highlighted_neurons(neuron_coordinates)
+		if _directpoints_renderer != null:
+			_directpoints_renderer.set_highlighted_neurons(neuron_coordinates)
 
 func clear_hover_state_for_all_neurons() -> void:
 	if len(_hovered_neuron_coordinates) != 0:
 		_hovered_neuron_coordinates = []
-		_dda_renderer.set_highlighted_neurons(_hovered_neuron_coordinates)
-		_directpoints_renderer.set_highlighted_neurons(_hovered_neuron_coordinates)
+		if _dda_renderer != null:
+			_dda_renderer.set_highlighted_neurons(_hovered_neuron_coordinates)
+		if _directpoints_renderer != null:
+			_directpoints_renderer.set_highlighted_neurons(_hovered_neuron_coordinates)
 
 func set_neuron_selection_state(neuron_coordinate: Vector3i, is_selected: bool) -> void:
 	var index: int = _selected_neuron_coordinates.find(neuron_coordinate)
@@ -89,8 +110,10 @@ func set_neuron_selection_state(neuron_coordinate: Vector3i, is_selected: bool) 
 		_selected_neuron_coordinates.append(neuron_coordinate)
 	else:
 		_selected_neuron_coordinates.remove_at(index)
-	_dda_renderer.set_neuron_selections(_selected_neuron_coordinates)
-	_directpoints_renderer.set_neuron_selections(_selected_neuron_coordinates)
+	if _dda_renderer != null:
+		_dda_renderer.set_neuron_selections(_selected_neuron_coordinates)
+	if _directpoints_renderer != null:
+		_directpoints_renderer.set_neuron_selections(_selected_neuron_coordinates)
 
 # flips the neuron coordinate selection state, and returns the new state (if its selected now)
 func toggle_neuron_selection_state(neuron_coordinate: Vector3i) -> bool:
@@ -102,15 +125,19 @@ func toggle_neuron_selection_state(neuron_coordinate: Vector3i) -> bool:
 	else:
 		_selected_neuron_coordinates.remove_at(index)
 		is_selected = false
-	_dda_renderer.set_neuron_selections(_selected_neuron_coordinates)
-	_directpoints_renderer.set_neuron_selections(_selected_neuron_coordinates)
+	if _dda_renderer != null:
+		_dda_renderer.set_neuron_selections(_selected_neuron_coordinates)
+	if _directpoints_renderer != null:
+		_directpoints_renderer.set_neuron_selections(_selected_neuron_coordinates)
 	return is_selected
 
 func clear_all_neuron_selection_states() -> void:
 	if len(_selected_neuron_coordinates) != 0:
 		_selected_neuron_coordinates =  []
-		_dda_renderer.set_neuron_selections(_selected_neuron_coordinates)
-		_directpoints_renderer.set_neuron_selections(_selected_neuron_coordinates)
+		if _dda_renderer != null:
+			_dda_renderer.set_neuron_selections(_selected_neuron_coordinates)
+		if _directpoints_renderer != null:
+			_directpoints_renderer.set_neuron_selections(_selected_neuron_coordinates)
 
 func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates

@@ -94,9 +94,18 @@ func setup(area: AbstractCorticalArea) -> void:
 	_multi_mesh.use_colors = true
 	
 	# Create voxel (cube) mesh for each neuron - maintaining familiar voxel appearance
-	var voxel_mesh = BoxMesh.new()
-	voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
-	_multi_mesh.mesh = voxel_mesh
+	# For power areas, we don't want individual neuron cubes since the cone shows firing animation
+	if area.cortical_ID == "_power":
+		# Use a very small invisible mesh for power areas (firing animation is on the cone itself)
+		var invisible_mesh = BoxMesh.new()
+		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
+		_multi_mesh.mesh = invisible_mesh
+		print("   ⚡ Power area uses invisible neuron voxels - firing shown on cone!")
+	else:
+		var voxel_mesh = BoxMesh.new()
+		voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
+		_multi_mesh.mesh = voxel_mesh
+		print("   📦 Standard area uses visible neuron cube voxels")
 	
 	# Create material for neuron voxels with Z-DEPTH COLORING support
 	var neuron_material = StandardMaterial3D.new()
@@ -135,11 +144,12 @@ func setup(area: AbstractCorticalArea) -> void:
 		cone_mesh.radial_segments = 16  # Smoother cone for larger size
 		cone_mesh.rings = 1  # Simple cone structure
 		_outline_mesh_instance.mesh = cone_mesh
-		print("   ⚡ Created 3x larger neon blue cone outline for power cortical area")
+		print("   ⚡ Created 3x larger CONE outline for power cortical area - NO CUBE!")
 	else:
 		var box_mesh = BoxMesh.new()
 		box_mesh.size = Vector3.ONE
 		_outline_mesh_instance.mesh = box_mesh
+		print("   📦 Created standard BOX outline for cortical area: ", area.cortical_ID)
 	# Use different materials based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Use custom jello material for memory spheres
