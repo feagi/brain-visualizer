@@ -216,24 +216,49 @@ func _show_neural_connections() -> void:
 		print("   ❌ ERROR: Could not get source position!")
 		return
 	
-	# Create curves to all destination cortical areas
+	# Create curves to all destination cortical areas (OUTGOING)
 	var curves_created = 0
 	for destination_area: AbstractCorticalArea in efferent_mappings.keys():
-		print("   🎯 Processing destination: ", destination_area.cortical_ID)
+		print("   🎯 Processing OUTGOING to: ", destination_area.cortical_ID)
 		var destination_position = _get_cortical_area_center_position_for_area(destination_area)
 		print("   📍 Destination position: ", destination_position)
 		
 		if destination_position != Vector3.ZERO:  # Valid position found
-			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID)
+			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, false)
 			_connection_curves.append(curve_node)
 			add_child(curve_node)
 			curves_created += 1
-			print("   ✅ Created connection curve to: ", destination_area.cortical_ID)
+			print("   ✅ Created OUTGOING curve to: ", destination_area.cortical_ID)
 		else:
-			print("   ⚠️ Skipped connection to ", destination_area.cortical_ID, " - invalid position")
+			print("   ⚠️ Skipped outgoing connection to ", destination_area.cortical_ID, " - invalid position")
+	
+	# Get all afferent (incoming) connections to this cortical area
+	var afferent_mappings = _representing_cortial_area.afferent_mappings
+	print("   🔍 DEBUG: afferent_mappings size: ", afferent_mappings.size())
+	
+	if not afferent_mappings.is_empty():
+		print("   📊 Found ", afferent_mappings.size(), " afferent (incoming) connections")
+		
+		# Create curves from all source cortical areas (INCOMING)
+		for source_area: AbstractCorticalArea in afferent_mappings.keys():
+			print("   🎯 Processing INCOMING from: ", source_area.cortical_ID)
+			var source_area_position = _get_cortical_area_center_position_for_area(source_area)
+			print("   📍 Source position: ", source_area_position)
+			
+			if source_area_position != Vector3.ZERO:  # Valid position found
+				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, true)
+				_connection_curves.append(curve_node)
+				add_child(curve_node)
+				curves_created += 1
+				print("   ✅ Created INCOMING curve from: ", source_area.cortical_ID)
+			else:
+				print("   ⚠️ Skipped incoming connection from ", source_area.cortical_ID, " - invalid position")
+	else:
+		print("   ❌ No afferent (incoming) connections found")
 	
 	_are_connections_visible = true
-	print("   🎯 Total curves created: ", curves_created, " out of ", efferent_mappings.size(), " connections")
+	var total_connections = efferent_mappings.size() + afferent_mappings.size()
+	print("   🎯 Total curves created: ", curves_created, " out of ", total_connections, " connections (", efferent_mappings.size(), " outgoing + ", afferent_mappings.size(), " incoming)")
 
 ## Hide all neural connection curves
 func _hide_neural_connections() -> void:
@@ -303,12 +328,14 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	return Vector3.ZERO
 
 ## Create a 3D curve connecting two points
-func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, destination_id: StringName) -> Node3D:
-	print("     🎨 Creating 3D curve from ", start_pos, " to ", end_pos, " for ", destination_id)
+func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, is_incoming: bool = false) -> Node3D:
+	var direction_text = "OUTGOING to" if not is_incoming else "INCOMING from"
+	print("     🎨 Creating 3D curve ", direction_text, " ", connection_id, ": ", start_pos, " → ", end_pos)
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
-	connection_node.name = "Connection_to_" + destination_id
+	var prefix = "OUT_to_" if not is_incoming else "IN_from_"
+	connection_node.name = prefix + connection_id
 	
 	# Calculate curve parameters
 	var direction = (end_pos - start_pos)
@@ -323,7 +350,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, destination_
 	
 	# Create curve segments - more segments = smoother curve
 	var num_segments = 12  # Good balance between smoothness and performance
-	var segment_material = _create_curve_material()
+	var segment_material = _create_curve_material(is_incoming)
 	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
@@ -346,7 +373,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, destination_
 		connection_node.add_child(segment)
 	
 	# Create pulse animation along this curve
-	_create_pulse_animation(connection_node, curve_points, destination_id)
+	_create_pulse_animation(connection_node, curve_points, connection_id, is_incoming)
 	
 	print("     ✨ Created beautiful 3D curve with ", num_segments, " segments and pulse animation")
 	return connection_node
@@ -393,11 +420,21 @@ func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: 
 	return mesh_instance
 
 ## Create material for curve segments
-func _create_curve_material() -> StandardMaterial3D:
+func _create_curve_material(is_incoming: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
-	material.albedo_color = Color(0.2, 0.8, 1.0, 0.9)  # Beautiful cyan
+	
+	if is_incoming:
+		# Incoming connections - Green/Lime color
+		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
+		material.emission_color = Color(0.1, 0.8, 0.2)
+		print("     🟢 Using GREEN material for INCOMING connection")
+	else:
+		# Outgoing connections - Cyan/Blue color  
+		material.albedo_color = Color(0.2, 0.8, 1.0, 0.9)  # Beautiful cyan
+		material.emission_color = Color(0.1, 0.6, 1.0)
+		print("     🔵 Using CYAN material for OUTGOING connection")
+	
 	material.emission_enabled = true
-	material.emission_color = Color(0.1, 0.6, 1.0)
 	material.emission_energy = 2.0
 	material.flags_unshaded = true
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -405,8 +442,9 @@ func _create_curve_material() -> StandardMaterial3D:
 	return material
 
 ## Create pulse animation along the curve
-func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], destination_id: StringName) -> void:
-	print("     ⚡ Creating pulse animation for connection to: ", destination_id)
+func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], connection_id: StringName, is_incoming: bool = false) -> void:
+	var direction_text = "to" if not is_incoming else "from"
+	print("     ⚡ Creating pulse animation for connection ", direction_text, ": ", connection_id)
 	
 	# Create multiple pulse spheres for continuous animation
 	var num_pulses = 3  # Multiple pulses traveling at once
@@ -424,11 +462,20 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], d
 		sphere_mesh.rings = 4
 		pulse_sphere.mesh = sphere_mesh
 		
-		# Create bright pulsing material
+		# Create bright pulsing material with different colors for direction
 		var pulse_material = StandardMaterial3D.new()
-		pulse_material.albedo_color = Color(1.0, 1.0, 0.3, 0.8)  # Bright yellow
+		if is_incoming:
+			# Incoming pulses - Bright lime/green
+			pulse_material.albedo_color = Color(0.3, 1.0, 0.3, 0.8)  # Bright lime
+			pulse_material.emission_color = Color(0.2, 1.0, 0.2)
+			print("       🟢 Creating GREEN pulse for INCOMING connection")
+		else:
+			# Outgoing pulses - Bright yellow/orange
+			pulse_material.albedo_color = Color(1.0, 1.0, 0.3, 0.8)  # Bright yellow
+			pulse_material.emission_color = Color(1.0, 0.8, 0.0)
+			print("       🟡 Creating YELLOW pulse for OUTGOING connection")
+		
 		pulse_material.emission_enabled = true
-		pulse_material.emission_color = Color(1.0, 0.8, 0.0)
 		pulse_material.emission_energy = 4.0
 		pulse_material.flags_unshaded = true
 		pulse_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
