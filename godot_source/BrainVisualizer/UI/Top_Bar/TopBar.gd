@@ -217,6 +217,9 @@ func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
 	# Check if current node is a cortical area
 	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
 		cortical_areas.append(node)
+		# Debug: Check if this is a memory area
+		if node._representing_cortial_area and node._representing_cortial_area.cortical_type == 1:  # MEMORY type
+			print("🔗 Found MEMORY cortical area in global toggle: ", node._representing_cortial_area.cortical_ID)
 	
 	# Check children recursively
 	for child in node.get_children():

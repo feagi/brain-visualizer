@@ -191,6 +191,9 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 		return  # Already showing connections
 	
 	print("🔗 SHOWING neural connections for: ", _representing_cortial_area.cortical_ID)
+	print("   🔍 Cortical area type: ", _representing_cortial_area.cortical_type)
+	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		print("   🔮 This is a MEMORY cortical area - checking connections...")
 	
 	# Clear any existing pulse tweens
 	_pulse_tweens.clear()
@@ -204,6 +207,16 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 	var efferent_mappings = _representing_cortial_area.efferent_mappings
 	print("   🔍 DEBUG: efferent_mappings type: ", typeof(efferent_mappings))
 	print("   🔍 DEBUG: efferent_mappings size: ", efferent_mappings.size())
+	
+	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		print("   🔮 MEMORY AREA DEBUG:")
+		print("     📊 Efferent mappings: ", efferent_mappings.size())
+		if efferent_mappings.size() > 0:
+			print("     🎯 Memory area HAS outgoing connections!")
+			for dest_area in efferent_mappings.keys():
+				print("       → ", dest_area.cortical_ID)
+		else:
+			print("     ❌ Memory area has NO outgoing connections")
 	
 	if efferent_mappings.is_empty():
 		print("   ❌ No efferent connections found for: ", _representing_cortial_area.cortical_ID)
@@ -310,6 +323,9 @@ func _get_cortical_area_center_position() -> Vector3:
 	print("     🔍 Getting position for: ", _representing_cortial_area.cortical_ID)
 	print("     🔍 _dda_renderer: ", _dda_renderer != null)
 	print("     🔍 _directpoints_renderer: ", _directpoints_renderer != null)
+	
+	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		print("     🔮 MEMORY AREA position retrieval...")
 	
 	# Use the renderer's static body position as the center
 	if _dda_renderer != null and _dda_renderer._static_body != null:
