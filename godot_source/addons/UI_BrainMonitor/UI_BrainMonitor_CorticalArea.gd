@@ -256,9 +256,29 @@ func _show_neural_connections() -> void:
 	else:
 		print("   ❌ No afferent (incoming) connections found")
 	
+	# Get all recursive (self) connections within this cortical area
+	var recursive_mappings = _representing_cortial_area.recursive_mappings
+	print("   🔍 DEBUG: recursive_mappings size: ", recursive_mappings.size())
+	
+	if not recursive_mappings.is_empty():
+		print("   📊 Found ", recursive_mappings.size(), " recursive (self) connections")
+		
+		# Create looping curves for recursive connections
+		for recursive_area: AbstractCorticalArea in recursive_mappings.keys():
+			print("   🎯 Processing RECURSIVE connection in: ", recursive_area.cortical_ID)
+			
+			# Create a self-looping curve
+			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID)
+			_connection_curves.append(loop_node)
+			add_child(loop_node)
+			curves_created += 1
+			print("   ✅ Created RECURSIVE loop for: ", recursive_area.cortical_ID)
+	else:
+		print("   ❌ No recursive (self) connections found")
+	
 	_are_connections_visible = true
-	var total_connections = efferent_mappings.size() + afferent_mappings.size()
-	print("   🎯 Total curves created: ", curves_created, " out of ", total_connections, " connections (", efferent_mappings.size(), " outgoing + ", afferent_mappings.size(), " incoming)")
+	var total_connections = efferent_mappings.size() + afferent_mappings.size() + recursive_mappings.size()
+	print("   🎯 Total curves created: ", curves_created, " out of ", total_connections, " connections (", efferent_mappings.size(), " outgoing + ", afferent_mappings.size(), " incoming + ", recursive_mappings.size(), " recursive)")
 
 ## Hide all neural connection curves
 func _hide_neural_connections() -> void:
@@ -525,3 +545,132 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		pulse_tween.tween_interval(0.3)
 	
 	print("     ✨ Created ", num_pulses, " animated pulses")
+
+## Create a recursive (self-looping) connection
+func _create_recursive_loop(center_pos: Vector3, area_id: StringName) -> Node3D:
+	print("     🔄 Creating recursive loop for: ", area_id, " at position: ", center_pos)
+	
+	# Create a container for the loop
+	var loop_node = Node3D.new()
+	loop_node.name = "RECURSIVE_" + area_id
+	
+	# Create a circular loop around the cortical area
+	var loop_radius = 3.0  # Radius of the loop around the area
+	var loop_height = 2.0  # Height above the area center
+	var num_segments = 16  # More segments for smooth circle
+	
+	# Calculate loop points in a circle
+	var loop_points: Array[Vector3] = []
+	for i in range(num_segments + 1):  # +1 to close the loop
+		var angle = (i / float(num_segments)) * TAU
+		var loop_point = center_pos + Vector3(
+			cos(angle) * loop_radius,
+			loop_height,
+			sin(angle) * loop_radius
+		)
+		loop_points.append(loop_point)
+	
+	# Create loop segments
+	var loop_material = _create_recursive_material()
+	for i in range(num_segments):
+		var point1 = loop_points[i]
+		var point2 = loop_points[i + 1]
+		var segment = _create_curve_segment(point1, point2, i, loop_material)
+		loop_node.add_child(segment)
+	
+	# Create recursive pulse animation
+	_create_recursive_pulse_animation(loop_node, loop_points, area_id)
+	
+	print("     ✨ Created recursive loop with ", num_segments, " segments")
+	return loop_node
+
+## Create material for recursive connections
+func _create_recursive_material() -> StandardMaterial3D:
+	var material = StandardMaterial3D.new()
+	# Recursive connections - Purple/Magenta color
+	material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
+	material.emission_enabled = true
+	material.emission_color = Color(0.8, 0.2, 0.8)
+	material.emission_energy = 2.5
+	material.flags_unshaded = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	print("     🟣 Using MAGENTA material for RECURSIVE connection")
+	return material
+
+## Create pulse animation for recursive loops
+func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vector3], area_id: StringName) -> void:
+	print("     ⚡ Creating recursive pulse animation for: ", area_id)
+	
+	# Create multiple pulses traveling around the loop
+	var num_pulses = 2  # Fewer pulses for cleaner loop animation
+	
+	for pulse_index in range(num_pulses):
+		# Create a glowing pulse sphere
+		var pulse_sphere = MeshInstance3D.new()
+		pulse_sphere.name = "RecursivePulse_" + str(pulse_index)
+		
+		# Create sphere mesh (slightly smaller for recursive)
+		var sphere_mesh = SphereMesh.new()
+		sphere_mesh.radius = 0.25  # Smaller than regular pulses
+		sphere_mesh.height = 0.5
+		sphere_mesh.radial_segments = 8
+		sphere_mesh.rings = 4
+		pulse_sphere.mesh = sphere_mesh
+		
+		# Create bright purple pulsing material
+		var pulse_material = StandardMaterial3D.new()
+		pulse_material.albedo_color = Color(1.0, 0.5, 1.0, 0.8)  # Bright purple
+		pulse_material.emission_enabled = true
+		pulse_material.emission_color = Color(1.0, 0.3, 1.0)
+		pulse_material.emission_energy = 4.0
+		pulse_material.flags_unshaded = true
+		pulse_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		pulse_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		pulse_sphere.material_override = pulse_material
+		
+		print("       🟣 Creating PURPLE pulse for RECURSIVE connection")
+		
+		# Start pulse at beginning of loop
+		pulse_sphere.position = loop_points[0]
+		loop_node.add_child(pulse_sphere)
+		
+		# Create animation tween
+		var pulse_tween = create_tween()
+		pulse_tween.set_loops()  # Infinite loop
+		_pulse_tweens.append(pulse_tween)
+		
+		# Stagger the pulses
+		var delay = pulse_index * 1.0  # 1 second delay between recursive pulses
+		var travel_time = 3.0  # Slower travel for recursive loops
+		
+		# Add initial delay for staggering
+		if delay > 0:
+			pulse_tween.tween_interval(delay)
+		
+		# Animate the pulse around the loop
+		pulse_tween.tween_method(
+			func(progress: float):
+				var point_index = int(progress * (loop_points.size() - 2))  # -2 because last point = first point
+				var local_progress = (progress * (loop_points.size() - 2)) - point_index
+				
+				# Interpolate between current and next point
+				if point_index < loop_points.size() - 1:
+					var current_point = loop_points[point_index]
+					var next_point = loop_points[point_index + 1]
+					pulse_sphere.position = current_point.lerp(next_point, local_progress)
+				else:
+					pulse_sphere.position = loop_points[0]  # Back to start
+				
+				# Pulse the glow intensity
+				var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 80.0) * 1.5
+				pulse_material.emission_energy = glow_intensity,
+			0.0,
+			1.0,
+			travel_time
+		)
+		
+		# Brief pause before restarting
+		pulse_tween.tween_interval(0.2)
+	
+	print("     ✨ Created ", num_pulses, " recursive animated pulses")
