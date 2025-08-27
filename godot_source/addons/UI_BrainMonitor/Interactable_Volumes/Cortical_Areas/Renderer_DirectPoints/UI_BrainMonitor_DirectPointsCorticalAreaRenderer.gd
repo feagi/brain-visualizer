@@ -576,7 +576,7 @@ func _create_tesla_coil_spikes() -> void:
 	# Create multiple electrical spikes around the cone tip
 	var spike_count = 8  # Number of electrical spikes
 	var cone_height = 6.0  # Match the cone height
-	var tip_position = Vector3(0, cone_height / 2.0, 0)  # Top of the cone
+	var tip_position = Vector3(0, cone_height * 0.45, 0)  # Much closer to actual tip (90% up the cone)
 	
 	for i in range(spike_count):
 		var spike = MeshInstance3D.new()
@@ -605,12 +605,12 @@ func _create_tesla_coil_spikes() -> void:
 		
 		# Position lightning sparks shooting out from cone tip in random directions
 		var base_angle = (i / float(spike_count)) * TAU  # Evenly distribute around tip
-		var random_angle_offset = randf_range(-0.5, 0.5)  # Add randomness
+		var random_angle_offset = randf_range(-1.0, 1.0)  # Increased randomness for more spread
 		var final_angle = base_angle + random_angle_offset
 		
-		# Random direction with some upward bias (like real tesla coil)
-		var horizontal_radius = randf_range(0.8, 1.5)
-		var vertical_offset = randf_range(-0.3, 1.2)  # Mostly upward, some sideways
+		# Random direction with some upward bias (like real tesla coil) - SPREAD OUT MORE
+		var horizontal_radius = randf_range(1.5, 3.0)  # Increased from 0.8-1.5 to 1.5-3.0
+		var vertical_offset = randf_range(-0.8, 1.8)  # Increased from -0.3-1.2 to -0.8-1.8
 		
 		var spark_direction = Vector3(
 			cos(final_angle) * horizontal_radius,
@@ -618,15 +618,19 @@ func _create_tesla_coil_spikes() -> void:
 			sin(final_angle) * horizontal_radius
 		).normalized()
 		
-		# Position at cone tip and point in spark direction
-		spike.position = tip_position
+		# Position spark so convergence point is at bottom third (thick end near cone tip)
+		var spark_length = spike_mesh.height
+		var convergence_offset = spark_length * 0.33  # Move out by 1/3 of length
+		var offset_position = spark_direction.normalized() * convergence_offset
+		
+		spike.position = tip_position + offset_position
 		spike.look_at(tip_position + spark_direction * 2.0, Vector3.UP)
 		
-		# Add slight random rotation for more natural lightning look
+		# Add more random rotation for wider spread and natural lightning look
 		spike.rotation_degrees += Vector3(
-			randf_range(-15, 15),
-			randf_range(-30, 30), 
-			randf_range(-15, 15)
+			randf_range(-30, 30),  # Increased from -15,15
+			randf_range(-45, 45),  # Increased from -30,30
+			randf_range(-30, 30)   # Increased from -15,15
 		)
 		
 		print("   🔍 DEBUG: Created spike ", i, " at position: ", spike.position, " with height: ", spike_mesh.height)
@@ -663,7 +667,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 		
 		# Calculate tip position (same as in _create_tesla_coil_spikes)
 		var cone_height = 6.0  # Same as the cone height
-		var tip_position = Vector3(0, cone_height / 2.0, 0)  # Top of the cone
+		var tip_position = Vector3(0, cone_height * 0.45, 0)  # Much closer to actual tip (90% up the cone)
 		
 		# Show all spikes with electrical flickering animation
 		for i in range(_tesla_coil_spikes.size()):
