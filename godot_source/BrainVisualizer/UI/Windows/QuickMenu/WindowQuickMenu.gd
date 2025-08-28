@@ -86,7 +86,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "One or more of the selected areas cannot be moved to a region"
+				move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a brain region."
 			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
 				delete_button.disabled = true
 				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
