@@ -215,8 +215,8 @@ func setup(area: AbstractCorticalArea) -> void:
 	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
 		_friendly_name_label.visible = true  # Show label for PNG icon areas
 		print("   🖼️ PNG icon area label set to visible for: ", area.cortical_ID)
-		# Position label above the PNG icon (3x3 units, so 2.5 units above center)
-		_friendly_name_label.position = Vector3(0.0, 2.5, 0.0)
+		# Position label above the PNG icon (icon is at y=2.0, label should be at y=4.5 for proper separation)
+		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
 		print("   📍 PNG icon label positioned at: ", _friendly_name_label.position)
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
@@ -253,7 +253,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
-		_friendly_name_label.position = Vector3(0.0, 2.5, 0.0)
+		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
 		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
@@ -281,7 +281,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
-		_friendly_name_label.position = Vector3(0.0, 2.5, 0.0)
+		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
 		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 	
 	# Update outline material scaling (only for non-memory areas that use shader materials)
@@ -362,6 +362,13 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	
 	# Start visibility timer to clear neurons after simulation_timestep
 	_start_visibility_timer()
+	
+	# Make power cone use firing colors when neural activity occurs
+	if _cortical_area_id == "_power" and _power_material:
+		print("   ⚡ Power cone becoming active - using firing colors")
+		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
+		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))  # Bright red emission
+		_power_material.set_shader_parameter("emission_energy", 1.5)  # Full glow
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
@@ -485,6 +492,13 @@ func _on_visibility_timeout() -> void:
 	
 	# Visibility timer expired - clearing neurons via timeout
 	_clear_all_neurons()
+	
+	# Make power cone use default cortical mesh color when no neural activity
+	if _cortical_area_id == "_power" and _power_material:
+		print("   ⚡ Power cone becoming inactive - using default cortical mesh color")
+		_power_material.set_shader_parameter("albedo_color", Color(0.172451, 0.315246, 0.861982, 0.8))  # Light blue like cortical meshes
+		_power_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
+		_power_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
 	"""Convert world position to neuron coordinate"""
@@ -576,6 +590,11 @@ func _trigger_power_firing_animation() -> void:
 		return
 	
 	print("   ⚡ Triggering power cone firing animation!")
+	
+	# Make power cone use firing colors when firing animation starts
+	_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
+	_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))  # Bright red emission
+	_power_material.set_shader_parameter("emission_energy", 1.5)  # Full glow
 	
 	# Create a new tween for this animation
 	_firing_tween = create_tween()
