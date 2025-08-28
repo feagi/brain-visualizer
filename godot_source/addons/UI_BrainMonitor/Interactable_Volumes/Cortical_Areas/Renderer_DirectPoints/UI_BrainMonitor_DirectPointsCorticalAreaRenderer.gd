@@ -231,6 +231,19 @@ func setup(area: AbstractCorticalArea) -> void:
 	area.recieved_new_direct_neural_points_bulk.connect(_on_received_direct_neural_points_bulk)
 	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)  # Legacy fallback
 	
+	# Connect to memory area stats updates for dynamic sizing
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		FeagiCore.feagi_local_cache.memory_area_stats_updated.connect(_on_memory_area_stats_updated)
+		print("   🔮 Connected to memory area stats updates for dynamic sizing")
+		
+		# Apply initial sizing if stats are already available
+		if FeagiCore.feagi_local_cache.memory_area_stats.has(_cortical_area_id):
+			var area_stats = FeagiCore.feagi_local_cache.memory_area_stats[_cortical_area_id]
+			if area_stats.has("neuron_count"):
+				var neuron_count = int(area_stats["neuron_count"])
+				print("   🔮 Applying initial memory sphere size: ", neuron_count, " neurons")
+				_update_memory_sphere_size(neuron_count)
+	
 	# Setup visibility timer for neuron firing timeout
 	_visibility_timer = Timer.new()
 	_visibility_timer.name = "NeuronVisibilityTimer"
@@ -880,6 +893,65 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	
 	print("   ✅ Created placeholder texture with color: ", placeholder_color)
 	return texture
+
+func _on_memory_area_stats_updated(stats: Dictionary) -> void:
+	"""Handle memory area stats updates from health check"""
+	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	
+	# Check if this memory area has stats
+	if _cortical_area_id not in stats:
+		print("   🔮 No stats found for memory area: ", _cortical_area_id)
+		return
+	
+	var area_stats = stats[_cortical_area_id]
+	if not area_stats.has("neuron_count"):
+		print("   🔮 No neuron_count in stats for memory area: ", _cortical_area_id)
+		return
+	
+	var neuron_count = int(area_stats["neuron_count"])
+	print("   🔮 Updating memory sphere size for ", _cortical_area_id, " with neuron count: ", neuron_count)
+	
+	# Update the sphere size based on neuron count
+	_update_memory_sphere_size(neuron_count)
+
+func _update_memory_sphere_size(neuron_count: int) -> void:
+	"""Update memory sphere size based on neuron count"""
+	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	
+	# Calculate size based on neuron count
+	# Base size: 1.0 (normal cortical area size)
+	# Scale factor: logarithmic scaling to prevent huge spheres
+	var base_size = 1.0
+	var scale_factor = 1.0
+	
+	if neuron_count > 0:
+		# Logarithmic scaling: log10(neuron_count + 1) + 1
+		# This gives: 0 neurons = 1.0x, 10 neurons = 2.0x, 100 neurons = 3.0x, etc.
+		scale_factor = log(neuron_count + 1) / log(10) + 1.0
+		# Cap the maximum size to prevent overly large spheres
+		scale_factor = min(scale_factor, 5.0)  # Max 5x size
+	
+	var sphere_radius = base_size * scale_factor * 0.5  # 0.5 is the base radius
+	var sphere_height = base_size * scale_factor * 1.0  # 1.0 is the base height
+	
+	print("   🔮 Memory sphere sizing: ", neuron_count, " neurons -> ", scale_factor, "x scale -> radius:", sphere_radius, " height:", sphere_height)
+	
+	# Update the sphere mesh
+	if _outline_mesh_instance and _outline_mesh_instance.mesh is SphereMesh:
+		var sphere_mesh = _outline_mesh_instance.mesh as SphereMesh
+		sphere_mesh.radius = sphere_radius
+		sphere_mesh.height = sphere_height
+		print("   🔮 Updated memory sphere mesh size")
+	
+	# Update the collision shape
+	if _static_body:
+		var collision_shape = _static_body.get_child(0) as CollisionShape3D
+		if collision_shape and collision_shape.shape is SphereShape3D:
+			var sphere_shape = collision_shape.shape as SphereShape3D
+			sphere_shape.radius = sphere_radius
+			print("   🔮 Updated memory sphere collision size")
 
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""

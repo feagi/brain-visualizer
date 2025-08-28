@@ -290,6 +290,10 @@ var _genome_validity: bool
 var _brain_readiness: bool
 var _simulation_timestep: float = 0.05  # Default 50ms
 
+# Memory area stats from health check
+var memory_area_stats: Dictionary = {}  # cortical_id -> {neuron_count, created_total, deleted_total, last_updated}
+signal memory_area_stats_updated(stats: Dictionary)
+
 var _pending_amalgamation: StringName = ""
 
 ## Given a dict form feagi of health info, update cached health values
@@ -360,6 +364,14 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 					simulation_timestep = timestep
 					simulation_timestep_changed.emit(simulation_timestep)
 			# Silently ignore invalid burst_frequency (0.0) to avoid spam
+	
+	# Handle memory area stats
+	if "memory_area_stats" in health:
+		var new_memory_stats = health["memory_area_stats"]
+		if new_memory_stats != null and new_memory_stats is Dictionary:
+			memory_area_stats = new_memory_stats.duplicate()
+			print("🧠 FEAGI CACHE: Updated memory area stats for ", memory_area_stats.size(), " areas")
+			memory_area_stats_updated.emit(memory_area_stats)
 	
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
