@@ -50,23 +50,69 @@ func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	name = "BM_" + region.region_ID
 
-	print("🧠 BrainMonitor: Setting up 3D scene for region: %s" % region.friendly_name)
+	print("🧠 BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
+	print("  📊 Root region info:")
+	print("    - Region ID: %s" % region.region_ID)  
+	print("    - Contains %d cortical areas" % region.contained_cortical_areas.size())
+	print("    - Contains %d child regions" % region.contained_regions.size())
+	print("🧠 Display Rules:")
+	print("  ✅ Root region cortical areas → Show in normal 3D position")
+	print("  ❌ Child region cortical areas → Hide (unless I/O)")  
+	print("  🔄 Child region I/O areas → Show inside brain region wireframe cubes")
 	
-	# Show only cortical areas that are directly in the root region (not in subregions)
+	# Show cortical areas from root region
+	print("  📦 STEP 1: Processing %d cortical areas from root region..." % _representing_region.contained_cortical_areas.size())
 	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
-		print("  📦 Adding direct cortical area: %s" % area.cortical_ID)
+		print("  📦 Evaluating ROOT area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 	
+	# ALSO check cortical areas in child regions that might be I/O areas
+	print("  🔄 STEP 2: Processing child regions for I/O areas...")
+	print("  🔄 Found %d child regions to process..." % _representing_region.contained_regions.size())
+	for child_region: BrainRegion in _representing_region.contained_regions:
+		print("  📦 Processing %d cortical areas from child region '%s'..." % [child_region.contained_cortical_areas.size(), child_region.friendly_name])
+		for area: AbstractCorticalArea in child_region.contained_cortical_areas:
+			print("  📦 Evaluating CHILD area: %s (type: %s) from region %s" % [area.cortical_ID, area.type_as_string, child_region.friendly_name])
+			# For areas in child regions, check if they're I/O of that specific child region
+			print("    🔍 Checking if %s is I/O of child region '%s'..." % [area.cortical_ID, child_region.friendly_name])
+			if _is_area_input_output_of_specific_child_region(area, child_region):
+				print("    ✅ Area %s IS I/O of child region '%s' - creating visualization" % [area.cortical_ID, child_region.friendly_name])
+				var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
+				if rendering_area:
+					print("    ✅ Successfully created visualization for %s" % area.cortical_ID)
+				else:
+					print("    ❌ Failed to create visualization for %s" % area.cortical_ID)
+			else:
+				print("    ❌ Area %s is NOT I/O of child region '%s' - skipping" % [area.cortical_ID, child_region.friendly_name])
+	
 	# Show child brain regions as 3D frames
+	print("  🏗️ STEP 3: Creating brain region wireframe cubes...")
+	print("  🔍 Root region has %d child regions to create frames for" % _representing_region.contained_regions.size())
+	if _representing_region.contained_regions.size() == 0:
+		print("    ⚠️  WARNING: No child regions found! Brain region frames won't be created.")
+	
 	for child_region: BrainRegion in _representing_region.contained_regions:
 		print("  🏗️ Adding child brain region frame: %s" % child_region.friendly_name)
+		print("    - Child has %d cortical areas" % child_region.contained_cortical_areas.size())
+		print("    - Child has %d input links" % child_region.input_open_chain_links.size())
+		print("    - Child has %d output links" % child_region.output_open_chain_links.size())
 		var region_frame: UI_BrainMonitor_BrainRegion3D = _add_brain_region_frame(child_region)
+		if region_frame:
+			print("    ✅ Child brain region frame created successfully")
+		else:
+			print("    ❌ Failed to create child brain region frame")
 	
 	# Connect to region signals for dynamic updates
+	print("  🔗 STEP 4: Connecting to region signals for dynamic updates...")
 	_representing_region.cortical_area_added_to_region.connect(_add_cortical_area)
 	_representing_region.cortical_area_removed_from_region.connect(_remove_cortical_area)
 	_representing_region.subregion_added_to_region.connect(_add_brain_region_frame)
 	_representing_region.subregion_removed_from_region.connect(_remove_brain_region_frame)
+	
+	print("🏁 BrainMonitor 3D Scene: SETUP COMPLETED for region: %s" % region.friendly_name)
+	print("  📊 Summary:")
+	print("    - Created %d cortical area visualizations" % _cortical_visualizations_by_ID.size())
+	print("    - Created %d brain region frames" % _brain_region_visualizations_by_ID.size())
 	
 
 
@@ -251,10 +297,16 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
 		return
 	
-	# Only add if the cortical area is directly in our representing region (not in a subregion)
-	if not _representing_region.is_cortical_area_in_region_directly(area):
-		print("  ⏭️  Skipping cortical area %s - not directly in region %s" % [area.cortical_ID, _representing_region.friendly_name])
+	# Check if this area should be created
+	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
+	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
+	
+	# Only create if the area is directly in root OR it's needed as I/O for a child region
+	if not is_directly_in_root and not is_io_of_child_region:
+		print("  ⏭️  Skipping cortical area %s - not directly in root region and not I/O of child region" % area.cortical_ID)
 		return
+	
+	print("  ✅ Creating cortical area %s - directly_in_root: %s, io_of_child: %s" % [area.cortical_ID, is_directly_in_root, is_io_of_child_region])
 	
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
 	_node_3D_root.add_child(rendering_area)
@@ -262,7 +314,17 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	_cortical_visualizations_by_ID[area.cortical_ID] = rendering_area
 	area.about_to_be_deleted.connect(_remove_cortical_area.bind(area))
 	area.coordinates_3D_updated.connect(rendering_area.set_new_position)
+	
+	# If this area is I/O of a child region, it will be moved later by the brain region component
+	# For now, position it normally - it will be repositioned when brain regions populate
+	if is_io_of_child_region:
+		print("  🔧 Created I/O area %s - will be repositioned by brain region wireframe" % area.cortical_ID)
+	
 	return rendering_area
+
+## Gets an existing cortical area visualization by ID (used by brain region frames)
+func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
+	return _cortical_visualizations_by_ID.get(cortical_id, null)
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
@@ -275,20 +337,28 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_BrainRegion3D:
+	print("  🔧 _add_brain_region_frame called for: %s" % brain_region.friendly_name)
+	
 	if brain_region.region_ID in _brain_region_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing brain region of ID %s!" % brain_region.region_ID)
-		return
+		return null
 	
+	print("  🏭 Creating UI_BrainMonitor_BrainRegion3D instance...")
 	var region_frame: UI_BrainMonitor_BrainRegion3D = UI_BrainMonitor_BrainRegion3D.new()
+	print("  📍 Adding to _node_3D_root...")
 	_node_3D_root.add_child(region_frame)
+	print("  🔧 Calling region_frame.setup()...")
 	region_frame.setup(brain_region)
+	print("  💾 Storing in _brain_region_visualizations_by_ID...")
 	_brain_region_visualizations_by_ID[brain_region.region_ID] = region_frame
 	
 	# Connect region frame signals
+	print("  🔗 Connecting signals...")
 	region_frame.region_double_clicked.connect(_on_brain_region_double_clicked)
 	region_frame.region_hover_changed.connect(_on_brain_region_hover_changed)
 	brain_region.about_to_be_deleted.connect(_remove_brain_region_frame.bind(brain_region))
 	
+	print("  ✅ Brain region frame setup complete for: %s" % brain_region.friendly_name)
 	return region_frame
 
 func _remove_brain_region_frame(brain_region: BrainRegion) -> void:
@@ -305,5 +375,64 @@ func _on_brain_region_double_clicked(brain_region: BrainRegion) -> void:
 	
 func _on_brain_region_hover_changed(brain_region: BrainRegion, is_hovered: bool) -> void:
 	print("🧠 BrainMonitor: Brain region hover changed: %s, hovered: %s" % [brain_region.friendly_name, is_hovered])
+
+## Checks if a cortical area is I/O of a specific child region (using same logic as brain region)
+func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, child_region: BrainRegion) -> bool:
+	print("      🔍 Checking if area %s is I/O of specific child region '%s'..." % [area.cortical_ID, child_region.friendly_name])
+	
+	# Method 1: Check connection chain links first
+	print("        📥 Checking %d input_open_chain_links..." % child_region.input_open_chain_links.size())
+	for link: ConnectionChainLink in child_region.input_open_chain_links:
+		if link.destination == area:
+			print("        ✅ Found as INPUT via chain link!")
+			return true
+	
+	print("        📤 Checking %d output_open_chain_links..." % child_region.output_open_chain_links.size())
+	for link: ConnectionChainLink in child_region.output_open_chain_links:
+		if link.source == area:
+			print("        ✅ Found as OUTPUT via chain link!")
+			return true
+	
+	# Method 2: Check IPU/OPU types
+	if area in child_region.contained_cortical_areas:
+		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			print("        ✅ Found as IPU type directly in child region!")
+			return true
+		elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			print("        ✅ Found as OPU type directly in child region!")
+			return true
+	
+	# Method 3: Use intelligent naming heuristics (same as brain region component)
+	if child_region.input_open_chain_links.size() == 0 and child_region.output_open_chain_links.size() == 0:
+		if area in child_region.contained_cortical_areas and child_region.contained_cortical_areas.size() == 2:
+			print("        💡 Using naming heuristics for 2-area region...")
+			var area_id = area.cortical_ID.to_lower()
+			# Check for input patterns
+			if "rig" in area_id or "right" in area_id or "input" in area_id or "in" in area_id:
+				print("        ✅ Found as INPUT via naming heuristic (contains '%s')!" % area_id)
+				return true
+			# Check for output patterns  
+			if "lef" in area_id or "left" in area_id or "output" in area_id or "out" in area_id:
+				print("        ✅ Found as OUTPUT via naming heuristic (contains '%s')!" % area_id)
+				return true
+	
+	print("        ❌ Area %s is NOT I/O of child region '%s'" % [area.cortical_ID, child_region.friendly_name])
+	return false
+
+## Checks if a cortical area is used as input/output by any child brain regions (using same logic as specific method)
+func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
+	# Check all child brain regions to see if this area is their I/O
+	print("    🔍 Checking if area %s is I/O of any child region..." % area.cortical_ID)
+	
+	for child_region: BrainRegion in _representing_region.contained_regions:
+		print("      🏗️ Checking child region: %s" % child_region.friendly_name)
+		
+		# Use the SAME logic as _is_area_input_output_of_specific_child_region
+		if _is_area_input_output_of_specific_child_region(area, child_region):
+			print("      ✅ Found as I/O of child region '%s'!" % child_region.friendly_name)
+			return true
+	
+	print("    ❌ Area %s is NOT I/O of any child region" % area.cortical_ID)
+	return false
 
 #endregion
