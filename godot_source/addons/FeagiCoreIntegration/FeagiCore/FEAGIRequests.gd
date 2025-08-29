@@ -447,6 +447,11 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	
 ## Used to edit the metadata of the region
 func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, region_name: StringName, region_description: StringName, coords_2D: Vector2i, coords_3D: Vector3i) -> FeagiRequestOutput:
+	print("🚨🚨🚨 FEAGI REQUEST: edit_region_object called!")
+	print("  🧠 Brain region: %s" % brain_region.friendly_name)
+	print("  📍 New 3D coordinates: %s" % coords_3D)
+	print("  📞 Called from:")
+	print_stack()
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -483,7 +488,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to create region of name %s!" % brain_region.name)
+		push_error("FEAGI Requests: Unable to create region of name %s!" % brain_region.friendly_name)
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_edit_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
 	return FEAGI_response_data

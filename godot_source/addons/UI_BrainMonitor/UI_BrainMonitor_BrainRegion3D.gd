@@ -21,21 +21,17 @@ var _input_areas_container: Node3D
 var _output_areas_container: Node3D
 var _cortical_area_visualizations: Dictionary[StringName, UI_BrainMonitor_CorticalArea] = {}
 var _frame_material: StandardMaterial3D
+var _generated_io_coordinates: Dictionary = {}  # Stores the generated I/O coordinates
 
 ## Logs dimensions of all I/O cortical areas for plate sizing calculations
 func _log_io_area_dimensions(brain_region: BrainRegion) -> void:
 	var input_areas = _get_input_cortical_areas_for_logging(brain_region)
 	var output_areas = _get_output_cortical_areas_for_logging(brain_region)
 	
-	print("    📥 INPUT cortical areas and dimensions:")
-	for area in input_areas:
-		print("      🔵 %s: dimensions %s, coordinates %s" % [area.cortical_ID, area.dimensions_3D, area.coordinates_3D])
-	
-	print("    📤 OUTPUT cortical areas and dimensions:")  
-	for area in output_areas:
-		print("      🔴 %s: dimensions %s, coordinates %s" % [area.cortical_ID, area.dimensions_3D, area.coordinates_3D])
-	
-	print("    📊 Total I/O areas: %d inputs + %d outputs = %d areas" % [input_areas.size(), output_areas.size(), input_areas.size() + output_areas.size()])
+	print("    📊 Found %d inputs + %d outputs = %d total I/O areas" % [input_areas.size(), output_areas.size(), input_areas.size() + output_areas.size()])
+	# Detailed area dimensions logged only if needed for debugging:
+	# for area in input_areas: print("      🔵 %s: dims %s, coords %s" % [area.cortical_ID, area.dimensions_3D, area.coordinates_3D])
+	# for area in output_areas: print("      🔴 %s: dims %s, coords %s" % [area.cortical_ID, area.dimensions_3D, area.coordinates_3D])
 
 ## Helper methods for logging (using same logic as visualization methods)
 func _get_input_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[AbstractCorticalArea]:
@@ -90,6 +86,76 @@ func _get_output_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[
 	
 	return output_areas
 
+## Generates new coordinates for input/output areas relative to brain region position
+func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dictionary:
+	print("🧮 Generating I/O coordinates for brain region: %s" % brain_region.friendly_name)
+	print("  📍 Brain region base coordinates: %s" % brain_region.coordinates_3D)
+	
+	var input_areas = _get_input_cortical_areas_for_logging(brain_region)
+	var output_areas = _get_output_cortical_areas_for_logging(brain_region)
+	
+	var result = {
+		"region_id": brain_region.region_ID,
+		"region_coordinates": brain_region.coordinates_3D,
+		"inputs": [],
+		"outputs": []
+	}
+	
+	# Calculate base positioning - brain region coordinates are the LOWEST corner (minimum x,y,z)
+	var region_origin = Vector3(brain_region.coordinates_3D)  # Starting point, not center
+	var input_base_offset = Vector3(1.0, 0.0, 0.0)  # Inputs near the left side (small positive X)
+	var output_base_offset = Vector3(5.0, 0.0, 0.0)  # Outputs further right (larger positive X)
+	var vertical_spacing = 2.0  # Space between multiple I/O areas
+	
+	print("  📥 Processing %d INPUT areas:" % input_areas.size())
+	for i in input_areas.size():
+		var area = input_areas[i]
+		# Calculate Y offset for vertical distribution (+ 5.0 to float above plate)
+		var y_offset = (i - (input_areas.size() - 1) / 2.0) * vertical_spacing + 5.0  # Add 5 to be above plate
+		var new_position = region_origin + input_base_offset + Vector3(0.0, y_offset, 0.0)
+		
+		var input_data = {
+			"area_id": area.cortical_ID,
+			"area_type": area.type_as_string,
+			"original_coordinates": area.coordinates_3D,
+			"new_coordinates": Vector3i(new_position)
+		}
+		result.inputs.append(input_data)
+		
+		print("    🔵 INPUT: %s (%s)" % [area.cortical_ID, area.type_as_string])
+		print("      📍 Original coordinates: %s" % area.coordinates_3D)
+		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
+		print("      📐 Offset from region: %s" % (new_position - region_origin))
+	
+	print("  📤 Processing %d OUTPUT areas:" % output_areas.size())
+	for i in output_areas.size():
+		var area = output_areas[i]
+		# Calculate Y offset for vertical distribution (+ 5.0 to float above plate)
+		var y_offset = (i - (output_areas.size() - 1) / 2.0) * vertical_spacing + 5.0  # Add 5 to be above plate
+		var new_position = region_origin + output_base_offset + Vector3(0.0, y_offset, 0.0)
+		
+		var output_data = {
+			"area_id": area.cortical_ID,
+			"area_type": area.type_as_string, 
+			"original_coordinates": area.coordinates_3D,
+			"new_coordinates": Vector3i(new_position)
+		}
+		result.outputs.append(output_data)
+		
+		print("    🔴 OUTPUT: %s (%s)" % [area.cortical_ID, area.type_as_string])
+		print("      📍 Original coordinates: %s" % area.coordinates_3D)
+		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
+		print("      📐 Offset from region: %s" % (new_position - region_origin))
+	
+	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
+	print("  📊 Generated %d input + %d output coordinates" % [input_areas.size(), output_areas.size()])
+	
+	return result
+
+## Returns the generated I/O coordinates for this brain region
+func get_generated_io_coordinates() -> Dictionary:
+	return _generated_io_coordinates
+
 ## Setup the 3D brain region visualization
 func setup(brain_region: BrainRegion) -> void:
 	print("🏗️ BrainRegion3D Setup started for region: %s" % brain_region.friendly_name)
@@ -103,6 +169,9 @@ func setup(brain_region: BrainRegion) -> void:
 	
 	print("  📏 Analyzing I/O cortical area dimensions for plate sizing:")
 	_log_io_area_dimensions(brain_region)
+	
+	print("  🎯 Generating new coordinates for I/O areas:")
+	_generated_io_coordinates = generate_io_coordinates_for_brain_region(brain_region)
 	
 	_representing_region = brain_region
 	name = "BrainRegion3D_" + brain_region.region_ID
@@ -207,7 +276,7 @@ func _calculate_plate_size(input_areas: Array[AbstractCorticalArea], output_area
 		max_bounds.x = max(max_bounds.x, area_max.x)
 		max_bounds.z = max(max_bounds.z, area_max.z)
 		
-		print("      📦 Area %s: coord %s + size %s = bounds (%s to %s)" % [area.cortical_ID, area_coord, area_size, area_min, area_max])
+		# print("      📦 Area %s: coord %s + size %s = bounds (%s to %s)" % [area.cortical_ID, area_coord, area_size, area_min, area_max])  # Suppressed to reduce log overflow
 	
 	# Calculate plate size with padding
 	var padding = 2.0  # Add padding around areas
@@ -322,8 +391,28 @@ func _populate_cortical_areas() -> void:
 		var existing_viz = brain_monitor_3d.get_cortical_area_visualization(area.cortical_ID)
 		if existing_viz:
 			print("    🔄 Moving input area %s from main scene to plate left side" % area.cortical_ID)
+			var old_parent = existing_viz.get_parent()
+			print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+			
+			# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
+			print("      🔌 Disconnecting coordinate update signals to prevent position override...")
+			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+				print("      ✂️  Disconnected main visualization coordinate updates")
+			
+			# Also disconnect renderer coordinate updates
+			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+				print("      ✂️  Disconnected DDA renderer coordinate updates")
+				
+			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+				print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
+			
 			existing_viz.get_parent().remove_child(existing_viz)
 			_input_areas_container.add_child(existing_viz)
+			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
+			print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
 			_scale_cortical_area_visualization(existing_viz, 0.8)  # Slightly smaller for plate display
 			_position_cortical_area_on_plate(existing_viz, i, input_areas.size(), true)  # true = is_input
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
@@ -336,8 +425,28 @@ func _populate_cortical_areas() -> void:
 		var existing_viz = brain_monitor_3d.get_cortical_area_visualization(area.cortical_ID)
 		if existing_viz:
 			print("    🔄 Moving output area %s from main scene to plate right side" % area.cortical_ID)
+			var old_parent = existing_viz.get_parent()
+			print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+			
+			# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
+			print("      🔌 Disconnecting coordinate update signals to prevent position override...")
+			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+				print("      ✂️  Disconnected main visualization coordinate updates")
+			
+			# Also disconnect renderer coordinate updates
+			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+				print("      ✂️  Disconnected DDA renderer coordinate updates")
+				
+			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+				print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
+			
 			existing_viz.get_parent().remove_child(existing_viz)
 			_output_areas_container.add_child(existing_viz)
+			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
+			print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
 			_scale_cortical_area_visualization(existing_viz, 0.8)  # Slightly smaller for plate display
 			_position_cortical_area_on_plate(existing_viz, i, output_areas.size(), false)  # false = is_output
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
@@ -346,6 +455,13 @@ func _populate_cortical_areas() -> void:
 	
 	# Adjust frame size based on content
 	_adjust_frame_size(input_areas.size(), output_areas.size())
+	
+	# Final verification of parenting
+	print("🔍 FINAL PARENTING CHECK:")
+	print("  📥 Input container children: %d" % _input_areas_container.get_child_count())
+	print("  📤 Output container children: %d" % _output_areas_container.get_child_count())
+	print("  🏗️ Brain region total children: %d" % get_child_count())
+	print("  ✅ Cortical areas should now move WITH brain region (signals disconnected)")
 
 ## Scales a cortical area visualization by scaling the 3D bodies within the renderers
 func _scale_cortical_area_visualization(cortical_viz: UI_BrainMonitor_CorticalArea, scale_factor: float) -> void:
@@ -363,33 +479,86 @@ func _scale_cortical_area_visualization(cortical_viz: UI_BrainMonitor_CorticalAr
 		if cortical_viz._directpoints_renderer._friendly_name_label != null:
 			cortical_viz._directpoints_renderer._friendly_name_label.scale = Vector3.ONE * scale_factor
 	
-	print("    📏 Scaled cortical area %s renderer bodies to %s" % [cortical_viz.cortical_area.cortical_ID, scale_factor])
+	# print("    📏 Scaled cortical area %s renderer bodies to %s" % [cortical_viz.cortical_area.cortical_ID, scale_factor])  # Suppressed to reduce log overflow
 
-## Positions a cortical area on the plate (inputs on left, outputs on right)
+## Positions a cortical area on the plate using generated absolute coordinates
 func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea, index: int, total_count: int, is_input: bool) -> void:
-	# Calculate position on the plate surface
-	# Y=0 to sit directly on the plate surface
-	var y_position = 0.0
-	var z_offset = (index - (total_count - 1) / 2.0) * CORTICAL_AREA_SPACING  # Spread along Z axis
-	var new_position = Vector3(0, y_position, z_offset)
+	# Use generated coordinates instead of hardcoded positioning
+	var cortical_id = cortical_viz.cortical_area.cortical_ID
+	var new_position = Vector3(0, 0, 0)  # fallback
+	var found_generated_coords = false
+	
+	# Look for this cortical area in the generated coordinates
+	var areas_to_search = _generated_io_coordinates.inputs if is_input else _generated_io_coordinates.outputs
+	for area_data in areas_to_search:
+		if area_data.area_id == cortical_id:
+			# Convert generated absolute FEAGI coordinates to relative position within brain region
+			var absolute_feagi_coords = Vector3(area_data.new_coordinates)
+			var brain_region_coords = Vector3(_representing_region.coordinates_3D)
+			var relative_position = absolute_feagi_coords - brain_region_coords
+			new_position = Vector3(relative_position.x, relative_position.y, relative_position.z)  # Use generated Y coordinate
+			found_generated_coords = true
+			print("    📍 Using generated coords for %s: absolute %s -> relative %s" % [cortical_id, absolute_feagi_coords, new_position])
+			break
+	
+	if not found_generated_coords:
+		# Fallback to old positioning if generated coordinates not found
+		print("    ⚠️  No generated coordinates found for %s, using fallback positioning" % cortical_id)
+		var y_position = 5.0  # Fallback Y position above plate (relative to brain region)
+		var z_offset = (index - (total_count - 1) / 2.0) * CORTICAL_AREA_SPACING
+		new_position = Vector3(0, y_position, z_offset)
 	
 	var side_label = "LEFT (input)" if is_input else "RIGHT (output)"
 	
+	print("    🎯 POSITIONING cortical area %s with position %s (relative to brain region)" % [cortical_id, new_position])
+	
+	# Calculate position relative to the appropriate container (InputAreas or OutputAreas)
+	var container = _input_areas_container if is_input else _output_areas_container
+	
+	# Convert brain region FEAGI coordinates to Godot world position (same logic as _update_position)
+	var feagi_pos = _representing_region.coordinates_3D
+	feagi_pos.z = -feagi_pos.z  # Flip Z direction
+	var brain_region_world_pos = Vector3(feagi_pos)
+	
+	# Calculate desired world position: brain_region_world + relative_offset
+	var desired_world_pos = brain_region_world_pos + new_position
+	
+	# Container position relative to brain region (from _create_containers)
+	var container_offset = Vector3(-INPUT_OUTPUT_SPACING, 0, 0) if is_input else Vector3(INPUT_OUTPUT_SPACING, 0, 0)
+	var container_world_pos = brain_region_world_pos + container_offset
+	
+	# Calculate position relative to container: desired_world - container_world  
+	var position_relative_to_container = desired_world_pos - container_world_pos
+	
+	print("      🔍 Brain region world: %s, Container world: %s" % [brain_region_world_pos, container_world_pos])
+	print("      🎯 Desired world position: %s" % desired_world_pos)
+	print("      📐 Position relative to container: %s" % position_relative_to_container)
+	
+	# CRITICAL FIX: Use GLOBAL positioning since the renderer static bodies are not proper children of containers
+	# The UI_BrainMonitor_CorticalArea is a Node (not Node3D), so it doesn't participate in 3D positioning
+	# We need to set absolute world positions directly
+	
+	print("      🔧 Setting GLOBAL renderer position to %s" % desired_world_pos)
+	
 	# Position the DDA renderer's static body if it exists
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
-		cortical_viz._dda_renderer._static_body.position = new_position
+		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
+		print("        ✅ DDA renderer global_position set to %s" % cortical_viz._dda_renderer._static_body.global_position)
 		# Also position the label if it exists
 		if cortical_viz._dda_renderer._friendly_name_label != null:
-			cortical_viz._dda_renderer._friendly_name_label.position = new_position + Vector3(0, 1.0, 0)  # Label above cortical area
+			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)  # Label above cortical area
 	
 	# Position the DirectPoints renderer's static body if it exists  
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
-		cortical_viz._directpoints_renderer._static_body.position = new_position
+		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
+		print("        ✅ DirectPoints renderer global_position set to %s" % cortical_viz._directpoints_renderer._static_body.global_position)
 		# Also position the label if it exists
 		if cortical_viz._directpoints_renderer._friendly_name_label != null:
-			cortical_viz._directpoints_renderer._friendly_name_label.position = new_position + Vector3(0, 1.0, 0)  # Label above cortical area
+			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)  # Label above cortical area
 	
-	print("    📍 Positioned %s on plate %s at Z-offset %.1f" % [cortical_viz.cortical_area.cortical_ID, side_label, z_offset])
+	print("    ✅ Cortical area %s positioned on plate" % cortical_id)
+	
+	# print("    📍 Positioned %s on plate %s at Z-offset %.1f" % [cortical_viz.cortical_area.cortical_ID, side_label, z_offset])  # Suppressed to reduce log overflow
 
 ## Gets input cortical areas based on connection chain links or direct areas
 func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
@@ -514,30 +683,219 @@ func _update_wireframe_size(new_size: Vector3) -> void:
 	# Keeping method for compatibility but no longer recreating wireframe mesh
 	print("  ⚠️  _update_wireframe_size() called but plates auto-size based on I/O areas")
 
-## Updates position based on brain region coordinates
+## Updates position based on brain region coordinates (moves brain region AND all I/O cortical areas)
+## IMPORTANT: This moves ONLY the visual representation - does NOT update underlying FEAGI cortical area coordinates
 func _update_position(new_coordinates: Vector3i) -> void:
-	# Convert FEAGI coordinates to Godot 3D space (following same convention as cortical areas)
-	# FEAGI uses lower-front-left corner as origin, Godot uses center
+	print("🚨🚨🚨 BRAIN REGION POSITION UPDATE CALLED! Region: %s" % _representing_region.friendly_name)
+	print("🚨🚨🚨 New coordinates: %s" % new_coordinates)
+	print("🚨🚨🚨 Current children count: %d" % get_child_count())
+	print("🚨🚨🚨 NOTE: Only moving visual representation - FEAGI cortical area coordinates unchanged")
+	print("🚨🚨🚨 WARNING: This should NOT trigger Circuit Builder FEAGI sync!")
+	
+	# DEBUG: Log current positions of I/O areas BEFORE moving brain region
+	print("📍 BEFORE BRAIN REGION MOVE - I/O Area Positions:")
+	_log_io_area_current_positions()
+	
+	# Convert FEAGI coordinates to Godot 3D space
+	# Brain region coordinates represent the LOWEST corner (minimum x,y,z) of the plate
 	# Z-axis needs to be flipped for proper orientation
 	
 	var feagi_pos = new_coordinates
 	feagi_pos.z = -feagi_pos.z  # Flip Z direction to match Godot coordinate system
 	
-	# For brain regions, we use the frame size as "dimensions" for offset calculation
-	var frame_size = Vector3(10.0, 6.0, 4.0)  # Default frame size
-	if _frame_collision and _frame_collision.get_child_count() > 0:
-		var collision_shape = _frame_collision.get_child(0).shape
-		if collision_shape is BoxShape3D:
-			frame_size = (collision_shape as BoxShape3D).size
-	
-	# Calculate center offset (FEAGI lower-front-left to Godot center)
-	var center_offset = frame_size / 2.0
-	center_offset.z = -center_offset.z  # Flip Z offset to match coordinate system
-	
-	position = Vector3(feagi_pos) + center_offset
+	# NO center offset - brain region coordinates are the starting corner, not the center
+	position = Vector3(feagi_pos)
 	
 	print("🧠 BrainRegion3D: Positioned region '%s' at FEAGI coords %v -> Godot position %v" % 
 		[_representing_region.friendly_name, new_coordinates, position])
+	
+	# DEBUG: Log positions of I/O areas AFTER moving brain region
+	print("📍 AFTER BRAIN REGION MOVE - I/O Area Positions:")
+	_log_io_area_current_positions()
+	
+	# Debug: Check if I/O containers exist and have children
+	print("🔍 DEBUG: Checking I/O containers after brain region move:")
+	if _input_areas_container:
+		print("  📥 Input container has %d children:" % _input_areas_container.get_child_count())
+		for child in _input_areas_container.get_children():
+			print("    - Input child: %s (type: %s)" % [child.name, child.get_class()])
+	else:
+		print("  ❌ Input container is null!")
+		
+	if _output_areas_container:
+		print("  📤 Output container has %d children:" % _output_areas_container.get_child_count())  
+		for child in _output_areas_container.get_children():
+			print("    - Output child: %s (type: %s)" % [child.name, child.get_class()])
+	else:
+		print("  ❌ Output container is null!")
+	
+	print("🚨🚨🚨 If containers have children, they should move automatically with brain region!")
+	
+	# DEBUG: Check if signals are still connected (they shouldn't be!)
+	if _input_areas_container.get_child_count() > 0:
+		var child = _input_areas_container.get_child(0) as UI_BrainMonitor_CorticalArea
+		if child:
+			var area = child._representing_cortial_area  # Note: property has typo in name
+			print("🔍 DEBUG: Checking signals for input area %s:" % area.cortical_ID)
+			print("  📡 Main position signal connected: %s" % area.coordinates_3D_updated.is_connected(child.set_new_position))
+			if child._dda_renderer:
+				print("  📡 DDA renderer signal connected: %s" % area.coordinates_3D_updated.is_connected(child._dda_renderer.update_position_with_new_FEAGI_coordinate))
+			if child._directpoints_renderer:
+				print("  📡 DirectPoints renderer signal connected: %s" % area.coordinates_3D_updated.is_connected(child._directpoints_renderer.update_position_with_new_FEAGI_coordinate))
+	
+	# CRITICAL: Since we're using global positioning, manually update I/O area positions
+	print("  🔄 Manually updating I/O cortical area global positions...")
+	_update_io_area_global_positions()
+	
+	print("🚨🚨🚨 BRAIN REGION POSITION UPDATE COMPLETED")
+
+## Logs the current positions of all I/O cortical areas
+func _log_io_area_current_positions() -> void:
+	if _input_areas_container:
+		print("  📥 INPUT AREA POSITIONS:")
+		for child in _input_areas_container.get_children():
+			var cortical_viz = child as UI_BrainMonitor_CorticalArea
+			if cortical_viz:
+				_log_single_cortical_area_position(cortical_viz, "INPUT")
+	
+	if _output_areas_container:
+		print("  📤 OUTPUT AREA POSITIONS:")
+		for child in _output_areas_container.get_children():
+			var cortical_viz = child as UI_BrainMonitor_CorticalArea
+			if cortical_viz:
+				_log_single_cortical_area_position(cortical_viz, "OUTPUT")
+
+## Logs the position details for a single cortical area
+func _log_single_cortical_area_position(cortical_viz: UI_BrainMonitor_CorticalArea, type_label: String) -> void:
+	var area = cortical_viz._representing_cortial_area
+	var area_id = area.cortical_ID if area else "unknown"
+	
+	print("    🔵 %s %s:" % [type_label, area_id])
+	
+	# Log positions from both renderers
+	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
+		var local_pos = cortical_viz._dda_renderer._static_body.position
+		var global_pos = cortical_viz._dda_renderer._static_body.global_position
+		print("      📍 DDA renderer - Local: %s, Global: %s" % [local_pos, global_pos])
+	
+	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
+		var local_pos = cortical_viz._directpoints_renderer._static_body.position
+		var global_pos = cortical_viz._directpoints_renderer._static_body.global_position
+		print("      📍 DirectPoints renderer - Local: %s, Global: %s" % [local_pos, global_pos])
+	
+	# Note: UI_BrainMonitor_CorticalArea is a Node (not Node3D), so it has no position property
+	# The actual positioning is handled by its child renderers (_dda_renderer and _directpoints_renderer)
+
+## Updates global positions of all I/O cortical areas when brain region moves
+func _update_io_area_global_positions() -> void:
+	print("    🔄 Recalculating global positions for all I/O cortical areas...")
+	
+	# Convert brain region FEAGI coordinates to Godot world position
+	var feagi_pos = _representing_region.coordinates_3D
+	feagi_pos.z = -feagi_pos.z  # Flip Z direction
+	var brain_region_world_pos = Vector3(feagi_pos)
+	
+	# Update input areas
+	for cortical_id in _cortical_area_visualizations.keys():
+		var cortical_viz = _cortical_area_visualizations[cortical_id]
+		
+		# Find the relative offset for this cortical area from generated coordinates
+		var new_position = Vector3.ZERO
+		var found_coords = false
+		
+		# Check inputs
+		for area_data in _generated_io_coordinates.inputs:
+			if area_data.area_id == cortical_id:
+				var absolute_feagi_coords = Vector3(area_data.new_coordinates)
+				var brain_region_coords = Vector3(_representing_region.coordinates_3D)
+				var relative_position = absolute_feagi_coords - brain_region_coords
+				new_position = Vector3(relative_position.x, relative_position.y, relative_position.z)
+				found_coords = true
+				break
+		
+		# Check outputs if not found in inputs
+		if not found_coords:
+			for area_data in _generated_io_coordinates.outputs:
+				if area_data.area_id == cortical_id:
+					var absolute_feagi_coords = Vector3(area_data.new_coordinates)
+					var brain_region_coords = Vector3(_representing_region.coordinates_3D)
+					var relative_position = absolute_feagi_coords - brain_region_coords
+					new_position = Vector3(relative_position.x, relative_position.y, relative_position.z)
+					found_coords = true
+					break
+		
+		if found_coords:
+			# Calculate new global position: current brain region world + relative offset
+			var desired_world_pos = brain_region_world_pos + new_position
+			
+			print("      🎯 Updating %s to global position %s" % [cortical_id, desired_world_pos])
+			
+			# Update DDA renderer position
+			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
+				cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
+				if cortical_viz._dda_renderer._friendly_name_label != null:
+					cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)
+			
+			# Update DirectPoints renderer position  
+			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
+				cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
+				if cortical_viz._directpoints_renderer._friendly_name_label != null:
+					cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)
+		else:
+			print("      ⚠️  No coordinates found for %s - skipping position update" % cortical_id)
+	
+	print("    ✅ I/O cortical area global position update complete")
+
+## Updates all I/O cortical area positions when brain region moves (maintains relative offsets) - DISABLED
+func _update_io_area_positions_DISABLED() -> void:
+	print("    🔄 Repositioning all I/O cortical areas to maintain relative positions...")
+	
+	# Go through all stored cortical area visualizations and reposition them
+	for cortical_id in _cortical_area_visualizations.keys():
+		var cortical_viz = _cortical_area_visualizations[cortical_id]
+		
+		# Find this cortical area in the generated coordinates to get its relative offset
+		var found_coords = false
+		var new_position = Vector3.ZERO
+		
+		# Check inputs
+		for area_data in _generated_io_coordinates.inputs:
+			if area_data.area_id == cortical_id:
+				# Calculate new absolute position: current brain region position + stored relative offset
+				var region_origin = Vector3(_representing_region.coordinates_3D)
+				var input_offset = Vector3(1.0, 0.0, 0.0)  # Same offset as coordinate generation
+				new_position = Vector3(input_offset.x, 0.0, input_offset.z)  # Y=0 for plate surface
+				found_coords = true
+				print("      📍 Repositioned INPUT %s to relative position %s" % [cortical_id, new_position])
+				break
+		
+		# Check outputs if not found in inputs
+		if not found_coords:
+			for area_data in _generated_io_coordinates.outputs:
+				if area_data.area_id == cortical_id:
+					# Calculate new absolute position: current brain region position + stored relative offset  
+					var region_origin = Vector3(_representing_region.coordinates_3D)
+					var output_offset = Vector3(5.0, 0.0, 0.0)  # Same offset as coordinate generation
+					new_position = Vector3(output_offset.x, 0.0, output_offset.z)  # Y=0 for plate surface
+					found_coords = true
+					print("      📍 Repositioned OUTPUT %s to relative position %s" % [cortical_id, new_position])
+					break
+		
+		if found_coords:
+			# Apply the new position to the cortical area renderers
+			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
+				cortical_viz._dda_renderer._static_body.position = new_position
+				if cortical_viz._dda_renderer._friendly_name_label != null:
+					cortical_viz._dda_renderer._friendly_name_label.position = new_position + Vector3(0, 1.0, 0)
+			
+			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
+				cortical_viz._directpoints_renderer._static_body.position = new_position
+				if cortical_viz._directpoints_renderer._friendly_name_label != null:
+					cortical_viz._directpoints_renderer._friendly_name_label.position = new_position + Vector3(0, 1.0, 0)
+		else:
+			print("      ⚠️  Could not find relative coordinates for %s - skipping reposition" % cortical_id)
+	
+	print("    ✅ I/O cortical area repositioning complete")
 
 ## Updates frame label/appearance when region name changes
 func _update_frame_label(new_name: StringName) -> void:
