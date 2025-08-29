@@ -22,6 +22,7 @@ var _UI_layer_for_BM: UI_BrainMonitor_Overlay = null
 var _representing_region: BrainRegion
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
+var _brain_region_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_BrainRegion3D]
 var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _restrict_neuron_selection_to: AbstractCorticalArea = null
 
@@ -49,19 +50,23 @@ func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	name = "BM_" + region.region_ID
 
+	print("🧠 BrainMonitor: Setting up 3D scene for region: %s" % region.friendly_name)
 	
-	
-	# WARNING for the time being, we will have BM be global instead of region specific
-	# for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
-	# 	var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
-	# region.cortical_area_added_to_region.connect(_add_cortical_area)
-	# TEMP
-	for area: AbstractCorticalArea in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+	# Show only cortical areas that are directly in the root region (not in subregions)
+	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
+		print("  📦 Adding direct cortical area: %s" % area.cortical_ID)
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 	
-	# Connect to cache signals to handle dynamic cortical area additions/removals
-	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_add_cortical_area)
-	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_remove_cortical_area)
+	# Show child brain regions as 3D frames
+	for child_region: BrainRegion in _representing_region.contained_regions:
+		print("  🏗️ Adding child brain region frame: %s" % child_region.friendly_name)
+		var region_frame: UI_BrainMonitor_BrainRegion3D = _add_brain_region_frame(child_region)
+	
+	# Connect to region signals for dynamic updates
+	_representing_region.cortical_area_added_to_region.connect(_add_cortical_area)
+	_representing_region.cortical_area_removed_from_region.connect(_remove_cortical_area)
+	_representing_region.subregion_added_to_region.connect(_add_brain_region_frame)
+	_representing_region.subregion_removed_from_region.connect(_remove_brain_region_frame)
 	
 
 
@@ -82,26 +87,34 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
-			if hit_body.get_parent() is not UI_BrainMonitor_AbstractCorticalAreaRenderer:
-				return
-			var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
-			if not hit_parent:
-				continue # this shouldn't be possible
-			var hit_world_location: Vector3 = hit["position"]
-			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
-			var neuron_coordinate_mousing_over: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
-			if not hit_parent_parent:
-				continue # this shouldnt be possible
 			
-			currently_moused_over_volumes.append(hit_parent_parent)
-			if hit_parent_parent in currently_mousing_over_neurons:
-				if neuron_coordinate_mousing_over not in currently_mousing_over_neurons[hit_parent_parent]:
-					currently_mousing_over_neurons[hit_parent_parent].append(neuron_coordinate_mousing_over)
-			else:
-				var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
-				currently_mousing_over_neurons[hit_parent_parent] = typed_arr
+			# Check if we hit a cortical area renderer
+			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+				var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
+				if not hit_parent:
+					continue # this shouldn't be possible
+				var hit_world_location: Vector3 = hit["position"]
+				var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
+				var neuron_coordinate_mousing_over: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
+				if not hit_parent_parent:
+					continue # this shouldnt be possible
+				
+				currently_moused_over_volumes.append(hit_parent_parent)
+				if hit_parent_parent in currently_mousing_over_neurons:
+					if neuron_coordinate_mousing_over not in currently_mousing_over_neurons[hit_parent_parent]:
+						currently_mousing_over_neurons[hit_parent_parent].append(neuron_coordinate_mousing_over)
+				else:
+					var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
+					currently_mousing_over_neurons[hit_parent_parent] = typed_arr
+				
+				_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
 			
-			_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
+			# Check if we hit a brain region frame
+			elif hit_body.get_parent() is UI_BrainMonitor_BrainRegion3D:
+				var region_frame: UI_BrainMonitor_BrainRegion3D = hit_body.get_parent()
+				if region_frame:
+					region_frame.set_hover_state(true)
+					print("🧠 Hovering over red line wireframe brain region: %s" % region_frame.representing_region.friendly_name)
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			
@@ -128,29 +141,44 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
-			if hit_body.get_parent() is not UI_BrainMonitor_AbstractCorticalAreaRenderer:
-				return
-			var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
-			if not hit_parent:
-				continue # this shouldn't be possible
-			var hit_world_location: Vector3 = hit["position"]
-			var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
-			var neuron_coordinate_clicked: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
-			if hit_parent_parent:
-				currently_moused_over_volumes.append(hit_parent_parent)
-				var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
-				if bm_input_event.button_pressed:
-					if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
-						var is_neuron_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
-						cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
-						cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
-					else:
-						if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-							
-							BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
-							BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
-							#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
-							#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
+			
+			# Check if we hit a cortical area renderer
+			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+				var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
+				if not hit_parent:
+					continue # this shouldn't be possible
+				var hit_world_location: Vector3 = hit["position"]
+				var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
+				var neuron_coordinate_clicked: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
+				if hit_parent_parent:
+					currently_moused_over_volumes.append(hit_parent_parent)
+					var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
+					if bm_input_event.button_pressed:
+						if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
+							var is_neuron_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
+							cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
+							cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
+						else:
+							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+								
+								BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
+								BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
+								#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
+								#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
+			
+			# Check if we hit a brain region frame
+			elif hit_body.get_parent() is UI_BrainMonitor_BrainRegion3D:
+				var region_frame: UI_BrainMonitor_BrainRegion3D = hit_body.get_parent()
+				if region_frame and bm_input_event.button_pressed:
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+						# Single click on brain region - select it
+						BV.UI.selection_system.clear_all_highlighted()
+						BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
+						BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
+						print("🧠 Clicked brain region frame: %s" % region_frame.representing_region.friendly_name)
+						
+						# Check for double-click (simple implementation)
+						region_frame.handle_double_click()
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
@@ -222,6 +250,12 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	if area.cortical_ID in _cortical_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
 		return
+	
+	# Only add if the cortical area is directly in our representing region (not in a subregion)
+	if not _representing_region.is_cortical_area_in_region_directly(area):
+		print("  ⏭️  Skipping cortical area %s - not directly in region %s" % [area.cortical_ID, _representing_region.friendly_name])
+		return
+	
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
 	_node_3D_root.add_child(rendering_area)
 	rendering_area.setup(area)
@@ -239,5 +273,37 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
+
+func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_BrainRegion3D:
+	if brain_region.region_ID in _brain_region_visualizations_by_ID:
+		push_warning("Unable to add to BM already existing brain region of ID %s!" % brain_region.region_ID)
+		return
+	
+	var region_frame: UI_BrainMonitor_BrainRegion3D = UI_BrainMonitor_BrainRegion3D.new()
+	_node_3D_root.add_child(region_frame)
+	region_frame.setup(brain_region)
+	_brain_region_visualizations_by_ID[brain_region.region_ID] = region_frame
+	
+	# Connect region frame signals
+	region_frame.region_double_clicked.connect(_on_brain_region_double_clicked)
+	region_frame.region_hover_changed.connect(_on_brain_region_hover_changed)
+	brain_region.about_to_be_deleted.connect(_remove_brain_region_frame.bind(brain_region))
+	
+	return region_frame
+
+func _remove_brain_region_frame(brain_region: BrainRegion) -> void:
+	if brain_region.region_ID not in _brain_region_visualizations_by_ID:
+		push_warning("Unable to remove from BM nonexistant brain region of ID %s!" % brain_region.region_ID)
+		return
+	var region_frame: UI_BrainMonitor_BrainRegion3D = _brain_region_visualizations_by_ID[brain_region.region_ID]
+	region_frame.queue_free()
+	_brain_region_visualizations_by_ID.erase(brain_region.region_ID)
+
+func _on_brain_region_double_clicked(brain_region: BrainRegion) -> void:
+	print("🧠 BrainMonitor: Brain region double-clicked: %s" % brain_region.friendly_name)
+	# TODO: Implement navigation/diving into brain region (future tab system)
+	
+func _on_brain_region_hover_changed(brain_region: BrainRegion, is_hovered: bool) -> void:
+	print("🧠 BrainMonitor: Brain region hover changed: %s, hovered: %s" % [brain_region.friendly_name, is_hovered])
 
 #endregion
