@@ -179,8 +179,10 @@ func setup(brain_region: BrainRegion) -> void:
 	# Create frame structure
 	print("  🔨 Creating 3D plate...")
 	_create_3d_plate()
+	print("  ✅ Plate created successfully!")
 	print("  📦 Creating containers...")
 	_create_containers()
+	print("  ✅ Containers created successfully!")
 	
 	# Populate with cortical areas
 	print("  👥 Populating cortical areas...")
@@ -194,6 +196,16 @@ func setup(brain_region: BrainRegion) -> void:
 	
 	# Set initial position using FEAGI coordinates
 	print("  📍 Setting position...")
+	var coords = _representing_region.coordinates_3D
+	var distance_from_origin = Vector3(coords).length()
+	
+	if distance_from_origin > 100.0:
+		print("  ⚠️  WARNING: Brain region positioned very far from origin!")
+		print("    📍 Coordinates: %s" % coords)
+		print("    📏 Distance from origin: %.1f units" % distance_from_origin)
+		print("    💡 This might make the brain region invisible in the camera view.")
+		print("    💡 Try moving the camera or adjusting the brain region coordinates.")
+	
 	_update_position(_representing_region.coordinates_3D)
 	print("🏁 BrainRegion3D Setup completed for region: %s" % _representing_region.friendly_name)
 
@@ -256,6 +268,8 @@ func _calculate_plate_size(input_areas: Array[AbstractCorticalArea], output_area
 	
 	if all_areas.size() == 0:
 		print("  ⚠️  No I/O areas found, using default plate size")
+		print("  📋 Input areas: %d, Output areas: %d" % [input_areas.size(), output_areas.size()])
+		print("  📐 Default plate size will be: (8.0 x 8.0)")
 		return Vector3(8.0, 0.0, 8.0)  # Default size, Y is ignored for plate
 	
 	# Calculate bounding box of all I/O areas
@@ -592,21 +606,19 @@ func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
 				input_areas.append(area)
 				print("      ✅ Added IPU input area: %s" % area.cortical_ID)
 		
-		# If still no areas and we have exactly 2 areas, use naming heuristics
+		# TEMPORARY: Aggressive fallback for debugging (will restore conservative logic after)
 		if input_areas.size() == 0 and _representing_region.contained_cortical_areas.size() == 2:
-			print("  💡 Fallback: Using naming heuristics for 2-area region...")
+			print("  💡 TEMPORARY: Using aggressive heuristics to debug input detection...")
 			for area in _representing_region.contained_cortical_areas:
 				var area_id = area.cortical_ID.to_lower()
-				# Look for common input patterns in names
-				if "rig" in area_id or "right" in area_id or "input" in area_id or "in" in area_id or "inp" in area_id:
+				# Look for common input patterns in names (c__lef should be input per FEAGI pattern)
+				if "lef" in area_id or "left" in area_id or "input" in area_id or "in" in area_id or "inp" in area_id:
 					input_areas.append(area)
-					print("      🎯 Selected as input (name heuristic): %s" % area.cortical_ID)
+					print("      🎯 AGGRESSIVE: Selected as input (name heuristic): %s" % area.cortical_ID)
 					break
 			
-			# If no naming match found, default to first area
-			if input_areas.size() == 0:
-				input_areas.append(_representing_region.contained_cortical_areas[0])
-				print("      🎯 Selected as input (default first): %s" % _representing_region.contained_cortical_areas[0].cortical_ID)
+			# NOTE: Since FEAGI says "inputs": [], we expect 0 input areas
+			# This aggressive test is just to see if detection logic works
 	
 	print("🔍 Total input areas found for '%s': %d" % [_representing_region.friendly_name, input_areas.size()])
 	return input_areas
@@ -617,6 +629,9 @@ func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
 	
 	print("🔍 Analyzing output areas for region '%s':" % _representing_region.friendly_name)
 	print("  📋 output_open_chain_links count: %d" % _representing_region.output_open_chain_links.size())
+	print("  📋 contained_cortical_areas count: %d" % _representing_region.contained_cortical_areas.size())
+	for area in _representing_region.contained_cortical_areas:
+		print("    🔍 Contained area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
 	
 	# Method 1: Check output_open_chain_links for areas that provide output
 	for i in range(_representing_region.output_open_chain_links.size()):
@@ -643,15 +658,20 @@ func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
 				output_areas.append(area)
 				print("      ✅ Added OPU output area: %s" % area.cortical_ID)
 		
-		# If still no areas and we have exactly 2 areas, use naming heuristics
+		# TEMPORARY: Aggressive fallback for debugging (will restore conservative logic after)
 		if output_areas.size() == 0 and _representing_region.contained_cortical_areas.size() == 2:
-			print("  💡 Fallback: Using naming heuristics for 2-area region...")
+			print("  💡 TEMPORARY: Using aggressive heuristics to debug output detection...")
 			for area in _representing_region.contained_cortical_areas:
 				var area_id = area.cortical_ID.to_lower()
-				# Look for common output patterns in names (c__lef should match "lef")
+				# Look for common output patterns in names (c__lef should match "lef") 
 				if "lef" in area_id or "left" in area_id or "output" in area_id or "out" in area_id:
 					output_areas.append(area)
-					print("      🎯 Selected as output (name heuristic): %s" % area.cortical_ID)
+					print("      🎯 AGGRESSIVE: Selected as output (name heuristic): %s" % area.cortical_ID)
+					break
+				# Also check for "rig" in outputs (user says c__rig should be output)
+				elif "rig" in area_id or "right" in area_id:
+					output_areas.append(area)
+					print("      🎯 AGGRESSIVE: Selected as output (name heuristic for rig): %s" % area.cortical_ID)
 					break
 	
 	print("🔍 Total output areas found for '%s': %d" % [_representing_region.friendly_name, output_areas.size()])

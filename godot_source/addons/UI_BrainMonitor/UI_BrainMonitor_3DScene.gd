@@ -405,18 +405,18 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 			print("        ✅ Found as OPU type directly in child region!")
 			return true
 	
-	# Method 3: Use intelligent naming heuristics (same as brain region component)
+	# Method 3: TEMPORARY aggressive naming heuristics (for debugging - will restore conservative logic after)
 	if child_region.input_open_chain_links.size() == 0 and child_region.output_open_chain_links.size() == 0:
 		if area in child_region.contained_cortical_areas and child_region.contained_cortical_areas.size() == 2:
-			print("        💡 Using naming heuristics for 2-area region...")
+			print("        💡 TEMPORARY: Using aggressive naming heuristics for debugging...")
 			var area_id = area.cortical_ID.to_lower()
-			# Check for input patterns
-			if "rig" in area_id or "right" in area_id or "input" in area_id or "in" in area_id:
-				print("        ✅ Found as INPUT via naming heuristic (contains '%s')!" % area_id)
+			# Check for input patterns  
+			if "lef" in area_id or "left" in area_id or "input" in area_id or "in" in area_id:
+				print("        ✅ AGGRESSIVE: Found as INPUT via naming heuristic (contains '%s')!" % area_id)
 				return true
-			# Check for output patterns  
-			if "lef" in area_id or "left" in area_id or "output" in area_id or "out" in area_id:
-				print("        ✅ Found as OUTPUT via naming heuristic (contains '%s')!" % area_id)
+			# Check for output patterns (c__rig should be output per FEAGI data)
+			if "rig" in area_id or "right" in area_id or "output" in area_id or "out" in area_id:
+				print("        ✅ AGGRESSIVE: Found as OUTPUT via naming heuristic (contains '%s')!" % area_id)
 				return true
 	
 	# print("        ❌ Area %s is NOT I/O of child region '%s'" % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
