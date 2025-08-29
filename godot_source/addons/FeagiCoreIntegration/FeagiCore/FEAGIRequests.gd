@@ -447,11 +447,6 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	
 ## Used to edit the metadata of the region
 func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, region_name: StringName, region_description: StringName, coords_2D: Vector2i, coords_3D: Vector3i) -> FeagiRequestOutput:
-	print("🚨🚨🚨 FEAGI REQUEST: edit_region_object called!")
-	print("  🧠 Brain region: %s" % brain_region.friendly_name)
-	print("  📍 New 3D coordinates: %s" % coords_3D)
-	print("  📞 Called from:")
-	print_stack()
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -472,14 +467,13 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 		push_error("FEAGI Requests: Region name cannot be blank!")
 		return FeagiRequestOutput.requirement_fail("BLANK_NAME")
 	
-	# Define Request
+	# Define Request - Using correct FEAGI API key names
 	var dict_to_send: Dictionary = {
 		"region_id": brain_region.region_ID,
-		"title": region_name,
-		"region_description": region_description,
-		"parent_region_id": parent_region.region_ID,
-		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
-		"coordinates_3d": FEAGIUtils.vector3i_to_array(coords_3D),
+		"region_title": region_name,  # title → region_title
+		"coordinate_2d": FEAGIUtils.vector2i_to_array(coords_2D),  # coordinates_2d → coordinate_2d
+		"coordinate_3d": FEAGIUtils.vector3i_to_array(coords_3D),  # coordinates_3d → coordinate_3d
+		# Removed unsupported keys: parent_region_id, region_description
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_region, dict_to_send)
 	

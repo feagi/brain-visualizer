@@ -47,8 +47,8 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		ID,
 		dict["title"],
 		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
-		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
-		Vector3i(10,10,10), #TODO
+		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),  # ✅ Fixed: Load actual FEAGI coordinates
+		# Vector3i(10,10,10), #TODO  ← Removed hardcoded fallback
 	)
 	
 
