@@ -378,7 +378,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	
 	# Make power cone use firing colors when neural activity occurs
 	if _cortical_area_id == "_power" and _power_material:
-		print("   ⚡ Power cone becoming active - using firing colors")
+		# print("   ⚡ Power cone becoming active - using firing colors")  # Suppressed to reduce log spam
 		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
 		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))  # Bright red emission
 		_power_material.set_shader_parameter("emission_energy", 1.5)  # Full glow
@@ -508,7 +508,7 @@ func _on_visibility_timeout() -> void:
 	
 	# Make power cone use default cortical mesh color when no neural activity
 	if _cortical_area_id == "_power" and _power_material:
-		print("   ⚡ Power cone becoming inactive - using default cortical mesh color")
+		# print("   ⚡ Power cone becoming inactive - using default cortical mesh color")  # Suppressed to reduce log spam
 		_power_material.set_shader_parameter("albedo_color", Color(0.172451, 0.315246, 0.861982, 0.8))  # Light blue like cortical meshes
 		_power_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
 		_power_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow
@@ -602,7 +602,7 @@ func _trigger_power_firing_animation() -> void:
 	if _cortical_area_id != "_power" or _power_material == null:
 		return
 	
-	print("   ⚡ Triggering power cone firing animation!")
+	# print("   ⚡ Triggering power cone firing animation!")  # Suppressed to reduce log spam
 	
 	# Make power cone use firing colors when firing animation starts
 	_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing

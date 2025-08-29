@@ -370,7 +370,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var new_memory_stats = health["memory_area_stats"]
 		if new_memory_stats != null and new_memory_stats is Dictionary:
 			memory_area_stats = new_memory_stats.duplicate()
-			print("🧠 FEAGI CACHE: Updated memory area stats for ", memory_area_stats.size(), " areas")
+			# print("🧠 FEAGI CACHE: Updated memory area stats for ", memory_area_stats.size(), " areas")  # Suppressed to reduce log spam
 			memory_area_stats_updated.emit(memory_area_stats)
 	
 	#TEMP amalgamation
