@@ -591,7 +591,7 @@ func _populate_cortical_areas() -> void:
 			_input_areas_container.add_child(existing_viz)
 			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
 			print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
-			_scale_cortical_area_visualization(existing_viz, 0.8)  # Slightly smaller for plate display
+			# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
 			_position_cortical_area_on_plate(existing_viz, i, input_areas.size(), true)  # true = is_input
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
 		else:
@@ -625,7 +625,7 @@ func _populate_cortical_areas() -> void:
 			_output_areas_container.add_child(existing_viz)
 			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
 			print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
-			_scale_cortical_area_visualization(existing_viz, 0.8)  # Slightly smaller for plate display
+			# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
 			_position_cortical_area_on_plate(existing_viz, i, output_areas.size(), false)  # false = is_output
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
 		else:
