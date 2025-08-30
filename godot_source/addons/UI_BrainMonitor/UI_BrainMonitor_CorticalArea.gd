@@ -346,25 +346,32 @@ func _get_cortical_area_center_position() -> Vector3:
 
 ## Get the center position of another cortical area by finding its renderer in the scene
 func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> Vector3:
-	# Find the cortical area renderer in the parent scene
-	var parent_scene = get_parent()
-	if parent_scene == null:
+	# 🚨 FIX: Use main 3D scene's cortical area registry instead of parent searching
+	# This fixes connection visualization for I/O areas moved to brain region containers
+	
+	# Find the main 3D scene by traversing up the tree
+	var current_node = self
+	var main_3d_scene: UI_BrainMonitor_3DScene = null
+	
+	while current_node != null:
+		current_node = current_node.get_parent()
+		if current_node is UI_BrainMonitor_3DScene:
+			main_3d_scene = current_node as UI_BrainMonitor_3DScene
+			break
+	
+	if main_3d_scene == null:
+		print("   ⚠️ Could not find main 3D scene for cortical area lookup")
 		return Vector3.ZERO
 	
-	# Look for the cortical area node by name pattern
-	var target_node_name = "CA_" + area.cortical_ID
-	var target_node = parent_scene.get_node_or_null(target_node_name)
+	# Use the 3D scene's cortical area registry to find the target
+	var target_visualization = main_3d_scene.get_cortical_area_visualization(area.cortical_ID)
 	
-	if target_node == null:
-		print("   ⚠️ Could not find target cortical area node: ", target_node_name)
+	if target_visualization == null:
+		print("   ⚠️ Could not find cortical area visualization for: ", area.cortical_ID)
 		return Vector3.ZERO
 	
-	# Get position from the target's renderer
-	var target_cortical_area = target_node as UI_BrainMonitor_CorticalArea
-	if target_cortical_area != null:
-		return target_cortical_area._get_cortical_area_center_position()
-	
-	return Vector3.ZERO
+	# Get position from the target's renderer  
+	return target_visualization._get_cortical_area_center_position()
 
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, is_incoming: bool = false, is_global_mode: bool = false) -> Node3D:
