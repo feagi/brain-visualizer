@@ -19,6 +19,7 @@ var _frame_container: Node3D
 var _frame_collision: StaticBody3D
 var _input_areas_container: Node3D
 var _output_areas_container: Node3D
+var _region_name_label: Label3D
 var _cortical_area_visualizations: Dictionary[StringName, UI_BrainMonitor_CorticalArea] = {}
 var _frame_material: StandardMaterial3D
 var _generated_io_coordinates: Dictionary = {}  # Stores the generated I/O coordinates
@@ -257,6 +258,22 @@ func _create_3d_plate() -> void:
 	output_plate.position.y = -1.0  # Below I/O areas
 	_frame_container.add_child(output_plate)
 	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x 1.0 x %.1f) for %d outputs" % [output_plate_size.x, output_plate_size.z, output_areas.size()])
+	
+	# Create region name label below the plates
+	_region_name_label = Label3D.new()
+	_region_name_label.name = "RegionNameLabel"
+	_region_name_label.text = _representing_region.friendly_name
+	_region_name_label.font_size = 192  # Same as cortical area labels
+	_region_name_label.position = Vector3(0.0, -3.0, 0.0)  # -2 relative to plates (which are at -1.0)
+	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
+	_region_name_label.outline_render_priority = 1
+	_region_name_label.outline_size = 2
+	_region_name_label.modulate = Color.WHITE
+	# Center the label horizontally
+	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_frame_container.add_child(_region_name_label)
+	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
 	
 	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
 	
@@ -1018,8 +1035,13 @@ func _update_io_area_positions_DISABLED() -> void:
 
 ## Updates frame label/appearance when region name changes
 func _update_frame_label(new_name: StringName) -> void:
-	# Could add text label to frame in future
+	# Update node name
 	name = "BrainRegion3D_" + _representing_region.region_ID + "_" + str(new_name)
+	
+	# Update the region name label if it exists
+	if _region_name_label:
+		_region_name_label.text = str(new_name)
+		print("  🏷️ Updated region label text to: '%s'" % new_name)
 
 ## Signal handlers for dynamic updates
 func _on_cortical_area_added(area: AbstractCorticalArea) -> void:
