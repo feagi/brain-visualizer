@@ -21,7 +21,6 @@ var _input_areas_container: Node3D
 var _output_areas_container: Node3D
 var _region_name_label: Label3D
 var _cortical_area_visualizations: Dictionary[StringName, UI_BrainMonitor_CorticalArea] = {}
-var _frame_material: StandardMaterial3D
 var _generated_io_coordinates: Dictionary = {}  # Stores the generated I/O coordinates
 
 ## Logs dimensions of all I/O cortical areas for plate sizing calculations
@@ -272,8 +271,12 @@ func _create_3d_plate() -> void:
 	# Center the label horizontally
 	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	
 	_frame_container.add_child(_region_name_label)
 	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
+	
+	# Add collision bodies for click detection (as direct children for proper detection)
+	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, plate_spacing)
 	
 	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
 	
@@ -300,6 +303,8 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	plate_material.flags_do_not_receive_shadows = true
 	plate_material.flags_disable_ambient_light = true
 	plate_mesh_instance.material_override = plate_material
+	
+	# Note: StaticBody3D will be added separately as direct child of BrainRegion3D for proper click detection
 	
 	return plate_mesh_instance
 
@@ -344,6 +349,54 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	print("    - Final plate size: %.1f x %.1f (with %.1f padding)" % [plate_width, plate_depth, padding])
 	
 	return Vector3(plate_width, 0.0, plate_depth)
+
+## Adds collision bodies for clicking detection (plates and label)
+func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_spacing: float) -> void:
+	# Create collision body for INPUT PLATE
+	var input_collision = StaticBody3D.new()
+	input_collision.name = "InputPlateClickArea"
+	input_collision.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
+	input_collision.position.y = -1.0  # Same Y as input plate
+	input_collision.position.z = 0.0
+	
+	var input_collision_shape = CollisionShape3D.new()
+	input_collision_shape.name = "CollisionShape"
+	var input_box_shape = BoxShape3D.new()
+	input_box_shape.size = Vector3(input_plate_size.x, 1.0, input_plate_size.z)
+	input_collision_shape.shape = input_box_shape
+	input_collision.add_child(input_collision_shape)
+	add_child(input_collision)  # Direct child of BrainRegion3D
+	
+	# Create collision body for OUTPUT PLATE
+	var output_collision = StaticBody3D.new()
+	output_collision.name = "OutputPlateClickArea"
+	output_collision.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
+	output_collision.position.y = -1.0  # Same Y as output plate
+	output_collision.position.z = 0.0
+	
+	var output_collision_shape = CollisionShape3D.new()
+	output_collision_shape.name = "CollisionShape"
+	var output_box_shape = BoxShape3D.new()
+	output_box_shape.size = Vector3(output_plate_size.x, 1.0, output_plate_size.z)
+	output_collision_shape.shape = output_box_shape
+	output_collision.add_child(output_collision_shape)
+	add_child(output_collision)  # Direct child of BrainRegion3D
+	
+	# Create collision body for REGION LABEL
+	var label_collision = StaticBody3D.new()
+	label_collision.name = "RegionLabelClickArea"
+	label_collision.position = Vector3(0.0, -3.0, 0.0)  # Same as label position
+	
+	var label_collision_shape = CollisionShape3D.new()
+	label_collision_shape.name = "CollisionShape"
+	var label_box_shape = BoxShape3D.new()
+	label_box_shape.size = Vector3(8.0, 2.0, 1.0)  # Reasonable clickable area around text
+	label_collision_shape.shape = label_box_shape
+	label_collision.add_child(label_collision_shape)
+	add_child(label_collision)  # Direct child of BrainRegion3D
+	
+	print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
+		[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z])
 
 ## Creates a connecting bridge between input and output plates  
 func _create_connecting_bridge(input_size: Vector3, output_size: Vector3, spacing: float) -> void:
@@ -804,8 +857,7 @@ func _adjust_frame_size(input_count: int, output_count: int) -> void:
 	if _frame_collision != null and _frame_collision.get_child_count() > 0 and _frame_collision.get_child(0).shape is BoxShape3D:
 		(_frame_collision.get_child(0).shape as BoxShape3D).size = new_size
 	
-	# Update position since frame size affects center offset calculation
-	_update_position(_representing_region.coordinates_3D)
+	# Note: Position is already set correctly in setup() - no need to update here
 
 ## Updates the plate size (DEPRECATED - plates auto-size based on I/O areas)
 func _update_wireframe_size(new_size: Vector3) -> void:
@@ -816,16 +868,6 @@ func _update_wireframe_size(new_size: Vector3) -> void:
 ## Updates position based on brain region coordinates (moves brain region AND all I/O cortical areas)
 ## IMPORTANT: This moves ONLY the visual representation - does NOT update underlying FEAGI cortical area coordinates
 func _update_position(new_coordinates: Vector3i) -> void:
-	print("🚨🚨🚨 BRAIN REGION POSITION UPDATE CALLED! Region: %s" % _representing_region.friendly_name)
-	print("🚨🚨🚨 New coordinates: %s" % new_coordinates)
-	print("🚨🚨🚨 Current children count: %d" % get_child_count())
-	print("🚨🚨🚨 NOTE: Only moving visual representation - FEAGI cortical area coordinates unchanged")
-	print("🚨🚨🚨 WARNING: This should NOT trigger Circuit Builder FEAGI sync!")
-	
-	# DEBUG: Log current positions of I/O areas BEFORE moving brain region
-	print("📍 BEFORE BRAIN REGION MOVE - I/O Area Positions:")
-	_log_io_area_current_positions()
-	
 	# Convert FEAGI coordinates to Godot 3D space
 	# Brain region coordinates represent the LOWEST corner (minimum x,y,z) of the plate
 	# Z-axis needs to be flipped for proper orientation
@@ -836,48 +878,11 @@ func _update_position(new_coordinates: Vector3i) -> void:
 	# NO center offset - brain region coordinates are the starting corner, not the center
 	position = Vector3(feagi_pos)
 	
-	print("🧠 BrainRegion3D: Positioned region '%s' at FEAGI coords %v -> Godot position %v" % 
+	print("🧠 BrainRegion3D: Positioned region '%s' at FEAGI coords %s -> Godot position %s" % 
 		[_representing_region.friendly_name, new_coordinates, position])
 	
-	# DEBUG: Log positions of I/O areas AFTER moving brain region
-	print("📍 AFTER BRAIN REGION MOVE - I/O Area Positions:")
-	_log_io_area_current_positions()
-	
-	# Debug: Check if I/O containers exist and have children
-	print("🔍 DEBUG: Checking I/O containers after brain region move:")
-	if _input_areas_container:
-		print("  📥 Input container has %d children:" % _input_areas_container.get_child_count())
-		for child in _input_areas_container.get_children():
-			print("    - Input child: %s (type: %s)" % [child.name, child.get_class()])
-	else:
-		print("  ❌ Input container is null!")
-		
-	if _output_areas_container:
-		print("  📤 Output container has %d children:" % _output_areas_container.get_child_count())  
-		for child in _output_areas_container.get_children():
-			print("    - Output child: %s (type: %s)" % [child.name, child.get_class()])
-	else:
-		print("  ❌ Output container is null!")
-	
-	print("🚨🚨🚨 If containers have children, they should move automatically with brain region!")
-	
-	# DEBUG: Check if signals are still connected (they shouldn't be!)
-	if _input_areas_container.get_child_count() > 0:
-		var child = _input_areas_container.get_child(0) as UI_BrainMonitor_CorticalArea
-		if child:
-			var area = child._representing_cortial_area  # Note: property has typo in name
-			print("🔍 DEBUG: Checking signals for input area %s:" % area.cortical_ID)
-			print("  📡 Main position signal connected: %s" % area.coordinates_3D_updated.is_connected(child.set_new_position))
-			if child._dda_renderer:
-				print("  📡 DDA renderer signal connected: %s" % area.coordinates_3D_updated.is_connected(child._dda_renderer.update_position_with_new_FEAGI_coordinate))
-			if child._directpoints_renderer:
-				print("  📡 DirectPoints renderer signal connected: %s" % area.coordinates_3D_updated.is_connected(child._directpoints_renderer.update_position_with_new_FEAGI_coordinate))
-	
-	# CRITICAL: Since we're using global positioning, manually update I/O area positions
-	print("  🔄 Manually updating I/O cortical area global positions...")
+	# Update I/O cortical area positions to maintain relative positioning
 	_update_io_area_global_positions()
-	
-	print("🚨🚨🚨 BRAIN REGION POSITION UPDATE COMPLETED")
 
 ## Logs the current positions of all I/O cortical areas
 func _log_io_area_current_positions() -> void:
@@ -1067,10 +1072,8 @@ func _refresh_frame_contents() -> void:
 
 ## Handles hover/selection interaction
 func set_hover_state(is_hovered: bool) -> void:
-	if is_hovered:
-		_frame_material.albedo_color = Color(1.0, 0.5, 0.0, 1.0)  # Bright orange/red when hovered
-	else:
-		_frame_material.albedo_color = Color(1.0, 0.0, 0.0, 1.0)  # Solid red normally
+	# Note: Dual-plate design doesn't need hover color changes - plates already have distinct colors
+	# Input plate: dark green, Output plate: dark blue
 	
 	region_hover_changed.emit(_representing_region, is_hovered)
 
