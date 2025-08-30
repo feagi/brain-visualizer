@@ -93,16 +93,31 @@ func setup(region: BrainRegion) -> void:
 	if _representing_region.contained_regions.size() == 0:
 		print("    ⚠️  WARNING: No child regions found! Brain region frames won't be created.")
 	
-	for child_region: BrainRegion in _representing_region.contained_regions:
-		print("  🏗️ Adding child brain region frame: %s" % child_region.friendly_name)
+	for i in _representing_region.contained_regions.size():
+		var child_region: BrainRegion = _representing_region.contained_regions[i]
+		print("  🏗️ [%d/%d] Processing child brain region: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
+		print("    - Region ID: %s" % child_region.region_ID)
+		print("    - 3D Coordinates: %s" % child_region.coordinates_3D)
 		print("    - Child has %d cortical areas" % child_region.contained_cortical_areas.size())
-		print("    - Child has %d input links" % child_region.input_open_chain_links.size())
-		print("    - Child has %d output links" % child_region.output_open_chain_links.size())
+		for area in child_region.contained_cortical_areas:
+			print("      • %s" % area.cortical_ID)
+		print("    - Child has %d input links, %d output links" % [child_region.input_open_chain_links.size(), child_region.output_open_chain_links.size()])
+		print("    - Inputs:")
+		for link in child_region.input_open_chain_links:
+			print("      • %s" % (link.destination.cortical_ID if link.destination else "null"))
+		print("    - Outputs:")
+		for link in child_region.output_open_chain_links:
+			print("      • %s" % (link.source.cortical_ID if link.source else "null"))
+		
+		print("  🔨 Calling _add_brain_region_frame for: %s..." % child_region.friendly_name)
 		var region_frame: UI_BrainMonitor_BrainRegion3D = _add_brain_region_frame(child_region)
+		
 		if region_frame:
-			print("    ✅ Child brain region frame created successfully")
+			print("    ✅ [%d/%d] Child brain region frame created successfully for: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
+			print("    📍 Positioned at Godot coordinates: %s" % region_frame.global_position)
 		else:
-			print("    ❌ Failed to create child brain region frame")
+			print("    ❌ [%d/%d] FAILED to create child brain region frame for: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
+			push_error("Region creation failed for: %s" % child_region.friendly_name)
 	
 	# Connect to region signals for dynamic updates
 	print("  🔗 STEP 4: Connecting to region signals for dynamic updates...")

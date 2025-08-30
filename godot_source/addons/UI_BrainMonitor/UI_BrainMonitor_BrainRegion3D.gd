@@ -15,7 +15,7 @@ var representing_region: BrainRegion:
 	get: return _representing_region
 
 var _representing_region: BrainRegion
-var _frame_container: MeshInstance3D
+var _frame_container: Node3D
 var _frame_collision: StaticBody3D
 var _input_areas_container: Node3D
 var _output_areas_container: Node3D
@@ -102,16 +102,25 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	
 	# Calculate base positioning - brain region coordinates are the LOWEST corner (minimum x,y,z)
 	var region_origin = Vector3(brain_region.coordinates_3D)  # Starting point, not center
-	var input_base_offset = Vector3(1.0, 0.0, 0.0)  # Inputs near the left side (small positive X)
-	var output_base_offset = Vector3(5.0, 0.0, 0.0)  # Outputs further right (larger positive X)
-	var vertical_spacing = 2.0  # Space between multiple I/O areas
+	var plate_spacing = 1.0  # Gap between plates (same as in _create_3d_plate)
 	
-	print("  📥 Processing %d INPUT areas:" % input_areas.size())
+	# Position I/O areas over their respective plates - SPREAD ALONG X-AXIS
+	var input_base_offset = Vector3(-plate_spacing/2.0 - 2.0, 2.0, 0.0)   # Over left (input) plate, Y=+2.0 to hover
+	var output_base_offset = Vector3(plate_spacing/2.0 + 2.0, 2.0, 0.0)   # Over right (output) plate, Y=+2.0 to hover
+	var area_gap = 1.5  # Gap between cortical areas (same as plate calculation)
+	
+	print("  📥 Processing %d INPUT areas (spreading along X-axis):" % input_areas.size())
+	var input_x_offset = 0.0
 	for i in input_areas.size():
 		var area = input_areas[i]
-		# Calculate Y offset for vertical distribution (+ 5.0 to float above plate)
-		var y_offset = (i - (input_areas.size() - 1) / 2.0) * vertical_spacing + 5.0  # Add 5 to be above plate
-		var new_position = region_origin + input_base_offset + Vector3(0.0, y_offset, 0.0)
+		var area_size = Vector3(area.dimensions_3D)
+		
+		# Calculate X offset for side-by-side distribution
+		var x_position_offset = Vector3(input_x_offset + area_size.x/2.0, 0.0, 0.0)  # Center of area
+		var new_position = region_origin + input_base_offset + x_position_offset
+		
+		# Move to next position for next area
+		input_x_offset += area_size.x + area_gap
 		
 		var input_data = {
 			"area_id": area.cortical_ID,
@@ -121,17 +130,23 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.inputs.append(input_data)
 		
-		print("    🔵 INPUT: %s (%s)" % [area.cortical_ID, area.type_as_string])
+		print("    🔵 INPUT: %s (%s) - width=%.1f" % [area.cortical_ID, area.type_as_string, area_size.x])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
+		print("      📍 NEW coordinates: %s (X-offset: %.1f)" % [Vector3i(new_position), x_position_offset.x])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
-	print("  📤 Processing %d OUTPUT areas:" % output_areas.size())
+	print("  📤 Processing %d OUTPUT areas (spreading along X-axis):" % output_areas.size())
+	var output_x_offset = 0.0
 	for i in output_areas.size():
 		var area = output_areas[i]
-		# Calculate Y offset for vertical distribution (+ 5.0 to float above plate)
-		var y_offset = (i - (output_areas.size() - 1) / 2.0) * vertical_spacing + 5.0  # Add 5 to be above plate
-		var new_position = region_origin + output_base_offset + Vector3(0.0, y_offset, 0.0)
+		var area_size = Vector3(area.dimensions_3D)
+		
+		# Calculate X offset for side-by-side distribution
+		var x_position_offset = Vector3(output_x_offset + area_size.x/2.0, 0.0, 0.0)  # Center of area
+		var new_position = region_origin + output_base_offset + x_position_offset
+		
+		# Move to next position for next area
+		output_x_offset += area_size.x + area_gap
 		
 		var output_data = {
 			"area_id": area.cortical_ID,
@@ -141,9 +156,9 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.outputs.append(output_data)
 		
-		print("    🔴 OUTPUT: %s (%s)" % [area.cortical_ID, area.type_as_string])
+		print("    🔴 OUTPUT: %s (%s) - width=%.1f" % [area.cortical_ID, area.type_as_string, area_size.x])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
+		print("      📍 NEW coordinates: %s (X-offset: %.1f)" % [Vector3i(new_position), x_position_offset.x])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
@@ -208,54 +223,137 @@ func setup(brain_region: BrainRegion) -> void:
 
 ## Creates the 3D plate structure underneath I/O cortical areas
 func _create_3d_plate() -> void:
-	# Calculate plate size based on I/O cortical areas
-	var input_areas = _get_input_cortical_areas_for_logging(_representing_region)
-	var output_areas = _get_output_cortical_areas_for_logging(_representing_region)
-	var plate_size = _calculate_plate_size(input_areas, output_areas)
+	# Get input/output areas for sizing
+	var input_areas = _get_input_cortical_areas()
+	var output_areas = _get_output_cortical_areas()
 	
-	print("  📐 Calculated plate size: %s" % plate_size)
+	# Calculate sizes for each plate independently - ALWAYS CREATE BOTH PLATES
+	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
+	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	
+	var plate_spacing = 1.0  # Gap between input and output plates
+	
+	print("  📐 Input plate size: %s (for %d areas)" % [input_plate_size, input_areas.size()])  
+	print("  📐 Output plate size: %s (for %d areas)" % [output_plate_size, output_areas.size()])
 	print("  📍 Brain region coordinates: %s" % _representing_region.coordinates_3D)
 	
-	# Create the plate mesh
-	_frame_container = MeshInstance3D.new()
-	_frame_container.name = "BrainRegionPlate"
+	# Create the main frame container
+	_frame_container = Node3D.new()
+	_frame_container.name = "RegionAssembly"
 	add_child(_frame_container)
 	
-	# Create a plane mesh in XZ axis
+	# ALWAYS CREATE INPUT PLATE (left side) - even if no input areas
+	var input_plate = _create_single_plate(input_plate_size, "InputPlate", Color(0.0, 0.4, 0.0))  # Dark green
+	# Position on left side
+	input_plate.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
+	input_plate.position.y = -1.0  # Below I/O areas
+	_frame_container.add_child(input_plate)
+	print("  🟢 InputPlate: Created dark green plate (size: %.1f x %.1f) for %d inputs" % [input_plate_size.x, input_plate_size.z, input_areas.size()])
+
+	# ALWAYS CREATE OUTPUT PLATE (right side) - even if no output areas
+	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", Color(0.0, 0.0, 0.4))  # Dark blue
+	# Position on right side
+	output_plate.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
+	output_plate.position.y = -1.0  # Below I/O areas
+	_frame_container.add_child(output_plate)
+	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x %.1f) for %d outputs" % [output_plate_size.x, output_plate_size.z, output_areas.size()])
+	
+	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
+	
+
+## Creates a single plate mesh for inputs or outputs
+func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
+	# Create plate mesh instance
+	var plate_mesh_instance = MeshInstance3D.new()
+	plate_mesh_instance.name = plate_name
+	
+	# Create plane mesh in XZ axis
 	var plane_mesh = PlaneMesh.new()
 	plane_mesh.size = Vector2(plate_size.x, plate_size.z)
 	plane_mesh.orientation = PlaneMesh.FACE_Y  # Facing up (XZ plane)
-	_frame_container.mesh = plane_mesh
+	plate_mesh_instance.mesh = plane_mesh
 	
-	# Create red semi-transparent material for the plate
-	_frame_material = StandardMaterial3D.new()
-	_frame_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_frame_material.albedo_color = Color(1.0, 0.2, 0.2, 0.6)  # Semi-transparent red
-	_frame_material.flags_unshaded = true
-	_frame_material.flags_transparent = true
-	_frame_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_frame_material.no_depth_test = false
-	_frame_material.flags_do_not_receive_shadows = true
-	_frame_material.flags_disable_ambient_light = true
+	# Create semi-transparent material
+	var plate_material = StandardMaterial3D.new()
+	plate_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	plate_material.albedo_color = Color(plate_color.r, plate_color.g, plate_color.b, 0.4)  # Semi-transparent
+	plate_material.flags_unshaded = true
+	plate_material.flags_transparent = true
+	plate_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	plate_material.no_depth_test = false
+	plate_material.flags_do_not_receive_shadows = true
+	plate_material.flags_disable_ambient_light = true
+	plate_mesh_instance.material_override = plate_material
 	
-	_frame_container.material_override = _frame_material
+	return plate_mesh_instance
+
+## Calculates plate size for a specific set of areas
+func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_type: String) -> Vector3:
+	if areas.size() == 0:
+		print("  ⚠️  No %s areas found, using default plate size" % plate_type)
+		return Vector3(6.0, 0.0, 6.0)  # Default size
 	
-	print("🔴 BrainRegionPlate: Created red XZ plate (size: %s) for region '%s'" % [Vector2(plate_size.x, plate_size.z), _representing_region.friendly_name])
+	# Calculate WIDTH: side-by-side layout with gaps
+	var area_gap = 1.5  # Gap between cortical areas
+	var padding = 2.0   # Padding around edges
+	var total_width = 0.0
+	var max_depth = 0.0
 	
-	# Position plate underneath cortical areas (negative Y offset)
-	_frame_container.position.y = -1.0  # Sit 1 unit below the cortical areas
+	print("  📊 Analyzing %d %s areas for plate sizing:" % [areas.size(), plate_type])
 	
-	# Create collision for interaction
-	_frame_collision = StaticBody3D.new()
-	_frame_collision.name = "PlateCollision"
-	add_child(_frame_collision)
+	# Calculate total width needed and find maximum depth
+	for i in areas.size():
+		var area = areas[i]
+		var area_size = Vector3(area.dimensions_3D)
+		
+		# Add area width
+		total_width += area_size.x
+		
+		# Add gap (except for last area)
+		if i < areas.size() - 1:
+			total_width += area_gap
+		
+		# Track maximum depth (Z dimension)
+		max_depth = max(max_depth, area_size.z)
+		
+		print("    🔸 %s: dimensions %s (width=%.1f, depth=%.1f)" % [area.cortical_ID, area_size, area_size.x, area_size.z])
 	
-	var collision_shape = CollisionShape3D.new()
-	var box_shape = BoxShape3D.new()
-	box_shape.size = Vector3(plate_size.x, 0.2, plate_size.z)  # Thin collision box
-	collision_shape.shape = box_shape
-	collision_shape.position.y = -1.0  # Match plate position
-	_frame_collision.add_child(collision_shape)
+	# Add padding to total dimensions
+	var plate_width = max(total_width + padding * 2, 4.0)  # Minimum 4.0
+	var plate_depth = max(max_depth + padding * 2, 4.0)   # Minimum 4.0
+	
+	print("  📐 %s plate calculation:" % plate_type)
+	print("    - Total area width: %.1f + %.1f gaps = %.1f" % [total_width - (areas.size() - 1) * area_gap, (areas.size() - 1) * area_gap, total_width])
+	print("    - Maximum area depth: %.1f" % max_depth) 
+	print("    - Final plate size: %.1f x %.1f (with %.1f padding)" % [plate_width, plate_depth, padding])
+	
+	return Vector3(plate_width, 0.0, plate_depth)
+
+## Creates a connecting bridge between input and output plates  
+func _create_connecting_bridge(input_size: Vector3, output_size: Vector3, spacing: float) -> void:
+	var bridge = MeshInstance3D.new()
+	bridge.name = "ConnectingBridge"
+	
+	# Create a thin bridge mesh
+	var bridge_mesh = BoxMesh.new()
+	bridge_mesh.size = Vector3(spacing, 0.2, 1.0)  # Thin bridge
+	bridge.mesh = bridge_mesh
+	
+	# Bridge material (darker, more subtle)
+	var bridge_material = StandardMaterial3D.new()
+	bridge_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bridge_material.albedo_color = Color(0.3, 0.3, 0.3, 0.6)  # Dark gray, semi-transparent
+	bridge_material.flags_unshaded = true
+	bridge_material.flags_transparent = true
+	bridge.material_override = bridge_material
+	
+	# Position bridge between plates
+	bridge.position.x = 0.0  # Centered between plates
+	bridge.position.y = -1.0  # Same level as plates
+	bridge.position.z = 0.0
+	
+	_frame_container.add_child(bridge)
+	print("  🌉 ConnectingBridge: Created bridge between input and output plates")
 
 ## Calculates the appropriate plate size based on I/O cortical areas
 func _calculate_plate_size(input_areas: Array[AbstractCorticalArea], output_areas: Array[AbstractCorticalArea]) -> Vector3:
@@ -686,8 +784,8 @@ func _adjust_frame_size(input_count: int, output_count: int) -> void:
 	# Plates are sized based on I/O area dimensions, not container content
 	print("  📏 Frame size adjustment requested, but plates auto-size based on I/O areas")
 	
-	# Update collision shape
-	if _frame_collision.get_child(0).shape is BoxShape3D:
+	# Update collision shape (if collision exists)
+	if _frame_collision != null and _frame_collision.get_child_count() > 0 and _frame_collision.get_child(0).shape is BoxShape3D:
 		(_frame_collision.get_child(0).shape as BoxShape3D).size = new_size
 	
 	# Update position since frame size affects center offset calculation
