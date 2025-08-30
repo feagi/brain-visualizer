@@ -923,54 +923,48 @@ func _log_single_cortical_area_position(cortical_viz: UI_BrainMonitor_CorticalAr
 
 ## Updates global positions of all I/O cortical areas when brain region moves
 func _update_io_area_global_positions() -> void:
-	print("    🔄 Recalculating global positions for all I/O cortical areas...")
+	print("    🔄 Recalculating I/O area positions for moved brain region...")
 	
-	# 🐞 DEBUG: What data do we have?
-	print("      📊 Movement update: %d visualizations, %d input coords, %d output coords" % [_cortical_area_visualizations.size(), _generated_io_coordinates.inputs.size(), _generated_io_coordinates.outputs.size()])
+	# CRITICAL FIX: Regenerate I/O coordinates based on current brain region position
+	# The old stored coordinates were based on the previous brain region position
+	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
 	
-	# Convert brain region FEAGI coordinates to Godot world position
+	# Convert new brain region FEAGI coordinates to Godot world position
 	var feagi_pos = _representing_region.coordinates_3D
 	feagi_pos.z = -feagi_pos.z  # Flip Z direction
 	var brain_region_world_pos = Vector3(feagi_pos)
 	
-	# Update input areas
+	# Update each cortical area to its new position
 	for cortical_id in _cortical_area_visualizations.keys():
 		var cortical_viz = _cortical_area_visualizations[cortical_id]
-		print("      🔍 Processing cortical area: %s" % cortical_id)
+		print("      🔍 Updating cortical area: %s" % cortical_id)
 		
-		# Find the relative offset for this cortical area from generated coordinates
-		var new_position = Vector3.ZERO
+		# Find the NEW absolute coordinates for this cortical area
 		var found_coords = false
+		var desired_world_pos = Vector3.ZERO
 		
 		# Check inputs
 		for area_data in _generated_io_coordinates.inputs:
 			if area_data.area_id == cortical_id:
-				var absolute_feagi_coords = Vector3(area_data.new_coordinates)
-				var brain_region_coords = Vector3(_representing_region.coordinates_3D)
-				var relative_position = absolute_feagi_coords - brain_region_coords
-				new_position = Vector3(relative_position.x, relative_position.y, relative_position.z)
+				var new_feagi_coords = Vector3(area_data.new_coordinates)
+				new_feagi_coords.z = -new_feagi_coords.z  # Flip Z for Godot
+				desired_world_pos = new_feagi_coords
 				found_coords = true
-				print("        ✅ Found as INPUT: %s -> new pos: %s" % [cortical_id, new_position])
+				print("        ✅ Found as INPUT: %s -> world pos: %s" % [cortical_id, desired_world_pos])
 				break
 		
 		# Check outputs if not found in inputs
 		if not found_coords:
 			for area_data in _generated_io_coordinates.outputs:
 				if area_data.area_id == cortical_id:
-					var absolute_feagi_coords = Vector3(area_data.new_coordinates)
-					var brain_region_coords = Vector3(_representing_region.coordinates_3D)
-					var relative_position = absolute_feagi_coords - brain_region_coords
-					new_position = Vector3(relative_position.x, relative_position.y, relative_position.z)
+					var new_feagi_coords = Vector3(area_data.new_coordinates)
+					new_feagi_coords.z = -new_feagi_coords.z  # Flip Z for Godot
+					desired_world_pos = new_feagi_coords
 					found_coords = true
-					print("        ✅ Found as OUTPUT: %s -> new pos: %s" % [cortical_id, new_position])
+					print("        ✅ Found as OUTPUT: %s -> world pos: %s" % [cortical_id, desired_world_pos])
 					break
 		
 		if found_coords:
-			# Calculate new global position: current brain region world + relative offset
-			var desired_world_pos = brain_region_world_pos + new_position
-			
-			# print("      🎯 Updating %s to global position %s" % [cortical_id, desired_world_pos])  # Suppressed to reduce log spam
-			
 			# Update DDA renderer position
 			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 				cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
@@ -983,9 +977,9 @@ func _update_io_area_global_positions() -> void:
 				if cortical_viz._directpoints_renderer._friendly_name_label != null:
 					cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)
 		else:
-			print("        ❌ No coordinates found for %s - skipping position update" % cortical_id)
+			print("        ❌ No coordinates found for %s - this shouldn't happen!" % cortical_id)
 	
-	print("    ✅ I/O cortical area global position update complete")
+	print("    ✅ I/O cortical area position update complete")
 
 ## Updates all I/O cortical area positions when brain region moves (maintains relative offsets) - DISABLED
 func _update_io_area_positions_DISABLED() -> void:
