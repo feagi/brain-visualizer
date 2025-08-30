@@ -2,7 +2,7 @@ extends SubViewportContainer
 class_name UI_BrainMonitor_3DScene
 ## Handles running the scene of Brain monitor, which shows a single instance of a brain region
 # Force re-parse to fix Godot parsing issues
-const SCENE_BRAIN_MOINITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
+const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -34,7 +34,7 @@ var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_Co
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
-	return load(SCENE_BRAIN_MOINITOR_PATH).instantiate()
+	return load(SCENE_BRAIN_MONITOR_PATH).instantiate()
 
 func _ready() -> void:
 	_node_3D_root = $SubViewport/Center
@@ -63,16 +63,16 @@ func setup(region: BrainRegion) -> void:
 	
 	# Show cortical areas from root region
 	print("  📦 STEP 1: Processing %d cortical areas from root region..." % _representing_region.contained_cortical_areas.size())
-	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
+	for area in _representing_region.contained_cortical_areas:
 		print("  📦 Evaluating ROOT area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 	
 	# ALSO check cortical areas in child regions that might be I/O areas
 	print("  🔄 STEP 2: Processing child regions for I/O areas...")
 	print("  🔄 Found %d child regions to process..." % _representing_region.contained_regions.size())
-	for child_region: BrainRegion in _representing_region.contained_regions:
+	for child_region in _representing_region.contained_regions:
 		print("  📦 Processing %d cortical areas from child region '%s'..." % [child_region.contained_cortical_areas.size(), child_region.friendly_name])
-		for area: AbstractCorticalArea in child_region.contained_cortical_areas:
+		for area in child_region.contained_cortical_areas:
 			# print("  📦 Evaluating CHILD area: %s (type: %s) from region %s" % [area.cortical_ID, area.type_as_string, child_region.friendly_name])  # Suppressed - too spammy
 			# For areas in child regions, check if they're I/O of that specific child region
 			# print("    🔍 Checking if %s is I/O of child region '%s'..." % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
