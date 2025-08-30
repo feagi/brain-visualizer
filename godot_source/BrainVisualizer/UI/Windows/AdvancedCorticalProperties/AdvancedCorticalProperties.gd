@@ -287,11 +287,74 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 func _setup_bm_prevew() -> void:
 	if _preview:
 		return
-	_preview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false)
+	
+	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
+	var preview_position = _get_preview_position_for_cortical_area()
+	
+	_preview = BV.UI.temp_root_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false)
 	var moves: Array[Signal] = [_vector_position.user_updated_vector]
 	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
 	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 	_preview.connect_UI_signals(moves, resizes, closes)
+	
+	# CRITICAL: Also connect to resize signal to update preview position for I/O areas
+	_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
+	print("🔮 Connected preview resize handler for potential I/O area")
+
+## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
+func _get_preview_position_for_cortical_area() -> Vector3i:
+	# Only works with single cortical area
+	if _cortical_area_refs.size() != 1:
+		return _vector_position.current_vector
+	
+	var cortical_area = _cortical_area_refs[0]
+	
+	# Check if this cortical area is I/O of any brain region with plates
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region == null:
+		return _vector_position.current_vector
+	
+	# Check all child regions to see if this area is their I/O
+	for child_region in root_region.contained_regions:
+		# Check if cortical area is in this region's partial mappings (I/O)
+		for partial_mapping in child_region.partial_mappings:
+			if partial_mapping.internal_target_cortical_area == cortical_area:
+				print("🔮 Cortical area %s is I/O of region %s - using plate position" % [cortical_area.cortical_ID, child_region.friendly_name])
+				
+				# Find the brain region 3D visualization to get plate coordinates
+				var brain_monitor = BV.UI.temp_root_bm
+				if brain_monitor == null:
+					return _vector_position.current_vector
+				
+				# Get the brain region 3D object
+				var brain_region_3d = brain_monitor._brain_region_visualizations_by_ID.get(child_region.region_ID)
+				if brain_region_3d == null:
+					print("🔮 Brain region 3D not found for %s - using API coordinates" % child_region.friendly_name)
+					return _vector_position.current_vector
+				
+				# Generate I/O coordinates to get the plate position
+				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
+				var areas_to_search = io_coords.inputs if partial_mapping.is_region_input else io_coords.outputs
+				
+				for area_data in areas_to_search:
+					if area_data.area_id == cortical_area.cortical_ID:
+						print("🔮 Found plate coordinates for %s: %s" % [cortical_area.cortical_ID, area_data.new_coordinates])
+						return Vector3i(area_data.new_coordinates)
+	
+	# Not an I/O area, use regular API coordinates
+	print("🔮 Using API coordinates for non-I/O area %s" % cortical_area.cortical_ID)
+	return _vector_position.current_vector
+
+## Handles dimension changes for I/O area previews - recalculates plate position since dimensions affect positioning
+func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
+	if _preview == null:
+		return
+	
+	# For I/O areas, when dimensions change, the plate position might change too
+	# Recalculate the preview position to ensure it stays on the plate
+	var updated_position = _get_preview_position_for_cortical_area()
+	_preview.set_new_position(updated_position)
+	print("🔮 Updated I/O area preview position after dimension change: %s" % updated_position)
 
 
 

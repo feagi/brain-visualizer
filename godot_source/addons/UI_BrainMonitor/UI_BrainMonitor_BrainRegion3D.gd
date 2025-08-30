@@ -221,6 +221,74 @@ func setup(brain_region: BrainRegion) -> void:
 	_update_position(_representing_region.coordinates_3D)
 	print("🏁 BrainRegion3D Setup completed for region: %s" % _representing_region.friendly_name)
 
+## Custom dimension update handler for I/O cortical areas on brain region plates
+## Updates dimensions without overriding brain region positioning
+func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_id: String) -> void:
+	print("🔧 Brain region handling dimension update for I/O area %s: %s" % [cortical_id, new_dimensions])
+	
+	# Find the cortical visualization using the ID
+	var cortical_viz = _cortical_area_visualizations.get(cortical_id)
+	if cortical_viz == null:
+		push_error("Brain region dimension update: Could not find visualization for area %s" % cortical_id)
+		return
+	
+	# Update DDA renderer dimensions (but preserve positioning)
+	if cortical_viz._dda_renderer != null:
+		# Update scale and shader parameters but NOT position
+		cortical_viz._dda_renderer._dimensions = new_dimensions
+		if cortical_viz._dda_renderer._static_body != null:
+			cortical_viz._dda_renderer._static_body.scale = new_dimensions
+			print("      📏 Updated DDA renderer scale: %s" % new_dimensions)
+		
+		# Update shader parameters
+		if cortical_viz._dda_renderer._DDA_mat != null:
+			cortical_viz._dda_renderer._DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
+			cortical_viz._dda_renderer._DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
+			cortical_viz._dda_renderer._DDA_mat.set_shader_parameter("voxel_count_z", new_dimensions.z)
+			var max_dim_size: int = max(new_dimensions.x, new_dimensions.y, new_dimensions.z)
+			var calculated_depth: int = ceili(log(float(max_dim_size)) / log(2.0))
+			calculated_depth = maxi(calculated_depth, 1)
+			cortical_viz._dda_renderer._DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
+			print("      🎨 Updated DDA shader parameters")
+		
+		# Update outline material scaling
+		if cortical_viz._dda_renderer._outline_mat != null:
+			cortical_viz._dda_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
+			print("      🔍 Updated DDA outline scaling")
+	
+	# Update DirectPoints renderer dimensions (but preserve positioning)  
+	if cortical_viz._directpoints_renderer != null:
+		# Update scale but NOT position
+		cortical_viz._directpoints_renderer._dimensions = new_dimensions
+		if cortical_viz._directpoints_renderer._static_body != null:
+			cortical_viz._directpoints_renderer._static_body.scale = new_dimensions
+			print("      📏 Updated DirectPoints renderer scale: %s" % new_dimensions)
+		
+		# Update collision shape size
+		var collision_shape = cortical_viz._directpoints_renderer._static_body.get_child(0) as CollisionShape3D
+		if collision_shape and collision_shape.shape is BoxShape3D:
+			if cortical_viz._directpoints_renderer._should_use_png_icon_by_id(cortical_viz.cortical_area.cortical_ID):
+				(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # PNG icon collision
+			else:
+				(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
+			print("      🔲 Updated DirectPoints collision shape")
+		
+		# Update outline mesh scale
+		if cortical_viz._directpoints_renderer._outline_mesh_instance != null:
+			cortical_viz._directpoints_renderer._outline_mesh_instance.scale = new_dimensions
+			print("      🔍 Updated DirectPoints outline scale")
+		
+		# Update outline material scaling
+		if cortical_viz._directpoints_renderer._outline_mat != null:
+			cortical_viz._directpoints_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
+			print("      🎨 Updated DirectPoints outline material")
+	
+	print("    ✅ Brain region dimension update completed (positioning preserved)")
+	
+	# Recalculate plate sizes since cortical area dimensions changed
+	print("    🔄 Recalculating plate sizes after dimension change...")
+	_adjust_frame_size(_get_input_cortical_areas().size(), _get_output_cortical_areas().size())
+
 ## Creates the 3D plate structure underneath I/O cortical areas
 func _create_3d_plate() -> void:
 	# Get input/output areas for sizing
@@ -587,6 +655,19 @@ func _populate_cortical_areas() -> void:
 				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 				print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
 			
+			# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
+			if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
+				area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
+				print("      ✂️  Disconnected DDA renderer dimension updates")
+				
+			if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
+				area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
+				print("      ✂️  Disconnected DirectPoints renderer dimension updates")
+			
+			# Connect to our custom dimension update handler that preserves brain region positioning
+			area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+			print("      🔌 Connected to brain region dimension update handler for %s" % area.cortical_ID)
+			
 			existing_viz.get_parent().remove_child(existing_viz)
 			_input_areas_container.add_child(existing_viz)
 			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
@@ -620,6 +701,15 @@ func _populate_cortical_areas() -> void:
 			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
 				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 				print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
+			
+			# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
+			if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
+				area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
+				print("      ✂️  Disconnected DDA renderer dimension updates")
+				
+			if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
+				area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
+				print("      ✂️  Disconnected DirectPoints renderer dimension updates")
 			
 			existing_viz.get_parent().remove_child(existing_viz)
 			_output_areas_container.add_child(existing_viz)
