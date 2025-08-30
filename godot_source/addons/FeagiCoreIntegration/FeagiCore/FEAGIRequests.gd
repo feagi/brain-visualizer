@@ -373,7 +373,7 @@ func send_vision_tuning_parameters(parameters: Dictionary) -> FeagiRequestOutput
 #endregion
 
 
-## Mass move a bunch of cortical areas at once
+## Mass move a bunch of genome objects at once (FIXED: Use correct API endpoints for each object type)
 func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vector2is: Dictionary) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
@@ -385,28 +385,93 @@ func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vecto
 			return FeagiRequestOutput.requirement_fail("INVALID_VALUE")
 		#TODO ID check
 	
-	# Define Request
-	var dict_to_send: Dictionary = {}
-	for move in genome_objects_mapped_to_new_locations_as_vector2is.keys():
-		dict_to_send[(move as GenomeObject).genome_ID] = {"coordinate_2d": FEAGIUtils.vector2i_to_array(genome_objects_mapped_to_new_locations_as_vector2is[move])}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_relocate_members, dict_to_send)
+	# CRITICAL FIX: Separate cortical areas from brain regions to use correct API endpoints
+	var cortical_areas_to_move: Array[AbstractCorticalArea] = []
+	var cortical_area_positions: Dictionary = {}
+	var brain_regions_to_move: Dictionary = {}
 	
-	# Send request and await results
-	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	await HTTP_FEAGI_request_worker.worker_done
-	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to 2D move %d genome objects!" % len(genome_objects_mapped_to_new_locations_as_vector2is))
-		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully 2D moved %d genome objects!" % len(genome_objects_mapped_to_new_locations_as_vector2is))
-	FeagiCore.feagi_local_cache.FEAGI_mass_update_2D_positions(genome_objects_mapped_to_new_locations_as_vector2is)
-	return FEAGI_response_data
+	# Separate objects by type
+	for genome_object in genome_objects_mapped_to_new_locations_as_vector2is.keys():
+		var new_position = genome_objects_mapped_to_new_locations_as_vector2is[genome_object]
+		
+		if genome_object is AbstractCorticalArea:
+			# Cortical areas: Use /v1/cortical_area/multi/cortical_area endpoint
+			var cortical_area = genome_object as AbstractCorticalArea
+			cortical_areas_to_move.append(cortical_area)
+			cortical_area_positions[cortical_area] = new_position
+			print("FEAGI REQUEST: Will update cortical area %s position using cortical_area API" % cortical_area.cortical_ID)
+		elif genome_object is BrainRegion:
+			# Brain regions: Use /v1/region/relocate_members endpoint  
+			var brain_region = genome_object as BrainRegion
+			brain_regions_to_move[brain_region] = new_position
+			print("FEAGI REQUEST: Will update brain region %s position using region API" % brain_region.friendly_name)
+		else:
+			push_warning("FEAGI Requests: Unknown genome object type for movement: %s" % genome_object.get_class())
+	
+	var final_result: FeagiRequestOutput
+	
+	# Handle cortical areas (use cortical area properties API - CORRECT!)
+	if cortical_areas_to_move.size() > 0:
+		print("FEAGI REQUEST: Moving %d cortical areas using CORRECT /v1/cortical_area/multi/cortical_area API" % cortical_areas_to_move.size())
+		
+		# Build properties dictionary with coordinate_2d for each cortical area
+		var properties = {}
+		for cortical_area in cortical_areas_to_move:
+			var new_coords = cortical_area_positions[cortical_area]
+			properties[cortical_area.cortical_ID] = {"coordinate_2d": FEAGIUtils.vector2i_to_array(new_coords)}
+		
+		# Use the existing update_cortical_areas function logic but with coordinate updates
+		properties["cortical_id_list"] = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas_to_move)
+		var cortical_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea, properties)
+		
+		var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_request)
+		await cortical_worker.worker_done
+		final_result = cortical_worker.retrieve_output_and_close()
+		
+		if _return_if_HTTP_failed_and_automatically_handle(final_result):
+			push_error("FEAGI Requests: Unable to move %d cortical areas using cortical_area API!" % cortical_areas_to_move.size())
+			return final_result
+		
+		print("FEAGI REQUEST: Successfully moved %d cortical areas using CORRECT cortical_area API!" % cortical_areas_to_move.size())
+		
+		# Update local cache for cortical areas
+		for cortical_area in cortical_areas_to_move:
+			var movement_dict = {cortical_area: cortical_area_positions[cortical_area]}
+			FeagiCore.feagi_local_cache.FEAGI_mass_update_2D_positions(movement_dict)
+	
+	# Handle brain regions (use region relocate_members API - may be correct for regions)
+	if brain_regions_to_move.size() > 0:
+		print("FEAGI REQUEST: Moving %d brain regions using /v1/region/relocate_members API" % brain_regions_to_move.size())
+		
+		var region_dict_to_send: Dictionary = {}
+		for brain_region in brain_regions_to_move.keys():
+			region_dict_to_send[(brain_region as BrainRegion).region_ID] = {"coordinate_2d": FEAGIUtils.vector2i_to_array(brain_regions_to_move[brain_region])}
+		
+		var region_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_relocate_members, region_dict_to_send)
+		
+		var region_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(region_request)
+		await region_worker.worker_done
+		var region_result: FeagiRequestOutput = region_worker.retrieve_output_and_close()
+		
+		if _return_if_HTTP_failed_and_automatically_handle(region_result):
+			push_error("FEAGI Requests: Unable to move %d brain regions!" % brain_regions_to_move.size())
+			return region_result
+			
+		print("FEAGI REQUEST: Successfully moved %d brain regions!" % brain_regions_to_move.size())
+		
+		# Update local cache for brain regions
+		FeagiCore.feagi_local_cache.FEAGI_mass_update_2D_positions(brain_regions_to_move)
+		final_result = region_result
+	
+	return final_result
 
 
 #region Brain Regions
 ## Used by the user to create regions
-func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObject], region_name: StringName, coords_2D: Vector2i, coords_3D: Vector3) -> FeagiRequestOutput:
+func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObject], region_name: StringName, coords_2D: Vector2i, coords_3D: Vector3i) -> FeagiRequestOutput:
+	# Clean region creation without fallbacks
+	print("🏗️ Creating region '%s' at coordinates 2D=%s, 3D=%s" % [region_name, coords_2D, coords_3D])
+	
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -428,7 +493,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		"title": region_name,
 		"parent_region_id": parent_region.region_ID,
 		"coordinates_2d": FEAGIUtils.vector2i_to_array(coords_2D),
-		"coordinates_3d": FEAGIUtils.vector3_to_array(coords_3D),
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coords_3D),
 		"areas": AbstractCorticalArea.cortical_area_array_to_ID_array(GenomeObject.filter_cortical_areas(region_internals)),
 		"regions": BrainRegion.object_array_to_ID_array(GenomeObject.filter_brain_regions(region_internals)),
 	}
@@ -442,7 +507,19 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		push_error("FEAGI Requests: Unable to create region of name %s!" % region_name)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response["region_id"], parent_region, region_name, coords_2D, coords_3D, region_internals)
+	
+	# Use coordinates from FEAGI response if available, otherwise use input coordinates
+	var feagi_coords_2d = coords_2D
+	var feagi_coords_3d = coords_3D
+	
+	if response.has("coordinate_2d") and response["coordinate_2d"] is Array:
+		feagi_coords_2d = FEAGIUtils.array_to_vector2i(response["coordinate_2d"])
+	if response.has("coordinate_3d") and response["coordinate_3d"] is Array:
+		feagi_coords_3d = FEAGIUtils.array_to_vector3i(response["coordinate_3d"])
+	
+	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response["region_id"], parent_region, region_name, feagi_coords_2d, feagi_coords_3d, region_internals)
+	
+	print("✅ Region '%s' created at %s" % [region_name, feagi_coords_3d])
 	return FEAGI_response_data
 	
 ## Used to edit the metadata of the region

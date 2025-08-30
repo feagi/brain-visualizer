@@ -8,8 +8,10 @@ var _selection: Array[GenomeObject]
 
 
 func setup(selection: Array[GenomeObject]) -> void:
+	print("🔍 QuickMenu: setup() called with %d objects" % selection.size())
 	_mode = GenomeObject.get_makeup_of_array(selection)
 	_selection = selection
+	print("🔍 QuickMenu: _selection assigned, size: %d, mode: %s" % [_selection.size(), _mode])
 	
 	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
 	var quick_connect_button: TextureButton = _window_internals.get_node('HBoxContainer/QuickConnect')
@@ -25,7 +27,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	quick_connect_N_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.NEURON_TO_NEURONS))
 	
 	_setup_base_window(WINDOW_NAME)
-	if len(selection) == 0:
+	if selection.size() == 0:
 		push_error("BV UI: The quick menu was opened with 0 selected objects. This should never happen! Please note the steps to cause this error and open an issue! Closing the window...")
 		close_window()
 		return
@@ -43,6 +45,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 			clone_button.tooltip_text = "Clone Cortical Area..."
 			delete_button.tooltip_text = "Delete this Cortical Area..."
 			
+			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
+			if _selection.size() == 0:
+				push_error("BV UI: CRITICAL - _selection became empty during setup after passing initial check!")
+				return
 			var area: AbstractCorticalArea = (_selection[0] as AbstractCorticalArea)
 			_titlebar.title = area.friendly_name
 			if !area.user_can_delete_this_area:
@@ -70,6 +76,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 			move_to_region_button.tooltip_text = "Add to a Brain Region..."
 			delete_button.tooltip_text = "Delete this Brain Region..."
 			
+			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
+			if _selection.size() == 0:
+				push_error("BV UI: CRITICAL - _selection became empty during setup after passing initial check!")
+				return
 			var region: BrainRegion = (_selection[0] as BrainRegion)
 			_titlebar.title = region.friendly_name
 
@@ -131,6 +141,14 @@ func setup(selection: Array[GenomeObject]) -> void:
 
 
 func _button_details() -> void:
+	_debug_selection_state("_button_details start")
+	# 🚨 SAFETY CHECK: Ensure selection array is not empty
+	if _selection.size() == 0:
+		push_error("BV UI: QuickMenu _button_details called with empty _selection array! This indicates a selection state bug.")
+		BV.NOTIF.add_notification("No objects selected for details view!")
+		close_window()
+		return
+	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
@@ -138,34 +156,35 @@ func _button_details() -> void:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
+	_debug_selection_state("_button_details before close")
 	close_window()
 
 func _button_quick_connect() -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
 		BV.WM.spawn_quick_connect((_selection[0] as AbstractCorticalArea))
 	close_window()
 
 func _button_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE) -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.WM.spawn_quick_connect_neuron(mode)
 	else:
 		BV.WM.spawn_quick_connect_neuron(mode, _selection[0] as AbstractCorticalArea)
 	close_window()
 
 func _button_clone() -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
 		BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
 	close_window()
 
 func _button_add_to_region() -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
-		var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
+		var parent_region: BrainRegion = _selection[0].current_parent_region # Whatever we selected, the parent region is the parent region of any element that selection
 		BV.WM.spawn_move_to_region(_selection, parent_region)
 	close_window()
 
@@ -174,4 +193,19 @@ func _button_delete() -> void:
 	close_window()
 
 func _on_focus_lost() -> void:
+	print("🔍 QuickMenu: Focus lost, closing window. Selection size: %d" % _selection.size())
 	close_window()
+
+# Debug function to check selection state
+func _debug_selection_state(context: String) -> void:
+	print("🔍 QuickMenu [%s]: Selection size: %d" % [context, _selection.size()])
+	if _selection.size() > 0:
+		print("    First object type: %s, ID: %s" % [_selection[0].get_class(), _selection[0].friendly_name if _selection[0].has_method("friendly_name") else "N/A"])
+
+# Override close_window to add safety debugging
+func close_window() -> void:
+	_debug_selection_state("close_window")
+	if _selection.size() == 0:
+		print("⚠️  QuickMenu: Selection is empty during close - this may indicate when the array gets cleared!")
+		print_stack()  # Print call stack to see what led to this
+	super.close_window()

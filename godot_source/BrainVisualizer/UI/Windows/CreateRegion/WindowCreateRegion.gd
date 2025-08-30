@@ -25,6 +25,17 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
 		_scroll_section.add_text_button_with_delete(selected, selected.friendly_name, Callable())
+	
+	# 🎯 FOLLOW CORTICAL AREA PATTERN: Set sensible default coordinates (not 0,0,0)
+	# Generate random coordinates in a reasonable range for visibility
+	var rand: RandomNumberGenerator = RandomNumberGenerator.new()
+	var default_3d = Vector3i(
+		rand.randi_range(-50, 50),   # Reasonable X range
+		rand.randi_range(5, 25),     # Reasonable Y range (above ground) 
+		rand.randi_range(-50, 50)    # Reasonable Z range
+	)
+	_vector.current_vector = default_3d
+	print("🎯 Region creation: Set default 3D coordinates to %s" % default_3d)
 		
 
 func _add_button_pressed() -> void:
@@ -47,8 +58,16 @@ func _create_region_button_pressed() -> void:
 	var selected: Array[GenomeObject] = []
 	selected.assign(_scroll_section.get_key_array())
 	var region_name: StringName = _name_box.text
-	var coords_2D: Vector2i = GenomeObject.get_average_2D_location(selected)
+	
+	# 🎯 FOLLOW CORTICAL AREA PATTERN: Generate random 2D position instead of averaging
+	var rand: RandomNumberGenerator = RandomNumberGenerator.new()
+	var coords_2D: Vector2i = Vector2i(rand.randi_range(-100, 100), rand.randi_range(-100, 100))
+	
 	var coords_3D: Vector3i = _vector.current_vector
+	
+	# 🚨 DEBUG: What coordinates are we using?
+	print("🏗️ REGION CREATION: 2D=%s, 3D=%s" % [coords_2D, coords_3D])
+	
 	if region_name == "":
 		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your Brain Region!")
 		BV.WM.spawn_popup(popup)

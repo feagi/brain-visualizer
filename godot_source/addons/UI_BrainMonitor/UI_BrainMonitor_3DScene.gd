@@ -341,6 +341,7 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_BrainRegion3D:
 	print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)
 	print("  🔧 _add_brain_region_frame called for: %s" % brain_region.friendly_name)
+	print("  📍 Brain region coordinates: 2D=%s, 3D=%s" % [brain_region.coordinates_2D, brain_region.coordinates_3D])
 	
 	if brain_region.region_ID in _brain_region_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing brain region of ID %s!" % brain_region.region_ID)
