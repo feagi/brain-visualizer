@@ -38,7 +38,7 @@ func _init(is_input_of_region: bool, mappings_suggested: Array[SingleMappingDefi
 	_custom_label = label
 	_connection_chain = ConnectionChain.from_partial_mapping_set(self)
 
-static func from_FEAGI_JSON_array(hints: Array[Dictionary], is_input: bool, brain_region: BrainRegion) -> Array[PartialMappingSet]:
+static func from_FEAGI_JSON_array(hints: Array, is_input: bool, brain_region: BrainRegion) -> Array[PartialMappingSet]:
 	var mappings_collection: Dictionary = {} # Key'd by internal ID -> target ID -> Array[SingleMappingDefinition]
 	var label_collection: Dictionary = {} # Key'd by internal ID -> target ID -> String
 	#NOTE: Even though we wont use src and dst cortical IDs in final, we are doing this to group like mappings together!
@@ -52,6 +52,21 @@ static func from_FEAGI_JSON_array(hints: Array[Dictionary], is_input: bool, brai
 		internal_key = "src_cortical_area_id"
 		external_key = "dst_cortical_area_id"
 	
+	# Handle both complex dictionary format and simple string array format
+	if hints.size() > 0 and hints[0] is String:
+		# Simple format: just cortical area IDs
+		var output: Array[PartialMappingSet] = []
+		for cortical_area_id in hints:
+			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(cortical_area_id)
+			if area == null:
+				push_error("CORE: Unable to find cortical area %s for partial mapping!" % cortical_area_id)
+				continue
+			# Create a simple partial mapping set with no actual mapping data
+			# This allows I/O detection to work
+			output.append(PartialMappingSet.new(is_input, [], area, brain_region, ""))
+		return output
+	
+	# Complex format: dictionary with mapping details
 	for hint in hints:
 		var mapping: SingleMappingDefinition = SingleMappingDefinition.from_FEAGI_JSON(hint)
 		if !hint[internal_key] in mappings_collection:

@@ -154,7 +154,7 @@ func FEAGI_delete_this_region() -> void:
 	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	# This function should be called by [BrainRegionsCache], which will then free this object
 
-func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
+func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array, is_input: bool) -> void:
 	if len(JSON_arr) == 0:
 		return # No point if the arr is empty
 	var new_mappings: Array[PartialMappingSet] = PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self)

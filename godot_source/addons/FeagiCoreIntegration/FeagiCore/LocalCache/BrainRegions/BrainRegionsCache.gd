@@ -46,7 +46,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 
 func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:
 	var region_dict: Dictionary
-	var arr_IO: Array[Dictionary]
+	var arr_IO: Array  # Can be Array[String] or Array[Dictionary]
 	var region: BrainRegion
 	for region_ID in region_summary_data:
 		region_dict = region_summary_data[region_ID]

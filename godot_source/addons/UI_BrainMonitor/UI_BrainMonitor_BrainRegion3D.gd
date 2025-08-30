@@ -757,7 +757,16 @@ func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
 				input_areas.append(area)
 				print("      ✅ Added input area: %s (%s)" % [area.cortical_ID, area.type_as_string])
 	
-	# Method 2: If no chain links, fall back to checking IPU types and making educated guesses
+	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
+	print("  📋 partial_mappings count: %d" % _representing_region.partial_mappings.size())
+	for partial_mapping in _representing_region.partial_mappings:
+		if partial_mapping.is_region_input:
+			var area = partial_mapping.internal_target_cortical_area
+			if area not in input_areas:
+				input_areas.append(area)
+				print("      ✅ Added input area via partial mapping: %s (%s)" % [area.cortical_ID, area.type_as_string])
+	
+	# Method 3: If no chain links, fall back to checking IPU types and making educated guesses
 	if _representing_region.input_open_chain_links.size() == 0:
 		print("  ⚠️  No input chain links found. Using fallback detection methods...")
 		
@@ -809,7 +818,16 @@ func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
 				output_areas.append(area)
 				print("      ✅ Added output area: %s (%s)" % [area.cortical_ID, area.type_as_string])
 	
-	# Method 2: If no chain links, fall back to checking OPU types and making educated guesses
+	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
+	print("  📋 partial_mappings count: %d" % _representing_region.partial_mappings.size())
+	for partial_mapping in _representing_region.partial_mappings:
+		if not partial_mapping.is_region_input:  # Output mapping
+			var area = partial_mapping.internal_target_cortical_area
+			if area not in output_areas:
+				output_areas.append(area)
+				print("      ✅ Added output area via partial mapping: %s (%s)" % [area.cortical_ID, area.type_as_string])
+	
+	# Method 3: If no chain links, fall back to checking OPU types and making educated guesses
 	if _representing_region.output_open_chain_links.size() == 0:
 		print("  ⚠️  No output chain links found. Using fallback detection methods...")
 		

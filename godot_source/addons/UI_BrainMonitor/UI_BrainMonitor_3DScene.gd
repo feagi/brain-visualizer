@@ -104,10 +104,26 @@ func setup(region: BrainRegion) -> void:
 		print("    - Child has %d input links, %d output links" % [child_region.input_open_chain_links.size(), child_region.output_open_chain_links.size()])
 		print("    - Inputs:")
 		for link in child_region.input_open_chain_links:
-			print("      • %s" % (link.destination.cortical_ID if link.destination else "null"))
+			var dest_name = "null"
+			if link.destination:
+				if link.destination is AbstractCorticalArea:
+					dest_name = (link.destination as AbstractCorticalArea).cortical_ID
+				elif link.destination is BrainRegion:
+					dest_name = (link.destination as BrainRegion).region_ID
+				else:
+					dest_name = str(link.destination)
+			print("      • %s" % dest_name)
 		print("    - Outputs:")
 		for link in child_region.output_open_chain_links:
-			print("      • %s" % (link.source.cortical_ID if link.source else "null"))
+			var src_name = "null"
+			if link.source:
+				if link.source is AbstractCorticalArea:
+					src_name = (link.source as AbstractCorticalArea).cortical_ID
+				elif link.source is BrainRegion:
+					src_name = (link.source as BrainRegion).region_ID
+				else:
+					src_name = str(link.source)
+			print("      • %s" % src_name)
 		
 		print("  🔨 Calling _add_brain_region_frame for: %s..." % child_region.friendly_name)
 		var region_frame: UI_BrainMonitor_BrainRegion3D = _add_brain_region_frame(child_region)
@@ -425,7 +441,16 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 			print("        ✅ Found as OUTPUT via chain link!")
 			return true
 	
-	# Method 2: Check IPU/OPU types
+	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
+	for partial_mapping in child_region.partial_mappings:
+		if partial_mapping.internal_target_cortical_area == area:
+			if partial_mapping.is_region_input:
+				print("        ✅ Found as INPUT via partial mapping (FEAGI inputs array)!")
+			else:
+				print("        ✅ Found as OUTPUT via partial mapping (FEAGI outputs array)!")
+			return true
+	
+	# Method 3: Check IPU/OPU types
 	if area in child_region.contained_cortical_areas:
 		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			print("        ✅ Found as IPU type directly in child region!")
@@ -434,7 +459,7 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 			print("        ✅ Found as OPU type directly in child region!")
 			return true
 	
-	# Method 3: TEMPORARY aggressive naming heuristics (for debugging - will restore conservative logic after)
+	# Method 4: TEMPORARY aggressive naming heuristics (for debugging - will restore conservative logic after)
 	if child_region.input_open_chain_links.size() == 0 and child_region.output_open_chain_links.size() == 0:
 		if area in child_region.contained_cortical_areas and child_region.contained_cortical_areas.size() == 2:
 			print("        💡 TEMPORARY: Using aggressive naming heuristics for debugging...")
