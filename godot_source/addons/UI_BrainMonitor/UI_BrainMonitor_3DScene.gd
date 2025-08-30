@@ -289,6 +289,15 @@ func create_preview(initial_FEAGI_soace_position: Vector3i, initial_dimensions: 
 	preview.tree_exiting.connect(_preview_closing)
 	return preview
 
+## Allows external elements to create a brain region preview showing dual plates
+func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> UI_BrainMonitor_BrainRegionPreview:
+	var preview: UI_BrainMonitor_BrainRegionPreview = UI_BrainMonitor_BrainRegionPreview.new()
+	_node_3D_root.add_child(preview)  # Add to 3D scene root
+	preview.setup(brain_region, initial_FEAGI_position)
+	preview.tree_exiting.connect(_brain_region_preview_closing)
+	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
+	return preview
+
 ## Closes all currently active previews
 func clear_all_open_previews() -> void:
 	var previews_duplicated: Array[UI_BrainMonitor_InteractivePreview] = _active_previews.duplicate()
@@ -300,6 +309,10 @@ func clear_all_open_previews() -> void:
 ## Called when the preview is about to be free'd for any reason
 func _preview_closing(preview: UI_BrainMonitor_InteractivePreview):
 	_active_previews.erase(preview)
+
+## Called when a brain region preview is about to be freed
+func _brain_region_preview_closing(preview: UI_BrainMonitor_BrainRegionPreview):
+	print("🔮 Brain region preview closing: %s" % preview.name)
 
 
 #endregion
