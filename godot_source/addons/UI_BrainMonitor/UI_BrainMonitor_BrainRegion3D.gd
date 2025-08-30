@@ -105,23 +105,12 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var plate_spacing = 1.0  # Gap between plates (same as in _create_3d_plate)
 	
 	# Position I/O areas over their respective plates - SPREAD ALONG X-AXIS
-	var input_base_offset = Vector3(-plate_spacing/2.0 - 2.0, 2.0, 0.0)   # Over left (input) plate, Y=+2.0 to hover
+	var input_base_offset = Vector3(-plate_spacing/2.0 - 9.0, 2.0, 0.0)   # Over left (input) plate, shifted further left, Y=+2.0 to hover
 	var output_base_offset = Vector3(plate_spacing/2.0 + 2.0, 2.0, 0.0)   # Over right (output) plate, Y=+2.0 to hover
 	var area_gap = 5.0  # Gap between cortical areas - increased to prevent title overlap
 	
 	print("  📥 Processing %d INPUT areas (spreading along X-axis):" % input_areas.size())
-	
-	# Calculate total width needed for all input areas to center them within the plate
-	var total_input_width = 0.0
-	for area in input_areas:
-		total_input_width += area.dimensions_3D.x
-		if input_areas.find(area) < input_areas.size() - 1:  # Add gap between areas (not after last)
-			total_input_width += area_gap
-	
-	# Start from the leftmost position to center areas within plate
-	var input_start_x = -total_input_width / 2.0  # Center the group of areas
-	var input_x_offset = input_start_x
-	
+	var input_x_offset = 0.0  # Start from left edge (same as output areas for consistency)
 	for i in input_areas.size():
 		var area = input_areas[i]
 		var area_size = Vector3(area.dimensions_3D)
@@ -147,7 +136,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("  📤 Processing %d OUTPUT areas (spreading along X-axis):" % output_areas.size())
-	var output_x_offset = 0.0
+	var output_x_offset = 0.0  # Start from left edge (original logic - was working correctly)
 	for i in output_areas.size():
 		var area = output_areas[i]
 		var area_size = Vector3(area.dimensions_3D)
