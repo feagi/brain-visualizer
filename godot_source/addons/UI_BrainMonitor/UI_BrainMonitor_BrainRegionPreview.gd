@@ -131,7 +131,7 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	
 	# Calculate required X width - spread areas along X-axis with gaps
 	var total_x_width = 0.0
-	var area_gap = 1.5
+	var area_gap = 5.0  # Gap between cortical areas - increased to prevent title overlap
 	for i in areas.size():
 		total_x_width += max(areas[i].dimensions_3D.x, 1.0)  # Minimum 1 unit width per area
 		if i < areas.size() - 1:  # Add gap between areas (not after last)
