@@ -248,7 +248,7 @@ func _create_3d_plate() -> void:
 	input_plate.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
 	input_plate.position.y = -1.0  # Below I/O areas
 	_frame_container.add_child(input_plate)
-	print("  🟢 InputPlate: Created dark green plate (size: %.1f x %.1f) for %d inputs" % [input_plate_size.x, input_plate_size.z, input_areas.size()])
+	print("  🟢 InputPlate: Created dark green plate (size: %.1f x 1.0 x %.1f) for %d inputs" % [input_plate_size.x, input_plate_size.z, input_areas.size()])
 
 	# ALWAYS CREATE OUTPUT PLATE (right side) - even if no output areas
 	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", Color(0.0, 0.0, 0.4))  # Dark blue
@@ -256,7 +256,7 @@ func _create_3d_plate() -> void:
 	output_plate.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
 	output_plate.position.y = -1.0  # Below I/O areas
 	_frame_container.add_child(output_plate)
-	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x %.1f) for %d outputs" % [output_plate_size.x, output_plate_size.z, output_areas.size()])
+	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x 1.0 x %.1f) for %d outputs" % [output_plate_size.x, output_plate_size.z, output_areas.size()])
 	
 	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
 	
@@ -267,11 +267,10 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	var plate_mesh_instance = MeshInstance3D.new()
 	plate_mesh_instance.name = plate_name
 	
-	# Create plane mesh in XZ axis
-	var plane_mesh = PlaneMesh.new()
-	plane_mesh.size = Vector2(plate_size.x, plate_size.z)
-	plane_mesh.orientation = PlaneMesh.FACE_Y  # Facing up (XZ plane)
-	plate_mesh_instance.mesh = plane_mesh
+	# Create box mesh with 1 unit thickness for better visibility
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = Vector3(plate_size.x, 1.0, plate_size.z)  # 1 unit thickness in Y
+	plate_mesh_instance.mesh = box_mesh
 	
 	# Create semi-transparent material
 	var plate_material = StandardMaterial3D.new()
