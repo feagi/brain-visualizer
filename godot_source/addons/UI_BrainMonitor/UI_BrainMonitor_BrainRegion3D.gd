@@ -87,11 +87,21 @@ func _get_output_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[
 	return output_areas
 
 ## Generates new coordinates for input/output areas relative to brain region position
+## Areas are positioned ABOVE the plates with consistent Y and Z starting points:
+## - Y: plate_top_y (1.5) + area_height/2.0 (shifted up by 2 from original plate surface)
+## - Z: ALL areas have IDENTICAL front edge (starting point) at area_z = FEAGI brain region Z + 2
+##   (Center Z varies by depth: area_z + area_depth/2.0)
 func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dictionary:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
 	
+	# Calculate base positioning and Z reference first
+	var brain_region_z = brain_region.coordinates_3D.z  # Use FEAGI brain region Z coordinate as reference
+	var area_z = brain_region_z + 2.0  # Z = FEAGI brain region Z + 2
+	
 	print("🎯 Generating coordinates: %d inputs, %d outputs for region '%s'" % [input_areas.size(), output_areas.size(), brain_region.friendly_name])
+	print("    📍 Using FEAGI brain region coordinates as reference: %s" % brain_region.coordinates_3D)
+	print("    🎯 FEAGI Z reference: %.1f, ALL I/O areas will have FRONT EDGE at Z = %.1f + 2 = %.1f" % [brain_region_z, brain_region_z, area_z])
 	
 	var result = {
 		"region_id": brain_region.region_ID,
@@ -104,9 +114,12 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var region_origin = Vector3(brain_region.coordinates_3D)  # Starting point, not center
 	var plate_spacing = 1.0  # Gap between plates (same as in _create_3d_plate)
 	
-	# Position I/O areas over their respective plates - SPREAD ALONG X-AXIS
-	var input_base_offset = Vector3(-plate_spacing/2.0 - 9.0, 2.0, 0.0)   # Over left (input) plate, shifted further left, Y=+2.0 to hover
-	var output_base_offset = Vector3(plate_spacing/2.0 + 2.0, 2.0, 0.0)   # Over right (output) plate, Y=+2.0 to hover
+	# Position I/O areas ABOVE their respective plates - SPREAD ALONG X-AXIS
+	# Plate top surface is at y = -0.5 (plate center at -1.0 + 0.5 thickness)
+	var plate_top_y = -0.5 + 2.0  # Shift up by 2 units as requested
+	
+	var input_base_offset = Vector3(-plate_spacing/2.0 - 9.0, 0.0, area_z)   # Over left (input) plate, shifted further left
+	var output_base_offset = Vector3(plate_spacing/2.0 + 2.0, 0.0, area_z)   # Over right (output) plate  
 	var area_gap = 5.0  # Gap between cortical areas - increased to prevent title overlap
 	
 	print("  📥 Processing %d INPUT areas (spreading along X-axis):" % input_areas.size())
@@ -117,7 +130,17 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		
 		# Calculate X offset for side-by-side distribution
 		var x_position_offset = Vector3(input_x_offset + area_size.x/2.0, 0.0, 0.0)  # Center of area
-		var new_position = region_origin + input_base_offset + x_position_offset
+		
+		# CRITICAL FIX: Position area so its BOTTOM sits on plate top surface
+		# Area center Y = plate_top_y + area_height/2.0 
+		var area_center_y = plate_top_y + area_size.y/2.0
+		var y_position_offset = Vector3(0.0, area_center_y, 0.0)
+		
+		var new_position = region_origin + input_base_offset + x_position_offset + y_position_offset
+		
+		# CRITICAL FIX: Force Z starting point to be exactly the same for ALL I/O areas
+		# Set center Z = area_z (starting point) + area_depth/2.0
+		new_position.z = area_z + area_size.z/2.0
 		
 		# Move to next position for next area
 		input_x_offset += area_size.x + area_gap
@@ -130,9 +153,9 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.inputs.append(input_data)
 		
-		print("    🔵 INPUT: %s (%s) - width=%.1f" % [area.cortical_ID, area.type_as_string, area_size.x])
+		print("    🔵 INPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (X-offset: %.1f)" % [Vector3i(new_position), x_position_offset.x])
+		print("      📍 NEW coordinates: %s (Y=%.1f+%.1f, Z_START=%.1f, Z_CENTER=%.1f)" % [Vector3i(new_position), plate_top_y, area_size.y/2.0, area_z, new_position.z])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("  📤 Processing %d OUTPUT areas (spreading along X-axis):" % output_areas.size())
@@ -143,7 +166,17 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		
 		# Calculate X offset for side-by-side distribution
 		var x_position_offset = Vector3(output_x_offset + area_size.x/2.0, 0.0, 0.0)  # Center of area
-		var new_position = region_origin + output_base_offset + x_position_offset
+		
+		# CRITICAL FIX: Position area so its BOTTOM sits on plate top surface
+		# Area center Y = plate_top_y + area_height/2.0 
+		var area_center_y = plate_top_y + area_size.y/2.0
+		var y_position_offset = Vector3(0.0, area_center_y, 0.0)
+		
+		var new_position = region_origin + output_base_offset + x_position_offset + y_position_offset
+		
+		# CRITICAL FIX: Force Z starting point to be exactly the same for ALL I/O areas
+		# Set center Z = area_z (starting point) + area_depth/2.0
+		new_position.z = area_z + area_size.z/2.0
 		
 		# Move to next position for next area
 		output_x_offset += area_size.x + area_gap
@@ -156,13 +189,17 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.outputs.append(output_data)
 		
-		print("    🔴 OUTPUT: %s (%s) - width=%.1f" % [area.cortical_ID, area.type_as_string, area_size.x])
+		print("    🔴 OUTPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (X-offset: %.1f)" % [Vector3i(new_position), x_position_offset.x])
+		print("      📍 NEW coordinates: %s (Y=%.1f+%.1f, Z_START=%.1f, Z_CENTER=%.1f)" % [Vector3i(new_position), plate_top_y, area_size.y/2.0, area_z, new_position.z])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
 	print("  📊 Generated %d input + %d output coordinates" % [input_areas.size(), output_areas.size()])
+	print("  ✅ All cortical areas positioned with SAME Z STARTING POINT:")
+	print("    🟢 Input areas: Bottom at Y=%.1f, Z_START=%.1f (FEAGI_%.1f+2)" % [plate_top_y, area_z, brain_region_z])  
+	print("    🔵 Output areas: Bottom at Y=%.1f, Z_START=%.1f (FEAGI_%.1f+2)" % [plate_top_y, area_z, brain_region_z])
+	print("    🎯 ALL I/O areas have IDENTICAL front edge at Z=%.1f in FEAGI coordinates" % area_z)
 	
 	return result
 
