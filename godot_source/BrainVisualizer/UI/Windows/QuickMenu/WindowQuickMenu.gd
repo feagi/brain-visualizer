@@ -14,6 +14,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	print("🔍 QuickMenu: _selection assigned, size: %d, mode: %s" % [_selection.size(), _mode])
 	
 	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
+	var open_3d_tab_button: TextureButton = _window_internals.get_node('HBoxContainer/Open3DTab')
 	var quick_connect_button: TextureButton = _window_internals.get_node('HBoxContainer/QuickConnect')
 	var quick_connect_CA_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_CA_N")
 	var quick_connect_N_CA_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_CA")
@@ -39,6 +40,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
 			details_button.tooltip_text = "View Cortical Area Details"
 			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
 			move_to_region_button.tooltip_text = "Add to a region..."
@@ -73,6 +75,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
 			details_button.tooltip_text = "View Brain Region Details"
+			open_3d_tab_button.tooltip_text = "Open Brain Region in 3D Tab"
 			move_to_region_button.tooltip_text = "Add to a Brain Region..."
 			delete_button.tooltip_text = "Delete this Brain Region..."
 			
@@ -84,6 +87,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = region.friendly_name
 
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for multiple cortical areas
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			quick_connect_CA_N_button.visible = false
@@ -103,6 +107,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for multiple brain regions
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
@@ -114,6 +119,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = "Selected multiple regions"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for mixed objects
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
@@ -190,6 +196,32 @@ func _button_add_to_region() -> void:
 
 func _button_delete() -> void:
 	BV.WM.spawn_confirm_deletion(_selection)
+	close_window()
+
+func _button_open_3d_tab() -> void:
+	_debug_selection_state("_button_open_3d_tab start")
+	# 🚨 SAFETY CHECK: Ensure selection array is not empty and contains a brain region
+	if _selection.size() == 0:
+		push_error("BV UI: QuickMenu _button_open_3d_tab called with empty _selection array!")
+		BV.NOTIF.add_notification("No brain region selected for 3D tab!")
+		close_window()
+		return
+		
+	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+		push_error("BV UI: QuickMenu _button_open_3d_tab called but selection is not a single brain region!")
+		BV.NOTIF.add_notification("3D tabs can only be created for single brain regions!")
+		close_window()
+		return
+	
+	var region: BrainRegion = _selection[0] as BrainRegion
+	if region == null:
+		push_error("BV UI: QuickMenu _button_open_3d_tab: Selected object is not a brain region!")
+		close_window()
+		return
+	
+	print("🧠 QuickMenu: Opening 3D tab for brain region: %s" % region.friendly_name)
+	BV.WM.spawn_3d_brain_monitor_tab(region)
+	_debug_selection_state("_button_open_3d_tab before close")
 	close_window()
 
 func _on_focus_lost() -> void:

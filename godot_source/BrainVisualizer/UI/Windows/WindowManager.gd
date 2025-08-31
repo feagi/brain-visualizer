@@ -96,6 +96,27 @@ func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
 	edit_region.setup(editing_region)
 
+func spawn_3d_brain_monitor_tab(region: BrainRegion) -> void:
+	print("🧠 WindowManager: Spawning 3D brain monitor tab for region: %s" % region.friendly_name)
+	# Get the root UI view to add the tab to the current tab container
+	var root_UI_view: UIView = BV.UI.root_UI_view
+	if root_UI_view == null:
+		push_error("WindowManager: Unable to spawn 3D brain monitor tab - no root UI view found!")
+		return
+	
+	# Find the first available tab container (or create one if needed)
+	var tab_containers: Array[UITabContainer] = root_UI_view.get_recursive_UITabContainer_children()
+	var target_tab_container: UITabContainer = null
+	
+	if tab_containers.size() > 0:
+		target_tab_container = tab_containers[0]  # Use the first available tab container
+	else:
+		push_error("WindowManager: No tab containers found for 3D brain monitor!")
+		return
+	
+	# Create the BM tab
+	root_UI_view.show_or_create_BM_of_region(region, target_tab_container)
+
 func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	var move_to_region: WindowAddToRegion = _default_spawn_window(_PREFAB_MOVE_TO_REGION, WindowAddToRegion.WINDOW_NAME) as WindowAddToRegion
 	move_to_region.setup(objects, starting_region)

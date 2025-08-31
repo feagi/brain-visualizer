@@ -34,6 +34,10 @@
 [ext_resource type="Texture2D" uid="uid://c7565e862kmpv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_C.png" id="20_oi7hc"]
 [ext_resource type="Texture2D" uid="uid://c3jt8mttbkkri" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_H.png" id="21_o0jxf"]
 [ext_resource type="Texture2D" uid="uid://v6x28vstw6uk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_D.png" id="22_yp6aw"]
+[ext_resource type="Texture2D" uid="uid://cqohb1qn3cbgd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png" id="23_3d_bm_s"]
+[ext_resource type="Texture2D" uid="uid://c3h4qywnxfvag" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png" id="24_3d_bm_c"]
+[ext_resource type="Texture2D" uid="uid://cy4gwqhocr2n8" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_H.png" id="25_3d_bm_h"]
+[ext_resource type="Texture2D" uid="uid://dg5oy5dh8vqoq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_D.png" id="26_3d_bm_d"]
 
 [node name="QuickCorticalMenu" type="VBoxContainer"]
 size_flags_horizontal = 0
@@ -70,6 +74,19 @@ texture_normal = ExtResource("3_1l638")
 texture_pressed = ExtResource("4_t0ut2")
 texture_hover = ExtResource("5_f2xq8")
 texture_disabled = ExtResource("6_evlmv")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Open3DTab" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Open Brain Region in 3D Tab"
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("23_3d_bm_s")
+texture_pressed = ExtResource("24_3d_bm_c")
+texture_hover = ExtResource("25_3d_bm_h")
+texture_disabled = ExtResource("26_3d_bm_d")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -165,6 +182,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Details" to="." method="_button_details"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Open3DTab" to="." method="_button_open_3d_tab"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToRegion" to="." method="_button_add_to_region"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]

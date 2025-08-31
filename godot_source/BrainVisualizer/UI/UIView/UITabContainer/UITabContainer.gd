@@ -2,10 +2,13 @@ extends TabContainer
 class_name UITabContainer
 
 var PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
+const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
+const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png") # Using edit icon for now, can be changed
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
+signal requested_view_region_as_BM(region: BrainRegion, request_origin: UITabContainer)
 
 var parent_UI_view: UIView:
 	get: return _parent_UI_view
@@ -41,6 +44,24 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 	#CURSED
 	_add_control_view_as_tab(new_cb)
 
+## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top
+func show_BM_of_region(region: BrainRegion) -> void:
+	if does_contain_BM_of_region(region):
+		bring_existing_region_BM_to_top(region)
+		return
+	spawn_BM_of_region(region)
+
+## SPECIFICALLY creates a BM of a region, and then adds it to this UITabContainer
+func spawn_BM_of_region(region: BrainRegion) -> void:
+	if does_contain_BM_of_region(region):
+		push_error("UI UITabContainer: This tab container already contains BM for region ID %s!" % region.region_ID)
+		return
+	print("🧠 UITabContainer: Creating new 3D brain monitor for region: %s" % region.friendly_name)
+	var new_bm: UI_BrainMonitor_3DScene = UI_BrainMonitor_3DScene.create_uninitialized_brain_monitor()
+	add_child(new_bm) # Add to scene tree first
+	new_bm.setup(region)
+	_add_control_view_as_tab(new_bm)
+
 ## Brings an existing CB of given region in this tab container to the top
 func bring_existing_region_CB_to_top(region: BrainRegion) -> void:
 	var cb: CircuitBuilder = return_CB_of_region(region)
@@ -50,6 +71,15 @@ func bring_existing_region_CB_to_top(region: BrainRegion) -> void:
 	var tab_idx: int = get_tab_idx_from_control(cb)
 	current_tab = tab_idx
 
+## Brings an existing BM of given region in this tab container to the top
+func bring_existing_region_BM_to_top(region: BrainRegion) -> void:
+	var bm: UI_BrainMonitor_3DScene = return_BM_of_region(region)
+	if bm == null:
+		push_warning("UI: Unable to find BM for region %s to bring to the top!" % region.region_ID)
+		return
+	var tab_idx: int = get_tab_idx_from_control(bm)
+	current_tab = tab_idx
+
 ## Closes all nonroot CB and BM views. If this results in all tabs being removed, it will emit all_tabs_removed
 func close_all_nonroot_views() -> void:
 	for child in get_children():
@@ -57,7 +87,10 @@ func close_all_nonroot_views() -> void:
 			if !(child as CircuitBuilder).representing_region.is_root_region():
 				child.queue_free()
 			continue
-		#TODO BM
+		elif child is UI_BrainMonitor_3DScene:
+			if !(child as UI_BrainMonitor_3DScene).representing_region.is_root_region():
+				child.queue_free()
+			continue
 	
 	if len(get_children()) == 0:
 		all_tabs_removed.emit()
@@ -107,6 +140,22 @@ func return_CB_of_region(searching_region: BrainRegion) -> CircuitBuilder:
 				return (child as CircuitBuilder)
 	return null
 
+## Returns true if we have a BM of the specified region
+func does_contain_BM_of_region(searching_region: BrainRegion) -> bool:
+	for child in get_children():
+		if child is UI_BrainMonitor_3DScene:
+			if (child as UI_BrainMonitor_3DScene).representing_region.region_ID == searching_region.region_ID:
+				return true
+	return false
+
+## Returns the BM of the given region. Returns null if it doesn't exist
+func return_BM_of_region(searching_region: BrainRegion) -> UI_BrainMonitor_3DScene:
+	for child in get_children():
+		if child is UI_BrainMonitor_3DScene:
+			if (child as UI_BrainMonitor_3DScene).representing_region.region_ID == searching_region.region_ID:
+				return (child as UI_BrainMonitor_3DScene)
+	return null
+
 func get_tab_IDX_as_control(idx: int) -> Control:
 	return get_child(idx) as Control
 
@@ -134,6 +183,15 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 		current_tab = tab_idx
 		cb.user_request_viewing_subregion.connect(_internal_CB_requesting_CB_view_of_region)
 		return
+	elif region_view is UI_BrainMonitor_3DScene:
+		var bm: UI_BrainMonitor_3DScene = region_view as UI_BrainMonitor_3DScene
+		# Note: BM is already added to scene tree in spawn_BM_of_region
+		var tab_idx: int = get_tab_idx_from_control(bm)
+		set_tab_icon(tab_idx , ICON_BM)
+		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
+		current_tab = tab_idx
+		print("🧠 UITabContainer: Added 3D brain monitor tab for region: %s" % bm.representing_region.friendly_name)
+		return
 	push_error("UI: Unknown control type added to UITabContainer! Ignoring!")
 
 func _remove_control_view_as_tab(region_view: Control) -> void:
@@ -142,8 +200,18 @@ func _remove_control_view_as_tab(region_view: Control) -> void:
 		cb.user_request_viewing_subregion.disconnect(_internal_CB_requesting_CB_view_of_region)
 		remove_child(cb)
 		cb.queue_free()
+	elif region_view is UI_BrainMonitor_3DScene:
+		var bm: UI_BrainMonitor_3DScene = region_view as UI_BrainMonitor_3DScene
+		print("🧠 UITabContainer: Removing 3D brain monitor tab for region: %s" % bm.representing_region.friendly_name)
+		# Clean up any open previews before removing
+		bm.clear_all_open_previews()
+		remove_child(bm)
+		bm.queue_free()
 	if len(get_children()) == 0:
 		all_tabs_removed.emit()
 
 func _internal_CB_requesting_CB_view_of_region(region: BrainRegion) -> void:
 	requested_view_region_as_CB.emit(region, self)
+
+func _internal_BM_requesting_BM_view_of_region(region: BrainRegion) -> void:
+	requested_view_region_as_BM.emit(region, self)

@@ -39,6 +39,7 @@ func setup_as_single_tab(tabs: Array[Control]) -> void:
 	_primary_container.add_child(new_tab)
 	new_tab.setup(tabs)
 	new_tab.requested_view_region_as_CB.connect(show_or_create_CB_of_region)
+	new_tab.requested_view_region_as_BM.connect(show_or_create_BM_of_region)
 
 ## Searches from the root [UIView] for a CB of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
 func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
@@ -48,6 +49,16 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 		return
 	## Region doesn't exist as a CB anywhere, create one
 	UI_tab_to_create_in.spawn_CB_of_region(region)
+
+## Searches from the root [UIView] for a BM of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
+func show_or_create_BM_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
+	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_BM_of_given_region(region)
+	if UI_tab != null:
+		UI_tab.bring_existing_region_BM_to_top(region)
+		return
+	## Region doesn't exist as a BM anywhere, create one
+	print("🧠 UIView: Creating new 3D brain monitor tab for region: %s" % region.friendly_name)
+	UI_tab_to_create_in.spawn_BM_of_region(region)
 
 ## Closes all non-root [BrainRegion] views
 func close_all_non_root_brain_region_views() -> void:
@@ -69,6 +80,14 @@ func return_UITabContainer_holding_CB_of_given_region(region: BrainRegion) -> UI
 	var all_tab_containers: Array[UITabContainer] = get_recursive_UITabContainer_children()
 	for tab_container in all_tab_containers:
 		if tab_container.does_contain_CB_of_region(region):
+			return tab_container
+	return null
+
+## Searches recursively downwards all [UITabContainer]s for one that contains a BM of the given region and returns it. If none found returns null
+func return_UITabContainer_holding_BM_of_given_region(region: BrainRegion) -> UITabContainer:
+	var all_tab_containers: Array[UITabContainer] = get_recursive_UITabContainer_children()
+	for tab_container in all_tab_containers:
+		if tab_container.does_contain_BM_of_region(region):
 			return tab_container
 	return null
 
