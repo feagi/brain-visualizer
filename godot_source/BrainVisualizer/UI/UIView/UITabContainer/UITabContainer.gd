@@ -56,6 +56,17 @@ func spawn_BM_of_region(region: BrainRegion) -> void:
 	if does_contain_BM_of_region(region):
 		push_error("UI UITabContainer: This tab container already contains BM for region ID %s!" % region.region_ID)
 		return
+	
+	print("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥")
+	print("🔥 CALL STACK TRACE: spawn_BM_of_region() called! 🔥")
+	print("🔥 Region: %s 🔥" % region.friendly_name)
+	print("🔥 Call Stack: 🔥")
+	get_stack().reverse()
+	for i in range(min(5, get_stack().size())):
+		var frame = get_stack()[i]
+		print("🔥   %d. %s:%s in %s() 🔥" % [i, frame.source, frame.line, frame.function])
+	print("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥")
+	
 	print("🧠 UITabContainer: Creating new 3D brain monitor for region: %s" % region.friendly_name)
 	var new_bm: UI_BrainMonitor_3DScene = UI_BrainMonitor_3DScene.create_uninitialized_brain_monitor()
 	_add_control_view_as_tab_with_region_info(new_bm, region)

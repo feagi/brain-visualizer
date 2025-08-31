@@ -149,6 +149,7 @@ func FEAGI_confirmed_genome() -> void:
 	brain_monitor.setup(root_region)
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	temp_root_bm = brain_monitor
+	print("🔥🔥🔥 MAIN BRAIN MONITOR INSTANCE ID: %d 🔥🔥🔥" % brain_monitor.get_instance_id())
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position if available...")
 	if _temp_bm_camera_pos.length() > 0.01:
