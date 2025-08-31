@@ -88,9 +88,9 @@ func _get_output_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[
 
 ## Generates new coordinates for input/output areas relative to brain region position
 ## Areas are positioned ABOVE the plates with consistent Y and Z starting points:
-## - Y: plate_top_y (1.5) + area_height/2.0 (shifted up by 2 from original plate surface)
-## - Z: ALL areas have IDENTICAL front edge (starting point) at area_z = FEAGI brain region Z + 2
-##   (Center Z varies by depth: area_z + area_depth/2.0)
+## - Y: plate_top_y (1.5) + area_height/2.0 (shifted up by 2 from original plate surface)  
+## - Z: ALL areas have IDENTICAL front edge at area_z = FEAGI brain region Z + 2
+##   In FEAGI coordinate system: +Z goes DEEPER into scene, so plates extend from front_edge toward +Z
 func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dictionary:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
@@ -155,7 +155,9 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		
 		print("    🔵 INPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (Y=%.1f+%.1f, Z_START=%.1f, Z_CENTER=%.1f)" % [Vector3i(new_position), plate_top_y, area_size.y/2.0, area_z, new_position.z])
+		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
+		print("      🎯 FRONT-EDGE Z: %.1f (same as plates)" % area_z)
+		print("      🎯 CENTER Z: %.1f (front_edge + depth/2)" % new_position.z)
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("  📤 Processing %d OUTPUT areas (spreading along X-axis):" % output_areas.size())
@@ -191,15 +193,17 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		
 		print("    🔴 OUTPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (Y=%.1f+%.1f, Z_START=%.1f, Z_CENTER=%.1f)" % [Vector3i(new_position), plate_top_y, area_size.y/2.0, area_z, new_position.z])
+		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
+		print("      🎯 FRONT-EDGE Z: %.1f (same as plates)" % area_z)
+		print("      🎯 CENTER Z: %.1f (front_edge + depth/2)" % new_position.z)
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
 	print("  📊 Generated %d input + %d output coordinates" % [input_areas.size(), output_areas.size()])
-	print("  ✅ All cortical areas positioned with SAME Z STARTING POINT:")
-	print("    🟢 Input areas: Bottom at Y=%.1f, Z_START=%.1f (FEAGI_%.1f+2)" % [plate_top_y, area_z, brain_region_z])  
-	print("    🔵 Output areas: Bottom at Y=%.1f, Z_START=%.1f (FEAGI_%.1f+2)" % [plate_top_y, area_z, brain_region_z])
-	print("    🎯 ALL I/O areas have IDENTICAL front edge at Z=%.1f in FEAGI coordinates" % area_z)
+	print("  ✅ === FRONT-EDGE POSITIONING SUMMARY ===")
+	print("    🟢 Input areas: FRONT-EDGE Z=%.1f (brain_region_%.1f+2)" % [area_z, brain_region_z])  
+	print("    🔵 Output areas: FRONT-EDGE Z=%.1f (brain_region_%.1f+2)" % [area_z, brain_region_z])
+	print("    🎯 ALL I/O areas have IDENTICAL front edge at Z=%.1f" % area_z)
 	
 	return result
 
@@ -332,10 +336,21 @@ func _create_3d_plate() -> void:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
 	
-	# Calculate Z positioning to align with I/O areas
+	# Calculate Z positioning to fully contain I/O areas
 	var brain_region_z = _representing_region.coordinates_3D.z
-	var io_areas_front_edge_z = brain_region_z + 2.0  # Same as cortical areas
-	var plate_z_offset = 2.0  # Plates aligned with I/O areas front edge
+	var io_areas_front_edge_z = brain_region_z + 2.0  # Same as cortical areas front edge
+	
+	# Calculate maximum depth to determine plate positioning
+	var max_input_depth = 0.0
+	for area in input_areas:
+		max_input_depth = max(max_input_depth, area.dimensions_3D.z)
+	var max_output_depth = 0.0
+	for area in output_areas:
+		max_output_depth = max(max_output_depth, area.dimensions_3D.z)
+	var max_total_depth = max(max_input_depth, max_output_depth)
+	
+	# Use front-edge positioning for plates (same as FEAGI cortical areas)
+	var plate_front_edge_z = io_areas_front_edge_z
 	
 	# Calculate sizes for each plate independently - ALWAYS CREATE BOTH PLATES
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
@@ -343,11 +358,19 @@ func _create_3d_plate() -> void:
 	
 	var plate_spacing = 1.0  # Gap between input and output plates
 	
+	# Work directly with front-edge positioning (no center calculations)
+	# Godot requires center positioning, so we'll apply the offset when setting position
+	
 	print("  📐 Input plate size: %s (for %d areas)" % [input_plate_size, input_areas.size()])  
 	print("  📐 Output plate size: %s (for %d areas)" % [output_plate_size, output_areas.size()])
 	print("  📍 Brain region coordinates: %s" % _representing_region.coordinates_3D)
+	
+	print("  🎯 === FRONT-EDGE POSITIONING (FEAGI: +Z = DEEPER) ===")
 	print("  🎯 I/O areas front edge Z: %.1f (brain region Z + 2)" % io_areas_front_edge_z)
-	print("  🎯 Plates will be positioned at Z: %.1f (aligned with I/O areas)" % plate_z_offset)
+	print("  🎯 Plates front edge Z: %.1f (aligned with I/O areas)" % plate_front_edge_z)
+	print("  🎯 Input plate depth: %.1f units" % input_plate_size.z)
+	print("  🎯 Output plate depth: %.1f units" % output_plate_size.z)
+	print("  📦 All plates positioned by FRONT-EDGE at Z=%.1f, extending deeper (+Z)" % plate_front_edge_z)
 	
 	# Create the main frame container
 	_frame_container = Node3D.new()
@@ -356,28 +379,30 @@ func _create_3d_plate() -> void:
 	
 	# ALWAYS CREATE INPUT PLATE (left side) - even if no input areas
 	var input_plate = _create_single_plate(input_plate_size, "InputPlate", Color(0.0, 0.4, 0.0))  # Dark green
-	# Position on left side and align Z with I/O areas
+	# Position on left side with front edge aligned to I/O areas
 	input_plate.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
 	input_plate.position.y = -1.0  # Below I/O areas
-	input_plate.position.z = plate_z_offset  # Align with I/O areas
+	input_plate.position.z = plate_front_edge_z  # Direct front-edge positioning
 	_frame_container.add_child(input_plate)
-	print("  🟢 InputPlate: Created dark green plate (size: %.1f x 1.0 x %.1f) at Z=%.1f for %d inputs" % [input_plate_size.x, input_plate_size.z, plate_z_offset, input_areas.size()])
+	print("  🟢 InputPlate: Created dark green plate (size: %.1f x 1.0 x %.1f)" % [input_plate_size.x, input_plate_size.z])
+	print("      🎯 POSITIONED AT Z: %.1f (front-edge aligned with I/O areas)" % plate_front_edge_z)
 
 	# ALWAYS CREATE OUTPUT PLATE (right side) - even if no output areas
 	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", Color(0.0, 0.0, 0.4))  # Dark blue
-	# Position on right side and align Z with I/O areas
+	# Position on right side with front edge aligned to I/O areas
 	output_plate.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
 	output_plate.position.y = -1.0  # Below I/O areas
-	output_plate.position.z = plate_z_offset  # Align with I/O areas
+	output_plate.position.z = plate_front_edge_z  # Direct front-edge positioning
 	_frame_container.add_child(output_plate)
-	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x 1.0 x %.1f) at Z=%.1f for %d outputs" % [output_plate_size.x, output_plate_size.z, plate_z_offset, output_areas.size()])
+	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x 1.0 x %.1f)" % [output_plate_size.x, output_plate_size.z])
+	print("      🎯 POSITIONED AT Z: %.1f (front-edge aligned with I/O areas)" % plate_front_edge_z)
 	
 	# Create region name label below the plates
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
 	_region_name_label.font_size = 192  # Same as cortical area labels
-	_region_name_label.position = Vector3(0.0, -3.0, plate_z_offset)  # -2 relative to plates, aligned in Z
+	_region_name_label.position = Vector3(0.0, -3.0, plate_front_edge_z)  # -2 relative to plates, aligned with front edge
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
 	_region_name_label.outline_size = 2
@@ -390,7 +415,7 @@ func _create_3d_plate() -> void:
 	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
-	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, plate_spacing, plate_z_offset)
+	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, plate_spacing, plate_front_edge_z)
 	
 	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
 	
@@ -465,13 +490,13 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	return Vector3(plate_width, 0.0, plate_depth)
 
 ## Adds collision bodies for clicking detection (plates and label)
-func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_spacing: float, plate_z_offset: float) -> void:
+func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_spacing: float, plate_front_edge_z: float) -> void:
 	# Create collision body for INPUT PLATE
 	var input_collision = StaticBody3D.new()
 	input_collision.name = "InputPlateClickArea"
 	input_collision.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
 	input_collision.position.y = -1.0  # Same Y as input plate
-	input_collision.position.z = plate_z_offset  # Same Z as input plate
+	input_collision.position.z = plate_front_edge_z  # Same Z as input plate
 	
 	var input_collision_shape = CollisionShape3D.new()
 	input_collision_shape.name = "CollisionShape"
@@ -486,7 +511,7 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	output_collision.name = "OutputPlateClickArea"
 	output_collision.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
 	output_collision.position.y = -1.0  # Same Y as output plate
-	output_collision.position.z = plate_z_offset  # Same Z as output plate
+	output_collision.position.z = plate_front_edge_z  # Same Z as output plate
 	
 	var output_collision_shape = CollisionShape3D.new()
 	output_collision_shape.name = "CollisionShape"
@@ -499,7 +524,7 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
 	label_collision.name = "RegionLabelClickArea"
-	label_collision.position = Vector3(0.0, -3.0, plate_z_offset)  # Align with plates Z position
+	label_collision.position = Vector3(0.0, -3.0, plate_front_edge_z)  # Align with plates front edge
 	
 	var label_collision_shape = CollisionShape3D.new()
 	label_collision_shape.name = "CollisionShape"
