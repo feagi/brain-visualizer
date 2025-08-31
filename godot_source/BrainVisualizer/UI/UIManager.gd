@@ -176,7 +176,8 @@ func FEAGI_confirmed_genome() -> void:
 
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
-	# Sending neuron activations to FEAGI
+	# Sending neuron activations to FEAGI via HTTP POST
+	print("🔥 NEURON FIRING: Sending manual stimulation for ", area_IDs_and_neuron_coordinates.size(), " cortical area(s)")
 	
 	# Check if network components are available
 	if not FeagiCore:
@@ -185,21 +186,77 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 	if not FeagiCore.network:
 		push_error("🔥 NEURON FIRING: FeagiCore.network is null!")
 		return
-	if not FeagiCore.network.websocket_API:
-		push_error("🔥 NEURON FIRING: FeagiCore.network.websocket_API is null!")
+	if not FeagiCore.network.http_API:
+		push_error("🔥 NEURON FIRING: FeagiCore.network.http_API is null!")
 		return
 	
-	var dict_to_send: Dictionary = {'data': {'direct_stimulation' : {}}}
+	# Check HTTP API health
+	print("🔥 NEURON FIRING: HTTP API health: ", FeagiCore.network.http_API.http_health)
+	if FeagiCore.network.http_API.http_health != FeagiCore.network.http_API.HTTP_HEALTH.CONNECTABLE:
+		push_error("🔥 NEURON FIRING: HTTP API is not in CONNECTABLE state! Current state: %d" % FeagiCore.network.http_API.http_health)
+		return
+	
+	# Build the correct payload format for manual stimulation API
+	var stimulation_payload: Dictionary = {}
 	for area_ID in area_IDs_and_neuron_coordinates:
 		var arr: Array[Array] = []
 		for vector in area_IDs_and_neuron_coordinates[area_ID]:
 			arr.append([vector.x, vector.y, vector.z])
-		dict_to_send["data"]["direct_stimulation"][area_ID] = arr
-		# Area has selected neurons
-		pass
+		# Convert StringName to String for proper JSON serialization
+		var area_id_string: String = str(area_ID)
+		stimulation_payload[area_id_string] = arr
+		print("🔥 NEURON FIRING: Area %s (converted from StringName): %d neurons" % [area_id_string, arr.size()])
 	
-	# Send activation data to FEAGI
-	FeagiCore.network.websocket_API.websocket_send(JSON.stringify(dict_to_send))
+	var payload_to_send: Dictionary = {"stimulation_payload": stimulation_payload}
+	print("🔥 NEURON FIRING: Final payload: ", payload_to_send)
+	
+	# Send via HTTP POST to /v1/agent/manual_stimulation
+	print("🔥 NEURON FIRING: Creating API request definition...")
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_agent_manualStimulation, payload_to_send)
+	print("🔥 NEURON FIRING: Making HTTP call...")
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	print("🔥 NEURON FIRING: Waiting for worker to complete...")
+	
+	# Add timeout mechanism
+	var worker_completed = false
+	var timeout_occurred = false
+	
+	# Set up timeout
+	get_tree().create_timer(10.0).timeout.connect(func():
+		if not worker_completed:
+			timeout_occurred = true
+			push_error("🔥 NEURON FIRING: HTTP request timed out after 10 seconds!")
+			if HTTP_FEAGI_request_worker != null:
+				HTTP_FEAGI_request_worker.kill_worker()
+	)
+	
+	# Wait for worker completion
+	await HTTP_FEAGI_request_worker.worker_done
+	worker_completed = true
+	
+	if timeout_occurred:
+		return
+		
+	print("🔥 NEURON FIRING: Worker completed successfully!")
+		
+	print("🔥 NEURON FIRING: Worker completed, retrieving output...")
+	var request_output: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	print("🔥 NEURON FIRING: Got output, checking success...")
+	
+	if request_output.success:
+		print("🔥 NEURON FIRING: Manual stimulation sent successfully!")
+		print("🔥 NEURON FIRING: Response: ", request_output.decode_response_as_string())
+	else:
+		push_error("🔥 NEURON FIRING: Manual stimulation failed!")
+		push_error("🔥 NEURON FIRING: Has timed out: ", request_output.has_timed_out)
+		push_error("🔥 NEURON FIRING: Has errored: ", request_output.has_errored)
+		push_error("🔥 NEURON FIRING: Failed requirement: ", request_output.failed_requirement)
+		if request_output.has_errored:
+			var error_info = request_output.decode_response_as_generic_error_code()
+			push_error("🔥 NEURON FIRING: Error code: ", error_info[0] if error_info.size() > 0 else "UNKNOWN")
+			push_error("🔥 NEURON FIRING: Error message: ", error_info[1] if error_info.size() > 1 else "UNKNOWN")
+		else:
+			push_error("🔥 NEURON FIRING: Response body: ", request_output.decode_response_as_string())
 
 
 
