@@ -54,6 +54,8 @@ func setup(region: BrainRegion) -> void:
 	print("🧠 BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
 	print("  📊 Root region info:")
 	print("    - Region ID: %s" % region.region_ID)  
+	print("    - Region is root region: %s" % region.is_root_region())
+	print("    - Region parent: %s" % (region.current_parent_region.friendly_name if region.current_parent_region else "None"))
 	print("    - Contains %d cortical areas" % region.contained_cortical_areas.size())
 	print("    - Contains %d child regions" % region.contained_regions.size())
 	print("🧠 Display Rules:")
@@ -61,15 +63,34 @@ func setup(region: BrainRegion) -> void:
 	print("  ❌ Child region cortical areas → Hide (unless I/O)")  
 	print("  🔄 Child region I/O areas → Show inside brain region wireframe cubes")
 	
+	# DEBUG: List all cortical areas in the region
+	print("  🔍 DETAILED CORTICAL AREA ANALYSIS:")
+	for area in region.contained_cortical_areas:
+		print("    - Area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
+	
+	# ⚠️ CRITICAL DEBUG: Make sure we're processing the right region's areas
+	print("  🚨 CRITICAL VERIFICATION:")
+	print("    - Target region: %s (ID: %s)" % [region.friendly_name, region.region_ID])
+	print("    - _representing_region: %s (ID: %s)" % [_representing_region.friendly_name, _representing_region.region_ID])
+	print("    - Are they the same? %s" % (region.region_ID == _representing_region.region_ID))
+	
 	# Show cortical areas from root region
-	print("  📦 STEP 1: Processing %d cortical areas from root region..." % _representing_region.contained_cortical_areas.size())
+	print("  📦 STEP 1: Processing %d cortical areas from target region..." % _representing_region.contained_cortical_areas.size())
+	var created_count: int = 0
 	for area in _representing_region.contained_cortical_areas:
-		print("  📦 Evaluating ROOT area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
+		print("  📦 Evaluating area: %s (type: %s, parent: %s)" % [area.cortical_ID, area.type_as_string, area.current_parent_region.friendly_name])
 		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
+		if rendering_area != null:
+			created_count += 1
+			print("    ✅ CREATED visualization for %s" % area.cortical_ID)
+		else:
+			print("    ❌ SKIPPED %s (filtered out)" % area.cortical_ID)
+	print("  ✅ STEP 1 COMPLETE: Created %d out of %d target region cortical areas" % [created_count, _representing_region.contained_cortical_areas.size()])
 	
 	# ALSO check cortical areas in child regions that might be I/O areas
 	print("  🔄 STEP 2: Processing child regions for I/O areas...")
 	print("  🔄 Found %d child regions to process..." % _representing_region.contained_regions.size())
+	var io_created_count: int = 0
 	for child_region in _representing_region.contained_regions:
 		print("  📦 Processing %d cortical areas from child region '%s'..." % [child_region.contained_cortical_areas.size(), child_region.friendly_name])
 		for area in child_region.contained_cortical_areas:
@@ -81,10 +102,8 @@ func setup(region: BrainRegion) -> void:
 				var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
 				if rendering_area:
 					print("    ✅ Successfully created visualization for %s" % area.cortical_ID)
-				else:
-					print("    ❌ Failed to create visualization for %s" % area.cortical_ID)
-			else:
-				print("    ❌ Area %s is NOT I/O of child region '%s' - skipping" % [area.cortical_ID, child_region.friendly_name])
+					io_created_count += 1
+	print("  ✅ STEP 2 COMPLETE: Created %d I/O area visualizations from child regions" % io_created_count)
 	
 	# Show child brain regions as 3D frames  
 	print("🚨🚨🚨 DEBUG: REACHED STEP 3! Creating brain region wireframe cubes...")
@@ -146,6 +165,17 @@ func setup(region: BrainRegion) -> void:
 	print("  📊 Summary:")
 	print("    - Created %d cortical area visualizations" % _cortical_visualizations_by_ID.size())
 	print("    - Created %d brain region frames" % _brain_region_visualizations_by_ID.size())
+	
+	# 🚨 CRITICAL DEBUG: List all cortical areas in this brain monitor instance
+	print("  🎯 FINAL VERIFICATION - Areas in brain monitor '%s':" % name)
+	for area_id in _cortical_visualizations_by_ID.keys():
+		var cortical_area = _cortical_visualizations_by_ID[area_id]
+		print("    - %s at position %s" % [area_id, cortical_area._representing_cortial_area.coordinates_3D])
+	
+	# Camera info
+	if _pancake_cam:
+		print("  📷 Camera position: %s" % _pancake_cam.position)
+		print("  🎯 Camera looking at brain monitor for region: %s" % region.friendly_name)
 	
 
 
@@ -347,17 +377,29 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
 	
+	print("  🔍 FILTERING ANALYSIS for area %s:" % area.cortical_ID)
+	print("    - Representing region: %s" % _representing_region.friendly_name)
+	print("    - Area region: %s" % (area.current_parent_region.friendly_name if area.current_parent_region else "None"))
+	print("    - Is directly in root: %s" % is_directly_in_root)
+	print("    - Is I/O of child region: %s" % is_io_of_child_region)
+	
 	# Only create if the area is directly in root OR it's needed as I/O for a child region
 	if not is_directly_in_root and not is_io_of_child_region:
 		print("  ⏭️  Skipping cortical area %s - not directly in root region and not I/O of child region" % area.cortical_ID)
 		return
 	
 	print("  ✅ Creating cortical area %s - directly_in_root: %s, io_of_child: %s" % [area.cortical_ID, is_directly_in_root, is_io_of_child_region])
+	print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])
 	
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
 	_node_3D_root.add_child(rendering_area)
 	rendering_area.setup(area)
 	_cortical_visualizations_by_ID[area.cortical_ID] = rendering_area
+	
+	print("  ✅ SUCCESS: Cortical area %s added to brain monitor %s" % [area.cortical_ID, name])
+	print("  📍 Area coordinates: %s" % area.coordinates_3D)
+	print("  🎯 Total areas in this brain monitor: %d" % _cortical_visualizations_by_ID.size())
+	
 	area.about_to_be_deleted.connect(_remove_cortical_area.bind(area))
 	area.coordinates_3D_updated.connect(rendering_area.set_new_position)
 	

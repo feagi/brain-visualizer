@@ -41,6 +41,33 @@ func setup_as_single_tab(tabs: Array[Control]) -> void:
 	new_tab.requested_view_region_as_CB.connect(show_or_create_CB_of_region)
 	new_tab.requested_view_region_as_BM.connect(show_or_create_BM_of_region)
 
+## Sets up the UIView as a split view with secondary container visible  
+func setup_as_split() -> void:
+	print("🔄 UIView: Setting up split view mode")
+	_mode = MODE.SPLIT
+	_secondary_container.visible = true
+	_split_container.collapsed = false
+	_split_container.dragger_visibility = SplitContainer.DRAGGER_VISIBLE
+	
+	# Create a new tab container for the secondary view if it doesn't exist
+	if _secondary_container.get_child_count() == 0:
+		var secondary_tab: UITabContainer = PREFAB_UI_TAB_CONTAINER.instantiate()
+		_secondary_container.add_child(secondary_tab)
+		secondary_tab.requested_view_region_as_CB.connect(show_or_create_CB_of_region)
+		secondary_tab.requested_view_region_as_BM.connect(show_or_create_BM_of_region)
+		print("🔄 UIView: Created secondary tab container")
+	
+	print("🔄 UIView: Split view setup complete")
+	print("🔄 UIView: Split container collapsed: %s" % _split_container.collapsed)
+	print("🔄 UIView: Secondary container visible: %s" % _secondary_container.visible)
+	print("🔄 UIView: Secondary container child count: %d" % _secondary_container.get_child_count())
+
+## Gets the secondary tab container (for brain monitor tabs in split view)
+func get_secondary_tab_container() -> UITabContainer:
+	if _mode != MODE.SPLIT or _secondary_container.get_child_count() == 0:
+		return null
+	return _secondary_container.get_child(0) as UITabContainer
+
 ## Searches from the root [UIView] for a CB of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
 func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
 	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_CB_of_given_region(region)
@@ -52,13 +79,18 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 
 ## Searches from the root [UIView] for a BM of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
 func show_or_create_BM_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
+	print("🧠 UIView: show_or_create_BM_of_region called for region: %s" % region.friendly_name)
+	print("🧠 UIView: Target tab container: %s" % UI_tab_to_create_in)
 	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_BM_of_given_region(region)
 	if UI_tab != null:
+		print("🧠 UIView: Found existing BM tab, bringing to top")
 		UI_tab.bring_existing_region_BM_to_top(region)
 		return
 	## Region doesn't exist as a BM anywhere, create one
 	print("🧠 UIView: Creating new 3D brain monitor tab for region: %s" % region.friendly_name)
+	print("🧠 UIView: Tab container before spawn: %d children" % UI_tab_to_create_in.get_child_count())
 	UI_tab_to_create_in.spawn_BM_of_region(region)
+	print("🧠 UIView: Tab container after spawn: %d children" % UI_tab_to_create_in.get_child_count())
 
 ## Closes all non-root [BrainRegion] views
 func close_all_non_root_brain_region_views() -> void:
@@ -107,19 +139,36 @@ func get_root_UIView() -> UIView:
 func get_recursive_UITabContainer_children(appending_search: Array[UITabContainer] = []) -> Array[UITabContainer]:
 	var output: Array[UITabContainer] = appending_search
 	if _mode == MODE.TAB:
-		output.append(_get_primary_child() as UITabContainer)
+		var primary_child = _get_primary_child()
+		if primary_child and primary_child is UITabContainer:
+			output.append(primary_child as UITabContainer)
 		return output
-	# this is a split view, append the outputs of both views under the split
-	if _get_primary_child():
-		output.append((_get_primary_child() as UIView).get_recursive_UITabContainer_children(output))
-	if _get_secondary_child():
-		output.append((_get_secondary_child()).get_recursive_UITabContainer_children(output))
+	# this is a split view, handle both primary and secondary containers
+	var primary_child = _get_primary_child()
+	if primary_child:
+		if primary_child is UITabContainer:
+			# Direct tab container, add it to output
+			output.append(primary_child as UITabContainer)
+		elif primary_child is UIView:
+			# Nested UIView, recursively get its tab containers
+			var nested_containers = (primary_child as UIView).get_recursive_UITabContainer_children()
+			output.append_array(nested_containers)
+	
+	var secondary_child = _get_secondary_child()
+	if secondary_child:
+		var nested_containers = secondary_child.get_recursive_UITabContainer_children()
+		output.append_array(nested_containers)
+	
 	return output
 
 #endregion
 
 func _get_primary_child() -> Control: # can be a [UITabContainer] or another [UIView]
+	if _primary_container.get_child_count() == 0:
+		return null
 	return _primary_container.get_child(0)
 
 func _get_secondary_child() -> UIView: # Can only ever be a [UIView]
-	return _secondary_container.get_child(0)
+	if _secondary_container.get_child_count() == 0:
+		return null
+	return _secondary_container.get_child(0) as UIView

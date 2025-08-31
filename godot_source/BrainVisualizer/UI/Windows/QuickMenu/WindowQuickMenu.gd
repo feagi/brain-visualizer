@@ -220,6 +220,19 @@ func _button_open_3d_tab() -> void:
 		return
 	
 	print("🧠 QuickMenu: Opening 3D tab for brain region: %s" % region.friendly_name)
+	print("  🔍 SELECTION ANALYSIS:")
+	print("    - Region ID: %s" % region.region_ID)
+	print("    - Is root region: %s" % region.is_root_region())
+	print("    - Parent: %s" % (region.current_parent_region.friendly_name if region.current_parent_region else "None"))
+	print("    - Contains %d cortical areas" % region.contained_cortical_areas.size())
+	print("    - Contains %d child regions" % region.contained_regions.size())
+	
+	# List cortical areas in selected region
+	print("  📋 CORTICAL AREAS IN SELECTED REGION:")
+	for i in region.contained_cortical_areas.size():
+		var area = region.contained_cortical_areas[i]
+		print("    %d. %s (parent: %s)" % [i+1, area.cortical_ID, area.current_parent_region.friendly_name if area.current_parent_region else "None"])
+	
 	BV.WM.spawn_3d_brain_monitor_tab(region)
 	_debug_selection_state("_button_open_3d_tab before close")
 	close_window()

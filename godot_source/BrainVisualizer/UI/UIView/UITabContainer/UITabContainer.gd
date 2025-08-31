@@ -4,7 +4,7 @@ class_name UITabContainer
 var PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
-const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png") # Using edit icon for now, can be changed
+const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png")
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -58,9 +58,14 @@ func spawn_BM_of_region(region: BrainRegion) -> void:
 		return
 	print("🧠 UITabContainer: Creating new 3D brain monitor for region: %s" % region.friendly_name)
 	var new_bm: UI_BrainMonitor_3DScene = UI_BrainMonitor_3DScene.create_uninitialized_brain_monitor()
-	add_child(new_bm) # Add to scene tree first
-	new_bm.setup(region)
-	_add_control_view_as_tab(new_bm)
+	_add_control_view_as_tab_with_region_info(new_bm, region)
+	# Use call_deferred to ensure _ready() has been called before setup
+	print("🧠 UITabContainer: Deferring setup for brain monitor: %s" % region.friendly_name)
+	new_bm.call_deferred("setup", region)
+	
+	# Double check tab visibility after a brief delay
+	var timer = get_tree().create_timer(0.1)
+	timer.timeout.connect(_check_tab_visibility.bind(region, new_bm))
 
 ## Brings an existing CB of given region in this tab container to the top
 func bring_existing_region_CB_to_top(region: BrainRegion) -> void:
@@ -185,14 +190,46 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 		return
 	elif region_view is UI_BrainMonitor_3DScene:
 		var bm: UI_BrainMonitor_3DScene = region_view as UI_BrainMonitor_3DScene
-		# Note: BM is already added to scene tree in spawn_BM_of_region
+		add_child(bm) # Add to tab container
 		var tab_idx: int = get_tab_idx_from_control(bm)
 		set_tab_icon(tab_idx , ICON_BM)
 		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
 		current_tab = tab_idx
-		print("🧠 UITabContainer: Added 3D brain monitor tab for region: %s" % bm.representing_region.friendly_name)
+		print("🧠 UITabContainer: Added 3D brain monitor tab (tab index: %d)" % tab_idx)
 		return
 	push_error("UI: Unknown control type added to UITabContainer! Ignoring!")
+
+func _add_control_view_as_tab_with_region_info(region_view: Control, region: BrainRegion) -> void:
+	if region_view is UI_BrainMonitor_3DScene:
+		var bm: UI_BrainMonitor_3DScene = region_view as UI_BrainMonitor_3DScene
+		print("🧠 UITabContainer: Adding brain monitor to tab container...")
+		print("🧠 UITabContainer: Brain monitor type: %s" % bm.get_class())
+		print("🧠 UITabContainer: Tab container children before add: %d" % get_child_count())
+		
+		add_child(bm) # Add to tab container
+		print("🧠 UITabContainer: Tab container children after add: %d" % get_child_count())
+		
+		var tab_idx: int = get_tab_idx_from_control(bm)
+		print("🧠 UITabContainer: Got tab index: %d" % tab_idx)
+		
+		set_tab_icon(tab_idx , ICON_BM)
+		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
+		print("🧠 UITabContainer: Set tab icon and width")
+		
+		current_tab = tab_idx
+		print("🧠 UITabContainer: Set current tab to: %d" % current_tab)
+		print("🧠 UITabContainer: TabContainer current_tab property: %d" % current_tab)
+		
+		# Check if tab is visible
+		print("🧠 UITabContainer: Tab container visible: %s" % visible)
+		print("🧠 UITabContainer: Brain monitor visible: %s" % bm.visible)
+		print("🧠 UITabContainer: Tab title: '%s'" % get_tab_title(tab_idx))
+		
+		print("🧠 UITabContainer: Added 3D brain monitor tab for region: %s (tab index: %d)" % [region.friendly_name, tab_idx])
+		return
+	else:
+		# Fallback to regular method for non-BM controls
+		_add_control_view_as_tab(region_view)
 
 func _remove_control_view_as_tab(region_view: Control) -> void:
 	if region_view is CircuitBuilder:
@@ -215,3 +252,27 @@ func _internal_CB_requesting_CB_view_of_region(region: BrainRegion) -> void:
 
 func _internal_BM_requesting_BM_view_of_region(region: BrainRegion) -> void:
 	requested_view_region_as_BM.emit(region, self)
+
+func _check_tab_visibility(region: BrainRegion, bm: UI_BrainMonitor_3DScene) -> void:
+	print("🧠 UITabContainer: Checking tab visibility after delay...")
+	print("🧠 UITabContainer: Current tab: %d" % current_tab)
+	print("🧠 UITabContainer: Total children: %d" % get_child_count())
+	print("🧠 UITabContainer: Brain monitor parent: %s" % bm.get_parent())
+	print("🧠 UITabContainer: Brain monitor visible: %s" % bm.visible)
+	
+	var tab_idx = get_tab_idx_from_control(bm)
+	if tab_idx >= 0:
+		print("🧠 UITabContainer: Tab found at index %d" % tab_idx)
+		print("🧠 UITabContainer: Tab title: '%s'" % get_tab_title(tab_idx))
+		print("🧠 UITabContainer: Tab disabled: %s" % is_tab_disabled(tab_idx))
+		# Force tab to be current
+		current_tab = tab_idx
+		print("🧠 UITabContainer: Forced current tab to %d" % current_tab)
+	else:
+		push_error("🧠 UITabContainer: Could not find tab for brain monitor!")
+	
+	# Check if region has been set up
+	if bm.representing_region != null:
+		print("🧠 UITabContainer: Brain monitor representing region: %s" % bm.representing_region.friendly_name)
+	else:
+		print("🧠 UITabContainer: Brain monitor representing region is still null")

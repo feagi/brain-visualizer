@@ -98,24 +98,74 @@ func spawn_edit_region(editing_region: BrainRegion) -> void:
 
 func spawn_3d_brain_monitor_tab(region: BrainRegion) -> void:
 	print("🧠 WindowManager: Spawning 3D brain monitor tab for region: %s" % region.friendly_name)
-	# Get the root UI view to add the tab to the current tab container
+	print("  🔍 REGION ANALYSIS:")
+	print("    - Region ID: %s" % region.region_ID)
+	print("    - Is root region: %s" % region.is_root_region())
+	print("    - Contains %d cortical areas" % region.contained_cortical_areas.size())
+	print("    - Contains %d child regions" % region.contained_regions.size())
+	print("    - Parent region: %s" % (region.current_parent_region.friendly_name if region.current_parent_region else "None"))
+	
+	# List the cortical areas in this region
+	print("  📋 CORTICAL AREAS IN THIS REGION:")
+	for i in region.contained_cortical_areas.size():
+		var area = region.contained_cortical_areas[i]
+		print("    %d. %s (type: %s)" % [i+1, area.cortical_ID, area.type_as_string])
+	
 	var root_UI_view: UIView = BV.UI.root_UI_view
 	if root_UI_view == null:
 		push_error("WindowManager: Unable to spawn 3D brain monitor tab - no root UI view found!")
 		return
 	
-	# Find the first available tab container (or create one if needed)
-	var tab_containers: Array[UITabContainer] = root_UI_view.get_recursive_UITabContainer_children()
-	var target_tab_container: UITabContainer = null
+	print("🧠 WindowManager: Root UI view mode: %s" % root_UI_view.mode)
 	
-	if tab_containers.size() > 0:
-		target_tab_container = tab_containers[0]  # Use the first available tab container
-	else:
-		push_error("WindowManager: No tab containers found for 3D brain monitor!")
+	# Set up split view if not already in split mode
+	if root_UI_view.mode != UIView.MODE.SPLIT:
+		print("🧠 WindowManager: Switching to split view mode")
+		root_UI_view.setup_as_split()
+	
+	# Get the secondary tab container for the brain monitor
+	var secondary_tab_container: UITabContainer = root_UI_view.get_secondary_tab_container()
+	if secondary_tab_container == null:
+		push_error("WindowManager: No secondary tab container found after split setup!")
 		return
 	
-	# Create the BM tab
-	root_UI_view.show_or_create_BM_of_region(region, target_tab_container)
+	print("🧠 WindowManager: Found secondary tab container with %d tabs" % secondary_tab_container.get_child_count())
+	
+	# Create the BM tab in the secondary container
+	print("🧠 WindowManager: Creating brain monitor in secondary container...")
+	root_UI_view.show_or_create_BM_of_region(region, secondary_tab_container)
+	print("🧠 WindowManager: Brain monitor tab created successfully")
+	
+	# 🚨 CRITICAL: Force focus on the new tab 
+	print("🧠 WindowManager: Forcing focus on secondary container tab...")
+	if secondary_tab_container.get_child_count() > 0:
+		var last_tab_index = secondary_tab_container.get_child_count() - 1
+		secondary_tab_container.current_tab = last_tab_index
+		print("🧠 WindowManager: Set secondary container current_tab to: %d" % last_tab_index)
+		
+		# 🚨 VISUAL VERIFICATION: Add a notification to confirm which container you should be looking at
+		print("🎯 IMPORTANT: Look at the SECONDARY (bottom/right) container for the new brain monitor!")
+		print("🎯 The PRIMARY (top/left) container still shows the main brain monitor with ALL cortical areas.")
+		print("🎯 The SECONDARY container should show ONLY %d cortical areas from region %s." % [region.contained_cortical_areas.size(), region.friendly_name])
+		
+		# Add a UI notification to help the user
+		BV.NOTIF.add_notification("Split view opened! New brain monitor for '%s' is in the SECONDARY panel (bottom/right). Main brain monitor remains in primary panel." % region.friendly_name)
+		
+		# Also check what's in primary vs secondary
+		print("🧠 WindowManager: Primary container (should have main BM)")
+		print("🧠 WindowManager: Secondary container has %d tabs (should have new BM for %s)" % [secondary_tab_container.get_child_count(), region.friendly_name])
+		
+		# Get the actual brain monitor instance that was just created
+		if secondary_tab_container.get_child_count() > 0:
+			var new_tab = secondary_tab_container.get_child(last_tab_index)
+			if new_tab is UI_BrainMonitor_3DScene:
+				var new_bm = new_tab as UI_BrainMonitor_3DScene
+				print("🧠 WindowManager: New brain monitor created with name: %s" % new_bm.name)
+				if new_bm.representing_region != null:
+					print("🧠 WindowManager: New brain monitor represents region: %s" % new_bm.representing_region.friendly_name)
+				else:
+					print("🧠 WindowManager: New brain monitor setup is deferred - region will be set shortly")
+				print("🧠 WindowManager: Target region was: %s" % region.friendly_name)
 
 func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	var move_to_region: WindowAddToRegion = _default_spawn_window(_PREFAB_MOVE_TO_REGION, WindowAddToRegion.WINDOW_NAME) as WindowAddToRegion
