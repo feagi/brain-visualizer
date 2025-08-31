@@ -375,7 +375,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
-	if "amalgamation_pending" in health:
+	if "amalgamation_pending" in health and health["amalgamation_pending"] != null:
 		var dict: Dictionary = health["amalgamation_pending"]
 		if "amalgamation_id" not in dict:
 			push_error("FEAGI HEALTHCHECK: Pending amalgmation missing amalgamation_id")
