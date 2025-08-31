@@ -177,6 +177,42 @@ func setup(region: BrainRegion) -> void:
 			print("    ❌ [%d/%d] FAILED to create child brain region frame for: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
 			push_error("Region creation failed for: %s" % child_region.friendly_name)
 	
+
+
+	# 🔍 CRITICAL COMPARISON: Debug why comparison isn't running
+	print("🔍 COMPARISON DEBUG:")
+	print("  - BV.UI.temp_root_bm exists: %s" % (BV.UI.temp_root_bm != null))
+	if BV.UI.temp_root_bm:
+		print("  - Main brain monitor instance: %d" % BV.UI.temp_root_bm.get_instance_id())
+		print("  - This brain monitor instance: %d" % get_instance_id())
+		print("  - Are they different: %s" % (BV.UI.temp_root_bm.get_instance_id() != get_instance_id()))
+	
+	# Force comparison regardless of condition
+	print("🔍 FORCED COMPARISON:")
+	print("  📊 THIS brain monitor (instance %d): %d cortical areas" % [get_instance_id(), _cortical_visualizations_by_ID.size()])
+	print("  📋 THIS brain monitor contains:")
+	for area_id in _cortical_visualizations_by_ID.keys():
+		print("    - %s" % area_id)
+	
+	if BV.UI.temp_root_bm:
+		print("  📊 MAIN brain monitor (instance %d): %d cortical areas" % [BV.UI.temp_root_bm.get_instance_id(), BV.UI.temp_root_bm._cortical_visualizations_by_ID.size()])
+		print("  📋 MAIN brain monitor contains:")
+		for area_id in BV.UI.temp_root_bm._cortical_visualizations_by_ID.keys():
+			print("    - %s" % area_id)
+		
+		# Critical test - are they sharing the same dictionary?
+		var are_same_dict = (BV.UI.temp_root_bm._cortical_visualizations_by_ID == _cortical_visualizations_by_ID)
+		print("  🚨 CRITICAL: Are they sharing the SAME dictionary object? %s" % are_same_dict)
+		
+		if are_same_dict:
+			print("  ⚠️ SMOKING GUN: Both monitors share the same _cortical_visualizations_by_ID dictionary!")
+			print("  ⚠️ This is why you see identical content despite different instances!")
+	else:
+		print("  ❌ Main brain monitor not found - cannot compare")
+
+
+
+
 	# Connect to region signals for dynamic updates
 	print("  🔗 STEP 4: Connecting to region signals for dynamic updates...")
 	_representing_region.cortical_area_added_to_region.connect(_add_cortical_area)
@@ -188,6 +224,45 @@ func setup(region: BrainRegion) -> void:
 	print("  📊 Summary:")
 	print("    - Created %d cortical area visualizations" % _cortical_visualizations_by_ID.size())
 	print("    - Created %d brain region frames" % _brain_region_visualizations_by_ID.size())
+	
+	# 🚨 ULTIMATE VERIFICATION: What is ACTUALLY in this brain monitor's 3D scene?
+	print("🔍 ULTIMATE TAB CONTENT VERIFICATION:")
+	print("  🎯 Brain Monitor Instance: %d" % get_instance_id())
+	print("  🎯 Representing Region: %s" % region.friendly_name)
+	print("  🎯 3D Root Node Instance: %d" % _node_3D_root.get_instance_id())
+	print("  🎯 3D Root Node Child Count: %d" % _node_3D_root.get_child_count())
+	
+	# List ALL children of the 3D root - this is what you actually see
+	print("  📋 ACTUAL 3D CHILDREN (what you see visually):")
+	for i in _node_3D_root.get_child_count():
+		var child = _node_3D_root.get_child(i)
+		if child is UI_BrainMonitor_CorticalArea:
+			var ca = child as UI_BrainMonitor_CorticalArea
+			print("    %d. CORTICAL AREA: %s" % [i+1, ca._representing_cortial_area.cortical_ID])
+		elif child is UI_BrainMonitor_BrainRegion3D:
+			var br = child as UI_BrainMonitor_BrainRegion3D
+			print("    %d. BRAIN REGION: %s" % [i+1, br.representing_region.friendly_name])
+		elif child is Label3D:
+			var label = child as Label3D
+			print("    %d. LABEL: %s" % [i+1, label.text.replace('\n', ' | ')])
+		else:
+			print("    %d. OTHER: %s" % [i+1, child])
+	
+	# Compare dictionary vs actual 3D children
+	var dict_count = _cortical_visualizations_by_ID.size()
+	var visual_count = 0
+	for child in _node_3D_root.get_children():
+		if child is UI_BrainMonitor_CorticalArea:
+			visual_count += 1
+	
+	print("  🚨 CRITICAL MISMATCH CHECK:")
+	print("    - Dictionary contains: %d cortical areas" % dict_count)
+	print("    - 3D scene visually shows: %d cortical areas" % visual_count)
+	print("    - Are they the same: %s" % (dict_count == visual_count))
+	
+	if dict_count != visual_count:
+		print("  ⚠️ SMOKING GUN: Dictionary and visual content don't match!")
+		print("  ⚠️ This explains why you see different content than expected!")
 
 	# 🚨 CRITICAL DEBUG: List all cortical areas in this brain monitor instance
 	print("  🎯 FINAL VERIFICATION - Areas in brain monitor '%s':" % name)
@@ -443,9 +518,18 @@ func _brain_region_preview_closing(preview: UI_BrainMonitor_BrainRegionPreview):
 # NOTE: Cortical area movements, resizes, and renames are handled by the [UI_BrainMonitor_CorticalArea]s themselves!
 
 func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
+	print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])
+	
+	# Show call stack to find who's calling this
+	print("🚨 CALL STACK for _add_cortical_area:")
+	var stack = get_stack()
+	stack.reverse()
+	for i in range(min(3, stack.size())):
+		var frame = stack[i]
+		print("  %d. %s:%s in %s()" % [i, frame.source, frame.line, frame.function])
 	if area.cortical_ID in _cortical_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
-		return
+		return null
 	
 	# Check if this area should be created
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
@@ -460,7 +544,7 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	# Only create if the area is directly in root OR it's needed as I/O for a child region
 	if not is_directly_in_root and not is_io_of_child_region:
 		print("  ⏭️  Skipping cortical area %s - not directly in root region and not I/O of child region" % area.cortical_ID)
-		return
+		return null
 	
 	print("  ✅ Creating cortical area %s - directly_in_root: %s, io_of_child: %s" % [area.cortical_ID, is_directly_in_root, is_io_of_child_region])
 	print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])
