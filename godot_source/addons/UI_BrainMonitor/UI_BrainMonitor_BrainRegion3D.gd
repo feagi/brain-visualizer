@@ -332,6 +332,11 @@ func _create_3d_plate() -> void:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
 	
+	# Calculate Z positioning to align with I/O areas
+	var brain_region_z = _representing_region.coordinates_3D.z
+	var io_areas_front_edge_z = brain_region_z + 2.0  # Same as cortical areas
+	var plate_z_offset = 2.0  # Plates aligned with I/O areas front edge
+	
 	# Calculate sizes for each plate independently - ALWAYS CREATE BOTH PLATES
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
@@ -341,6 +346,8 @@ func _create_3d_plate() -> void:
 	print("  📐 Input plate size: %s (for %d areas)" % [input_plate_size, input_areas.size()])  
 	print("  📐 Output plate size: %s (for %d areas)" % [output_plate_size, output_areas.size()])
 	print("  📍 Brain region coordinates: %s" % _representing_region.coordinates_3D)
+	print("  🎯 I/O areas front edge Z: %.1f (brain region Z + 2)" % io_areas_front_edge_z)
+	print("  🎯 Plates will be positioned at Z: %.1f (aligned with I/O areas)" % plate_z_offset)
 	
 	# Create the main frame container
 	_frame_container = Node3D.new()
@@ -349,26 +356,28 @@ func _create_3d_plate() -> void:
 	
 	# ALWAYS CREATE INPUT PLATE (left side) - even if no input areas
 	var input_plate = _create_single_plate(input_plate_size, "InputPlate", Color(0.0, 0.4, 0.0))  # Dark green
-	# Position on left side
+	# Position on left side and align Z with I/O areas
 	input_plate.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
 	input_plate.position.y = -1.0  # Below I/O areas
+	input_plate.position.z = plate_z_offset  # Align with I/O areas
 	_frame_container.add_child(input_plate)
-	print("  🟢 InputPlate: Created dark green plate (size: %.1f x 1.0 x %.1f) for %d inputs" % [input_plate_size.x, input_plate_size.z, input_areas.size()])
+	print("  🟢 InputPlate: Created dark green plate (size: %.1f x 1.0 x %.1f) at Z=%.1f for %d inputs" % [input_plate_size.x, input_plate_size.z, plate_z_offset, input_areas.size()])
 
 	# ALWAYS CREATE OUTPUT PLATE (right side) - even if no output areas
 	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", Color(0.0, 0.0, 0.4))  # Dark blue
-	# Position on right side
+	# Position on right side and align Z with I/O areas
 	output_plate.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
 	output_plate.position.y = -1.0  # Below I/O areas
+	output_plate.position.z = plate_z_offset  # Align with I/O areas
 	_frame_container.add_child(output_plate)
-	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x 1.0 x %.1f) for %d outputs" % [output_plate_size.x, output_plate_size.z, output_areas.size()])
+	print("  🔵 OutputPlate: Created dark blue plate (size: %.1f x 1.0 x %.1f) at Z=%.1f for %d outputs" % [output_plate_size.x, output_plate_size.z, plate_z_offset, output_areas.size()])
 	
 	# Create region name label below the plates
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
 	_region_name_label.font_size = 192  # Same as cortical area labels
-	_region_name_label.position = Vector3(0.0, -3.0, 0.0)  # -2 relative to plates (which are at -1.0)
+	_region_name_label.position = Vector3(0.0, -3.0, plate_z_offset)  # -2 relative to plates, aligned in Z
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
 	_region_name_label.outline_size = 2
@@ -381,7 +390,7 @@ func _create_3d_plate() -> void:
 	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
-	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, plate_spacing)
+	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, plate_spacing, plate_z_offset)
 	
 	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
 	
@@ -456,13 +465,13 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	return Vector3(plate_width, 0.0, plate_depth)
 
 ## Adds collision bodies for clicking detection (plates and label)
-func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_spacing: float) -> void:
+func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_spacing: float, plate_z_offset: float) -> void:
 	# Create collision body for INPUT PLATE
 	var input_collision = StaticBody3D.new()
 	input_collision.name = "InputPlateClickArea"
 	input_collision.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
 	input_collision.position.y = -1.0  # Same Y as input plate
-	input_collision.position.z = 0.0
+	input_collision.position.z = plate_z_offset  # Same Z as input plate
 	
 	var input_collision_shape = CollisionShape3D.new()
 	input_collision_shape.name = "CollisionShape"
@@ -477,7 +486,7 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	output_collision.name = "OutputPlateClickArea"
 	output_collision.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
 	output_collision.position.y = -1.0  # Same Y as output plate
-	output_collision.position.z = 0.0
+	output_collision.position.z = plate_z_offset  # Same Z as output plate
 	
 	var output_collision_shape = CollisionShape3D.new()
 	output_collision_shape.name = "CollisionShape"
@@ -490,7 +499,7 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
 	label_collision.name = "RegionLabelClickArea"
-	label_collision.position = Vector3(0.0, -3.0, 0.0)  # Same as label position
+	label_collision.position = Vector3(0.0, -3.0, plate_z_offset)  # Align with plates Z position
 	
 	var label_collision_shape = CollisionShape3D.new()
 	label_collision_shape.name = "CollisionShape"
