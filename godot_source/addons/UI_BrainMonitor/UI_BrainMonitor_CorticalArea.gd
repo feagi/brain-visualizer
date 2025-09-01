@@ -404,44 +404,271 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	
 	print("     🌈 Arc height: ", arc_height, " Control point: ", control_point)
 	
-	# Create curve segments - more segments = smoother curve  
-	var num_segments = 20 if is_wobbly else 12  # Even more segments for dramatic wobbly curves
-	var segment_material = _create_curve_material(is_inhibitory, is_global_mode)
-	
-	# Create animated material for plastic connections with breathing effect
-	if is_plastic:
-		segment_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
-	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
 	
-	for i in range(num_segments):
-		var t1 = float(i) / float(num_segments)
-		var t2 = float(i + 1) / float(num_segments)
+	# For plastic connections, create dashed lines
+	if is_plastic:
+		var num_dashes = 10  # Number of dashes along the curve
+		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
-		# Calculate points on quadratic Bezier curve
-		var point1 = _quadratic_bezier(start_pos, control_point, end_pos, t1)
-		var point2 = _quadratic_bezier(start_pos, control_point, end_pos, t2)
+		for i in range(num_dashes):
+			var t = float(i) / float(num_dashes - 1)  # 0 to 1 along curve
+			
+			# Calculate position on quadratic Bezier curve
+			var dash_position = _quadratic_bezier(start_pos, control_point, end_pos, t)
+			
+			# Calculate direction for orientation
+			var t_next = min(t + 0.1, 1.0)  # Small step ahead for direction
+			var next_position = _quadratic_bezier(start_pos, control_point, end_pos, t_next)
+			var dash_direction = (next_position - dash_position).normalized()
+			
+			# Create a small cylinder for each dash
+			var dash = MeshInstance3D.new()
+			dash.name = "Dash_" + str(i)
+			dash.mesh = CylinderMesh.new()
+			
+			# Set dash size (small line segment)
+			var cylinder_mesh = dash.mesh as CylinderMesh
+			cylinder_mesh.height = 0.6  # Length of each dash
+			cylinder_mesh.top_radius = 0.06  # Thin line
+			cylinder_mesh.bottom_radius = 0.06
+			cylinder_mesh.radial_segments = 6  # Simple geometry
+			
+			# Position the dash
+			dash.position = dash_position
+			dash.material_override = dash_material
+			
+			# Orient the dash along the curve direction
+			if dash_direction.length() > 0.001:  # Avoid zero direction
+				# Point the cylinder along the curve (Y-axis of cylinder is height)
+				dash.look_at(dash_position + dash_direction, Vector3.UP)
+				# Rotate 90 degrees so cylinder height aligns with direction
+				dash.rotate_object_local(Vector3.RIGHT, PI/2)
+			
+			connection_node.add_child(dash)
+			
+			# Store position for pulse animation
+			if i == 0:
+				curve_points.append(dash_position)
+			curve_points.append(dash_position)
 		
-		# Store base points for animation (without wobble initially)
-		if i == 0:
-			curve_points.append(point1)
-		curve_points.append(point2)
+		# Store dashes for animation
+		connection_node.set_meta("plastic_dashes", connection_node.get_children())
+		_add_dash_wave_animation(connection_node, start_pos, control_point, end_pos)
 		
-		# Create cylinder segment between these two points
-		var segment = _create_curve_segment(point1, point2, i, segment_material)
-		connection_node.add_child(segment)
+		print("     ⚊ Created plastic connection with ", num_dashes, " dashes")
+	else:
+		# For non-plastic connections, use continuous segments
+		var num_segments = 12
+		var segment_material = _create_curve_material(is_inhibitory, is_global_mode)
 		
-		# Add continuous wobble animation for plastic connections
-		if is_plastic:
-			_add_continuous_wobble_animation(segment, point1, point2, t1, t2, start_pos, control_point, end_pos)
-			_add_plastic_thickness_animation(segment, t1)
+		for i in range(num_segments):
+			var t1 = float(i) / float(num_segments)
+			var t2 = float(i + 1) / float(num_segments)
+			
+			# Calculate points on quadratic Bezier curve
+			var point1 = _quadratic_bezier(start_pos, control_point, end_pos, t1)
+			var point2 = _quadratic_bezier(start_pos, control_point, end_pos, t2)
+			
+			# Store points for animation
+			if i == 0:
+				curve_points.append(point1)
+			curve_points.append(point2)
+			
+			# Create cylinder segment between these two points
+			var segment = _create_curve_segment(point1, point2, i, segment_material)
+			connection_node.add_child(segment)
+		
+		print("     ⚪ Created non-plastic connection with ", num_segments, " segments")
 	
 	# Create pulse animation along this curve
 	_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
 	
-	print("     ✨ Created beautiful 3D curve with ", num_segments, " segments and pulse animation")
+	print("     ✨ Created beautiful 3D curve connection")
 	return connection_node
+
+## Add traveling wave animation to dashed plastic connections
+func _add_dash_wave_animation(connection_node: Node3D, curve_start: Vector3, curve_control: Vector3, curve_end: Vector3) -> void:
+	"""Animate dashes with traveling wave effect for plastic connections"""
+	if not connection_node:
+		return
+	
+	print("       ⚡ Adding traveling dash wave animation")
+	
+	# Get the stored dashes
+	var dashes = connection_node.get_meta("plastic_dashes", []) as Array[Node]
+	if dashes.is_empty():
+		print("       ❌ Could not find dashes for animation")
+		return
+	
+	var num_dashes = dashes.size()
+	
+	# Store original scales for each dash
+	var original_scales: Array[Vector3] = []
+	for dash_node in dashes:
+		var dash = dash_node as MeshInstance3D
+		if is_instance_valid(dash):
+			original_scales.append(dash.scale)
+	
+	# Create traveling wave animation
+	var wave_tween = create_tween()
+	wave_tween.set_loops()  # Infinite animation
+	
+	wave_tween.tween_method(
+		func(animation_time: float):
+			# Safety check
+			if not connection_node or not is_instance_valid(connection_node):
+				wave_tween.kill()
+				return
+			
+			# Traveling wave parameters
+			var wave_speed = 1.0  # Speed of traveling effect
+			var pulse_width = 2.5  # How many dashes are bright at once
+			var brightness_variation = 0.8  # How much dashes pulse
+			var length_variation = 0.5  # How much dashes extend in length
+			
+			# Create traveling wave effect along the dashes
+			var time_phase = animation_time * wave_speed
+			
+			# Animate each dash
+			for i in range(num_dashes):
+				var dash = dashes[i] as MeshInstance3D
+				if not is_instance_valid(dash):
+					continue
+				
+				# Calculate position along curve (0 to 1)
+				var curve_position = float(i) / float(num_dashes - 1)
+				
+				# Create traveling wave with smooth falloff
+				var wave_center = fmod(time_phase, TAU) / TAU  # Traveling center (0 to 1)
+				var distance_from_wave = abs(curve_position - wave_center)
+				
+				# Handle wrap-around
+				if distance_from_wave > 0.5:
+					distance_from_wave = 1.0 - distance_from_wave
+				
+				# Create smooth pulse using cosine for smooth falloff
+				var pulse_intensity = cos(distance_from_wave * PI / pulse_width) if distance_from_wave < pulse_width else 0.0
+				pulse_intensity = max(0.0, pulse_intensity)  # Only positive values
+				
+				# Apply scale animation (dashes grow in length and thickness)
+				var original_scale = original_scales[i] if i < original_scales.size() else Vector3.ONE
+				var thickness_multiplier = 1.0 + (pulse_intensity * brightness_variation * 0.5)  # Thickness
+				var length_multiplier = 1.0 + (pulse_intensity * length_variation)  # Length
+				
+				dash.scale = Vector3(
+					original_scale.x * thickness_multiplier,  # X radius
+					original_scale.y * length_multiplier,     # Y height (length)
+					original_scale.z * thickness_multiplier  # Z radius
+				)
+				
+				# Apply brightness animation to material
+				if dash.material_override is StandardMaterial3D:
+					var material = dash.material_override as StandardMaterial3D
+					var base_emission = 0.2  # Base emission energy
+					var emission_boost = pulse_intensity * 0.7  # Bright pulse
+					material.emission_energy = base_emission + emission_boost
+					
+					# Also modify transparency for additional effect
+					var base_transparency = 0.8
+					var transparency_boost = pulse_intensity * 0.2
+					material.albedo_color.a = base_transparency + transparency_boost,
+		0.0,
+		100.0,  # Long animation time
+		4.0     # 4 second wave cycle
+	)
+
+## Add circular rotating wave animation to dashed recursive loops
+func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, loop_radius: float) -> void:
+	"""Animate dashes around circular loop with rotating wave patterns"""
+	if not loop_node:
+		return
+	
+	print("       🌀 Adding circular dash wave animation to recursive loop")
+	
+	# Get the stored loop dashes
+	var dashes = loop_node.get_meta("plastic_loop_dashes", []) as Array[Node]
+	if dashes.is_empty():
+		print("       ❌ Could not find loop dashes for animation")
+		return
+	
+	var num_dashes = dashes.size()
+	
+	# Store original scales for each dash
+	var original_scales: Array[Vector3] = []
+	for dash_node in dashes:
+		var dash = dash_node as MeshInstance3D
+		if is_instance_valid(dash):
+			original_scales.append(dash.scale)
+	
+	# Create circular rotating wave animation
+	var circular_tween = create_tween()
+	circular_tween.set_loops()  # Infinite animation
+	
+	circular_tween.tween_method(
+		func(animation_time: float):
+			# Safety check
+			if not loop_node or not is_instance_valid(loop_node):
+				circular_tween.kill()
+				return
+			
+			# Circular wave parameters
+			var rotation_speed = 0.8  # Speed of rotating wave
+			var pulse_width = 3.0  # How many dashes are bright at once
+			var brightness_variation = 1.0  # How much dashes pulse
+			var length_variation = 0.6  # How much dashes extend in length
+			
+			# Create rotating wave effect around the circle
+			var time_phase = animation_time * rotation_speed
+			
+			# Animate each dash around the circle
+			for i in range(num_dashes):
+				var dash = dashes[i] as MeshInstance3D
+				if not is_instance_valid(dash):
+					continue
+				
+				# Calculate angular position around circle (0 to TAU)
+				var angular_position = (float(i) / float(num_dashes)) * TAU
+				
+				# Create rotating wave
+				var wave_angle = angular_position - time_phase  # Subtract for clockwise rotation
+				
+				# Normalize wave angle to 0-TAU range
+				wave_angle = fmod(wave_angle, TAU)
+				if wave_angle < 0:
+					wave_angle += TAU
+				
+				# Create smooth pulse using cosine
+				var pulse_intensity = cos(wave_angle * pulse_width / TAU)
+				pulse_intensity = max(0.0, pulse_intensity)  # Only positive values
+				
+				# Apply scale animation (dashes grow in length and thickness)
+				var original_scale = original_scales[i] if i < original_scales.size() else Vector3.ONE
+				var thickness_multiplier = 1.0 + (pulse_intensity * brightness_variation * 0.4)  # Thickness
+				var length_multiplier = 1.0 + (pulse_intensity * length_variation)  # Length
+				
+				dash.scale = Vector3(
+					original_scale.x * thickness_multiplier,  # X radius
+					original_scale.y * length_multiplier,     # Y height (length)
+					original_scale.z * thickness_multiplier  # Z radius
+				)
+				
+				# Apply brightness animation to material
+				if dash.material_override is StandardMaterial3D:
+					var material = dash.material_override as StandardMaterial3D
+					var base_emission = 0.25  # Base emission energy
+					var emission_boost = pulse_intensity * 0.8  # Strong bright rotating pulse
+					material.emission_energy = base_emission + emission_boost
+					
+					# Also modify transparency for additional effect
+					var base_transparency = 0.75
+					var transparency_boost = pulse_intensity * 0.25
+					material.albedo_color.a = base_transparency + transparency_boost,
+		0.0,
+		100.0,  # Long animation time
+		5.0     # 5 second rotation cycle
+	)
 
 ## Calculate point on quadratic Bezier curve
 func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
@@ -626,26 +853,69 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		)
 		loop_points.append(loop_point)
 	
-	# Create loop segments with wobble effect for plastic connections
-	var loop_material = _create_recursive_material(is_inhibitory, is_global_mode)
-	
-	# Use enhanced plastic material for plastic recursive connections
+	# For plastic recursive loops, create dashed circular pattern
 	if is_plastic:
-		loop_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
-	for i in range(num_segments):
-		var point1 = loop_points[i]
-		var point2 = loop_points[i + 1]
+		var num_dashes = 14  # Number of dashes around the circle
+		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
-		var segment = _create_curve_segment(point1, point2, i, loop_material)
-		loop_node.add_child(segment)
+		for i in range(num_dashes):
+			var angle = (float(i) / float(num_dashes)) * TAU
+			var dash_position = center_pos + Vector3(
+				cos(angle) * loop_radius,
+				loop_height,
+				sin(angle) * loop_radius
+			)
+			
+			# Calculate tangent direction for circular orientation
+			var tangent_direction = Vector3(-sin(angle), 0, cos(angle))  # Perpendicular to radius
+			
+			# Create a small cylinder for each dash
+			var dash = MeshInstance3D.new()
+			dash.name = "LoopDash_" + str(i)
+			dash.mesh = CylinderMesh.new()
+			
+			# Set dash size (small line segment)
+			var cylinder_mesh = dash.mesh as CylinderMesh
+			cylinder_mesh.height = 0.8  # Length of each dash
+			cylinder_mesh.top_radius = 0.06  # Thin line
+			cylinder_mesh.bottom_radius = 0.06
+			cylinder_mesh.radial_segments = 6  # Simple geometry
+			
+			# Position the dash
+			dash.position = dash_position
+			dash.material_override = dash_material
+			
+			# Orient the dash tangent to the circle
+			if tangent_direction.length() > 0.001:
+				# Point the cylinder along the tangent (Y-axis of cylinder is height)
+				dash.look_at(dash_position + tangent_direction, Vector3.UP)
+				# Rotate 90 degrees so cylinder height aligns with tangent
+				dash.rotate_object_local(Vector3.RIGHT, PI/2)
+			
+			loop_node.add_child(dash)
+			
+			# Store position for pulse animation
+			if i == 0:
+				loop_points.append(dash_position)
+			loop_points.append(dash_position)
 		
-		# Add continuous wobble and thickness animation for plastic recursive connections
-		if is_plastic:
-			var t1 = float(i) / float(num_segments)
-			var t2 = float(i + 1) / float(num_segments)
-			# For recursive loops, create a simplified wobble around the base loop position
-			_add_continuous_loop_wobble_animation(segment, point1, point2, t1)
-			_add_plastic_thickness_animation(segment, t1)
+		# Store dashes for animation
+		loop_node.set_meta("plastic_loop_dashes", loop_node.get_children())
+		_add_circular_dash_wave_animation(loop_node, center_pos, loop_radius)
+		
+		print("     ⚊ Created plastic recursive loop with ", num_dashes, " dashes")
+	else:
+		# For non-plastic recursive connections, use continuous segments
+		var loop_material = _create_recursive_material(is_inhibitory, is_global_mode)
+		
+		for i in range(num_segments):
+			var point1 = loop_points[i]
+			var point2 = loop_points[i + 1]
+			
+			var segment = _create_curve_segment(point1, point2, i, loop_material)
+			loop_node.add_child(segment)
+		
+		print("     ⚪ Created non-plastic recursive loop with ", num_segments, " segments")
 	
 	# Create recursive pulse animation
 	_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
@@ -922,120 +1192,4 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 		0.0,
 		1.0,
 		breathing_speed
-	)
-
-## Add continuous wobble animation to plastic connection segments
-func _add_continuous_wobble_animation(segment: MeshInstance3D, base_point1: Vector3, base_point2: Vector3, t1: float, t2: float, curve_start: Vector3, curve_control: Vector3, curve_end: Vector3) -> void:
-	"""Create continuous wobble animation for plastic connection segments"""
-	if not segment:
-		return
-	
-	print("       🌊 Adding continuous wobble animation to plastic segment at t1=", t1, " t2=", t2)
-	
-	# Create a tween for continuous position animation
-	var wobble_tween = create_tween()
-	wobble_tween.set_loops()  # Infinite animation
-	
-	# Store base positions and curve info
-	var segment_center = (base_point1 + base_point2) / 2.0
-	var segment_direction = (base_point2 - base_point1).normalized()
-	var segment_length = base_point1.distance_to(base_point2)
-	
-	# Animate the segment position with wobble
-	wobble_tween.tween_method(
-		func(animation_time: float):
-			# Safety check
-			if not segment or not is_instance_valid(segment):
-				wobble_tween.kill()
-				return
-			
-			# Calculate subtle wobble offset
-			var wobble_strength = 0.4  # Much more subtle - reduced from 1.2
-			var wobble_frequency = 1.2  # Slightly slower
-			var time_offset = (t1 + t2) * 0.5 * PI * 2  # Phase shift based on position along curve
-			
-			# Create gentle layered wobble movement
-			var primary_wobble_x = sin(animation_time * wobble_frequency + time_offset) * wobble_strength
-			var primary_wobble_y = cos(animation_time * wobble_frequency * 1.3 + time_offset * 1.5) * wobble_strength * 0.7
-			var primary_wobble_z = sin(animation_time * wobble_frequency * 0.8 + time_offset * 2.5) * wobble_strength
-			
-			# Add very gentle secondary ripples
-			var ripple_strength = wobble_strength * 0.2  # Reduced from 0.3
-			var ripple_frequency = wobble_frequency * 2.5  # Reduced from 3.5
-			var secondary_wobble_x = sin(animation_time * ripple_frequency + time_offset * 4) * ripple_strength
-			var secondary_wobble_y = cos(animation_time * ripple_frequency * 1.7 + time_offset * 3) * ripple_strength
-			var secondary_wobble_z = sin(animation_time * ripple_frequency * 1.2 + time_offset * 5) * ripple_strength
-			
-			var total_wobble = Vector3(
-				primary_wobble_x + secondary_wobble_x,
-				primary_wobble_y + secondary_wobble_y,
-				primary_wobble_z + secondary_wobble_z
-			)
-			
-			# Apply wobble to segment center position
-			var new_center = segment_center + total_wobble
-			
-			# Recalculate the segment endpoints with wobble
-			var half_direction = segment_direction * (segment_length / 2.0)
-			var new_point1 = new_center - half_direction + total_wobble * 0.3  # Vary endpoints slightly
-			var new_point2 = new_center + half_direction + total_wobble * 0.7
-			
-			# Update segment position and orientation
-			segment.position = (new_point1 + new_point2) / 2.0
-			
-			# Update segment rotation to face new direction
-			var new_direction = (new_point2 - new_point1).normalized()
-			if new_direction.length() > 0.001:
-				var up_vector = Vector3.UP
-				if abs(new_direction.dot(Vector3.UP)) > 0.9:
-					up_vector = Vector3.FORWARD
-				var right_vector = up_vector.cross(new_direction).normalized()
-				var corrected_up = new_direction.cross(right_vector).normalized()
-				segment.basis = Basis(right_vector, new_direction, corrected_up),
-		0.0,
-		100.0,  # Long animation time for smooth looping
-		5.0     # 5 second loop cycle
-	)
-
-## Add continuous wobble animation to plastic recursive loop segments
-func _add_continuous_loop_wobble_animation(segment: MeshInstance3D, base_point1: Vector3, base_point2: Vector3, t_position: float) -> void:
-	"""Create continuous wobble animation for plastic recursive loop segments"""
-	if not segment:
-		return
-	
-	print("       🔄 Adding continuous loop wobble animation to plastic segment at t=", t_position)
-	
-	# Create a tween for continuous position animation
-	var loop_wobble_tween = create_tween()
-	loop_wobble_tween.set_loops()  # Infinite animation
-	
-	# Store base positions
-	var segment_center = (base_point1 + base_point2) / 2.0
-	var segment_direction = (base_point2 - base_point1).normalized()
-	var segment_length = base_point1.distance_to(base_point2)
-	
-	# Animate the segment position with wobble (simpler for loops)
-	loop_wobble_tween.tween_method(
-		func(animation_time: float):
-			# Safety check
-			if not segment or not is_instance_valid(segment):
-				loop_wobble_tween.kill()
-				return
-			
-			# Calculate subtle wobble offset (simpler for recursive loops)
-			var wobble_strength = 0.3  # Much more subtle - reduced from 0.8
-			var wobble_frequency = 1.4  # Slightly slower
-			var time_offset = t_position * PI * 2
-			
-			var wobble_x = sin(animation_time * wobble_frequency + time_offset) * wobble_strength
-			var wobble_y = cos(animation_time * wobble_frequency * 1.2 + time_offset * 1.3) * wobble_strength * 0.6
-			var wobble_z = sin(animation_time * wobble_frequency * 0.9 + time_offset * 1.8) * wobble_strength
-			
-			var total_wobble = Vector3(wobble_x, wobble_y, wobble_z)
-			
-			# Apply wobble to segment position
-			segment.position = segment_center + total_wobble,
-		0.0,
-		100.0,  # Long animation time for smooth looping
-		4.0     # 4 second loop cycle for recursive connections
 	)
