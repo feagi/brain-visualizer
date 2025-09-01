@@ -115,20 +115,28 @@ func spawn_3d_brain_monitor_tab(region: BrainRegion) -> void:
 	if temp_split != null and temp_split.current_state == TempSplit.STATES.CB_CLOSED:
 		temp_split.set_view(TempSplit.STATES.CB_HORIZONTAL)
 	
-	# Get the secondary tab container for the brain monitor
+	# Get both tab containers
+	var primary_tab_container: UITabContainer = root_UI_view._get_primary_child() as UITabContainer
 	var secondary_tab_container: UITabContainer = root_UI_view.get_secondary_tab_container()
-	if secondary_tab_container == null:
-		push_error("WindowManager: No secondary tab container found after split setup!")
+	
+	if primary_tab_container == null or secondary_tab_container == null:
+		push_error("WindowManager: Tab containers not found after split setup!")
 		return
 	
-	# Create the BM tab in the secondary container
+	# Create both CB and BM tabs for the same region
+	primary_tab_container.spawn_CB_of_region(region)
 	secondary_tab_container.spawn_BM_of_region(region)
 	
-	# Focus on the new tab and notify user
+	# Focus on both new tabs
+	if primary_tab_container.get_child_count() > 0:
+		var primary_last_tab = primary_tab_container.get_child_count() - 1
+		primary_tab_container.current_tab = primary_last_tab
+	
 	if secondary_tab_container.get_child_count() > 0:
-		var last_tab_index = secondary_tab_container.get_child_count() - 1
-		secondary_tab_container.current_tab = last_tab_index
-		BV.NOTIF.add_notification("Opened 3D brain monitor for region '%s' in split view" % region.friendly_name)
+		var secondary_last_tab = secondary_tab_container.get_child_count() - 1
+		secondary_tab_container.current_tab = secondary_last_tab
+	
+	BV.NOTIF.add_notification("Opened Circuit Builder and 3D Brain Monitor tabs for region '%s'" % region.friendly_name)
 
 func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRegion) -> void:
 	var move_to_region: WindowAddToRegion = _default_spawn_window(_PREFAB_MOVE_TO_REGION, WindowAddToRegion.WINDOW_NAME) as WindowAddToRegion
