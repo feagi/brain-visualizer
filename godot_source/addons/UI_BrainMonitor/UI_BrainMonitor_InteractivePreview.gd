@@ -9,17 +9,9 @@ signal user_moved_preview(new_FEAGI_space_position: Vector3i)
 signal user_resized_preview(new_dimensions: Vector3i)
 
 func setup(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool) -> void:
-	print("🔮 PREVIEW DEBUG: UI_BrainMonitor_InteractivePreview setup called")
-	print("  - Position: %s, Dimensions: %s, Show voxels: %s" % [initial_FEAGI_position, initial_dimensions, show_voxels])
-	
 	_renderer = UI_BrainMonitor_InteractivePreviewRenderer.new()
-	print("  - Renderer created: %s" % _renderer)
-	
 	add_child(_renderer)
-	print("  - Renderer added as child to preview")
-	
 	_renderer.setup(initial_FEAGI_position, initial_dimensions, show_voxels)
-	print("🔮 PREVIEW DEBUG: UI_BrainMonitor_InteractivePreview setup complete")
 
 ## If you wish to externally connect signals to this, you can pass them in as arrays
 func connect_UI_signals(move_signals: Array[Signal], resize_signals: Array[Signal], close_signals: Array[Signal]) -> void:
@@ -31,9 +23,7 @@ func connect_UI_signals(move_signals: Array[Signal], resize_signals: Array[Signa
 		close_signal.connect(queue_free)
 
 func set_new_position(new_position_FEAGI_space: Vector3i) -> void:
-	print("🔮 PREVIEW DEBUG: set_new_position called with: %s" % new_position_FEAGI_space)
 	_renderer.update_position_with_new_FEAGI_coordinate(new_position_FEAGI_space)
 
 func set_new_dimensions(new_dimensions: Vector3i) -> void:
-	print("🔮 PREVIEW DEBUG: set_new_dimensions called with: %s" % new_dimensions)
 	_renderer.update_dimensions(new_dimensions)

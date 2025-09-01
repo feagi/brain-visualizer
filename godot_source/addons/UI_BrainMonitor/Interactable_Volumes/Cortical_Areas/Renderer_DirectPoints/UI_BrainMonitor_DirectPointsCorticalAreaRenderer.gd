@@ -910,7 +910,6 @@ func _on_memory_area_stats_updated(stats: Dictionary) -> void:
 		return
 	
 	var neuron_count = int(area_stats["neuron_count"])
-	print("   🔮 Updating memory sphere size for ", _cortical_area_id, " with neuron count: ", neuron_count)
 	
 	# Update the sphere size based on neuron count
 	_update_memory_sphere_size(neuron_count)
@@ -936,14 +935,12 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	var sphere_radius = base_size * scale_factor * 0.5  # 0.5 is the base radius
 	var sphere_height = base_size * scale_factor * 1.0  # 1.0 is the base height
 	
-	print("   🔮 Memory sphere sizing: ", neuron_count, " neurons -> ", scale_factor, "x scale -> radius:", sphere_radius, " height:", sphere_height)
 	
 	# Update the sphere mesh
 	if _outline_mesh_instance and _outline_mesh_instance.mesh is SphereMesh:
 		var sphere_mesh = _outline_mesh_instance.mesh as SphereMesh
 		sphere_mesh.radius = sphere_radius
 		sphere_mesh.height = sphere_height
-		print("   🔮 Updated memory sphere mesh size")
 	
 	# Update the collision shape
 	if _static_body:
@@ -951,7 +948,6 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 		if collision_shape and collision_shape.shape is SphereShape3D:
 			var sphere_shape = collision_shape.shape as SphereShape3D
 			sphere_shape.radius = sphere_radius
-			print("   🔮 Updated memory sphere collision size")
 
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""

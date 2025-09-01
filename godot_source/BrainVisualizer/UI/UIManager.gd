@@ -506,23 +506,13 @@ static func get_icon_texture_by_ID(cortical_ID: StringName, fallback_is_input: b
 
 ## Gets the currently active brain monitor (either main or currently focused tab)
 func get_active_brain_monitor() -> UI_BrainMonitor_3DScene:
-	print("🔍 DEBUG: get_active_brain_monitor() called")
-	
 	# First try to find the currently active tab brain monitor
 	var active_tab_bm = _find_active_tab_brain_monitor()
 	if active_tab_bm != null:
-		print("🔍 DEBUG: Found active tab brain monitor: %s (instance %d)" % [active_tab_bm.name, active_tab_bm.get_instance_id()])
-		print("🔍 DEBUG: Tab BM representing region: %s" % (active_tab_bm._representing_region.friendly_name if active_tab_bm._representing_region else "None"))
 		return active_tab_bm
 	
 	# Fall back to main brain monitor if no tab is active
-	if temp_root_bm != null:
-		print("🔍 DEBUG: No active tab brain monitor found, using main: %s (instance %d)" % [temp_root_bm.name, temp_root_bm.get_instance_id()])
-		return temp_root_bm
-	else:
-		print("🔍 DEBUG: ⚠️ WARNING: Both active tab and main brain monitor are null!")
-		push_error("UIManager: get_active_brain_monitor() - No brain monitor available! This may cause crashes.")
-		return null
+	return temp_root_bm
 
 ## Recursively searches for the currently active brain monitor tab
 func _find_active_tab_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -530,73 +520,45 @@ func _find_active_tab_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 ## Recursively searches a UIView for active brain monitor tabs
 func _search_for_active_brain_monitor_in_view(ui_view: UIView) -> UI_BrainMonitor_3DScene:
-	print("🔍 SEARCH DEBUG: Checking UIView: %s" % ui_view)
 	if ui_view == null:
-		print("🔍 SEARCH DEBUG: UIView is null, returning null")
 		return null
-	
-	print("🔍 SEARCH DEBUG: UIView mode: %s" % ui_view.mode)
 	
 	# Check if this UIView contains a TabContainer
 	if ui_view.mode == UIView.MODE.TAB:
-		print("🔍 SEARCH DEBUG: Found TAB mode UIView")
 		var tab_container = ui_view._get_primary_child() as UITabContainer
-		print("🔍 SEARCH DEBUG: Primary child (should be TabContainer): %s" % tab_container)
 		if tab_container != null and tab_container.get_tab_count() > 0:
-			print("🔍 SEARCH DEBUG: TabContainer has %d tabs, current tab: %d" % [tab_container.get_tab_count(), tab_container.current_tab])
 			var active_control = tab_container.get_tab_control(tab_container.current_tab)
-			print("🔍 SEARCH DEBUG: Active control: %s" % active_control)
 			if active_control is UI_BrainMonitor_3DScene:
-				print("🔍 SEARCH DEBUG: ✅ Found active BrainMonitor tab: %s" % active_control.name)
 				return active_control as UI_BrainMonitor_3DScene
-			else:
-				print("🔍 SEARCH DEBUG: ❌ Active control is not a BrainMonitor (type: %s)" % active_control.get_class())
-		else:
-			print("🔍 SEARCH DEBUG: ❌ TabContainer is null or has no tabs")
 	
 	# If split mode, check both primary and secondary children
 	elif ui_view.mode == UIView.MODE.SPLIT:
-		print("🔍 SEARCH DEBUG: Found SPLIT mode UIView")
-		
 		# Check primary child (recursive)
 		var primary_child = ui_view._get_primary_child()
-		print("🔍 SEARCH DEBUG: Primary child: %s" % primary_child)
 		if primary_child is UIView:
-			print("🔍 SEARCH DEBUG: Primary is UIView, searching recursively...")
 			var result = _search_for_active_brain_monitor_in_view(primary_child as UIView)
 			if result != null:
 				return result
 		elif primary_child is UITabContainer:
-			print("🔍 SEARCH DEBUG: Primary is TabContainer")
 			var tab_container = primary_child as UITabContainer
-			print("🔍 SEARCH DEBUG: Primary TabContainer has %d tabs, current: %d" % [tab_container.get_tab_count(), tab_container.current_tab])
 			if tab_container.get_tab_count() > 0:
 				var active_control = tab_container.get_tab_control(tab_container.current_tab)
-				print("🔍 SEARCH DEBUG: Primary active control: %s" % active_control)
 				if active_control is UI_BrainMonitor_3DScene:
-					print("🔍 SEARCH DEBUG: ✅ Found BrainMonitor in PRIMARY: %s" % active_control.name)
 					return active_control as UI_BrainMonitor_3DScene
 		
 		# Check secondary child (recursive)
 		var secondary_child = ui_view._get_secondary_child()
-		print("🔍 SEARCH DEBUG: Secondary child: %s" % secondary_child)
 		if secondary_child is UIView:
-			print("🔍 SEARCH DEBUG: Secondary is UIView, searching recursively...")
 			var result = _search_for_active_brain_monitor_in_view(secondary_child as UIView)
 			if result != null:
 				return result
 		elif secondary_child is UITabContainer:
-			print("🔍 SEARCH DEBUG: Secondary is TabContainer")
 			var tab_container = secondary_child as UITabContainer
-			print("🔍 SEARCH DEBUG: Secondary TabContainer has %d tabs, current: %d" % [tab_container.get_tab_count(), tab_container.current_tab])
 			if tab_container.get_tab_count() > 0:
 				var active_control = tab_container.get_tab_control(tab_container.current_tab)
-				print("🔍 SEARCH DEBUG: Secondary active control: %s" % active_control)
 				if active_control is UI_BrainMonitor_3DScene:
-					print("🔍 SEARCH DEBUG: ✅ Found BrainMonitor in SECONDARY: %s" % active_control.name)
 					return active_control as UI_BrainMonitor_3DScene
 	
-	print("🔍 SEARCH DEBUG: ❌ No active BrainMonitor found in this UIView")
 	return null
 	
 	

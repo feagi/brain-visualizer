@@ -285,61 +285,25 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 		collapsibles[i].is_open = expanded[i]
 
 func _setup_bm_prevew() -> void:
-	print("🎯 DEBUG: _setup_bm_prevew() called for cortical area preview")
 	if _preview:
-		print("🎯 DEBUG: Preview already exists, analyzing and clearing...")
-		print("🔍 EXISTING PREVIEW DEBUG:")
-		print("  - Preview object: %s" % _preview)
-		print("  - Preview parent: %s" % (_preview.get_parent() if _preview else "None"))
-		if _preview and _preview.get_parent():
-			print("  - Parent's parent: %s" % _preview.get_parent().get_parent())
-			print("  - Parent instance ID: %d" % _preview.get_parent().get_instance_id())
-		print("  - Preview in scene tree: %s" % (_preview.is_inside_tree() if _preview else "N/A"))
-		print("  - Preview has renderer: %s" % (_preview._renderer != null if _preview else "N/A"))
-		if _preview and _preview._renderer:
-			print("  - Renderer in scene tree: %s" % _preview._renderer.is_inside_tree())
-			print("  - Renderer has static body: %s" % (_preview._renderer._static_body != null))
-			if _preview._renderer._static_body:
-				var static_body = _preview._renderer._static_body
-				print("  - Static body visible: %s" % static_body.visible)
-				print("  - Static body position: %s" % static_body.position)
-				print("  - Static body scale: %s" % static_body.scale)
-				var mesh_instance = static_body.get_node_or_null("MeshInstance3D")
-				if mesh_instance:
-					print("  - MeshInstance3D exists: %s" % mesh_instance)
-					print("  - MeshInstance3D visible: %s" % mesh_instance.visible)
-					print("  - Has material override: %s" % (mesh_instance.material_override != null))
-		
-		# Clear the existing preview to force recreation
-		print("🧹 DEBUG: Clearing existing preview to force fresh creation...")
-		if _preview:
-			_preview.queue_free()
-		_preview = null
+		return
 	
 	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
 	var preview_position = _get_preview_position_for_cortical_area()
-	print("🎯 DEBUG: Preview position calculated: %s" % preview_position)
 	
-	print("🎯 DEBUG: About to call BV.UI.get_active_brain_monitor()")
 	var active_bm = BV.UI.get_active_brain_monitor()
-	print("🎯 DEBUG: Active brain monitor obtained: %s" % (active_bm.name if active_bm else "null"))
-	
 	if active_bm == null:
 		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
 		return
 	
 	_preview = active_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false)
-	print("🎯 DEBUG: Preview created: %s" % _preview)
-	
 	var moves: Array[Signal] = [_vector_position.user_updated_vector]
 	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
 	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 	_preview.connect_UI_signals(moves, resizes, closes)
-	print("🎯 DEBUG: Preview signals connected")
 	
 	# CRITICAL: Also connect to resize signal to update preview position for I/O areas
 	_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
-	print("🔮 Connected preview resize handler for potential I/O area")
 
 ## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
 func _get_preview_position_for_cortical_area() -> Vector3i:
