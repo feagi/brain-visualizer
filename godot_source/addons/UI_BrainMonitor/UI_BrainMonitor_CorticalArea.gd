@@ -240,7 +240,8 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 		print("   📍 Destination position: ", destination_position)
 		
 		if destination_position != Vector3.ZERO:  # Valid position found
-			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, false, is_global_mode)
+			var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
+			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, mapping_set, is_global_mode)
 			_connection_curves.append(curve_node)
 			add_child(curve_node)
 			curves_created += 1
@@ -262,7 +263,8 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 			print("   📍 Source position: ", source_area_position)
 			
 			if source_area_position != Vector3.ZERO:  # Valid position found
-				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, true, is_global_mode)
+				var mapping_set: InterCorticalMappingSet = afferent_mappings[source_area]
+				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, mapping_set, is_global_mode)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -284,7 +286,8 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 			print("   🎯 Processing RECURSIVE connection in: ", recursive_area.cortical_ID)
 			
 			# Create a self-looping curve
-			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID, is_global_mode)
+			var mapping_set: InterCorticalMappingSet = recursive_mappings[recursive_area]
+			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID, mapping_set, is_global_mode)
 			_connection_curves.append(loop_node)
 			add_child(loop_node)
 			curves_created += 1
@@ -374,14 +377,18 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	return target_visualization._get_cortical_area_center_position()
 
 ## Create a 3D curve connecting two points
-func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, is_incoming: bool = false, is_global_mode: bool = false) -> Node3D:
-	var direction_text = "OUTGOING to" if not is_incoming else "INCOMING from"
-	print("     🎨 Creating 3D curve ", direction_text, " ", connection_id, ": ", start_pos, " → ", end_pos)
+func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
+	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
+	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
+	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
+	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
+	print("     🎨 Creating 3D curve ", connection_type, " ", plasticity_type, " to ", connection_id, ": ", start_pos, " → ", end_pos)
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
-	var prefix = "OUT_to_" if not is_incoming else "IN_from_"
-	connection_node.name = prefix + connection_id
+	var type_prefix = "INH_" if is_inhibitory else "EXC_"
+	var plastic_prefix = "PLA_" if is_plastic else "STD_" 
+	connection_node.name = type_prefix + plastic_prefix + connection_id
 	
 	# Calculate curve parameters
 	var direction = (end_pos - start_pos)
@@ -392,11 +399,18 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	var arc_height = distance * 0.4  # 40% of distance for nice arc
 	var control_point = mid_point + Vector3(0, arc_height, 0)
 	
+	# For plastic connections, add wobble effect by modifying control point and segments
+	var is_wobbly = is_plastic
+	
 	print("     🌈 Arc height: ", arc_height, " Control point: ", control_point)
 	
-	# Create curve segments - more segments = smoother curve
-	var num_segments = 12  # Good balance between smoothness and performance
-	var segment_material = _create_curve_material(is_incoming, is_global_mode)
+	# Create curve segments - more segments = smoother curve  
+	var num_segments = 20 if is_wobbly else 12  # Even more segments for dramatic wobbly curves
+	var segment_material = _create_curve_material(is_inhibitory, is_global_mode)
+	
+	# Create animated material for plastic connections with breathing effect
+	if is_plastic:
+		segment_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
@@ -409,7 +423,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		var point1 = _quadratic_bezier(start_pos, control_point, end_pos, t1)
 		var point2 = _quadratic_bezier(start_pos, control_point, end_pos, t2)
 		
-		# Store points for animation
+		# Store base points for animation (without wobble initially)
 		if i == 0:
 			curve_points.append(point1)
 		curve_points.append(point2)
@@ -417,9 +431,14 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		# Create cylinder segment between these two points
 		var segment = _create_curve_segment(point1, point2, i, segment_material)
 		connection_node.add_child(segment)
+		
+		# Add continuous wobble animation for plastic connections
+		if is_plastic:
+			_add_continuous_wobble_animation(segment, point1, point2, t1, t2, start_pos, control_point, end_pos)
+			_add_plastic_thickness_animation(segment, t1)
 	
 	# Create pulse animation along this curve
-	_create_pulse_animation(connection_node, curve_points, connection_id, is_incoming)
+	_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
 	
 	print("     ✨ Created beautiful 3D curve with ", num_segments, " segments and pulse animation")
 	return connection_node
@@ -465,8 +484,8 @@ func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: 
 	mesh_instance.material_override = material
 	return mesh_instance
 
-## Create material for curve segments
-func _create_curve_material(is_incoming: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+## Create material for curve segments based on inhibitory/excitatory properties
+func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
 	if is_global_mode:
@@ -474,16 +493,16 @@ func _create_curve_material(is_incoming: bool = false, is_global_mode: bool = fa
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
 		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
 		print("     ⚪ Using GRAY material for GLOBAL mode connection")
-	elif is_incoming:
-		# Incoming connections - Green/Lime color
+	elif is_inhibitory:
+		# Inhibitory connections - Red color
+		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
+		material.emission_color = Color(0.8, 0.1, 0.1)
+		print("     🔴 Using RED material for INHIBITORY connection")
+	else:
+		# Excitatory (non-inhibitory) connections - Green color
 		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
 		material.emission_color = Color(0.1, 0.8, 0.2)
-		print("     🟢 Using GREEN material for INCOMING connection")
-	else:
-		# Outgoing connections - Cyan/Blue color  
-		material.albedo_color = Color(0.2, 0.8, 1.0, 0.9)  # Beautiful cyan
-		material.emission_color = Color(0.1, 0.6, 1.0)
-		print("     🔵 Using CYAN material for OUTGOING connection")
+		print("     🟢 Using GREEN material for EXCITATORY connection")
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.0
@@ -493,9 +512,9 @@ func _create_curve_material(is_incoming: bool = false, is_global_mode: bool = fa
 	return material
 
 ## Create pulse animation along the curve
-func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], connection_id: StringName, is_incoming: bool = false) -> void:
-	var direction_text = "to" if not is_incoming else "from"
-	print("     ⚡ Creating pulse animation for connection ", direction_text, ": ", connection_id)
+func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], connection_id: StringName, is_inhibitory: bool = false) -> void:
+	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
+	print("     ⚡ Creating pulse animation for ", connection_type, " connection: ", connection_id)
 	
 	# Create multiple pulse spheres for continuous animation
 	var num_pulses = 3  # Multiple pulses traveling at once
@@ -513,18 +532,18 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		sphere_mesh.rings = 4
 		pulse_sphere.mesh = sphere_mesh
 		
-		# Create bright pulsing material with different colors for direction
+		# Create bright pulsing material with different colors based on connection type
 		var pulse_material = StandardMaterial3D.new()
-		if is_incoming:
-			# Incoming pulses - Bright lime/green
+		if is_inhibitory:
+			# Inhibitory pulses - Bright red/orange
+			pulse_material.albedo_color = Color(1.0, 0.5, 0.3, 0.8)  # Bright red-orange
+			pulse_material.emission_color = Color(1.0, 0.3, 0.1)
+			print("       🔴 Creating RED pulse for INHIBITORY connection")
+		else:
+			# Excitatory pulses - Bright lime/green
 			pulse_material.albedo_color = Color(0.3, 1.0, 0.3, 0.8)  # Bright lime
 			pulse_material.emission_color = Color(0.2, 1.0, 0.2)
-			print("       🟢 Creating GREEN pulse for INCOMING connection")
-		else:
-			# Outgoing pulses - Bright yellow/orange
-			pulse_material.albedo_color = Color(1.0, 1.0, 0.3, 0.8)  # Bright yellow
-			pulse_material.emission_color = Color(1.0, 0.8, 0.0)
-			print("       🟡 Creating YELLOW pulse for OUTGOING connection")
+			print("       🟢 Creating GREEN pulse for EXCITATORY connection")
 		
 		pulse_material.emission_enabled = true
 		pulse_material.emission_energy = 4.0
@@ -578,12 +597,18 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 	print("     ✨ Created ", num_pulses, " animated pulses")
 
 ## Create a recursive (self-looping) connection
-func _create_recursive_loop(center_pos: Vector3, area_id: StringName, is_global_mode: bool = false) -> Node3D:
-	print("     🔄 Creating recursive loop for: ", area_id, " at position: ", center_pos)
+func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
+	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
+	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
+	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
+	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
+	print("     🔄 Creating recursive loop ", connection_type, " ", plasticity_type, " for: ", area_id, " at position: ", center_pos)
 	
 	# Create a container for the loop
 	var loop_node = Node3D.new()
-	loop_node.name = "RECURSIVE_" + area_id
+	var type_prefix = "INH_RECURS_" if is_inhibitory else "EXC_RECURS_"
+	var plastic_prefix = "PLA_" if is_plastic else "STD_"
+	loop_node.name = type_prefix + plastic_prefix + area_id
 	
 	# Create a circular loop around the cortical area
 	var loop_radius = 3.0  # Radius of the loop around the area
@@ -601,22 +626,35 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, is_global_
 		)
 		loop_points.append(loop_point)
 	
-	# Create loop segments
-	var loop_material = _create_recursive_material(is_global_mode)
+	# Create loop segments with wobble effect for plastic connections
+	var loop_material = _create_recursive_material(is_inhibitory, is_global_mode)
+	
+	# Use enhanced plastic material for plastic recursive connections
+	if is_plastic:
+		loop_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 	for i in range(num_segments):
 		var point1 = loop_points[i]
 		var point2 = loop_points[i + 1]
+		
 		var segment = _create_curve_segment(point1, point2, i, loop_material)
 		loop_node.add_child(segment)
+		
+		# Add continuous wobble and thickness animation for plastic recursive connections
+		if is_plastic:
+			var t1 = float(i) / float(num_segments)
+			var t2 = float(i + 1) / float(num_segments)
+			# For recursive loops, create a simplified wobble around the base loop position
+			_add_continuous_loop_wobble_animation(segment, point1, point2, t1)
+			_add_plastic_thickness_animation(segment, t1)
 	
 	# Create recursive pulse animation
-	_create_recursive_pulse_animation(loop_node, loop_points, area_id)
+	_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
 	
 	print("     ✨ Created recursive loop with ", num_segments, " segments")
 	return loop_node
 
-## Create material for recursive connections
-func _create_recursive_material(is_global_mode: bool = false) -> StandardMaterial3D:
+## Create material for recursive connections based on inhibitory/excitatory properties
+func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
 	if is_global_mode:
@@ -624,11 +662,16 @@ func _create_recursive_material(is_global_mode: bool = false) -> StandardMateria
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
 		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
 		print("     ⚪ Using GRAY material for GLOBAL mode RECURSIVE connection")
+	elif is_inhibitory:
+		# Inhibitory recursive connections - Dark red/maroon
+		material.albedo_color = Color(0.8, 0.2, 0.2, 0.9)  # Dark red
+		material.emission_color = Color(0.6, 0.1, 0.1)
+		print("     🟤 Using DARK RED material for INHIBITORY RECURSIVE connection")
 	else:
-		# Recursive connections - Purple/Magenta color
+		# Excitatory recursive connections - Purple/Magenta color (distinct from regular green)
 		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
 		material.emission_color = Color(0.8, 0.2, 0.8)
-		print("     🟣 Using MAGENTA material for RECURSIVE connection")
+		print("     🟣 Using MAGENTA material for EXCITATORY RECURSIVE connection")
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.5
@@ -638,8 +681,9 @@ func _create_recursive_material(is_global_mode: bool = false) -> StandardMateria
 	return material
 
 ## Create pulse animation for recursive loops
-func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vector3], area_id: StringName) -> void:
-	print("     ⚡ Creating recursive pulse animation for: ", area_id)
+func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vector3], area_id: StringName, is_inhibitory: bool = false) -> void:
+	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
+	print("     ⚡ Creating ", connection_type, " recursive pulse animation for: ", area_id)
 	
 	# Create multiple pulses traveling around the loop
 	var num_pulses = 2  # Fewer pulses for cleaner loop animation
@@ -657,18 +701,26 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		sphere_mesh.rings = 4
 		pulse_sphere.mesh = sphere_mesh
 		
-		# Create bright purple pulsing material
+		# Create bright pulsing material based on connection type
 		var pulse_material = StandardMaterial3D.new()
-		pulse_material.albedo_color = Color(1.0, 0.5, 1.0, 0.8)  # Bright purple
 		pulse_material.emission_enabled = true
-		pulse_material.emission_color = Color(1.0, 0.3, 1.0)
 		pulse_material.emission_energy = 4.0
 		pulse_material.flags_unshaded = true
 		pulse_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		pulse_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		pulse_sphere.material_override = pulse_material
 		
-		print("       🟣 Creating PURPLE pulse for RECURSIVE connection")
+		if is_inhibitory:
+			# Inhibitory recursive - Dark red pulse
+			pulse_material.albedo_color = Color(0.8, 0.3, 0.3, 0.8)  # Dark red
+			pulse_material.emission_color = Color(0.8, 0.2, 0.2)
+			print("       🟤 Creating DARK RED pulse for INHIBITORY RECURSIVE connection")
+		else:
+			# Excitatory recursive - Bright purple pulse
+			pulse_material.albedo_color = Color(1.0, 0.5, 1.0, 0.8)  # Bright purple
+			pulse_material.emission_color = Color(1.0, 0.3, 1.0)
+			print("       🟣 Creating PURPLE pulse for EXCITATORY RECURSIVE connection")
+		
+		pulse_sphere.material_override = pulse_material
 		
 		# Start pulse at beginning of loop
 		pulse_sphere.position = loop_points[0]
@@ -719,3 +771,271 @@ func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
 	# Add more cortical area IDs here that should use PNG icons
 	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
 	return area.cortical_ID in png_icon_areas
+
+## Helper function to determine if a mapping set contains inhibitory connections
+func _is_mapping_set_inhibitory(mapping_set: InterCorticalMappingSet) -> bool:
+	"""Check if the mapping set contains any inhibitory connections (negative PSC multiplier)"""
+	if mapping_set == null or mapping_set.mappings.is_empty():
+		return false
+	
+	# Check all mappings in the set
+	for mapping in mapping_set.mappings:
+		if mapping.post_synaptic_current_multiplier < 0:
+			return true  # At least one inhibitory connection found
+	
+	return false  # All connections are excitatory
+
+## Helper function to determine if a mapping set contains plastic connections
+func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
+	"""Check if the mapping set contains any plastic connections"""
+	if mapping_set == null or mapping_set.mappings.is_empty():
+		return false
+	
+	# Check all mappings in the set
+	for mapping in mapping_set.mappings:
+		if mapping.is_plastic:
+			return true  # At least one plastic connection found
+	
+	return false  # All connections are non-plastic
+
+## Helper function to determine if MAJORITY of mappings in a set are plastic (for connection-wide effects)
+func _is_mapping_set_majority_plastic(mapping_set: InterCorticalMappingSet) -> bool:
+	"""Check if the majority of mappings in the set are plastic - use this for visual effects"""
+	if mapping_set == null or mapping_set.mappings.is_empty():
+		return false
+	
+	var plastic_count = 0
+	var total_count = mapping_set.mappings.size()
+	
+	for mapping in mapping_set.mappings:
+		if mapping.is_plastic:
+			plastic_count += 1
+	
+	return plastic_count > (total_count / 2)  # More than 50% are plastic
+
+## Add dramatic wobble effect to a point for plastic connections
+func _add_wobble_to_point(point: Vector3, t: float) -> Vector3:
+	"""Add a dramatic, highly visible wobble effect to connection points for plastic connections"""
+	var time = Time.get_ticks_msec() / 1000.0  # Current time in seconds
+	var wobble_strength = 1.2  # Much stronger wobble - 4x stronger than before
+	var wobble_frequency = 1.5  # Slightly slower for more dramatic effect
+	
+	# Create multiple layered sine waves for very organic, snake-like movement
+	var primary_wobble_x = sin(time * wobble_frequency + t * PI * 2) * wobble_strength
+	var primary_wobble_y = cos(time * wobble_frequency * 1.3 + t * PI * 1.5) * wobble_strength * 0.8
+	var primary_wobble_z = sin(time * wobble_frequency * 0.8 + t * PI * 2.5) * wobble_strength
+	
+	# Add secondary higher-frequency ripples for more complexity
+	var ripple_strength = wobble_strength * 0.3
+	var ripple_frequency = wobble_frequency * 3.5
+	var secondary_wobble_x = sin(time * ripple_frequency + t * PI * 4) * ripple_strength
+	var secondary_wobble_y = cos(time * ripple_frequency * 1.7 + t * PI * 3) * ripple_strength
+	var secondary_wobble_z = sin(time * ripple_frequency * 1.2 + t * PI * 5) * ripple_strength
+	
+	# Combine primary and secondary wobbles
+	var total_wobble = Vector3(
+		primary_wobble_x + secondary_wobble_x,
+		primary_wobble_y + secondary_wobble_y,
+		primary_wobble_z + secondary_wobble_z
+	)
+	
+	return point + total_wobble
+
+## Create animated material for plastic connections with pulsing effects
+func _create_plastic_animated_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+	"""Create a dynamic, pulsing material for plastic connections with enhanced visual effects"""
+	var material = StandardMaterial3D.new()
+	
+	if is_global_mode:
+		# Global mode - Gray color for all connections
+		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)
+		material.emission_color = Color(0.5, 0.5, 0.5)
+		print("     ⚪ Using GRAY PLASTIC material for GLOBAL mode connection")
+	elif is_inhibitory:
+		# Inhibitory plastic connections - Enhanced red with stronger base emission
+		material.albedo_color = Color(1.0, 0.3, 0.3, 0.95)  # More opaque for visibility
+		material.emission_color = Color(1.0, 0.2, 0.2)  # Brighter emission
+		print("     🔴⚡ Using ANIMATED RED material for INHIBITORY PLASTIC connection")
+	else:
+		# Excitatory plastic connections - Enhanced green with stronger base emission  
+		material.albedo_color = Color(0.3, 1.0, 0.4, 0.95)  # More opaque for visibility
+		material.emission_color = Color(0.2, 1.0, 0.3)  # Brighter emission
+		print("     🟢⚡ Using ANIMATED GREEN material for EXCITATORY PLASTIC connection")
+	
+	material.emission_enabled = true
+	material.emission_energy = 3.0  # Higher base emission for plastic connections
+	material.flags_unshaded = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.metallic = 0.3  # Add some metallic sheen for plastic connections
+	material.roughness = 0.4
+	
+	return material
+
+## Add dynamic thickness animation to plastic connection segments
+func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float) -> void:
+	"""Add breathing/pulsing thickness animation to plastic connection segments"""
+	if not segment or not segment.mesh:
+		return
+	
+	# Create a tween for continuous thickness animation
+	var thickness_tween = create_tween()
+	thickness_tween.set_loops()  # Infinite animation
+	
+	# Store reference to the original cylinder mesh
+	var cylinder_mesh = segment.mesh as CylinderMesh
+	if not cylinder_mesh:
+		return
+	
+	var base_radius = cylinder_mesh.top_radius
+	var thickness_variation = 0.08  # More subtle thickness variation (8% instead of 15%)
+	var breathing_speed = 2.5 + (t_position * 0.5)  # Speed varies along curve
+	
+	print("       🫁 Adding breathing thickness animation to plastic segment at t=", t_position)
+	
+	# Animate thickness with breathing effect
+	thickness_tween.tween_method(
+		func(scale_factor: float):
+			# Safety checks - ensure objects still exist
+			if not segment or not is_instance_valid(segment):
+				thickness_tween.kill()  # Stop animation if segment is destroyed
+				return
+			
+			if not cylinder_mesh or not is_instance_valid(cylinder_mesh):
+				thickness_tween.kill()  # Stop animation if mesh is destroyed
+				return
+			
+			var time_offset = t_position * PI * 2  # Phase shift based on position
+			var breathing = sin(Time.get_ticks_msec() / 1000.0 * breathing_speed + time_offset) * thickness_variation
+			var new_radius = base_radius * (1.0 + breathing)
+			
+			# Apply thickness changes safely
+			cylinder_mesh.top_radius = new_radius
+			cylinder_mesh.bottom_radius = new_radius
+			
+			# Also pulse the material emission energy with null safety
+			if segment.material_override != null:
+				var material = segment.material_override as StandardMaterial3D
+				if material != null:
+					var emission_pulse = 1.0 + (sin(Time.get_ticks_msec() / 1000.0 * breathing_speed * 1.5 + time_offset) * 0.2)  # More subtle pulse - reduced from 0.4 to 0.2
+					material.emission_energy = 3.0 * emission_pulse,
+		0.0,
+		1.0,
+		breathing_speed
+	)
+
+## Add continuous wobble animation to plastic connection segments
+func _add_continuous_wobble_animation(segment: MeshInstance3D, base_point1: Vector3, base_point2: Vector3, t1: float, t2: float, curve_start: Vector3, curve_control: Vector3, curve_end: Vector3) -> void:
+	"""Create continuous wobble animation for plastic connection segments"""
+	if not segment:
+		return
+	
+	print("       🌊 Adding continuous wobble animation to plastic segment at t1=", t1, " t2=", t2)
+	
+	# Create a tween for continuous position animation
+	var wobble_tween = create_tween()
+	wobble_tween.set_loops()  # Infinite animation
+	
+	# Store base positions and curve info
+	var segment_center = (base_point1 + base_point2) / 2.0
+	var segment_direction = (base_point2 - base_point1).normalized()
+	var segment_length = base_point1.distance_to(base_point2)
+	
+	# Animate the segment position with wobble
+	wobble_tween.tween_method(
+		func(animation_time: float):
+			# Safety check
+			if not segment or not is_instance_valid(segment):
+				wobble_tween.kill()
+				return
+			
+			# Calculate subtle wobble offset
+			var wobble_strength = 0.4  # Much more subtle - reduced from 1.2
+			var wobble_frequency = 1.2  # Slightly slower
+			var time_offset = (t1 + t2) * 0.5 * PI * 2  # Phase shift based on position along curve
+			
+			# Create gentle layered wobble movement
+			var primary_wobble_x = sin(animation_time * wobble_frequency + time_offset) * wobble_strength
+			var primary_wobble_y = cos(animation_time * wobble_frequency * 1.3 + time_offset * 1.5) * wobble_strength * 0.7
+			var primary_wobble_z = sin(animation_time * wobble_frequency * 0.8 + time_offset * 2.5) * wobble_strength
+			
+			# Add very gentle secondary ripples
+			var ripple_strength = wobble_strength * 0.2  # Reduced from 0.3
+			var ripple_frequency = wobble_frequency * 2.5  # Reduced from 3.5
+			var secondary_wobble_x = sin(animation_time * ripple_frequency + time_offset * 4) * ripple_strength
+			var secondary_wobble_y = cos(animation_time * ripple_frequency * 1.7 + time_offset * 3) * ripple_strength
+			var secondary_wobble_z = sin(animation_time * ripple_frequency * 1.2 + time_offset * 5) * ripple_strength
+			
+			var total_wobble = Vector3(
+				primary_wobble_x + secondary_wobble_x,
+				primary_wobble_y + secondary_wobble_y,
+				primary_wobble_z + secondary_wobble_z
+			)
+			
+			# Apply wobble to segment center position
+			var new_center = segment_center + total_wobble
+			
+			# Recalculate the segment endpoints with wobble
+			var half_direction = segment_direction * (segment_length / 2.0)
+			var new_point1 = new_center - half_direction + total_wobble * 0.3  # Vary endpoints slightly
+			var new_point2 = new_center + half_direction + total_wobble * 0.7
+			
+			# Update segment position and orientation
+			segment.position = (new_point1 + new_point2) / 2.0
+			
+			# Update segment rotation to face new direction
+			var new_direction = (new_point2 - new_point1).normalized()
+			if new_direction.length() > 0.001:
+				var up_vector = Vector3.UP
+				if abs(new_direction.dot(Vector3.UP)) > 0.9:
+					up_vector = Vector3.FORWARD
+				var right_vector = up_vector.cross(new_direction).normalized()
+				var corrected_up = new_direction.cross(right_vector).normalized()
+				segment.basis = Basis(right_vector, new_direction, corrected_up),
+		0.0,
+		100.0,  # Long animation time for smooth looping
+		5.0     # 5 second loop cycle
+	)
+
+## Add continuous wobble animation to plastic recursive loop segments
+func _add_continuous_loop_wobble_animation(segment: MeshInstance3D, base_point1: Vector3, base_point2: Vector3, t_position: float) -> void:
+	"""Create continuous wobble animation for plastic recursive loop segments"""
+	if not segment:
+		return
+	
+	print("       🔄 Adding continuous loop wobble animation to plastic segment at t=", t_position)
+	
+	# Create a tween for continuous position animation
+	var loop_wobble_tween = create_tween()
+	loop_wobble_tween.set_loops()  # Infinite animation
+	
+	# Store base positions
+	var segment_center = (base_point1 + base_point2) / 2.0
+	var segment_direction = (base_point2 - base_point1).normalized()
+	var segment_length = base_point1.distance_to(base_point2)
+	
+	# Animate the segment position with wobble (simpler for loops)
+	loop_wobble_tween.tween_method(
+		func(animation_time: float):
+			# Safety check
+			if not segment or not is_instance_valid(segment):
+				loop_wobble_tween.kill()
+				return
+			
+			# Calculate subtle wobble offset (simpler for recursive loops)
+			var wobble_strength = 0.3  # Much more subtle - reduced from 0.8
+			var wobble_frequency = 1.4  # Slightly slower
+			var time_offset = t_position * PI * 2
+			
+			var wobble_x = sin(animation_time * wobble_frequency + time_offset) * wobble_strength
+			var wobble_y = cos(animation_time * wobble_frequency * 1.2 + time_offset * 1.3) * wobble_strength * 0.6
+			var wobble_z = sin(animation_time * wobble_frequency * 0.9 + time_offset * 1.8) * wobble_strength
+			
+			var total_wobble = Vector3(wobble_x, wobble_y, wobble_z)
+			
+			# Apply wobble to segment position
+			segment.position = segment_center + total_wobble,
+		0.0,
+		100.0,  # Long animation time for smooth looping
+		4.0     # 4 second loop cycle for recursive connections
+	)
