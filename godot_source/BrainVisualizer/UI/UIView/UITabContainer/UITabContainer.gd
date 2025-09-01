@@ -74,6 +74,9 @@ func spawn_BM_of_region(region: BrainRegion) -> void:
 	print("🧠 UITabContainer: Deferring setup for brain monitor: %s" % region.friendly_name)
 	new_bm.call_deferred("setup", region)
 	
+	# Set tab title after setup is complete
+	new_bm.call_deferred("_update_tab_title_after_setup")
+	
 	# Double check tab visibility after a brief delay
 	var timer = get_tree().create_timer(0.1)
 	timer.timeout.connect(_check_tab_visibility.bind(region, new_bm))

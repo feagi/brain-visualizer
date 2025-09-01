@@ -51,9 +51,35 @@ func _ready() -> void:
 	_pancake_cam = $SubViewport/Center/PancakeCam
 	if _pancake_cam:
 		_pancake_cam.BM_input_events.connect(_process_user_input)
+		
+		# 🚨 CRITICAL FIX: Ensure SubViewport has a World3D with proper environment
+		var subviewport = $SubViewport as SubViewport
+		if subviewport.world_3d == null:
+			print("🔧 INSTANCE: SubViewport missing World3D - setting up with environment...")
+			
+			# 🚨 CRITICAL FIX: Tab brain monitors need SEPARATE World3D to avoid seeing main content
+			if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
+				var main_viewport = BV.UI.temp_root_bm.get_child(0) as SubViewport
+				if main_viewport.world_3d != null:
+					print("🔧 INSTANCE: Creating SEPARATE World3D for tab (avoids shared content)")
+					subviewport.world_3d = _create_world3d_with_environment()
+					print("🔧 INSTANCE: Tab brain monitor now has isolated 3D world")
+				else:
+					print("🔧 INSTANCE: Main brain monitor also missing World3D - creating shared environment")
+					var shared_world = _create_world3d_with_environment()
+					subviewport.world_3d = shared_world
+					main_viewport.world_3d = shared_world
+			else:
+				print("🔧 INSTANCE: No main brain monitor - creating World3D with environment")
+				subviewport.world_3d = _create_world3d_with_environment()
+		
 		_world_3D = _pancake_cam.get_world_3d()
 		print("🔧 INSTANCE: Camera = %s (instance %d)" % [_pancake_cam, _pancake_cam.get_instance_id()])
-		print("🔧 INSTANCE: World3D = %s (RID: %s)" % [_world_3D, _world_3D.get_rid()])
+		print("🔧 INSTANCE: SubViewport World3D = %s" % subviewport.world_3d)
+		if _world_3D:
+			print("🔧 INSTANCE: Camera World3D = %s (RID: %s)" % [_world_3D, str(_world_3D.get_rid())])
+		else:
+			print("🔧 INSTANCE: Camera World3D is NULL!")
 	
 
 func setup(region: BrainRegion) -> void:
@@ -263,6 +289,25 @@ func setup(region: BrainRegion) -> void:
 	if dict_count != visual_count:
 		print("  ⚠️ SMOKING GUN: Dictionary and visual content don't match!")
 		print("  ⚠️ This explains why you see different content than expected!")
+	
+	# 🚨 CRITICAL TEST: Are you maybe seeing content from BOTH brain monitors at once?
+	print("  🔍 CAMERA DEBUG:")
+	print("    📷 Camera position: %s" % _pancake_cam.position)
+	print("    🎯 Camera is looking at: %s" % (_pancake_cam.position - _pancake_cam.transform.basis.z * 100))
+	
+	if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
+		var main_root = BV.UI.temp_root_bm._node_3D_root
+		var this_root = _node_3D_root
+		print("  🔍 POTENTIAL OVERLAP CHECK:")
+		print("    📺 MAIN brain monitor 3D root: %s (instance %d)" % [main_root, main_root.get_instance_id()])
+		print("    📺 THIS brain monitor 3D root: %s (instance %d)" % [this_root, this_root.get_instance_id()])
+		print("    📺 Are they the same root? %s" % (main_root == this_root))
+		
+		if main_root == this_root:
+			print("    ⚠️ SMOKING GUN: Both brain monitors share the same 3D root!")
+			print("    ⚠️ This would cause overlapping content!")
+		else:
+			print("    ✅ Good: Each brain monitor has separate 3D roots")
 
 	# 🚨 CRITICAL DEBUG: List all cortical areas in this brain monitor instance
 	print("  🎯 FINAL VERIFICATION - Areas in brain monitor '%s':" % name)
@@ -306,26 +351,119 @@ func setup(region: BrainRegion) -> void:
 	else:
 		print("  ✅ VERIFICATION: All %d areas from region %s are visualized in this tab!" % [region.contained_cortical_areas.size(), region.friendly_name])
 	
-	# 🚨 VISUAL INDICATOR: Add a text label in 3D space to identify this brain monitor
+	# 🚨 MASSIVE VISUAL INDICATOR: Add huge bright label to identify this brain monitor
 	var label_3d = Label3D.new()
-	label_3d.text = "🎯 TAB: %s\n📊 %d areas (not %d)\n🚫 NOT ROOT REGION!" % [region.friendly_name, region.contained_cortical_areas.size(), root_region.contained_cortical_areas.size()]
+	label_3d.text = "🟡🟡🟡 TAB: %s 🟡🟡🟡\n🔥🔥 %d AREAS ONLY 🔥🔥\n⚡⚡ NOT ROOT REGION ⚡⚡" % [region.friendly_name, region.contained_cortical_areas.size()]
 	label_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label_3d.modulate = Color.YELLOW  # Make it bright yellow
-	var label_material = StandardMaterial3D.new()
-	label_material.flags_unshaded = true
-	label_material.flags_transparent = false
-	label_material.albedo_color = Color.YELLOW
+	label_3d.modulate = Color.YELLOW
+	label_3d.pixel_size = 0.005  # Make it HUGE 
+	label_3d.font_size = 64  # Large font
+	label_3d.outline_size = 8  # Add outline for visibility
+	label_3d.outline_modulate = Color.BLACK
+	
+	# Position it high above the scene so it's always visible
 	if region.contained_cortical_areas.size() > 0:
 		var center_pos = Vector3.ZERO
 		for area in region.contained_cortical_areas:
 			center_pos += Vector3(area.coordinates_3D)  # Convert Vector3i to Vector3
 		center_pos /= region.contained_cortical_areas.size()
-		label_3d.position = center_pos + Vector3(0, 20, 0)  # Above the region
+		label_3d.position = center_pos + Vector3(0, 100, 0)  # WAY above the region
 	else:
-		label_3d.position = Vector3(0, 20, 0)
-	_node_3D_root.add_child(label_3d)
-	print("  🏷️ Added visual label to identify this brain monitor in 3D space")
+		label_3d.position = Vector3(0, 100, 0)
 	
+	_node_3D_root.add_child(label_3d)
+	print("  🏷️ Added MASSIVE yellow label to identify this brain monitor in 3D space")
+	print("  🏷️ Label position: %s" % label_3d.position)
+	print("  🏷️ Label text: %s" % label_3d.text.replace('\n', ' | '))
+	
+	# 🚨 CRITICAL: Add bright red wireframe box around the region to make it obvious
+	if region.contained_cortical_areas.size() > 0:
+		var mesh_instance = MeshInstance3D.new()
+		var box_mesh = BoxMesh.new()
+		box_mesh.size = Vector3(100, 50, 100)  # Large bounding box
+		mesh_instance.mesh = box_mesh
+		
+		var material = StandardMaterial3D.new()
+		material.albedo_color = Color.RED
+		material.flags_transparent = true
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.albedo_color.a = 0.3  # Semi-transparent
+		material.flags_unshaded = true
+		material.no_depth_test = true
+		mesh_instance.material_override = material
+		
+		var center_pos = Vector3.ZERO
+		for area in region.contained_cortical_areas:
+			center_pos += Vector3(area.coordinates_3D)
+		center_pos /= region.contained_cortical_areas.size()
+		mesh_instance.position = center_pos + Vector3(0, 25, 0)  # Above the areas
+		
+		_node_3D_root.add_child(mesh_instance)
+		print("  📦 Added bright red wireframe box around region %s" % region.friendly_name)
+	
+	# 🚨 CRITICAL VIEWPORT VERIFICATION
+	print("🚨 VIEWPORT VERIFICATION:")
+	print("  🎯 This brain monitor instance: %d" % get_instance_id())
+	
+	var this_viewport = get_child(0) as SubViewport
+	print("  🎯 This brain monitor's SubViewport: %s (instance %d)" % [this_viewport, this_viewport.get_instance_id()])
+	print("  🎯 This brain monitor's World3D: %s" % this_viewport.world_3d)
+	
+	if this_viewport.world_3d != null:
+		print("  ✅ GOOD: Brain monitor has World3D (RID: %s)" % str(this_viewport.world_3d.get_rid()))
+	else:
+		print("  ❌ ERROR: Brain monitor still missing World3D after _ready() fix!")
+	
+	if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
+		var main_viewport = BV.UI.temp_root_bm.get_child(0) as SubViewport
+		print("  📺 MAIN brain monitor's World3D: %s" % main_viewport.world_3d)
+		
+		if this_viewport.world_3d != null and main_viewport.world_3d != null:
+			var sharing_world = (main_viewport.world_3d == this_viewport.world_3d)
+			if sharing_world:
+				print("  ⚠️ PROBLEM: Both brain monitors share same World3D - this causes identical content!")
+				print("  ⚠️ Tab brain monitor should have separate World3D to show only filtered content!")
+			else:
+				print("  ✅ GOOD: Each brain monitor has separate World3D - isolated content!")
+		else:
+			print("  ⚠️ One or both brain monitors missing World3D")
+
+func _create_world3d_with_environment() -> World3D:
+	print("🌌 Creating World3D with proper environment and sky...")
+	var new_world = World3D.new()
+	
+	# Try to copy environment from the main scene's viewport
+	var main_viewport = get_viewport()
+	if main_viewport and main_viewport.world_3d and main_viewport.world_3d.environment:
+		print("🌌 Copying environment from main viewport")
+		new_world.environment = main_viewport.world_3d.environment
+		print("🌌 ✅ Copied environment from main scene")
+		return new_world
+	
+	# Fallback: Create basic environment if can't copy
+	print("🌌 Creating basic environment as fallback...")
+	var environment = Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color(0.0951993, 0.544281, 0.999948, 1)  # Sky blue
+	new_world.environment = environment
+	
+	print("🌌 ✅ Created World3D with basic environment")
+	return new_world
+
+
+func _update_tab_title_after_setup() -> void:
+	print("🏷️ Updating tab title after setup...")
+	if _representing_region and get_parent() is TabContainer:
+		var tab_container = get_parent() as TabContainer
+		var tab_index = tab_container.get_tab_idx_from_control(self)
+		if tab_index >= 0:
+			var new_title = _representing_region.friendly_name
+			tab_container.set_tab_title(tab_index, new_title)
+			print("🏷️ Set tab title to: '%s' (index %d)" % [new_title, tab_index])
+		else:
+			print("🏷️ Could not find tab index for this brain monitor")
+	else:
+		print("🏷️ No representing region or not in TabContainer")
 
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
