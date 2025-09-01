@@ -43,7 +43,6 @@ func setup_as_single_tab(tabs: Array[Control]) -> void:
 
 ## Sets up the UIView as a split view with secondary container visible  
 func setup_as_split() -> void:
-	print("🔄 UIView: Setting up split view mode")
 	_mode = MODE.SPLIT
 	_secondary_container.visible = true
 	_split_container.collapsed = false
@@ -55,12 +54,6 @@ func setup_as_split() -> void:
 		_secondary_container.add_child(secondary_tab)
 		secondary_tab.requested_view_region_as_CB.connect(show_or_create_CB_of_region)
 		secondary_tab.requested_view_region_as_BM.connect(show_or_create_BM_of_region)
-		print("🔄 UIView: Created secondary tab container")
-	
-	print("🔄 UIView: Split view setup complete")
-	print("🔄 UIView: Split container collapsed: %s" % _split_container.collapsed)
-	print("🔄 UIView: Secondary container visible: %s" % _secondary_container.visible)
-	print("🔄 UIView: Secondary container child count: %d" % _secondary_container.get_child_count())
 
 ## Gets the secondary tab container (for brain monitor tabs in split view)
 func get_secondary_tab_container() -> UITabContainer:
@@ -79,18 +72,12 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 
 ## Searches from the root [UIView] for a BM of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
 func show_or_create_BM_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
-	print("🧠 UIView: show_or_create_BM_of_region called for region: %s" % region.friendly_name)
-	print("🧠 UIView: Target tab container: %s" % UI_tab_to_create_in)
 	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_BM_of_given_region(region)
 	if UI_tab != null:
-		print("🧠 UIView: Found existing BM tab, bringing to top")
 		UI_tab.bring_existing_region_BM_to_top(region)
 		return
 	## Region doesn't exist as a BM anywhere, create one
-	print("🧠 UIView: Creating new 3D brain monitor tab for region: %s" % region.friendly_name)
-	print("🧠 UIView: Tab container before spawn: %d children" % UI_tab_to_create_in.get_child_count())
 	UI_tab_to_create_in.spawn_BM_of_region(region)
-	print("🧠 UIView: Tab container after spawn: %d children" % UI_tab_to_create_in.get_child_count())
 
 ## Closes all non-root [BrainRegion] views
 func close_all_non_root_brain_region_views() -> void:

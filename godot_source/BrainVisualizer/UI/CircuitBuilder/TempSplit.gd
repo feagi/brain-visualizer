@@ -9,6 +9,10 @@ enum STATES {
 }
 
 var _current_state: STATES = STATES.CB_CLOSED
+
+## Get the current split view state
+var current_state: STATES:
+	get: return _current_state
 var initial_y_offset: int
 
 func _ready() -> void:
