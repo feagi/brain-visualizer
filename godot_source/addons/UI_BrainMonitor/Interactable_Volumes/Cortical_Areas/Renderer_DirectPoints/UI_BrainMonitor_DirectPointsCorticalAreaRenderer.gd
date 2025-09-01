@@ -59,6 +59,10 @@ var _tesla_coil_material: ShaderMaterial
 var _is_tesla_coil_active: bool = false
 var _tesla_coil_tweens: Array[Tween] = []  # Store active tweens to stop them later
 
+# Memory area materials for state switching
+var _memory_jello_material: ShaderMaterial  # Active firing state material
+var _memory_transparent_material: ShaderMaterial  # Inactive transparent state material
+
 func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
@@ -107,13 +111,19 @@ func setup(area: AbstractCorticalArea) -> void:
 	_multi_mesh.use_colors = true
 	
 	# Create voxel (cube) mesh for each neuron - maintaining familiar voxel appearance
-	# For power areas, we don't want individual neuron cubes since the cone shows firing animation
+	# For power and memory areas, we don't want individual neuron cubes since the shape itself shows firing
 	if area.cortical_ID == "_power":
 		# Use a very small invisible mesh for power areas (firing animation is on the cone itself)
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
 		print("   ⚡ Power area uses invisible neuron voxels - firing shown on cone!")
+	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		# Use invisible mesh for memory areas (firing animation is on the sphere itself)
+		var invisible_mesh = BoxMesh.new()
+		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
+		_multi_mesh.mesh = invisible_mesh
+		print("   🔮 Memory area uses invisible neuron voxels - firing shown on sphere!")
 	else:
 		var voxel_mesh = BoxMesh.new()
 		voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
@@ -165,12 +175,15 @@ func setup(area: AbstractCorticalArea) -> void:
 		print("   📦 Created standard BOX outline for cortical area: ", area.cortical_ID)
 	# Use different materials based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		# Use custom jello material for memory spheres
-		var jello_mat = load(MEMORY_JELLO_MAT_PATH).duplicate()
-		_outline_mesh_instance.material_override = jello_mat
-		_outline_mesh_instance.visible = true  # Always visible for memory spheres
+		# Create both transparent and active materials for memory spheres
+		_memory_jello_material = load(MEMORY_JELLO_MAT_PATH).duplicate()
+		_memory_transparent_material = _create_transparent_memory_material()
+		
+		# Start with light blue cortical material (inactive state)
+		_outline_mesh_instance.material_override = _memory_transparent_material
+		_outline_mesh_instance.visible = true  # Always visible with light blue cortical color
 		_outline_mat = null  # Memory areas don't use the outline shader material
-		print("   🔮 Memory sphere uses custom jello material, always visible")
+		print("   🔮 Memory sphere created with LIGHT BLUE cortical material by default")
 	elif area.cortical_ID == "_power":
 		# Use custom neon blue material for power cone
 		_power_material = load(POWER_NEON_MAT_PATH).duplicate()
@@ -382,6 +395,11 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
 		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))  # Bright red emission
 		_power_material.set_shader_parameter("emission_energy", 1.5)  # Full glow
+	
+	# Make memory sphere use active jello material when neural activity occurs
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+		# print("   🔮 Memory sphere becoming active - switching to jello material")  # Suppressed to reduce log spam
+		_outline_mesh_instance.material_override = _memory_jello_material
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
@@ -474,6 +492,10 @@ func _clear_all_neurons() -> void:
 	"""Clear all neuron voxel instances"""
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
+	
+	# Restore memory sphere to transparent state when neurons are cleared
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
+		_outline_mesh_instance.material_override = _memory_transparent_material
 
 func _start_visibility_timer() -> void:
 	"""Start the visibility timer using simulation_timestep from cache"""
@@ -512,6 +534,11 @@ func _on_visibility_timeout() -> void:
 		_power_material.set_shader_parameter("albedo_color", Color(0.172451, 0.315246, 0.861982, 0.8))  # Light blue like cortical meshes
 		_power_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
 		_power_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow
+	
+	# Make memory sphere return to transparent state when no neural activity
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
+		# print("   🔮 Memory sphere becoming inactive - switching to transparent material")  # Suppressed to reduce log spam
+		_outline_mesh_instance.material_override = _memory_transparent_material
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
 	"""Convert world position to neuron coordinate"""
@@ -1033,4 +1060,19 @@ func _set_tesla_coil_active(active: bool) -> void:
 		
 		# Hide all spikes
 		for spike in _tesla_coil_spikes:
-			spike.visible = false 
+			spike.visible = false
+
+## Create inactive material for memory areas when not firing (light blue like cortical voxels)
+func _create_transparent_memory_material() -> ShaderMaterial:
+	"""Create a light blue cortical area colored version of the memory jello material for inactive state"""
+	var inactive_material = load(MEMORY_JELLO_MAT_PATH).duplicate()
+	
+	# Use the same light blue color as cortical area voxels (matching power cone inactive color)
+	var cortical_blue = Color(0.172451, 0.315246, 0.861982, 0.8)  # Light blue like cortical meshes
+	inactive_material.set_shader_parameter("albedo_color", cortical_blue)
+	inactive_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
+	inactive_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow like cortical areas
+	inactive_material.set_shader_parameter("rim_intensity", 0.8)  # Moderate rim lighting
+	
+	print("   🔮 Created inactive memory material: light blue cortical color")
+	return inactive_material 
