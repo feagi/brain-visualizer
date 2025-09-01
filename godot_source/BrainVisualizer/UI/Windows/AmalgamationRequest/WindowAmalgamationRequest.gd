@@ -31,13 +31,24 @@ func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: 
 	var closed_signals: Array[Signal] = [close_window_requested, FeagiCore.about_to_reload_genome]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimchange_signal]
-	_region_button.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION)
-	var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(Vector3i(0,0,0), circuit_size, false)
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	print("🔧 DEBUG: Setting up region button with root region: %s" % root_region)
+	_region_button.setup(root_region, GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION)
+	print("🔧 DEBUG: Region button setup complete, current_selected: %s" % _region_button.current_selected)
+	var active_bm = BV.UI.get_active_brain_monitor()
+	if active_bm == null:
+		push_error("WindowAmalgamationRequest: No brain monitor available for preview creation!")
+		return
+	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(Vector3i(0,0,0), circuit_size, false)
 	preview.connect_UI_signals(move_signals, resize_signals, closed_signals)
 	#BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
 
 
 func _import_pressed():
+	print("🔧 DEBUG: _import_pressed() called for amalgamation import")
+	print("🔧 DEBUG: Region button state: %s" % _region_button)
+	print("🔧 DEBUG: Region button current_selected: %s" % _region_button.current_selected)
+	
 	var wiring_mode: String = "none" #TODO move to an enum!
 	match(_wiring_selector.selected):
 		0:
@@ -47,7 +58,19 @@ func _import_pressed():
 		2:
 			wiring_mode = "none"
 	
-	FeagiCore.requests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID, _region_button.current_selected.genome_ID, wiring_mode)
+	var selected_region = _region_button.current_selected
+	if selected_region == null:
+		print("🔧 DEBUG: No region selected, falling back to root region")
+		selected_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+		if selected_region == null:
+			push_error("WindowAmalgamationRequest: No region available for amalgamation import!")
+			BV.NOTIF.add_notification("❌ No region available for amalgamation import!", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+			return
+	
+	print("🔧 DEBUG: Selected region: %s" % selected_region.friendly_name)
+	print("🔧 DEBUG: Selected region genome ID: %s" % selected_region.genome_ID)
+	
+	FeagiCore.requests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID, selected_region.genome_ID, wiring_mode)
 	close_window(false)
 
 #OVERRIDE

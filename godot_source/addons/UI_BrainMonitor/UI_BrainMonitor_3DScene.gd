@@ -307,11 +307,21 @@ func remove_neuron_cortical_are_selection_restrictions() -> void:
 
 ## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
 func create_preview(initial_FEAGI_soace_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool) -> UI_BrainMonitor_InteractivePreview:
+	print("🔮 DEBUG: create_preview() called on brain monitor: %s (instance %d)" % [name, get_instance_id()])
+	print("🔮 DEBUG: Creating preview at position: %s, dimensions: %s" % [initial_FEAGI_soace_position, initial_dimensions])
+	print("🔮 DEBUG: This brain monitor represents region: %s" % (_representing_region.friendly_name if _representing_region else "None"))
+	
 	var preview: UI_BrainMonitor_InteractivePreview = UI_BrainMonitor_InteractivePreview.new()
 	add_child(preview)
+	print("🔮 DEBUG: Preview added as child to brain monitor")
+	
 	preview.setup(initial_FEAGI_soace_position, initial_dimensions, show_voxels)
+	print("🔮 DEBUG: Preview setup completed")
+	
 	_active_previews.append(preview)
 	preview.tree_exiting.connect(_preview_closing)
+	print("🔮 DEBUG: Preview registered and connected, total active previews: %d" % _active_previews.size())
+	
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates

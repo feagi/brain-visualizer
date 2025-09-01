@@ -39,7 +39,11 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["i__inf"])
 	else:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["o__mot"])
-	var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false)
+	var active_bm = BV.UI.get_active_brain_monitor()
+	if active_bm == null:
+		push_error("PartSpawnCorticalAreaIOPU: No brain monitor available for preview creation!")
+		return
+	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false)
 	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 
 
