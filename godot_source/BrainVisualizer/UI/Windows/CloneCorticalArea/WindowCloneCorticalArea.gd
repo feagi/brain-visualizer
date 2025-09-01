@@ -35,11 +35,12 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	var closing_signals: Array[Signal] = [close_window_requested]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimensions_signal]
-	var active_bm = BV.UI.get_active_brain_monitor()
+	# Use the brain monitor that is currently visualizing the cortical area being cloned (important for tabs!)
+	var active_bm = BV.UI.get_brain_monitor_for_cortical_area(_cloning_cortical_area)
 	if active_bm == null:
 		push_error("WindowCloneCorticalArea: No brain monitor available for preview creation!")
 		return
-	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false)
+	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false, _cloning_cortical_area.cortical_type, _cloning_cortical_area)
 	preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
 
 

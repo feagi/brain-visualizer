@@ -291,13 +291,14 @@ func _setup_bm_prevew() -> void:
 	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
 	var preview_position = _get_preview_position_for_cortical_area()
 	
-	var active_bm = BV.UI.get_active_brain_monitor()
+	# Use the brain monitor that is currently visualizing this cortical area (important for tabs!)
+	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+	var active_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
 	if active_bm == null:
 		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
 		return
 	
 	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
-	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
 	_preview = active_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
 	var moves: Array[Signal] = [_vector_position.user_updated_vector]
 	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
@@ -463,12 +464,13 @@ func _enable_3D_preview(): #NOTE only currently works with single
 		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
 		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
-		var active_bm = BV.UI.get_active_brain_monitor()
+		# Use the brain monitor that is currently visualizing this cortical area (important for tabs!)
+		var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+		var active_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
 		if active_bm == null:
 			push_error("AdvancedCorticalProperties: No brain monitor available for 3D preview!")
 			return
 		var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
-		var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
 		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area)
 		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 		

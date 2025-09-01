@@ -405,6 +405,10 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
 	return _cortical_visualizations_by_ID.get(cortical_id, null)
 
+## Check if this brain monitor is currently visualizing a specific cortical area
+func has_cortical_area_visualization(cortical_id: String) -> bool:
+	return cortical_id in _cortical_visualizations_by_ID
+
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)

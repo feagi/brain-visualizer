@@ -514,6 +514,150 @@ func get_active_brain_monitor() -> UI_BrainMonitor_3DScene:
 	# Fall back to main brain monitor if no tab is active
 	return temp_root_bm
 
+## Find the brain monitor that should display this cortical area using EXACT same logic as _add_cortical_area()
+func get_brain_monitor_for_cortical_area(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_3DScene:
+	if cortical_area == null:
+		return get_active_brain_monitor()
+	
+	print("🔍🔍🔍 PREVIEW ROUTING DEBUG START 🔍🔍🔍")
+	print("🔍 Using same logic as _add_cortical_area() to find brain monitor for: %s" % cortical_area.cortical_ID)
+	print("🔍 Area belongs to region: %s" % (cortical_area.current_parent_region.friendly_name if cortical_area.current_parent_region else "NULL"))
+	print("🔍 Area type: %s" % cortical_area.type_as_string)
+	
+	# Use the EXACT same logic as _add_cortical_area() to find which brain monitor should display this area
+	var target_brain_monitor = _find_brain_monitor_using_add_cortical_area_logic(cortical_area)
+	if target_brain_monitor != null:
+		print("🎯🎯🎯 FOUND TARGET BRAIN MONITOR: %s (region: %s)" % [target_brain_monitor.name, target_brain_monitor._representing_region.friendly_name])
+		print("🔍🔍🔍 PREVIEW ROUTING DEBUG END 🔍🔍🔍")
+		return target_brain_monitor
+	
+	# Fallback to active brain monitor
+	print("   ⚠️⚠️⚠️ NO BRAIN MONITOR FOUND using add_cortical_area logic, using active one")
+	var fallback = get_active_brain_monitor()
+	print("🎯🎯🎯 FALLBACK BRAIN MONITOR: %s" % (fallback.name if fallback else "NULL"))
+	print("🔍🔍🔍 PREVIEW ROUTING DEBUG END 🔍🔍🔍")
+	return fallback
+
+## Find brain monitor using the exact same logic as UI_BrainMonitor_3DScene._add_cortical_area()
+func _find_brain_monitor_using_add_cortical_area_logic(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_3DScene:
+	print("  🔍 Checking main brain monitor (root region)...")
+	# Check main brain monitor first (root region)
+	if temp_root_bm != null:
+		print("    🧠 Main brain monitor exists, checking acceptance...")
+		if _would_brain_monitor_accept_cortical_area(temp_root_bm, cortical_area):
+			print("   ✅✅✅ Main brain monitor ACCEPTS area: %s" % cortical_area.cortical_ID)
+			return temp_root_bm
+		else:
+			print("   ❌ Main brain monitor REJECTS area: %s" % cortical_area.cortical_ID)
+	else:
+		print("    ❌ Main brain monitor is NULL!")
+	
+	print("  🔍 Checking all tabbed brain monitors...")
+	# First, let's find ALL brain monitors in the entire scene tree
+	print("  🔍 COMPREHENSIVE SEARCH: Finding ALL brain monitors in scene tree...")
+	var all_brain_monitors = _find_all_brain_monitors_in_scene_tree()
+	print("  🧠 Found %d total brain monitors in scene tree:" % all_brain_monitors.size())
+	for i in range(all_brain_monitors.size()):
+		var bm = all_brain_monitors[i]
+		var region_name = bm._representing_region.friendly_name if bm._representing_region else "NULL"
+		var instance_id = bm.get_instance_id()
+		print("    %d. %s (region: %s, instance: %d)" % [i, bm.name, region_name, instance_id])
+		if _would_brain_monitor_accept_cortical_area(bm, cortical_area):
+			print("    ✅✅✅ Brain monitor %d ACCEPTS area: %s" % [i, cortical_area.cortical_ID])
+			return bm
+		else:
+			print("    ❌ Brain monitor %d REJECTS area: %s" % [i, cortical_area.cortical_ID])
+	
+	print("   ❌❌❌ NO brain monitor accepts area: %s" % cortical_area.cortical_ID)
+	
+	print("  ❌❌❌ NO brain monitor found for area: %s" % cortical_area.cortical_ID)
+	return null
+
+## Find ALL brain monitors in the entire scene tree (comprehensive search)
+func _find_all_brain_monitors_in_scene_tree() -> Array[UI_BrainMonitor_3DScene]:
+	var all_brain_monitors: Array[UI_BrainMonitor_3DScene] = []
+	
+	# Start from the scene root and search recursively
+	var scene_tree = get_tree()
+	if scene_tree and scene_tree.current_scene:
+		_recursive_find_brain_monitors(scene_tree.current_scene, all_brain_monitors)
+	
+	return all_brain_monitors
+
+func _recursive_find_brain_monitors(node: Node, brain_monitors: Array[UI_BrainMonitor_3DScene]) -> void:
+	# Check if current node is a brain monitor
+	if node is UI_BrainMonitor_3DScene:
+		brain_monitors.append(node as UI_BrainMonitor_3DScene)
+	
+	# Search all children recursively
+	for child in node.get_children():
+		_recursive_find_brain_monitors(child, brain_monitors)
+
+## Check if a brain monitor would accept this cortical area using the same logic as _add_cortical_area()
+func _would_brain_monitor_accept_cortical_area(brain_monitor: UI_BrainMonitor_3DScene, cortical_area: AbstractCorticalArea) -> bool:
+	if brain_monitor == null or cortical_area == null:
+		return false
+	
+	var representing_region = brain_monitor._representing_region
+	if representing_region == null:
+		return false
+	
+	# Use the EXACT same logic as UI_BrainMonitor_3DScene._add_cortical_area()
+	var is_directly_in_region = representing_region.is_cortical_area_in_region_directly(cortical_area)
+	var is_io_of_child_region = _is_area_input_output_of_child_region_for_brain_monitor(brain_monitor, cortical_area)
+	
+	print("     🔍🔍🔍 ACCEPTANCE ANALYSIS for brain monitor %s:" % representing_region.friendly_name)
+	print("       🔹 Area: %s" % cortical_area.cortical_ID)
+	print("       🔹 Area's parent region: %s" % (cortical_area.current_parent_region.friendly_name if cortical_area.current_parent_region else "NULL"))
+	print("       🔹 Brain monitor region: %s" % representing_region.friendly_name)
+	print("       🔹 Is directly in region: %s" % is_directly_in_region)
+	print("       🔹 Is I/O of child region: %s" % is_io_of_child_region)
+	
+	# Same condition as _add_cortical_area(): accept if directly in region OR I/O of child region
+	return is_directly_in_region or is_io_of_child_region
+
+## Helper to check if area is I/O of child region (EXACT same logic as brain monitor)
+func _is_area_input_output_of_child_region_for_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene, cortical_area: AbstractCorticalArea) -> bool:
+	var representing_region = brain_monitor._representing_region
+	if representing_region == null:
+		return false
+	
+	# Use EXACT same logic as UI_BrainMonitor_3DScene._is_area_input_output_of_child_region()
+	for child_region: BrainRegion in representing_region.contained_regions:
+		if _is_area_input_output_of_specific_child_region_for_brain_monitor(cortical_area, child_region):
+			print("      ✅ Preview routing: Found as I/O of child region '%s'!" % child_region.friendly_name)
+			return true
+	
+	return false
+
+## EXACT copy of UI_BrainMonitor_3DScene._is_area_input_output_of_specific_child_region()
+func _is_area_input_output_of_specific_child_region_for_brain_monitor(area: AbstractCorticalArea, child_region: BrainRegion) -> bool:
+	# Method 1: Check connection chain links first
+	for link: ConnectionChainLink in child_region.input_open_chain_links:
+		if link.destination == area:
+			print("        ✅ Preview routing: Found as INPUT via chain link!")
+			return true
+	
+	for link: ConnectionChainLink in child_region.output_open_chain_links:
+		if link.source == area:
+			print("        ✅ Preview routing: Found as OUTPUT via chain link!")
+			return true
+	
+	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays)
+	for partial_mapping in child_region.partial_mappings:
+		if partial_mapping.internal_target_cortical_area == area:
+			if partial_mapping.is_region_input:
+				print("        ✅ Preview routing: Found as INPUT via partial mapping (FEAGI inputs array)!")
+			else:
+				print("        ✅ Preview routing: Found as OUTPUT via partial mapping (FEAGI outputs array)!")
+			return true
+	
+	return false
+
+
+
+
+
 ## Recursively searches for the currently active brain monitor tab
 func _find_active_tab_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return _search_for_active_brain_monitor_in_view(_root_UI_view)
