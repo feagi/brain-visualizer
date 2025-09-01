@@ -409,7 +409,12 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	
 	# For plastic connections, create dashed lines
 	if is_plastic:
-		var num_dashes = 10  # Number of dashes along the curve
+		# Calculate number of dashes based on curve length for consistent spacing
+		var curve_length = _estimate_curve_length(start_pos, control_point, end_pos)
+		var desired_dash_spacing = 2.5  # Units between dashes
+		var num_dashes = max(4, int(curve_length / desired_dash_spacing))  # Minimum 4 dashes
+		
+		print("     📏 Curve length: ", curve_length, " → ", num_dashes, " dashes")
 		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
 		for i in range(num_dashes):
@@ -428,9 +433,9 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 			dash.name = "Dash_" + str(i)
 			dash.mesh = CylinderMesh.new()
 			
-			# Set dash size (small line segment)
+			# Set dash size (longer line segment)
 			var cylinder_mesh = dash.mesh as CylinderMesh
-			cylinder_mesh.height = 0.6  # Length of each dash
+			cylinder_mesh.height = 1.2  # Longer dashes
 			cylinder_mesh.top_radius = 0.06  # Thin line
 			cylinder_mesh.bottom_radius = 0.06
 			cylinder_mesh.radial_segments = 6  # Simple geometry
@@ -439,12 +444,18 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 			dash.position = dash_position
 			dash.material_override = dash_material
 			
-			# Orient the dash along the curve direction
+			# Orient the dash along the curve direction (Y-axis is cylinder height)
 			if dash_direction.length() > 0.001:  # Avoid zero direction
-				# Point the cylinder along the curve (Y-axis of cylinder is height)
-				dash.look_at(dash_position + dash_direction, Vector3.UP)
-				# Rotate 90 degrees so cylinder height aligns with direction
-				dash.rotate_object_local(Vector3.RIGHT, PI/2)
+				# Create transform matrix to align Y-axis (cylinder height) with curve direction
+				var up_vector = Vector3.UP
+				if abs(dash_direction.dot(Vector3.UP)) > 0.9:
+					up_vector = Vector3.FORWARD  # Avoid parallel vectors
+				
+				var right_vector = up_vector.cross(dash_direction).normalized()
+				var corrected_up = dash_direction.cross(right_vector).normalized()
+				
+				# Set the transform to align Y-axis with dash direction
+				dash.transform.basis = Basis(right_vector, dash_direction, corrected_up)
 			
 			connection_node.add_child(dash)
 			
@@ -675,6 +686,20 @@ func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vecto
 	var u = 1.0 - t
 	return u * u * p0 + 2.0 * u * t * p1 + t * t * p2
 
+## Estimate the length of a quadratic Bezier curve by sampling points
+func _estimate_curve_length(start_pos: Vector3, control_pos: Vector3, end_pos: Vector3) -> float:
+	var total_length = 0.0
+	var num_samples = 20  # More samples for better accuracy
+	
+	var prev_point = start_pos
+	for i in range(1, num_samples + 1):
+		var t = float(i) / float(num_samples)
+		var current_point = _quadratic_bezier(start_pos, control_pos, end_pos, t)
+		total_length += prev_point.distance_to(current_point)
+		prev_point = current_point
+	
+	return total_length
+
 ## Create a single segment of the curve
 func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: int, material: StandardMaterial3D) -> MeshInstance3D:
 	var mesh_instance = MeshInstance3D.new()
@@ -855,7 +880,12 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 	
 	# For plastic recursive loops, create dashed circular pattern
 	if is_plastic:
-		var num_dashes = 14  # Number of dashes around the circle
+		# Calculate number of dashes based on loop circumference for consistent spacing
+		var loop_circumference = TAU * loop_radius  # 2π * radius
+		var desired_dash_spacing = 2.0  # Units between dashes for loops
+		var num_dashes = max(6, int(loop_circumference / desired_dash_spacing))  # Minimum 6 dashes
+		
+		print("     🔄 Loop circumference: ", loop_circumference, " → ", num_dashes, " dashes")
 		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
 		for i in range(num_dashes):
@@ -874,9 +904,9 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 			dash.name = "LoopDash_" + str(i)
 			dash.mesh = CylinderMesh.new()
 			
-			# Set dash size (small line segment)
+			# Set dash size (longer line segment)
 			var cylinder_mesh = dash.mesh as CylinderMesh
-			cylinder_mesh.height = 0.8  # Length of each dash
+			cylinder_mesh.height = 1.4  # Longer dashes for loops
 			cylinder_mesh.top_radius = 0.06  # Thin line
 			cylinder_mesh.bottom_radius = 0.06
 			cylinder_mesh.radial_segments = 6  # Simple geometry
@@ -885,12 +915,18 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 			dash.position = dash_position
 			dash.material_override = dash_material
 			
-			# Orient the dash tangent to the circle
+			# Orient the dash tangent to the circle (Y-axis is cylinder height)
 			if tangent_direction.length() > 0.001:
-				# Point the cylinder along the tangent (Y-axis of cylinder is height)
-				dash.look_at(dash_position + tangent_direction, Vector3.UP)
-				# Rotate 90 degrees so cylinder height aligns with tangent
-				dash.rotate_object_local(Vector3.RIGHT, PI/2)
+				# Create transform matrix to align Y-axis (cylinder height) with tangent direction
+				var up_vector = Vector3.UP
+				if abs(tangent_direction.dot(Vector3.UP)) > 0.9:
+					up_vector = Vector3.FORWARD  # Avoid parallel vectors
+				
+				var right_vector = up_vector.cross(tangent_direction).normalized()
+				var corrected_up = tangent_direction.cross(right_vector).normalized()
+				
+				# Set the transform to align Y-axis with tangent direction
+				dash.transform.basis = Basis(right_vector, tangent_direction, corrected_up)
 			
 			loop_node.add_child(dash)
 			
