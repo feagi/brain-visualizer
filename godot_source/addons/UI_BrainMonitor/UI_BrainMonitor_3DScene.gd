@@ -34,436 +34,128 @@ var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_Co
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
-	var new_instance = load(SCENE_BRAIN_MONITOR_PATH).instantiate()
-	print("🏭 FACTORY: Created NEW brain monitor instance: %s" % new_instance)
-	print("🏭 FACTORY: Instance ID: %d" % new_instance.get_instance_id())
-	return new_instance
+	return load(SCENE_BRAIN_MONITOR_PATH).instantiate()
 
 func _ready() -> void:
-	print("🔧 INSTANCE _ready(): Brain monitor instance %d initializing..." % get_instance_id())
 	_node_3D_root = $SubViewport/Center
 	_UI_layer_for_BM = $SubViewport/BM_UI
-	
-	print("🔧 INSTANCE: _node_3D_root = %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])
-	print("🔧 INSTANCE: SubViewport = %s (instance %d)" % [$SubViewport, $SubViewport.get_instance_id()])
 	
 	# TODO check mode (PC)
 	_pancake_cam = $SubViewport/Center/PancakeCam
 	if _pancake_cam:
 		_pancake_cam.BM_input_events.connect(_process_user_input)
 		
-		# 🚨 CRITICAL FIX: Ensure SubViewport has a World3D with proper environment
+		# Ensure SubViewport has a World3D with proper environment
 		var subviewport = $SubViewport as SubViewport
 		if subviewport.world_3d == null:
-			print("🔧 INSTANCE: SubViewport missing World3D - setting up with environment...")
-			
-			# 🚨 CRITICAL FIX: Tab brain monitors need SEPARATE World3D to avoid seeing main content
+			# Tab brain monitors need SEPARATE World3D to avoid seeing main content
 			if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
 				var main_viewport = BV.UI.temp_root_bm.get_child(0) as SubViewport
 				if main_viewport.world_3d != null:
-					print("🔧 INSTANCE: Creating SEPARATE World3D for tab (avoids shared content)")
 					subviewport.world_3d = _create_world3d_with_environment()
-					print("🔧 INSTANCE: Tab brain monitor now has isolated 3D world")
 				else:
-					print("🔧 INSTANCE: Main brain monitor also missing World3D - creating shared environment")
 					var shared_world = _create_world3d_with_environment()
 					subviewport.world_3d = shared_world
 					main_viewport.world_3d = shared_world
 			else:
-				print("🔧 INSTANCE: No main brain monitor - creating World3D with environment")
 				subviewport.world_3d = _create_world3d_with_environment()
 		
 		_world_3D = _pancake_cam.get_world_3d()
-		print("🔧 INSTANCE: Camera = %s (instance %d)" % [_pancake_cam, _pancake_cam.get_instance_id()])
-		print("🔧 INSTANCE: SubViewport World3D = %s" % subviewport.world_3d)
-		if _world_3D:
-			print("🔧 INSTANCE: Camera World3D = %s (RID: %s)" % [_world_3D, str(_world_3D.get_rid())])
-		else:
-			print("🔧 INSTANCE: Camera World3D is NULL!")
 	
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	name = "BM_" + region.region_ID
 
-	print("🔥🔥🔥 INSTANCE ID: %d 🔥🔥🔥" % get_instance_id())
-	print("🔥🔥🔥 BRAIN MONITOR SETUP FOR: %s 🔥🔥🔥" % region.friendly_name)
-	print("🔥🔥🔥 3D ROOT INSTANCE: %d 🔥🔥🔥" % _node_3D_root.get_instance_id())
-	print("🧠 BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
-	print("🧠 INSTANCE SETUP: Brain monitor instance %d setting up for region %s" % [get_instance_id(), region.friendly_name])
-	print("🧠 INSTANCE SETUP: This instance's 3D root: %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])
+	print("BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
 	
-	# 🚨 CRITICAL: Verify this is NOT the main/root brain monitor instance
-	if BV.UI.temp_root_bm and BV.UI.temp_root_bm.get_instance_id() == get_instance_id():
-		print("⚠️ WARNING: This IS the main/temp root brain monitor instance!")
-		print("⚠️ This should NOT happen for tabbed brain monitors!")
-	else:
-		print("✅ GOOD: This is a SEPARATE instance from the main brain monitor!")
-		print("✅ Main brain monitor instance: %d" % (BV.UI.temp_root_bm.get_instance_id() if BV.UI.temp_root_bm else -1))
-		print("✅ This tab brain monitor instance: %d" % get_instance_id())
-	print("  📊 Root region info:")
-	print("    - Region ID: %s" % region.region_ID)  
-	print("    - Region is root region: %s" % region.is_root_region())
-	print("    - Region parent: %s" % (region.current_parent_region.friendly_name if region.current_parent_region else "None"))
-	print("    - Contains %d cortical areas" % region.contained_cortical_areas.size())
-	print("    - Contains %d child regions" % region.contained_regions.size())
-	print("🧠 Display Rules:")
-	print("  ✅ Root region cortical areas → Show in normal 3D position")
-	print("  ❌ Child region cortical areas → Hide (unless I/O)")  
-	print("  🔄 Child region I/O areas → Show inside brain region wireframe cubes")
+
 	
-	# DEBUG: List all cortical areas in the region
-	print("  🔍 DETAILED CORTICAL AREA ANALYSIS:")
-	for area in region.contained_cortical_areas:
-		print("    - Area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
+
 	
-	# ⚠️ CRITICAL DEBUG: Make sure we're processing the right region's areas
-	print("  🚨 CRITICAL VERIFICATION:")
-	print("    - Target region: %s (ID: %s)" % [region.friendly_name, region.region_ID])
-	print("    - _representing_region: %s (ID: %s)" % [_representing_region.friendly_name, _representing_region.region_ID])
-	print("    - Are they the same? %s" % (region.region_ID == _representing_region.region_ID))
-	
-	# Show cortical areas from root region
-	print("  📦 STEP 1: Processing %d cortical areas from target region..." % _representing_region.contained_cortical_areas.size())
-	var created_count: int = 0
+	# Create cortical areas from target region
 	for area in _representing_region.contained_cortical_areas:
-		print("  📦 Evaluating area: %s (type: %s, parent: %s)" % [area.cortical_ID, area.type_as_string, area.current_parent_region.friendly_name])
-		var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
-		if rendering_area != null:
-			created_count += 1
-			print("    ✅ CREATED visualization for %s" % area.cortical_ID)
-		else:
-			print("    ❌ SKIPPED %s (filtered out)" % area.cortical_ID)
-	print("  ✅ STEP 1 COMPLETE: Created %d out of %d target region cortical areas" % [created_count, _representing_region.contained_cortical_areas.size()])
+		_add_cortical_area(area)
 	
-	# ALSO check cortical areas in child regions that might be I/O areas
-	print("  🔄 STEP 2: Processing child regions for I/O areas...")
-	print("  🔄 Found %d child regions to process..." % _representing_region.contained_regions.size())
-	var io_created_count: int = 0
+	# Check cortical areas in child regions that might be I/O areas
 	for child_region in _representing_region.contained_regions:
-		print("  📦 Processing %d cortical areas from child region '%s'..." % [child_region.contained_cortical_areas.size(), child_region.friendly_name])
 		for area in child_region.contained_cortical_areas:
-			# print("  📦 Evaluating CHILD area: %s (type: %s) from region %s" % [area.cortical_ID, area.type_as_string, child_region.friendly_name])  # Suppressed - too spammy
-			# For areas in child regions, check if they're I/O of that specific child region
-			# print("    🔍 Checking if %s is I/O of child region '%s'..." % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
 			if _is_area_input_output_of_specific_child_region(area, child_region):
-				print("    ✅ Area %s IS I/O of child region '%s' - creating visualization" % [area.cortical_ID, child_region.friendly_name])
-				var rendering_area: UI_BrainMonitor_CorticalArea = _add_cortical_area(area)
-				if rendering_area:
-					print("    ✅ Successfully created visualization for %s" % area.cortical_ID)
-					io_created_count += 1
-	print("  ✅ STEP 2 COMPLETE: Created %d I/O area visualizations from child regions" % io_created_count)
+				_add_cortical_area(area)
 	
-	# Show child brain regions as 3D frames  
-	print("🚨🚨🚨 DEBUG: REACHED STEP 3! Creating brain region wireframe cubes...")
-	print("  🏗️ STEP 3: Creating brain region wireframe cubes...")
-	print("  🔍 Root region has %d child regions to create frames for" % _representing_region.contained_regions.size())
-	if _representing_region.contained_regions.size() == 0:
-		print("    ⚠️  WARNING: No child regions found! Brain region frames won't be created.")
-	
-	for i in _representing_region.contained_regions.size():
-		var child_region: BrainRegion = _representing_region.contained_regions[i]
-		print("  🏗️ [%d/%d] Processing child brain region: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
-		print("    - Region ID: %s" % child_region.region_ID)
-		print("    - 3D Coordinates: %s" % child_region.coordinates_3D)
-		print("    - Child has %d cortical areas" % child_region.contained_cortical_areas.size())
-		for area in child_region.contained_cortical_areas:
-			print("      • %s" % area.cortical_ID)
-		print("    - Child has %d input links, %d output links" % [child_region.input_open_chain_links.size(), child_region.output_open_chain_links.size()])
-		print("    - Inputs:")
-		for link in child_region.input_open_chain_links:
-			var dest_name = "null"
-			if link.destination:
-				if link.destination is AbstractCorticalArea:
-					dest_name = (link.destination as AbstractCorticalArea).cortical_ID
-				elif link.destination is BrainRegion:
-					dest_name = (link.destination as BrainRegion).region_ID
-				else:
-					dest_name = str(link.destination)
-			print("      • %s" % dest_name)
-		print("    - Outputs:")
-		for link in child_region.output_open_chain_links:
-			var src_name = "null"
-			if link.source:
-				if link.source is AbstractCorticalArea:
-					src_name = (link.source as AbstractCorticalArea).cortical_ID
-				elif link.source is BrainRegion:
-					src_name = (link.source as BrainRegion).region_ID
-				else:
-					src_name = str(link.source)
-			print("      • %s" % src_name)
-		
-		print("  🔨 Calling _add_brain_region_frame for: %s..." % child_region.friendly_name)
-		var region_frame: UI_BrainMonitor_BrainRegion3D = _add_brain_region_frame(child_region)
-		
-		if region_frame:
-			print("    ✅ [%d/%d] Child brain region frame created successfully for: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
-			print("    📍 Positioned at Godot coordinates: %s" % region_frame.global_position)
-		else:
-			print("    ❌ [%d/%d] FAILED to create child brain region frame for: %s" % [i+1, _representing_region.contained_regions.size(), child_region.friendly_name])
-			push_error("Region creation failed for: %s" % child_region.friendly_name)
+	# Create child brain region frames
+	for child_region in _representing_region.contained_regions:
+		_add_brain_region_frame(child_region)
 	
 
 
-	# 🔍 CRITICAL COMPARISON: Debug why comparison isn't running
-	print("🔍 COMPARISON DEBUG:")
-	print("  - BV.UI.temp_root_bm exists: %s" % (BV.UI.temp_root_bm != null))
-	if BV.UI.temp_root_bm:
-		print("  - Main brain monitor instance: %d" % BV.UI.temp_root_bm.get_instance_id())
-		print("  - This brain monitor instance: %d" % get_instance_id())
-		print("  - Are they different: %s" % (BV.UI.temp_root_bm.get_instance_id() != get_instance_id()))
 	
-	# Force comparison regardless of condition
-	print("🔍 FORCED COMPARISON:")
-	print("  📊 THIS brain monitor (instance %d): %d cortical areas" % [get_instance_id(), _cortical_visualizations_by_ID.size()])
-	print("  📋 THIS brain monitor contains:")
-	for area_id in _cortical_visualizations_by_ID.keys():
-		print("    - %s" % area_id)
-	
-	if BV.UI.temp_root_bm:
-		print("  📊 MAIN brain monitor (instance %d): %d cortical areas" % [BV.UI.temp_root_bm.get_instance_id(), BV.UI.temp_root_bm._cortical_visualizations_by_ID.size()])
-		print("  📋 MAIN brain monitor contains:")
-		for area_id in BV.UI.temp_root_bm._cortical_visualizations_by_ID.keys():
-			print("    - %s" % area_id)
-		
-		# Critical test - are they sharing the same dictionary?
-		var are_same_dict = (BV.UI.temp_root_bm._cortical_visualizations_by_ID == _cortical_visualizations_by_ID)
-		print("  🚨 CRITICAL: Are they sharing the SAME dictionary object? %s" % are_same_dict)
-		
-		if are_same_dict:
-			print("  ⚠️ SMOKING GUN: Both monitors share the same _cortical_visualizations_by_ID dictionary!")
-			print("  ⚠️ This is why you see identical content despite different instances!")
-	else:
-		print("  ❌ Main brain monitor not found - cannot compare")
 
 
 
 
 	# Connect to region signals for dynamic updates
-	print("  🔗 STEP 4: Connecting to region signals for dynamic updates...")
 	_representing_region.cortical_area_added_to_region.connect(_add_cortical_area)
 	_representing_region.cortical_area_removed_from_region.connect(_remove_cortical_area)
 	_representing_region.subregion_added_to_region.connect(_add_brain_region_frame)
 	_representing_region.subregion_removed_from_region.connect(_remove_brain_region_frame)
-	
-	print("🏁 BrainMonitor 3D Scene: SETUP COMPLETED for region: %s" % region.friendly_name)
-	print("  📊 Summary:")
-	print("    - Created %d cortical area visualizations" % _cortical_visualizations_by_ID.size())
-	print("    - Created %d brain region frames" % _brain_region_visualizations_by_ID.size())
-	
-	# 🚨 ULTIMATE VERIFICATION: What is ACTUALLY in this brain monitor's 3D scene?
-	print("🔍 ULTIMATE TAB CONTENT VERIFICATION:")
-	print("  🎯 Brain Monitor Instance: %d" % get_instance_id())
-	print("  🎯 Representing Region: %s" % region.friendly_name)
-	print("  🎯 3D Root Node Instance: %d" % _node_3D_root.get_instance_id())
-	print("  🎯 3D Root Node Child Count: %d" % _node_3D_root.get_child_count())
-	
-	# List ALL children of the 3D root - this is what you actually see
-	print("  📋 ACTUAL 3D CHILDREN (what you see visually):")
-	for i in _node_3D_root.get_child_count():
-		var child = _node_3D_root.get_child(i)
-		if child is UI_BrainMonitor_CorticalArea:
-			var ca = child as UI_BrainMonitor_CorticalArea
-			print("    %d. CORTICAL AREA: %s" % [i+1, ca._representing_cortial_area.cortical_ID])
-		elif child is UI_BrainMonitor_BrainRegion3D:
-			var br = child as UI_BrainMonitor_BrainRegion3D
-			print("    %d. BRAIN REGION: %s" % [i+1, br.representing_region.friendly_name])
-		elif child is Label3D:
-			var label = child as Label3D
-			print("    %d. LABEL: %s" % [i+1, label.text.replace('\n', ' | ')])
-		else:
-			print("    %d. OTHER: %s" % [i+1, child])
-	
-	# Compare dictionary vs actual 3D children
-	var dict_count = _cortical_visualizations_by_ID.size()
-	var visual_count = 0
-	for child in _node_3D_root.get_children():
-		if child is UI_BrainMonitor_CorticalArea:
-			visual_count += 1
-	
-	print("  🚨 CRITICAL MISMATCH CHECK:")
-	print("    - Dictionary contains: %d cortical areas" % dict_count)
-	print("    - 3D scene visually shows: %d cortical areas" % visual_count)
-	print("    - Are they the same: %s" % (dict_count == visual_count))
-	
-	if dict_count != visual_count:
-		print("  ⚠️ SMOKING GUN: Dictionary and visual content don't match!")
-		print("  ⚠️ This explains why you see different content than expected!")
-	
-	# 🚨 CRITICAL TEST: Are you maybe seeing content from BOTH brain monitors at once?
-	print("  🔍 CAMERA DEBUG:")
-	print("    📷 Camera position: %s" % _pancake_cam.position)
-	print("    🎯 Camera is looking at: %s" % (_pancake_cam.position - _pancake_cam.transform.basis.z * 100))
-	
-	if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
-		var main_root = BV.UI.temp_root_bm._node_3D_root
-		var this_root = _node_3D_root
-		print("  🔍 POTENTIAL OVERLAP CHECK:")
-		print("    📺 MAIN brain monitor 3D root: %s (instance %d)" % [main_root, main_root.get_instance_id()])
-		print("    📺 THIS brain monitor 3D root: %s (instance %d)" % [this_root, this_root.get_instance_id()])
-		print("    📺 Are they the same root? %s" % (main_root == this_root))
-		
-		if main_root == this_root:
-			print("    ⚠️ SMOKING GUN: Both brain monitors share the same 3D root!")
-			print("    ⚠️ This would cause overlapping content!")
-		else:
-			print("    ✅ Good: Each brain monitor has separate 3D roots")
 
-	# 🚨 CRITICAL DEBUG: List all cortical areas in this brain monitor instance
-	print("  🎯 FINAL VERIFICATION - Areas in brain monitor '%s':" % name)
-	for area_id in _cortical_visualizations_by_ID.keys():
-		var cortical_area = _cortical_visualizations_by_ID[area_id]
-		print("    - %s at position %s" % [area_id, cortical_area._representing_cortial_area.coordinates_3D])
-
-	# Camera info
-	if _pancake_cam:
-		print("  📷 Camera position: %s" % _pancake_cam.position)
-		print("  🎯 Camera looking at brain monitor for region: %s" % region.friendly_name)
-		
-		# 🚨 CRITICAL: Position camera to focus on THIS region's areas
-		if region.contained_cortical_areas.size() > 0:
-			var center_pos = Vector3.ZERO
-			for area in region.contained_cortical_areas:
-				center_pos += Vector3(area.coordinates_3D)  # Convert Vector3i to Vector3
-			center_pos /= region.contained_cortical_areas.size()
-			
-			print("  📍 Calculated center of region areas: %s" % center_pos)
-			# Position camera to look at this region's specific areas
-			_pancake_cam.position = center_pos + Vector3(0, 50, 100)  # Above and behind the region
-			_pancake_cam.look_at(center_pos, Vector3.UP)
-			print("  📷 REPOSITIONED camera to focus on region %s at %s" % [region.friendly_name, _pancake_cam.position])
-	
-	# 🚨 COMPARISON: Show what the ROOT region contains vs what THIS region contains
-	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	print("  🔍 VISUAL COMPARISON:")
-	print("    📋 ROOT REGION (%s) contains %d cortical areas:" % [root_region.friendly_name, root_region.contained_cortical_areas.size()])
-	for i in root_region.contained_cortical_areas.size():
-		var root_area = root_region.contained_cortical_areas[i]
-		print("      %d. %s at %s" % [i+1, root_area.cortical_ID, root_area.coordinates_3D])
-	
-	print("    📋 THIS TAB REGION (%s) contains %d cortical areas:" % [region.friendly_name, region.contained_cortical_areas.size()])
-	for i in region.contained_cortical_areas.size():
-		var this_area = region.contained_cortical_areas[i]
-		print("      %d. %s at %s" % [i+1, this_area.cortical_ID, this_area.coordinates_3D])
-	
-	if region.contained_cortical_areas.size() != _cortical_visualizations_by_ID.size():
-		print("  ⚠️ WARNING: Region has %d areas but only %d were visualized!" % [region.contained_cortical_areas.size(), _cortical_visualizations_by_ID.size()])
-	else:
-		print("  ✅ VERIFICATION: All %d areas from region %s are visualized in this tab!" % [region.contained_cortical_areas.size(), region.friendly_name])
-	
-	# 🚨 MASSIVE VISUAL INDICATOR: Add huge bright label to identify this brain monitor
-	var label_3d = Label3D.new()
-	label_3d.text = "🟡🟡🟡 TAB: %s 🟡🟡🟡\n🔥🔥 %d AREAS ONLY 🔥🔥\n⚡⚡ NOT ROOT REGION ⚡⚡" % [region.friendly_name, region.contained_cortical_areas.size()]
-	label_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label_3d.modulate = Color.YELLOW
-	label_3d.pixel_size = 0.005  # Make it HUGE 
-	label_3d.font_size = 64  # Large font
-	label_3d.outline_size = 8  # Add outline for visibility
-	label_3d.outline_modulate = Color.BLACK
-	
-	# Position it high above the scene so it's always visible
-	if region.contained_cortical_areas.size() > 0:
-		var center_pos = Vector3.ZERO
-		for area in region.contained_cortical_areas:
-			center_pos += Vector3(area.coordinates_3D)  # Convert Vector3i to Vector3
-		center_pos /= region.contained_cortical_areas.size()
-		label_3d.position = center_pos + Vector3(0, 100, 0)  # WAY above the region
-	else:
-		label_3d.position = Vector3(0, 100, 0)
-	
-	_node_3D_root.add_child(label_3d)
-	print("  🏷️ Added MASSIVE yellow label to identify this brain monitor in 3D space")
-	print("  🏷️ Label position: %s" % label_3d.position)
-	print("  🏷️ Label text: %s" % label_3d.text.replace('\n', ' | '))
-	
-	# 🚨 CRITICAL: Add bright red wireframe box around the region to make it obvious
-	if region.contained_cortical_areas.size() > 0:
-		var mesh_instance = MeshInstance3D.new()
-		var box_mesh = BoxMesh.new()
-		box_mesh.size = Vector3(100, 50, 100)  # Large bounding box
-		mesh_instance.mesh = box_mesh
-		
-		var material = StandardMaterial3D.new()
-		material.albedo_color = Color.RED
-		material.flags_transparent = true
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		material.albedo_color.a = 0.3  # Semi-transparent
-		material.flags_unshaded = true
-		material.no_depth_test = true
-		mesh_instance.material_override = material
-		
+	# Position camera to focus on region's areas
+	if _pancake_cam and region.contained_cortical_areas.size() > 0:
 		var center_pos = Vector3.ZERO
 		for area in region.contained_cortical_areas:
 			center_pos += Vector3(area.coordinates_3D)
 		center_pos /= region.contained_cortical_areas.size()
-		mesh_instance.position = center_pos + Vector3(0, 25, 0)  # Above the areas
+		_pancake_cam.position = center_pos + Vector3(0, 50, 100)
+		_pancake_cam.look_at(center_pos, Vector3.UP)
+	
+	# Add subtle label for non-root regions (tab brain monitors)
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if region != root_region:
+		var label_3d = Label3D.new()
+		label_3d.text = "TAB: %s\n%d areas from this region" % [region.friendly_name, region.contained_cortical_areas.size()]
+		label_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label_3d.modulate = Color.YELLOW
+		label_3d.pixel_size = 0.01
+		label_3d.font_size = 32
+		label_3d.outline_size = 4
+		label_3d.outline_modulate = Color.BLACK
 		
-		_node_3D_root.add_child(mesh_instance)
-		print("  📦 Added bright red wireframe box around region %s" % region.friendly_name)
-	
-	# 🚨 CRITICAL VIEWPORT VERIFICATION
-	print("🚨 VIEWPORT VERIFICATION:")
-	print("  🎯 This brain monitor instance: %d" % get_instance_id())
-	
-	var this_viewport = get_child(0) as SubViewport
-	print("  🎯 This brain monitor's SubViewport: %s (instance %d)" % [this_viewport, this_viewport.get_instance_id()])
-	print("  🎯 This brain monitor's World3D: %s" % this_viewport.world_3d)
-	
-	if this_viewport.world_3d != null:
-		print("  ✅ GOOD: Brain monitor has World3D (RID: %s)" % str(this_viewport.world_3d.get_rid()))
-	else:
-		print("  ❌ ERROR: Brain monitor still missing World3D after _ready() fix!")
-	
-	if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
-		var main_viewport = BV.UI.temp_root_bm.get_child(0) as SubViewport
-		print("  📺 MAIN brain monitor's World3D: %s" % main_viewport.world_3d)
-		
-		if this_viewport.world_3d != null and main_viewport.world_3d != null:
-			var sharing_world = (main_viewport.world_3d == this_viewport.world_3d)
-			if sharing_world:
-				print("  ⚠️ PROBLEM: Both brain monitors share same World3D - this causes identical content!")
-				print("  ⚠️ Tab brain monitor should have separate World3D to show only filtered content!")
-			else:
-				print("  ✅ GOOD: Each brain monitor has separate World3D - isolated content!")
+		if region.contained_cortical_areas.size() > 0:
+			var center_pos = Vector3.ZERO
+			for area in region.contained_cortical_areas:
+				center_pos += Vector3(area.coordinates_3D)
+			center_pos /= region.contained_cortical_areas.size()
+			label_3d.position = center_pos + Vector3(0, 30, 0)
 		else:
-			print("  ⚠️ One or both brain monitors missing World3D")
+			label_3d.position = Vector3(0, 30, 0)
+		
+		_node_3D_root.add_child(label_3d)
 
 func _create_world3d_with_environment() -> World3D:
-	print("🌌 Creating World3D with proper environment and sky...")
 	var new_world = World3D.new()
 	
 	# Try to copy environment from the main scene's viewport
 	var main_viewport = get_viewport()
 	if main_viewport and main_viewport.world_3d and main_viewport.world_3d.environment:
-		print("🌌 Copying environment from main viewport")
 		new_world.environment = main_viewport.world_3d.environment
-		print("🌌 ✅ Copied environment from main scene")
 		return new_world
 	
 	# Fallback: Create basic environment if can't copy
-	print("🌌 Creating basic environment as fallback...")
 	var environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color(0.0951993, 0.544281, 0.999948, 1)  # Sky blue
 	new_world.environment = environment
 	
-	print("🌌 ✅ Created World3D with basic environment")
 	return new_world
 
 
 func _update_tab_title_after_setup() -> void:
-	print("🏷️ Updating tab title after setup...")
 	if _representing_region and get_parent() is TabContainer:
 		var tab_container = get_parent() as TabContainer
 		var tab_index = tab_container.get_tab_idx_from_control(self)
 		if tab_index >= 0:
-			var new_title = _representing_region.friendly_name
-			tab_container.set_tab_title(tab_index, new_title)
-			print("🏷️ Set tab title to: '%s' (index %d)" % [new_title, tab_index])
-		else:
-			print("🏷️ Could not find tab index for this brain monitor")
-	else:
-		print("🏷️ No representing region or not in TabContainer")
+			tab_container.set_tab_title(tab_index, _representing_region.friendly_name)
 
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:

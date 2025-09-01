@@ -21,8 +21,8 @@ var root_UI_view: UIView:
 	get: return _root_UI_view
 var selection_system: SelectionSystem:
 	get: return _selection_system
-	
-var temp_root_bm: UI_BrainMonitor_3DScene
+# Main brain monitor instance - public access
+var temp_root_bm: UI_BrainMonitor_3DScene = null
 
 var _top_bar: TopBar
 var _window_manager: WindowManager
@@ -174,6 +174,10 @@ func FEAGI_confirmed_genome() -> void:
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE with theme applied")
+
+## Returns the main brain monitor instance - alternative getter for external access
+func get_temp_root_bm() -> UI_BrainMonitor_3DScene:
+	return temp_root_bm
 
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
