@@ -306,10 +306,10 @@ func remove_neuron_cortical_are_selection_restrictions() -> void:
 	_restrict_neuron_selection_to = null
 
 ## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
-func create_preview(initial_FEAGI_soace_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool) -> UI_BrainMonitor_InteractivePreview:
+func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null) -> UI_BrainMonitor_InteractivePreview:
 	var preview: UI_BrainMonitor_InteractivePreview = UI_BrainMonitor_InteractivePreview.new()
 	_node_3D_root.add_child(preview)  # CRITICAL FIX: Add to 3D scene root, not brain monitor container
-	preview.setup(initial_FEAGI_soace_position, initial_dimensions, show_voxels)
+	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 	_active_previews.append(preview)
 	preview.tree_exiting.connect(_preview_closing)
 	return preview

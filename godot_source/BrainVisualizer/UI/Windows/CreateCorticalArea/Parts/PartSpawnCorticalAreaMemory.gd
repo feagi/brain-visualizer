@@ -20,5 +20,5 @@ func cortical_type_selected(_cortical_type: AbstractCorticalArea.CORTICAL_AREA_T
 	if active_bm == null:
 		push_error("PartSpawnCorticalAreaMemory: No brain monitor available for preview creation!")
 		return
-	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(location.current_vector, dimensions.current_vector, false) # show voxels?
+	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(location.current_vector, dimensions.current_vector, false, _cortical_type) # Pass cortical area type for correct shape!
 	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)

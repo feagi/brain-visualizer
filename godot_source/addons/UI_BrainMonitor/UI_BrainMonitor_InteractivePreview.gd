@@ -8,10 +8,10 @@ var _renderer: UI_BrainMonitor_InteractivePreviewRenderer
 signal user_moved_preview(new_FEAGI_space_position: Vector3i)
 signal user_resized_preview(new_dimensions: Vector3i)
 
-func setup(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool) -> void:
+func setup(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null) -> void:
 	_renderer = UI_BrainMonitor_InteractivePreviewRenderer.new()
 	add_child(_renderer)
-	_renderer.setup(initial_FEAGI_position, initial_dimensions, show_voxels)
+	_renderer.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 
 ## If you wish to externally connect signals to this, you can pass them in as arrays
 func connect_UI_signals(move_signals: Array[Signal], resize_signals: Array[Signal], close_signals: Array[Signal]) -> void:

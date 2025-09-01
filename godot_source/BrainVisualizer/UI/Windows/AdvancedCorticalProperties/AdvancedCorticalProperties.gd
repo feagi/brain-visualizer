@@ -296,7 +296,9 @@ func _setup_bm_prevew() -> void:
 		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
 		return
 	
-	_preview = active_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false)
+	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
+	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+	_preview = active_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
 	var moves: Array[Signal] = [_vector_position.user_updated_vector]
 	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
 	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
@@ -465,7 +467,9 @@ func _enable_3D_preview(): #NOTE only currently works with single
 		if active_bm == null:
 			push_error("AdvancedCorticalProperties: No brain monitor available for 3D preview!")
 			return
-		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false) # show voxels?
+		var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
+		var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area)
 		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 		
 

@@ -43,7 +43,7 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	if active_bm == null:
 		push_error("PartSpawnCorticalAreaIOPU: No brain monitor available for preview creation!")
 		return
-	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false)
+	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false, cortical_type)
 	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 
 
