@@ -74,3 +74,24 @@ yarn-error.log*
 *.import
 godot_source/.vscode/settings.json
 godot_source/.vscode/
+
+# Rust build artifacts
+rust_extensions/**/target/
+rust_extensions/**/Cargo.lock
+rust_extensions/**/*.pdb
+
+# Rust GDExtension generated files
+godot_source/libfeagi_data_deserializer.dylib
+godot_source/libfeagi_data_deserializer.dll
+godot_source/libfeagi_data_deserializer.so
+godot_source/feagi_data_deserializer.gdextension.uid
+
+# Godot GDExtension addon build artifacts
+godot_source/addons/feagi_rust_deserializer/target/
+godot_source/addons/feagi_rust_deserializer/*.dylib
+godot_source/addons/feagi_rust_deserializer/*.dll
+godot_source/addons/feagi_rust_deserializer/*.so
+
+# Temporary Rust files
+rust_extensions/**/*--temp.*
+**/*.rs.bk
