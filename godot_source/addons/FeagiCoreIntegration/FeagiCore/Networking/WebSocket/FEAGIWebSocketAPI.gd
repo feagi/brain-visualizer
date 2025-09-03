@@ -40,7 +40,25 @@ const MISSING_AREA_WARNING_INTERVAL: float = 10.0  # Only warn every 10 seconds 
 # Case-insensitive cortical area mapping cache
 var _case_mapping_cache: Dictionary = {}  # lowercase_id -> actual_cached_id
 
+# Rust-based high-performance deserializer
+var _rust_deserializer = null
+
 func _ready():
+	# Initialize Rust-based high-performance deserializer (REQUIRED)
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+		if _rust_deserializer:
+			print("🦀 FEAGI Rust deserializer initialized successfully!")
+		else:
+			push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
+			set_process(false)
+			return
+	else:
+		push_error("🦀 CRITICAL: FeagiDataDeserializer class not found! Cannot process WebSocket data without Rust extension.")
+		push_error("🦀 Please ensure the feagi_rust_deserializer addon is properly installed and the shared library is built.")
+		set_process(false)  # Disable processing if Rust deserializer fails
+		return
+	
 	# Reset missing area tracking when genome reloads
 	if FeagiCore.feagi_local_cache:
 		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
@@ -188,8 +206,12 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			# AreaHeaders: [CorticalID:6][DataOffset:4][DataLength:4] per area = 14 bytes per area
 			# NeuronData: [X array][Y array][Z array][P array] per area
 			
-			# Use the new optimized decoder
-			var decoded_result = _decode_type_11_optimized(bytes, 0)
+			# Use Rust-based high-performance deserializer (REQUIRED)
+			if _rust_deserializer == null:
+				push_error("🦀 CRITICAL: Rust deserializer is null! Cannot process Type 11 data.")
+				return
+			
+			var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
 			
 			if !decoded_result.success:
 				print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
@@ -324,149 +346,5 @@ func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	_socket_health = new_health
 	FEAGI_socket_health_changed.emit(prev_health, new_health)
 
-# Ultra-optimized Type 11 decoder for feagi-data-processing format
-func _decode_type_11_optimized(buffer: PackedByteArray, offset: int) -> Dictionary:
-	"""
-	Decode Type 11 (NeuronCategoricalXYZP) from feagi-data-processing format
-	Using bulk array operations for maximum performance
-	
-	Format:
-	1. Global Header: [Type:1][Version:1][NumAreas:2] = 4 bytes
-	2. Area Headers: [CorticalID:6][DataOffset:4][DataLength:4] per area = 14 bytes per area  
-	3. Neuron Data: [X array][Y array][Z array][P array] per area
-	
-	Returns: {
-		"success": bool,
-		"areas": {
-			"cortical_id": {
-				"x_array": PackedInt32Array,
-				"y_array": PackedInt32Array,
-				"z_array": PackedInt32Array,
-				"p_array": PackedFloat32Array
-			}
-		},
-		"total_neurons": int,
-		"error": String (if success=false)
-	}
-	"""
-	var result = {
-		"success": false,
-		"areas": {},
-		"total_neurons": 0,
-		"error": ""
-	}
-	
-	var buffer_size = buffer.size()
-	var pos = offset
-	
-	# Check minimum size for global header
-	if pos + 4 > buffer_size:
-		result.error = "Buffer too small for global header (need 4 bytes)"
-		return result
-	
-	# Read global header
-	var structure_type = buffer[pos]
-	var version = buffer[pos + 1]
-	var num_areas = buffer.decode_u16(pos + 2)  # Little endian uint16
-	pos += 4
-	
-	# Validate header
-	if structure_type != 11:
-		result.error = "Invalid structure type: %d (expected 11)" % structure_type
-		return result
-	
-	if version != 1:
-		result.error = "Unsupported version: %d (expected 1)" % version
-		return result
-	
-	if num_areas == 0:
-		result.error = "No cortical areas in data"
-		return result
-	
-	# Check size for area headers
-	var area_headers_size = num_areas * 14  # 6 + 4 + 4 bytes per area
-	if pos + area_headers_size > buffer_size:
-		result.error = "Buffer too small for area headers (need %d bytes)" % area_headers_size
-		return result
-	
-	# Read area headers
-	var area_headers = []
-	for i in range(num_areas):
-		# Read cortical ID (6 bytes) - convert to string efficiently
-		var cortical_id = buffer.slice(pos, pos + 6).get_string_from_ascii()
-		pos += 6
-		
-		# Read data offset and length (8 bytes total)
-		var data_offset = buffer.decode_u32(pos)      # Little endian uint32
-		var data_length = buffer.decode_u32(pos + 4)  # Little endian uint32
-		pos += 8
-		
-		area_headers.append({
-			"cortical_id": cortical_id,
-			"data_offset": data_offset,
-			"data_length": data_length
-		})
-	
-	# Process each area's neuron data with true bulk operations
-	var total_neurons = 0
-	
-	for header in area_headers:
-		var cortical_id = header.cortical_id
-		var data_offset = header.data_offset
-		var data_length = header.data_length
-		
-		# Validate data range
-		if data_offset + data_length > buffer_size:
-			result.error = "Area %s data range exceeds buffer (offset=%d, length=%d, buffer_size=%d)" % [cortical_id, data_offset, data_length, buffer_size]
-			return result
-		
-		# Calculate number of neurons in this area
-		if data_length % 16 != 0:
-			result.error = "Area %s data length %d not divisible by 16" % [cortical_id, data_length]
-			return result
-		
-		var num_neurons = data_length / 16
-		if num_neurons == 0:
-			# Empty area - skip but don't error
-			result.areas[cortical_id] = {
-				"x_array": PackedInt32Array(),
-				"y_array": PackedInt32Array(),
-				"z_array": PackedInt32Array(),
-				"p_array": PackedFloat32Array()
-			}
-			continue
-		
-		# Extract arrays with ZERO loops - direct bulk conversion
-		var array_byte_size = num_neurons * 4  # Each array has num_neurons * 4 bytes
-		var data_pos = data_offset
-		
-		# X array: Direct byte-to-int32 conversion (NO LOOPS!)
-		var x_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
-		var x_array = x_bytes.to_int32_array()
-		data_pos += array_byte_size
-		
-		# Y array: Direct byte-to-int32 conversion (NO LOOPS!)
-		var y_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
-		var y_array = y_bytes.to_int32_array()
-		data_pos += array_byte_size
-		
-		# Z array: Direct byte-to-int32 conversion (NO LOOPS!)
-		var z_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
-		var z_array = z_bytes.to_int32_array()
-		data_pos += array_byte_size
-		
-		# P array: Direct byte-to-float32 conversion (NO LOOPS!)
-		var p_bytes = buffer.slice(data_pos, data_pos + array_byte_size)
-		var p_array = p_bytes.to_float32_array()
-		
-		result.areas[cortical_id] = {
-			"x_array": x_array,      # PackedInt32Array - direct from bytes
-			"y_array": y_array,      # PackedInt32Array - direct from bytes
-			"z_array": z_array,      # PackedInt32Array - direct from bytes
-			"p_array": p_array       # PackedFloat32Array - direct from bytes
-		}
-		total_neurons += num_neurons
-	
-	result.success = true
-	result.total_neurons = total_neurons
-	return result
+# All deserialization is now handled by the Rust extension
+# The _decode_type_11_optimized function has been removed as it's no longer needed
