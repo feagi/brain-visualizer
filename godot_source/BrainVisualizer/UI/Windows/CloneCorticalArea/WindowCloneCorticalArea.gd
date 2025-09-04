@@ -14,12 +14,15 @@ var _field_cortical_name: TextInput
 var _field_3d_location: Vector3iSpinboxField
 var _field_2d_location: Vector2iSpinboxField
 var _cloning_cortical_area: AbstractCorticalArea
+var _preview: UI_BrainMonitor_InteractivePreview
 
 func _ready() -> void:
 	super()
 	_field_cortical_name = _window_internals.get_node('HBoxContainer/Cortical_Name')
 	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
 	_field_2d_location = _window_internals.get_node('HBoxContainer3/Coordinates_2D')
+	# Connect to window close signal to ensure preview cleanup
+	close_window_requested.connect(_cleanup_preview_on_close)
 
 func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -32,7 +35,7 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	_field_3d_location.current_vector = cloning_cortical_area.coordinates_3D + OFFSET_3D
 	_field_2d_location.current_vector = cloning_cortical_area.coordinates_2D + OFFSET_2D
 	
-	var closing_signals: Array[Signal] = [close_window_requested]
+	var closing_signals: Array[Signal] = []  # No close signals needed - we handle cleanup explicitly
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimensions_signal]
 	# Use the brain monitor that is currently visualizing the cortical area being cloned (important for tabs!)
@@ -40,11 +43,21 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	if active_bm == null:
 		push_error("WindowCloneCorticalArea: No brain monitor available for preview creation!")
 		return
-	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false, _cloning_cortical_area.cortical_type, _cloning_cortical_area)
-	preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
+	_preview = active_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false, _cloning_cortical_area.cortical_type, _cloning_cortical_area)
+	_preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
 
 
 func _clone_pressed():
 	#TODO check for conflicting name and alert user
-	FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, FeagiCore.feagi_local_cache.brain_regions.get_root_region()) #TODO remove root region
+	await FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, FeagiCore.feagi_local_cache.brain_regions.get_root_region()) #TODO remove root region
+	# Explicitly clean up preview before closing window
+	_cleanup_preview()
 	close_window()
+
+func _cleanup_preview() -> void:
+	if _preview and is_instance_valid(_preview):
+		_preview.queue_free()
+		_preview = null
+
+func _cleanup_preview_on_close(_window_name: StringName) -> void:
+	_cleanup_preview()
