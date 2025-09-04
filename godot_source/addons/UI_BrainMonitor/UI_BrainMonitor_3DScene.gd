@@ -131,6 +131,11 @@ func setup(region: BrainRegion) -> void:
 			label_3d.position = Vector3(0, 30, 0)
 		
 		_node_3D_root.add_child(label_3d)
+	
+	# Connect to cache reload events to refresh all cortical area connections
+	if FeagiCore.feagi_local_cache:
+		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
+		# print("BrainMonitor 3D Scene: 🔗 CONNECTED to cache reload signal for global connection refresh")  # Suppressed - causes output overflow
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()
@@ -348,15 +353,15 @@ func _brain_region_preview_closing(preview: UI_BrainMonitor_BrainRegionPreview):
 # NOTE: Cortical area movements, resizes, and renames are handled by the [UI_BrainMonitor_CorticalArea]s themselves!
 
 func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
-	print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])
+	# print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])  # Suppressed - causes output overflow
 	
-	# Show call stack to find who's calling this
-	print("🚨 CALL STACK for _add_cortical_area:")
-	var stack = get_stack()
-	stack.reverse()
-	for i in range(min(3, stack.size())):
-		var frame = stack[i]
-		print("  %d. %s:%s in %s()" % [i, frame.source, frame.line, frame.function])
+	# Show call stack to find who's calling this - SUPPRESSED DUE TO OUTPUT OVERFLOW
+	# print("🚨 CALL STACK for _add_cortical_area:")
+	# var stack = get_stack()
+	# stack.reverse()
+	# for i in range(min(3, stack.size())):
+	# 	var frame = stack[i]
+	# 	print("  %d. %s:%s in %s()" % [i, frame.source, frame.line, frame.function])
 	if area.cortical_ID in _cortical_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
 		return null
@@ -377,19 +382,19 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 		return null
 	
 	print("  ✅ Creating cortical area %s - directly_in_root: %s, io_of_child: %s" % [area.cortical_ID, is_directly_in_root, is_io_of_child_region])
-	print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])
-	print("  🎯 INSTANCE: Adding to brain monitor instance %d" % get_instance_id())
-	print("  🎯 INSTANCE: Adding to 3D root %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])
+	# print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])  # Suppressed - too verbose
+	# print("  🎯 INSTANCE: Adding to brain monitor instance %d" % get_instance_id())  # Suppressed - too verbose
+	# print("  🎯 INSTANCE: Adding to 3D root %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])  # Suppressed - too verbose
 	
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
 	_node_3D_root.add_child(rendering_area)
-	print("  🎯 ADDED: Cortical area %s added as child to 3D root instance %d" % [area.cortical_ID, _node_3D_root.get_instance_id()])
+	# print("  🎯 ADDED: Cortical area %s added as child to 3D root instance %d" % [area.cortical_ID, _node_3D_root.get_instance_id()])  # Suppressed - too verbose
 	rendering_area.setup(area)
 	_cortical_visualizations_by_ID[area.cortical_ID] = rendering_area
 	
 	print("  ✅ SUCCESS: Cortical area %s added to brain monitor %s" % [area.cortical_ID, name])
-	print("  📍 Area coordinates: %s" % area.coordinates_3D)
-	print("  🎯 Total areas in this brain monitor: %d" % _cortical_visualizations_by_ID.size())
+	# print("  📍 Area coordinates: %s" % area.coordinates_3D)  # Suppressed - too frequent
+	# print("  🎯 Total areas in this brain monitor: %d" % _cortical_visualizations_by_ID.size())  # Suppressed - too frequent
 	
 	area.about_to_be_deleted.connect(_remove_cortical_area.bind(area))
 	area.coordinates_3D_updated.connect(rendering_area.set_new_position)
@@ -420,7 +425,7 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_BrainRegion3D:
-	print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)
+	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
 	print("  🔧 _add_brain_region_frame called for: %s" % brain_region.friendly_name)
 	print("  📍 Brain region coordinates: 2D=%s, 3D=%s" % [brain_region.coordinates_2D, brain_region.coordinates_3D])
 	
@@ -528,5 +533,36 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 	
 	# print("    ❌ Area %s is NOT I/O of any child region" % area.cortical_ID)  # Suppressed - too spammy
 	return false
+
+## Cache reload event handler - refreshes all cortical area connections
+func _on_cache_reloaded_refresh_all_connections() -> void:
+	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD detected - refreshing all cortical area connections")
+	
+	# Force refresh connections for all currently hovered cortical areas
+	var refreshed_count = 0
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz._is_volume_moused_over:
+			print("   🔗 Refreshing connections for hovered area: ", cortical_viz.cortical_area.cortical_ID)
+			cortical_viz._hide_neural_connections()
+			cortical_viz._show_neural_connections()
+			refreshed_count += 1
+	
+	print("BrainMonitor 3D Scene: ✅ Refreshed connections for ", refreshed_count, " hovered cortical areas")
+
+## Manual force refresh of all cortical area connections (for debugging/troubleshooting)
+func force_refresh_all_cortical_connections() -> void:
+	print("BrainMonitor 3D Scene: 🔧 MANUAL REFRESH - Force refreshing all cortical area connections")
+	
+	var refreshed_count = 0
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		# Hide any existing connections
+		cortical_viz._hide_neural_connections()
+		
+		# If this area is currently hovered, show refreshed connections
+		if cortical_viz._is_volume_moused_over:
+			cortical_viz._show_neural_connections()
+			refreshed_count += 1
+	
+	print("BrainMonitor 3D Scene: ✅ Manual refresh completed for ", refreshed_count, " areas")
 
 #endregion

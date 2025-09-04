@@ -39,8 +39,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 		add_child(_directpoints_renderer)
 		_directpoints_renderer.setup(_representing_cortial_area)
-		print("   🎯 Using ONLY DirectPoints renderer for: ", _representing_cortial_area.cortical_ID)
-		print("   🚫 NO DDA renderer created - should have no cube!")
+		# print("   🎯 Using ONLY DirectPoints renderer for: ", _representing_cortial_area.cortical_ID)  # Suppressed - causes output overflow
+		# print("   🚫 NO DDA renderer created - should have no cube!")  # Suppressed - causes output overflow
 	else:
 		# Standard areas use DDA renderer for translucent voxel structure
 		_dda_renderer = _create_renderer_depending_on_cortical_area_type(_representing_cortial_area)
@@ -51,7 +51,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 		add_child(_directpoints_renderer)
 		_directpoints_renderer.setup(_representing_cortial_area)
-		print("   🎯 Using BOTH DDA and DirectPoints renderers for: ", _representing_cortial_area.cortical_ID)
+		# print("   🎯 Using BOTH DDA and DirectPoints renderers for: ", _representing_cortial_area.cortical_ID)  # Suppressed - causes output overflow
 	
 	# setup signals to update properties automatically for renderers
 	if _dda_renderer != null:
@@ -70,14 +70,29 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Connect direct points data to DirectPoints renderer (for individual firing neurons)
 	if _directpoints_renderer.has_method("_on_received_direct_neural_points"):
 		defined_cortical_area.recieved_new_direct_neural_points.connect(_directpoints_renderer._on_received_direct_neural_points)
-		print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DirectPoints renderer")
+		# print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DirectPoints renderer")  # Suppressed - causes output overflow
 	
 	# Connect bulk direct points data for optimized processing
 	if _directpoints_renderer.has_method("_on_received_direct_neural_points_bulk"):
 		defined_cortical_area.recieved_new_direct_neural_points_bulk.connect(_directpoints_renderer._on_received_direct_neural_points_bulk)
-		print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")
+		# print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")  # Suppressed - causes output overflow
 	
-	print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")
+	# print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")  # Suppressed - causes output overflow
+	
+	# Connect to cache reload events to refresh connection curves
+	if FeagiCore.feagi_local_cache:
+		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
+		# print("🔗 CONNECTED: Cache reload signal for connection curve refresh")  # Suppressed - causes output overflow
+	
+	# Connect to mapping change signals for real-time updates
+	if defined_cortical_area:
+		defined_cortical_area.afferent_input_cortical_area_added.connect(_on_mapping_changed)
+		defined_cortical_area.afferent_input_cortical_area_removed.connect(_on_mapping_changed)
+		defined_cortical_area.efferent_input_cortical_area_added.connect(_on_mapping_changed)
+		defined_cortical_area.efferent_input_cortical_area_removed.connect(_on_mapping_changed)
+		defined_cortical_area.recursive_cortical_area_added.connect(_on_mapping_changed)
+		defined_cortical_area.recursive_cortical_area_removed.connect(_on_mapping_changed)
+		# print("🔗 CONNECTED: Mapping change signals for real-time curve updates")  # Suppressed - causes output overflow
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
@@ -323,9 +338,9 @@ func _hide_neural_connections() -> void:
 
 ## Get the center position of this cortical area in world space
 func _get_cortical_area_center_position() -> Vector3:
-	print("     🔍 Getting position for: ", _representing_cortial_area.cortical_ID)
-	print("     🔍 _dda_renderer: ", _dda_renderer != null)
-	print("     🔍 _directpoints_renderer: ", _directpoints_renderer != null)
+	# print("     🔍 Getting position for: ", _representing_cortial_area.cortical_ID)  # Suppressed - too frequent
+	# print("     🔍 _dda_renderer: ", _dda_renderer != null)  # Suppressed - too frequent  
+	# print("     🔍 _directpoints_renderer: ", _directpoints_renderer != null)  # Suppressed - too frequent
 	
 	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		print("     🔮 MEMORY AREA position retrieval...")
@@ -333,11 +348,11 @@ func _get_cortical_area_center_position() -> Vector3:
 	# Use the renderer's static body position as the center
 	if _dda_renderer != null and _dda_renderer._static_body != null:
 		var pos = _dda_renderer._static_body.global_position
-		print("     ✅ DDA renderer position: ", pos)
+		# print("     ✅ DDA renderer position: ", pos)  # Suppressed - too frequent
 		return pos
 	elif _directpoints_renderer != null and _directpoints_renderer._static_body != null:
 		var pos = _directpoints_renderer._static_body.global_position
-		print("     ✅ DirectPoints renderer position: ", pos)
+		# print("     ✅ DirectPoints renderer position: ", pos)  # Suppressed - too frequent
 		return pos
 	else:
 		print("     ❌ No renderer or static body available for: ", _representing_cortial_area.cortical_ID)
@@ -1229,3 +1244,56 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 		1.0,
 		breathing_speed
 	)
+
+## Cleanup method to disconnect signals and prevent memory leaks
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_cleanup_cache_connections()
+
+func _cleanup_cache_connections() -> void:
+	print("🧹 CLEANUP: Disconnecting cache signals for cortical area: ", _representing_cortial_area.cortical_ID if _representing_cortial_area else "unknown")
+	
+	# Disconnect cache reload signal
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
+		FeagiCore.feagi_local_cache.cache_reloaded.disconnect(_on_cache_reloaded)
+	
+	# Disconnect mapping change signals if cortical area still exists
+	if _representing_cortial_area:
+		if _representing_cortial_area.afferent_input_cortical_area_added.is_connected(_on_mapping_changed):
+			_representing_cortial_area.afferent_input_cortical_area_added.disconnect(_on_mapping_changed)
+		if _representing_cortial_area.afferent_input_cortical_area_removed.is_connected(_on_mapping_changed):
+			_representing_cortial_area.afferent_input_cortical_area_removed.disconnect(_on_mapping_changed)
+		if _representing_cortial_area.efferent_input_cortical_area_added.is_connected(_on_mapping_changed):
+			_representing_cortial_area.efferent_input_cortical_area_added.disconnect(_on_mapping_changed)
+		if _representing_cortial_area.efferent_input_cortical_area_removed.is_connected(_on_mapping_changed):
+			_representing_cortial_area.efferent_input_cortical_area_removed.disconnect(_on_mapping_changed)
+		if _representing_cortial_area.recursive_cortical_area_added.is_connected(_on_mapping_changed):
+			_representing_cortial_area.recursive_cortical_area_added.disconnect(_on_mapping_changed)
+		if _representing_cortial_area.recursive_cortical_area_removed.is_connected(_on_mapping_changed):
+			_representing_cortial_area.recursive_cortical_area_removed.disconnect(_on_mapping_changed)
+
+#region Cache Event Handlers
+
+## Called when the cache is reloaded to refresh connection curves
+func _on_cache_reloaded() -> void:
+	print("🔄 CACHE RELOAD: Refreshing connection curves for cortical area: ", _representing_cortial_area.cortical_ID)
+	
+	# If we're currently showing connections, refresh them with updated cache data
+	if _is_volume_moused_over:
+		print("   📊 Area is hovered, refreshing curves with new cache data")
+		_hide_neural_connections()  # Clear old curves
+		_show_neural_connections()  # Rebuild with fresh cache data
+	else:
+		print("   📊 Area not hovered, curves will refresh on next hover")
+
+## Called when mapping connections change in real-time
+func _on_mapping_changed(_area = null, _mapping_set = null) -> void:
+	print("🔗 MAPPING CHANGE: Detected mapping change for cortical area: ", _representing_cortial_area.cortical_ID)
+	
+	# If we're currently showing connections, refresh them immediately
+	if _is_volume_moused_over:
+		print("   📊 Area is hovered, immediately refreshing curves due to mapping change")
+		_hide_neural_connections()  # Clear old curves
+		_show_neural_connections()  # Rebuild with updated mappings
+		
+#endregion

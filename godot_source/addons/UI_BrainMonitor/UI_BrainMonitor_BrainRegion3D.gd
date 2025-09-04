@@ -279,7 +279,7 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 		cortical_viz._dda_renderer._dimensions = new_dimensions
 		if cortical_viz._dda_renderer._static_body != null:
 			cortical_viz._dda_renderer._static_body.scale = new_dimensions
-			print("      📏 Updated DDA renderer scale: %s" % new_dimensions)
+			# print("      📏 Updated DDA renderer scale: %s" % new_dimensions)  # Suppressed - too frequent
 		
 		# Update shader parameters
 		if cortical_viz._dda_renderer._DDA_mat != null:
@@ -303,7 +303,7 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 		cortical_viz._directpoints_renderer._dimensions = new_dimensions
 		if cortical_viz._directpoints_renderer._static_body != null:
 			cortical_viz._directpoints_renderer._static_body.scale = new_dimensions
-			print("      📏 Updated DirectPoints renderer scale: %s" % new_dimensions)
+			# print("      📏 Updated DirectPoints renderer scale: %s" % new_dimensions)  # Suppressed - too frequent
 		
 		# Update collision shape size
 		var collision_shape = cortical_viz._directpoints_renderer._static_body.get_child(0) as CollisionShape3D
@@ -312,17 +312,17 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 				(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # PNG icon collision
 			else:
 				(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
-			print("      🔲 Updated DirectPoints collision shape")
+			# print("      🔲 Updated DirectPoints collision shape")  # Suppressed - too frequent
 		
 		# Update outline mesh scale
 		if cortical_viz._directpoints_renderer._outline_mesh_instance != null:
 			cortical_viz._directpoints_renderer._outline_mesh_instance.scale = new_dimensions
-			print("      🔍 Updated DirectPoints outline scale")
+			# print("      🔍 Updated DirectPoints outline scale")  # Suppressed - too frequent
 		
 		# Update outline material scaling
 		if cortical_viz._directpoints_renderer._outline_mat != null:
 			cortical_viz._directpoints_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
-			print("      🎨 Updated DirectPoints outline material")
+			# print("      🎨 Updated DirectPoints outline material")  # Suppressed - too frequent
 	
 	print("    ✅ Brain region dimension update completed (positioning preserved)")
 	
@@ -876,12 +876,12 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	# The UI_BrainMonitor_CorticalArea is a Node (not Node3D), so it doesn't participate in 3D positioning
 	# We need to set absolute world positions directly
 	
-	print("      🔧 Setting GLOBAL renderer position to %s" % desired_world_pos)
+	# print("      🔧 Setting GLOBAL renderer position to %s" % desired_world_pos)  # Suppressed - too frequent
 	
 	# Position the DDA renderer's static body if it exists
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
-		print("        ✅ DDA renderer global_position set to %s" % cortical_viz._dda_renderer._static_body.global_position)
+		# print("        ✅ DDA renderer global_position set to %s" % cortical_viz._dda_renderer._static_body.global_position)  # Suppressed - too frequent
 		# Also position the label if it exists
 		if cortical_viz._dda_renderer._friendly_name_label != null:
 			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)  # Label above cortical area
@@ -889,7 +889,7 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	# Position the DirectPoints renderer's static body if it exists  
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
-		print("        ✅ DirectPoints renderer global_position set to %s" % cortical_viz._directpoints_renderer._static_body.global_position)
+		# print("        ✅ DirectPoints renderer global_position set to %s" % cortical_viz._directpoints_renderer._static_body.global_position)  # Suppressed - too frequent
 		# Also position the label if it exists
 		if cortical_viz._directpoints_renderer._friendly_name_label != null:
 			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)  # Label above cortical area
@@ -1090,12 +1090,12 @@ func _log_single_cortical_area_position(cortical_viz: UI_BrainMonitor_CorticalAr
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		var local_pos = cortical_viz._dda_renderer._static_body.position
 		var global_pos = cortical_viz._dda_renderer._static_body.global_position
-		print("      📍 DDA renderer - Local: %s, Global: %s" % [local_pos, global_pos])
+		# print("      📍 DDA renderer - Local: %s, Global: %s" % [local_pos, global_pos])  # Suppressed - debug spam
 	
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 		var local_pos = cortical_viz._directpoints_renderer._static_body.position
 		var global_pos = cortical_viz._directpoints_renderer._static_body.global_position
-		print("      📍 DirectPoints renderer - Local: %s, Global: %s" % [local_pos, global_pos])
+		# print("      📍 DirectPoints renderer - Local: %s, Global: %s" % [local_pos, global_pos])  # Suppressed - debug spam
 	
 	# Note: UI_BrainMonitor_CorticalArea is a Node (not Node3D), so it has no position property
 	# The actual positioning is handled by its child renderers (_dda_renderer and _directpoints_renderer)

@@ -314,7 +314,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	if _outline_mat != null:
 		_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
-	print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)
+	# print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)  # Suppressed - called too frequently
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility
@@ -347,7 +347,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	# Limit points for performance
 	var actual_point_count = min(point_count, _max_neurons)
 	if actual_point_count != point_count:
-		print("DirectPoints: Limiting to ", actual_point_count, " voxels for performance (received ", point_count, ")")
+		pass  # Suppressed: "DirectPoints: Limiting to X voxels for performance" - called too frequently
 	
 	# Update MultiMesh instance count
 	_multi_mesh.instance_count = actual_point_count
