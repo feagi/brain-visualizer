@@ -233,13 +233,7 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 		else:
 			print("     ❌ Memory area has NO outgoing connections")
 	
-	if efferent_mappings.is_empty():
-		print("   ❌ No efferent connections found for: ", _representing_cortial_area.cortical_ID)
-		return
-	
-	print("   📊 Found ", efferent_mappings.size(), " efferent connections")
-	
-	# Get the center position of this cortical area
+	# Get the center position of this cortical area (needed for both efferent and afferent connections)
 	var source_position = _get_cortical_area_center_position()
 	print("   🎯 Source position: ", source_position)
 	
@@ -247,22 +241,29 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 		print("   ❌ ERROR: Could not get source position!")
 		return
 	
-	# Create curves to all destination cortical areas (OUTGOING)
 	var curves_created = 0
-	for destination_area: AbstractCorticalArea in efferent_mappings.keys():
-		print("   🎯 Processing OUTGOING to: ", destination_area.cortical_ID)
-		var destination_position = _get_cortical_area_center_position_for_area(destination_area)
-		print("   📍 Destination position: ", destination_position)
+	
+	# Process efferent (outgoing) connections if they exist
+	if not efferent_mappings.is_empty():
+		print("   📊 Found ", efferent_mappings.size(), " efferent connections")
 		
-		if destination_position != Vector3.ZERO:  # Valid position found
-			var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
-			var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, mapping_set, is_global_mode)
-			_connection_curves.append(curve_node)
-			add_child(curve_node)
-			curves_created += 1
-			print("   ✅ Created OUTGOING curve to: ", destination_area.cortical_ID)
-		else:
-			print("   ⚠️ Skipped outgoing connection to ", destination_area.cortical_ID, " - invalid position")
+		# Create curves to all destination cortical areas (OUTGOING)
+		for destination_area: AbstractCorticalArea in efferent_mappings.keys():
+			print("   🎯 Processing OUTGOING to: ", destination_area.cortical_ID)
+			var destination_position = _get_cortical_area_center_position_for_area(destination_area)
+			print("   📍 Destination position: ", destination_position)
+			
+			if destination_position != Vector3.ZERO:  # Valid position found
+				var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
+				var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, mapping_set, is_global_mode)
+				_connection_curves.append(curve_node)
+				add_child(curve_node)
+				curves_created += 1
+				print("   ✅ Created OUTGOING curve to: ", destination_area.cortical_ID)
+			else:
+				print("   ⚠️ Skipped outgoing connection to ", destination_area.cortical_ID, " - invalid position")
+	else:
+		print("   ❌ No efferent connections found for: ", _representing_cortial_area.cortical_ID)
 	
 	# Get all afferent (incoming) connections to this cortical area
 	var afferent_mappings = _representing_cortial_area.afferent_mappings
