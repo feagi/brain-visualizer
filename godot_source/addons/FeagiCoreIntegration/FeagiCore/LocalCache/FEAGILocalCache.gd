@@ -272,6 +272,9 @@ var brain_readiness: bool:
 			_brain_readiness = v
 			brain_readiness_changed.emit(v)
 
+var genome_num: int:
+	get: return _genome_num
+
 var simulation_timestep: float:
 	get: return _simulation_timestep
 	set(v):
@@ -288,6 +291,7 @@ var _synapse_count_current: int = -1
 var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
+var _genome_num: int = 0
 var _simulation_timestep: float = 0.05  # Default 50ms
 
 # Memory area stats from health check
@@ -342,6 +346,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var value = health["brain_readiness"]
 		if value != null:
 			brain_readiness = bool(value)
+	if "genome_num" in health: 
+		var value = health["genome_num"]
+		if value != null:
+			genome_num = int(value)
 	
 	# Handle simulation_timestep or burst_frequency
 	if "simulation_timestep" in health:

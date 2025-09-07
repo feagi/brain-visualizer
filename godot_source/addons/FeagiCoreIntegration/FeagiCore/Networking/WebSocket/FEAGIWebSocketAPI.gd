@@ -32,6 +32,7 @@ var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
 var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
 var _temp_genome_ID: float = 0.0
+var _temp_genome_num: int = 0
 
 # Missing cortical area handling
 var _missing_cortical_areas: Dictionary = {}  # cortical_id -> {last_warning_time, fetch_attempted}
@@ -166,12 +167,30 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			if dict.has("status"):
 				var dict_status = dict["status"]
 				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+				
+				# Check for genome changes via timestamp OR genome_num counter
+				var genome_changed = false
+				
 				if dict_status.has("genome_timestamp"):
 					if (!is_zero_approx(_temp_genome_ID - dict_status["genome_timestamp"])):
 						if !is_zero_approx(_temp_genome_ID):
-							print("reset")
-							feagi_requesting_reset.emit()
+							print("🔄 GENOME RESET DETECTED: genome_timestamp changed from ", _temp_genome_ID, " to ", dict_status["genome_timestamp"])
+							genome_changed = true
 						_temp_genome_ID = dict_status["genome_timestamp"]
+				
+				if dict_status.has("genome_num"):
+					var current_genome_num = dict_status["genome_num"]
+					if _temp_genome_num > 0 and current_genome_num != _temp_genome_num:
+						print("🔄 GENOME RESET DETECTED: genome_num changed from ", _temp_genome_num, " to ", current_genome_num)
+						genome_changed = true
+					_temp_genome_num = current_genome_num
+				
+				# Trigger reset and clear stale cache if genome changed
+				if genome_changed:
+					print("🗑️ CLEARING stale missing cortical areas cache (had ", _missing_cortical_areas.size(), " entries)")
+					_missing_cortical_areas.clear()
+					_case_mapping_cache.clear()
+					feagi_requesting_reset.emit()
 						
 					
 		7: # ActivatedNeuronLocation
