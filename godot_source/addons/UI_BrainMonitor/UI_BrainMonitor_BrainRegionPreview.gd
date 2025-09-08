@@ -32,7 +32,7 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else 5.0
 	
 	# Create input plate (brighter green to match main region)
-	var input_color = Color(0.0, 0.6, 0.0, 0.7)
+	var input_color = Color(0.0, 0.6, 0.0, 0.2)
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_translucent_plate(input_plate_size, "InputPlatePreview", input_color)
@@ -47,7 +47,7 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	_preview_container.add_child(input_plate)
 	
 	# Create output plate (darker green to match main region)
-	var output_color = Color(0.0, 0.4, 0.0, 0.7)
+	var output_color = Color(0.0, 0.4, 0.0, 0.2)
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_translucent_plate(output_plate_size, "OutputPlatePreview", output_color)
@@ -270,7 +270,8 @@ func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String
 	# Create wireframe material (same style as main region)
 	var wireframe_material = StandardMaterial3D.new()
 	wireframe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	wireframe_material.albedo_color = plate_color
+	wireframe_material.albedo_color = plate_color  # Use actual alpha value from plate_color parameter
+	wireframe_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # Enable alpha transparency
 	wireframe_material.flags_unshaded = true
 	wireframe_material.flags_transparent = true
 	wireframe_material.flags_do_not_receive_shadows = true

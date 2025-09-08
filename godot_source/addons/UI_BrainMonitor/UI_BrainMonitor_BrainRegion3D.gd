@@ -383,8 +383,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
 	
-	# Create new plates with updated sizes (70% opacity)
-	var input_color = Color(0.0, 0.6, 0.0, 0.7)  # Brighter green for input
+	# Create new plates with updated sizes (20% opacity to match user setting)
+	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Brighter green for input
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
@@ -395,7 +395,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	input_plate.position.z = input_plate_size.z / 2.0
 	_frame_container.add_child(input_plate)
 	
-	var output_color = Color(0.0, 0.4, 0.0, 0.7)  # Darker green for output with 70% opacity
+	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green for output with 20% opacity
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -514,7 +514,7 @@ func _create_3d_plate() -> void:
 	add_child(_frame_container)
 	
 	# INPUT PLATE: Front-left corner at brain region coordinates (0,0,0 relative)
-	var input_color = Color(0.0, 0.6, 0.0, 0.7)  # Brighter green with 70% opacity
+	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Brighter green with opacity
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
@@ -525,11 +525,9 @@ func _create_3d_plate() -> void:
 	input_plate.position.y = PLATE_HEIGHT / 2.0  # Half-height to align bottom at origin
 	input_plate.position.z = input_plate_size.z / 2.0  # Half-depth to align front edge at origin
 	_frame_container.add_child(input_plate)
-	print("  🟢 InputPlate: Created %s plate (size: %.1f x %.1f x %.1f)" % ["bright green solid (70% opacity)" if input_areas.size() > 0 else "bright green wireframe placeholder", input_plate_size.x if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x, input_plate_size.y if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.y, input_plate_size.z if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.z])
-	print("      📍 POSITIONED: Front-left corner at brain region coordinates (0,0,0 relative)")
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
-	var output_color = Color(0.0, 0.4, 0.0, 0.7)  # Darker green with 70% opacity
+	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green with opacity
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -541,8 +539,7 @@ func _create_3d_plate() -> void:
 	output_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as input plate (Godot center)
 	output_plate.position.z = output_plate_size.z / 2.0  # Half-depth to align front edge at same Z as input
 	_frame_container.add_child(output_plate)
-	print("  🟢 OutputPlate: Created %s plate (size: %.1f x %.1f x %.1f)" % ["darker green solid (70% opacity)" if output_areas.size() > 0 else "darker green wireframe placeholder", output_plate_size.x if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x, output_plate_size.y if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.y, output_plate_size.z if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.z])
-	print("      📍 POSITIONED: Front-left corner at input_width + gap from region")
+
 	
 	# Create region name label below the plates
 	_region_name_label = Label3D.new()
@@ -595,7 +592,8 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	# Create semi-transparent material
 	var plate_material = StandardMaterial3D.new()
 	plate_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	plate_material.albedo_color = Color(plate_color.r, plate_color.g, plate_color.b, 0.4)  # Semi-transparent
+	plate_material.albedo_color = plate_color  # Use the actual alpha value from plate_color parameter
+	plate_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # Enable alpha transparency
 	plate_material.flags_unshaded = true
 	plate_material.flags_transparent = true
 	plate_material.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -660,7 +658,8 @@ func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String
 	# Create wireframe material
 	var wireframe_material = StandardMaterial3D.new()
 	wireframe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	wireframe_material.albedo_color = plate_color
+	wireframe_material.albedo_color = plate_color  # Use actual alpha value from plate_color parameter
+	wireframe_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # Enable alpha transparency
 	wireframe_material.flags_unshaded = true
 	wireframe_material.flags_transparent = true
 	wireframe_material.flags_do_not_receive_shadows = true
