@@ -17,7 +17,7 @@ const PLATE_SIDE_MARGIN: float = 2.0         # Margin on left/right sides of pla
 const PLATE_FRONT_BACK_MARGIN: float = 2.0   # Margin on front/back of plate
 const PLATE_HEIGHT: float = 1.0              # Constant height of all plates
 const PLATE_GAP: float = 1.0                 # Gap between input and output plates
-const AREA_ABOVE_PLATE_GAP: float = 1.0      # Gap between plate top and area bottom
+const AREA_ABOVE_PLATE_GAP: float = 3.0      # Gap between plate top and area bottom
 const PLACEHOLDER_PLATE_SIZE: Vector3 = Vector3(5.0, 1.0, 5.0)  # Size for empty plate placeholders
 
 var representing_region: BrainRegion:
@@ -207,6 +207,28 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	print("    🎯 ALL I/O areas have IDENTICAL front edge at Z=%.1f" % brain_region.coordinates_3D.z)
 	
 	return result
+
+## DEBUG: Manually check label positions
+func debug_label_positions() -> void:
+	print("🔍 MANUAL LABEL DEBUG CHECK:")
+	if _representing_region:
+		print("    🧠 Brain region FEAGI coordinates: %s" % _representing_region.coordinates_3D)
+		print("    🧠 Brain region global_position: %s" % global_position)
+	else:
+		print("    ❌ No representing region!")
+		
+	if _region_name_label:
+		print("    🏷️ Label exists: YES")
+		print("    🏷️ Label local position: %s" % _region_name_label.position)
+		print("    🏷️ Label global_position: %s" % _region_name_label.global_position)
+		print("    🏷️ Label parent: %s" % _region_name_label.get_parent().name)
+	else:
+		print("    ❌ No region name label found!")
+		
+	print("    📦 Total BrainRegion3D children: %d" % get_child_count())
+	for i in get_child_count():
+		var child = get_child(i)
+		print("        - Child %d: %s (type: %s)" % [i, child.name, child.get_class()])
 
 ## Returns the generated I/O coordinates for this brain region
 func get_generated_io_coordinates() -> Dictionary:
@@ -404,7 +426,11 @@ func _create_3d_plate() -> void:
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
 	_region_name_label.font_size = 192  # Same as cortical area labels
-	_region_name_label.position = Vector3(0.0, -3.0, 0.0)  # Below plates, aligned with brain region front edge
+	# Position label at center of both plates combined: Y-3 for below, Z-2 for closer to viewer
+	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+	var center_x = total_width / 2.0  # Center between both plates
+	_region_name_label.position = Vector3(center_x, -3.0, input_plate_size.x)  # Centered horizontally
+	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
 	_region_name_label.outline_size = 2
@@ -414,12 +440,22 @@ func _create_3d_plate() -> void:
 	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	
 	_frame_container.add_child(_region_name_label)
+	
+	# DEBUG: Log positions AFTER adding to scene tree for accurate global_position
+	print("🔍 DEBUG LABEL POSITIONING (AFTER ADDING TO TREE):")
+	print("    🧠 Brain region FEAGI coordinates: %s" % _representing_region.coordinates_3D)
+	print("    🧠 Brain region global_position: %s" % global_position)
+	print("    🏷️ Label local position: %s" % _region_name_label.position)
+	print("    🏷️ Label global_position: %s" % _region_name_label.global_position)
 	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
 	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, PLATE_GAP)
 	
 	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
+	
+	# DEBUG: Call manual label debug check after plate creation
+	debug_label_positions()
 	
 
 ## Creates a single plate mesh for inputs or outputs
@@ -486,7 +522,10 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
 	label_collision.name = "RegionLabelClickArea"
-	label_collision.position = Vector3(0.0, -3.0, 0.0)  # Align with brain region front edge
+	# Position collision same as label (centered between both plates)  
+	var collision_total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+	var collision_center_x = collision_total_width / 2.0
+	label_collision.position = Vector3(collision_center_x, -3.0, 2.0)  # Centered horizontally, 2 units closer to viewer
 	
 	var label_collision_shape = CollisionShape3D.new()
 	label_collision_shape.name = "CollisionShape"
@@ -495,6 +534,10 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	label_collision_shape.shape = label_box_shape
 	label_collision.add_child(label_collision_shape)
 	add_child(label_collision)  # Direct child of BrainRegion3D
+	
+	# DEBUG: Log collision position AFTER adding to scene tree
+	print("    🎯 Collision local position: %s" % label_collision.position)
+	print("    🎯 Collision global_position: %s" % label_collision.global_position)
 	
 	print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
 		[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z])
@@ -1011,6 +1054,9 @@ func _update_position(new_coordinates: Vector3i) -> void:
 		[_representing_region.friendly_name, new_coordinates, global_position])
 	print("  📍 Region coordinates = front-left corner of INPUT plate")
 	
+	# DEBUG: Check label positions after positioning
+	debug_label_positions()
+	
 	# Update I/O cortical area positions to maintain relative positioning
 	_update_io_area_global_positions()
 
@@ -1195,6 +1241,14 @@ func _refresh_frame_contents() -> void:
 		var coords = _representing_region.coordinates_3D
 		var godot_position = Vector3(coords.x, coords.y, -coords.z)
 		global_position = godot_position
+		
+		# DEBUG: Log label positions during refresh
+		if _region_name_label:
+			print("🔍 DEBUG LABEL POSITIONING (DURING REFRESH):")
+			print("    🧠 Brain region FEAGI coordinates: %s" % coords)
+			print("    🧠 Brain region global_position: %s" % global_position)
+			print("    🏷️ Label local position: %s" % _region_name_label.position)
+			print("    🏷️ Label global_position: %s" % _region_name_label.global_position)
 		print("🔧 REFRESH: Positioned brain region '%s' at FEAGI coords %s -> global_position %s" % [_representing_region.friendly_name, coords, global_position])
 		print("  📍 Region coordinates = front-left corner of INPUT plate")
 	
