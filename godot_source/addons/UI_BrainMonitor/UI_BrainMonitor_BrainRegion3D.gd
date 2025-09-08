@@ -352,9 +352,116 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 	
 	print("    ✅ Brain region dimension update completed (positioning preserved)")
 	
-	# Recalculate plate sizes since cortical area dimensions changed
-	print("    🔄 Recalculating plate sizes after dimension change...")
-	_adjust_frame_size(_get_input_cortical_areas().size(), _get_output_cortical_areas().size())
+	# COMPREHENSIVE PLATE UPDATE: Recalculate sizes and reposition all I/O areas
+	print("    🔄 Comprehensive plate update after dimension change...")
+	_recalculate_plates_and_positioning_after_dimension_change()
+
+## Comprehensive plate and positioning update after cortical area dimension changes
+func _recalculate_plates_and_positioning_after_dimension_change() -> void:
+	if not _representing_region:
+		return
+		
+	print("🔧 DIMENSION CHANGE UPDATE: Recalculating plates and repositioning all I/O areas...")
+	
+	# 1. Regenerate I/O coordinates with new dimensions (includes new plate size calculations)
+	print("  📊 Step 1: Regenerating I/O coordinates with updated dimensions...")
+	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
+	
+	# 2. Remove old plates from the frame container
+	print("  🗑️ Step 2: Removing old plates...")
+	if _frame_container:
+		for child in _frame_container.get_children():
+			if child.name == "InputPlate" or child.name == "OutputPlate":
+				child.queue_free()
+	
+	# 3. Recreate plates with new sizes
+	print("  🏗️ Step 3: Recreating plates with updated sizes...")
+	var input_areas = _get_input_cortical_areas()
+	var output_areas = _get_output_cortical_areas()
+	
+	# Calculate new plate sizes
+	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
+	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	
+	# Create new plates with updated sizes
+	var input_color = Color(0.0, 0.4, 0.0) if input_areas.size() > 0 else Color(1.0, 1.0, 0.0)
+	var input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
+	input_plate.position.x = input_plate_size.x / 2.0
+	input_plate.position.y = PLATE_HEIGHT / 2.0  
+	input_plate.position.z = input_plate_size.z / 2.0
+	_frame_container.add_child(input_plate)
+	
+	var output_color = Color(0.4, 0.0, 0.0) if output_areas.size() > 0 else Color(1.0, 1.0, 0.0)
+	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
+	var output_front_left_x = input_plate_size.x + PLATE_GAP
+	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0
+	output_plate.position.y = PLATE_HEIGHT / 2.0
+	output_plate.position.z = output_plate_size.z / 2.0
+	_frame_container.add_child(output_plate)
+	
+	# 4. Reposition all I/O cortical areas using new coordinates
+	print("  📍 Step 4: Repositioning all I/O cortical areas with new calculations...")
+	for cortical_id in _cortical_area_visualizations.keys():
+		var cortical_viz = _cortical_area_visualizations[cortical_id]
+		
+		# Find new position for this cortical area
+		var found_new_position = false
+		
+		# Check inputs first
+		for area_data in _generated_io_coordinates.inputs:
+			if area_data.area_id == cortical_id:
+				var absolute_feagi_coords = Vector3(area_data.new_coordinates)
+				var brain_region_coords = Vector3(_representing_region.coordinates_3D)
+				var relative_position = absolute_feagi_coords - brain_region_coords
+				_reposition_cortical_area_on_plate(cortical_viz, relative_position, true)  # true = input
+				found_new_position = true
+				print("    📥 Repositioned INPUT %s to: %s" % [cortical_id, relative_position])
+				break
+		
+		# Check outputs if not found in inputs
+		if not found_new_position:
+			for area_data in _generated_io_coordinates.outputs:
+				if area_data.area_id == cortical_id:
+					var absolute_feagi_coords = Vector3(area_data.new_coordinates)
+					var brain_region_coords = Vector3(_representing_region.coordinates_3D)
+					var relative_position = absolute_feagi_coords - brain_region_coords
+					_reposition_cortical_area_on_plate(cortical_viz, relative_position, false)  # false = output
+					found_new_position = true
+					print("    📤 Repositioned OUTPUT %s to: %s" % [cortical_id, relative_position])
+					break
+		
+		if not found_new_position:
+			print("    ⚠️ Could not find new position for cortical area: %s" % cortical_id)
+	
+	# 5. Update region label position to stay centered between new plates
+	print("  🏷️ Step 5: Updating region label position...")
+	if _region_name_label:
+		var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+		var center_x = total_width / 2.0
+		_region_name_label.position = Vector3(center_x, -3.0, input_plate_size.x)  # Centered between new plates
+		print("    📍 Label repositioned to center: (%.1f, -3.0, %.1f)" % [center_x, input_plate_size.x])
+	
+	print("  ✅ Comprehensive plate and positioning update completed!")
+
+## Repositions a single cortical area on its plate using new relative coordinates
+func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea, new_position: Vector3, is_input: bool) -> void:
+	# Convert brain region FEAGI coordinates to Godot world position
+	var brain_region_coords = _representing_region.coordinates_3D
+	var brain_region_world_pos = Vector3(brain_region_coords.x, brain_region_coords.y, -brain_region_coords.z)
+	
+	# Calculate desired world position
+	var desired_world_pos = brain_region_world_pos + new_position
+	
+	# Position the renderers at the new location
+	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
+		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
+		if cortical_viz._dda_renderer._friendly_name_label != null:
+			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)
+	
+	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
+		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
+		if cortical_viz._directpoints_renderer._friendly_name_label != null:
+			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)
 
 ## Creates the 3D plate structure underneath I/O cortical areas
 func _create_3d_plate() -> void:
