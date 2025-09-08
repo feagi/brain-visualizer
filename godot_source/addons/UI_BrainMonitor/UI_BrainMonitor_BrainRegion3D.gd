@@ -96,10 +96,12 @@ func _get_output_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[
 	return output_areas
 
 ## Generates new coordinates for input/output areas relative to brain region position
-## Areas are positioned ABOVE the plates with consistent Y and Z starting points:
-## - Y: plate_top_y (1.5) + area_height/2.0 (shifted up by 2 from original plate surface)  
-## - Z: ALL areas have IDENTICAL front edge at brain region Z coordinate (no offset)
-##   In FEAGI coordinate system: +Z goes DEEPER into scene, so plates extend from front_edge toward +Z
+## Areas are positioned ABOVE the plates using front-left corner positioning internally, 
+## but converted to CENTER coordinates for Godot renderers:
+## - Front-left corners calculated with proper margins and buffers from plates  
+## - CENTER coordinates passed to renderers: (front-left + X/2, front-left + Y/2, front-left - Z/2)
+## - X,Y: Standard center calculation (front-left + dimension/2.0)
+## - Z: Subtract dimension/2.0 because Godot Z-axis is opposite to FEAGI Z-axis
 func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dictionary:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
@@ -148,7 +150,13 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		var area_front_left_y = input_start_y
 		var area_front_left_z = input_start_z
 		
-		var new_position = region_origin + Vector3(area_front_left_x, area_front_left_y, area_front_left_z)
+		# Convert front-left corner to CENTER coordinates (Godot renderers expect center positioning)
+		# Note: Z-axis is flipped between FEAGI and Godot coordinate systems
+		var area_center_x = area_front_left_x + area_size.x / 2.0
+		var area_center_y = area_front_left_y + area_size.y / 2.0  
+		var area_center_z = area_front_left_z - area_size.z / 2.0  # Subtract because Godot Z is opposite to FEAGI Z
+		
+		var new_position = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
 		
 		# Move to next area position: current_x + area_width + buffer
 		current_input_x += area_size.x + AREA_BUFFER_DISTANCE
@@ -163,9 +171,9 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		
 		print("    🔵 INPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
-		print("      🎯 FRONT-EDGE Z: %.1f (same as brain region Z)" % brain_region.coordinates_3D.z)
-		print("      🎯 CENTER Z: %.1f (front_edge + depth/2)" % new_position.z)
+		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position))
+		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
+		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("  📤 Processing %d OUTPUT areas (front-left corner positioning):" % output_areas.size())
@@ -179,7 +187,13 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		var area_front_left_y = output_start_y
 		var area_front_left_z = output_start_z
 		
-		var new_position = region_origin + Vector3(area_front_left_x, area_front_left_y, area_front_left_z)
+		# Convert front-left corner to CENTER coordinates (Godot renderers expect center positioning)
+		# Note: Z-axis is flipped between FEAGI and Godot coordinate systems
+		var area_center_x = area_front_left_x + area_size.x / 2.0
+		var area_center_y = area_front_left_y + area_size.y / 2.0
+		var area_center_z = area_front_left_z - area_size.z / 2.0  # Subtract because Godot Z is opposite to FEAGI Z
+		
+		var new_position = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
 		
 		# Move to next area position: current_x + area_width + buffer
 		current_output_x += area_size.x + AREA_BUFFER_DISTANCE
@@ -194,17 +208,18 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		
 		print("    🔴 OUTPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
 		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s" % Vector3i(new_position))
-		print("      🎯 FRONT-EDGE Z: %.1f (same as brain region Z)" % brain_region.coordinates_3D.z)
-		print("      🎯 CENTER Z: %.1f (front_edge + depth/2)" % new_position.z)
+		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position))
+		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
+		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
 	print("  📊 Generated %d input + %d output coordinates" % [input_areas.size(), output_areas.size()])
-	print("  ✅ === FRONT-EDGE POSITIONING SUMMARY ===")
-	print("    🟢 Input areas: FRONT-EDGE Z=%.1f (brain region front-left corner)" % brain_region.coordinates_3D.z)  
-	print("    🔵 Output areas: FRONT-EDGE Z=%.1f (brain region front-left corner)" % brain_region.coordinates_3D.z)
-	print("    🎯 ALL I/O areas have IDENTICAL front edge at Z=%.1f" % brain_region.coordinates_3D.z)
+	print("  ✅ === POSITIONING SUMMARY ===")
+	print("    🟢 Input areas: Front-left corners start at margins, CENTER positioning used for renderers")
+	print("    🔵 Output areas: Front-left corners start at margins, CENTER positioning used for renderers")  
+	print("    🎯 CENTER coordinates: X,Y = front-left + size/2, Z = front-left - size/2 (Godot Z-flip)")
+	print("    📍 Brain region front-left corner at Z=%.1f, areas positioned with Z-axis correction" % brain_region.coordinates_3D.z)
 	
 	return result
 
