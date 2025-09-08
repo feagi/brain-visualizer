@@ -10,13 +10,21 @@ signal temporal_depth_updated(val: int, this_costical_area: MemoryCorticalArea)
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 
 	if "neuron_init_lifespan" in data.keys(): 
-		initial_neuron_lifespan = data["neuron_init_lifespan"]
+		var value = data["neuron_init_lifespan"]
+		if value != null:
+			initial_neuron_lifespan = value
 	if "neuron_lifespan_growth_rate" in data.keys(): 
-		lifespan_growth_rate = data["neuron_lifespan_growth_rate"]
+		var value = data["neuron_lifespan_growth_rate"]
+		if value != null:
+			lifespan_growth_rate = value
 	if "neuron_longterm_mem_threshold" in data.keys(): 
-		longterm_memory_threshold = data["neuron_longterm_mem_threshold"]
+		var value = data["neuron_longterm_mem_threshold"]
+		if value != null:
+			longterm_memory_threshold = value
 	if "temporal_depth" in data.keys():
-		temporal_depth = data["temporal_depth"]
+		var value = data["temporal_depth"]
+		if value != null:
+			temporal_depth = value
 	return
 
 var initial_neuron_lifespan: int:

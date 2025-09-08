@@ -190,7 +190,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					print("🗑️ CLEARING stale missing cortical areas cache (had ", _missing_cortical_areas.size(), " entries)")
 					_missing_cortical_areas.clear()
 					_case_mapping_cache.clear()
+					print("📡 WEBSOCKET: Emitting feagi_requesting_reset signal...")
 					feagi_requesting_reset.emit()
+					print("✅ WEBSOCKET: feagi_requesting_reset signal emitted")
 						
 					
 		7: # ActivatedNeuronLocation
@@ -268,6 +270,18 @@ func _reconnect_websocket() -> void:
 	_socket.connect_to_url(_socket_web_address)
 
 func _handle_missing_cortical_area(cortical_id: StringName) -> void:
+	# Skip handling missing areas during genome reload/processing to avoid spam
+	var genome_state = FeagiCore.genome_load_state
+	if genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING or genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_PROCESSING:
+		# Suppress debug output during genome reload - this is expected behavior
+		return
+	
+	# Also skip if cache is empty (genome hasn't loaded yet)
+	var cache_size = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size()
+	if cache_size == 0:
+		# Suppress debug output when cache is empty - genome is still loading
+		return
+	
 	print("🔍 DEBUG: _handle_missing_cortical_area() called for '%s'" % cortical_id)
 	var current_time = Time.get_time_dict_from_system()
 	var current_timestamp = current_time.hour * 3600 + current_time.minute * 60 + current_time.second
@@ -284,16 +298,11 @@ func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 	
 	# Only show warning if enough time has passed
 	if time_since_last_warning >= MISSING_AREA_WARNING_INTERVAL:
-		print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache (will retry fetching) - cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
+		print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache (will retry fetching) - cache size: ", cache_size)
 		area_info.last_warning_time = current_timestamp
 		
 		# Attempt to fetch the missing cortical area from FEAGI (only once per area)
-		# But skip if genome is currently reloading or processing, as it will be wiped anyway
 		if not area_info.fetch_attempted and FeagiCore.can_interact_with_feagi():
-			var genome_state = FeagiCore.genome_load_state
-			if genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING or genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_PROCESSING:
-				print("   ⏸️  Skipping fetch for '", cortical_id, "' - genome is reloading/processing")
-				return
 			area_info.fetch_attempted = true
 			print("   🔄 Attempting to fetch missing cortical area '", cortical_id, "' from FEAGI...")
 			_fetch_missing_cortical_area_async(cortical_id)

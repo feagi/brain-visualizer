@@ -350,11 +350,15 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
-		_cortical_neuron_per_vox_count = data["cortical_neuron_per_vox_count"]
-		cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
+		var value = data["cortical_neuron_per_vox_count"]
+		if value != null:
+			_cortical_neuron_per_vox_count = value
+			cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
 	if "cortical_synaptic_attractivity" in data.keys(): 
-		_cortical_synaptic_attractivity = data["cortical_synaptic_attractivity"]
-		cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
+		var value = data["cortical_synaptic_attractivity"]
+		if value != null:
+			_cortical_synaptic_attractivity = value
+			cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)

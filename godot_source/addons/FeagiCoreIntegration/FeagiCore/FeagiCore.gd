@@ -312,7 +312,14 @@ func feagi_recieved_supression_threshold(new_supression_threshold: int) -> void:
 
 
 func _recieve_genome_reset_request():
-	if genome_load_state == GENOME_LOAD_STATE.GENOME_READY:
+	print("🔄 FEAGICORE: _recieve_genome_reset_request() called - current state: ", GENOME_LOAD_STATE.keys()[genome_load_state])
+	
+	# Allow reload from READY or PROCESSING states (PROCESSING means we had a genome before)
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_READY or genome_load_state == GENOME_LOAD_STATE.GENOME_PROCESSING:
+		print("✅ FEAGICORE: Triggering genome reload from %s state" % GENOME_LOAD_STATE.keys()[genome_load_state])
 		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+	else:
+		print("⚠️ FEAGICORE: Ignoring genome reset request - current state doesn't warrant reload: %s" % GENOME_LOAD_STATE.keys()[genome_load_state])
+		print("   💡 NOTE: Reset requests only trigger from GENOME_READY or GENOME_PROCESSING states")
 
 #endregion

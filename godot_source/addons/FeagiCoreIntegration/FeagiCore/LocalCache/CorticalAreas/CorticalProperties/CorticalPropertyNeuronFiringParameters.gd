@@ -16,27 +16,47 @@ signal neuron_excitability_updated(val: int, this_cortical_area: CoreCorticalAre
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 
 	if "neuron_fire_threshold" in data.keys(): 
-		neuron_fire_threshold = data["neuron_fire_threshold"]
+		var value = data["neuron_fire_threshold"]
+		if value != null:
+			neuron_fire_threshold = value
 	if "neuron_fire_threshold_increment" in data.keys(): 
-		neuron_fire_threshold_increment = FEAGIUtils.untyped_array_to_vector3(data["neuron_fire_threshold_increment"])
+		var value = data["neuron_fire_threshold_increment"]
+		if value != null:
+			neuron_fire_threshold_increment = FEAGIUtils.untyped_array_to_vector3(value)
 	if "neuron_firing_threshold_limit" in data.keys(): 
-		neuron_firing_threshold_limit = data["neuron_firing_threshold_limit"]
+		var value = data["neuron_firing_threshold_limit"]
+		if value != null:
+			neuron_firing_threshold_limit = value
 	if "neuron_refractory_period" in data.keys(): 
-		neuron_refractory_period = data["neuron_refractory_period"]
+		var value = data["neuron_refractory_period"]
+		if value != null:
+			neuron_refractory_period = value
 	if "neuron_leak_coefficient" in data.keys(): 
-		neuron_leak_coefficient = data["neuron_leak_coefficient"]
+		var value = data["neuron_leak_coefficient"]
+		if value != null:
+			neuron_leak_coefficient = value
 	if "neuron_leak_variability" in data.keys(): 
-		neuron_leak_variability = data["neuron_leak_variability"]
+		var value = data["neuron_leak_variability"]
+		if value != null:
+			neuron_leak_variability = value
 	if "neuron_consecutive_fire_count" in data.keys(): 
-		neuron_consecutive_fire_count = data["neuron_consecutive_fire_count"]
+		var value = data["neuron_consecutive_fire_count"]
+		if value != null:
+			neuron_consecutive_fire_count = value
 	if "neuron_snooze_period" in data.keys(): 
-		neuron_snooze_period = data["neuron_snooze_period"]
+		var value = data["neuron_snooze_period"]
+		if value != null:
+			neuron_snooze_period = value
 	if "neuron_mp_charge_accumulation" in data.keys(): 
-		neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
+		var value = data["neuron_mp_charge_accumulation"]
+		if value != null:
+			neuron_mp_charge_accumulation = value
 	if "neuron_excitability" in data.keys():
-		# Convert from 0-1 range to 0-100 percentage for UI display
-		var excitability_float = float(data["neuron_excitability"])
-		neuron_excitability = int(round(excitability_float * 100.0))
+		var value = data["neuron_excitability"]
+		if value != null:
+			# Convert from 0-1 range to 0-100 percentage for UI display
+			var excitability_float = float(value)
+			neuron_excitability = int(round(excitability_float * 100.0))
 	return
 
 var neuron_mp_charge_accumulation: bool:

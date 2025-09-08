@@ -33,7 +33,11 @@ func _init():
 	websocket_API = FEAGIWebSocketAPI.new()
 	websocket_API.name = "FEAGIWebSocketAPI"
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
-	websocket_API.feagi_requesting_reset.connect(func() : genome_reset_request_recieved.emit())
+	websocket_API.feagi_requesting_reset.connect(func() : 
+		print("🔗 NETWORKING: Received feagi_requesting_reset, forwarding to FeagiCore...")
+		genome_reset_request_recieved.emit()
+		print("✅ NETWORKING: genome_reset_request_recieved signal emitted")
+	)
 	add_child(websocket_API)
 
 ## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify.

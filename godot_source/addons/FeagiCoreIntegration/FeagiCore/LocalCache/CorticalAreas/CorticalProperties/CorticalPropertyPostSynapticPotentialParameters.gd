@@ -50,15 +50,25 @@ func _init(cortical_area_ref: AbstractCorticalArea) -> void:
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "neuron_post_synaptic_potential" in data.keys(): 
-		neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
+		var value = data["neuron_post_synaptic_potential"]
+		if value != null:
+			neuron_post_synaptic_potential = value
 	if "neuron_post_synaptic_potential_max" in data.keys(): 
-		neuron_post_synaptic_potential_max = data["neuron_post_synaptic_potential_max"]
+		var value = data["neuron_post_synaptic_potential_max"]
+		if value != null:
+			neuron_post_synaptic_potential_max = value
 	if "neuron_degeneracy_coefficient" in data.keys(): 
-		neuron_degeneracy_coefficient = data["neuron_degeneracy_coefficient"]
+		var value = data["neuron_degeneracy_coefficient"]
+		if value != null:
+			neuron_degeneracy_coefficient = value
 	if "neuron_psp_uniform_distribution" in data.keys(): 
-		neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
+		var value = data["neuron_psp_uniform_distribution"]
+		if value != null:
+			neuron_psp_uniform_distribution = value
 	if "neuron_mp_driven_psp" in data.keys():
-		neuron_mp_driven_psp = data["neuron_mp_driven_psp"]
+		var value = data["neuron_mp_driven_psp"]
+		if value != null:
+			neuron_mp_driven_psp = value
 	return
 
 func _set_neuron_psp_uniform_distribution(new_val: bool) -> void:
@@ -90,5 +100,3 @@ func _set_neuron_degeneracy_coefficient(new_val: float) -> void:
 		return
 	_neuron_degeneracy_coefficient = new_val
 	neuron_degeneracy_coefficient_updated.emit(new_val, _cortical_area)
-
-
