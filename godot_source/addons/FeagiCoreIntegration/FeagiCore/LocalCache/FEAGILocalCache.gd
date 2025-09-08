@@ -38,6 +38,14 @@ func _init():
 	morphologies = MorphologiesCache.new()
 	brain_regions = BrainRegionsCache.new()
 	mapping_data = MappingsCache.new()
+	
+	# Connect to mapping update signals to automatically refresh brain region cache
+	mapping_data.mapping_created.connect(_on_mapping_created)
+	mapping_data.mapping_updated.connect(_on_mapping_updated)
+	
+	# Connect to brain region creation and modification signals
+	brain_regions.region_added.connect(_on_brain_region_added)
+	brain_regions.region_about_to_be_removed.connect(_on_brain_region_about_to_be_removed)
 
 ## Given several summary datas from FEAGI, we can build the entire cache at once
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
@@ -60,6 +68,9 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	morphologies.update_morphology_cache_from_summary(morphologies_summary)
 	mapping_data.FEAGI_load_all_mappings(mapping_summary)
 	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
+	
+	# Connect to signals from all existing brain regions for future updates
+	_connect_to_existing_brain_region_signals()
 	
 	# Load mapping restrictions from server (async call)
 	_load_mapping_restrictions_async()
@@ -478,5 +489,216 @@ func _set_IPU_OPU_to_capability_key_mappings(IPU_mappings: Dictionary, OPU_mappi
 		for OPU_cortical_ID in OPU_cortical_IDs:
 			_OPU_cortical_ID_to_capability_key[OPU_cortical_ID] = OPU_ID
 	
+
+#endregion
+
+#region Brain Region Cache Auto-Refresh
+
+## Called when a new mapping is created - refreshes brain region cache designations
+func _on_mapping_created(mapping: InterCorticalMappingSet) -> void:
+	print("🔄 FEAGI CACHE: Auto-refreshing brain region cache due to mapping creation: %s -> %s" % [mapping.source_cortical_area.cortical_ID, mapping.destination_cortical_area.cortical_ID])
+	_refresh_brain_region_cache_for_mapping(mapping)
+
+## Called when an existing mapping is updated - refreshes brain region cache designations  
+func _on_mapping_updated(mapping: InterCorticalMappingSet) -> void:
+	print("🔄 FEAGI CACHE: Auto-refreshing brain region cache due to mapping update: %s -> %s" % [mapping.source_cortical_area.cortical_ID, mapping.destination_cortical_area.cortical_ID])
+	_refresh_brain_region_cache_for_mapping(mapping)
+
+## Called when a new brain region is created - immediately refresh its cache and connect to its signals
+func _on_brain_region_added(region: BrainRegion) -> void:
+	print("🔄 FEAGI CACHE: Auto-refreshing cache for newly created brain region: %s" % region.region_ID)
+	
+	# Connect to this region's area addition/removal signals for future updates
+	region.cortical_area_added_to_region.connect(_on_cortical_area_added_to_region)
+	region.cortical_area_removed_from_region.connect(_on_cortical_area_removed_from_region)
+	
+	# Only refresh if the region has cortical areas already
+	# This avoids conflicts with FEAGI partial mapping loading
+	if region.contained_cortical_areas.size() > 0:
+		_refresh_single_brain_region_cache(region)
+
+## Called when a brain region is about to be removed - disconnect from its signals
+func _on_brain_region_about_to_be_removed(region: BrainRegion) -> void:
+	print("🔄 FEAGI CACHE: Disconnecting signals for brain region about to be removed: %s" % region.region_ID)
+	
+	# Disconnect from this region's signals
+	if region.cortical_area_added_to_region.is_connected(_on_cortical_area_added_to_region):
+		region.cortical_area_added_to_region.disconnect(_on_cortical_area_added_to_region)
+	if region.cortical_area_removed_from_region.is_connected(_on_cortical_area_removed_from_region):
+		region.cortical_area_removed_from_region.disconnect(_on_cortical_area_removed_from_region)
+
+## Called when a cortical area is added to a brain region - refresh that region's cache
+func _on_cortical_area_added_to_region(area: AbstractCorticalArea) -> void:
+	var region = area.current_parent_region
+	if region:
+		print("🔄 FEAGI CACHE: Auto-refreshing brain region cache due to area addition: %s added to %s" % [area.cortical_ID, region.region_ID])
+		_refresh_single_brain_region_cache(region)
+
+## Called when a cortical area is removed from a brain region - refresh that region's cache  
+func _on_cortical_area_removed_from_region(area: AbstractCorticalArea) -> void:
+	# Note: We need to get the region from the signal context since the area might already be moved
+	# For now, we'll refresh all regions that might be affected
+	print("🔄 FEAGI CACHE: Auto-refreshing brain region caches due to area removal: %s" % area.cortical_ID)
+	
+	# Since the area might have been moved, refresh all regions to be safe
+	# This is less efficient but ensures correctness
+	for region_id in brain_regions.available_brain_regions.keys():
+		var region = brain_regions.available_brain_regions[region_id]
+		_refresh_single_brain_region_cache(region)
+
+## Refreshes brain region input/output cache designations when cortical mappings change
+func _refresh_brain_region_cache_for_mapping(mapping: InterCorticalMappingSet) -> void:
+	# Get the regions that contain the source and destination areas
+	var source_region: BrainRegion = mapping.source_cortical_area.current_parent_region
+	var destination_region: BrainRegion = mapping.destination_cortical_area.current_parent_region
+	
+	# Refresh cache for both regions if they exist
+	if source_region:
+		_refresh_single_brain_region_cache(source_region)
+	if destination_region and destination_region != source_region:
+		_refresh_single_brain_region_cache(destination_region)
+
+## Refreshes the partial mapping cache for a specific brain region
+func _refresh_single_brain_region_cache(region: BrainRegion) -> void:
+	print("🔄 FEAGI CACHE: Refreshing cache designations for brain region: %s" % region.region_ID)
+	
+	# Derive input/output designations from current cortical mappings and connections
+	_update_brain_region_io_designations_from_local_mappings(region)
+
+## Updates brain region input/output designations based on current local mapping cache
+func _update_brain_region_io_designations_from_local_mappings(region: BrainRegion) -> void:
+	# DON'T clear existing partial mappings - they might be from FEAGI and still valid
+	# Only add synthetic mappings for areas that don't already have partial mappings
+	
+	# Analyze current cortical mappings to determine input/output designations
+	var input_areas: Array[AbstractCorticalArea] = []
+	var output_areas: Array[AbstractCorticalArea] = []
+	
+	# Method 1: Analyze connection chain links for this region
+	for input_link in region.input_open_chain_links:
+		if input_link.destination and input_link.destination is AbstractCorticalArea:
+			var dest_area = input_link.destination as AbstractCorticalArea
+			if dest_area in region.contained_cortical_areas and not input_areas.has(dest_area):
+				input_areas.append(dest_area)
+	
+	for output_link in region.output_open_chain_links:
+		if output_link.source and output_link.source is AbstractCorticalArea:
+			var source_area = output_link.source as AbstractCorticalArea
+			if source_area in region.contained_cortical_areas and not output_areas.has(source_area):
+				output_areas.append(source_area)
+	
+	# Method 2: Analyze cortical mappings that cross region boundaries
+	for contained_area in region.contained_cortical_areas:
+		# Check if this area receives inputs from outside the region (making it an input area)
+		for afferent_id in contained_area.afferent_mappings.keys():
+			var afferent_area = cortical_areas.available_cortical_areas.get(afferent_id)
+			if afferent_area and afferent_area.current_parent_region != region:
+				if not input_areas.has(contained_area):
+					input_areas.append(contained_area)
+		
+		# Check if this area sends outputs outside the region (making it an output area)  
+		for efferent_id in contained_area.efferent_mappings.keys():
+			var efferent_area = cortical_areas.available_cortical_areas.get(efferent_id)
+			if efferent_area and efferent_area.current_parent_region != region:
+				if not output_areas.has(contained_area):
+					output_areas.append(contained_area)
+	
+	# Method 3: Use cortical area types as fallback hints
+	for contained_area in region.contained_cortical_areas:
+		if contained_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			if not input_areas.has(contained_area):
+				input_areas.append(contained_area)
+		elif contained_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			if not output_areas.has(contained_area):
+				output_areas.append(contained_area)
+	
+	# Only create synthetic partial mappings for areas that don't already have them
+	var areas_with_existing_mappings: Array[AbstractCorticalArea] = []
+	for existing_mapping in region.partial_mappings:
+		if existing_mapping.internal_target_cortical_area not in areas_with_existing_mappings:
+			areas_with_existing_mappings.append(existing_mapping.internal_target_cortical_area)
+	
+	# Filter out areas that already have partial mappings
+	var new_input_areas: Array[AbstractCorticalArea] = []
+	var new_output_areas: Array[AbstractCorticalArea] = []
+	
+	for input_area in input_areas:
+		if input_area not in areas_with_existing_mappings:
+			new_input_areas.append(input_area)
+	
+	for output_area in output_areas:
+		if output_area not in areas_with_existing_mappings:
+			new_output_areas.append(output_area)
+	
+	# Only create synthetic mappings for truly new areas
+	if new_input_areas.size() > 0 or new_output_areas.size() > 0:
+		_create_synthetic_partial_mappings_for_region(region, new_input_areas, new_output_areas)
+		print("✅ FEAGI CACHE: Added synthetic I/O designations - Region: %s, New Inputs: %d, New Outputs: %d" % [region.region_ID, new_input_areas.size(), new_output_areas.size()])
+	else:
+		print("✅ FEAGI CACHE: No new I/O designations needed - Region: %s already has adequate mappings" % region.region_ID)
+
+## Creates synthetic partial mappings for a brain region based on analyzed input/output areas
+func _create_synthetic_partial_mappings_for_region(region: BrainRegion, input_areas: Array[AbstractCorticalArea], output_areas: Array[AbstractCorticalArea]) -> void:
+	# Create input partial mappings
+	for input_area in input_areas:
+		var synthetic_input_mapping = _create_synthetic_partial_mapping(input_area, region, true)
+		if synthetic_input_mapping:
+			region._partial_mappings.append(synthetic_input_mapping)
+			region.partial_mappings_inputted.emit(synthetic_input_mapping)
+	
+	# Create output partial mappings
+	for output_area in output_areas:
+		var synthetic_output_mapping = _create_synthetic_partial_mapping(output_area, region, false)
+		if synthetic_output_mapping:
+			region._partial_mappings.append(synthetic_output_mapping)
+			region.partial_mappings_inputted.emit(synthetic_output_mapping)
+
+## Creates a synthetic partial mapping for an area within a region
+func _create_synthetic_partial_mapping(area: AbstractCorticalArea, region: BrainRegion, is_input: bool) -> PartialMappingSet:
+	# Create a minimal synthetic mapping based on the area's current state
+	var synthetic_mappings: Array[SingleMappingDefinition] = []
+	
+	# Try to get a suitable morphology, fallback to memory morphology, then to null
+	var morphology: BaseMorphology = morphologies.try_get_morphology_object(&"memory")
+	if morphology == null:
+		# If memory morphology doesn't exist, try to get any available morphology
+		if morphologies.available_morphologies.size() > 0:
+			var first_key = morphologies.available_morphologies.keys()[0]
+			morphology = morphologies.available_morphologies[first_key]
+	
+	# Create a default mapping with the found morphology (can be null)
+	var default_mapping = SingleMappingDefinition.create_default_mapping(morphology)
+	synthetic_mappings.append(default_mapping)
+	
+	# Create a descriptive label
+	var direction_label = "INPUT" if is_input else "OUTPUT"
+	var label = "%s_%s_AUTO_REFRESH" % [direction_label, area.cortical_ID]
+	
+	return PartialMappingSet.new(is_input, synthetic_mappings, area, region, label)
+
+## Clears existing partial mappings from a brain region
+func _clear_region_partial_mappings(region: BrainRegion) -> void:
+	# Create a copy to avoid modification during iteration
+	var mappings_to_remove = region.partial_mappings.duplicate()
+	
+	for mapping in mappings_to_remove:
+		# Trigger the removal signal and cleanup
+		mapping.mappings_about_to_be_deleted.emit(mapping)
+
+## Connects to signals from all existing brain regions (called during genome load)
+func _connect_to_existing_brain_region_signals() -> void:
+	print("🔄 FEAGI CACHE: Connecting to signals from %d existing brain regions" % brain_regions.available_brain_regions.size())
+	
+	for region_id in brain_regions.available_brain_regions.keys():
+		var region = brain_regions.available_brain_regions[region_id]
+		
+		# Connect to area addition/removal signals if not already connected
+		if not region.cortical_area_added_to_region.is_connected(_on_cortical_area_added_to_region):
+			region.cortical_area_added_to_region.connect(_on_cortical_area_added_to_region)
+		if not region.cortical_area_removed_from_region.is_connected(_on_cortical_area_removed_from_region):
+			region.cortical_area_removed_from_region.connect(_on_cortical_area_removed_from_region)
+		
+		# Don't immediately refresh during genome load - let FEAGI partial mappings load first
+		# _refresh_single_brain_region_cache(region)
 
 #endregion

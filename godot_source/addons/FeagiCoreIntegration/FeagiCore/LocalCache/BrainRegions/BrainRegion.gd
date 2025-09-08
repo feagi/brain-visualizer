@@ -55,12 +55,12 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 	if A is AbstractCorticalArea:
-		return (A as AbstractCorticalArea).current_region
+		return (A as AbstractCorticalArea).current_parent_region
 	if A is BrainRegion:
 		if (A as BrainRegion).is_root_region():
 			push_error("CORE CACHE: Unable to get parent region of the root region!")
 			return null
-		return (A as BrainRegion).parent_region
+		return (A as BrainRegion).current_parent_region
 	push_error("CORE CACHE: Unable to get parent region of an object of unknown type!")
 	return null
 
