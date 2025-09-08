@@ -407,7 +407,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		input_plate = _create_wireframe_placeholder_plate(PLACEHOLDER_PLATE_SIZE, "InputPlate", input_color)
 	input_plate.position.x = input_plate_size.x / 2.0
 	input_plate.position.y = PLATE_HEIGHT / 2.0  
-	input_plate.position.z = input_plate_size.z / 2.0
+	input_plate.position.z = _representing_region.coordinates_3D.z - input_plate_size.z / 2.0  # Front edge at brain region Z
 	_frame_container.add_child(input_plate)
 	
 	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green for output with 20% opacity
@@ -419,7 +419,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	var output_front_left_x = input_plate_size.x + PLATE_GAP
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0
 	output_plate.position.y = PLATE_HEIGHT / 2.0
-	output_plate.position.z = output_plate_size.z / 2.0
+	output_plate.position.z = _representing_region.coordinates_3D.z - output_plate_size.z / 2.0  # Front edge at brain region Z
 	_frame_container.add_child(output_plate)
 	
 	# 4. Reposition all I/O cortical areas using new coordinates
@@ -538,7 +538,7 @@ func _create_3d_plate() -> void:
 	# FRONT-LEFT CORNER positioning - Godot centers meshes, so adjust by half-size
 	input_plate.position.x = input_plate_size.x / 2.0  # Half-width to align front-left corner at origin
 	input_plate.position.y = PLATE_HEIGHT / 2.0  # Half-height to align bottom at origin
-	input_plate.position.z = input_plate_size.z / 2.0  # Half-depth to align front edge at origin
+	input_plate.position.z = _representing_region.coordinates_3D.z - input_plate_size.z / 2.0  # Front edge at brain region Z
 	_frame_container.add_child(input_plate)
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
@@ -552,7 +552,7 @@ func _create_3d_plate() -> void:
 	var output_front_left_x = input_plate_size.x + PLATE_GAP
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0  # Godot center adjustment
 	output_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as input plate (Godot center)
-	output_plate.position.z = output_plate_size.z / 2.0  # Half-depth to align front edge at same Z as input
+	output_plate.position.z = _representing_region.coordinates_3D.z - output_plate_size.z / 2.0  # Front edge at brain region Z
 	_frame_container.add_child(output_plate)
 
 	
