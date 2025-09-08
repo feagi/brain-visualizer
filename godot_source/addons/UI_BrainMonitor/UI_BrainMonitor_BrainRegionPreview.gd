@@ -62,7 +62,22 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i) -> void:
 	# Convert FEAGI coordinates to Godot space (flip Z-axis)
 	var godot_position = Vector3(new_FEAGI_coordinate.x, new_FEAGI_coordinate.y, -new_FEAGI_coordinate.z)
+	
+	print("🔮 DEBUG PREVIEW: About to set position for '%s'" % _brain_region.friendly_name)
+	print("  📍 FEAGI coords: %s" % new_FEAGI_coordinate)
+	print("  📍 Calculated godot_position: %s" % godot_position)
+	print("  📍 Current global_position BEFORE: %s" % global_position)
+	print("  📍 Current position BEFORE: %s" % position)
+	print("  🔍 Parent: %s" % (get_parent().name if get_parent() else "none"))
+	print("  🔍 Parent global_position: %s" % (get_parent().global_position if get_parent() else "none"))
+	print("  🔍 Parent position: %s" % (get_parent().position if get_parent() else "none"))
+	print("  🔍 Parent transform: %s" % (get_parent().transform if get_parent() else "none"))
+	
 	global_position = godot_position
+	
+	print("  📍 Current global_position AFTER: %s" % global_position)
+	print("  📍 Current position AFTER: %s" % position)
+	print("  📍 Difference from expected: %s" % (global_position - godot_position))
 
 ## Cleans up the preview
 func cleanup() -> void:

@@ -437,7 +437,10 @@ func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_Brain
 	var region_frame: UI_BrainMonitor_BrainRegion3D = UI_BrainMonitor_BrainRegion3D.new()
 	print("  📍 Adding to _node_3D_root...")
 	_node_3D_root.add_child(region_frame)
+	print("  📍 DEBUG: Main region parent: %s" % region_frame.get_parent().name)
+	print("  📍 DEBUG: Main region parent transform: %s" % region_frame.get_parent().transform)
 	print("  🔧 Calling region_frame.setup()...")
+	print("  🔍 DEBUG: Brain region coordinates before setup: %s" % brain_region.coordinates_3D)
 	region_frame.setup(brain_region)
 	print("  💾 Storing in _brain_region_visualizations_by_ID...")
 	_brain_region_visualizations_by_ID[brain_region.region_ID] = region_frame
