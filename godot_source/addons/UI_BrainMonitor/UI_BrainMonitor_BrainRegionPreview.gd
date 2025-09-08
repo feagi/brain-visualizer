@@ -24,7 +24,12 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	# Calculate plate sizes
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
-	var plate_spacing = 1.0
+	var plate_gap = 1.0  # Gap between plates (same as main brain region)
+	var plate_height = 1.0  # Plate height (same as main brain region)
+	
+	# Handle placeholder plates (5x1x5) for positioning calculations
+	var actual_input_width = input_plate_size.x if input_areas.size() > 0 else 5.0
+	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else 5.0
 	
 	# Create input plate (brighter green to match main region)
 	var input_color = Color(0.0, 0.6, 0.0, 0.7)
@@ -33,8 +38,12 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 		input_plate = _create_translucent_plate(input_plate_size, "InputPlatePreview", input_color)
 	else:
 		input_plate = _create_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "InputPlatePreview", input_color)
-	input_plate.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
-	input_plate.position.y = -1.0
+	
+	# FRONT-LEFT CORNER positioning (matches main brain region)
+	# INPUT PLATE: Front-left corner at preview region coordinates (0,0,0 relative)
+	input_plate.position.x = actual_input_width / 2.0  # Half-width to align front-left corner at origin
+	input_plate.position.y = plate_height / 2.0  # Half-height to align bottom at origin 
+	input_plate.position.z = (input_plate_size.z if input_areas.size() > 0 else 5.0) / 2.0  # Half-depth to align front edge at origin
 	_preview_container.add_child(input_plate)
 	
 	# Create output plate (darker green to match main region)
@@ -44,16 +53,24 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 		output_plate = _create_translucent_plate(output_plate_size, "OutputPlatePreview", output_color)
 	else:
 		output_plate = _create_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "OutputPlatePreview", output_color)
-	output_plate.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
-	output_plate.position.y = -1.0
+	
+	# OUTPUT PLATE: Front-left corner at input_width + gap from preview region front-left corner
+	var output_front_left_x = actual_input_width + plate_gap
+	output_plate.position.x = output_front_left_x + actual_output_width / 2.0  # Front-left corner + half-width
+	output_plate.position.y = plate_height / 2.0  # Half-height to align bottom at origin
+	output_plate.position.z = (output_plate_size.z if output_areas.size() > 0 else 5.0) / 2.0  # Half-depth to align front edge at origin
 	_preview_container.add_child(output_plate)
 	
-	# Create preview region name label
+	# Create preview region name label (positioned consistently with main brain region)
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "PreviewRegionLabel"
 	_region_name_label.text = brain_region.friendly_name + " (PREVIEW)"
 	_region_name_label.font_size = 192
-	_region_name_label.position = Vector3(0.0, -3.0, 0.0)
+	
+	# Position label centered between plates and closer to viewer (matches main brain region)
+	var center_x = (actual_input_width + plate_gap + actual_output_width) / 2.0
+	_region_name_label.position = Vector3(center_x, -3.0, 2.0)  # Same as main region: Y=-3, Z=+2 for viewer proximity
+	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_region_name_label.outline_render_priority = 1
 	_region_name_label.outline_size = 2
@@ -63,10 +80,14 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	
 	_preview_container.add_child(_region_name_label)
 	
+	print("  🟢 PREVIEW InputPlate: %s (size: %.1f x %.1f x %.1f)" % ["solid" if input_areas.size() > 0 else "wireframe placeholder", actual_input_width, plate_height, input_plate_size.z if input_areas.size() > 0 else 5.0])
+	print("  🟢 PREVIEW OutputPlate: %s at X=%.1f (size: %.1f x %.1f x %.1f)" % ["solid" if output_areas.size() > 0 else "wireframe placeholder", output_front_left_x, actual_output_width, plate_height, output_plate_size.z if output_areas.size() > 0 else 5.0])
+	print("  🏷️  PREVIEW Label: Centered at X=%.1f between both plates" % center_x)
+	
 	# Set initial position
 	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position)
 	
-	print("🔮 Brain region preview setup completed for: %s" % brain_region.friendly_name)
+	print("🔮 Brain region preview setup completed for: %s (using FRONT-LEFT CORNER positioning)" % brain_region.friendly_name)
 
 ## Updates the preview position when coordinates change
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i) -> void:
