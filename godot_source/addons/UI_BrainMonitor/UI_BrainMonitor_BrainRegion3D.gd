@@ -383,16 +383,24 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
 	
-	# Create new plates with updated sizes
-	var input_color = Color(0.0, 0.4, 0.0) if input_areas.size() > 0 else Color(1.0, 1.0, 0.0)
-	var input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
+	# Create new plates with updated sizes (70% opacity)
+	var input_color = Color(0.0, 0.6, 0.0, 0.7)  # Brighter green for input
+	var input_plate
+	if input_areas.size() > 0:
+		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
+	else:
+		input_plate = _create_wireframe_placeholder_plate(PLACEHOLDER_PLATE_SIZE, "InputPlate", input_color)
 	input_plate.position.x = input_plate_size.x / 2.0
 	input_plate.position.y = PLATE_HEIGHT / 2.0  
 	input_plate.position.z = input_plate_size.z / 2.0
 	_frame_container.add_child(input_plate)
 	
-	var output_color = Color(0.4, 0.0, 0.0) if output_areas.size() > 0 else Color(1.0, 1.0, 0.0)
-	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
+	var output_color = Color(0.0, 0.4, 0.0, 0.7)  # Darker green for output with 70% opacity
+	var output_plate
+	if output_areas.size() > 0:
+		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
+	else:
+		output_plate = _create_wireframe_placeholder_plate(PLACEHOLDER_PLATE_SIZE, "OutputPlate", output_color)
 	var output_front_left_x = input_plate_size.x + PLATE_GAP
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0
 	output_plate.position.y = PLATE_HEIGHT / 2.0
@@ -506,26 +514,34 @@ func _create_3d_plate() -> void:
 	add_child(_frame_container)
 	
 	# INPUT PLATE: Front-left corner at brain region coordinates (0,0,0 relative)
-	var input_color = Color(0.0, 0.4, 0.0) if input_areas.size() > 0 else Color(1.0, 1.0, 0.0)  # Green or Yellow placeholder
-	var input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
+	var input_color = Color(0.0, 0.6, 0.0, 0.7)  # Brighter green with 70% opacity
+	var input_plate
+	if input_areas.size() > 0:
+		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
+	else:
+		input_plate = _create_wireframe_placeholder_plate(PLACEHOLDER_PLATE_SIZE, "InputPlate", input_color)
 	# FRONT-LEFT CORNER positioning - Godot centers meshes, so adjust by half-size
 	input_plate.position.x = input_plate_size.x / 2.0  # Half-width to align front-left corner at origin
 	input_plate.position.y = PLATE_HEIGHT / 2.0  # Half-height to align bottom at origin
 	input_plate.position.z = input_plate_size.z / 2.0  # Half-depth to align front edge at origin
 	_frame_container.add_child(input_plate)
-	print("  🟢 InputPlate: Created %s plate (size: %.1f x %.1f x %.1f)" % ["green" if input_areas.size() > 0 else "yellow placeholder", input_plate_size.x, input_plate_size.y, input_plate_size.z])
+	print("  🟢 InputPlate: Created %s plate (size: %.1f x %.1f x %.1f)" % ["bright green solid (70% opacity)" if input_areas.size() > 0 else "bright green wireframe placeholder", input_plate_size.x if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x, input_plate_size.y if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.y, input_plate_size.z if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.z])
 	print("      📍 POSITIONED: Front-left corner at brain region coordinates (0,0,0 relative)")
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
-	var output_color = Color(0.4, 0.0, 0.0) if output_areas.size() > 0 else Color(1.0, 1.0, 0.0)  # Red or Yellow placeholder
-	var output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
+	var output_color = Color(0.0, 0.4, 0.0, 0.7)  # Darker green with 70% opacity
+	var output_plate
+	if output_areas.size() > 0:
+		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
+	else:
+		output_plate = _create_wireframe_placeholder_plate(PLACEHOLDER_PLATE_SIZE, "OutputPlate", output_color)
 	# FRONT-LEFT CORNER positioning - Output plate starts at input_width + gap
 	var output_front_left_x = input_plate_size.x + PLATE_GAP
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0  # Godot center adjustment
 	output_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as input plate (Godot center)
 	output_plate.position.z = output_plate_size.z / 2.0  # Half-depth to align front edge at same Z as input
 	_frame_container.add_child(output_plate)
-	print("  🔴 OutputPlate: Created %s plate (size: %.1f x %.1f x %.1f)" % ["red" if output_areas.size() > 0 else "yellow placeholder", output_plate_size.x, output_plate_size.y, output_plate_size.z])
+	print("  🟢 OutputPlate: Created %s plate (size: %.1f x %.1f x %.1f)" % ["darker green solid (70% opacity)" if output_areas.size() > 0 else "darker green wireframe placeholder", output_plate_size.x if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x, output_plate_size.y if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.y, output_plate_size.z if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.z])
 	print("      📍 POSITIONED: Front-left corner at input_width + gap from region")
 	
 	# Create region name label below the plates
@@ -592,6 +608,67 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	
 	return plate_mesh_instance
 
+## Creates a wireframe-only placeholder plate for empty input/output areas
+func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
+	# Create plate mesh instance
+	var plate_mesh_instance = MeshInstance3D.new()
+	plate_mesh_instance.name = plate_name + "_Wireframe"
+	
+	# Create array mesh for wireframe
+	var array_mesh = ArrayMesh.new()
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	
+	# Define vertices for a box (5x1x5 as specified)
+	var vertices = PackedVector3Array()
+	var indices = PackedInt32Array()
+	
+	# Box corners (front-left corner at origin)
+	var half_x = plate_size.x / 2.0
+	var half_y = plate_size.y / 2.0  
+	var half_z = plate_size.z / 2.0
+	
+	# 8 vertices of box (centered for Godot)
+	vertices.append(Vector3(-half_x, -half_y, -half_z))  # 0: front-bottom-left
+	vertices.append(Vector3(half_x, -half_y, -half_z))   # 1: front-bottom-right
+	vertices.append(Vector3(half_x, half_y, -half_z))    # 2: front-top-right
+	vertices.append(Vector3(-half_x, half_y, -half_z))   # 3: front-top-left
+	vertices.append(Vector3(-half_x, -half_y, half_z))   # 4: back-bottom-left
+	vertices.append(Vector3(half_x, -half_y, half_z))    # 5: back-bottom-right
+	vertices.append(Vector3(half_x, half_y, half_z))     # 6: back-top-right
+	vertices.append(Vector3(-half_x, half_y, half_z))    # 7: back-top-left
+	
+	# Define wireframe edges (lines connecting box vertices)
+	var wireframe_indices = [
+		# Front face
+		0, 1, 1, 2, 2, 3, 3, 0,
+		# Back face  
+		4, 5, 5, 6, 6, 7, 7, 4,
+		# Connecting edges
+		0, 4, 1, 5, 2, 6, 3, 7
+	]
+	
+	for i in wireframe_indices:
+		indices.append(i)
+	
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_INDEX] = indices
+	
+	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
+	plate_mesh_instance.mesh = array_mesh
+	
+	# Create wireframe material
+	var wireframe_material = StandardMaterial3D.new()
+	wireframe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	wireframe_material.albedo_color = plate_color
+	wireframe_material.flags_unshaded = true
+	wireframe_material.flags_transparent = true
+	wireframe_material.flags_do_not_receive_shadows = true
+	wireframe_material.flags_disable_ambient_light = true
+	wireframe_material.vertex_color_use_as_albedo = false
+	plate_mesh_instance.material_override = wireframe_material
+	
+	return plate_mesh_instance
 
 ## Adds collision bodies for clicking detection (plates and label)
 func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_gap: float) -> void:

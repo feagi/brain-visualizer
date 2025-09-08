@@ -26,14 +26,24 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
 	var plate_spacing = 1.0
 	
-	# Create translucent input plate (dark green)
-	var input_plate = _create_translucent_plate(input_plate_size, "InputPlatePreview", Color(0.0, 0.4, 0.0, 0.5))
+	# Create input plate (brighter green to match main region)
+	var input_color = Color(0.0, 0.6, 0.0, 0.7)
+	var input_plate
+	if input_areas.size() > 0:
+		input_plate = _create_translucent_plate(input_plate_size, "InputPlatePreview", input_color)
+	else:
+		input_plate = _create_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "InputPlatePreview", input_color)
 	input_plate.position.x = -(input_plate_size.x / 2.0 + plate_spacing / 2.0)
 	input_plate.position.y = -1.0
 	_preview_container.add_child(input_plate)
 	
-	# Create translucent output plate (dark blue)  
-	var output_plate = _create_translucent_plate(output_plate_size, "OutputPlatePreview", Color(0.0, 0.0, 0.4, 0.5))
+	# Create output plate (darker green to match main region)
+	var output_color = Color(0.0, 0.4, 0.0, 0.7)
+	var output_plate
+	if output_areas.size() > 0:
+		output_plate = _create_translucent_plate(output_plate_size, "OutputPlatePreview", output_color)
+	else:
+		output_plate = _create_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "OutputPlatePreview", output_color)
 	output_plate.position.x = output_plate_size.x / 2.0 + plate_spacing / 2.0
 	output_plate.position.y = -1.0
 	_preview_container.add_child(output_plate)
@@ -186,3 +196,65 @@ func _create_translucent_plate(plate_size: Vector3, plate_name: String, plate_co
 	mesh_instance.material_override = material
 	
 	return mesh_instance
+
+## Creates a wireframe-only placeholder plate for empty input/output areas (preview version)
+func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
+	# Create plate mesh instance
+	var plate_mesh_instance = MeshInstance3D.new()
+	plate_mesh_instance.name = plate_name + "_Wireframe"
+	
+	# Create array mesh for wireframe
+	var array_mesh = ArrayMesh.new()
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	
+	# Define vertices for a box (5x1x5 as specified)
+	var vertices = PackedVector3Array()
+	var indices = PackedInt32Array()
+	
+	# Box corners (front-left corner at origin)
+	var half_x = plate_size.x / 2.0
+	var half_y = plate_size.y / 2.0  
+	var half_z = plate_size.z / 2.0
+	
+	# 8 vertices of box (centered for Godot)
+	vertices.append(Vector3(-half_x, -half_y, -half_z))  # 0: front-bottom-left
+	vertices.append(Vector3(half_x, -half_y, -half_z))   # 1: front-bottom-right
+	vertices.append(Vector3(half_x, half_y, -half_z))    # 2: front-top-right
+	vertices.append(Vector3(-half_x, half_y, -half_z))   # 3: front-top-left
+	vertices.append(Vector3(-half_x, -half_y, half_z))   # 4: back-bottom-left
+	vertices.append(Vector3(half_x, -half_y, half_z))    # 5: back-bottom-right
+	vertices.append(Vector3(half_x, half_y, half_z))     # 6: back-top-right
+	vertices.append(Vector3(-half_x, half_y, half_z))    # 7: back-top-left
+	
+	# Define wireframe edges (lines connecting box vertices)
+	var wireframe_indices = [
+		# Front face
+		0, 1, 1, 2, 2, 3, 3, 0,
+		# Back face  
+		4, 5, 5, 6, 6, 7, 7, 4,
+		# Connecting edges
+		0, 4, 1, 5, 2, 6, 3, 7
+	]
+	
+	for i in wireframe_indices:
+		indices.append(i)
+	
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_INDEX] = indices
+	
+	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
+	plate_mesh_instance.mesh = array_mesh
+	
+	# Create wireframe material (same style as main region)
+	var wireframe_material = StandardMaterial3D.new()
+	wireframe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	wireframe_material.albedo_color = plate_color
+	wireframe_material.flags_unshaded = true
+	wireframe_material.flags_transparent = true
+	wireframe_material.flags_do_not_receive_shadows = true
+	wireframe_material.flags_disable_ambient_light = true
+	wireframe_material.vertex_color_use_as_albedo = false
+	plate_mesh_instance.material_override = wireframe_material
+	
+	return plate_mesh_instance
