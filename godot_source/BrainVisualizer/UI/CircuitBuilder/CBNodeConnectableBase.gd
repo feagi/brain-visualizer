@@ -30,10 +30,10 @@ func _gui_input(event):
 
 func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: NodePath) -> void:
 	dragged.connect(_on_finish_drag)
-	_inputs = get_node(input_path)
-	_outputs = get_node(output_path)
+	_inputs = get_node_or_null(input_path)
+	_outputs = get_node_or_null(output_path)
 	if !recursive_path.is_empty():
-		_recursives =  get_node(recursive_path)
+		_recursives = get_node_or_null(recursive_path)
 	position_offset_changed.connect(_on_node_move)
 	position_offset_changed.connect(_on_position_changed)
 	_dragged = false
@@ -48,22 +48,42 @@ func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: Stri
 	terminal.tree_exited.connect(_force_shrink)
 	match(connection_type):
 		CBNodeTerminal.TYPE.INPUT:
+			if _inputs == null or !is_instance_valid(_inputs):
+				push_warning("CBNodeConnectableBase: INPUT container is null/invalid; skipping add_child")
+				terminal.queue_free()
+				return null
 			_inputs.add_child(terminal)
 			terminal.setup(connection_type, text, self, input_container_offset_changed)
 
 		CBNodeTerminal.TYPE.OUTPUT:
+			if _outputs == null or !is_instance_valid(_outputs):
+				push_warning("CBNodeConnectableBase: OUTPUT container is null/invalid; skipping add_child")
+				terminal.queue_free()
+				return null
 			_outputs.add_child(terminal)
 			terminal.setup(connection_type, text, self, output_container_offset_changed)
 
 		CBNodeTerminal.TYPE.RECURSIVE:
+			if _recursives == null or !is_instance_valid(_recursives):
+				push_warning("CBNodeConnectableBase: RECURSIVE container is null/invalid; skipping add_child")
+				terminal.queue_free()
+				return null
 			_recursives.add_child(terminal)
 			terminal.setup(connection_type, text, self, recursive_container_offset_changed)
 
 		CBNodeTerminal.TYPE.INPUT_OPEN:
+			if _inputs == null or !is_instance_valid(_inputs):
+				push_warning("CBNodeConnectableBase: INPUT_OPEN container is null/invalid; skipping add_child")
+				terminal.queue_free()
+				return null
 			_inputs.add_child(terminal)
 			terminal.setup(connection_type, text, self, input_container_offset_changed)
 
 		CBNodeTerminal.TYPE.OUTPUT_OPEN:
+			if _outputs == null or !is_instance_valid(_outputs):
+				push_warning("CBNodeConnectableBase: OUTPUT_OPEN container is null/invalid; skipping add_child")
+				terminal.queue_free()
+				return null
 			_outputs.add_child(terminal)
 			terminal.setup(connection_type, text, self, output_container_offset_changed)
 	

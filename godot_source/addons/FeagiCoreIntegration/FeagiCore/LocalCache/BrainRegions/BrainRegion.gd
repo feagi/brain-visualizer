@@ -272,12 +272,13 @@ func is_subregion_recursive(region: BrainRegion) -> bool:
 
 ## Returns the path of this region, starting with the root region and ending with this region
 func get_path() -> Array[BrainRegion]:
-	var searching_region: BrainRegion = self
 	var path: Array[BrainRegion] = []
-	while !searching_region.is_root_region():
-		path.append(searching_region)
-		searching_region = searching_region.current_parent_region
-	path.append(searching_region)
+	var current: BrainRegion = self
+	while current != null:
+		path.append(current)
+		if current.is_root_region():
+			break
+		current = current.current_parent_region
 	path.reverse()
 	return path
 

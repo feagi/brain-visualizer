@@ -371,6 +371,41 @@ func send_vision_tuning_parameters(parameters: Dictionary) -> FeagiRequestOutput
 	return FEAGI_response_data
 
 #endregion
+#region Regions summary (lightweight)
+
+## Fetches the regions summary (members, inputs, outputs) without reloading the entire genome
+func get_regions_summary() -> FeagiRequestOutput:
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	var region_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_region_regionsMembers)
+	var region_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(region_request)
+	await region_worker.worker_done
+	var region_data: FeagiRequestOutput = region_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(region_data)
+	return region_data
+
+#endregion
+
+#region Mapping summary (lightweight)
+
+## Fetches the cortical mapping summary without reloading the entire genome
+func get_mapping_summary() -> FeagiRequestOutput:
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
+	var mapping_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(mappings_request)
+	await mapping_worker.worker_done
+	var mapping_data: FeagiRequestOutput = mapping_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(mapping_data)
+	return mapping_data
+
+#endregion
 
 
 ## Mass move a bunch of genome objects at once (FIXED: Use correct API endpoints for each object type)
@@ -518,6 +553,18 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		feagi_coords_3d = FEAGIUtils.array_to_vector3i(response["coordinate_3d"])
 	
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response["region_id"], parent_region, region_name, feagi_coords_2d, feagi_coords_3d, region_internals)
+
+	# Seed I/O directly from POST response (includes inputs/outputs now)
+	if response.has("inputs") or response.has("outputs"):
+		var seed: Dictionary = {}
+		seed[response["region_id"]] = {
+			"inputs": response.get("inputs", []),
+			"outputs": response.get("outputs", [])
+		}
+		FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_partial_mapping_sets(seed)
+	var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[response["region_id"]]
+	if new_region:
+		FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(new_region)
 	
 	print("✅ Region '%s' created at %s" % [region_name, feagi_coords_3d])
 	return FEAGI_response_data

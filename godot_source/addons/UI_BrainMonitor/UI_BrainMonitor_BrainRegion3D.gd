@@ -302,6 +302,27 @@ func setup(brain_region: BrainRegion) -> void:
 	# Populate with cortical areas
 	print("  👥 Populating cortical areas...")
 	_populate_cortical_areas()
+
+	# One-time hydrate: if both input and output are empty but region has areas, ask cache to refresh designations and repopulate
+	if _representing_region and _representing_region.contained_cortical_areas.size() > 0:
+		var had_no_io = (_get_input_cortical_areas().size() == 0 and _get_output_cortical_areas().size() == 0)
+		if had_no_io:
+			print("  🔄 HYDRATE: I/O empty at creation. Requesting cache refresh for region %s..." % _representing_region.region_ID)
+			# Ask FEAGI for latest region summary, then update local cache, then refresh designations additively
+			var region_summary_resp = await FeagiCore.requests.get_regions_summary()
+			if region_summary_resp.success:
+				var summary_dict: Dictionary = region_summary_resp.decode_response_as_dict()
+				FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_partial_mapping_sets(summary_dict)
+				FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(_representing_region)
+			# Regenerate coordinates and repopulate
+			_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
+			# Clear any previously parented cortical visualizations on our containers
+			for child in _input_areas_container.get_children():
+				child.queue_free()
+			for child in _output_areas_container.get_children():
+				child.queue_free()
+			await get_tree().process_frame
+			_populate_cortical_areas()
 	
 	# Connect to region signals for dynamic updates
 	_representing_region.cortical_area_added_to_region.connect(_on_cortical_area_added)
