@@ -645,24 +645,30 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[GenomeObject]) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
-		push_error("FEAGI Requests: Not ready for requests!")
+		BV.NOTIF.add_notification("Cannot move objects: Not connected to FEAGI", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 	if !target_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-		push_error("FEAGI Requests: No such region ID %s to edit!" % target_region.region_ID)
+		var error_msg = "Cannot move objects: Target region '%s' does not exist!" % target_region.friendly_name
+		BV.NOTIF.add_notification(error_msg, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
 	for object in objects_to_move:
 		if object is BrainRegion:
 			if (object as BrainRegion).is_root_region():
-				push_error("FEAGI Requests: Unable to make Root Region a child of %s!" % target_region.name)
+				var error_msg = "Unable to make Root Region a child of %s!" % target_region.friendly_name
+				BV.NOTIF.add_notification(error_msg, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 				return FeagiRequestOutput.requirement_fail("CANNOT_MOVE_ROOT")
 			if (object as BrainRegion).region_ID == target_region.region_ID:
-				push_error("FEAGI Requests: Cannot make region %s child of itself!" % target_region.name)
+				var error_msg = "Cannot make region %s child of itself!" % target_region.friendly_name
+				BV.NOTIF.add_notification(error_msg, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 				return FeagiRequestOutput.requirement_fail("CANNOT_RECURSE_REGION")
 	
-	# Define Request
+	# Define Request - FEAGI requires both parent_region_id AND coordinate_2d
 	var dict_to_send: Dictionary = {}
 	for object in objects_to_move:
-		dict_to_send[object.genome_ID] = {"parent_region_id": target_region.region_ID}
+		dict_to_send[object.genome_ID] = {
+			"parent_region_id": target_region.region_ID,
+			"coordinate_2d": FEAGIUtils.vector2i_to_array(object.coordinates_2D)
+		}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_relocateMembers, dict_to_send)
 	
 	# Send request and await results
@@ -670,12 +676,92 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to move objects to region of name %s!" % target_region.name)
+		var error_msg = "Unable to move objects to region '%s'. Server error: %s" % [target_region.friendly_name, FEAGI_response_data.failure_reason]
+		BV.NOTIF.add_notification(error_msg, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 		return FEAGI_response_data
+	
+	# Parse the response to get updated region data
+	var response_dict = FEAGI_response_data.decode_response_as_dict()
+	print("🔄 MOVE RESPONSE: Processing updated region data from FEAGI")
+	print("    📋 Response contains region: %s" % response_dict.get("region_id", "unknown"))
+	print("    📥 Updated inputs: %s" % response_dict.get("inputs", []))
+	print("    📤 Updated outputs: %s" % response_dict.get("outputs", []))
+	
+	# Update local cache for moved objects
 	for object in objects_to_move:
 		object.FEAGI_change_parent_brain_region(target_region)
+	
+	# CRITICAL: Update the destination region's I/O designations using the API response
+	if "inputs" in response_dict and "outputs" in response_dict:
+		print("🔄 CACHE UPDATE: Refreshing I/O designations for destination region using API response")
+		
+		# Update the region's partial mappings with the new I/O designations from FEAGI
+		var updated_inputs = response_dict["inputs"]
+		var updated_outputs = response_dict["outputs"]
+		
+		# Create updated partial mappings based on API response
+		var updated_partial_mappings: Array[PartialMappingSet] = []
+		
+		# Add input mappings
+		for input_area_id in updated_inputs:
+			if input_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+				var input_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[input_area_id]
+				# PartialMappingSet(is_input_of_region, mappings_suggested, internal_target, brain_region, label)
+				var input_mapping = PartialMappingSet.new(true, [], input_area, target_region, "")
+				updated_partial_mappings.append(input_mapping)
+				print("    📥 Added input mapping for: %s" % input_area_id)
+		
+		# Add output mappings  
+		for output_area_id in updated_outputs:
+			if output_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+				var output_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[output_area_id]
+				# PartialMappingSet(is_input_of_region, mappings_suggested, internal_target, brain_region, label)
+				var output_mapping = PartialMappingSet.new(false, [], output_area, target_region, "")
+				updated_partial_mappings.append(output_mapping)
+				print("    📤 Added output mapping for: %s" % output_area_id)
+		
+		# Update the target region's partial mappings
+		target_region.partial_mappings = updated_partial_mappings
+		print("    ✅ Updated region partial mappings: %d total (%d inputs, %d outputs)" % [updated_partial_mappings.size(), updated_inputs.size(), updated_outputs.size()])
+		
+		# Force refresh of the region's I/O visualization using a deferred call to avoid timing issues
+		print("🎯 VISUALIZATION REFRESH: Triggering I/O visualization update for region %s" % target_region.friendly_name)
+		call_deferred("_trigger_region_io_visualization_refresh", target_region.region_ID)
+	else:
+		print("⚠️  API response missing inputs/outputs arrays - skipping I/O refresh")
+	
+	var success_msg = "Successfully moved %d object(s) to region '%s'" % [objects_to_move.size(), target_region.friendly_name]
+	BV.NOTIF.add_notification(success_msg, NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
 	return FEAGI_response_data
 
+## Helper function to trigger I/O visualization refresh for a specific region
+func _trigger_region_io_visualization_refresh(region_id: StringName) -> void:
+	print("🔄 VISUALIZATION REFRESH: Looking for 3D visualization of region %s" % region_id)
+	
+	# Get scene tree from Engine (works from non-Node classes)
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if not scene_tree or not scene_tree.root:
+		print("    ❌ Could not access scene tree - refresh skipped")
+		return
+	
+	# Find all UI_BrainMonitor_3DScene nodes using find_children
+	var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
+	
+	for scene in brain_monitor_scenes:
+		if scene is UI_BrainMonitor_3DScene:
+			var monitor_scene = scene as UI_BrainMonitor_3DScene
+			
+			# Look for the region's 3D visualization in the dictionary
+			if region_id in monitor_scene._brain_region_visualizations_by_ID:
+				var brain_region_3d = monitor_scene._brain_region_visualizations_by_ID[region_id]
+				print("    ✅ Found region 3D visualization, triggering I/O refresh")
+				
+				# Force a refresh of the I/O areas by calling the refresh method
+				brain_region_3d._refresh_frame_contents()
+				print("    🎯 I/O visualization refresh completed for region %s" % region_id)
+				return
+	
+	print("    ⚠️  No 3D visualization found for region %s - refresh skipped" % region_id)
 
 func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRequestOutput:
 	# Requirement checking

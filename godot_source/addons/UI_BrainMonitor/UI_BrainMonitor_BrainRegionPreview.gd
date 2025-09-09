@@ -31,13 +31,13 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	var actual_input_width = input_plate_size.x if input_areas.size() > 0 else 5.0
 	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else 5.0
 	
-	# Create input plate (brighter green to match main region)
-	var input_color = Color(0.0, 0.6, 0.0, 0.2)
+	# Create input plate (bright visible green for preview)
+	var input_color = Color(0.2, 0.8, 0.2, 0.8)  # Much more visible with 80% opacity
 	var input_plate
 	if input_areas.size() > 0:
-		input_plate = _create_translucent_plate(input_plate_size, "InputPlatePreview", input_color)
+		input_plate = _create_visible_preview_plate(input_plate_size, "InputPlatePreview", input_color)
 	else:
-		input_plate = _create_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "InputPlatePreview", input_color)
+		input_plate = _create_visible_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "InputPlatePreview", input_color)
 	
 	# FRONT-LEFT CORNER positioning (matches main brain region)
 	# INPUT PLATE: Front-left corner at preview region coordinates (0,0,0 relative)
@@ -48,13 +48,13 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	input_plate.position.z = -input_depth / 2.0
 	_preview_container.add_child(input_plate)
 	
-	# Create output plate (darker green to match main region)
-	var output_color = Color(0.0, 0.4, 0.0, 0.2)
+	# Create output plate (bright visible blue for preview)
+	var output_color = Color(0.2, 0.2, 0.8, 0.8)  # Distinct blue color with 80% opacity
 	var output_plate
 	if output_areas.size() > 0:
-		output_plate = _create_translucent_plate(output_plate_size, "OutputPlatePreview", output_color)
+		output_plate = _create_visible_preview_plate(output_plate_size, "OutputPlatePreview", output_color)
 	else:
-		output_plate = _create_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "OutputPlatePreview", output_color)
+		output_plate = _create_visible_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "OutputPlatePreview", output_color)
 	
 	# OUTPUT PLATE: Front-left corner at input_width + gap from preview region front-left corner
 	var output_front_left_x = actual_input_width + plate_gap
@@ -77,21 +77,22 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_region_name_label.outline_render_priority = 1
-	_region_name_label.outline_size = 2
-	_region_name_label.modulate = Color(1.0, 1.0, 1.0, 0.7)  # Translucent white
+	_region_name_label.outline_size = 4  # Thicker outline for better visibility
+	_region_name_label.modulate = Color(1.0, 1.0, 0.0, 1.0)  # Bright yellow for high visibility
+	_region_name_label.outline_modulate = Color(0.0, 0.0, 0.0, 1.0)  # Black outline for contrast
 	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	
 	_preview_container.add_child(_region_name_label)
 	
-	print("  🟢 PREVIEW InputPlate: %s (size: %.1f x %.1f x %.1f)" % ["solid" if input_areas.size() > 0 else "wireframe placeholder", actual_input_width, plate_height, input_plate_size.z if input_areas.size() > 0 else 5.0])
-	print("  🟢 PREVIEW OutputPlate: %s at X=%.1f (size: %.1f x %.1f x %.1f)" % ["solid" if output_areas.size() > 0 else "wireframe placeholder", output_front_left_x, actual_output_width, plate_height, output_plate_size.z if output_areas.size() > 0 else 5.0])
-	print("  🏷️  PREVIEW Label: Centered at X=%.1f between both plates" % center_x)
+	print("  🟢 PREVIEW InputPlate: %s bright green with 80%% opacity (size: %.1f x %.1f x %.1f)" % ["solid" if input_areas.size() > 0 else "wireframe placeholder", actual_input_width, plate_height, input_plate_size.z if input_areas.size() > 0 else 5.0])
+	print("  🔵 PREVIEW OutputPlate: %s bright blue with 80%% opacity at X=%.1f (size: %.1f x %.1f x %.1f)" % ["solid" if output_areas.size() > 0 else "wireframe placeholder", output_front_left_x, actual_output_width, plate_height, output_plate_size.z if output_areas.size() > 0 else 5.0])
+	print("  🟡 PREVIEW Label: Bright yellow with black outline at X=%.1f between plates" % center_x)
 	
 	# Set initial position
 	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position)
 	
-	print("🔮 Brain region preview setup completed for: %s (using FRONT-LEFT CORNER positioning)" % brain_region.friendly_name)
+	print("🔮 Brain region preview setup completed for: %s (HIGH VISIBILITY plates with emission)" % brain_region.friendly_name)
 
 ## Updates the preview position when coordinates change
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i) -> void:
@@ -202,28 +203,37 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	
 	return plate_size
 
-## Creates a translucent plate mesh
-func _create_translucent_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
+## Creates a highly visible preview plate with solid appearance
+func _create_visible_preview_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
 	var mesh_instance = MeshInstance3D.new()
 	mesh_instance.name = plate_name
 	
-	# Create box mesh
+	# Create box mesh with 1 unit thickness like actual brain region plates
 	var box_mesh = BoxMesh.new()
-	box_mesh.size = plate_size
+	box_mesh.size = Vector3(plate_size.x, 1.0, plate_size.z)  # Fixed 1.0 thickness for visibility
 	mesh_instance.mesh = box_mesh
 	
-	# Create translucent material
+	# Create visible material with high opacity and emission for visibility
 	var material = StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = plate_color
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.flags_transparent = true
-	material.flags_unshaded = true  # Makes it glow slightly
+	material.flags_unshaded = true
+	material.flags_do_not_receive_shadows = true
+	material.flags_disable_ambient_light = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	
+	# Add slight emission to make it glow and stand out
+	material.emission_enabled = true
+	material.emission = Color(plate_color.r * 0.3, plate_color.g * 0.3, plate_color.b * 0.3)
+	
 	mesh_instance.material_override = material
 	
 	return mesh_instance
 
-## Creates a wireframe-only placeholder plate for empty input/output areas (preview version)
-func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
+## Creates a highly visible wireframe placeholder plate for empty input/output areas
+func _create_visible_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
 	# Create plate mesh instance
 	var plate_mesh_instance = MeshInstance3D.new()
 	plate_mesh_instance.name = plate_name + "_Wireframe"
@@ -271,16 +281,24 @@ func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String
 	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
 	plate_mesh_instance.mesh = array_mesh
 	
-	# Create wireframe material (same style as main region)
+	# Create highly visible wireframe material for preview
 	var wireframe_material = StandardMaterial3D.new()
 	wireframe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	wireframe_material.albedo_color = plate_color  # Use actual alpha value from plate_color parameter
-	wireframe_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # Enable alpha transparency
+	wireframe_material.albedo_color = plate_color  # Use the bright colors we set
+	wireframe_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	wireframe_material.flags_unshaded = true
 	wireframe_material.flags_transparent = true
 	wireframe_material.flags_do_not_receive_shadows = true
 	wireframe_material.flags_disable_ambient_light = true
 	wireframe_material.vertex_color_use_as_albedo = false
+	
+	# Make wireframe lines thicker and more visible
+	wireframe_material.grow_amount = 0.1  # Make lines slightly thicker
+	
+	# Add slight emission for visibility
+	wireframe_material.emission_enabled = true
+	wireframe_material.emission = Color(plate_color.r * 0.4, plate_color.g * 0.4, plate_color.b * 0.4)
+	
 	plate_mesh_instance.material_override = wireframe_material
 	
 	return plate_mesh_instance

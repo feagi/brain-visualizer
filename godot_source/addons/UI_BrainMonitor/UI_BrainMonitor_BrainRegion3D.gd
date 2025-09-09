@@ -371,12 +371,32 @@ func _deferred_io_verification_and_hydration() -> void:
 		# Regenerate coordinates and repopulate
 		_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
 		
-		# Clear any previously parented cortical visualizations on our containers
+		# Get current I/O areas after cache refresh to determine what should be kept
+		var updated_input_areas = _get_input_cortical_areas()
+		var updated_output_areas = _get_output_cortical_areas()
+		var updated_io_ids: Array[String] = []
+		
+		for area in updated_input_areas:
+			updated_io_ids.append(area.cortical_ID)
+		for area in updated_output_areas:
+			updated_io_ids.append(area.cortical_ID)
+		
+		# Only clear visualizations that are no longer I/O areas
 		for child in _input_areas_container.get_children():
-			child.queue_free()
+			var area_id = child.name.replace("CA_", "")  # Extract cortical ID from node name
+			if area_id not in updated_io_ids:
+				print("    🧹 HYDRATION: Removing outdated input visualization: %s" % area_id)
+				child.queue_free()
+				_cortical_area_visualizations.erase(area_id)
+		
 		for child in _output_areas_container.get_children():
-			child.queue_free()
-		_cortical_area_visualizations.clear()
+			var area_id = child.name.replace("CA_", "")  # Extract cortical ID from node name  
+			if area_id not in updated_io_ids:
+				print("    🧹 HYDRATION: Removing outdated output visualization: %s" % area_id)
+				child.queue_free()
+				_cortical_area_visualizations.erase(area_id)
+		
+		print("    🔄 HYDRATION: Selective cleanup complete - keeping valid I/O visualizations")
 		
 		await get_tree().process_frame
 		_populate_cortical_areas()
@@ -1111,6 +1131,12 @@ func _populate_cortical_areas() -> void:
 				print("      ❌ Failed to create visualization for input area %s" % area.cortical_ID)
 				continue
 		
+		# Check if visualization is already correctly positioned on input plate
+		if existing_viz.get_parent() == _input_areas_container:
+			print("    ✅ Input area %s already correctly positioned on input plate, skipping repositioning" % area.cortical_ID)
+			_cortical_area_visualizations[area.cortical_ID] = existing_viz
+			continue
+		
 		print("    🔄 Moving input area %s from main scene to plate left side" % area.cortical_ID)
 		var old_parent = existing_viz.get_parent()
 		print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
@@ -1163,6 +1189,12 @@ func _populate_cortical_areas() -> void:
 			if not existing_viz:
 				print("      ❌ Failed to create visualization for output area %s" % area.cortical_ID)
 				continue
+		
+		# Check if visualization is already correctly positioned on output plate
+		if existing_viz.get_parent() == _output_areas_container:
+			print("    ✅ Output area %s already correctly positioned on output plate, skipping repositioning" % area.cortical_ID)
+			_cortical_area_visualizations[area.cortical_ID] = existing_viz
+			continue
 		
 		print("    🔄 Moving output area %s from main scene to plate right side" % area.cortical_ID)
 		var old_parent = existing_viz.get_parent()
@@ -1651,10 +1683,30 @@ func _on_cortical_area_removed(area: AbstractCorticalArea) -> void:
 
 ## Refreshes the entire frame contents
 func _refresh_frame_contents() -> void:
-	# Clear existing visualizations
-	for viz in _cortical_area_visualizations.values():
-		viz.queue_free()
-	_cortical_area_visualizations.clear()
+	# Get current I/O areas to determine what should be kept
+	var current_input_areas = _get_input_cortical_areas()
+	var current_output_areas = _get_output_cortical_areas()
+	var current_io_ids: Array[String] = []
+	
+	for area in current_input_areas:
+		current_io_ids.append(area.cortical_ID)
+	for area in current_output_areas:
+		current_io_ids.append(area.cortical_ID)
+	
+	# Only clear visualizations that are no longer I/O areas
+	var visualizations_to_remove: Array[String] = []
+	for area_id in _cortical_area_visualizations.keys():
+		if area_id not in current_io_ids:
+			visualizations_to_remove.append(area_id)
+			print("🧹 REFRESH: Removing visualization for area %s (no longer I/O for this region)" % area_id)
+	
+	# Remove outdated visualizations
+	for area_id in visualizations_to_remove:
+		if area_id in _cortical_area_visualizations:
+			_cortical_area_visualizations[area_id].queue_free()
+			_cortical_area_visualizations.erase(area_id)
+	
+	print("🔄 REFRESH: Keeping %d existing I/O visualizations, removed %d outdated ones" % [current_io_ids.size() - visualizations_to_remove.size(), visualizations_to_remove.size()])
 	
 	# Position the brain region: FEAGI coordinates = front-left corner of INPUT plate
 	if _representing_region:
@@ -1672,7 +1724,7 @@ func _refresh_frame_contents() -> void:
 		print("🔧 REFRESH: Positioned brain region '%s' at FEAGI coords %s -> global_position %s" % [_representing_region.friendly_name, coords, global_position])
 		print("  📍 Region coordinates = front-left corner of INPUT plate")
 	
-	# Repopulate
+	# Repopulate (will reuse existing I/O visualizations where possible)
 	_populate_cortical_areas()
 
 ## Handles hover/selection interaction
