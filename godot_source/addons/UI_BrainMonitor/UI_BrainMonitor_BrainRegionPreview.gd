@@ -43,7 +43,9 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	# INPUT PLATE: Front-left corner at preview region coordinates (0,0,0 relative)
 	input_plate.position.x = actual_input_width / 2.0  # Half-width to align front-left corner at origin
 	input_plate.position.y = plate_height / 2.0  # Half-height to align bottom at origin 
-	input_plate.position.z = (input_plate_size.z if input_areas.size() > 0 else 5.0) / 2.0  # Half-depth to align front edge at origin
+	# Center Z must be NEGATIVE half-depth so the front edge is at parent's Z
+	var input_depth = (input_plate_size.z if input_areas.size() > 0 else 5.0)
+	input_plate.position.z = -input_depth / 2.0
 	_preview_container.add_child(input_plate)
 	
 	# Create output plate (darker green to match main region)
@@ -58,7 +60,9 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	var output_front_left_x = actual_input_width + plate_gap
 	output_plate.position.x = output_front_left_x + actual_output_width / 2.0  # Front-left corner + half-width
 	output_plate.position.y = plate_height / 2.0  # Half-height to align bottom at origin
-	output_plate.position.z = (output_plate_size.z if output_areas.size() > 0 else 5.0) / 2.0  # Half-depth to align front edge at origin
+	# Center Z must be NEGATIVE half-depth so the front edge is at parent's Z
+	var output_depth = (output_plate_size.z if output_areas.size() > 0 else 5.0)
+	output_plate.position.z = -output_depth / 2.0
 	_preview_container.add_child(output_plate)
 	
 	# Create preview region name label (positioned consistently with main brain region)
@@ -67,9 +71,9 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	_region_name_label.text = brain_region.friendly_name + " (PREVIEW)"
 	_region_name_label.font_size = 192
 	
-	# Position label centered between plates and closer to viewer (matches main brain region)
+	# Position label centered between plates and very close to viewer (front edge - small epsilon)
 	var center_x = (actual_input_width + plate_gap + actual_output_width) / 2.0
-	_region_name_label.position = Vector3(center_x, -3.0, 2.0)  # Same as main region: Y=-3, Z=+2 for viewer proximity
+	_region_name_label.position = Vector3(center_x, -3.0, -0.5)
 	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_region_name_label.outline_render_priority = 1
