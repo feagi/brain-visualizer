@@ -217,7 +217,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	print("    🎯 CENTER coordinates: X,Y = front-left + size/2, Z = front-left - size/2 (Godot Z-flip)")
 	var input_plate_center_z_feagi = brain_region.coordinates_3D.z + input_plate_size.z / 2.0
 	var output_plate_center_z_feagi = brain_region.coordinates_3D.z + output_plate_size.z / 2.0
-	print("    📍 Front edge Z (FEAGI): %.1f | Plate centers Z (FEAGI): input=%.1f, output=%.1f" % [brain_region.coordinates_3D.z, input_plate_center_z_feagi, output_plate_center_z_feagi])
+	print("    📍 Front edge Z (FEAGI): %.1f | Plate centers Z (FEAGI): input=%.1f, output=%.1f | Area start Z (FEAGI): %.1f" % [brain_region.coordinates_3D.z, input_plate_center_z_feagi, output_plate_center_z_feagi, input_start_z])
 	
 	return result
 
@@ -326,6 +326,17 @@ func setup(brain_region: BrainRegion) -> void:
 	_update_position(_representing_region.coordinates_3D)
 	print("  ✅ DEBUG SETUP: _update_position call completed")
 	print("🏁 BrainRegion3D Setup completed for region: %s" % _representing_region.friendly_name)
+
+	# Defer a post-build sync to ensure all child renderers and plates are fully in tree
+	call_deferred("_post_initial_build_sync")
+
+## Deferred one-time sync to eliminate startup race between plates and area renderers
+func _post_initial_build_sync() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	# Regenerate and apply to ensure consistency with dynamic path
+	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
+	_recalculate_plates_and_positioning_after_dimension_change()
 
 ## Custom dimension update handler for I/O cortical areas on brain region plates
 ## Updates dimensions without overriding brain region positioning
