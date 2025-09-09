@@ -565,6 +565,9 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[response["region_id"]]
 	if new_region:
 		FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(new_region)
+		# Ask UI to open or refresh BM for the new region so areas appear immediately
+		if BV.UI and BV.UI.temp_root_bm:
+			BV.WM.spawn_3d_brain_monitor_tab(new_region)
 	
 	print("✅ Region '%s' created at %s" % [region_name, feagi_coords_3d])
 	return FEAGI_response_data

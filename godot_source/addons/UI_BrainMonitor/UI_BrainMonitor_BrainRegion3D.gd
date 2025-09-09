@@ -453,6 +453,19 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	print("  🏗️ Step 3: Recreating plates with updated sizes...")
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
+
+	# Detect areas used as both input and output; mark conflict
+	var input_ids_update: Array[StringName] = []
+	for a in input_areas:
+		input_ids_update.append(a.cortical_ID)
+	var output_ids_update: Array[StringName] = []
+	for a in output_areas:
+		output_ids_update.append(a.cortical_ID)
+	var conflict := false
+	for id in input_ids_update:
+		if id in output_ids_update:
+			conflict = true
+			break
 	
 	# Calculate new plate sizes
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
@@ -468,8 +481,15 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	input_plate.position.x = input_plate_size.x / 2.0
 	input_plate.position.y = PLATE_HEIGHT / 2.0  
 	_frame_container.add_child(input_plate)
+	# If conflict, attach hover warning
+	if conflict:
+		_attach_hover_warning(input_plate, "Area used as both INPUT and OUTPUT in this region")
 	
 	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green for output with 20% opacity
+	if conflict:
+		# Set plates to reddish when conflict detected
+		input_color = Color(0.6, 0.0, 0.0, 0.25)
+		output_color = Color(0.6, 0.0, 0.0, 0.25)
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -479,6 +499,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0
 	output_plate.position.y = PLATE_HEIGHT / 2.0
 	_frame_container.add_child(output_plate)
+	if conflict:
+		_attach_hover_warning(output_plate, "Area used as both INPUT and OUTPUT in this region")
 
 	# Align plate global Z to match front-edge at brain region Z
 	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
@@ -630,6 +652,22 @@ func _create_3d_plate() -> void:
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
 	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green with opacity
+	# Detect areas used as both input and output; mark conflict
+	var input_ids: Array[StringName] = []
+	for a in input_areas:
+		input_ids.append(a.cortical_ID)
+	var output_ids: Array[StringName] = []
+	for a in output_areas:
+		output_ids.append(a.cortical_ID)
+	var conflict := false
+	for id in input_ids:
+		if id in output_ids:
+			conflict = true
+			break
+	if conflict:
+		# Set plates to reddish and notify on hover
+		input_color = Color(0.6, 0.0, 0.0, 0.25)
+		output_color = Color(0.6, 0.0, 0.0, 0.25)
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -722,6 +760,17 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	
 	return plate_mesh_instance
 
+func _attach_hover_warning(plate_node: MeshInstance3D, warning_text: String) -> void:
+	# Attach a simple Label3D as a child and toggle visibility on hover
+	var warn = Label3D.new()
+	warn.name = "HoverWarning"
+	warn.text = warning_text
+	warn.visible = false
+	warn.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	warn.modulate = Color(1, 0.6, 0.6, 0.9)
+	warn.position = Vector3(0, 2.0, 0)
+	plate_node.add_child(warn)
+
 ## Creates a wireframe-only placeholder plate for empty input/output areas
 func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
 	# Create plate mesh instance
@@ -801,6 +850,13 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	input_collision_shape.shape = input_box_shape
 	input_collision.add_child(input_collision_shape)
 	add_child(input_collision)  # Direct child of BrainRegion3D
+	# Hover wiring for input plate
+	if has_node("RegionAssembly/InputPlate"):
+		var plate: MeshInstance3D = get_node("RegionAssembly/InputPlate")
+		var warn: Label3D = plate.get_node_or_null("HoverWarning")
+		if warn:
+			input_collision.mouse_entered.connect(func(): warn.visible = true)
+			input_collision.mouse_exited.connect(func(): warn.visible = false)
 	
 	# Create collision body for OUTPUT PLATE - Front-left corner positioning
 	var output_collision = StaticBody3D.new()
@@ -817,6 +873,13 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	output_collision_shape.shape = output_box_shape
 	output_collision.add_child(output_collision_shape)
 	add_child(output_collision)  # Direct child of BrainRegion3D
+	# Hover wiring for output plate
+	if has_node("RegionAssembly/OutputPlate"):
+		var plate_o: MeshInstance3D = get_node("RegionAssembly/OutputPlate")
+		var warn_o: Label3D = plate_o.get_node_or_null("HoverWarning")
+		if warn_o:
+			output_collision.mouse_entered.connect(func(): warn_o.visible = true)
+			output_collision.mouse_exited.connect(func(): warn_o.visible = false)
 	
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
