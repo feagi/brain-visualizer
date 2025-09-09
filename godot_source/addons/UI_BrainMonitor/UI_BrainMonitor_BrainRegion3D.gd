@@ -421,8 +421,12 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	print("  🗑️ Step 2: Removing old plates...")
 	if _frame_container:
 		for child in _frame_container.get_children():
-			if child.name == "InputPlate" or child.name == "OutputPlate":
+			var child_name: String = child.name
+			# Remove any existing input/output plate meshes (solid or wireframe) and related click areas
+			if child_name.begins_with("InputPlate") or child_name.begins_with("OutputPlate") or child_name == "InputPlateClickArea" or child_name == "OutputPlateClickArea":
 				child.queue_free()
+		# Ensure queued frees are processed before recreating new plates
+		await get_tree().process_frame
 	
 	# 3. Recreate plates with new sizes
 	print("  🏗️ Step 3: Recreating plates with updated sizes...")
