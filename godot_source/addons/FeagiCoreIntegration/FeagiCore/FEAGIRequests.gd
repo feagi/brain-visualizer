@@ -559,9 +559,6 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	if response.has("inputs") or response.has("outputs"):
 		var inputs = response.get("inputs", [])
 		var outputs = response.get("outputs", [])
-		print("🔄 REGION CREATION: Processing I/O mappings for new region %s" % response["region_id"])
-		print("    📥 Inputs to process: %s" % inputs)
-		print("    📤 Outputs to process: %s" % outputs)
 		
 		# Debug: Check if cortical areas exist in cache before creating partial mappings
 		for area_id in inputs:
