@@ -682,86 +682,104 @@ func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[G
 	
 	# Parse the response to get updated region data
 	var response_dict = FEAGI_response_data.decode_response_as_dict()
-	print("🔄 MOVE RESPONSE: Processing updated region data from FEAGI")
-	print("    📋 Response contains region: %s" % response_dict.get("region_id", "unknown"))
-	print("    📥 Updated inputs: %s" % response_dict.get("inputs", []))
-	print("    📤 Updated outputs: %s" % response_dict.get("outputs", []))
+	print("MOVE API RESPONSE: ", response_dict.keys())
 	
 	# Update local cache for moved objects
 	for object in objects_to_move:
 		object.FEAGI_change_parent_brain_region(target_region)
 	
-	# CRITICAL: Update the destination region's I/O designations using the API response
-	if "inputs" in response_dict and "outputs" in response_dict:
-		print("🔄 CACHE UPDATE: Refreshing I/O designations for destination region using API response")
-		
-		# Update the region's partial mappings with the new I/O designations from FEAGI
-		var updated_inputs = response_dict["inputs"]
-		var updated_outputs = response_dict["outputs"]
-		
-		# Create updated partial mappings based on API response
-		var updated_partial_mappings: Array[PartialMappingSet] = []
-		
-		# Add input mappings
-		for input_area_id in updated_inputs:
-			if input_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-				var input_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[input_area_id]
-				# PartialMappingSet(is_input_of_region, mappings_suggested, internal_target, brain_region, label)
-				var input_mapping = PartialMappingSet.new(true, [], input_area, target_region, "")
-				updated_partial_mappings.append(input_mapping)
-				print("    📥 Added input mapping for: %s" % input_area_id)
-		
-		# Add output mappings  
-		for output_area_id in updated_outputs:
-			if output_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-				var output_area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[output_area_id]
-				# PartialMappingSet(is_input_of_region, mappings_suggested, internal_target, brain_region, label)
-				var output_mapping = PartialMappingSet.new(false, [], output_area, target_region, "")
-				updated_partial_mappings.append(output_mapping)
-				print("    📤 Added output mapping for: %s" % output_area_id)
-		
-		# Update the target region's partial mappings
-		target_region.partial_mappings = updated_partial_mappings
-		print("    ✅ Updated region partial mappings: %d total (%d inputs, %d outputs)" % [updated_partial_mappings.size(), updated_inputs.size(), updated_outputs.size()])
-		
-		# Force refresh of the region's I/O visualization using a deferred call to avoid timing issues
-		print("🎯 VISUALIZATION REFRESH: Triggering I/O visualization update for region %s" % target_region.friendly_name)
-		call_deferred("_trigger_region_io_visualization_refresh", target_region.region_ID)
-	else:
-		print("⚠️  API response missing inputs/outputs arrays - skipping I/O refresh")
+	# CRITICAL: Force I/O refresh for destination region
+	print("FORCING I/O REFRESH for region: ", target_region.region_ID)
+	call_deferred("_force_io_refresh", target_region.region_ID)
 	
 	var success_msg = "Successfully moved %d object(s) to region '%s'" % [objects_to_move.size(), target_region.friendly_name]
 	BV.NOTIF.add_notification(success_msg, NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
 	return FEAGI_response_data
 
-## Helper function to trigger I/O visualization refresh for a specific region
-func _trigger_region_io_visualization_refresh(region_id: StringName) -> void:
-	print("🔄 VISUALIZATION REFRESH: Looking for 3D visualization of region %s" % region_id)
+## Force I/O refresh for a region after moving objects
+func _force_io_refresh(region_id: StringName) -> void:
+	print("IO REFRESH: Starting for region ", region_id)
 	
-	# Get scene tree from Engine (works from non-Node classes)
-	var scene_tree = Engine.get_main_loop() as SceneTree
-	if not scene_tree or not scene_tree.root:
-		print("    ❌ Could not access scene tree - refresh skipped")
+	# Get the region from cache
+	if not region_id in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		print("IO REFRESH: Region not found in cache")
 		return
 	
-	# Find all UI_BrainMonitor_3DScene nodes using find_children
+	var region = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[region_id]
+	
+	# Step 1: Refresh cache data
+	FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(region)
+	
+	# Step 2: Manual I/O detection based on connections
+	_detect_io_areas_by_connections(region)
+	
+	# Step 3: Trigger visualization refresh
+	_refresh_region_visualization(region_id)
+
+## Detect I/O areas by analyzing external connections
+func _detect_io_areas_by_connections(region: BrainRegion) -> void:
+	print("IO DETECTION: Analyzing connections for region ", region.friendly_name)
+	
+	var new_partial_mappings: Array[PartialMappingSet] = []
+	var contained_ids: Array[String] = []
+	
+	# Get all area IDs in this region
+	for area in region.contained_cortical_areas:
+		contained_ids.append(area.cortical_ID)
+	
+	# Check each area for external connections
+	for area in region.contained_cortical_areas:
+		var is_input = false
+		var is_output = false
+		
+		# Check incoming connections (afferent_mappings keys are source areas)
+		if area.afferent_mappings:
+			for source_area in area.afferent_mappings:
+				var source_id = source_area.cortical_ID
+				if source_id not in contained_ids:
+					print("IO DETECTION: ", area.cortical_ID, " has external input from ", source_id)
+					is_input = true
+		
+		# Check outgoing connections (efferent_mappings keys are destination areas)
+		if area.efferent_mappings:
+			for dest_area in area.efferent_mappings:
+				var dest_id = dest_area.cortical_ID
+				if dest_id not in contained_ids:
+					print("IO DETECTION: ", area.cortical_ID, " has external output to ", dest_id)
+					is_output = true
+		
+		# Create partial mappings for I/O areas
+		if is_input:
+			var input_mapping = PartialMappingSet.new(true, [], area, region, "external_input")
+			new_partial_mappings.append(input_mapping)
+			print("IO DETECTION: Added INPUT mapping for ", area.cortical_ID)
+		
+		if is_output:
+			var output_mapping = PartialMappingSet.new(false, [], area, region, "external_output")
+			new_partial_mappings.append(output_mapping)
+			print("IO DETECTION: Added OUTPUT mapping for ", area.cortical_ID)
+	
+	# Add new mappings to existing ones
+	region.partial_mappings.append_array(new_partial_mappings)
+	print("IO DETECTION: Region now has ", region.partial_mappings.size(), " total partial mappings")
+
+## Refresh region visualization
+func _refresh_region_visualization(region_id: StringName) -> void:
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if not scene_tree or not scene_tree.root:
+		return
+	
 	var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
 	
 	for scene in brain_monitor_scenes:
 		if scene is UI_BrainMonitor_3DScene:
 			var monitor_scene = scene as UI_BrainMonitor_3DScene
-			
-			# Look for the region's 3D visualization in the dictionary
 			if region_id in monitor_scene._brain_region_visualizations_by_ID:
 				var brain_region_3d = monitor_scene._brain_region_visualizations_by_ID[region_id]
-				print("    ✅ Found region 3D visualization, triggering I/O refresh")
-				
-				# Force a refresh of the I/O areas by calling the refresh method
 				brain_region_3d._refresh_frame_contents()
-				print("    🎯 I/O visualization refresh completed for region %s" % region_id)
+				print("IO REFRESH: Triggered visualization refresh for ", region_id)
 				return
-	
-	print("    ⚠️  No 3D visualization found for region %s - refresh skipped" % region_id)
+
 
 func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRequestOutput:
 	# Requirement checking
