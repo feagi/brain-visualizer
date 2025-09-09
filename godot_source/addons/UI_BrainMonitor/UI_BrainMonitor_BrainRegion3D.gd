@@ -126,18 +126,16 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
 	
-	# INPUT PLATE: Front-left corner at brain region coordinates (0,0,0 relative)
-	# Input areas start at: region coordinates + margin
+	# INPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
 	var input_start_x = PLATE_SIDE_MARGIN  # Margin from left edge
 	var input_start_y = AREA_ABOVE_PLATE_GAP  # Margin from bottom edge  
-	var input_start_z = 0.0  # No Z offset from region front edge
+	var input_start_z = 0.0  # Front edge alignment at region Z
 	
-	# OUTPUT PLATE: Front-left corner at input_width + gap from region
-	# Output areas start at: output plate front-left corner + margin
+	# OUTPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
 	var output_plate_x = input_plate_size.x + PLATE_GAP
 	var output_start_x = output_plate_x + PLATE_SIDE_MARGIN
 	var output_start_y = AREA_ABOVE_PLATE_GAP
-	var output_start_z = 0.0  # Same Z as input (no offset from region front edge)
+	var output_start_z = 0.0  # Front edge alignment at region Z
 	
 	print("  📥 Processing %d INPUT areas (front-left corner positioning):" % input_areas.size())
 	var current_input_x = input_start_x  # Start at plate front-left + margin
@@ -150,11 +148,10 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		var area_front_left_y = input_start_y
 		var area_front_left_z = input_start_z
 		
-		# Convert front-left corner to CENTER coordinates (Godot renderers expect center positioning)
-		# Note: Z-axis is flipped between FEAGI and Godot coordinate systems
+		# Convert front-left corner to CENTER coordinates in FEAGI (Godot flip happens later)
 		var area_center_x = area_front_left_x + area_size.x / 2.0
 		var area_center_y = area_front_left_y + area_size.y / 2.0  
-		var area_center_z = area_front_left_z - area_size.z / 2.0  # Subtract because Godot Z is opposite to FEAGI Z
+		var area_center_z = area_front_left_z + area_size.z / 2.0
 		
 		var new_position = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
 		
@@ -187,11 +184,10 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		var area_front_left_y = output_start_y
 		var area_front_left_z = output_start_z
 		
-		# Convert front-left corner to CENTER coordinates (Godot renderers expect center positioning)
-		# Note: Z-axis is flipped between FEAGI and Godot coordinate systems
+		# Convert front-left corner to CENTER coordinates in FEAGI (Godot flip happens later)
 		var area_center_x = area_front_left_x + area_size.x / 2.0
 		var area_center_y = area_front_left_y + area_size.y / 2.0
-		var area_center_z = area_front_left_z - area_size.z / 2.0  # Subtract because Godot Z is opposite to FEAGI Z
+		var area_center_z = area_front_left_z + area_size.z / 2.0
 		
 		var new_position = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
 		
@@ -219,9 +215,37 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	print("    🟢 Input areas: Front-left corners start at margins, CENTER positioning used for renderers")
 	print("    🔵 Output areas: Front-left corners start at margins, CENTER positioning used for renderers")  
 	print("    🎯 CENTER coordinates: X,Y = front-left + size/2, Z = front-left - size/2 (Godot Z-flip)")
-	print("    📍 Brain region front-left corner at Z=%.1f, areas positioned with Z-axis correction" % brain_region.coordinates_3D.z)
+	var input_plate_center_z_feagi = brain_region.coordinates_3D.z + input_plate_size.z / 2.0
+	var output_plate_center_z_feagi = brain_region.coordinates_3D.z + output_plate_size.z / 2.0
+	print("    📍 Front edge Z (FEAGI): %.1f | Plate centers Z (FEAGI): input=%.1f, output=%.1f" % [brain_region.coordinates_3D.z, input_plate_center_z_feagi, output_plate_center_z_feagi])
 	
 	return result
+
+## Force refresh of all existing brain regions to apply new positioning logic
+static func refresh_all_brain_regions_positioning() -> void:
+	print("🔄 REFRESHING all existing brain region positioning with new plate alignment...")
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if scene_tree:
+		var all_nodes = scene_tree.get_nodes_in_group("brain_regions")
+		if all_nodes.is_empty():
+			# Fallback: search the entire scene tree
+			all_nodes = _find_all_brain_region_nodes(scene_tree.current_scene)
+		
+		print("  📊 Found %d brain region nodes to refresh" % all_nodes.size())
+		for node in all_nodes:
+			if node is UI_BrainMonitor_BrainRegion3D:
+				var brain_region_3d = node as UI_BrainMonitor_BrainRegion3D
+				print("  🔧 Refreshing positioning for region: %s" % brain_region_3d.name)
+				brain_region_3d._recalculate_plates_and_positioning_after_dimension_change()
+
+## Helper to find all brain region nodes in scene tree
+static func _find_all_brain_region_nodes(node: Node) -> Array:
+	var brain_regions = []
+	if node is UI_BrainMonitor_BrainRegion3D:
+		brain_regions.append(node)
+	for child in node.get_children():
+		brain_regions.append_array(_find_all_brain_region_nodes(child))
+	return brain_regions
 
 ## DEBUG: Manually check label positions
 func debug_label_positions() -> void:
@@ -407,7 +431,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		input_plate = _create_wireframe_placeholder_plate(PLACEHOLDER_PLATE_SIZE, "InputPlate", input_color)
 	input_plate.position.x = input_plate_size.x / 2.0
 	input_plate.position.y = PLATE_HEIGHT / 2.0  
-	input_plate.position.z = _representing_region.coordinates_3D.z - input_plate_size.z / 2.0  # Front edge at brain region Z
 	_frame_container.add_child(input_plate)
 	
 	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green for output with 20% opacity
@@ -419,8 +442,16 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	var output_front_left_x = input_plate_size.x + PLATE_GAP
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0
 	output_plate.position.y = PLATE_HEIGHT / 2.0
-	output_plate.position.z = _representing_region.coordinates_3D.z - output_plate_size.z / 2.0  # Front edge at brain region Z
 	_frame_container.add_child(output_plate)
+
+	# Align plate global Z to match front-edge at brain region Z
+	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
+	if input_plate:
+		var input_center_z = region_world.z - input_plate_size.z / 2.0
+		input_plate.global_position.z = input_center_z
+	if output_plate:
+		var output_center_z = region_world.z - output_plate_size.z / 2.0
+		output_plate.global_position.z = output_center_z
 	
 	# 4. Reposition all I/O cortical areas using new coordinates
 	print("  📍 Step 4: Repositioning all I/O cortical areas with new calculations...")
@@ -472,10 +503,19 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 	var brain_region_coords = _representing_region.coordinates_3D
 	var brain_region_world_pos = Vector3(brain_region_coords.x, brain_region_coords.y, -brain_region_coords.z)
 	
-	# Calculate desired world position
-	var desired_world_pos = brain_region_world_pos + new_position
+	# Calculate desired world position; new_position is FEAGI-relative
+	# FEAGI -> Godot conversion: (x, y, -z)
+	var desired_world_pos = brain_region_world_pos + Vector3(new_position.x, new_position.y, -new_position.z)
+
+	# Ensure cortical area's FRONT edge sits on plate FRONT edge:
+	# plate front edge FEAGI Z = brain_region_coords.z; Godot Z is negative
+	# Center of area should be at: FEAGI (front + depth/2) => Godot: -(front + depth/2)
+	var area_depth = cortical_viz.cortical_area.dimensions_3D.z
+	var feagi_front_z = brain_region_coords.z
+	var desired_world_center_z = -(feagi_front_z + float(area_depth) / 2.0)
+	desired_world_pos.z = desired_world_center_z
 	
-	# Position the renderers at the new location
+	# Position the renderers at the new location (now snapped to plate Z)
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
 		if cortical_viz._dda_renderer._friendly_name_label != null:
@@ -485,6 +525,20 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
 		if cortical_viz._directpoints_renderer._friendly_name_label != null:
 			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)
+
+func _get_plate_global_z(is_input: bool) -> float:
+	# Fetch the exact Z from the plate nodes to avoid drift
+	if _frame_container == null:
+		return 0.0
+	var plate_name = "InputPlate" if is_input else "OutputPlate"
+	var plate_node = _frame_container.get_node_or_null(plate_name)
+	if plate_node == null:
+		return 0.0
+	return (plate_node as Node3D).global_position.z
+
+	# Debug: ensure plate and cortical area Z match exactly
+	# var which = "INPUT" if is_input else "OUTPUT"
+	# print("    🔧 Snapped %s cortical area Z to plate Z=%.2f" % [which, desired_world_pos.z])
 
 ## Creates the 3D plate structure underneath I/O cortical areas
 func _create_3d_plate() -> void:
@@ -538,7 +592,7 @@ func _create_3d_plate() -> void:
 	# FRONT-LEFT CORNER positioning - Godot centers meshes, so adjust by half-size
 	input_plate.position.x = input_plate_size.x / 2.0  # Half-width to align front-left corner at origin
 	input_plate.position.y = PLATE_HEIGHT / 2.0  # Half-height to align bottom at origin
-	input_plate.position.z = _representing_region.coordinates_3D.z - input_plate_size.z / 2.0  # Front edge at brain region Z
+	# Use global Z set through transform later to allow querying exact plate Z
 	_frame_container.add_child(input_plate)
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
@@ -552,8 +606,17 @@ func _create_3d_plate() -> void:
 	var output_front_left_x = input_plate_size.x + PLATE_GAP
 	output_plate.position.x = output_front_left_x + output_plate_size.x / 2.0  # Godot center adjustment
 	output_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as input plate (Godot center)
-	output_plate.position.z = _representing_region.coordinates_3D.z - output_plate_size.z / 2.0  # Front edge at brain region Z
+	# Use global Z set through transform later to allow querying exact plate Z
 	_frame_container.add_child(output_plate)
+
+	# After adding plates, set their global Z so front edges align at brain region Z
+	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
+	if input_plate:
+		var input_center_z = region_world.z - input_plate_size.z / 2.0
+		input_plate.global_position.z = input_center_z
+	if output_plate:
+		var output_center_z = region_world.z - output_plate_size.z / 2.0
+		output_plate.global_position.z = output_center_z
 
 	
 	# Create region name label below the plates
