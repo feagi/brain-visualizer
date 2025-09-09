@@ -129,13 +129,13 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	# INPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
 	var input_start_x = PLATE_SIDE_MARGIN  # Margin from left edge
 	var input_start_y = AREA_ABOVE_PLATE_GAP  # Margin from bottom edge  
-	var input_start_z = 0.0  # Front edge alignment at region Z
+	var input_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
 	
 	# OUTPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
 	var output_plate_x = input_plate_size.x + PLATE_GAP
 	var output_start_x = output_plate_x + PLATE_SIDE_MARGIN
 	var output_start_y = AREA_ABOVE_PLATE_GAP
-	var output_start_z = 0.0  # Front edge alignment at region Z
+	var output_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
 	
 	print("  📥 Processing %d INPUT areas (front-left corner positioning):" % input_areas.size())
 	var current_input_x = input_start_x  # Start at plate front-left + margin
@@ -492,8 +492,10 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if _region_name_label:
 		var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
 		var center_x = total_width / 2.0
-		_region_name_label.position = Vector3(center_x, -3.0, input_plate_size.x)  # Centered between new plates
-		print("    📍 Label repositioned to center: (%.1f, -3.0, %.1f)" % [center_x, input_plate_size.x])
+		var front_edge_world_z = -_representing_region.coordinates_3D.z
+		var label_world_z = front_edge_world_z - 0.5
+		_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
+		print("    📍 Label repositioned near front edge: world pos (%.1f, %.1f, %.1f)" % [_region_name_label.global_position.x, _region_name_label.global_position.y, _region_name_label.global_position.z])
 	
 	print("  ✅ Comprehensive plate and positioning update completed!")
 
@@ -507,13 +509,8 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 	# FEAGI -> Godot conversion: (x, y, -z)
 	var desired_world_pos = brain_region_world_pos + Vector3(new_position.x, new_position.y, -new_position.z)
 
-	# Ensure cortical area's FRONT edge sits on plate FRONT edge:
-	# plate front edge FEAGI Z = brain_region_coords.z; Godot Z is negative
-	# Center of area should be at: FEAGI (front + depth/2) => Godot: -(front + depth/2)
-	var area_depth = cortical_viz.cortical_area.dimensions_3D.z
-	var feagi_front_z = brain_region_coords.z
-	var desired_world_center_z = -(feagi_front_z + float(area_depth) / 2.0)
-	desired_world_pos.z = desired_world_center_z
+	# Ensure cortical area's CENTER matches generated coordinate (relative FEAGI new_position)
+	# We already converted FEAGI new_position with Z flip above; do not override with a second rule
 	
 	# Position the renderers at the new location (now snapped to plate Z)
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
@@ -627,7 +624,12 @@ func _create_3d_plate() -> void:
 	# Position label at center of both plates combined: Y-3 for below, Z-2 for closer to viewer
 	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
 	var center_x = total_width / 2.0  # Center between both plates
-	_region_name_label.position = Vector3(center_x, -3.0, input_plate_size.x)  # Centered horizontally
+	# Place label just in front of the plates (very close to front edge)
+	# FEAGI: front edge Z = brain_region.coords.z → Godot world Z = -frontZ
+	# Use a tiny epsilon toward the viewer so it renders in front
+	var front_edge_world_z = -_representing_region.coordinates_3D.z
+	var label_world_z = front_edge_world_z - 0.5  # 0.5 units closer to viewer
+	_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
 	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
