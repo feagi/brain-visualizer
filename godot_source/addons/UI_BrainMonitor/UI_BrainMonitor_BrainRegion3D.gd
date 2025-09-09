@@ -1737,6 +1737,33 @@ func _refresh_frame_contents() -> void:
 	
 	# Repopulate (will reuse existing I/O visualizations where possible)
 	_populate_cortical_areas()
+	
+	# CRITICAL FIX: Update label position after all elements are in place
+	call_deferred("_update_label_position_after_refresh")
+
+## Updates the region label position to center it between the new plates after refresh
+func _update_label_position_after_refresh() -> void:
+	if not _region_name_label or not _representing_region:
+		return
+	
+	# Recalculate plate sizes for current I/O areas
+	var input_areas = _get_input_cortical_areas()
+	var output_areas = _get_output_cortical_areas()
+	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
+	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	
+	# Recalculate total width and center position
+	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+	var center_x = total_width / 2.0
+	
+	# Update label position to be centered between the new plates
+	var front_edge_world_z = -_representing_region.coordinates_3D.z
+	var label_world_z = front_edge_world_z - 0.5  # 0.5 units closer to viewer
+	_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
+	
+	print("🏷️ LABEL UPDATE: Repositioned region label '%s' to center between updated plates" % _representing_region.friendly_name)
+	print("    📐 New plate sizes - Input: %s, Output: %s, Total width: %.1f" % [input_plate_size, output_plate_size, total_width])
+	print("    📍 New label position: %s (centered at X=%.1f)" % [_region_name_label.global_position, center_x])
 
 ## Handles hover/selection interaction
 func set_hover_state(is_hovered: bool) -> void:
