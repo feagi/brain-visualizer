@@ -1724,6 +1724,17 @@ func _refresh_frame_contents() -> void:
 		print("🔧 REFRESH: Positioned brain region '%s' at FEAGI coords %s -> global_position %s" % [_representing_region.friendly_name, coords, global_position])
 		print("  📍 Region coordinates = front-left corner of INPUT plate")
 	
+	# CRITICAL FIX: Regenerate coordinates for newly detected I/O areas
+	print("🔄 REFRESH: Regenerating I/O coordinates for updated area set")
+	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
+	
+	# CRITICAL FIX: Recreate plates with updated sizes for new I/O area count
+	print("🔄 REFRESH: Recreating plates for updated I/O area set")
+	if _frame_container:
+		_frame_container.queue_free()
+	_create_3d_plate()
+	_create_containers()
+	
 	# Repopulate (will reuse existing I/O visualizations where possible)
 	_populate_cortical_areas()
 
