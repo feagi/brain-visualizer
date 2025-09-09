@@ -78,10 +78,18 @@ func setup(region: BrainRegion) -> void:
 		_add_cortical_area(area)
 	
 	# Check cortical areas in child regions that might be I/O areas
+	print("🔍 SETUP: Checking child regions for I/O cortical areas...")
 	for child_region in _representing_region.contained_regions:
+		print("  🏗️ Child region: %s (contains %d areas)" % [child_region.friendly_name, child_region.contained_cortical_areas.size()])
 		for area in child_region.contained_cortical_areas:
-			if _is_area_input_output_of_specific_child_region(area, child_region):
+			print("    🔍 Checking area: %s" % area.cortical_ID)
+			var is_io = _is_area_input_output_of_specific_child_region(area, child_region)
+			print("    📋 Is I/O area: %s" % is_io)
+			if is_io:
+				print("    ✅ Creating visualization for I/O area: %s" % area.cortical_ID)
 				_add_cortical_area(area)
+			else:
+				print("    ⏭️ Skipping non-I/O area: %s" % area.cortical_ID)
 	
 	# Create child brain region frames
 	for child_region in _representing_region.contained_regions:

@@ -82,6 +82,10 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 	_available_brain_regions[region_ID] = region
 	for object in contained_objects:
 		object.FEAGI_change_parent_brain_region(region)
+	# NOTE: region_added signal will be emitted after all cache data is loaded (called from FEAGIRequests)
+
+## Emits the region_added signal for a specific region (called after all cache data is loaded)
+func emit_region_added_signal(region: BrainRegion) -> void:
 	region_added.emit(region)
 
 func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:

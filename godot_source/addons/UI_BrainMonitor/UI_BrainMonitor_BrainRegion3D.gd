@@ -303,26 +303,8 @@ func setup(brain_region: BrainRegion) -> void:
 	print("  👥 Populating cortical areas...")
 	_populate_cortical_areas()
 
-	# One-time hydrate: if both input and output are empty but region has areas, ask cache to refresh designations and repopulate
-	if _representing_region and _representing_region.contained_cortical_areas.size() > 0:
-		var had_no_io = (_get_input_cortical_areas().size() == 0 and _get_output_cortical_areas().size() == 0)
-		if had_no_io:
-			print("  🔄 HYDRATE: I/O empty at creation. Requesting cache refresh for region %s..." % _representing_region.region_ID)
-			# Ask FEAGI for latest region summary, then update local cache, then refresh designations additively
-			var region_summary_resp = await FeagiCore.requests.get_regions_summary()
-			if region_summary_resp.success:
-				var summary_dict: Dictionary = region_summary_resp.decode_response_as_dict()
-				FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_partial_mapping_sets(summary_dict)
-				FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(_representing_region)
-			# Regenerate coordinates and repopulate
-			_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
-			# Clear any previously parented cortical visualizations on our containers
-			for child in _input_areas_container.get_children():
-				child.queue_free()
-			for child in _output_areas_container.get_children():
-				child.queue_free()
-			await get_tree().process_frame
-			_populate_cortical_areas()
+	# Deferred hydration check: ensure I/O areas are properly detected and displayed
+	call_deferred("_deferred_io_verification_and_hydration")
 	
 	# Connect to region signals for dynamic updates
 	_representing_region.cortical_area_added_to_region.connect(_on_cortical_area_added)
@@ -350,6 +332,62 @@ func setup(brain_region: BrainRegion) -> void:
 
 	# Defer a post-build sync to ensure all child renderers and plates are fully in tree
 	call_deferred("_post_initial_build_sync")
+
+## Deferred I/O verification and hydration: ensures areas are properly displayed after setup
+func _deferred_io_verification_and_hydration() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame  # Wait for all initial setup to complete
+	
+	if not _representing_region or _representing_region.contained_cortical_areas.size() == 0:
+		print("  ⏭️ HYDRATION: No contained areas in region, skipping hydration")
+		return
+	
+	var input_areas = _get_input_cortical_areas()
+	var output_areas = _get_output_cortical_areas()
+	var has_no_io_areas = (input_areas.size() == 0 and output_areas.size() == 0)
+	var has_missing_visualizations = false
+	
+	# Check if we have I/O areas but missing visualizations on plates
+	for area in input_areas:
+		if area.cortical_ID not in _cortical_area_visualizations:
+			has_missing_visualizations = true
+			break
+	
+	if not has_missing_visualizations:
+		for area in output_areas:
+			if area.cortical_ID not in _cortical_area_visualizations:
+				has_missing_visualizations = true
+				break
+	
+	# Trigger hydration if no I/O areas found OR missing visualizations
+	if has_no_io_areas or has_missing_visualizations:
+		print("  🔄 HYDRATION: Region %s needs I/O refresh - no_io: %s, missing_viz: %s" % [_representing_region.region_ID, has_no_io_areas, has_missing_visualizations])
+		print("    - Found %d inputs, %d outputs" % [input_areas.size(), output_areas.size()])
+		print("    - Have %d visualizations on plates" % _cortical_area_visualizations.size())
+		
+		# Use local cache refresh instead of network request for better reliability
+		FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(_representing_region)
+		
+		# Regenerate coordinates and repopulate
+		_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
+		
+		# Clear any previously parented cortical visualizations on our containers
+		for child in _input_areas_container.get_children():
+			child.queue_free()
+		for child in _output_areas_container.get_children():
+			child.queue_free()
+		_cortical_area_visualizations.clear()
+		
+		await get_tree().process_frame
+		_populate_cortical_areas()
+		
+		# Force a comprehensive update
+		_recalculate_plates_and_positioning_after_dimension_change()
+		print("  ✅ HYDRATION: Completed I/O refresh for region %s" % _representing_region.region_ID)
+	else:
+		print("  ✅ HYDRATION: Region %s I/O areas properly detected and displayed" % _representing_region.region_ID)
+		# Still do the post-initial build sync for consistency
+		_post_initial_build_sync()
 
 ## Deferred one-time sync to eliminate startup race between plates and area renderers
 func _post_initial_build_sync() -> void:
@@ -1064,91 +1102,107 @@ func _populate_cortical_areas() -> void:
 	for i in input_areas.size():
 		var area = input_areas[i]
 		var existing_viz = brain_monitor_3d.get_cortical_area_visualization(area.cortical_ID)
-		if existing_viz:
-			print("    🔄 Moving input area %s from main scene to plate left side" % area.cortical_ID)
-			var old_parent = existing_viz.get_parent()
-			print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+		
+		if not existing_viz:
+			# CRITICAL FIX: Create the cortical area visualization if it doesn't exist
+			print("    🏗️ Creating missing visualization for input area %s" % area.cortical_ID)
+			existing_viz = brain_monitor_3d._add_cortical_area(area)
+			if not existing_viz:
+				print("      ❌ Failed to create visualization for input area %s" % area.cortical_ID)
+				continue
+		
+		print("    🔄 Moving input area %s from main scene to plate left side" % area.cortical_ID)
+		var old_parent = existing_viz.get_parent()
+		print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+		
+		# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
+		print("      🔌 Disconnecting coordinate update signals to prevent position override...")
+		if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+			area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+			print("      ✂️  Disconnected main visualization coordinate updates")
+		
+		# Also disconnect renderer coordinate updates
+		if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+			area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			print("      ✂️  Disconnected DDA renderer coordinate updates")
 			
-			# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
-			print("      🔌 Disconnecting coordinate update signals to prevent position override...")
-			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
-				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
-				print("      ✂️  Disconnected main visualization coordinate updates")
+		if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+			area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+			print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
+		
+		# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
+		if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
+			area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
+			print("      ✂️  Disconnected DDA renderer dimension updates")
 			
-			# Also disconnect renderer coordinate updates
-			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
-				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
-				print("      ✂️  Disconnected DDA renderer coordinate updates")
-				
-			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
-				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
-				print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
-			
-			# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
-			if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
-				area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
-				print("      ✂️  Disconnected DDA renderer dimension updates")
-				
-			if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
-				area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
-				print("      ✂️  Disconnected DirectPoints renderer dimension updates")
-			
-			# Connect to our custom dimension update handler that preserves brain region positioning
-			area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
-			print("      🔌 Connected to brain region dimension update handler for %s" % area.cortical_ID)
-			
-			existing_viz.get_parent().remove_child(existing_viz)
-			_input_areas_container.add_child(existing_viz)
-			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
-			print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
-			# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
-			_position_cortical_area_on_plate(existing_viz, i, input_areas.size(), true)  # true = is_input
-			_cortical_area_visualizations[area.cortical_ID] = existing_viz
-		else:
-			print("    ❌ Could not find existing visualization for input area %s" % area.cortical_ID)
+		if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
+			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
+			print("      ✂️  Disconnected DirectPoints renderer dimension updates")
+		
+		# Connect to our custom dimension update handler that preserves brain region positioning
+		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		print("      🔌 Connected to brain region dimension update handler for %s" % area.cortical_ID)
+		
+		existing_viz.get_parent().remove_child(existing_viz)
+		_input_areas_container.add_child(existing_viz)
+		print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
+		print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
+		# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
+		_position_cortical_area_on_plate(existing_viz, i, input_areas.size(), true)  # true = is_input
+		_cortical_area_visualizations[area.cortical_ID] = existing_viz
 	
 	# Move output area visualizations from main scene to our plate
 	for i in output_areas.size():
 		var area = output_areas[i]
 		var existing_viz = brain_monitor_3d.get_cortical_area_visualization(area.cortical_ID)
-		if existing_viz:
-			print("    🔄 Moving output area %s from main scene to plate right side" % area.cortical_ID)
-			var old_parent = existing_viz.get_parent()
-			print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+		
+		if not existing_viz:
+			# CRITICAL FIX: Create the cortical area visualization if it doesn't exist
+			print("    🏗️ Creating missing visualization for output area %s" % area.cortical_ID)
+			existing_viz = brain_monitor_3d._add_cortical_area(area)
+			if not existing_viz:
+				print("      ❌ Failed to create visualization for output area %s" % area.cortical_ID)
+				continue
+		
+		print("    🔄 Moving output area %s from main scene to plate right side" % area.cortical_ID)
+		var old_parent = existing_viz.get_parent()
+		print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+		
+		# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
+		print("      🔌 Disconnecting coordinate update signals to prevent position override...")
+		if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+			area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+			print("      ✂️  Disconnected main visualization coordinate updates")
+		
+		# Also disconnect renderer coordinate updates
+		if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+			area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			print("      ✂️  Disconnected DDA renderer coordinate updates")
 			
-			# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
-			print("      🔌 Disconnecting coordinate update signals to prevent position override...")
-			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
-				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
-				print("      ✂️  Disconnected main visualization coordinate updates")
+		if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+			area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+			print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
+		
+		# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
+		if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
+			area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
+			print("      ✂️  Disconnected DDA renderer dimension updates")
 			
-			# Also disconnect renderer coordinate updates
-			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
-				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
-				print("      ✂️  Disconnected DDA renderer coordinate updates")
-				
-			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
-				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
-				print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
-			
-			# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
-			if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
-				area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
-				print("      ✂️  Disconnected DDA renderer dimension updates")
-				
-			if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
-				area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
-				print("      ✂️  Disconnected DirectPoints renderer dimension updates")
-			
-			existing_viz.get_parent().remove_child(existing_viz)
-			_output_areas_container.add_child(existing_viz)
-			print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
-			print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
-			# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
-			_position_cortical_area_on_plate(existing_viz, i, output_areas.size(), false)  # false = is_output
-			_cortical_area_visualizations[area.cortical_ID] = existing_viz
-		else:
-			print("    ❌ Could not find existing visualization for output area %s" % area.cortical_ID)
+		if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
+			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
+			print("      ✂️  Disconnected DirectPoints renderer dimension updates")
+		
+		# Connect to our custom dimension update handler that preserves brain region positioning
+		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		print("      🔌 Connected to brain region dimension update handler for %s" % area.cortical_ID)
+		
+		existing_viz.get_parent().remove_child(existing_viz)
+		_output_areas_container.add_child(existing_viz)
+		print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
+		print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
+		# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
+		_position_cortical_area_on_plate(existing_viz, i, output_areas.size(), false)  # false = is_output
+		_cortical_area_visualizations[area.cortical_ID] = existing_viz
 	
 	# Adjust frame size based on content
 	_adjust_frame_size(input_areas.size(), output_areas.size())
@@ -1277,7 +1331,9 @@ func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
 	print("  📋 partial_mappings count: %d" % _representing_region.partial_mappings.size())
-	for partial_mapping in _representing_region.partial_mappings:
+	for i in range(_representing_region.partial_mappings.size()):
+		var partial_mapping = _representing_region.partial_mappings[i]
+		print("    📋 Partial mapping %d: is_input=%s, target_area=%s" % [i, partial_mapping.is_region_input, partial_mapping.internal_target_cortical_area.cortical_ID])
 		if partial_mapping.is_region_input:
 			var area = partial_mapping.internal_target_cortical_area
 			if area not in input_areas:
@@ -1338,7 +1394,9 @@ func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
 	print("  📋 partial_mappings count: %d" % _representing_region.partial_mappings.size())
-	for partial_mapping in _representing_region.partial_mappings:
+	for i in range(_representing_region.partial_mappings.size()):
+		var partial_mapping = _representing_region.partial_mappings[i]
+		print("    📋 Partial mapping %d: is_input=%s, target_area=%s" % [i, partial_mapping.is_region_input, partial_mapping.internal_target_cortical_area.cortical_ID])
 		if not partial_mapping.is_region_input:  # Output mapping
 			var area = partial_mapping.internal_target_cortical_area
 			if area not in output_areas:

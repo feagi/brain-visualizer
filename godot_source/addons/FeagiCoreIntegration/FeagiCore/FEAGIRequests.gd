@@ -552,19 +552,47 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 	if response.has("coordinate_3d") and response["coordinate_3d"] is Array:
 		feagi_coords_3d = FEAGIUtils.array_to_vector3i(response["coordinate_3d"])
 	
+	# Add region to cache (but don't emit signal yet)
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_add_region(response["region_id"], parent_region, region_name, feagi_coords_2d, feagi_coords_3d, region_internals)
 
-	# Seed I/O directly from POST response (includes inputs/outputs now)
+	# Load I/O mapping data from POST response BEFORE emitting region_added signal  
 	if response.has("inputs") or response.has("outputs"):
+		var inputs = response.get("inputs", [])
+		var outputs = response.get("outputs", [])
+		print("🔄 REGION CREATION: Processing I/O mappings for new region %s" % response["region_id"])
+		print("    📥 Inputs to process: %s" % inputs)
+		print("    📤 Outputs to process: %s" % outputs)
+		
+		# Debug: Check if cortical areas exist in cache before creating partial mappings
+		for area_id in inputs:
+			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(area_id)
+			print("    🔍 Checking INPUT area %s: %s" % [area_id, "FOUND" if area else "NOT FOUND"])
+			if area:
+				print("      🏠 Area parent region: %s" % (area.current_parent_region.region_ID if area.current_parent_region else "None"))
+		
+		for area_id in outputs:
+			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(area_id)
+			print("    🔍 Checking OUTPUT area %s: %s" % [area_id, "FOUND" if area else "NOT FOUND"])  
+			if area:
+				print("      🏠 Area parent region: %s" % (area.current_parent_region.region_ID if area.current_parent_region else "None"))
+		
 		var seed: Dictionary = {}
 		seed[response["region_id"]] = {
-			"inputs": response.get("inputs", []),
-			"outputs": response.get("outputs", [])
+			"inputs": inputs,
+			"outputs": outputs
 		}
 		FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_partial_mapping_sets(seed)
+		print("🔄 REGION CREATION: Loaded I/O mappings for new region %s - inputs: %s, outputs: %s" % [response["region_id"], inputs.size(), outputs.size()])
+	
 	var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[response["region_id"]]
 	if new_region:
+		# Refresh the region cache to establish any synthetic I/O mappings
 		FeagiCore.feagi_local_cache._refresh_single_brain_region_cache(new_region)
+		
+		# NOW emit the region_added signal after all cache data is loaded
+		print("🚀 REGION CREATION: All cache data loaded, emitting region_added signal for: %s" % new_region.friendly_name)
+		FeagiCore.feagi_local_cache.brain_regions.emit_region_added_signal(new_region)
+		
 		# Ask UI to open or refresh BM for the new region so areas appear immediately
 		if BV.UI and BV.UI.temp_root_bm:
 			BV.WM.spawn_3d_brain_monitor_tab(new_region)

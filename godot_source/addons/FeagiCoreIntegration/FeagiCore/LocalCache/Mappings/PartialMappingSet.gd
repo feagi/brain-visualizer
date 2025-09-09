@@ -56,14 +56,18 @@ static func from_FEAGI_JSON_array(hints: Array, is_input: bool, brain_region: Br
 	if hints.size() > 0 and hints[0] is String:
 		# Simple format: just cortical area IDs
 		var output: Array[PartialMappingSet] = []
+		print("📋 PARTIAL MAPPING: Creating partial mappings for region %s - is_input: %s, area_ids: %s" % [brain_region.region_ID, is_input, hints])
 		for cortical_area_id in hints:
 			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(cortical_area_id)
 			if area == null:
 				push_error("CORE: Unable to find cortical area %s for partial mapping!" % cortical_area_id)
+				print("📋 PARTIAL MAPPING: ❌ FAILED to find area %s - skipping partial mapping" % cortical_area_id)
 				continue
 			# Create a simple partial mapping set with no actual mapping data
 			# This allows I/O detection to work
+			print("📋 PARTIAL MAPPING: ✅ Created partial mapping for area %s (parent: %s)" % [cortical_area_id, area.current_parent_region.region_ID if area.current_parent_region else "None"])
 			output.append(PartialMappingSet.new(is_input, [], area, brain_region, ""))
+		print("📋 PARTIAL MAPPING: Created %d partial mappings out of %d requested" % [output.size(), hints.size()])
 		return output
 	
 	# Complex format: dictionary with mapping details
