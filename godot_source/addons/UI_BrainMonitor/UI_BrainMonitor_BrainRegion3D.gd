@@ -472,6 +472,10 @@ func _post_initial_build_sync() -> void:
 ## Updates dimensions without overriding brain region positioning
 func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_id: String) -> void:
 	print("🔧 Brain region handling dimension update for I/O area %s: %s" % [cortical_id, new_dimensions])
+	if _dimension_recalc_in_progress:
+		print("⏳ Dimension recalc already in progress; skipping duplicate update for %s" % cortical_id)
+		return
+	_dimension_recalc_in_progress = true
 	
 	# Find the cortical visualization using the ID
 	var cortical_viz = _cortical_area_visualizations.get(cortical_id)
@@ -535,6 +539,7 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 	# COMPREHENSIVE PLATE UPDATE: Recalculate sizes and reposition all I/O areas
 	print("    🔄 Comprehensive plate update after dimension change...")
 	_recalculate_plates_and_positioning_after_dimension_change()
+	_dimension_recalc_in_progress = false
 
 ## Comprehensive plate and positioning update after cortical area dimension changes
 func _recalculate_plates_and_positioning_after_dimension_change() -> void:
@@ -547,16 +552,16 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	print("  📊 Step 1: Regenerating I/O coordinates with updated dimensions...")
 	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
 	
-	# 2. Remove old plates from the frame container
-	print("  🗑️ Step 2: Removing old plates...")
+	# 2. Remove entire existing RegionAssembly containers to avoid duplicates lingering
+	print("  🗑️ Step 2: Removing any existing RegionAssembly nodes (full rebuild)...")
 	if _frame_container:
-		for child in _frame_container.get_children():
-			var child_name: String = child.name
-			# Remove any existing plate meshes (solid or wireframe)
-			if child_name.begins_with("InputPlate") or child_name.begins_with("OutputPlate") or child_name.begins_with("ConflictPlate"):
-				child.queue_free()
-		# Ensure queued frees are processed before recreating new plates
-		await get_tree().process_frame
+		_frame_container.queue_free()
+		_frame_container = null
+	# Also remove any stray 'RegionAssembly' children left behind
+	for direct_child in get_children():
+		if direct_child is Node3D and direct_child.name == "RegionAssembly":
+			direct_child.queue_free()
+	await get_tree().process_frame
 
 	# Also remove old click collision bodies attached directly to this node (if tied to previous sizes)
 	for direct_child in get_children():
@@ -567,6 +572,10 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	
 	# 3. Recreate plates with new sizes
 	print("  🏗️ Step 3: Recreating plates with updated sizes...")
+	# Recreate the main frame container before adding plates
+	_frame_container = Node3D.new()
+	_frame_container.name = "RegionAssembly"
+	add_child(_frame_container)
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
 	var conflict_areas = _get_conflict_cortical_areas()
@@ -692,6 +701,19 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 					_reposition_cortical_area_on_plate(cortical_viz, relative_position, false)  # false = output
 					found_new_position = true
 					print("    📤 Repositioned OUTPUT %s to: %s" % [cortical_id, relative_position])
+					break
+
+		# Check conflicts if not found in inputs or outputs
+		if not found_new_position:
+			for area_data in _generated_io_coordinates.conflicts:
+				if area_data.area_id == cortical_id:
+					var absolute_feagi_coords = Vector3(area_data.new_coordinates)
+					var brain_region_coords = Vector3(_representing_region.coordinates_3D)
+					var relative_position = absolute_feagi_coords - brain_region_coords
+					# Use output-style Z flip logic inside reposition helper
+					_reposition_cortical_area_on_plate(cortical_viz, relative_position, false)
+					found_new_position = true
+					print("    🔴 Repositioned CONFLICT %s to: %s" % [cortical_id, relative_position])
 					break
 		
 		if not found_new_position:
@@ -2297,6 +2319,7 @@ func _cleanup_all_children() -> void:
 
 ## CRITICAL: Disable connection monitoring to prevent recursive refresh loops
 var _connection_monitoring_enabled: bool = true
+var _dimension_recalc_in_progress: bool = false
 
 func _disable_connection_monitoring() -> void:
 	_connection_monitoring_enabled = false
@@ -2355,7 +2378,6 @@ func _on_area_dimensions_changed(area: AbstractCorticalArea) -> void:
 	if not _connection_monitoring_enabled:
 		print("🔇 MONITORING: Ignoring dimension change for %s (monitoring disabled)" % area.cortical_ID)
 		return
-		
-	print("📐 DIMENSION CHANGE: Area %s dimensions changed, refreshing plates" % area.cortical_ID)
-	# Small delay to ensure dimension changes are fully processed
-	call_deferred("force_refresh")
+	# Debounce multiple dimension changes in a single frame
+	print("📐 DIMENSION CHANGE: Area %s dimensions changed -> scheduling comprehensive plate rebuild" % area.cortical_ID)
+	call_deferred("_recalculate_plates_and_positioning_after_dimension_change")

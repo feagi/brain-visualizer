@@ -242,9 +242,15 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 							"Output plate": "RegionAssembly/OutputPlate",
 							"Conflict plate": "RegionAssembly/ConflictPlate"
 						}
+						var plate_wire_map := {
+							"Input plate": "RegionAssembly/InputPlate_Wireframe",
+							"Output plate": "RegionAssembly/OutputPlate_Wireframe",
+							"Conflict plate": "RegionAssembly/ConflictPlate_Wireframe"
+						}
 						for plate_label in plate_map.keys():
-							if region_frame.has_node(plate_map[plate_label]):
-								var plate: MeshInstance3D = region_frame.get_node(plate_map[plate_label])
+							if region_frame.has_node(plate_map[plate_label]) or region_frame.has_node(plate_wire_map[plate_label]):
+								var plate_path = plate_map[plate_label] if region_frame.has_node(plate_map[plate_label]) else plate_wire_map[plate_label]
+								var plate: MeshInstance3D = region_frame.get_node(plate_path)
 								if plate.mesh is BoxMesh:
 									var box: BoxMesh = plate.mesh as BoxMesh
 									var half_x = box.size.x * 0.5
