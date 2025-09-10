@@ -558,10 +558,9 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		# Ensure queued frees are processed before recreating new plates
 		await get_tree().process_frame
 
-	# Also remove old click collision bodies attached directly to this node
-	var click_nodes_to_remove = ["InputPlateClickArea", "OutputPlateClickArea", "ConflictPlateClickArea", "RegionLabelClickArea"]
+	# Also remove old click collision bodies attached directly to this node (if tied to previous sizes)
 	for direct_child in get_children():
-		if direct_child.name in click_nodes_to_remove:
+		if direct_child is StaticBody3D and (direct_child.name.ends_with("ClickArea")):
 			direct_child.queue_free()
 	# Process removal of click areas
 	await get_tree().process_frame
@@ -625,12 +624,25 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	var conflict_plate = null
 	if conflict_areas.size() > 0:
 		var conflict_color = Color(0.8, 0.0, 0.0, 0.2)
-		conflict_plate = _create_single_plate(conflict_plate_size, "ConflictPlate", conflict_color)
+		# Reuse existing conflict plate if present to avoid duplicates
+		var existing_conflict: MeshInstance3D = _frame_container.get_node_or_null("ConflictPlate")
+		if existing_conflict:
+			# Update mesh size and material
+			var existing_mesh := existing_conflict.mesh
+			if existing_mesh is BoxMesh:
+				(existing_mesh as BoxMesh).size = Vector3(conflict_plate_size.x, 1.0, conflict_plate_size.z)
+			# Update color
+			if existing_conflict.material_override is StandardMaterial3D:
+				(existing_conflict.material_override as StandardMaterial3D).albedo_color = conflict_color
+			conflict_plate = existing_conflict
+		else:
+			conflict_plate = _create_single_plate(conflict_plate_size, "ConflictPlate", conflict_color)
 		# Recompute front-left based on current (possibly changed) output size to prevent collisions
 		var conflict_front_left_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP
 		conflict_plate.position.x = conflict_front_left_x + conflict_plate_size.x / 2.0
 		conflict_plate.position.y = PLATE_HEIGHT / 2.0
-		_frame_container.add_child(conflict_plate)
+		if conflict_plate.get_parent() != _frame_container:
+			_frame_container.add_child(conflict_plate)
 		print("  🔴 Conflict plate created at front-left X=%.1f, center X=%.1f" % [conflict_front_left_x, conflict_plate.position.x])
 
 	# Align plate global Z to match front-edge at brain region Z
