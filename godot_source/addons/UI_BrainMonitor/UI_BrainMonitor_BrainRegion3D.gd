@@ -1011,6 +1011,9 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	# Create collision body for INPUT PLATE - Front-left corner positioning
 	var input_collision = StaticBody3D.new()
 	input_collision.name = "InputPlateClickArea"
+	# Ensure pickable by ray: set common layer/mask (default 1)
+	input_collision.collision_layer = 1
+	input_collision.collision_mask = 1
 	input_collision.position.x = input_plate_size.x / 2.0  # Same as plate center position
 	input_collision.position.y = PLATE_HEIGHT / 2.0  # Same as plate center position
 	input_collision.position.z = input_plate_size.z / 2.0  # Same as plate center position
@@ -1018,10 +1021,17 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	var input_collision_shape = CollisionShape3D.new()
 	input_collision_shape.name = "CollisionShape"
 	var input_box_shape = BoxShape3D.new()
-	input_box_shape.size = Vector3(input_plate_size.x, 1.0, input_plate_size.z)
+	# Slightly thicker to guarantee hits
+	input_box_shape.size = Vector3(input_plate_size.x, 2.0, input_plate_size.z)
 	input_collision_shape.shape = input_box_shape
 	input_collision.add_child(input_collision_shape)
 	add_child(input_collision)  # Direct child of BrainRegion3D
+	# Snap collider center to the actual plate's global center (ensures exact Z match)
+	var input_plate_node: Node3D = get_node_or_null("RegionAssembly/InputPlate") as Node3D
+	if input_plate_node == null:
+		input_plate_node = get_node_or_null("RegionAssembly/InputPlate_Wireframe") as Node3D
+	if input_plate_node != null:
+		input_collision.global_position = input_plate_node.global_position
 	# Hover wiring for input plate
 	if has_node("RegionAssembly/InputPlate"):
 		var plate: MeshInstance3D = get_node("RegionAssembly/InputPlate")
@@ -1029,10 +1039,23 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 		if warn:
 			input_collision.mouse_entered.connect(func(): warn.visible = true)
 			input_collision.mouse_exited.connect(func(): warn.visible = false)
+		# Show overlay plate context
+		input_collision.mouse_entered.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				bm._UI_layer_for_BM.show_plate_hover(_representing_region.friendly_name, "Input plate")
+		)
+		input_collision.mouse_exited.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				bm._UI_layer_for_BM.clear_plate_hover()
+		)
 	
 	# Create collision body for OUTPUT PLATE - Front-left corner positioning
 	var output_collision = StaticBody3D.new()
 	output_collision.name = "OutputPlateClickArea"
+	output_collision.collision_layer = 1
+	output_collision.collision_mask = 1
 	var output_front_left_x = input_plate_size.x + plate_gap
 	output_collision.position.x = output_front_left_x + output_plate_size.x / 2.0  # Same as plate position
 	output_collision.position.y = PLATE_HEIGHT / 2.0  # Same as plate position
@@ -1041,10 +1064,16 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	var output_collision_shape = CollisionShape3D.new()
 	output_collision_shape.name = "CollisionShape"
 	var output_box_shape = BoxShape3D.new()
-	output_box_shape.size = Vector3(output_plate_size.x, 1.0, output_plate_size.z)
+	output_box_shape.size = Vector3(output_plate_size.x, 2.0, output_plate_size.z)
 	output_collision_shape.shape = output_box_shape
 	output_collision.add_child(output_collision_shape)
 	add_child(output_collision)  # Direct child of BrainRegion3D
+	# Snap collider center to the actual plate's global center (ensures exact Z match)
+	var output_plate_node: Node3D = get_node_or_null("RegionAssembly/OutputPlate") as Node3D
+	if output_plate_node == null:
+		output_plate_node = get_node_or_null("RegionAssembly/OutputPlate_Wireframe") as Node3D
+	if output_plate_node != null:
+		output_collision.global_position = output_plate_node.global_position
 	# Hover wiring for output plate
 	if has_node("RegionAssembly/OutputPlate"):
 		var plate_o: MeshInstance3D = get_node("RegionAssembly/OutputPlate")
@@ -1052,11 +1081,24 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 		if warn_o:
 			output_collision.mouse_entered.connect(func(): warn_o.visible = true)
 			output_collision.mouse_exited.connect(func(): warn_o.visible = false)
+		# Show overlay plate context
+		output_collision.mouse_entered.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				bm._UI_layer_for_BM.show_plate_hover(_representing_region.friendly_name, "Output plate")
+		)
+		output_collision.mouse_exited.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				bm._UI_layer_for_BM.clear_plate_hover()
+		)
 	
 	# Create collision body for CONFLICT PLATE (if it exists)
 	if has_conflict_plate:
 		var conflict_collision = StaticBody3D.new()
 		conflict_collision.name = "ConflictPlateClickArea"
+		conflict_collision.collision_layer = 1
+		conflict_collision.collision_mask = 1
 		var conflict_plate_x = input_plate_size.x + plate_gap + output_plate_size.x + plate_gap  # Same as plate positioning
 		conflict_collision.position.x = conflict_plate_x + conflict_plate_size.x / 2.0  # Same as plate position
 		conflict_collision.position.y = PLATE_HEIGHT / 2.0  # Same as plate position
@@ -1065,10 +1107,14 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 		var conflict_collision_shape = CollisionShape3D.new()
 		conflict_collision_shape.name = "CollisionShape"
 		var conflict_box_shape = BoxShape3D.new()
-		conflict_box_shape.size = Vector3(conflict_plate_size.x, 1.0, conflict_plate_size.z)
+		conflict_box_shape.size = Vector3(conflict_plate_size.x, 2.0, conflict_plate_size.z)
 		conflict_collision_shape.shape = conflict_box_shape
 		conflict_collision.add_child(conflict_collision_shape)
 		add_child(conflict_collision)  # Direct child of BrainRegion3D
+		# Snap collider center to the actual plate's global center (ensures exact Z match)
+		var conflict_plate_node: Node3D = get_node_or_null("RegionAssembly/ConflictPlate") as Node3D
+		if conflict_plate_node != null:
+			conflict_collision.global_position = conflict_plate_node.global_position
 		# Hover wiring for conflict plate
 		if has_node("RegionAssembly/ConflictPlate"):
 			var plate_c: MeshInstance3D = get_node("RegionAssembly/ConflictPlate")
@@ -1076,6 +1122,17 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 			if warn_c:
 				conflict_collision.mouse_entered.connect(func(): warn_c.visible = true)
 				conflict_collision.mouse_exited.connect(func(): warn_c.visible = false)
+			# Show overlay plate context
+			conflict_collision.mouse_entered.connect(func():
+				var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+				if bm and bm._UI_layer_for_BM:
+					bm._UI_layer_for_BM.show_plate_hover(_representing_region.friendly_name, "Conflict plate")
+			)
+			conflict_collision.mouse_exited.connect(func():
+				var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+				if bm and bm._UI_layer_for_BM:
+					bm._UI_layer_for_BM.clear_plate_hover()
+			)
 	
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
@@ -1574,27 +1631,31 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	print("      🎯 Desired world position: %s" % desired_world_pos)
 	print("      📐 Position relative to container: %s" % position_relative_to_container)
 	
-	# CRITICAL FIX: Use GLOBAL positioning since the renderer static bodies are not proper children of containers
-	# The UI_BrainMonitor_CorticalArea is a Node (not Node3D), so it doesn't participate in 3D positioning
-	# We need to set absolute world positions directly
+	# CRITICAL: Move renderers via their FEAGI positioning APIs so internal state (and animations) stay in sync
+	# Compute lower-left-front FEAGI coordinate from absolute center FEAGI (area_data.new_coordinates)
+	var dims_feagi: Vector3i = cortical_viz.cortical_area.dimensions_3D
+	# absolute_feagi_coords is available earlier; re-derive center from brain region + relative new_position
+	var center_feagi: Vector3i = Vector3i(Vector3(_representing_region.coordinates_3D) + new_position)
+	var lff_feagi: Vector3i = Vector3i(
+		center_feagi.x - int(dims_feagi.x / 2),
+		center_feagi.y - int(dims_feagi.y / 2),
+		center_feagi.z - int(dims_feagi.z / 2)
+	)
 	
-	# print("      🔧 Setting GLOBAL renderer position to %s" % desired_world_pos)  # Suppressed - too frequent
+	# Position DDA renderer (structure + labels)
+	if cortical_viz._dda_renderer != null:
+		cortical_viz._dda_renderer.update_position_with_new_FEAGI_coordinate(lff_feagi)
 	
-	# Position the DDA renderer's static body if it exists
-	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
-		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
-		# print("        ✅ DDA renderer global_position set to %s" % cortical_viz._dda_renderer._static_body.global_position)  # Suppressed - too frequent
-		# Also position the label if it exists
-		if cortical_viz._dda_renderer._friendly_name_label != null:
-			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)  # Label above cortical area
-	
-	# Position the DirectPoints renderer's static body if it exists  
-	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
-		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
-		# print("        ✅ DirectPoints renderer global_position set to %s" % cortical_viz._directpoints_renderer._static_body.global_position)  # Suppressed - too frequent
-		# Also position the label if it exists
-		if cortical_viz._directpoints_renderer._friendly_name_label != null:
-			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, 1.0, 0)  # Label above cortical area
+	# Position DirectPoints renderer (points + labels)
+	if cortical_viz._directpoints_renderer != null:
+		cortical_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate(lff_feagi)
+
+	# If neural connections are currently shown (hover state), rebuild them to align pulses with new position
+	if cortical_viz._is_volume_moused_over:
+		if cortical_viz.has_method("_hide_neural_connections"):
+			cortical_viz._hide_neural_connections()
+		if cortical_viz.has_method("_show_neural_connections"):
+			cortical_viz._show_neural_connections()
 	
 	print("    ✅ Cortical area %s positioned on plate" % cortical_id)
 	

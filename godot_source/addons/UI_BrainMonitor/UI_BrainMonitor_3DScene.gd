@@ -189,8 +189,26 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
 			
+			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
+			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+				var region_frame = hit_body.get_parent()
+				if region_frame and _UI_layer_for_BM:
+					var plate_kind := ""
+					match hit_body.name:
+						"InputPlateClickArea": plate_kind = "Input plate"
+						"OutputPlateClickArea": plate_kind = "Output plate"
+						"ConflictPlateClickArea": plate_kind = "Conflict plate"
+						_:
+							plate_kind = "Plate"
+					var region_name: String = "Region"
+					if region_frame and region_frame.get("representing_region") != null:
+						var rep = region_frame.get("representing_region")
+						var fname = rep.get("friendly_name") if rep != null else null
+						if fname != null:
+							region_name = str(fname)
+					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
 			# Check if we hit a cortical area renderer
-			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+			elif hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
 				var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
 				if not hit_parent:
 					continue # this shouldn't be possible
@@ -216,6 +234,40 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if region_frame:
 					region_frame.set_hover_state(true)
 					print("🧠 Hovering over red line wireframe brain region: %s" % region_frame.representing_region.friendly_name)
+					# Fallback plate detection by hit position against plate meshes (in case plate colliders weren't hit)
+					if _UI_layer_for_BM:
+						var hit_pos: Vector3 = hit["position"]
+						var plate_map := {
+							"Input plate": "RegionAssembly/InputPlate",
+							"Output plate": "RegionAssembly/OutputPlate",
+							"Conflict plate": "RegionAssembly/ConflictPlate"
+						}
+						for plate_label in plate_map.keys():
+							if region_frame.has_node(plate_map[plate_label]):
+								var plate: MeshInstance3D = region_frame.get_node(plate_map[plate_label])
+								if plate.mesh is BoxMesh:
+									var box: BoxMesh = plate.mesh as BoxMesh
+									var half_x = box.size.x * 0.5
+									var half_z = box.size.z * 0.5
+									var local: Vector3 = plate.to_local(hit_pos)
+									if abs(local.x) <= half_x and abs(local.z) <= half_z:
+										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
+										break
+			# Check if we hit a plate click area (input/output/conflict)
+			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+				var region_frame = hit_body.get_parent()
+				if region_frame and _UI_layer_for_BM:
+					var plate_kind := ""
+					match hit_body.name:
+						"InputPlateClickArea": plate_kind = "Input plate"
+						"OutputPlateClickArea": plate_kind = "Output plate"
+						"ConflictPlateClickArea": plate_kind = "Conflict plate"
+						_:
+							plate_kind = "Plate"
+					var region_name := "Region"
+					if region_frame.representing_region:
+						region_name = region_frame.representing_region.friendly_name
+					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			
@@ -239,6 +291,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				# Clicking over nothing
+				# Clear plate hover label if we click on empty space
+				if _UI_layer_for_BM:
+					_UI_layer_for_BM.clear_plate_hover()
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
@@ -280,6 +335,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						
 						# Check for double-click (simple implementation)
 						region_frame.handle_double_click()
+			# If clicking on a plate, clear the label on mouse up (we only show on hover)
+			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+				if _UI_layer_for_BM and not bm_input_event.button_pressed:
+					_UI_layer_for_BM.clear_plate_hover()
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)

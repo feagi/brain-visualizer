@@ -46,3 +46,13 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			Vector3i(3,2,0): direction = " - Roll Right"
 		text += direction
 	_mouse_context_label.text = text
+
+## Show plate hover context (region name + plate kind)
+func show_plate_hover(region_name: String, plate_kind: String) -> void:
+	_mouse_context_label.text = region_name + " - " + plate_kind
+
+## Clear plate hover context (only if no cortical hover text is present)
+func clear_plate_hover() -> void:
+	# Optional: do not clear if cortical context is showing
+	# For now, we clear unconditionally when plate hover ends
+	_mouse_context_label.text = ""
