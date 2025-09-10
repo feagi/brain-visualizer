@@ -28,6 +28,7 @@ var _frame_container: Node3D
 var _frame_collision: StaticBody3D
 var _input_areas_container: Node3D
 var _output_areas_container: Node3D
+var _conflict_areas_container: Node3D
 var _region_name_label: Label3D
 var _cortical_area_visualizations: Dictionary[StringName, UI_BrainMonitor_CorticalArea] = {}
 var _generated_io_coordinates: Dictionary = {}  # Stores the generated I/O coordinates
@@ -105,9 +106,10 @@ func _get_output_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[
 func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dictionary:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
+	var conflict_areas = _get_conflict_cortical_areas()
 	
 	# FEAGI coordinates = front-left corner (lowest x,y,z) - NO extra offsets
-	print("🎯 Generating coordinates: %d inputs, %d outputs for region '%s'" % [input_areas.size(), output_areas.size(), brain_region.friendly_name])
+	print("🎯 Generating coordinates: %d inputs, %d outputs, %d conflicts for region '%s'" % [input_areas.size(), output_areas.size(), conflict_areas.size(), brain_region.friendly_name])
 	print("    📍 FEAGI brain region coordinates = front-left corner of input plate: %s" % brain_region.coordinates_3D)
 	print("    🎯 All positioning relative to this front-left corner (lowest x,y,z)")
 	
@@ -115,7 +117,8 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		"region_id": brain_region.region_ID,
 		"region_coordinates": brain_region.coordinates_3D,
 		"inputs": [],
-		"outputs": []
+		"outputs": [],
+		"conflicts": []
 	}
 	
 	# Calculate base positioning - brain region coordinates are the LOWEST corner (minimum x,y,z)
@@ -125,6 +128,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	# Calculate plate sizes for positioning
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	var conflict_plate_size = _calculate_plate_size_for_areas(conflict_areas, "CONFLICT")
 	
 	# INPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
 	var input_start_x = PLATE_SIDE_MARGIN  # Margin from left edge
@@ -136,6 +140,12 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var output_start_x = output_plate_x + PLATE_SIDE_MARGIN
 	var output_start_y = AREA_ABOVE_PLATE_GAP
 	var output_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
+	
+	# CONFLICT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI) 
+	var conflict_plate_x = output_plate_x + output_plate_size.x + PLATE_GAP
+	var conflict_start_x = conflict_plate_x + PLATE_SIDE_MARGIN
+	var conflict_start_y = AREA_ABOVE_PLATE_GAP
+	var conflict_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
 	
 	print("  📥 Processing %d INPUT areas (front-left corner positioning):" % input_areas.size())
 	var current_input_x = input_start_x  # Start at plate front-left + margin
@@ -209,15 +219,54 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
 		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
+	# CONFLICT PLATE: Process areas that appear in both inputs and outputs
+	print("  ⚠️  Processing %d CONFLICT areas (front-left corner positioning):" % conflict_areas.size())
+	var current_conflict_x = conflict_start_x  # Start at conflict plate front-left + margin
+	for i in conflict_areas.size():
+		var area = conflict_areas[i]
+		var area_size = Vector3(area.dimensions_3D)
+		
+		# Position area: FRONT-LEFT CORNER positioning (lowest x,y,z)
+		var area_front_left_x = current_conflict_x
+		var area_front_left_y = conflict_start_y
+		var area_front_left_z = conflict_start_z
+		
+		# Convert front-left corner to CENTER coordinates in FEAGI (Godot flip happens later)
+		var area_center_x = area_front_left_x + area_size.x / 2.0
+		var area_center_y = area_front_left_y + area_size.y / 2.0
+		var area_center_z = area_front_left_z + area_size.z / 2.0
+		
+		var new_position = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
+		
+		# Move to next area position: current_x + area_width + buffer
+		current_conflict_x += area_size.x + AREA_BUFFER_DISTANCE
+		
+		var conflict_data = {
+			"area_id": area.cortical_ID,
+			"area_type": area.type_as_string, 
+			"original_coordinates": area.coordinates_3D,
+			"new_coordinates": Vector3i(new_position)
+		}
+		result.conflicts.append(conflict_data)
+		
+		print("    🔴 CONFLICT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
+		print("      📍 Original coordinates: %s" % area.coordinates_3D)
+		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position))
+		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
+		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
+		print("      📐 Offset from region: %s" % (new_position - region_origin))
+	
 	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
-	print("  📊 Generated %d input + %d output coordinates" % [input_areas.size(), output_areas.size()])
+	print("  📊 Generated %d input + %d output + %d conflict coordinates" % [input_areas.size(), output_areas.size(), conflict_areas.size()])
 	print("  ✅ === POSITIONING SUMMARY ===")
 	print("    🟢 Input areas: Front-left corners start at margins, CENTER positioning used for renderers")
-	print("    🔵 Output areas: Front-left corners start at margins, CENTER positioning used for renderers")  
+	print("    🔵 Output areas: Front-left corners start at margins, CENTER positioning used for renderers")
+	print("    🔴 Conflict areas: Front-left corners start at margins, CENTER positioning used for renderers")  
 	print("    🎯 CENTER coordinates: X,Y = front-left + size/2, Z = front-left - size/2 (Godot Z-flip)")
 	var input_plate_center_z_feagi = brain_region.coordinates_3D.z + input_plate_size.z / 2.0
 	var output_plate_center_z_feagi = brain_region.coordinates_3D.z + output_plate_size.z / 2.0
-	print("    📍 Front edge Z (FEAGI): %.1f | Plate centers Z (FEAGI): input=%.1f, output=%.1f | Area start Z (FEAGI): %.1f" % [brain_region.coordinates_3D.z, input_plate_center_z_feagi, output_plate_center_z_feagi, input_start_z])
+	var conflict_plate_center_z_feagi = brain_region.coordinates_3D.z + conflict_plate_size.z / 2.0
+	print("    📍 Front edge Z (FEAGI): %.1f | Plate centers Z (FEAGI): input=%.1f, output=%.1f, conflict=%.1f | Area start Z (FEAGI): %.1f" % [brain_region.coordinates_3D.z, input_plate_center_z_feagi, output_plate_center_z_feagi, conflict_plate_center_z_feagi, input_start_z])
 	
 	return result
 
@@ -233,15 +282,15 @@ static func refresh_all_brain_regions_positioning() -> void:
 		
 		print("  📊 Found %d brain region nodes to refresh" % all_nodes.size())
 		for node in all_nodes:
-			if node is UI_BrainMonitor_BrainRegion3D:
-				var brain_region_3d = node as UI_BrainMonitor_BrainRegion3D
+			if node.has_method("_recalculate_plates_and_positioning_after_dimension_change") and node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
+				var brain_region_3d = node
 				print("  🔧 Refreshing positioning for region: %s" % brain_region_3d.name)
 				brain_region_3d._recalculate_plates_and_positioning_after_dimension_change()
 
 ## Helper to find all brain region nodes in scene tree
 static func _find_all_brain_region_nodes(node: Node) -> Array:
 	var brain_regions = []
-	if node is UI_BrainMonitor_BrainRegion3D:
+	if node.has_method("_recalculate_plates_and_positioning_after_dimension_change") and node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 		brain_regions.append(node)
 	for child in node.get_children():
 		brain_regions.append_array(_find_all_brain_region_nodes(child))
@@ -311,6 +360,9 @@ func setup(brain_region: BrainRegion) -> void:
 	_representing_region.cortical_area_removed_from_region.connect(_on_cortical_area_removed)
 	_representing_region.coordinates_3D_updated.connect(_update_position)
 	_representing_region.friendly_name_updated.connect(_update_frame_label)
+	
+	# Connect to connection monitoring for dynamic I/O status changes
+	_start_connection_monitoring()
 	
 	# Set initial position using FEAGI coordinates
 	print("  📍 Setting position...")
@@ -511,6 +563,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	print("  🏗️ Step 3: Recreating plates with updated sizes...")
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
+	var conflict_areas = _get_conflict_cortical_areas()
 
 	# Detect areas used as both input and output; mark conflict
 	var input_ids_update: Array[StringName] = []
@@ -525,9 +578,10 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 			conflict = true
 			break
 	
-	# Calculate new plate sizes
+	# Calculate new plate sizes (always create input/output; conflict only if exists)
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	var conflict_plate_size = _calculate_plate_size_for_areas(conflict_areas, "CONFLICT")
 	
 	# Create new plates with updated sizes (20% opacity to match user setting)
 	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Brighter green for input
@@ -560,6 +614,17 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if conflict:
 		_attach_hover_warning(output_plate, "Area used as both INPUT and OUTPUT in this region")
 
+	# Create conflict plate to the RIGHT of the output plate (only if conflicts exist)
+	var conflict_plate = null
+	if conflict_areas.size() > 0:
+		var conflict_color = Color(0.8, 0.0, 0.0, 0.2)
+		conflict_plate = _create_single_plate(conflict_plate_size, "ConflictPlate", conflict_color)
+		var conflict_front_left_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP
+		conflict_plate.position.x = conflict_front_left_x + conflict_plate_size.x / 2.0
+		conflict_plate.position.y = PLATE_HEIGHT / 2.0
+		_frame_container.add_child(conflict_plate)
+		print("  🔴 Conflict plate created at front-left X=%.1f, center X=%.1f" % [conflict_front_left_x, conflict_plate.position.x])
+
 	# Align plate global Z to match front-edge at brain region Z
 	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
 	if input_plate:
@@ -568,7 +633,16 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if output_plate:
 		var output_center_z = region_world.z - output_plate_size.z / 2.0
 		output_plate.global_position.z = output_center_z
+	if conflict_plate:
+		var conflict_center_z = region_world.z - conflict_plate_size.z / 2.0
+		conflict_plate.global_position.z = conflict_center_z
 	
+	# Update clickable collision areas to match new plate sizes/positions
+	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, conflict_plate_size, conflict_areas.size() > 0, PLATE_GAP)
+
+	# Recenter label across all plates (including conflict if present)
+	call_deferred("_update_label_position_after_refresh")
+
 	# 4. Reposition all I/O cortical areas using new coordinates
 	print("  📍 Step 4: Repositioning all I/O cortical areas with new calculations...")
 	for cortical_id in _cortical_area_visualizations.keys():
@@ -655,9 +729,10 @@ func _get_plate_global_z(is_input: bool) -> float:
 
 ## Creates the 3D plate structure underneath I/O cortical areas
 func _create_3d_plate() -> void:
-	# Get input/output areas for sizing
+	# Get input/output/conflict areas for sizing
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
+	var conflict_areas = _get_conflict_cortical_areas()
 	
 	# FEAGI FRONT-LEFT CORNER positioning - no extra offsets
 	# Plates positioned directly at brain region coordinates (front-left corner)
@@ -669,10 +744,14 @@ func _create_3d_plate() -> void:
 	var max_output_depth = 0.0
 	for area in output_areas:
 		max_output_depth = max(max_output_depth, area.dimensions_3D.z)
+	var max_conflict_depth = 0.0
+	for area in conflict_areas:
+		max_conflict_depth = max(max_conflict_depth, area.dimensions_3D.z)
 	
-	# Calculate sizes for each plate independently - ALWAYS CREATE BOTH PLATES
+	# Calculate sizes for each plate independently - CREATE ALL PLATES (conflict only if needed)
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	var conflict_plate_size = _calculate_plate_size_for_areas(conflict_areas, "CONFLICT")
 	
 	var plate_spacing = 1.0  # Gap between input and output plates
 	
@@ -681,13 +760,17 @@ func _create_3d_plate() -> void:
 	
 	print("  📐 Input plate size: %s (for %d areas)" % [input_plate_size, input_areas.size()])  
 	print("  📐 Output plate size: %s (for %d areas)" % [output_plate_size, output_areas.size()])
+	print("  📐 Conflict plate size: %s (for %d areas)" % [conflict_plate_size, conflict_areas.size()])
 	print("  📍 Brain region coordinates: %s" % _representing_region.coordinates_3D)
 	
-	print("  🎯 === FEAGI FRONT-LEFT CORNER POSITIONING ===")
-	print("  🎯 Input plate: Front-left corner at brain region coordinates")
-	print("  🎯 Output plate: Front-left corner at (region.x + input_width + gap, region.y, region.z)")
+	print("  🎯 === FEAGI FRONT-LEFT CORNER POSITIONING (3-PLATE SYSTEM) ===")
+	print("  🎯 Input plate: Front-left corner at brain region coordinates (X=0)")
+	print("  🎯 Output plate: Front-left corner at X=%.1f (input_width + gap)" % (input_plate_size.x + PLATE_GAP))
+	print("  🎯 Conflict plate: Front-left corner at X=%.1f (input + gap + output + gap)" % (input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP))
+	print("  📐 Layout: [Input:%.1f] --%.1f-- [Output:%.1f] --%.1f-- [Conflict:%.1f]" % [input_plate_size.x, PLATE_GAP, output_plate_size.x, PLATE_GAP, conflict_plate_size.x])
 	print("  🎯 Input plate depth: %.1f units" % input_plate_size.z)
 	print("  🎯 Output plate depth: %.1f units" % output_plate_size.z)
+	print("  🎯 Conflict plate depth: %.1f units" % conflict_plate_size.z)
 	print("  📦 All plates extend from front-left corner toward higher x,y,z values")
 	
 	# Create the main frame container
@@ -696,7 +779,7 @@ func _create_3d_plate() -> void:
 	add_child(_frame_container)
 	
 	# INPUT PLATE: Front-left corner at brain region coordinates (0,0,0 relative)
-	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Brighter green with opacity
+	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Light green with opacity
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
@@ -707,25 +790,10 @@ func _create_3d_plate() -> void:
 	input_plate.position.y = PLATE_HEIGHT / 2.0  # Half-height to align bottom at origin
 	# Use global Z set through transform later to allow querying exact plate Z
 	_frame_container.add_child(input_plate)
+	print("  🟢 INPUT PLATE: Front-left X=0.0, Center X=%.1f" % input_plate.position.x)
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
 	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green with opacity
-	# Detect areas used as both input and output; mark conflict
-	var input_ids: Array[StringName] = []
-	for a in input_areas:
-		input_ids.append(a.cortical_ID)
-	var output_ids: Array[StringName] = []
-	for a in output_areas:
-		output_ids.append(a.cortical_ID)
-	var conflict := false
-	for id in input_ids:
-		if id in output_ids:
-			conflict = true
-			break
-	if conflict:
-		# Set plates to reddish and notify on hover
-		input_color = Color(0.6, 0.0, 0.0, 0.25)
-		output_color = Color(0.6, 0.0, 0.0, 0.25)
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -737,6 +805,27 @@ func _create_3d_plate() -> void:
 	output_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as input plate (Godot center)
 	# Use global Z set through transform later to allow querying exact plate Z
 	_frame_container.add_child(output_plate)
+	print("  🟢 OUTPUT PLATE: Front-left X=%.1f, Center X=%.1f" % [output_front_left_x, output_plate.position.x])
+	
+	# CONFLICT PLATE: Only create if there are conflicted areas  
+	var conflict_plate = null
+	if conflict_areas.size() > 0:
+		var conflict_color = Color(0.8, 0.0, 0.0, 0.2)  # Red with opacity
+		conflict_plate = _create_single_plate(conflict_plate_size, "ConflictPlate", conflict_color)
+		# FRONT-LEFT CORNER positioning - Must match coordinate generation logic
+		var conflict_plate_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP  # Same as coordinate generation
+		conflict_plate.position.x = conflict_plate_x + conflict_plate_size.x / 2.0  # Godot center adjustment
+		conflict_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as other plates (Godot center)
+		# Use global Z set through transform later to allow querying exact plate Z
+		_frame_container.add_child(conflict_plate)
+		print("  🔴 CONFLICT PLATE: Created red conflict plate for %d conflicted areas" % conflict_areas.size())
+		print("  🔴 CONFLICT PLATE POSITIONING:")
+		print("    📍 Input plate width: %.1f" % input_plate_size.x)
+		print("    📍 First gap: %.1f" % PLATE_GAP)
+		print("    📍 Output plate width: %.1f" % output_plate_size.x)
+		print("    📍 Second gap: %.1f" % PLATE_GAP)
+		print("    📍 Conflict plate front-left X: %.1f" % conflict_plate_x)
+		print("    📍 Conflict plate center X: %.1f" % conflict_plate.position.x)
 
 	# After adding plates, set their global Z so front edges align at brain region Z
 	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
@@ -746,16 +835,20 @@ func _create_3d_plate() -> void:
 	if output_plate:
 		var output_center_z = region_world.z - output_plate_size.z / 2.0
 		output_plate.global_position.z = output_center_z
+	if conflict_plate:
+		var conflict_center_z = region_world.z - conflict_plate_size.z / 2.0
+		conflict_plate.global_position.z = conflict_center_z
 
-	
 	# Create region name label below the plates
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
 	_region_name_label.font_size = 192  # Same as cortical area labels
-	# Position label at center of both plates combined: Y-3 for below, Z-2 for closer to viewer
+	# Position label at center of ALL plates (including conflict plate if it exists)
 	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
-	var center_x = total_width / 2.0  # Center between both plates
+	if conflict_areas.size() > 0:
+		total_width += PLATE_GAP + conflict_plate_size.x  # Add conflict plate to total width
+	var center_x = total_width / 2.0  # Center across all plates
 	# Place label just in front of the plates (very close to front edge)
 	# FEAGI: front edge Z = brain_region.coords.z → Godot world Z = -frontZ
 	# Use a tiny epsilon toward the viewer so it renders in front
@@ -782,9 +875,10 @@ func _create_3d_plate() -> void:
 	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
-	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, PLATE_GAP)
+	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, conflict_plate_size, conflict_areas.size() > 0, PLATE_GAP)
 	
-	print("  🏗️ RegionAssembly: Created dual-plate design for region '%s'" % _representing_region.friendly_name)
+	var plate_count = 2 + (1 if conflict_areas.size() > 0 else 0)
+	print("  🏗️ RegionAssembly: Created %d-plate design for region '%s' (%d input, %d output, %d conflict areas)" % [plate_count, _representing_region.friendly_name, input_areas.size(), output_areas.size(), conflict_areas.size()])
 	
 	# DEBUG: Call manual label debug check after plate creation
 	debug_label_positions()
@@ -893,7 +987,7 @@ func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String
 	return plate_mesh_instance
 
 ## Adds collision bodies for clicking detection (plates and label)
-func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, plate_gap: float) -> void:
+func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_size: Vector3, conflict_plate_size: Vector3, has_conflict_plate: bool, plate_gap: float) -> void:
 	# Create collision body for INPUT PLATE - Front-left corner positioning
 	var input_collision = StaticBody3D.new()
 	input_collision.name = "InputPlateClickArea"
@@ -939,11 +1033,37 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 			output_collision.mouse_entered.connect(func(): warn_o.visible = true)
 			output_collision.mouse_exited.connect(func(): warn_o.visible = false)
 	
+	# Create collision body for CONFLICT PLATE (if it exists)
+	if has_conflict_plate:
+		var conflict_collision = StaticBody3D.new()
+		conflict_collision.name = "ConflictPlateClickArea"
+		var conflict_plate_x = input_plate_size.x + plate_gap + output_plate_size.x + plate_gap  # Same as plate positioning
+		conflict_collision.position.x = conflict_plate_x + conflict_plate_size.x / 2.0  # Same as plate position
+		conflict_collision.position.y = PLATE_HEIGHT / 2.0  # Same as plate position
+		conflict_collision.position.z = conflict_plate_size.z / 2.0  # Same as plate position
+		
+		var conflict_collision_shape = CollisionShape3D.new()
+		conflict_collision_shape.name = "CollisionShape"
+		var conflict_box_shape = BoxShape3D.new()
+		conflict_box_shape.size = Vector3(conflict_plate_size.x, 1.0, conflict_plate_size.z)
+		conflict_collision_shape.shape = conflict_box_shape
+		conflict_collision.add_child(conflict_collision_shape)
+		add_child(conflict_collision)  # Direct child of BrainRegion3D
+		# Hover wiring for conflict plate
+		if has_node("RegionAssembly/ConflictPlate"):
+			var plate_c: MeshInstance3D = get_node("RegionAssembly/ConflictPlate")
+			var warn_c: Label3D = plate_c.get_node_or_null("HoverWarning")
+			if warn_c:
+				conflict_collision.mouse_entered.connect(func(): warn_c.visible = true)
+				conflict_collision.mouse_exited.connect(func(): warn_c.visible = false)
+	
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
 	label_collision.name = "RegionLabelClickArea"
-	# Position collision same as label (centered between both plates)  
+	# Position collision same as label (centered across all plates)  
 	var collision_total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+	if has_conflict_plate:
+		collision_total_width += PLATE_GAP + conflict_plate_size.x  # Add conflict plate to total width
 	var collision_center_x = collision_total_width / 2.0
 	label_collision.position = Vector3(collision_center_x, -3.0, 2.0)  # Centered horizontally, 2 units closer to viewer
 	
@@ -959,8 +1079,12 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	print("    🎯 Collision local position: %s" % label_collision.position)
 	print("    🎯 Collision global_position: %s" % label_collision.global_position)
 	
-	print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
-		[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z])
+	if has_conflict_plate:
+		print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), ConflictPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
+			[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z, conflict_plate_size.x, conflict_plate_size.z])
+	else:
+		print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
+			[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z])
 
 ## Creates a connecting bridge between input and output plates  
 func _create_connecting_bridge(input_size: Vector3, output_size: Vector3, spacing: float) -> void:
@@ -1071,25 +1195,34 @@ func _create_containers() -> void:
 	_output_areas_container.name = "OutputAreas"
 	add_child(_output_areas_container)
 	
-	# Position containers (input on left, output on right)
+	_conflict_areas_container = Node3D.new()
+	_conflict_areas_container.name = "ConflictAreas"
+	add_child(_conflict_areas_container)
+	
+	# Position containers (input on left, output in middle, conflict on right)
 	_input_areas_container.position = Vector3(-INPUT_OUTPUT_SPACING, 0, 0)
-	_output_areas_container.position = Vector3(INPUT_OUTPUT_SPACING, 0, 0)
+	_output_areas_container.position = Vector3(0, 0, 0)  # Center position
+	_conflict_areas_container.position = Vector3(INPUT_OUTPUT_SPACING, 0, 0)  # Right position
 
 ## Populates the plate with cortical areas based on I/O classification
 func _populate_cortical_areas() -> void:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
+	var conflict_areas = _get_conflict_cortical_areas()
 	
 	print("🧠 BrainRegion3D: Populating region '%s' plate with I/O areas:" % _representing_region.friendly_name)
 	print("  📥 Input areas to show on plate: %d" % input_areas.size())
 	for area in input_areas:
-		print("    🔵 %s (%s) - will be positioned on LEFT side of plate" % [area.cortical_ID, area.type_as_string])
+		print("    🔵 %s (%s) - will be positioned on INPUT plate (left, light green)" % [area.cortical_ID, area.type_as_string])
 	print("  📤 Output areas to show on plate: %d" % output_areas.size()) 
 	for area in output_areas:
-		print("    🔴 %s (%s) - will be positioned on RIGHT side of plate" % [area.cortical_ID, area.type_as_string])
+		print("    🔴 %s (%s) - will be positioned on OUTPUT plate (middle, darker green)" % [area.cortical_ID, area.type_as_string])
+	print("  ⚠️  Conflict areas to show on plate: %d" % conflict_areas.size()) 
+	for area in conflict_areas:
+		print("    🔴 %s (%s) - will be positioned on CONFLICT plate (right, red)" % [area.cortical_ID, area.type_as_string])
 	
-	if input_areas.size() == 0 and output_areas.size() == 0:
-		print("  ⚠️  No I/O areas found! Plate will have no overlying cortical areas.")
+	if input_areas.size() == 0 and output_areas.size() == 0 and conflict_areas.size() == 0:
+		print("  ⚠️  No I/O areas found! Plates will have no overlying cortical areas.")
 		print("  🔍 Debug info:")
 		print("    - Region has %d input_open_chain_links" % _representing_region.input_open_chain_links.size())
 		print("    - Region has %d output_open_chain_links" % _representing_region.output_open_chain_links.size())
@@ -1236,6 +1369,65 @@ func _populate_cortical_areas() -> void:
 		_position_cortical_area_on_plate(existing_viz, i, output_areas.size(), false)  # false = is_output
 		_cortical_area_visualizations[area.cortical_ID] = existing_viz
 	
+	# Move conflict area visualizations from main scene to our conflict plate  
+	for i in conflict_areas.size():
+		var area = conflict_areas[i]
+		var existing_viz = brain_monitor_3d.get_cortical_area_visualization(area.cortical_ID)
+		
+		if not existing_viz:
+			# CRITICAL FIX: Create the cortical area visualization if it doesn't exist
+			print("    🏗️ Creating missing visualization for conflict area %s" % area.cortical_ID)
+			existing_viz = brain_monitor_3d._add_cortical_area(area)
+			if not existing_viz:
+				print("      ❌ Failed to create visualization for conflict area %s" % area.cortical_ID)
+				continue
+		
+		# Check if visualization is already correctly positioned on conflict plate
+		if existing_viz.get_parent() == _conflict_areas_container:
+			print("    ✅ Conflict area %s already correctly positioned on conflict plate, skipping repositioning" % area.cortical_ID)
+			_cortical_area_visualizations[area.cortical_ID] = existing_viz
+			continue
+		
+		print("    🔄 Moving conflict area %s from main scene to conflict plate" % area.cortical_ID)
+		var old_parent = existing_viz.get_parent()
+		print("      🔍 OLD parent: %s" % old_parent.name if old_parent else "none")
+		
+		# CRITICAL: Disconnect coordinate update signals to prevent fighting parent-child movement
+		print("      🔌 Disconnecting coordinate update signals to prevent position override...")
+		if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+			area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+			print("      ✂️  Disconnected main visualization coordinate updates")
+		
+		# Also disconnect renderer coordinate updates
+		if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+			area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			print("      ✂️  Disconnected DDA renderer coordinate updates")
+			
+		if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+			area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+			print("      ✂️  Disconnected DirectPoints renderer coordinate updates")
+		
+		# CRITICAL: Also disconnect dimension update signals to prevent position conflicts
+		if existing_viz._dda_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._dda_renderer.update_dimensions):
+			area.dimensions_3D_updated.disconnect(existing_viz._dda_renderer.update_dimensions)
+			print("      ✂️  Disconnected DDA renderer dimension updates")
+			
+		if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
+			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
+			print("      ✂️  Disconnected DirectPoints renderer dimension updates")
+		
+		# Connect to our custom dimension update handler that preserves brain region positioning
+		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		print("      🔌 Connected to brain region dimension update handler for %s" % area.cortical_ID)
+		
+		existing_viz.get_parent().remove_child(existing_viz)
+		_conflict_areas_container.add_child(existing_viz)
+		print("      🔍 NEW parent: %s" % existing_viz.get_parent().name)
+		print("      🔍 NEW parent hierarchy: %s -> %s -> %s" % [existing_viz.get_parent().get_parent().name, existing_viz.get_parent().name, existing_viz.name])
+		# Use a special flag to indicate this is a conflict area (neither purely input nor output)  
+		_position_cortical_area_on_plate(existing_viz, i, conflict_areas.size(), "conflict")  # "conflict" = special conflict type
+		_cortical_area_visualizations[area.cortical_ID] = existing_viz
+	
 	# Adjust frame size based on content
 	_adjust_frame_size(input_areas.size(), output_areas.size())
 	
@@ -1243,6 +1435,7 @@ func _populate_cortical_areas() -> void:
 	print("🔍 FINAL PARENTING CHECK:")
 	print("  📥 Input container children: %d" % _input_areas_container.get_child_count())
 	print("  📤 Output container children: %d" % _output_areas_container.get_child_count())
+	print("  ⚠️  Conflict container children: %d" % _conflict_areas_container.get_child_count())
 	print("  🏗️ Brain region total children: %d" % get_child_count())
 	print("  ✅ Cortical areas should now move WITH brain region (signals disconnected)")
 
@@ -1265,7 +1458,7 @@ func _scale_cortical_area_visualization(cortical_viz: UI_BrainMonitor_CorticalAr
 	# print("    📏 Scaled cortical area %s renderer bodies to %s" % [cortical_viz.cortical_area.cortical_ID, scale_factor])  # Suppressed to reduce log overflow
 
 ## Positions a cortical area on the plate using generated absolute coordinates
-func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea, index: int, total_count: int, is_input: bool) -> void:
+func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea, index: int, total_count: int, area_type) -> void:
 	# Use generated coordinates instead of hardcoded positioning
 	var cortical_id = cortical_viz.cortical_area.cortical_ID
 	var new_position = Vector3(0, 0, 0)  # fallback
@@ -1273,8 +1466,34 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	
 	# Look for cortical area in generated coordinates
 	
+	# Determine area type and search location
+	var is_input = false
+	var is_output = false 
+	var is_conflict = false
+	
+	if area_type is bool:
+		is_input = (area_type == true)
+		is_output = (area_type == false)
+	elif area_type is String:
+		if area_type == "input":
+			is_input = true
+		elif area_type == "output":
+			is_output = true
+		elif area_type == "conflict":
+			is_conflict = true
+	
 	# Look for this cortical area in the generated coordinates
-	var areas_to_search = _generated_io_coordinates.inputs if is_input else _generated_io_coordinates.outputs
+	var areas_to_search: Array
+	if is_input:
+		areas_to_search = _generated_io_coordinates.inputs
+	elif is_output:
+		areas_to_search = _generated_io_coordinates.outputs
+	elif is_conflict:
+		areas_to_search = _generated_io_coordinates.conflicts
+	else:
+		push_error("BrainRegion3D: Invalid area_type %s for cortical area %s" % [area_type, cortical_id])
+		return
+	
 	for area_data in areas_to_search:
 		if area_data.area_id == cortical_id:
 			# Convert generated absolute FEAGI coordinates to relative position within brain region
@@ -1290,12 +1509,24 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 		push_error("BrainRegion3D: No generated coordinates found for cortical area %s - this should not happen!" % cortical_id)
 		return
 	
-	var side_label = "LEFT (input)" if is_input else "RIGHT (output)"
+	var side_label = ""
+	if is_input:
+		side_label = "INPUT (left, light green)"
+	elif is_output:
+		side_label = "OUTPUT (middle, darker green)"
+	elif is_conflict:
+		side_label = "CONFLICT (right, red)"
 	
 	print("    🎯 POSITIONING cortical area %s with position %s (relative to brain region)" % [cortical_id, new_position])
 	
-	# Calculate position relative to the appropriate container (InputAreas or OutputAreas)
-	var container = _input_areas_container if is_input else _output_areas_container
+	# Calculate position relative to the appropriate container (InputAreas, OutputAreas, or ConflictAreas)
+	var container: Node3D
+	if is_input:
+		container = _input_areas_container
+	elif is_output:
+		container = _output_areas_container
+	elif is_conflict:
+		container = _conflict_areas_container
 	
 	# Convert brain region FEAGI coordinates to Godot world position (same logic as _update_position)
 	var brain_region_coords = _representing_region.coordinates_3D
@@ -1305,7 +1536,14 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	var desired_world_pos = brain_region_world_pos + new_position
 	
 	# Container position relative to brain region (from _create_containers)
-	var container_offset = Vector3(-INPUT_OUTPUT_SPACING, 0, 0) if is_input else Vector3(INPUT_OUTPUT_SPACING, 0, 0)
+	var container_offset: Vector3
+	if is_input:
+		container_offset = Vector3(-INPUT_OUTPUT_SPACING, 0, 0)
+	elif is_output:
+		container_offset = Vector3(0, 0, 0)  # Center position
+	elif is_conflict:
+		container_offset = Vector3(INPUT_OUTPUT_SPACING, 0, 0)  # Right position
+	
 	var container_world_pos = brain_region_world_pos + container_offset
 	
 	# Calculate position relative to container: desired_world - container_world  
@@ -1341,8 +1579,12 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	
 	# print("    📍 Positioned %s on plate %s at Z-offset %.1f" % [cortical_viz.cortical_area.cortical_ID, side_label, z_offset])  # Suppressed to reduce log overflow
 
-## Gets input cortical areas based on connection chain links or direct areas
-func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
+## Gets RAW input cortical areas (before conflict filtering) - used internally
+func _get_input_cortical_areas_raw() -> Array[AbstractCorticalArea]:
+	return _get_input_cortical_areas_internal()
+
+## Gets input cortical areas based on connection chain links or direct areas (INTERNAL - no conflict filtering)
+func _get_input_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 	var input_areas: Array[AbstractCorticalArea] = []
 	
 	print("🔍 Analyzing input areas for region '%s':" % _representing_region.friendly_name)
@@ -1401,8 +1643,31 @@ func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
 	print("🔍 Total input areas found for '%s': %d" % [_representing_region.friendly_name, input_areas.size()])
 	return input_areas
 
-## Gets output cortical areas based on connection chain links or direct areas
-func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
+## Gets input cortical areas (FILTERED - excludes conflicts that appear in both inputs and outputs)
+func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
+	var raw_input_areas = _get_input_cortical_areas_internal()
+	var conflict_areas = _get_conflict_cortical_areas()
+	var pure_input_areas: Array[AbstractCorticalArea] = []
+	
+	# Filter out conflicted areas
+	for area in raw_input_areas:
+		var is_conflict = false
+		for conflict_area in conflict_areas:
+			if area.cortical_ID == conflict_area.cortical_ID:
+				is_conflict = true
+				break
+		if not is_conflict:
+			pure_input_areas.append(area)
+	
+	print("🔍 Pure input areas (after conflict filtering) for '%s': %d" % [_representing_region.friendly_name, pure_input_areas.size()])
+	return pure_input_areas
+
+## Gets RAW output cortical areas (before conflict filtering) - used internally
+func _get_output_cortical_areas_raw() -> Array[AbstractCorticalArea]:
+	return _get_output_cortical_areas_internal()
+
+## Gets output cortical areas based on connection chain links or direct areas (INTERNAL - no conflict filtering)
+func _get_output_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 	var output_areas: Array[AbstractCorticalArea] = []
 	
 	print("🔍 Analyzing output areas for region '%s':" % _representing_region.friendly_name)
@@ -1466,6 +1731,46 @@ func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
 	print("🔍 Total output areas found for '%s': %d" % [_representing_region.friendly_name, output_areas.size()])
 	return output_areas
 
+## Gets output cortical areas (FILTERED - excludes conflicts that appear in both inputs and outputs)
+func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
+	var raw_output_areas = _get_output_cortical_areas_internal()
+	var conflict_areas = _get_conflict_cortical_areas()
+	var pure_output_areas: Array[AbstractCorticalArea] = []
+	
+	# Filter out conflicted areas
+	for area in raw_output_areas:
+		var is_conflict = false
+		for conflict_area in conflict_areas:
+			if area.cortical_ID == conflict_area.cortical_ID:
+				is_conflict = true
+				break
+		if not is_conflict:
+			pure_output_areas.append(area)
+	
+	print("🔍 Pure output areas (after conflict filtering) for '%s': %d" % [_representing_region.friendly_name, pure_output_areas.size()])
+	return pure_output_areas
+
+## Gets cortical areas that appear in both inputs and outputs (conflicted areas)
+func _get_conflict_cortical_areas() -> Array[AbstractCorticalArea]:
+	var input_areas = _get_input_cortical_areas_internal()  # Get raw inputs without conflict filtering
+	var output_areas = _get_output_cortical_areas_internal()  # Get raw outputs without conflict filtering
+	var conflict_areas: Array[AbstractCorticalArea] = []
+	
+	print("🔍 Detecting conflict areas for region '%s':" % _representing_region.friendly_name)
+	print("  📥 Raw input areas: %d" % input_areas.size())
+	print("  📤 Raw output areas: %d" % output_areas.size())
+	
+	# Find areas that appear in both input and output lists
+	for input_area in input_areas:
+		for output_area in output_areas:
+			if input_area.cortical_ID == output_area.cortical_ID:
+				if input_area not in conflict_areas:
+					conflict_areas.append(input_area)
+					print("  ⚠️  CONFLICT DETECTED: Area %s appears in both inputs and outputs" % input_area.cortical_ID)
+	
+	print("🔍 Total conflict areas found for '%s': %d" % [_representing_region.friendly_name, conflict_areas.size()])
+	return conflict_areas
+
 ## Adjusts frame size based on contained cortical areas
 func _adjust_frame_size(input_count: int, output_count: int) -> void:
 	var max_count = max(input_count, output_count)
@@ -1527,6 +1832,13 @@ func _log_io_area_current_positions() -> void:
 			var cortical_viz = child as UI_BrainMonitor_CorticalArea
 			if cortical_viz:
 				_log_single_cortical_area_position(cortical_viz, "OUTPUT")
+	
+	if _conflict_areas_container:
+		print("  ⚠️  CONFLICT AREA POSITIONS:")
+		for child in _conflict_areas_container.get_children():
+			var cortical_viz = child as UI_BrainMonitor_CorticalArea
+			if cortical_viz:
+				_log_single_cortical_area_position(cortical_viz, "CONFLICT")
 
 ## Logs the position details for a single cortical area
 func _log_single_cortical_area_position(cortical_viz: UI_BrainMonitor_CorticalArea, type_label: String) -> void:
@@ -1589,6 +1901,17 @@ func _update_io_area_global_positions() -> void:
 					desired_world_pos = new_feagi_coords
 					found_coords = true
 					print("        ✅ Found as OUTPUT: %s -> world pos: %s" % [cortical_id, desired_world_pos])
+					break
+		
+		# Check conflicts if not found in inputs or outputs
+		if not found_coords:
+			for area_data in _generated_io_coordinates.conflicts:
+				if area_data.area_id == cortical_id:
+					var new_feagi_coords = Vector3(area_data.new_coordinates)
+					new_feagi_coords.z = -new_feagi_coords.z  # Flip Z for Godot
+					desired_world_pos = new_feagi_coords
+					found_coords = true
+					print("        ✅ Found as CONFLICT: %s -> world pos: %s" % [cortical_id, desired_world_pos])
 					break
 		
 		if found_coords:
@@ -1672,6 +1995,8 @@ func _update_frame_label(new_name: StringName) -> void:
 ## Signal handlers for dynamic updates
 func _on_cortical_area_added(area: AbstractCorticalArea) -> void:
 	print("🧠 BrainRegion3D: Cortical area added to region, refreshing frame")
+	# Connect monitoring signals for the new area
+	_connect_area_signals(area)
 	_refresh_frame_contents()
 
 func _on_cortical_area_removed(area: AbstractCorticalArea) -> void:
@@ -1681,11 +2006,86 @@ func _on_cortical_area_removed(area: AbstractCorticalArea) -> void:
 		_cortical_area_visualizations.erase(area.cortical_ID)
 	_refresh_frame_contents()
 
+## Forces a complete refresh of the brain region (public method for external calls)
+func force_refresh() -> void:
+	print("🔄 FORCE REFRESH: External refresh requested for region '%s'" % _representing_region.friendly_name)
+	_refresh_frame_contents()
+
+## Starts monitoring connections for changes that could affect I/O status
+func _start_connection_monitoring() -> void:
+	print("🔗 CONNECTION MONITORING: Starting for region '%s'" % _representing_region.friendly_name)
+	# Connect to mapping update signals for all areas in this region
+	for area in _representing_region.contained_cortical_areas:
+		_connect_area_signals(area)
+
+## Connects to signals for a cortical area to monitor connection changes
+func _connect_area_signals(area: AbstractCorticalArea) -> void:
+	# Connect to mapping update signals if they exist
+	if area.has_signal("mappings_updated"):
+		if not area.mappings_updated.is_connected(_on_area_connections_changed):
+			area.mappings_updated.connect(_on_area_connections_changed.bind(area))
+			print("  🔗 Connected to mappings_updated for area: %s" % area.cortical_ID)
+	
+	# Also connect to dimension changes which might affect positioning
+	if not area.dimensions_3D_updated.is_connected(_on_area_dimensions_changed):
+		area.dimensions_3D_updated.connect(_on_area_dimensions_changed.bind(area))
+		print("  📐 Connected to dimensions_updated for area: %s" % area.cortical_ID)
+
+
+## Checks if I/O status has changed and refreshes if needed
+func _check_io_status_and_refresh() -> void:
+	print("🔍 CHECKING I/O STATUS: Analyzing current vs previous I/O configuration")
+	# Force refresh - the I/O detection logic will handle determining conflicts
+	force_refresh()
+
+## Validates that all plates are properly aligned
+func _validate_plate_alignment() -> void:
+	if not _frame_container:
+		return
+		
+	print("🔍 PLATE ALIGNMENT VALIDATION:")
+	var input_plate = _frame_container.get_node_or_null("InputPlate")
+	var output_plate = _frame_container.get_node_or_null("OutputPlate") 
+	var conflict_plate = _frame_container.get_node_or_null("ConflictPlate")
+	
+	if input_plate:
+		print("  ✅ Input Plate - Position: %s, Global: %s" % [input_plate.position, input_plate.global_position])
+	if output_plate:
+		print("  ✅ Output Plate - Position: %s, Global: %s" % [output_plate.position, output_plate.global_position])
+	if conflict_plate:
+		print("  ✅ Conflict Plate - Position: %s, Global: %s" % [conflict_plate.position, conflict_plate.global_position])
+		# Check alignment
+		if input_plate and output_plate and conflict_plate:
+			var y_diff_input_output = abs(input_plate.position.y - output_plate.position.y)
+			var y_diff_output_conflict = abs(output_plate.position.y - conflict_plate.position.y)
+			if y_diff_input_output > 0.1 or y_diff_output_conflict > 0.1:
+				print("  ⚠️  ALIGNMENT WARNING: Plates may not be properly aligned in Y-axis")
+				print("    Input-Output Y diff: %.3f" % y_diff_input_output)
+				print("    Output-Conflict Y diff: %.3f" % y_diff_output_conflict)
+			else:
+				print("  ✅ All plates properly aligned in Y-axis")
+	else:
+		print("  📝 No conflict plate (no conflicted areas)")
+
 ## Refreshes the entire frame contents
 func _refresh_frame_contents() -> void:
+	print("🔄 REFRESH: Starting frame content refresh for region '%s'" % _representing_region.friendly_name)
+	
+	# Log current partial mappings state for debugging
+	print("  📊 CURRENT PARTIAL MAPPINGS:")
+	print("    📊 Total partial_mappings: %d" % _representing_region.partial_mappings.size())
+	for i in range(_representing_region.partial_mappings.size()):
+		var mapping = _representing_region.partial_mappings[i]
+		print("      🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+	
+	# CRITICAL: Clean up ALL children to prevent node duplication
+	_cleanup_all_children()
+	
 	# Get current I/O areas to determine what should be kept
 	var current_input_areas = _get_input_cortical_areas()
 	var current_output_areas = _get_output_cortical_areas()
+	var current_conflict_areas = _get_conflict_cortical_areas()
+
 	var current_io_ids: Array[String] = []
 	
 	for area in current_input_areas:
@@ -1732,11 +2132,18 @@ func _refresh_frame_contents() -> void:
 	print("🔄 REFRESH: Recreating plates for updated I/O area set")
 	if _frame_container:
 		_frame_container.queue_free()
+		# Reset container references since they'll be recreated
+		_input_areas_container = null
+		_output_areas_container = null
+		_conflict_areas_container = null
 	_create_3d_plate()
 	_create_containers()
 	
 	# Repopulate (will reuse existing I/O visualizations where possible)
 	_populate_cortical_areas()
+	
+	# Validate plate alignment
+	call_deferred("_validate_plate_alignment")
 	
 	# CRITICAL FIX: Update label position after all elements are in place
 	call_deferred("_update_label_position_after_refresh")
@@ -1749,11 +2156,15 @@ func _update_label_position_after_refresh() -> void:
 	# Recalculate plate sizes for current I/O areas
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
+	var conflict_areas = _get_conflict_cortical_areas()
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
+	var conflict_plate_size = _calculate_plate_size_for_areas(conflict_areas, "CONFLICT")
 	
-	# Recalculate total width and center position
+	# Recalculate total width and center position (including conflict plate if it exists)
 	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+	if conflict_areas.size() > 0:
+		total_width += PLATE_GAP + conflict_plate_size.x  # Add conflict plate to total width
 	var center_x = total_width / 2.0
 	
 	# Update label position to be centered between the new plates
@@ -1762,7 +2173,7 @@ func _update_label_position_after_refresh() -> void:
 	_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
 	
 	print("🏷️ LABEL UPDATE: Repositioned region label '%s' to center between updated plates" % _representing_region.friendly_name)
-	print("    📐 New plate sizes - Input: %s, Output: %s, Total width: %.1f" % [input_plate_size, output_plate_size, total_width])
+	print("    📐 New plate sizes - Input: %s, Output: %s, Conflict: %s, Total width: %.1f" % [input_plate_size, output_plate_size, conflict_plate_size, total_width])
 	print("    📍 New label position: %s (centered at X=%.1f)" % [_region_name_label.global_position, center_x])
 
 ## Handles hover/selection interaction
@@ -1776,3 +2187,93 @@ func set_hover_state(is_hovered: bool) -> void:
 func handle_double_click() -> void:
 	region_double_clicked.emit(_representing_region)
 	print("🧠 BrainRegion3D: Double-clicked region '%s' - ready for dive-in navigation" % _representing_region.friendly_name)
+
+## CRITICAL: Cleans up ALL children to prevent node duplication during refresh
+func _cleanup_all_children() -> void:
+	print("🧹 CLEANUP: Removing all children from region '%s' to prevent duplication" % _representing_region.friendly_name)
+	var children_count = get_child_count()
+	print("  📦 Removing %d children..." % children_count)
+	
+	# Store important nodes we want to keep
+	var keep_label = _region_name_label
+	
+	# Remove all children
+	for child in get_children():
+		print("    🗑️ Removing child: %s (%s)" % [child.name, child.get_class()])
+		remove_child(child)
+		child.queue_free()
+	
+	# Reset important references
+	_frame_container = null
+	_input_areas_container = null
+	_output_areas_container = null
+	_conflict_areas_container = null
+	_region_name_label = null
+	_cortical_area_visualizations.clear()
+	
+	print("  ✅ Cleanup complete - all children removed and references reset")
+
+## CRITICAL: Disable connection monitoring to prevent recursive refresh loops
+var _connection_monitoring_enabled: bool = true
+
+func _disable_connection_monitoring() -> void:
+	_connection_monitoring_enabled = false
+	print("🔇 MONITORING: Disabled connection monitoring for region '%s'" % _representing_region.friendly_name)
+
+func _enable_connection_monitoring() -> void:
+	_connection_monitoring_enabled = true
+	print("🔊 MONITORING: Enabled connection monitoring for region '%s'" % _representing_region.friendly_name)
+
+## DEBUG: Prints detailed system state for troubleshooting flaky behavior
+func debug_current_system_state() -> void:
+	print("🔍 DEBUG STATE: Current system state for region '%s'" % _representing_region.friendly_name)
+	print("  🔗 Connection monitoring enabled: %s" % _connection_monitoring_enabled)
+	print("  📦 Child count: %d" % get_child_count())
+	print("  🎨 Cortical visualizations count: %d" % _cortical_area_visualizations.size())
+	
+	# Check partial mappings
+	print("  📊 PARTIAL MAPPINGS (%d total):" % _representing_region.partial_mappings.size())
+	for i in range(_representing_region.partial_mappings.size()):
+		var mapping = _representing_region.partial_mappings[i]
+		print("    🔗 %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+	
+	# Check I/O detection results
+	var input_areas = _get_input_cortical_areas()
+	var output_areas = _get_output_cortical_areas() 
+	var conflict_areas = _get_conflict_cortical_areas()
+
+	# Check plate existence
+	print("  🏗️ PLATE STATUS:")
+	if _frame_container:
+		print("    ✅ Frame container exists")
+		print("    🟢 Input plate: %s" % ("EXISTS" if _frame_container.has_node("InputPlate") else "MISSING"))
+		print("    🟢 Output plate: %s" % ("EXISTS" if _frame_container.has_node("OutputPlate") else "MISSING"))
+		print("    🔴 Conflict plate: %s" % ("EXISTS" if _frame_container.has_node("ConflictPlate") else "MISSING"))
+	else:
+		print("    ❌ Frame container is NULL")
+		
+	# Check container references
+	print("  📦 CONTAINER REFERENCES:")
+	print("    📥 Input container: %s" % ("EXISTS" if _input_areas_container else "NULL"))
+	print("    📤 Output container: %s" % ("EXISTS" if _output_areas_container else "NULL"))
+	print("    🔴 Conflict container: %s" % ("EXISTS" if _conflict_areas_container else "NULL"))
+
+## Called when connections change for an area in this region (with monitoring control)
+func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
+	if not _connection_monitoring_enabled:
+		print("🔇 MONITORING: Ignoring connection change for %s (monitoring disabled)" % area.cortical_ID)
+		return
+		
+	print("🔗 CONNECTION CHANGE: Area %s connections changed, checking I/O status" % area.cortical_ID)
+	# Small delay to ensure connection changes are fully processed
+	call_deferred("_check_io_status_and_refresh")
+
+## Called when dimensions change for an area in this region (with monitoring control)
+func _on_area_dimensions_changed(area: AbstractCorticalArea) -> void:
+	if not _connection_monitoring_enabled:
+		print("🔇 MONITORING: Ignoring dimension change for %s (monitoring disabled)" % area.cortical_ID)
+		return
+		
+	print("📐 DIMENSION CHANGE: Area %s dimensions changed, refreshing plates" % area.cortical_ID)
+	# Small delay to ensure dimension changes are fully processed
+	call_deferred("force_refresh")

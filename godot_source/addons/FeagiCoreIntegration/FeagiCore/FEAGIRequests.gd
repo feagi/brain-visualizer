@@ -1728,6 +1728,19 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	
 	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, raw_dicts)
+	
+	# CRITICAL NEW FEATURE: Process brain region I/O data from response if available
+	var full_response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	if full_response.has("brain_regions"):
+		print("🔗 MAPPING GET: Processing brain region I/O data from FEAGI response")
+		# Temporarily disable ALL competing refresh signals during update
+		_disable_region_refresh_signals()
+		_disable_local_cache_refresh_signals()
+		_process_brain_region_io_updates(full_response["brain_regions"])
+		# Re-enable signals after update is complete
+		call_deferred("_enable_region_refresh_signals")
+		call_deferred("_enable_local_cache_refresh_signals")
+	
 	return FEAGI_response_data
 
 
@@ -1769,12 +1782,206 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
 	
-	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
+	# CRITICAL NEW FEATURE: Process brain region I/O data from response for dynamic plate reconfiguration
+	if response.has("brain_regions"):
+		print("🔗 MAPPING UPDATE: Processing brain region I/O data from FEAGI response")
+		# Temporarily disable ALL competing refresh signals during update
+		_disable_region_refresh_signals()
+		_disable_local_cache_refresh_signals()
+		_process_brain_region_io_updates(response["brain_regions"])
+		# Update local cache AFTER processing brain region updates to prevent conflicts
+		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
+		# Re-enable signals after update is complete
+		call_deferred("_enable_region_refresh_signals") 
+		call_deferred("_enable_local_cache_refresh_signals")
+	else:
+		print("⚠️  MAPPING UPDATE: No brain region data in response - using fallback refresh")
+		# Update local cache first, then refresh
+		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
+		# Fallback: refresh regions containing the source and destination areas
+		_refresh_regions_containing_areas([source_area, destination_area])
+	
 	#var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
 	#mapping_set.mappings_changed.emit(mapping_set)
 	#mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()
 	#FeagiCore.feagi_local_cache.mapping_data.mapping_updated.emit(mapping_set)
 	return FEAGI_response_data
+
+## Processes brain region I/O updates from FEAGI API response and reconfigures plates
+func _process_brain_region_io_updates(brain_regions_data) -> void:
+	print("🔄 BRAIN REGION I/O UPDATE: Processing %d region(s) from FEAGI response" % brain_regions_data.size())
+	
+	for region_id in brain_regions_data.keys():
+		var region_data = brain_regions_data[region_id]
+		print("  🧠 Processing region: %s" % region_id)
+		print("    📋 Region data keys: %s" % region_data.keys())
+		
+		# Find the brain region in cache
+		if region_id not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys():
+			print("    ⚠️  Region %s not found in cache, skipping" % region_id)
+			continue
+			
+		var brain_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[region_id]
+		print("    🏷️ Region friendly name: %s" % brain_region.friendly_name)
+		
+		# Log current state before update
+		print("    📊 BEFORE UPDATE:")
+		print("      📊 Current partial_mappings count: %d" % brain_region.partial_mappings.size())
+		for i in range(brain_region.partial_mappings.size()):
+			var mapping = brain_region.partial_mappings[i]
+			print("        🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+		
+		# Update the brain region's input/output arrays if provided
+		if region_data.has("inputs"):
+			var inputs = region_data["inputs"]
+			print("    📥 Updating %d input areas: %s" % [inputs.size(), inputs])
+			# Update the brain region's partial mappings to reflect new I/O status
+			_update_brain_region_io_mappings(brain_region, inputs, true)  # true = input
+			
+		if region_data.has("outputs"):
+			var outputs = region_data["outputs"]
+			print("    📤 Updating %d output areas: %s" % [outputs.size(), outputs])
+			# Update the brain region's partial mappings to reflect new I/O status
+			_update_brain_region_io_mappings(brain_region, outputs, false)  # false = output
+		
+		# Log state after update
+		print("    📊 AFTER UPDATE:")
+		print("      📊 Updated partial_mappings count: %d" % brain_region.partial_mappings.size())
+		for i in range(brain_region.partial_mappings.size()):
+			var mapping = brain_region.partial_mappings[i]
+			print("        🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+		
+		# Trigger plate reconfiguration for this region
+		print("    🔄 Triggering visualization refresh...")
+		_refresh_region_visualization(region_id)
+		print("    ✅ Region %s plate reconfiguration triggered" % region_id)
+
+## Updates brain region I/O mappings based on FEAGI response data
+func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array, is_input: bool) -> void:
+	var mapping_type = "input" if is_input else "output"
+	print("    🔧 Updating %s mappings for region %s with %d areas" % [mapping_type, brain_region.friendly_name, area_ids.size()])
+	
+	# Clear existing partial mappings of this type
+	var mappings_to_remove = []
+	for mapping in brain_region.partial_mappings:
+		if mapping.is_region_input == is_input:
+			mappings_to_remove.append(mapping)
+	
+	for mapping in mappings_to_remove:
+		brain_region.partial_mappings.erase(mapping)
+	
+	# Create new partial mappings based on FEAGI response
+	for area_id_str in area_ids:
+		var area_id = StringName(area_id_str)
+		if area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[area_id]
+			# Create new partial mapping
+			var partial_mapping = PartialMappingSet.new(
+				is_input,          # is_input_of_region
+				[],                # mappings_suggested (empty for now)
+				area,              # internal_target
+				brain_region,      # brain_region
+				area_id           # label
+			)
+			brain_region.partial_mappings.append(partial_mapping)
+			print("      ✅ Added %s mapping for area: %s" % [mapping_type, area_id])
+		else:
+			print("      ⚠️  Area %s not found in cache, skipping" % area_id)
+
+## Fallback: Refreshes brain regions that contain the specified areas
+func _refresh_regions_containing_areas(areas: Array[AbstractCorticalArea]) -> void:
+	print("🔄 FALLBACK REFRESH: Finding regions containing %d areas" % areas.size())
+	var regions_to_refresh: Array[StringName] = []
+	
+	for area in areas:
+		print("  🔍 Finding regions containing area: %s" % area.cortical_ID)
+		
+		# Find all regions that contain this area
+		for region_id in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys():
+			var region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[region_id]
+			if area in region.contained_cortical_areas:
+				if region_id not in regions_to_refresh:
+					regions_to_refresh.append(region_id)
+					print("    📍 Found in region: %s" % region.friendly_name)
+	
+	# Refresh all affected regions
+	for region_id in regions_to_refresh:
+		print("  🔄 Triggering refresh for region: %s" % region_id)
+		_refresh_region_visualization(region_id)
+	
+	if regions_to_refresh.is_empty():
+		print("  ⚠️  No regions found containing the specified areas")
+
+## CRITICAL: Disables recursive refresh signals to prevent infinite loops during FEAGI data updates
+func _disable_region_refresh_signals() -> void:
+	print("🔇 SIGNAL CONTROL: Disabling recursive refresh signals during update")
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if not scene_tree or not scene_tree.root:
+		return
+	
+	var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
+	
+	for scene in brain_monitor_scenes:
+		if scene is UI_BrainMonitor_3DScene:
+			var monitor_scene = scene as UI_BrainMonitor_3DScene
+			for region_id in monitor_scene._brain_region_visualizations_by_ID:
+				var brain_region_3d = monitor_scene._brain_region_visualizations_by_ID[region_id]
+				brain_region_3d._disable_connection_monitoring()
+
+## CRITICAL: Re-enables recursive refresh signals after FEAGI data updates are complete
+func _enable_region_refresh_signals() -> void:
+	print("🔊 SIGNAL CONTROL: Re-enabling recursive refresh signals after update")
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if not scene_tree or not scene_tree.root:
+		return
+	
+	var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
+	
+	for scene in brain_monitor_scenes:
+		if scene is UI_BrainMonitor_3DScene:
+			var monitor_scene = scene as UI_BrainMonitor_3DScene
+			for region_id in monitor_scene._brain_region_visualizations_by_ID:
+				var brain_region_3d = monitor_scene._brain_region_visualizations_by_ID[region_id]
+				brain_region_3d._enable_connection_monitoring()
+
+## CRITICAL: Temporarily disable local cache refresh signals to prevent conflicts during FEAGI updates
+var _local_cache_signals_disabled: bool = false
+
+func _disable_local_cache_refresh_signals() -> void:
+	if _local_cache_signals_disabled:
+		return  # Already disabled
+		
+	print("🔇 CACHE CONTROL: Disabling local cache refresh signals during FEAGI update")
+	_local_cache_signals_disabled = true
+	
+	# Disconnect local cache mapping change signals that trigger competing refreshes
+	if FeagiCore.feagi_local_cache.mapping_data.has_signal("mapping_updated"):
+		var connections = FeagiCore.feagi_local_cache.mapping_data.mapping_updated.get_connections()
+		for connection in connections:
+			# Store connection info for re-enabling later
+			if not _stored_mapping_connections:
+				_stored_mapping_connections = []
+			_stored_mapping_connections.append(connection)
+			FeagiCore.feagi_local_cache.mapping_data.mapping_updated.disconnect(connection.callable)
+			print("  🔇 Disconnected mapping_updated signal")
+
+## CRITICAL: Re-enable local cache refresh signals after FEAGI updates complete
+var _stored_mapping_connections: Array = []
+
+func _enable_local_cache_refresh_signals() -> void:
+	if not _local_cache_signals_disabled:
+		return  # Already enabled
+		
+	print("🔊 CACHE CONTROL: Re-enabling local cache refresh signals after FEAGI update")
+	_local_cache_signals_disabled = false
+	
+	# Reconnect local cache mapping change signals
+	for connection in _stored_mapping_connections:
+		FeagiCore.feagi_local_cache.mapping_data.mapping_updated.connect(connection.callable)
+		print("  🔊 Reconnected mapping_updated signal")
+	
+	_stored_mapping_connections.clear()
+
 	#if FeagiCore.feagi_local_cache.mapping_data.does_mappings_exist_between_areas(source_area, destination_area):
 	#	FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID].FEAGI_updated_mappings_JSON(temp_json_inbetween)
 	#	return FEAGI_response_data

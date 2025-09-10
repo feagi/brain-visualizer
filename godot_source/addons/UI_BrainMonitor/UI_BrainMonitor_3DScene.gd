@@ -23,7 +23,7 @@ var _UI_layer_for_BM: UI_BrainMonitor_Overlay = null
 var _representing_region: BrainRegion
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
-var _brain_region_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_BrainRegion3D]
+var _brain_region_visualizations_by_ID: Dictionary  # Dictionary[StringName, UI_BrainMonitor_BrainRegion3D]
 var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _restrict_neuron_selection_to: AbstractCorticalArea = null
 
@@ -210,9 +210,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				
 				_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
 			
-			# Check if we hit a brain region frame
-			elif hit_body.get_parent() is UI_BrainMonitor_BrainRegion3D:
-				var region_frame: UI_BrainMonitor_BrainRegion3D = hit_body.get_parent()
+			# Check if we hit a brain region frame (by checking script global name)
+			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
+				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame:
 					region_frame.set_hover_state(true)
 					print("🧠 Hovering over red line wireframe brain region: %s" % region_frame.representing_region.friendly_name)
@@ -267,9 +267,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 								#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
 								#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
 			
-			# Check if we hit a brain region frame
-			elif hit_body.get_parent() is UI_BrainMonitor_BrainRegion3D:
-				var region_frame: UI_BrainMonitor_BrainRegion3D = hit_body.get_parent()
+			# Check if we hit a brain region frame (by checking script global name)
+			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
+				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
 						# Single click on brain region - select it
@@ -432,7 +432,7 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
 
-func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_BrainRegion3D:
+func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
 	print("  🔧 _add_brain_region_frame called for: %s" % brain_region.friendly_name)
 	print("  📍 Brain region coordinates: 2D=%s, 3D=%s" % [brain_region.coordinates_2D, brain_region.coordinates_3D])
@@ -442,7 +442,8 @@ func _add_brain_region_frame(brain_region: BrainRegion) -> UI_BrainMonitor_Brain
 		return null
 	
 	print("  🏭 Creating UI_BrainMonitor_BrainRegion3D instance...")
-	var region_frame: UI_BrainMonitor_BrainRegion3D = UI_BrainMonitor_BrainRegion3D.new()
+	var brain_region_script = load("res://addons/UI_BrainMonitor/UI_BrainMonitor_BrainRegion3D.gd")
+	var region_frame = brain_region_script.new()  # UI_BrainMonitor_BrainRegion3D
 	print("  📍 Adding to _node_3D_root...")
 	_node_3D_root.add_child(region_frame)
 	print("  📍 DEBUG: Main region parent: %s" % region_frame.get_parent().name)
@@ -466,7 +467,7 @@ func _remove_brain_region_frame(brain_region: BrainRegion) -> void:
 	if brain_region.region_ID not in _brain_region_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant brain region of ID %s!" % brain_region.region_ID)
 		return
-	var region_frame: UI_BrainMonitor_BrainRegion3D = _brain_region_visualizations_by_ID[brain_region.region_ID]
+	var region_frame = _brain_region_visualizations_by_ID[brain_region.region_ID]  # UI_BrainMonitor_BrainRegion3D
 	region_frame.queue_free()
 	_brain_region_visualizations_by_ID.erase(brain_region.region_ID)
 
