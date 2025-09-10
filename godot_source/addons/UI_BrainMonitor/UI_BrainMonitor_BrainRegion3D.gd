@@ -223,38 +223,37 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	print("  ⚠️  Processing %d CONFLICT areas (front-left corner positioning):" % conflict_areas.size())
 	var current_conflict_x = conflict_start_x  # Start at conflict plate front-left + margin
 	for i in conflict_areas.size():
-		var area = conflict_areas[i]
-		var area_size = Vector3(area.dimensions_3D)
+		var area_c = conflict_areas[i]
+		var area_size_c = Vector3(area_c.dimensions_3D)
 		
-		# Position area: FRONT-LEFT CORNER positioning (lowest x,y,z)
+		# Position area exactly like input/output: FRONT-LEFT corner then convert to center
 		var area_front_left_x = current_conflict_x
 		var area_front_left_y = conflict_start_y
 		var area_front_left_z = conflict_start_z
 		
-		# Convert front-left corner to CENTER coordinates in FEAGI (Godot flip happens later)
-		var area_center_x = area_front_left_x + area_size.x / 2.0
-		var area_center_y = area_front_left_y + area_size.y / 2.0
-		var area_center_z = area_front_left_z + area_size.z / 2.0
+		var area_center_x = area_front_left_x + area_size_c.x / 2.0
+		var area_center_y = area_front_left_y + area_size_c.y / 2.0
+		var area_center_z = area_front_left_z + area_size_c.z / 2.0
 		
-		var new_position = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
+		var new_position_c = region_origin + Vector3(area_center_x, area_center_y, area_center_z)
 		
 		# Move to next area position: current_x + area_width + buffer
-		current_conflict_x += area_size.x + AREA_BUFFER_DISTANCE
+		current_conflict_x += area_size_c.x + AREA_BUFFER_DISTANCE
 		
 		var conflict_data = {
-			"area_id": area.cortical_ID,
-			"area_type": area.type_as_string, 
-			"original_coordinates": area.coordinates_3D,
-			"new_coordinates": Vector3i(new_position)
+			"area_id": area_c.cortical_ID,
+			"area_type": area_c.type_as_string, 
+			"original_coordinates": area_c.coordinates_3D,
+			"new_coordinates": Vector3i(new_position_c)
 		}
 		result.conflicts.append(conflict_data)
 		
-		print("    🔴 CONFLICT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
-		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position))
+		print("    🔴 CONFLICT: %s (%s) - dims=%s" % [area_c.cortical_ID, area_c.type_as_string, area_size_c])
+		print("      📍 Original coordinates: %s" % area_c.coordinates_3D)
+		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position_c))
 		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
 		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
-		print("      📐 Offset from region: %s" % (new_position - region_origin))
+		print("      📐 Offset from region: %s" % (new_position_c - region_origin))
 	
 	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
 	print("  📊 Generated %d input + %d output + %d conflict coordinates" % [input_areas.size(), output_areas.size(), conflict_areas.size()])
@@ -553,11 +552,19 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if _frame_container:
 		for child in _frame_container.get_children():
 			var child_name: String = child.name
-			# Remove any existing input/output plate meshes (solid or wireframe) and related click areas
-			if child_name.begins_with("InputPlate") or child_name.begins_with("OutputPlate") or child_name == "InputPlateClickArea" or child_name == "OutputPlateClickArea":
+			# Remove any existing plate meshes (solid or wireframe)
+			if child_name.begins_with("InputPlate") or child_name.begins_with("OutputPlate") or child_name.begins_with("ConflictPlate"):
 				child.queue_free()
 		# Ensure queued frees are processed before recreating new plates
 		await get_tree().process_frame
+
+	# Also remove old click collision bodies attached directly to this node
+	var click_nodes_to_remove = ["InputPlateClickArea", "OutputPlateClickArea", "ConflictPlateClickArea", "RegionLabelClickArea"]
+	for direct_child in get_children():
+		if direct_child.name in click_nodes_to_remove:
+			direct_child.queue_free()
+	# Process removal of click areas
+	await get_tree().process_frame
 	
 	# 3. Recreate plates with new sizes
 	print("  🏗️ Step 3: Recreating plates with updated sizes...")
@@ -619,6 +626,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if conflict_areas.size() > 0:
 		var conflict_color = Color(0.8, 0.0, 0.0, 0.2)
 		conflict_plate = _create_single_plate(conflict_plate_size, "ConflictPlate", conflict_color)
+		# Recompute front-left based on current (possibly changed) output size to prevent collisions
 		var conflict_front_left_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP
 		conflict_plate.position.x = conflict_front_left_x + conflict_plate_size.x / 2.0
 		conflict_plate.position.y = PLATE_HEIGHT / 2.0
