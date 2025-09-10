@@ -771,11 +771,19 @@ func _refresh_region_visualization(region_id: StringName) -> void:
 	for scene in brain_monitor_scenes:
 		if scene is UI_BrainMonitor_3DScene:
 			var monitor_scene = scene as UI_BrainMonitor_3DScene
+			# First try direct key lookup
 			if region_id in monitor_scene._brain_region_visualizations_by_ID:
 				var brain_region_3d = monitor_scene._brain_region_visualizations_by_ID[region_id]
 				brain_region_3d._refresh_frame_contents()
 				print("IO REFRESH: Triggered visualization refresh for ", region_id)
 				return
+			# Fallback: match by string equality (handles String vs StringName mismatches)
+			for existing_id in monitor_scene._brain_region_visualizations_by_ID.keys():
+				if str(existing_id) == str(region_id):
+					var br3d = monitor_scene._brain_region_visualizations_by_ID[existing_id]
+					br3d._refresh_frame_contents()
+					print("IO REFRESH: Triggered visualization refresh (fallback match) for ", region_id)
+					return
 
 
 func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRequestOutput:
@@ -1728,15 +1736,16 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	
 	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, raw_dicts)
-	
-	# CRITICAL NEW FEATURE: Process brain region I/O data from response if available
+
+	# CRITICAL NEW FEATURE: Process brain region I/O data from response if available (robust extraction)
 	var full_response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	if full_response.has("brain_regions"):
-		print("🔗 MAPPING GET: Processing brain region I/O data from FEAGI response")
+	var regions_map: Dictionary = _extract_brain_regions_io_from_mapping_response(full_response)
+	if regions_map.size() > 0:
+		print("🔗 MAPPING GET: Processing %d region(s) I/O data from FEAGI response" % regions_map.size())
 		# Temporarily disable ALL competing refresh signals during update
 		_disable_region_refresh_signals()
 		_disable_local_cache_refresh_signals()
-		_process_brain_region_io_updates(full_response["brain_regions"])
+		_process_brain_region_io_updates(regions_map)
 		# Re-enable signals after update is complete
 		call_deferred("_enable_region_refresh_signals")
 		call_deferred("_enable_local_cache_refresh_signals")
@@ -1782,13 +1791,14 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully set the mappings of %s toward %s with %d mappings!" % [source_cortical_ID, destination_cortical_ID, len(mappings)])
 	
-	# CRITICAL NEW FEATURE: Process brain region I/O data from response for dynamic plate reconfiguration
-	if response.has("brain_regions"):
-		print("🔗 MAPPING UPDATE: Processing brain region I/O data from FEAGI response")
+	# CRITICAL NEW FEATURE: Process brain region I/O data from response for dynamic plate reconfiguration (robust extraction)
+	var regions_map_put: Dictionary = _extract_brain_regions_io_from_mapping_response(response)
+	if regions_map_put.size() > 0:
+		print("🔗 MAPPING UPDATE: Processing %d region(s) I/O data from FEAGI response" % regions_map_put.size())
 		# Temporarily disable ALL competing refresh signals during update
 		_disable_region_refresh_signals()
 		_disable_local_cache_refresh_signals()
-		_process_brain_region_io_updates(response["brain_regions"])
+		_process_brain_region_io_updates(regions_map_put)
 		# Update local cache AFTER processing brain region updates to prevent conflicts
 		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
 		# Re-enable signals after update is complete
@@ -1814,7 +1824,7 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 	for region_id in brain_regions_data.keys():
 		var region_data = brain_regions_data[region_id]
 		print("  🧠 Processing region: %s" % region_id)
-		print("    📋 Region data keys: %s" % region_data.keys())
+		print("    📋 Region data keys: %s" % [region_data.keys()])
 		
 		# Find the brain region in cache
 		if region_id not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys():
@@ -1829,17 +1839,23 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 		print("      📊 Current partial_mappings count: %d" % brain_region.partial_mappings.size())
 		for i in range(brain_region.partial_mappings.size()):
 			var mapping = brain_region.partial_mappings[i]
-			print("        🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+			print("        🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target_cortical_area.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
 		
-		# Update the brain region's input/output arrays if provided
+		# Update the brain region's input/output arrays if provided (String -> StringName conversion)
 		if region_data.has("inputs"):
-			var inputs = region_data["inputs"]
+			var inputs_raw = region_data["inputs"]
+			var inputs: Array[StringName] = []
+			for id in inputs_raw:
+				inputs.append(StringName(id))
 			print("    📥 Updating %d input areas: %s" % [inputs.size(), inputs])
 			# Update the brain region's partial mappings to reflect new I/O status
 			_update_brain_region_io_mappings(brain_region, inputs, true)  # true = input
 			
 		if region_data.has("outputs"):
-			var outputs = region_data["outputs"]
+			var outputs_raw = region_data["outputs"]
+			var outputs: Array[StringName] = []
+			for id2 in outputs_raw:
+				outputs.append(StringName(id2))
 			print("    📤 Updating %d output areas: %s" % [outputs.size(), outputs])
 			# Update the brain region's partial mappings to reflect new I/O status
 			_update_brain_region_io_mappings(brain_region, outputs, false)  # false = output
@@ -1849,12 +1865,69 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 		print("      📊 Updated partial_mappings count: %d" % brain_region.partial_mappings.size())
 		for i in range(brain_region.partial_mappings.size()):
 			var mapping = brain_region.partial_mappings[i]
-			print("        🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+			print("        🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target_cortical_area.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
 		
 		# Trigger plate reconfiguration for this region
 		print("    🔄 Triggering visualization refresh...")
-		_refresh_region_visualization(region_id)
+		call_deferred("_refresh_region_visualization", region_id)
 		print("    ✅ Region %s plate reconfiguration triggered" % region_id)
+
+## Extracts a canonical map of region_id -> {"inputs": [], "outputs": []} from FEAGI mapping API responses
+func _extract_brain_regions_io_from_mapping_response(response: Dictionary) -> Dictionary:
+	var regions: Dictionary = {}
+	if response.size() == 0:
+		return regions
+
+	# Case 1: { "brain_regions": { "region_id": { "inputs": [...], "outputs": [...] }, ... } }
+	if response.has("brain_regions") and response["brain_regions"] is Dictionary:
+		var br: Dictionary = response["brain_regions"]
+		for region_id in br.keys():
+			var region_data: Dictionary = br[region_id]
+			regions[region_id] = {
+				"inputs": region_data.get("inputs", []),
+				"outputs": region_data.get("outputs", [])
+			}
+		return regions
+
+	# Case 2: { "regions": [ {"region_id"|"id": "...", "inputs": [...], "outputs": [...]}, ... ] }
+	if response.has("regions") and response["regions"] is Array:
+		for entry in (response["regions"] as Array):
+			if entry is Dictionary:
+				var d: Dictionary = entry
+				var rid = d.get("region_id", d.get("id", null))
+				if rid != null:
+					regions[rid] = {
+						"inputs": d.get("inputs", []),
+						"outputs": d.get("outputs", [])
+					}
+		return regions
+
+	# Case 3: { "region" : { "region_id": "...", "inputs": [...], "outputs": [...] } }
+	if response.has("region") and response["region"] is Dictionary:
+		var r: Dictionary = response["region"]
+		var rid2 = r.get("region_id", r.get("id", null))
+		if rid2 != null:
+			regions[rid2] = {
+				"inputs": r.get("inputs", []),
+				"outputs": r.get("outputs", [])
+			}
+		return regions
+
+	# Case 4: { "source_region": {...}, "destination_region": {...} }
+	if response.has("source_region") or response.has("destination_region") or response.has("src_region") or response.has("dst_region"):
+		for key in ["source_region", "destination_region", "src_region", "dst_region"]:
+			if response.has(key) and response[key] is Dictionary:
+				var rr: Dictionary = response[key]
+				var rid3 = rr.get("region_id", rr.get("id", null))
+				if rid3 != null:
+					regions[rid3] = {
+						"inputs": rr.get("inputs", []),
+						"outputs": rr.get("outputs", [])
+					}
+		return regions
+
+	# Nothing usable found
+	return regions
 
 ## Updates brain region I/O mappings based on FEAGI response data
 func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array, is_input: bool) -> void:

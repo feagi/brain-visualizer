@@ -2076,7 +2076,7 @@ func _refresh_frame_contents() -> void:
 	print("    📊 Total partial_mappings: %d" % _representing_region.partial_mappings.size())
 	for i in range(_representing_region.partial_mappings.size()):
 		var mapping = _representing_region.partial_mappings[i]
-		print("      🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+		print("      🔗 Mapping %d: %s (%s)" % [i, mapping.internal_target_cortical_area.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
 	
 	# CRITICAL: Clean up ALL children to prevent node duplication
 	_cleanup_all_children()
@@ -2235,7 +2235,7 @@ func debug_current_system_state() -> void:
 	print("  📊 PARTIAL MAPPINGS (%d total):" % _representing_region.partial_mappings.size())
 	for i in range(_representing_region.partial_mappings.size()):
 		var mapping = _representing_region.partial_mappings[i]
-		print("    🔗 %d: %s (%s)" % [i, mapping.internal_target.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
+		print("    🔗 %d: %s (%s)" % [i, mapping.internal_target_cortical_area.cortical_ID, "INPUT" if mapping.is_region_input else "OUTPUT"])
 	
 	# Check I/O detection results
 	var input_areas = _get_input_cortical_areas()
