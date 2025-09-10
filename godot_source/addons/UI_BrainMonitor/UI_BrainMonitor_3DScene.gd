@@ -249,7 +249,19 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									var box: BoxMesh = plate.mesh as BoxMesh
 									var half_x = box.size.x * 0.5
 									var half_z = box.size.z * 0.5
-									var local: Vector3 = plate.to_local(hit_pos)
+									# Project the view ray onto the plate's Z level for precise Z matching
+									var rq: PhysicsRayQueryParameters3D = bm_input_event.get_ray_query()
+									var ray_from: Vector3 = rq.from
+									var ray_to: Vector3 = rq.to
+									var z_plate: float = plate.global_position.z
+									var z_dir: float = ray_to.z - ray_from.z
+									if abs(z_dir) < 0.0001:
+										continue
+									var t: float = (z_plate - ray_from.z) / z_dir
+									if t < 0.0 or t > 1.0:
+										continue
+									var projected: Vector3 = ray_from.lerp(ray_to, t)
+									var local: Vector3 = plate.global_transform.affine_inverse() * projected
 									if abs(local.x) <= half_x and abs(local.z) <= half_z:
 										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
 										break
