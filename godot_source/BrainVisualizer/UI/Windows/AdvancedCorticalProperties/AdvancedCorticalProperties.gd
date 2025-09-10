@@ -334,20 +334,30 @@ func _get_preview_position_for_cortical_area() -> Vector3i:
 					push_warning("AdvancedCorticalProperties: No brain monitor available for I/O area plate position calculation")
 					return _vector_position.current_vector
 				
-				# Get the brain region 3D object
+				# Get the brain region 3D object (with robust ID matching)
 				var brain_region_3d = brain_monitor._brain_region_visualizations_by_ID.get(child_region.region_ID)
+				if brain_region_3d == null:
+					for existing_id in brain_monitor._brain_region_visualizations_by_ID.keys():
+						if str(existing_id) == str(child_region.region_ID):
+							brain_region_3d = brain_monitor._brain_region_visualizations_by_ID[existing_id]
+							break
 				if brain_region_3d == null:
 					print("🔮 Brain region 3D not found for %s - using API coordinates" % child_region.friendly_name)
 					return _vector_position.current_vector
 				
 				# Generate I/O coordinates to get the plate position
 				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
-				var areas_to_search = io_coords.inputs if partial_mapping.is_region_input else io_coords.outputs
-				
-				for area_data in areas_to_search:
-					if area_data.area_id == cortical_area.cortical_ID:
-						print("🔮 Found plate coordinates for %s: %s" % [cortical_area.cortical_ID, area_data.new_coordinates])
-						return Vector3i(area_data.new_coordinates)
+				# Search inputs, then outputs, then conflicts to handle conflict-plate areas
+				var search_sets = [io_coords.inputs, io_coords.outputs, io_coords.conflicts]
+				for set_arr in search_sets:
+					for area_data in set_arr:
+						if area_data.area_id == cortical_area.cortical_ID:
+							print("🔮 Found plate coordinates (CENTER FEAGI) for %s: %s" % [cortical_area.cortical_ID, area_data.new_coordinates])
+							# Convert center FEAGI coords to lower-left-front FEAGI (renderer expects LFF)
+							var dims: Vector3i = _vector_dimensions_spin.current_vector
+							var center: Vector3i = Vector3i(area_data.new_coordinates)
+							var lff: Vector3i = Vector3i(center.x - dims.x / 2, center.y - dims.y / 2, center.z - dims.z / 2)
+							return lff
 	
 	# Not an I/O area, use regular API coordinates
 	print("🔮 Using API coordinates for non-I/O area %s" % cortical_area.cortical_ID)
