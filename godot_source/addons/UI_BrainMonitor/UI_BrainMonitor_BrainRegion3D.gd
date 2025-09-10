@@ -130,18 +130,18 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
 	var conflict_plate_size = _calculate_plate_size_for_areas(conflict_areas, "CONFLICT")
 	
-	# INPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
+	# INPUT PLATE: Areas start at plate FRONT edge (viewer side), extend inward (toward +Z in FEAGI, which is -Z in Godot)
 	var input_start_x = PLATE_SIDE_MARGIN  # Margin from left edge
 	var input_start_y = AREA_ABOVE_PLATE_GAP  # Margin from bottom edge  
-	var input_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
+	var input_start_z = PLATE_FRONT_BACK_MARGIN  # Positive margin inside the front edge
 	
-	# OUTPUT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI)
+	# OUTPUT PLATE: Areas start at plate FRONT edge, extend inward
 	var output_plate_x = input_plate_size.x + PLATE_GAP
 	var output_start_x = output_plate_x + PLATE_SIDE_MARGIN
 	var output_start_y = AREA_ABOVE_PLATE_GAP
 	var output_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
 	
-	# CONFLICT PLATE: Areas start at plate FRONT edge (region Z), extend inward (+Z in FEAGI) 
+	# CONFLICT PLATE: Areas start at plate FRONT edge, extend inward 
 	var conflict_plate_x = output_plate_x + output_plate_size.x + PLATE_GAP
 	var conflict_start_x = conflict_plate_x + PLATE_SIDE_MARGIN
 	var conflict_start_y = AREA_ABOVE_PLATE_GAP
@@ -1532,8 +1532,9 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	var brain_region_coords = _representing_region.coordinates_3D
 	var brain_region_world_pos = Vector3(brain_region_coords.x, brain_region_coords.y, -brain_region_coords.z)
 	
-	# Calculate desired world position: brain_region_world + relative_offset
-	var desired_world_pos = brain_region_world_pos + new_position
+	# Calculate desired world position: apply FEAGI→Godot transform
+	# X, Y add normally; Z must be inverted so areas sit INSIDE the plate (behind the front edge)
+	var desired_world_pos = brain_region_world_pos + Vector3(new_position.x, new_position.y, -new_position.z)
 	
 	# Container position relative to brain region (from _create_containers)
 	var container_offset: Vector3
