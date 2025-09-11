@@ -8,7 +8,7 @@ edition = "2021"
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 
 # FEAGI data serialization library
-feagi_data_serialization = { git = "https://github.com/feagi/feagi-data-processing", branch = "staging" }
+feagi_data_serialization = "0.0.50-beta.18"
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }
