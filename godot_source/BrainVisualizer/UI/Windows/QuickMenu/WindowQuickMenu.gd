@@ -61,7 +61,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
 			if !area.can_exist_in_subregion:
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Brain Region"
+				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Circuit"
 			if area is MemoryCorticalArea:
 				quick_connect_CA_N_button.visible = false
 				quick_connect_N_CA_button.visible = false
@@ -74,10 +74,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 			quick_connect_CA_N_button.visible = false
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
-			details_button.tooltip_text = "View Brain Region Details"
-			open_3d_tab_button.tooltip_text = "Open Brain Region in 3D Tab"
-			move_to_region_button.tooltip_text = "Add to a Brain Region..."
-			delete_button.tooltip_text = "Delete this Brain Region..."
+			details_button.tooltip_text = "View Circuit Details"
+			open_3d_tab_button.tooltip_text = "Open Circuit in 3D Tab"
+			move_to_region_button.tooltip_text = "Add to a Circuit..."
+			delete_button.tooltip_text = "Delete this Circuit..."
 			
 			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
 			if _selection.size() == 0:

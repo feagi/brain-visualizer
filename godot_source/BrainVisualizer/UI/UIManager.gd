@@ -103,15 +103,15 @@ func FEAGI_confirmed_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Enabling FEAGI UI elements now that genome is confirmed")
 	top_bar.toggle_buttons_interactability(true)
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Checking if root brain region is available...")
+	print("UIMANAGER: [3D_SCENE_DEBUG] Checking if Main circuit is available...")
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
-		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No root region detected - 3D scene cannot initialize!")
-		push_error("UI: Unable to init root region for CB and BM since no root region was detected!")
+		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No Main circuit detected - 3D scene cannot initialize!")
+		push_error("UI: Unable to init Main circuit for CB and BM since none was detected!")
 		return
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Root region available - proceeding with initialization")
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Main circuit available - proceeding with initialization")
 	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	print("UIMANAGER: [3D_SCENE_DEBUG] Root region details: ", root_region)
+	print("UIMANAGER: [3D_SCENE_DEBUG] Main circuit details: ", root_region)
 	
 	var initial_tabs: Array[Control]
 	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Circuit Builder...")
@@ -120,7 +120,7 @@ func FEAGI_confirmed_genome() -> void:
 	cb.setup(root_region)
 	
 	initial_tabs = [cb]
-	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up root UI view...")
+	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up Main circuit UI view...")
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
@@ -145,7 +145,7 @@ func FEAGI_confirmed_genome() -> void:
 		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: Failed to get brain monitor UI component!")
 		return
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with root region...")
+	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with Main circuit...")
 	brain_monitor.setup(root_region)
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	temp_root_bm = brain_monitor

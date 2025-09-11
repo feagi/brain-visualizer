@@ -1,7 +1,7 @@
 extends BaseDraggableWindow
 class_name WindowViewBrainRegions
 
-const WINDOW_NAME: StringName = "view_brain_regions"
+const WINDOW_NAME: StringName = "view_circuits"
 const ITEM_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Brain_Regions/WindowViewBrainRegionItem.tscn")
 
 var _scroll_section: ScrollSectionGenericWithFilter

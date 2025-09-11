@@ -22,7 +22,7 @@ expand_mode = 1
 
 [node name="Label" type="Label" parent="BrainRegionsList/HBoxContainer"]
 theme_type_variation = &"Label_Header"
-text = "Brain Regions"
+text = "Circuits"
 
 [node name="TextureButton_BrainRegions" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)

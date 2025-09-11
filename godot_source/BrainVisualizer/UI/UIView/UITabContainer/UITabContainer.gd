@@ -131,7 +131,7 @@ func get_CB_tabs() -> Array[CircuitBuilder]:
 			output.append(child as CircuitBuilder)
 	return output
 
-## Returns true if the open tab is representing the root region
+## Returns true if the open tab is representing the Main circuit
 func is_current_top_view_root_region() -> bool:
 	var top_control = get_current_tab_control()
 	if top_control is CircuitBuilder:
@@ -147,7 +147,7 @@ func does_contain_CB_of_region(searching_region: BrainRegion) -> bool:
 				return true
 	return false
 
-## Returns true if there is a CB of the root region as a tab here
+## Returns true if there is a CB of the Main circuit as a tab here
 func does_contain_root_region_CB() -> bool:
 	return does_contain_CB_of_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
 

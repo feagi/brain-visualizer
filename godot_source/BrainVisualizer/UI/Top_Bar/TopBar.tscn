@@ -71,14 +71,14 @@ expand_mode = 1
 [node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
-text = "Brain Regions"
+text = "Circuits"
 
 [node name="TextureButton_BrainRegions" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Add Brain Region..."
+tooltip_text = "Add Circuit..."
 texture_normal = ExtResource("4_e2mvc")
 texture_pressed = ExtResource("5_etpv8")
 texture_hover = ExtResource("6_fkuh3")
