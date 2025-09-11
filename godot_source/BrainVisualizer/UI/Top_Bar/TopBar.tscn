@@ -28,6 +28,7 @@
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 [ext_resource type="Texture2D" uid="uid://dedyobqpiapjq" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00_C.png" id="21_n6kq0"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
 
 [node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
@@ -51,6 +52,39 @@ theme_type_variation = &"HBoxContainer_farther"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
+
+[node name="BrainRegionsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_o4dth")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("26_brain_regions_icon")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Brain Regions"
+
+[node name="TextureButton_BrainRegions" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Add Brain Region..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
 
 [node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -290,6 +324,8 @@ script = ExtResource("7_g1qxj")
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList" to="." method="_open_brain_regions"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions" to="." method="_open_create_brain_region"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList" to="." method="_open_neuron_morphologies"]

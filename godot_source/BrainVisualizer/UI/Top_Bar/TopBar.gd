@@ -64,6 +64,8 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 		return
 	print("TOPBAR: Setting pressability to %s" % pressable)
 	_refresh_rate_field.editable = pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList.disabled = !pressable
@@ -126,6 +128,14 @@ func _open_cortical_areas() -> void:
 
 func _open_create_cortical() -> void:
 	BV.WM.spawn_create_cortical()
+func _open_brain_regions() -> void:
+	# Placeholder: open regions manager/view when implemented
+	BV.WM.spawn_brain_regions_view()
+
+func _open_create_brain_region() -> void:
+	# Placeholder: open create brain region flow when implemented
+	BV.WM.spawn_create_brain_region()
+
 	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
 func _open_neuron_morphologies() -> void:
