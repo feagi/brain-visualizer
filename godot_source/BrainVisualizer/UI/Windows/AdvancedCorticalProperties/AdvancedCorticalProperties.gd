@@ -453,7 +453,8 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 	# For I/O areas, when dimensions change, the plate position might change too
 	# Recalculate the preview position to ensure it stays on the plate
 	var updated_plate_pos = _get_preview_position_for_cortical_area()
-	_preview.set_new_position(updated_plate_pos)
+	# Host/tab preview must stay at the area's actual FEAGI LFF position
+	_preview.set_new_position(_vector_position.current_vector)
 	print("🔮 Updated I/O area preview position after dimension change: %s" % updated_plate_pos)
 	# Apply per-BM updated positions to auxiliary previews
 	for aux in _aux_previews:
