@@ -18,6 +18,7 @@ var representing_region: BrainRegion:
 var _node_3D_root: Node3D
 var _pancake_cam: UI_BrainMonitor_PancakeCamera
 var _UI_layer_for_BM: UI_BrainMonitor_Overlay = null
+var _combo: BrainObjectsCombo = null
 
 
 var _representing_region: BrainRegion
@@ -66,20 +67,19 @@ func _ready() -> void:
 				subviewport.world_3d = _create_world3d_with_environment()
 		
 		_world_3D = _pancake_cam.get_world_3d()
-	
-func _on_container_mouse_entered() -> void:
-	if _pancake_cam:
-		_pancake_cam.set_mouse_hover_state(true)
 
-func _on_container_mouse_exited() -> void:
-	if _pancake_cam:
-		_pancake_cam.set_mouse_hover_state(false)
+	# Add the context-aware brain objects combo to the overlay top-left
+	if _UI_layer_for_BM:
+		var combo_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
+		_combo = combo_scene.instantiate()
+		_UI_layer_for_BM.add_child(_combo)
+		_combo.set_3d_context(self, _representing_region)
 
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	name = "BM_" + region.region_ID
-
+	
 	print("BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
 	
 
@@ -157,6 +157,18 @@ func setup(region: BrainRegion) -> void:
 	if FeagiCore.feagi_local_cache:
 		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
 		# print("BrainMonitor 3D Scene: 🔗 CONNECTED to cache reload signal for global connection refresh")  # Suppressed - causes output overflow
+
+	# Update combo context after setup has region
+	if _combo:
+		_combo.set_3d_context(self, _representing_region)
+
+func _on_container_mouse_entered() -> void:
+	if _pancake_cam:
+		_pancake_cam.set_mouse_hover_state(true)
+
+func _on_container_mouse_exited() -> void:
+	if _pancake_cam:
+		_pancake_cam.set_mouse_hover_state(false)
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()

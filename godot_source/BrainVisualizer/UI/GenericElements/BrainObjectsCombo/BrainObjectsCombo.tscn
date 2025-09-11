@@ -1,0 +1,52 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_icon_region"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="4_icon_area"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_plus_s"]
+
+[node name="BrainObjectsCombo" type="HBoxContainer"]
+script = ExtResource("1_script")
+
+[node name="BrainRegionsList" type="PanelContainer" parent="."]
+script = ExtResource("2_basebtn")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BrainRegionsList"]
+
+[node name="TextureRect" type="TextureRect" parent="BrainRegionsList/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+texture = ExtResource("3_icon_region")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="BrainRegionsList/HBoxContainer"]
+theme_type_variation = &"Label_Header"
+text = "Brain Regions"
+
+[node name="TextureButton_BrainRegions" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(32, 32)
+texture_normal = ExtResource("5_plus_s")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="CorticalAreasList" type="PanelContainer" parent="."]
+script = ExtResource("2_basebtn")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CorticalAreasList"]
+
+[node name="TextureRect" type="TextureRect" parent="CorticalAreasList/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+texture = ExtResource("4_icon_area")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="CorticalAreasList/HBoxContainer"]
+theme_type_variation = &"Label_Header"
+text = "Cortical Areas"
+
+[node name="TextureButton_Cortical" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(32, 32)
+texture_normal = ExtResource("5_plus_s")
+ignore_texture_size = true
+stretch_mode = 0
+
+
