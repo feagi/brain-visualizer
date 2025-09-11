@@ -123,11 +123,7 @@ func _view_selected(new_state: TempSplit.STATES) -> void:
 	request_UI_mode.emit(new_state)
 
 func _open_inputs() -> void:
-	BV.WM.spawn_cortical_view()
-	# After opening, filter to IPU if the window supports it
-	var win = BV.WM.loaded_windows.get("view_cortical", null)
-	if win != null and win.has_method("setup_filtered"):
-		win.setup_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	BV.WM.spawn_cortical_view_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
 func _open_create_input() -> void:
 	BV.WM.spawn_create_cortical()
@@ -144,10 +140,7 @@ func _open_create_brain_region() -> void:
 #VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
 func _open_outputs() -> void:
-	BV.WM.spawn_cortical_view()
-	var win2 = BV.WM.loaded_windows.get("view_cortical", null)
-	if win2 != null and win2.has_method("setup_filtered"):
-		win2.setup_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	BV.WM.spawn_cortical_view_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
 func _open_create_output() -> void:
 	BV.WM.spawn_create_cortical()

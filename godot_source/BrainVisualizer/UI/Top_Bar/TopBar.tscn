@@ -3,13 +3,14 @@
 [ext_resource type="Script" uid="uid://yg0uidt8aocq" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://cmd2qum2418ya" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
+[ext_resource type="Texture2D" uid="uid://cmd2qum2418ya" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="3_x3r8j"]
 [ext_resource type="Texture2D" uid="uid://b4jkpvgo7fes3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
 [ext_resource type="Texture2D" uid="uid://dm7j5k1l27tvy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
 [ext_resource type="Texture2D" uid="uid://btuaycki4ux0h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
 [ext_resource type="Texture2D" uid="uid://df4tfd8cxsr4c" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
 [ext_resource type="Texture2D" uid="uid://wuvsw5nevytt" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
+[ext_resource type="Texture2D" uid="uid://bxample123456" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_output"]
 [ext_resource type="Texture2D" uid="uid://utixcswkpwmx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="Texture2D" uid="uid://vaefjkam3ann" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
@@ -131,7 +132,7 @@ custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-texture = ExtResource("8_cdeim")
+texture = ExtResource("8_output")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]

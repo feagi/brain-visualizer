@@ -91,6 +91,10 @@ func spawn_cortical_view_with_context(context_region: BrainRegion, on_focus: Cal
 	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_PREFAB_CORTICAL_VIEW, WindowViewCorticalArea.WINDOW_NAME) as WindowViewCorticalArea
 	view_cortical.setup_with_context(context_region, on_focus)
 
+func spawn_cortical_view_filtered(type_filter: int) -> void:
+	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_PREFAB_CORTICAL_VIEW, WindowViewCorticalArea.WINDOW_NAME) as WindowViewCorticalArea
+	view_cortical.setup_filtered(type_filter)
+
 func spawn_select_genome_object(view_config: SelectGenomeObjectSettings) -> WindowSelectGenomeObject:
 	var select_genome_object: WindowSelectGenomeObject = _default_spawn_window(_PREFAB_SELECT_GENOME_OBJECT, WindowSelectGenomeObject.WINDOW_NAME) as WindowSelectGenomeObject
 	select_genome_object.setup(view_config)
