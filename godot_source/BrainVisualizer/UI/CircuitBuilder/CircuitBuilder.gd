@@ -389,7 +389,8 @@ func _center_on_graph_element(element: GraphElement) -> void:
 	var node_px: Vector2 = element.size + Vector2(64, 64) # padding margin
 	var fit_zoom_x: float = viewport_px.x / max(node_px.x, 1.0)
 	var fit_zoom_y: float = viewport_px.y / max(node_px.y, 1.0)
-	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.8 # zoom out 20% to ensure visibility
+	# Zoom out aggressively so the chosen node is clearly visible within split views
+	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.3 # zoom out 70%
 	# Clamp to GraphEdit zoom limits if available
 	var min_z: float = 0.2
 	var max_z: float = 2.0
