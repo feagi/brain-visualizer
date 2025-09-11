@@ -25,6 +25,26 @@ var _connection_curves: Array[Node3D] = []  # Store all connection curve nodes
 var _are_connections_visible: bool = false
 var _pulse_tweens: Array[Tween] = []  # Store pulse animation tweens
 
+# Distance-based scaling for pulse spheres (flow animation)
+const PULSE_DISTANCE_SCALE_ENABLED: bool = true
+const PULSE_DISTANCE_REF: float = 50.0
+const PULSE_DISTANCE_MIN_SCALE: float = 0.7
+const PULSE_DISTANCE_MAX_SCALE: float = 5.0
+
+## Scale a pulse sphere based on distance to the active camera to keep visibility at range
+func _apply_distance_scale_to_pulse(pulse_sphere: MeshInstance3D) -> void:
+	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null:
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return
+	var dist: float = cam.global_position.distance_to(pulse_sphere.global_position)
+	var s: float = clamp(dist / PULSE_DISTANCE_REF, PULSE_DISTANCE_MIN_SCALE, PULSE_DISTANCE_MAX_SCALE)
+	pulse_sphere.scale = Vector3(s, s, s)
+
 
 func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	_representing_cortial_area = defined_cortical_area
@@ -823,6 +843,8 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		# Start pulse at beginning of curve
 		pulse_sphere.position = curve_points[0]
 		curve_node.add_child(pulse_sphere)
+		# Initial distance-based scaling
+		_apply_distance_scale_to_pulse(pulse_sphere)
 		
 		# Create animation tween
 		var pulse_tween = create_tween()
@@ -850,6 +872,8 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 					pulse_sphere.position = current_point.lerp(next_point, local_progress)
 				else:
 					pulse_sphere.position = curve_points[-1]  # End point
+				# Update size relative to camera distance while moving
+				_apply_distance_scale_to_pulse(pulse_sphere)
 				
 				# Pulse the glow intensity
 				var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 100.0) * 1.5
@@ -1047,6 +1071,8 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		# Start pulse at beginning of loop
 		pulse_sphere.position = loop_points[0]
 		loop_node.add_child(pulse_sphere)
+		# Initial distance-based scaling
+		_apply_distance_scale_to_pulse(pulse_sphere)
 		
 		# Create animation tween
 		var pulse_tween = create_tween()
@@ -1074,6 +1100,8 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 					pulse_sphere.position = current_point.lerp(next_point, local_progress)
 				else:
 					pulse_sphere.position = loop_points[0]  # Back to start
+				# Update size relative to camera distance while moving
+				_apply_distance_scale_to_pulse(pulse_sphere)
 				
 				# Pulse the glow intensity
 				var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 80.0) * 1.5
