@@ -31,6 +31,10 @@ func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	_step_1_pick_type()
 
+func setup_with_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
+	_setup_base_window(WINDOW_NAME)
+	_step_2_set_details(cortical_type)
+
 func _step_1_pick_type() -> void:
 	_IOPU_definition.visible = false
 	_custom_definition.visible = false

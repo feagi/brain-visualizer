@@ -126,7 +126,7 @@ func _open_inputs() -> void:
 	BV.WM.spawn_cortical_view_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
 func _open_create_input() -> void:
-	BV.WM.spawn_create_cortical()
+	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
 func _open_brain_regions() -> void:
 	# Placeholder: open circuits manager/view when implemented
@@ -143,7 +143,7 @@ func _open_outputs() -> void:
 	BV.WM.spawn_cortical_view_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
 func _open_create_output() -> void:
-	BV.WM.spawn_create_cortical()
+	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
 func _open_neuron_morphologies() -> void:
 	BV.WM.spawn_manager_morphology()
