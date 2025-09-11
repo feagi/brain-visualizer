@@ -41,7 +41,12 @@ func setup_with_context_filtered(context_region: BrainRegion, on_focus: Callable
 	setup_with_context(context_region, on_focus)
 
 func _press_add_cortical_area() -> void:
-	BV.WM.spawn_create_cortical()
+	if _type_filter != -1:
+		# We have a type filter, so directly create that type
+		BV.WM.spawn_create_cortical_with_type(_type_filter)
+	else:
+		# No filter, show the type selection dialog
+		BV.WM.spawn_create_cortical()
 	close_window()
  
 func _cortical_area_added(cortical_area: AbstractCorticalArea) -> void:
