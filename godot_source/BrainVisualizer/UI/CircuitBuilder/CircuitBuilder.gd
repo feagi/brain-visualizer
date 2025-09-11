@@ -384,12 +384,27 @@ func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	_center_on_graph_element(node)
 
 func _center_on_graph_element(element: GraphElement) -> void:
-	# Center the GraphEdit view on the element and apply a modest zoom
-	var rect: Rect2 = element.get_global_rect()
-	var center: Vector2 = rect.get_center()
-	# Pan
-	scroll_offset = center - (size / 2.0)
-	# Auto-zoom to fit element comfortably
-	# GraphEdit has no direct zoom API; if available in theme/custom, adjust here.
-	# As a simple approximation, we can nudge scroll and rely on user zoom.
+	# Determine a target zoom to fit the node comfortably in the current viewport, then zoom out a bit
+	var viewport_px: Vector2 = size
+	var node_px: Vector2 = element.size + Vector2(64, 64) # padding margin
+	var fit_zoom_x: float = viewport_px.x / max(node_px.x, 1.0)
+	var fit_zoom_y: float = viewport_px.y / max(node_px.y, 1.0)
+	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.8 # zoom out 20% to ensure visibility
+	# Clamp to GraphEdit zoom limits if available
+	var min_z: float = 0.2
+	var max_z: float = 2.0
+	if "min_zoom" in self:
+		min_z = self.min_zoom
+	if "max_zoom" in self:
+		max_z = self.max_zoom
+	target_zoom = clamp(target_zoom, min_z, max_z)
+	self.zoom = target_zoom
+
+	# Compute node center in content units (position_offset is content units; convert size from pixels to content)
+	var node_center_local: Vector2 = element.position_offset + (element.size / (2.0 * max(self.zoom, 0.0001)))
+
+	# Convert viewport pixels to content units based on zoom
+	var viewport_content_units: Vector2 = viewport_px / max(self.zoom, 0.0001)
+	# Center scroll so node center is in the middle of the visible area
+	scroll_offset = node_center_local - (viewport_content_units / 2.0)
 #endregion
