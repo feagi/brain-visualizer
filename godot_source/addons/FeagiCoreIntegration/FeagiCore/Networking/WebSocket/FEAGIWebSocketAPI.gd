@@ -43,28 +43,63 @@ var _case_mapping_cache: Dictionary = {}  # lowercase_id -> actual_cached_id
 
 # Rust-based high-performance deserializer
 var _rust_deserializer = null
+const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
+
+# Queue Type 11 messages on Web until WASM is ready
+var _pending_type11: Array = []
+var _waiting_for_wasm: bool = false
+
 
 func _ready():
-	# Initialize Rust-based high-performance deserializer (REQUIRED)
-	if ClassDB.class_exists("FeagiDataDeserializer"):
-		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
-		if _rust_deserializer:
-			print("🦀 FEAGI Rust deserializer initialized successfully!")
-		else:
-			push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
-			set_process(false)
-			return
+	# Initialize platform-specific decoding path
+	if OS.has_feature("web"):
+		print("🌐 Web build detected: using WASM decoder; native GDExtension is unavailable on Web.")
+		# Kick off WASM loader early so it's ready by the time data arrives
+		WASMDecoder.ensure_wasm_loaded()
 	else:
-		push_error("🦀 CRITICAL: FeagiDataDeserializer class not found! Cannot process WebSocket data without Rust extension.")
-		push_error("🦀 Please ensure the feagi_rust_deserializer addon is properly installed and the shared library is built.")
-		set_process(false)  # Disable processing if Rust deserializer fails
-		return
+		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
+		if ClassDB.class_exists("FeagiDataDeserializer"):
+			_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+			if _rust_deserializer:
+				print("🦀 FEAGI Rust deserializer initialized successfully!")
+			else:
+				push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
+				set_process(false)
+				return
+		else:
+			push_error("🦀 CRITICAL: FeagiDataDeserializer class not found! Cannot process WebSocket data without Rust extension.")
+			push_error("🦀 Please ensure the feagi_rust_deserializer addon is properly installed and the shared library is built.")
+			set_process(false)  # Disable processing if Rust deserializer fails
+			return
 	
 	# Reset missing area tracking when genome reloads
 	if FeagiCore.feagi_local_cache:
 		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
 
 func _process(_delta: float):
+	# On Web, flush queued Type 11 packets once WASM is ready
+	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
+		# Process all queued before polling socket
+		for i in _pending_type11.size():
+			var qbytes: PackedByteArray = _pending_type11[i]
+			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
+			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
+				for cortical_id in decoded_result.areas.keys():
+					var area_data = decoded_result.areas[cortical_id]
+					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
+					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
+					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
+					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
+					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					if area:
+						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+					else:
+						_handle_missing_cortical_area(cortical_id)
+	# Clear queue after processing
+	if OS.has_feature("web") and WASMDecoder.is_wasm_ready():
+		_pending_type11.clear()
+
 	_socket.poll()
 	match(_socket.get_ready_state()):
 		WebSocketPeer.State.STATE_CONNECTING:
@@ -127,6 +162,17 @@ func connect_websocket() -> void:
 		push_error("FEAGI WS: No address specified!")
 	_is_purposfully_disconnecting = false
 	_retry_count = 0
+	# On Web, ensure WASM is initialized before opening the socket to avoid early packets
+	if OS.has_feature("web") and not WASMDecoder.is_wasm_ready():
+		WASMDecoder.ensure_wasm_loaded()
+		if not _waiting_for_wasm:
+			_waiting_for_wasm = true
+			var timer := get_tree().create_timer(0.1)
+			timer.timeout.connect(func():
+				_waiting_for_wasm = false
+				connect_websocket()
+			)
+		return
 	set_process(true)
 	_reconnect_websocket()
 
@@ -227,37 +273,56 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			# AreaHeaders: [CorticalID:6][DataOffset:4][DataLength:4] per area = 14 bytes per area
 			# NeuronData: [X array][Y array][Z array][P array] per area
 			
-			# Use Rust-based high-performance deserializer (REQUIRED)
-			if _rust_deserializer == null:
-				push_error("🦀 CRITICAL: Rust deserializer is null! Cannot process Type 11 data.")
-				return
-			
-			var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
-			
-			if !decoded_result.success:
-				print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
-				return
-			
-			# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
-			for cortical_id in decoded_result.areas.keys():
-				var area_data = decoded_result.areas[cortical_id]
-				
-				# Emit bulk arrays directly - ZERO conversion overhead!
-				FEAGI_sent_direct_neural_points_bulk.emit(
-					cortical_id,
-					area_data.x_array,    # PackedInt32Array - direct from decoder
-					area_data.y_array,    # PackedInt32Array - direct from decoder  
-					area_data.z_array,    # PackedInt32Array - direct from decoder
-					area_data.p_array     # PackedFloat32Array - direct from decoder
-				)
-				
-				# Update cortical area with bulk arrays
-				var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-				
-				if area:
-					area.FEAGI_set_direct_points_bulk_data(area_data.x_array, area_data.y_array, area_data.z_array, area_data.p_array)
-				else:
-					_handle_missing_cortical_area(cortical_id)
+			if OS.has_feature("web"):
+				if not WASMDecoder.is_wasm_ready():
+					# Queue until WASM is ready and return early
+					_pending_type11.append(bytes.duplicate())
+					return
+				var decoded_result: Dictionary = WASMDecoder.decode_type_11(bytes)
+				if !decoded_result or !decoded_result.has("success") or decoded_result.success != true:
+					var err = decoded_result.get("error", "unknown")
+					# Suppress noisy logs while WASM is still loading
+					if err == "WASM not ready" or err == "WASM not initialized":
+						return
+					print("   ❌ ERROR: Type 11 WASM decode failed: ", err)
+					return
+				# Process each decoded cortical area with DIRECT bulk arrays
+				for cortical_id in decoded_result.areas.keys():
+					var area_data = decoded_result.areas[cortical_id]
+					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
+					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
+					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
+					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
+					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					if area:
+						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+					else:
+						_handle_missing_cortical_area(cortical_id)
+			else:
+				# Use Rust-based high-performance deserializer (REQUIRED on desktop)
+				if _rust_deserializer == null:
+					push_error("🦀 CRITICAL: Rust deserializer is null! Cannot process Type 11 data.")
+					return
+				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
+				if !decoded_result.success:
+					print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
+					return
+				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
+				for cortical_id in decoded_result.areas.keys():
+					var area_data = decoded_result.areas[cortical_id]
+					FEAGI_sent_direct_neural_points_bulk.emit(
+						cortical_id,
+						area_data.x_array,
+						area_data.y_array,
+						area_data.z_array,
+						area_data.p_array
+					)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					if area:
+						area.FEAGI_set_direct_points_bulk_data(area_data.x_array, area_data.y_array, area_data.z_array, area_data.p_array)
+					else:
+						_handle_missing_cortical_area(cortical_id)
 
 		_: # Unknown
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")

@@ -45,13 +45,7 @@ if [ -f "target/debug/libfeagi_data_deserializer.dylib" ]; then
     cp "target/debug/libfeagi_data_deserializer.dylib" "$GODOT_ADDON_DIR/target/debug/"
 fi
 
-# Copy the GDExtension configuration to project root (where Godot expects it)
-cp "feagi_data_deserializer.gdextension" "../../godot_source/"
-
-# Also copy the library directly to project root for simpler loading
-cp "target/release/libfeagi_data_deserializer.dylib" "../../godot_source/"
-
-# Remove any old library files in the wrong location
+# Remove any old library files in the wrong location and avoid root copies
 rm -f "$GODOT_ADDON_DIR/libfeagi_data_deserializer.dylib"
 
 echo "✅ Files copied successfully!"

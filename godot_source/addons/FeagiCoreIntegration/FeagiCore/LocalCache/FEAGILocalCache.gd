@@ -49,8 +49,12 @@ func _init():
 
 ## Given several summary datas from FEAGI, we can build the entire cache at once
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
-	
-	print("\n🔄 FEAGI CACHE: Replacing the ENTIRE local cached genome! (called from: %s)" % get_stack()[1].source)
+
+	var _stack: Array = get_stack()
+	var _caller: String = "unknown"
+	if _stack.size() > 1 and _stack[1] is Dictionary and (_stack[1] as Dictionary).has("source"):
+		_caller = String((_stack[1] as Dictionary)["source"])
+	print("\n🔄 FEAGI CACHE: Replacing the ENTIRE local cached genome! (called from: %s)" % _caller)
 	cache_about_to_reload.emit()
 	clear_whole_genome()
 	
@@ -86,7 +90,11 @@ func _load_mapping_restrictions_async() -> void:
 
 ## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
 func clear_whole_genome() -> void:
-	print("\n🗑️ FEAGI CACHE: REMOVING the ENTIRE local cached genome! (called from: %s)" % get_stack()[1].source)
+	var _stack: Array = get_stack()
+	var _caller: String = "unknown"
+	if _stack.size() > 1 and _stack[1] is Dictionary and (_stack[1] as Dictionary).has("source"):
+		_caller = String((_stack[1] as Dictionary)["source"])
+	print("\n🗑️ FEAGI CACHE: REMOVING the ENTIRE local cached genome! (called from: %s)" % _caller)
 	mapping_data.FEAGI_delete_all_mappings()
 	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	morphologies.update_morphology_cache_from_summary({})
