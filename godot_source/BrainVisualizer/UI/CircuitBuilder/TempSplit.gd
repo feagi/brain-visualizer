@@ -17,7 +17,8 @@ var initial_y_offset: int
 
 func _ready() -> void:
 	initial_y_offset = position.y
-	split_offset = BV.UI.screen_size.x * .6
+	# Default left offset at 75% so right pane is 25%
+	split_offset = int(BV.UI.screen_size.x * 0.75)
 	BV.UI.screen_size_changed.connect(_screen_size_change)
 	_screen_size_change(BV.UI.screen_size)
 
@@ -36,7 +37,8 @@ func set_view(state: STATES) -> void:
 			visible = true
 			dragger_visibility =SplitContainer.DRAGGER_VISIBLE
 			vertical = false
-			#split_offset = int(BV.UI.screen_size.y / 2.0)
+			# Ensure left offset = 75% when opening horizontally
+			split_offset = int(BV.UI.screen_size.x * 0.75)
 			collapsed = false
 		STATES.CB_VERTICAL:
 			visible = true
@@ -51,8 +53,8 @@ func _screen_size_change(new_screen_size: Vector2) -> void:
 	size = new_screen_size - Vector2(0,initial_y_offset)
 	match(_current_state):
 		STATES.CB_HORIZONTAL:
-			ratio = float(split_offset) / old_size.x
-			split_offset = int(ratio * size.x)
+			# Maintain left offset = 75% so right pane ~25%
+			split_offset = int(size.x * 0.75)
 		STATES.CB_VERTICAL:
 			ratio = float(split_offset) / old_size.y
 			split_offset = int(ratio * size.y)
