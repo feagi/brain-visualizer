@@ -12,6 +12,16 @@ static func ensure_wasm_loaded() -> bool:
 	if not is_web_platform():
 		return false
 	# Idempotent loader: injects <script> once and initializes wasm module
+	# Resolve wasm dir from ProjectSettings in GDScript and expose to JS via window
+	var wasm_dir_variant = ProjectSettings.get_setting("application/wasm_dir")
+	var wasm_dir: String = String(wasm_dir_variant) if wasm_dir_variant != null else "wasm/"
+	if wasm_dir == "":
+		wasm_dir = "wasm/"
+	if not wasm_dir.ends_with("/"):
+		wasm_dir += "/"
+	var win = JavaScriptBridge.get_interface("window")
+	if win:
+		win.set("__feagi_wasm_dir", wasm_dir)
 	var ok = JavaScriptBridge.eval("""
 	(function(){
 		if (window.__feagi_wasm_ready) return true;
@@ -19,8 +29,8 @@ static func ensure_wasm_loaded() -> bool:
 			window.__feagi_wasm_loading = true;
 			var s = document.createElement('script');
 			var base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-			var wasmDir = ProjectSettings.get_setting('application/wasm_dir') || 'wasm/';
-			if (!wasmDir.endsWith('/')) wasmDir += '/';
+			var wasmDir = window.__feagi_wasm_dir || 'wasm/';
+			if (wasmDir[wasmDir.length - 1] !== '/') wasmDir += '/';
 			var jsUrl = base + wasmDir + 'feagi_wasm_processing.js';
 			var wasmUrl = base + wasmDir + 'feagi_wasm_processing_bg.wasm';
 			s.src = jsUrl;

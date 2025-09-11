@@ -16,6 +16,7 @@ run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 wasm_dir="wasm/"
+feagi/root_region_id="root"
 
 [autoload]
 

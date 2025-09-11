@@ -131,17 +131,25 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 ## Get information about the cache state
 #region Queries
 
+func _get_configured_root_id() -> StringName:
+	var rid = ProjectSettings.get_setting("feagi/root_region_id")
+	if rid == null or String(rid) == "":
+		return BrainRegion.ROOT_REGION_ID
+	return StringName(String(rid))
+
 ## Returns True if the root region is in the cache
 func is_root_available() -> bool:
-	return BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()
+	var root_id: StringName = _get_configured_root_id()
+	return root_id in _available_brain_regions.keys()
 
 
 ## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
 func get_root_region() -> BrainRegion:
-	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
+	var root_id: StringName = _get_configured_root_id()
+	if !(root_id in _available_brain_regions.keys()):
 		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
 		return null
-	return _available_brain_regions[BrainRegion.ROOT_REGION_ID]
+	return _available_brain_regions[root_id]
 
 ## Gets the path of regions that holds the common demoninator path between 2 regions
 ## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]

@@ -19,7 +19,7 @@ if [[ -z "$GODOT_BIN" ]]; then
 fi
 
 # Output path: arg1 or default matching export preset location
-OUT_PATH="${1:-$PROJECT_DIR/../playground/public/static/godot/index.html}"
+OUT_PATH="${1:-$PROJECT_DIR/../../playground/public/static/godot/index.html}"
 mkdir -p "$(dirname "$OUT_PATH")"
 
 # Rename the .gdextension to prevent early scan warnings
