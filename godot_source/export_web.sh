@@ -8,8 +8,9 @@ ADDON_DIR="$PROJECT_DIR/addons/feagi_rust_deserializer"
 GDE_FILE="$ADDON_DIR/feagi_data_deserializer.gdextension"
 GDE_FILE_OFF="$GDE_FILE.off"
 TMP_BASE="/tmp"
-TMP_STEM="feagi_rust_deserializer--temp.$(date +%s)"
+TMP_STEM="brainviz-export--temp.$(date +%s)"
 TMP_DIR="$TMP_BASE/$TMP_STEM"
+TMP_PROJ="$TMP_DIR/project"
 
 # Require explicit Godot binary path (no fallbacks)
 GODOT_BIN="${GODOT_BIN:-}"
@@ -22,36 +23,20 @@ fi
 OUT_PATH="${1:-$PROJECT_DIR/../../playground/public/static/godot/index.html}"
 mkdir -p "$(dirname "$OUT_PATH")"
 
-# Rename the .gdextension to prevent early scan warnings
-RENAMED=0
-if [[ -f "$GDE_FILE" ]]; then
-  echo "Temporarily renaming $GDE_FILE -> $GDE_FILE_OFF ..."
-  mv "$GDE_FILE" "$GDE_FILE_OFF"
-  RENAMED=1
-fi
-
-# Also move the entire addon directory out so it cannot be packed into the PCK
-MOVED=0
-if [[ -d "$ADDON_DIR" ]]; then
-  mkdir -p "$TMP_DIR"
-  echo "Temporarily moving addon dir to $TMP_DIR ..."
-  mv "$ADDON_DIR" "$TMP_DIR/"
-  MOVED=1
-fi
+# Create a clean temp project copy excluding the native addon entirely
+mkdir -p "$TMP_PROJ"
+echo "Creating temp export project at $TMP_PROJ (excluding native addon)..."
+rsync -a --delete \
+  --exclude "addons/feagi_rust_deserializer/**" \
+  "$PROJECT_DIR/" "$TMP_PROJ/"
 
 set +e
-"$GODOT_BIN" --headless --path "$PROJECT_DIR" --export-release "Web" "$OUT_PATH"
+"$GODOT_BIN" --headless --path "$TMP_PROJ" --export-release "Web" "$OUT_PATH"
 EXPORT_STATUS=$?
 set -e
 
-if [[ "$RENAMED" -eq 1 ]]; then
-  mv "$GDE_FILE_OFF" "$GDE_FILE"
-fi
-
-if [[ "$MOVED" -eq 1 ]]; then
-  mv "$TMP_DIR/feagi_rust_deserializer" "$PROJECT_DIR/addons/"
-  rmdir "$TMP_DIR" || true
-fi
+# Cleanup temp project
+rm -rf "$TMP_DIR"
 
 # Also copy wasm assets alongside index.html so the browser can fetch them
 OUT_DIR="$(dirname "$OUT_PATH")"

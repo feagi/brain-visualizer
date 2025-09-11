@@ -19,9 +19,9 @@ static func ensure_wasm_loaded() -> bool:
 		wasm_dir = "wasm/"
 	if not wasm_dir.ends_with("/"):
 		wasm_dir += "/"
-	var win = JavaScriptBridge.get_interface("window")
-	if win:
-		win.set("__feagi_wasm_dir", wasm_dir)
+	# Set window.__feagi_wasm_dir without calling non-existent 'set' on Window
+	var wasm_js = wasm_dir.replace("\\", "\\\\").replace("'", "\\'")
+	JavaScriptBridge.eval("window.__feagi_wasm_dir='" + wasm_js + "';")
 	var ok = JavaScriptBridge.eval("""
 	(function(){
 		if (window.__feagi_wasm_ready) return true;
@@ -73,7 +73,9 @@ static func decode_type_11(bytes: PackedByteArray) -> Dictionary:
 	# Convert to JS Uint8Array and call exported decoder wrapper
 	var js_u8 = JavaScriptBridge.create_object("Uint8Array", [bytes])
 	var win = JavaScriptBridge.get_interface("window")
-	if win and win.has_method("__feagi_decode_type_11"):
-		var js_result = win.call("__feagi_decode_type_11", js_u8)
-		return js_result if typeof(js_result) == TYPE_DICTIONARY else {}
+	if win:
+		var has = JavaScriptBridge.eval("typeof window.__feagi_decode_type_11 === 'function'")
+		if bool(has):
+			var js_result = win.call("__feagi_decode_type_11", js_u8)
+			return js_result if typeof(js_result) == TYPE_DICTIONARY else {}
 	return {"success": false, "error": "WASM not initialized", "areas": {}, "total_neurons": 0}
