@@ -44,6 +44,11 @@ func _ready() -> void:
 	_pancake_cam = $SubViewport/Center/PancakeCam
 	if _pancake_cam:
 		_pancake_cam.BM_input_events.connect(_process_user_input)
+		# Track mouse enter/exit on this container so keyboard actions (R) are scoped to hovered tab/viewport
+		if not mouse_entered.is_connected(_on_container_mouse_entered):
+			mouse_entered.connect(_on_container_mouse_entered)
+		if not mouse_exited.is_connected(_on_container_mouse_exited):
+			mouse_exited.connect(_on_container_mouse_exited)
 		
 		# Ensure SubViewport has a World3D with proper environment
 		var subviewport = $SubViewport as SubViewport
@@ -62,6 +67,14 @@ func _ready() -> void:
 		
 		_world_3D = _pancake_cam.get_world_3d()
 	
+func _on_container_mouse_entered() -> void:
+	if _pancake_cam:
+		_pancake_cam.set_mouse_hover_state(true)
+
+func _on_container_mouse_exited() -> void:
+	if _pancake_cam:
+		_pancake_cam.set_mouse_hover_state(false)
+
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region

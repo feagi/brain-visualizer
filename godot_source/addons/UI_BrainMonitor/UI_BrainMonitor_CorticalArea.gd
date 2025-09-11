@@ -803,15 +803,15 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		# Create bright pulsing material with different colors based on connection type
 		var pulse_material = StandardMaterial3D.new()
 		if is_inhibitory:
-			# Inhibitory pulses - Bright red/orange
-			pulse_material.albedo_color = Color(1.0, 0.5, 0.3, 0.8)  # Bright red-orange
-			pulse_material.emission_color = Color(1.0, 0.3, 0.1)
-			print("       🔴 Creating RED pulse for INHIBITORY connection")
+			# Inhibitory pulses - Bright white for better visibility
+			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
+			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+			print("       ⚪ Creating WHITE pulse for INHIBITORY connection")
 		else:
-			# Excitatory pulses - Bright lime/green
-			pulse_material.albedo_color = Color(0.3, 1.0, 0.3, 0.8)  # Bright lime
-			pulse_material.emission_color = Color(0.2, 1.0, 0.2)
-			print("       🟢 Creating GREEN pulse for EXCITATORY connection")
+			# Excitatory pulses - Bright white for better visibility
+			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
+			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+			print("       ⚪ Creating WHITE pulse for EXCITATORY connection")
 		
 		pulse_material.emission_enabled = true
 		pulse_material.emission_energy = 4.0
@@ -1032,15 +1032,15 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		pulse_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 		
 		if is_inhibitory:
-			# Inhibitory recursive - Dark red pulse
-			pulse_material.albedo_color = Color(0.8, 0.3, 0.3, 0.8)  # Dark red
-			pulse_material.emission_color = Color(0.8, 0.2, 0.2)
-			print("       🟤 Creating DARK RED pulse for INHIBITORY RECURSIVE connection")
+			# Inhibitory recursive - Bright white for visibility
+			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
+			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+			print("       ⚪ Creating WHITE pulse for INHIBITORY RECURSIVE connection")
 		else:
-			# Excitatory recursive - Bright purple pulse
-			pulse_material.albedo_color = Color(1.0, 0.5, 1.0, 0.8)  # Bright purple
-			pulse_material.emission_color = Color(1.0, 0.3, 1.0)
-			print("       🟣 Creating PURPLE pulse for EXCITATORY RECURSIVE connection")
+			# Excitatory recursive - Bright white to match inhibitory
+			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
+			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+			print("       ⚪ Creating WHITE pulse for EXCITATORY RECURSIVE connection")
 		
 		pulse_sphere.material_override = pulse_material
 		

@@ -49,6 +49,9 @@ var _initial_position: Vector3
 var _initial_euler_rotation: Vector3
 var _fps_velocity: float = FPS_DEFAULT_SPEED
 
+# Indicates whether the mouse cursor is currently hovering this camera's SubViewport
+var _is_mouse_hovering_viewport: bool = false
+
 var _mouse_position_when_any_click_started: Vector2 = Vector2(-1, -1)
 var _click_down_count: int = 0
 
@@ -60,6 +63,11 @@ func _ready() -> void:
 	_parent_viewport = get_viewport()
 	_initial_position = position
 	_initial_euler_rotation = rotation_degrees
+
+
+## Sets the hover state for this camera's SubViewport so we can scope keyboard actions like reset
+func set_mouse_hover_state(is_hovered: bool) -> void:
+	_is_mouse_hovering_viewport = is_hovered
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -174,7 +182,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				var dir: Vector3 = Vector3(0,0,0)
 
 				if Input.is_key_pressed(KEY_R):
-					reset_camera()
+					# Only reset if the mouse is currently over this SubViewport
+					if _is_mouse_hovering_viewport:
+						reset_camera()
 					return
 				if Input.is_action_pressed("forward"):
 					dir += Vector3(0,0,-1)
