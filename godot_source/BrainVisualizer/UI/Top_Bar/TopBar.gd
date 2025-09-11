@@ -66,10 +66,10 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 	_refresh_rate_field.editable = pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs.disabled = !pressable
 	
 	
 
@@ -122,22 +122,35 @@ func _user_on_burst_delay_change(new_refresh_rate_hz: float) -> void:
 func _view_selected(new_state: TempSplit.STATES) -> void:
 	request_UI_mode.emit(new_state)
 
-func _open_cortical_areas() -> void:
+func _open_inputs() -> void:
 	BV.WM.spawn_cortical_view()
-	#VisConfig.UI_manager.window_manager.spawn_cortical_view()
+	# After opening, filter to IPU if the window supports it
+	var win = BV.WM.loaded_windows.get("view_cortical", null)
+	if win != null and win.has_method("setup_filtered"):
+		win.setup_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
-func _open_create_cortical() -> void:
+func _open_create_input() -> void:
 	BV.WM.spawn_create_cortical()
+
 func _open_brain_regions() -> void:
-	# Placeholder: open regions manager/view when implemented
+	# Placeholder: open circuits manager/view when implemented
 	BV.WM.spawn_brain_regions_view()
 
 func _open_create_brain_region() -> void:
-	# Open create brain region window using root region as parent and no preselected objects
+	# Open create circuit window using main circuit as parent and no preselected objects
 	var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	BV.WM.spawn_create_region(parent_region, [])
 
-	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
+#VisConfig.UI_manager.window_manager.spawn_create_cortical()
+
+func _open_outputs() -> void:
+	BV.WM.spawn_cortical_view()
+	var win2 = BV.WM.loaded_windows.get("view_cortical", null)
+	if win2 != null and win2.has_method("setup_filtered"):
+		win2.setup_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+
+func _open_create_output() -> void:
+	BV.WM.spawn_create_cortical()
 
 func _open_neuron_morphologies() -> void:
 	BV.WM.spawn_manager_morphology()

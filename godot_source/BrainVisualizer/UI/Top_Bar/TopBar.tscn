@@ -86,14 +86,14 @@ texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="InputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 layout_mode = 2
 script = ExtResource("2_o4dth")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList"]
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -101,17 +101,50 @@ size_flags_vertical = 4
 texture = ExtResource("3_x3r8j")
 expand_mode = 1
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
-text = "Cortical Areas"
+text = "Inputs"
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="TextureButton_Inputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Add Brain Area..."
+tooltip_text = "Add Input..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="OutputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_o4dth")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("8_cdeim")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Outputs"
+
+[node name="TextureButton_Outputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Add Output..."
 texture_normal = ExtResource("4_e2mvc")
 texture_pressed = ExtResource("5_etpv8")
 texture_hover = ExtResource("6_fkuh3")
@@ -326,8 +359,10 @@ layout_mode = 2
 
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList" to="." method="_open_brain_regions"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions" to="." method="_open_create_brain_region"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList" to="." method="_open_inputs"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs" to="." method="_open_create_input"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList" to="." method="_open_outputs"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs" to="." method="_open_create_output"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList" to="." method="_open_neuron_morphologies"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton" to="." method="_open_create_morpology"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
