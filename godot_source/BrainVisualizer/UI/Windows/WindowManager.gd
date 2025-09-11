@@ -9,6 +9,7 @@ const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/W
 const _PREFAB_QUICK_CONNECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.tscn")
 const _PREFAB_QUICK_CONNECT_NEURON: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.tscn")
 const _PREFAB_CORTICAL_VIEW: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
+const _PREFAB_BRAIN_REGIONS_VIEW: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Brain_Regions/WindowViewBrainRegions.tscn")
 const _PREFAB_QUICK_MENU: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickMenu/WindowQuickMenu.tscn")
 const _PREFAB_CLONE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CloneCorticalArea/WindowCloneCorticalArea.tscn")
 const _PREFAB_IMPORT_AMALGAMATION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AmalgamationRequest/WindowAmalgamationRequest.tscn")
@@ -77,6 +78,10 @@ func spawn_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE, initial_sou
 func spawn_cortical_view() -> void:
 	var view_cortical: WindowViewCorticalArea = _default_spawn_window(_PREFAB_CORTICAL_VIEW, WindowViewCorticalArea.WINDOW_NAME) as WindowViewCorticalArea
 	view_cortical.setup()
+
+func spawn_brain_regions_view() -> void:
+	var view_regions: WindowViewBrainRegions = _default_spawn_window(_PREFAB_BRAIN_REGIONS_VIEW, WindowViewBrainRegions.WINDOW_NAME) as WindowViewBrainRegions
+	view_regions.setup()
 
 func spawn_select_genome_object(view_config: SelectGenomeObjectSettings) -> WindowSelectGenomeObject:
 	var select_genome_object: WindowSelectGenomeObject = _default_spawn_window(_PREFAB_SELECT_GENOME_OBJECT, WindowSelectGenomeObject.WINDOW_NAME) as WindowSelectGenomeObject
