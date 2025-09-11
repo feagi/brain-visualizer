@@ -1,11 +1,15 @@
+@tool
 extends EditorExportPlugin
 
 var _renamed: Array[String] = []
 
-func _supports_platform(platform: EditorExportPlatform) -> bool:
-	return platform.get_name() == "Web"
+func _supports_platform(_platform: EditorExportPlatform) -> bool:
+	# Avoid calling methods that may not exist; we handle gating by features in callbacks
+	return true
 
 func _export_begin(features: PackedStringArray, is_debug: bool, path: String, flags: int) -> void:
+	if not features.has("web"):
+		return
 	# Proactively rename native GDExtension files so the exporter doesn't scan them on Web
 	var candidates := ["res://addons/feagi_rust_deserializer/feagi_data_deserializer.gdextension"]
 	for p in candidates:
@@ -32,6 +36,8 @@ func _export_end() -> void:
 	_renamed.clear()
 
 func _export_file(path: String, type: String, features: PackedStringArray) -> void:
+	if not features.has("web"):
+		return
 	# Strip native GDExtension configs from Web exports to avoid warnings
 	if path.ends_with(".gdextension"):
 		skip() # do not include this file

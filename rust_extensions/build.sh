@@ -40,10 +40,10 @@ mkdir -p "$GODOT_ADDON_DIR/target/debug"
 # Copy the shared library to the target structure
 cp "target/release/libfeagi_data_deserializer.dylib" "$GODOT_ADDON_DIR/target/release/"
 
-# Also copy debug version if it exists
-if [ -f "target/debug/libfeagi_data_deserializer.dylib" ]; then
-    cp "target/debug/libfeagi_data_deserializer.dylib" "$GODOT_ADDON_DIR/target/debug/"
-fi
+# Build and copy debug library for editor use
+echo "🔨 Building Rust library (debug mode for editor)..."
+cargo build
+cp "target/debug/libfeagi_data_deserializer.dylib" "$GODOT_ADDON_DIR/target/debug/"
 
 # Remove any old library files in the wrong location and avoid root copies
 rm -f "$GODOT_ADDON_DIR/libfeagi_data_deserializer.dylib"
@@ -53,6 +53,27 @@ echo "✅ Files copied successfully!"
 # Display file sizes for reference
 echo "📊 Library size:"
 ls -lh "$GODOT_ADDON_DIR/target/release/libfeagi_data_deserializer.dylib"
+
+# On macOS, also build universal (arm64+x86_64) and overwrite debug/release for editor compatibility
+if [[ "$(uname)" == "Darwin" ]]; then
+  echo "🍎 Building universal (arm64+x86_64) binaries..."
+  rustup target add aarch64-apple-darwin x86_64-apple-darwin >/dev/null 2>&1 || true
+  # Release
+  cargo build --release --target aarch64-apple-darwin
+  cargo build --release --target x86_64-apple-darwin
+  lipo -create -output target/universal_release.dylib \
+    target/aarch64-apple-darwin/release/libfeagi_data_deserializer.dylib \
+    target/x86_64-apple-darwin/release/libfeagi_data_deserializer.dylib
+  cp target/universal_release.dylib "$GODOT_ADDON_DIR/target/release/libfeagi_data_deserializer.dylib"
+  # Debug
+  cargo build --target aarch64-apple-darwin
+  cargo build --target x86_64-apple-darwin
+  lipo -create -output target/universal_debug.dylib \
+    target/aarch64-apple-darwin/debug/libfeagi_data_deserializer.dylib \
+    target/x86_64-apple-darwin/debug/libfeagi_data_deserializer.dylib
+  cp target/universal_debug.dylib "$GODOT_ADDON_DIR/target/debug/libfeagi_data_deserializer.dylib"
+  echo "✅ Universal binaries installed."
+fi
 
 echo ""
 echo "🎉 Build complete! The Rust extension is ready to use."

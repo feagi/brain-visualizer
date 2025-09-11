@@ -48,6 +48,8 @@ const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
 # Queue Type 11 messages on Web until WASM is ready
 var _pending_type11: Array = []
 var _waiting_for_wasm: bool = false
+var _rust_init_attempts: int = 0
+const MAX_RUST_INIT_ATTEMPTS := 5
 
 
 func _ready():
@@ -58,19 +60,26 @@ func _ready():
 		WASMDecoder.ensure_wasm_loaded()
 	else:
 		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
-		if ClassDB.class_exists("FeagiDataDeserializer"):
-			_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
-			if _rust_deserializer:
-				print("🦀 FEAGI Rust deserializer initialized successfully!")
-			else:
-				push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
-				set_process(false)
-				return
-		else:
-			push_error("🦀 CRITICAL: FeagiDataDeserializer class not found! Cannot process WebSocket data without Rust extension.")
-			push_error("🦀 Please ensure the feagi_rust_deserializer addon is properly installed and the shared library is built.")
-			set_process(false)  # Disable processing if Rust deserializer fails
+		_init_rust_deserializer()
+
+func _init_rust_deserializer() -> void:
+	if _rust_deserializer != null:
+		return
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+		if _rust_deserializer:
+			print("🦀 FEAGI Rust deserializer initialized successfully!")
 			return
+		else:
+			push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
+			return
+	# Class not registered yet – retry a few times to allow GDExtension to finish loading
+	_rust_init_attempts += 1
+	if _rust_init_attempts <= MAX_RUST_INIT_ATTEMPTS:
+		var t := get_tree().create_timer(0.25)
+		t.timeout.connect(_init_rust_deserializer)
+		return
+	push_error("🦀 CRITICAL: FeagiDataDeserializer class not found after retries. Ensure addon is installed and library built (debug/release).")
 	
 	# Reset missing area tracking when genome reloads
 	if FeagiCore.feagi_local_cache:
