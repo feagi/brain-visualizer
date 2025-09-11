@@ -146,7 +146,7 @@ func FEAGI_confirmed_genome() -> void:
 		return
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with Main circuit...")
-	brain_monitor.setup(root_region)
+	brain_monitor.setup(root_region, false)  # false = don't show combo buttons in main scene
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	temp_root_bm = brain_monitor
 	print("🔥🔥🔥 MAIN BRAIN MONITOR INSTANCE ID: %d 🔥🔥🔥" % brain_monitor.get_instance_id())

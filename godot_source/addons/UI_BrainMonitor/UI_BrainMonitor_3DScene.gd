@@ -19,6 +19,7 @@ var _node_3D_root: Node3D
 var _pancake_cam: UI_BrainMonitor_PancakeCamera
 var _UI_layer_for_BM: UI_BrainMonitor_Overlay = null
 var _combo: BrainObjectsCombo = null
+var _should_show_combo_buttons: bool = true
 
 
 var _representing_region: BrainRegion
@@ -68,8 +69,17 @@ func _ready() -> void:
 		
 		_world_3D = _pancake_cam.get_world_3d()
 
+
+
+func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
+	_should_show_combo_buttons = show_combo_buttons
+	_representing_region = region
+	name = "BM_" + region.region_ID
+	
+	print("BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
+	
 	# Add the context-aware brain objects combo to the overlay top-left
-	if _UI_layer_for_BM:
+	if _UI_layer_for_BM and _should_show_combo_buttons:
 		# Ensure a top row exists (so we can keep Bottom_Row at bottom)
 		var top_row: HBoxContainer = null
 		if _UI_layer_for_BM.has_node("Top_Row"):
@@ -98,13 +108,6 @@ func _ready() -> void:
 			_combo.name = "BrainObjectsCombo"
 			top_row.add_child(_combo)
 			_combo.set_3d_context(self, _representing_region)
-
-
-func setup(region: BrainRegion) -> void:
-	_representing_region = region
-	name = "BM_" + region.region_ID
-	
-	print("BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
 	
 
 	
