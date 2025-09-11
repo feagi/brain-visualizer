@@ -13,6 +13,7 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
 var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
 var _preview: UI_BrainMonitor_InteractivePreview
+var _aux_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 
 
 func _ready():
@@ -77,6 +78,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 func close_window() -> void:
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
+	# Cleanup auxiliary previews
+	for aux in _aux_previews:
+		if aux != null:
+			aux.queue_free()
+	_aux_previews.clear()
 
 func _refresh_all_relevant() -> void:
 	_refresh_from_cache_summary() # all cortical areas have these
@@ -285,28 +291,70 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 		collapsibles[i].is_open = expanded[i]
 
 func _setup_bm_prevew() -> void:
-	if _preview:
-		return
-	
 	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
 	var preview_position = _get_preview_position_for_cortical_area()
 	
-	# Use the brain monitor that is currently visualizing this cortical area (important for tabs!)
+	# Determine the cortical area context (if any)
 	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
-	var active_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
-	if active_bm == null:
+	
+	# Host BM: the one that contains this area (child-of); receives both MOVE and RESIZE
+	var host_bm: UI_BrainMonitor_3DScene = null
+	if existing_area and existing_area.current_parent_region:
+		host_bm = BV.UI.get_brain_monitor_for_region(existing_area.current_parent_region)
+	if host_bm == null:
+		host_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
+	if host_bm == null:
 		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
 		return
 	
 	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
-	_preview = active_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
-	var moves: Array[Signal] = [_vector_position.user_updated_vector]
-	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
-	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-	_preview.connect_UI_signals(moves, resizes, closes)
+	if _preview == null:
+		var moves: Array[Signal] = [_vector_position.user_updated_vector]
+		var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+		var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+		_preview = host_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+		_preview.connect_UI_signals(moves, resizes, closes)
+		# Ensure main preview is cleared when window closes
+		_preview.tree_exiting.connect(func(): _preview = null)
+	else:
+		# If host changed (tab switch), relocate main preview
+		if _preview.get_parent() != host_bm._node_3D_root:
+			_preview.queue_free()
+			_preview = host_bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			_preview.connect_UI_signals([_vector_position.user_updated_vector], [_vector_dimensions_spin.user_updated_vector], [close_window_requesed_no_arg, _button_summary_send.pressed])
+			_preview.tree_exiting.connect(func(): _preview = null)
 	
-	# CRITICAL: Also connect to resize signal to update preview position for I/O areas
-	_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
+	# Clear any stale aux mirrors before recreating
+	for aux in _aux_previews:
+		if aux != null:
+			aux.queue_free()
+	_aux_previews.clear()
+	
+	# Resize-only auxiliary previews: show on all visible 3D scenes as per rule
+	var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+	var resizes_only: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+	# Mirror to all visible brain monitors that would display this area (directly or as I/O), excluding host
+	var all_visible := BV.UI.get_all_visible_brain_monitors()
+	for bm in all_visible:
+		if bm == null or bm == host_bm:
+			continue
+		var show_here := false
+		if existing_area == null:
+			show_here = true
+		else:
+			# Show if the bm’s region is the area’s parent OR if the area is I/O of that region
+			var rep_region = bm._representing_region
+			if rep_region:
+				show_here = rep_region.is_cortical_area_in_region_directly(existing_area) or BV.UI.is_area_io_of_region(existing_area, rep_region)
+		if show_here:
+			var mirror = bm.create_preview(preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			mirror.connect_UI_signals([], resizes_only, closes_only)
+			mirror.tree_exiting.connect(func(): _aux_previews.erase(mirror))
+			_aux_previews.append(mirror)
+	
+	# CRITICAL: Also connect to resize signal to update preview position for I/O areas (keeps center aligned on plates)
+	if not _vector_dimensions_spin.user_updated_vector.is_connected(_update_preview_for_io_area_resize):
+		_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
 
 ## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
 func _get_preview_position_for_cortical_area() -> Vector3i:
@@ -373,6 +421,10 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 	var updated_position = _get_preview_position_for_cortical_area()
 	_preview.set_new_position(updated_position)
 	print("🔮 Updated I/O area preview position after dimension change: %s" % updated_position)
+	# Apply the same updated position to auxiliary previews (resize-only mirrors)
+	for aux in _aux_previews:
+		if aux != null:
+			aux.set_new_position(updated_position)
 
 
 

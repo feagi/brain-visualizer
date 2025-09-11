@@ -581,8 +581,13 @@ func get_active_brain_monitor() -> UI_BrainMonitor_3DScene:
 func get_brain_monitor_for_cortical_area(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_3DScene:
 	if cortical_area == null:
 		return get_active_brain_monitor()
-	
-	# Use the EXACT same logic as _add_cortical_area() to find which brain monitor should display this area
+
+	# Prefer the brain monitor that directly contains this cortical area (its direct parent region)
+	var direct_parent_bm := _find_brain_monitor_for_area_direct_parent(cortical_area)
+	if direct_parent_bm != null:
+		return direct_parent_bm
+
+	# Fallback: Use the broader acceptance logic (may include root monitor)
 	var target_brain_monitor = _find_brain_monitor_using_add_cortical_area_logic(cortical_area)
 	if target_brain_monitor != null:
 		return target_brain_monitor
@@ -603,6 +608,52 @@ func _find_brain_monitor_using_add_cortical_area_logic(cortical_area: AbstractCo
 			return bm
 	
 	return null
+
+## Returns all visible brain monitors in the scene tree
+func get_all_visible_brain_monitors() -> Array[UI_BrainMonitor_3DScene]:
+	var all_bms: Array[UI_BrainMonitor_3DScene] = _find_all_brain_monitors_in_scene_tree()
+	var visible_bms: Array[UI_BrainMonitor_3DScene] = []
+	for bm in all_bms:
+		if bm != null and bm.is_visible_in_tree():
+			visible_bms.append(bm)
+	return visible_bms
+
+## Finds a brain monitor whose representing region directly contains the cortical area
+func _find_brain_monitor_for_area_direct_parent(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_3DScene:
+	if cortical_area == null:
+		return null
+	# Search all visible brain monitors first, prefer a more specific region over root
+	var candidates: Array[UI_BrainMonitor_3DScene] = get_all_visible_brain_monitors()
+	for bm in candidates:
+		var rep = bm._representing_region
+		if rep != null and rep.is_cortical_area_in_region_directly(cortical_area):
+			return bm
+	return null
+
+## Returns the brain monitor that represents the given region (visible preferred)
+func get_brain_monitor_for_region(region: BrainRegion) -> UI_BrainMonitor_3DScene:
+	if region == null:
+		return null
+	var all_bms: Array[UI_BrainMonitor_3DScene] = _find_all_brain_monitors_in_scene_tree()
+	var region_id_str: String = str(region.region_ID)
+	var fallback: UI_BrainMonitor_3DScene = null
+	for bm in all_bms:
+		if bm == null or bm._representing_region == null:
+			continue
+		if str(bm._representing_region.region_ID) == region_id_str:
+			if bm.is_visible_in_tree():
+				return bm
+			fallback = bm
+	return fallback
+
+## Checks whether the given cortical area is considered I/O of the region
+func is_area_io_of_region(area: AbstractCorticalArea, region: BrainRegion) -> bool:
+	if area == null or region == null:
+		return false
+	for partial_mapping in region.partial_mappings:
+		if partial_mapping.internal_target_cortical_area == area:
+			return true
+	return false
 
 ## Find ALL brain monitors in the entire scene tree (comprehensive search)
 func _find_all_brain_monitors_in_scene_tree() -> Array[UI_BrainMonitor_3DScene]:
