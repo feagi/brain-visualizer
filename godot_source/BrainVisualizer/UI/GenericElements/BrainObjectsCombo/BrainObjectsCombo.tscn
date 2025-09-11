@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_plus_s"]
 
 [node name="BrainObjectsCombo" type="HBoxContainer"]
+mouse_filter = 1
 script = ExtResource("1_script")
 
 [node name="BrainRegionsList" type="PanelContainer" parent="."]

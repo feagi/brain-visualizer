@@ -70,10 +70,34 @@ func _ready() -> void:
 
 	# Add the context-aware brain objects combo to the overlay top-left
 	if _UI_layer_for_BM:
-		var combo_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
-		_combo = combo_scene.instantiate()
-		_UI_layer_for_BM.add_child(_combo)
-		_combo.set_3d_context(self, _representing_region)
+		# Ensure a top row exists (so we can keep Bottom_Row at bottom)
+		var top_row: HBoxContainer = null
+		if _UI_layer_for_BM.has_node("Top_Row"):
+			top_row = _UI_layer_for_BM.get_node("Top_Row") as HBoxContainer
+		else:
+			top_row = HBoxContainer.new()
+			top_row.name = "Top_Row"
+			top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			top_row.mouse_filter = Control.MOUSE_FILTER_PASS
+			_UI_layer_for_BM.add_child(top_row)
+			# Add a spacer to push Bottom_Row to bottom if not present
+			if not _UI_layer_for_BM.has_node("Spacer_V"):
+				var spacer := Control.new()
+				spacer.name = "Spacer_V"
+				spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+				spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				_UI_layer_for_BM.add_child(spacer)
+			# Ensure Bottom_Row stays last so it's at the bottom
+			if _UI_layer_for_BM.has_node("Bottom_Row"):
+				var bottom_row := _UI_layer_for_BM.get_node("Bottom_Row")
+				_UI_layer_for_BM.move_child(bottom_row, _UI_layer_for_BM.get_child_count() - 1)
+		# Instantiate combo into top row if not already present
+		if not top_row.has_node("BrainObjectsCombo"):
+			var combo_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
+			_combo = combo_scene.instantiate()
+			_combo.name = "BrainObjectsCombo"
+			top_row.add_child(_combo)
+			_combo.set_3d_context(self, _representing_region)
 
 
 func setup(region: BrainRegion) -> void:

@@ -18,6 +18,9 @@ func _ready() -> void:
 	_btn_cortical_list = $CorticalAreasList
 	_btn_cortical_add = $TextureButton_Cortical
 
+	# Ensure the combo doesn't block underlying 3D interactions except on actual clicks
+	mouse_filter = Control.MOUSE_FILTER_PASS
+
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
 	_btn_cortical_list.pressed.connect(_open_cortical_areas)
