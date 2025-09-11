@@ -43,12 +43,7 @@ horizontal_scroll_mode = 0
 [node name="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter/ScrollSectionGeneric" index="0"]
 size_flags_horizontal = 3
 
-[node name="Button2" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
-layout_mode = 2
-text = "Update Visabilties"
-
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Button" to="." method="_press_add_region"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Button2" to="." method="_button_update_visabilities"]
 
 [editable path="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter"]
 

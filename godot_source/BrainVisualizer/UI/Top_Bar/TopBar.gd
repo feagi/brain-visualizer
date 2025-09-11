@@ -133,8 +133,9 @@ func _open_brain_regions() -> void:
 	BV.WM.spawn_brain_regions_view()
 
 func _open_create_brain_region() -> void:
-	# Placeholder: open create brain region flow when implemented
-	BV.WM.spawn_create_brain_region()
+	# Open create brain region window using root region as parent and no preselected objects
+	var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	BV.WM.spawn_create_region(parent_region, [])
 
 	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
