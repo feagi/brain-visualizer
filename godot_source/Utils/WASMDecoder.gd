@@ -64,18 +64,43 @@ static func is_wasm_ready() -> bool:
 
 static func decode_type_11(bytes: PackedByteArray) -> Dictionary:
 	if not is_web_platform():
-		return {}
+		return {"success": false, "error": "Not web platform", "areas": {}, "total_neurons": 0}
+	
 	# Ensure loader ran at least once
 	var ready: bool = ensure_wasm_loaded()
 	if not ready:
 		# Not ready yet; caller can retry on next frame
 		return {"success": false, "error": "WASM not ready", "areas": {}, "total_neurons": 0}
-	# Convert to JS Uint8Array and call exported decoder wrapper
-	var js_u8 = JavaScriptBridge.create_object("Uint8Array", [bytes])
-	var win = JavaScriptBridge.get_interface("window")
-	if win:
-		var has = JavaScriptBridge.eval("typeof window.__feagi_decode_type_11 === 'function'")
-		if bool(has):
-			var js_result = win.call("__feagi_decode_type_11", js_u8)
-			return js_result if typeof(js_result) == TYPE_DICTIONARY else {}
-	return {"success": false, "error": "WASM not initialized", "areas": {}, "total_neurons": 0}
+	
+	# Check if WASM function is available
+	var has = JavaScriptBridge.eval("typeof window.__feagi_decode_type_11 === 'function'")
+	if not bool(has):
+		return {"success": false, "error": "WASM not initialized", "areas": {}, "total_neurons": 0}
+	
+	# Early return for empty bytes
+	if bytes.size() == 0:
+		return {"success": false, "error": "Empty byte array", "areas": {}, "total_neurons": 0}
+	
+	# Convert PackedByteArray to regular Array for JavaScript (only when needed)
+	var bytes_array: Array = []
+	bytes_array.resize(bytes.size())
+	for i in range(bytes.size()):
+		bytes_array[i] = bytes[i]
+	
+	# Store bytes array in a global temporarily, then call the WASM function
+	JavaScriptBridge.eval("window.__temp_feagi_bytes = " + var_to_str(bytes_array))
+	var js_result = JavaScriptBridge.eval("""
+	(function() {
+		try {
+			var bytes_array = window.__temp_feagi_bytes;
+			var uint8_array = new Uint8Array(bytes_array);
+			var result = window.__feagi_decode_type_11(uint8_array);
+			delete window.__temp_feagi_bytes;
+			return result;
+		} catch(e) {
+			delete window.__temp_feagi_bytes;
+			return {success: false, error: String(e), areas: {}, total_neurons: 0};
+		}
+	})();
+	""")
+	return js_result if typeof(js_result) == TYPE_DICTIONARY else {"success": false, "error": "Invalid result type", "areas": {}, "total_neurons": 0}
