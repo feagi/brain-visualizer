@@ -2,6 +2,8 @@
 
 This directory contains Rust-based extensions for the FEAGI Brain Visualizer, providing high-performance data processing capabilities through Godot's GDExtension system.
 
+> 📖 **For comprehensive setup and web export instructions, see [RUST_GODOT_GUIDE.md](./RUST_GODOT_GUIDE.md)**
+
 ## Overview
 
 The Rust extensions replace computationally intensive GDScript operations with native Rust code, providing significant performance improvements for:
@@ -120,7 +122,7 @@ export RUST_LOG=debug
 
 - [ ] Integration with additional FEAGI data types
 - [ ] GPU-accelerated processing using wgpu
-- [ ] WebAssembly support for web deployment
+- [x] WebAssembly support for web deployment ✅ **COMPLETED**
 - [ ] Multi-threaded processing for large datasets
 - [ ] Custom memory allocators for specific use cases
 
