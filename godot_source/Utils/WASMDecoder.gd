@@ -41,12 +41,22 @@ static func ensure_wasm_loaded() -> bool:
 						return wasm_bindgen(resp);
 					}).then(function(){
 						window.__feagi_wasm_ready = true;
+						console.log('🦀 WASM module loaded successfully');
 						// Install a stable wrapper we can call from Godot
 						window.__feagi_decode_type_11 = function(bytes){
-							try { return wasm_bindgen.decode_type_11(bytes); }
-							catch(e){ return {success:false, error:String(e)}; }
+							try { 
+								console.log('🦀 WASM decode_type_11 called with bytes:', bytes.length);
+								var result = wasm_bindgen.decode_type_11(bytes);
+								console.log('🦀 WASM decode_type_11 result:', result);
+								return result;
+							}
+							catch(e){ 
+								console.error('🦀 WASM decode_type_11 error:', e);
+								return {success:false, error:String(e), areas: {}, total_neurons: 0}; 
+							}
 						};
-					}).catch(function(e){ console.error('WASM init failed:', e); });
+						console.log('🦀 WASM wrapper function installed');
+					}).catch(function(e){ console.error('🦀 WASM init failed:', e); });
 				}
 			};
 			document.head.appendChild(s);
@@ -89,18 +99,74 @@ static func decode_type_11(bytes: PackedByteArray) -> Dictionary:
 	
 	# Store bytes array in a global temporarily, then call the WASM function
 	JavaScriptBridge.eval("window.__temp_feagi_bytes = " + var_to_str(bytes_array))
-	var js_result = JavaScriptBridge.eval("""
+	var json_result = JavaScriptBridge.eval("""
 	(function() {
 		try {
 			var bytes_array = window.__temp_feagi_bytes;
 			var uint8_array = new Uint8Array(bytes_array);
 			var result = window.__feagi_decode_type_11(uint8_array);
 			delete window.__temp_feagi_bytes;
-			return result;
+			
+			// Ensure result is a proper object for Godot
+			if (!result || typeof result !== 'object') {
+				return JSON.stringify({success: false, error: 'WASM returned invalid result', areas: {}, total_neurons: 0});
+			}
+			
+			// Convert JavaScript object to Godot-compatible format
+			// The areas is a Map, we need to convert it to a plain object
+			var areas_obj = {};
+			if (result.areas && typeof result.areas.forEach === 'function') {
+				// It's a Map, convert to plain object
+				result.areas.forEach(function(value, key) {
+					areas_obj[key] = {
+						x_array: Array.from(value.x_array || []),
+						y_array: Array.from(value.y_array || []),
+						z_array: Array.from(value.z_array || []),
+						p_array: Array.from(value.p_array || [])
+					};
+				});
+			} else if (result.areas && typeof result.areas === 'object') {
+				// Already a plain object
+				areas_obj = result.areas;
+			}
+			
+			var godot_result = {
+				success: result.success === true,
+				error: String(result.error || ''),
+				areas: areas_obj,
+				total_neurons: Number(result.total_neurons || 0)
+			};
+			
+			console.log('🦀 Converted result for Godot:', godot_result);
+			// Return as JSON string since JavaScriptBridge.eval has issues with complex objects
+			return JSON.stringify(godot_result);
 		} catch(e) {
 			delete window.__temp_feagi_bytes;
-			return {success: false, error: String(e), areas: {}, total_neurons: 0};
+			return JSON.stringify({success: false, error: String(e), areas: {}, total_neurons: 0});
 		}
 	})();
 	""")
-	return js_result if typeof(js_result) == TYPE_DICTIONARY else {"success": false, "error": "Invalid result type", "areas": {}, "total_neurons": 0}
+	
+	# Parse JSON result
+	if typeof(json_result) != TYPE_STRING:
+		print("🦀 WASM JSON result type: ", typeof(json_result), " value: ", json_result)
+		return {"success": false, "error": "WASM returned non-string result", "areas": {}, "total_neurons": 0}
+	
+	print("🦀 WASM JSON result: ", json_result)
+	
+	# Parse the JSON string to get the actual result
+	var json = JSON.new()
+	var parse_result = json.parse(json_result)
+	if parse_result != OK:
+		print("🦀 JSON parse error: ", parse_result)
+		return {"success": false, "error": "Failed to parse WASM JSON result", "areas": {}, "total_neurons": 0}
+	
+	var js_result = json.data
+	print("🦀 Parsed WASM result type: ", typeof(js_result))
+	if typeof(js_result) == TYPE_DICTIONARY:
+		print("🦀 WASM result success: ", js_result.get("success", "missing"))
+		print("🦀 WASM result areas count: ", js_result.get("areas", {}).size())
+		return js_result
+	else:
+		print("🦀 WASM result raw: ", js_result)
+		return {"success": false, "error": "Invalid result type after JSON parse", "areas": {}, "total_neurons": 0}
