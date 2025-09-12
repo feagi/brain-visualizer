@@ -36,15 +36,11 @@ text = "SHM: idle"
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Path" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
-custom_minimum_size = Vector2(600, 0)
-placeholder_text = "Shared memory file path, e.g., /tmp/feagi_video_shm.bin — then click Open SHM"
 size_flags_horizontal = 0
-
-[node name="Open" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
-layout_mode = 2
-text = "Open SHM"
+text = "Select Agent"
+custom_minimum_size = Vector2(300, 0)
 
 [node name="ViewLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
@@ -116,4 +112,3 @@ text = "8X"
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/2x" to="." method="_scale_button_pressed" binds= [2]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/4x" to="." method="_scale_button_pressed" binds= [4]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/8x" to="." method="_scale_button_pressed" binds= [8]]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/SHMControls/Open" to="." method="_open_shm_pressed"]

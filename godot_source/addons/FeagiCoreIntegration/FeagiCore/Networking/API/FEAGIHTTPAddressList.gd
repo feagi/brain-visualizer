@@ -39,6 +39,7 @@ var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/s
 var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
 var GET_agent_list: StringName = "/v1/agent/list"
 var GET_agent_properties: StringName = "/v1/agent/properties"
+var GET_agent_shared_mem: StringName = "/v1/agent/shared_mem"
 var GET_input_vision: StringName = "/v1/input/vision"
 
 # Post Requests
