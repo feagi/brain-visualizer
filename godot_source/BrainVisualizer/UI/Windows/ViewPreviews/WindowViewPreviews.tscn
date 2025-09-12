@@ -17,6 +17,7 @@ title = "View Previews"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
@@ -33,17 +34,25 @@ text = "SHM: idle"
 
 [node name="SHMControls" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 0
 
 [node name="Path" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
 custom_minimum_size = Vector2(600, 0)
 placeholder_text = "Shared memory file path, e.g., /tmp/feagi_video_shm.bin — then click Open SHM"
-size_flags_horizontal = 4
+size_flags_horizontal = 0
 
 [node name="Open" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
 text = "Open SHM"
+
+[node name="ViewLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+layout_mode = 2
+text = "View:"
+
+[node name="ViewToggle" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+layout_mode = 2
+text = "Raw"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -60,7 +69,7 @@ text = "0 X 0 (Nothing Playing)"
 [node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_type_variation = &"NotificationSystemNotification"
 
@@ -76,8 +85,8 @@ theme_override_constants/margin_bottom = 4
 [node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer/MarginContainer"]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 0
+size_flags_vertical = 0
 
 [node name="sizes" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
