@@ -5,10 +5,13 @@
 
 set -e  # Exit on any error
 
-echo "🦀 Building FEAGI Rust Data Deserializer..."
+echo "🦀 Building FEAGI Rust Extensions..."
 
 # Navigate to the Rust project directory
-cd "$(dirname "$0")/feagi_data_deserializer"
+ROOT_DIR="$(dirname "$0")"
+
+# Build feagi_data_deserializer
+cd "$ROOT_DIR/feagi_data_deserializer"
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
@@ -76,7 +79,54 @@ if [[ "$(uname)" == "Darwin" ]]; then
 fi
 
 echo ""
-echo "🎉 Build complete! The Rust extension is ready to use."
+echo "🎉 feagi_data_deserializer build complete!"
 echo "💡 Restart Godot to load the new extension."
 echo ""
 echo "🧪 To test the integration, run the test_rust_deserializer.tscn scene in Godot."
+
+# Build feagi_shared_video
+echo "\n🦀 Building feagi_shared_video (shared memory reader)..."
+cd "$ROOT_DIR/feagi_shared_video"
+echo "🧹 Cleaning previous builds..."
+cargo clean
+echo "🔨 Building Rust library (release mode)..."
+cargo build --release
+
+if [ ! -f "target/release/libfeagi_shared_video.dylib" ]; then
+    echo "❌ Build failed - feagi_shared_video shared library not found!"
+    exit 1
+fi
+
+echo "✅ Build successful!"
+
+GODOT_ADDON_DIR2="../../godot_source/addons/feagi_shared_video"
+mkdir -p "$GODOT_ADDON_DIR2/target/release" "$GODOT_ADDON_DIR2/target/debug"
+cp "target/release/libfeagi_shared_video.dylib" "$GODOT_ADDON_DIR2/target/release/"
+
+echo "🔨 Building Rust library (debug mode for editor)..."
+cargo build
+cp "target/debug/libfeagi_shared_video.dylib" "$GODOT_ADDON_DIR2/target/debug/"
+rm -f "$GODOT_ADDON_DIR2/libfeagi_shared_video.dylib"
+
+echo "📊 Library size:"
+ls -lh "$GODOT_ADDON_DIR2/target/release/libfeagi_shared_video.dylib"
+
+if [[ "$(uname)" == "Darwin" ]]; then
+  echo "🍎 Building universal (arm64+x86_64) binaries for feagi_shared_video..."
+  rustup target add aarch64-apple-darwin x86_64-apple-darwin >/dev/null 2>&1 || true
+  cargo build --release --target aarch64-apple-darwin
+  cargo build --release --target x86_64-apple-darwin
+  lipo -create -output target/universal_release.dylib \
+    target/aarch64-apple-darwin/release/libfeagi_shared_video.dylib \
+    target/x86_64-apple-darwin/release/libfeagi_shared_video.dylib
+  cp target/universal_release.dylib "$GODOT_ADDON_DIR2/target/release/libfeagi_shared_video.dylib"
+  cargo build --target aarch64-apple-darwin
+  cargo build --target x86_64-apple-darwin
+  lipo -create -output target/universal_debug.dylib \
+    target/aarch64-apple-darwin/debug/libfeagi_shared_video.dylib \
+    target/x86_64-apple-darwin/debug/libfeagi_shared_video.dylib
+  cp target/universal_debug.dylib "$GODOT_ADDON_DIR2/target/debug/libfeagi_shared_video.dylib"
+  echo "✅ Universal binaries installed (feagi_shared_video)."
+fi
+
+echo "\n🎉 All Rust extensions built successfully!"

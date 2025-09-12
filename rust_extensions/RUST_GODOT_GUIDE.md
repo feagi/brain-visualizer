@@ -80,10 +80,43 @@ cd rust_extensions
 ```
 
 This script:
-1. Builds release and debug versions
+1. Builds release and debug versions for `feagi_data_deserializer`
 2. Creates universal binaries (macOS: arm64+x86_64)
 3. Copies files to `godot_source/addons/feagi_rust_deserializer/`
 4. Clears quarantine attributes (macOS)
+
+### Building the Shared Memory Video Reader (feagi_shared_video)
+
+macOS (Universal debug):
+
+```bash
+cd rust_extensions/feagi_shared_video
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+cargo build --target aarch64-apple-darwin
+cargo build --target x86_64-apple-darwin
+lipo -create -output target/universal_debug.dylib \
+  target/aarch64-apple-darwin/debug/libfeagi_shared_video.dylib \
+  target/x86_64-apple-darwin/debug/libfeagi_shared_video.dylib
+cp target/universal_debug.dylib ../../godot_source/addons/feagi_shared_video/target/debug/libfeagi_shared_video.dylib
+```
+
+Windows (Debug):
+
+```powershell
+cd rust_extensions\feagi_shared_video
+cargo build
+Copy-Item target\debug\feagi_shared_video.dll ..\..\godot_source\addons\feagi_shared_video\target\debug\
+```
+
+Linux (Debug):
+
+```bash
+cd rust_extensions/feagi_shared_video
+cargo build
+cp target/debug/libfeagi_shared_video.so ../../godot_source/addons/feagi_shared_video/target/debug/
+```
+
+Update `godot_source/addons/feagi_shared_video/feagi_shared_video.gdextension` to match your platform paths if necessary.
 
 ### Web Build
 

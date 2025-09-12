@@ -27,6 +27,24 @@ layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 
+[node name="SHMStatus" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "SHM: idle"
+
+[node name="SHMControls" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Path" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+layout_mode = 2
+custom_minimum_size = Vector2(600, 0)
+placeholder_text = "Shared memory file path, e.g., /tmp/feagi_video_shm.bin — then click Open SHM"
+size_flags_horizontal = 4
+
+[node name="Open" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+layout_mode = 2
+text = "Open SHM"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_horizontal = 0
@@ -89,3 +107,4 @@ text = "8X"
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/2x" to="." method="_scale_button_pressed" binds= [2]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/4x" to="." method="_scale_button_pressed" binds= [4]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/8x" to="." method="_scale_button_pressed" binds= [8]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/SHMControls/Open" to="." method="_open_shm_pressed"]
