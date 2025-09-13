@@ -143,9 +143,9 @@ func _call_register_agent_for_shm() -> void:
 				print("𒓉 [REG] Using SHM from register: ", viz)
 				# Set env for current process to let WebSocketAPI pick it up
 				OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz)
-				# Ask WS API to (re)initialize SHM now that we have a path
-				if websocket_API and websocket_API.has_method("_init_shm_visualization"):
-					websocket_API._init_shm_visualization()
+				# Ask WS API to switch to SHM using a public helper
+				if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
+					websocket_API.enable_shared_memory_visualization(viz)
 	
 ## Completely disconnect all networking systems from FEAGI
 func disconnect_networking() -> void:

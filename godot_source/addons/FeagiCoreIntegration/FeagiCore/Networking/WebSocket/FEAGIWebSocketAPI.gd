@@ -61,6 +61,16 @@ var _shm_slot_size: int = 0
 var _shm_last_seq: int = -1
 var _ws_notice_printed: bool = false
 var _shm_notice_printed: bool = false
+var _ws_notice_deadline_ms: int = 0
+var _pending_shm_path: String = ""
+var _shm_init_attempts: int = 0
+var _shm_init_max_attempts: int = 10
+var _shm_no_new_reported: bool = false
+var _shm_missed_cycles: int = 0
+var _shm_reopen_threshold: int = 12
+var _shm_last_error: String = ""
+var _shm_attempting: bool = false
+var _shm_debug_logs: bool = false
 
 
 func _ready():
@@ -75,6 +85,8 @@ func _ready():
 
 	# 𒓉 Try to initialize shared memory visualization (env-provided path)
 	_init_shm_visualization()
+	# Defer WS fallback notice to allow registration to provide SHM path
+	_ws_notice_deadline_ms = Time.get_ticks_msec() + 3000
 
 func _init_rust_deserializer() -> void:
 	if _rust_deserializer != null:
@@ -107,9 +119,13 @@ func _process(_delta: float):
 			print("𒓉 [WS] SHM polling active; path=", _shm_path)
 			_shm_notice_printed = true
 	else:
-		# Print once to make it obvious we're on WS path
-		if not _ws_notice_printed:
-			print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled)")
+		# Print once to make it obvious we're on WS path, but only after a brief delay
+		# and not while we are actively trying to initialize SHM
+		if not _ws_notice_printed and _pending_shm_path == "" and not _shm_attempting and Time.get_ticks_msec() >= _ws_notice_deadline_ms:
+			if _shm_last_error != "":
+				print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled); last_shm_error=", _shm_last_error)
+			else:
+				print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled)")
 			_ws_notice_printed = true
 	# On Web, flush queued Type 11 packets once WASM is ready
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
@@ -267,11 +283,43 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 	
 	## respond as per type
 	match(bytes[0]):
-		1: # JSON wrapper
+		1: # JSON wrapper (may be legacy status OR SHM JSON Type 11)
 			bytes = bytes.slice(2)
-			var dict: Dictionary = str_to_var(bytes.get_string_from_ascii()) 
-			if !dict:
-				push_error("FEAGI: Unable to parse WS Data!")
+			var text := bytes.get_string_from_ascii()
+			var dict_any: Variant = str_to_var(text)
+			var dict: Dictionary = {}
+			if typeof(dict_any) == TYPE_DICTIONARY:
+				dict = dict_any
+			else:
+				var json_parsed = JSON.parse_string(text)
+				if typeof(json_parsed) == TYPE_DICTIONARY:
+					dict = json_parsed
+				else:
+					push_error("FEAGI: Unable to parse WS Data (neither var nor json)!")
+					return
+			# SHM JSON Type 11 passthrough
+			if dict.has("type") and int(dict.get("type", -1)) == 11 and dict.has("areas") and typeof(dict["areas"]) == TYPE_DICTIONARY:
+				var areas: Dictionary = dict["areas"]
+				var total_points := 0
+				for cortical_id in areas.keys():
+					var a = areas[cortical_id]
+					if typeof(a) != TYPE_DICTIONARY:
+						continue
+					var x_arr := PackedInt32Array(a.get("x", []))
+					var y_arr := PackedInt32Array(a.get("y", []))
+					var z_arr := PackedInt32Array(a.get("z", []))
+					var p_arr := PackedFloat32Array(a.get("p", []))
+					total_points += x_arr.size()
+					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_arr, y_arr, z_arr, p_arr)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					if area:
+						area.FEAGI_set_direct_points_bulk_data(x_arr, y_arr, z_arr, p_arr)
+					else:
+						_handle_missing_cortical_area(cortical_id)
+				if _shm_debug_logs:
+					print("𒓉 [WS] Processed SHM JSON Type 11: areas=", areas.size(), " points=", total_points)
+				# Throttle logging but keep processing subsequent frames without suppression
+				_shm_notice_printed = true
 				return
 			if dict.has("status"):
 				var dict_status = dict["status"]
@@ -426,35 +474,110 @@ func _init_shm_visualization() -> void:
 		p = OS.get_environment("FEAGI_VIZ_SHM")
 	if p == "":
 		return
-	if not FileAccess.file_exists(p):
-		print("𒓉 [WS] SHM path not found: ", p)
+	_pending_shm_path = p
+	_shm_init_attempts = 0
+	_shm_last_error = ""
+	_shm_attempting = true
+	# Start retry loop to wait for file/header to be ready without spamming WS fallback
+	_ws_notice_printed = false
+	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500
+	print("𒓉 [WS] Awaiting SHM neuron visualization path: ", p)
+	_try_open_shm_path()
+
+func _try_open_shm_path() -> void:
+	if _pending_shm_path == "":
 		return
+	var p := _pending_shm_path
+	if not FileAccess.file_exists(p):
+		# Retry later; file will be created by FEAGI
+		if _shm_init_attempts < _shm_init_max_attempts:
+			_shm_init_attempts += 1
+			_shm_last_error = "file not found"
+			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": waiting for file: ", p)
+			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
+			return
+		else:
+			print("𒓉 [WS] SHM activation failed: file never appeared: ", p)
+			_shm_attempting = false
+			_pending_shm_path = ""
+			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
+			return
 	var f := FileAccess.open(p, FileAccess.READ)
 	if f == null:
-		push_error("𒓉 [WS] Failed to open SHM: " + p)
-		return
+		if _shm_init_attempts < _shm_init_max_attempts:
+			_shm_init_attempts += 1
+			var err := FileAccess.get_open_error()
+			_shm_last_error = "open failed error=" + str(err)
+			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": open failed. error=", err)
+			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
+			return
+		else:
+			var err2 := FileAccess.get_open_error()
+			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=open failed error=", err2)
+			_shm_attempting = false
+			_pending_shm_path = ""
+			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
+			return
 	# Read header once to initialize
 	f.seek(0)
 	var h := f.get_buffer(_shm_header_size)
 	if h.size() < 32:
-		push_error("𒓉 [WS] SHM header too small (" + str(h.size()) + ")")
-		return
+		if _shm_init_attempts < _shm_init_max_attempts:
+			_shm_init_attempts += 1
+			_shm_last_error = "header too small size=" + str(h.size())
+			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": header too small (", h.size(), ")")
+			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
+			return
+		else:
+			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=header too small size=", h.size())
+			_shm_attempting = false
+			_pending_shm_path = ""
+			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
+			return
 	var magic := ""
 	for i in range(8):
 		magic += char(h[i])
 	if magic != "FEAGIVIS" and magic != "FEAGIBIN" and magic != "FEAGIMOT":
-		push_error("𒓉 [WS] SHM magic invalid: " + magic)
-		return
-	_shm_num_slots = h.decode_u32(12)
-	_shm_slot_size = h.decode_u32(16)
-	_shm_last_seq = _decode_u64_le(h, 20) - 1
+		if _shm_init_attempts < _shm_init_max_attempts:
+			_shm_init_attempts += 1
+			_shm_last_error = "invalid magic=" + magic
+			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid magic '", magic, "' (expect FEAGIVIS/FEAGIBIN/FEAGIMOT)")
+			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
+			return
+		else:
+			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid magic '", magic, "'")
+			_shm_attempting = false
+			_pending_shm_path = ""
+			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
+			return
+	var num_slots := h.decode_u32(12)
+	var slot_size := h.decode_u32(16)
+	var first_seq := _decode_u64_le(h, 20)
+	if num_slots <= 0 or slot_size <= 0:
+		if _shm_init_attempts < _shm_init_max_attempts:
+			_shm_init_attempts += 1
+			_shm_last_error = "invalid header values slots=" + str(num_slots) + ", slot_size=" + str(slot_size)
+			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid header values slots=", num_slots, " slot_size=", slot_size)
+			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
+			return
+		else:
+			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid header values slots=", num_slots, " slot_size=", slot_size)
+			_shm_attempting = false
+			_pending_shm_path = ""
+			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
+			return
+	_shm_num_slots = num_slots
+	_shm_slot_size = slot_size
+	_shm_last_seq = first_seq - 1
 	_shm_file = f
 	_shm_path = p
 	_use_shared_mem = true
-	print("𒓉 [WS] Using SHM neuron visualization: ", p, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size)
+	_pending_shm_path = ""
+	_shm_attempting = false
+	print("𒓉 [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
 	# Reset path notices to show SHM active on next _process tick
 	_shm_notice_printed = false
-	_ws_notice_printed = false
+	_ws_notice_printed = true
 
 func _poll_shm_once() -> void:
 	if _shm_file == null:
@@ -466,6 +589,23 @@ func _poll_shm_once() -> void:
 		return
 	var frame_seq := _decode_u64_le(h, 20)
 	if frame_seq <= _shm_last_seq:
+		_shm_missed_cycles += 1
+		# Quiet repetitive logs; only print once per staleness streak
+		if _shm_debug_logs and not _shm_no_new_reported:
+			var wi := int(h.decode_u32(28))
+			print("𒓉 [WS] SHM no new frame: head=", frame_seq, " last=", _shm_last_seq, " write_index=", wi)
+			_shm_no_new_reported = true
+		# If we miss enough cycles, reopen the file to avoid stale cache (quiet)
+		if _shm_missed_cycles >= _shm_reopen_threshold:
+			# Close and reopen
+			_shm_file = null
+			var f2 := FileAccess.open(_shm_path, FileAccess.READ)
+			if f2 != null:
+				_shm_file = f2
+				_shm_missed_cycles = 0
+				_shm_no_new_reported = false
+				# Force re-read header next tick
+				return
 		return
 	var write_index := int(h.decode_u32(28))
 	if _shm_num_slots <= 0 or _shm_slot_size <= 0:
@@ -484,8 +624,26 @@ func _poll_shm_once() -> void:
 		return
 	var payload := _shm_file.get_buffer(payload_len)
 	_shm_last_seq = frame_seq
-	print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
+	_shm_no_new_reported = false
+	_shm_missed_cycles = 0
+	if _shm_debug_logs:
+		print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
 	_process_wrapped_byte_structure(payload)
+
+func enable_shared_memory_visualization(p: String) -> void:
+	# Public API to switch to SHM immediately using a provided path
+	if p == "":
+		return
+	OS.set_environment("FEAGI_VIZ_NEURONS_SHM", p)
+	_pending_shm_path = p
+	_shm_init_attempts = 0
+	_shm_last_error = ""
+	_shm_attempting = true
+	# Give time for FEAGI to create and initialize the file header
+	_ws_notice_printed = false
+	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500
+	print("𒓉 [WS] Enabling SHM neuron visualization via register; will retry: ", p)
+	_try_open_shm_path()
 
 func _decode_u64_le(bytes: PackedByteArray, offset: int) -> int:
 	# Godot GDScript lacks decode_u64 on some versions; compose from two u32
