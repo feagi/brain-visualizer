@@ -41,6 +41,10 @@ func _ready():
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
+	# If SHM already active from _ready() discovery, skip WS fallback
+	if _use_shared_mem:
+		print("𒓉 [Preview] setup(): SHM already active; skipping WS fallback")
+		return
 	# Prefer shared memory reader if explicitly configured via environment
 	var shm_path: String = OS.get_environment("FEAGI_VIDEO_SHM")
 	print("𒓉 [Preview] setup(): FEAGI_VIDEO_SHM=\"%s\"; SharedMemVideo available? %s" % [shm_path, str(ClassDB.class_exists("SharedMemVideo"))])
@@ -133,31 +137,83 @@ func _try_open_core_visualization_shm() -> void:
 		_shm_status.text = "SHM: extension missing - using websocket"
 		_fallback_to_websocket()
 		return
+	# Prefer explicit video preview path if provided
+	var video_path: String = OS.get_environment("FEAGI_VIDEO_SHM")
+	if video_path != "":
+		var obj_v = ClassDB.instantiate("SharedMemVideo")
+		if obj_v and obj_v.open(video_path):
+			_shm_reader = obj_v
+			_use_shared_mem = true
+			_shm_status.text = "SHM: video preview"
+			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", video_path)
+			set_process(true)
+			_update_container_to_content()
+			return
+	# Fallback to core visualization path
 	var core_viz_path: String = OS.get_environment("FEAGI_VIZ_SHM")
-	if core_viz_path == "":
-		print("𒓉 [Preview] FEAGI_VIZ_SHM not set; using WebSocket")
-		_shm_status.text = "SHM: not provided - using websocket"
-		_fallback_to_websocket()
+	if core_viz_path != "":
+		var obj = ClassDB.instantiate("SharedMemVideo")
+		if obj and obj.open(core_viz_path):
+			_shm_reader = obj
+			_use_shared_mem = true
+			_shm_status.text = "SHM: core visualization"
+			print("𒓉 [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
+			set_process(true)
+			_update_container_to_content()
+			return
+	# Attempt API discovery: GET /v1/agent/shared_mem
+	_try_fetch_video_shm_from_api()
+	if _use_shared_mem:
 		return
-	var exists := FileAccess.file_exists(core_viz_path)
-	print("𒓉 [Preview] _try_open_core_visualization_shm(): FEAGI_VIZ_SHM=\"%s\" exists? %s" % [core_viz_path, str(exists)])
-	var obj = ClassDB.instantiate("SharedMemVideo")
-	if obj and obj.open(core_viz_path):
-		_shm_reader = obj
-		_use_shared_mem = true
-		_shm_status.text = "SHM: core visualization"
-		print("𒓉 [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
-		set_process(true)
-		_update_container_to_content()
-	else:
-		var reason2 := "open() returned false"
-		if obj == null:
-			reason2 = "SharedMemVideo.instantiate() returned null"
-		elif not FileAccess.file_exists(core_viz_path):
-			reason2 = "file does not exist"
-		print("𒓉 [Preview] Failed to open SHM at ", core_viz_path, " reason: ", reason2, "; using WebSocket")
-		_shm_status.text = "SHM: open failed - using websocket"
-		_fallback_to_websocket()
+	# Final fallback: WebSocket
+	print("𒓉 [Preview] No SHM path available; using WebSocket")
+	_shm_status.text = "SHM: not provided - using websocket"
+	_fallback_to_websocket()
+
+
+func _try_fetch_video_shm_from_api() -> void:
+	if not FeagiCore or not FeagiCore.network or not FeagiCore.network.http_API or FeagiCore.network.http_API.address_list == null:
+		return
+	var http_API = FeagiCore.network.http_API
+	var def = APIRequestWorkerDefinition.define_single_GET_call(http_API.address_list.GET_agent_shared_mem)
+	var worker = http_API.make_HTTP_call(def)
+	print("𒓉 [Preview] Querying /v1/agent/shared_mem for video preview…")
+	await worker.worker_done
+	var out = worker.retrieve_output_and_close()
+	if out.has_errored or out.has_timed_out:
+		return
+	var resp: Variant = out.decode_response_as_dict()
+	if typeof(resp) != TYPE_DICTIONARY:
+		return
+	# Heuristic: prefer agents whose id contains 'video-agent' and mapping has 'video_stream'
+	var chosen_path: String = ""
+	var chosen_agent: String = ""
+	for aid in resp.keys():
+		var mapping = resp[aid]
+		if typeof(mapping) != TYPE_DICTIONARY:
+			continue
+		var path: String = ""
+		if mapping.has("video_stream"):
+			path = str(mapping["video_stream"])
+		elif mapping.has("video_preview_shared_mem_path"):
+			path = str(mapping["video_preview_shared_mem_path"])
+		if path == "":
+			continue
+		# Prefer video-agent*; otherwise first available
+		if chosen_path == "" or (aid is String and aid.findn("video-agent") != -1):
+			chosen_path = path
+			chosen_agent = str(aid)
+			if aid.findn("video-agent") != -1:
+				break
+	if chosen_path != "":
+		var obj = ClassDB.instantiate("SharedMemVideo")
+		if obj and obj.open(chosen_path):
+			_shm_reader = obj
+			_use_shared_mem = true
+			_shm_status.text = "SHM: video preview (API)"
+			print("𒓉 [Preview] Using SHM from API for agent ", chosen_agent, ": ", chosen_path)
+			set_process(true)
+			_update_container_to_content()
 
 func _crop_half(tex: ImageTexture, left_half: bool) -> ImageTexture:
 	if tex == null:
