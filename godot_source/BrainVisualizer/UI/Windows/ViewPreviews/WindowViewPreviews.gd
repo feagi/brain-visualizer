@@ -23,6 +23,7 @@ var _shm_reader: Variant = null # Use Variant to avoid hard dependency if extens
 
 func _ready():
 	super()
+	print("[Preview] _ready(): initializing View Previews window")
 	_resolution_UI = _window_internals.get_node("HBoxContainer/resolution")
 	_preview_container = _window_internals.get_node("PanelContainer")
 	_visual_preview = _window_internals.get_node("PanelContainer/MarginContainer/TextureRect")
@@ -35,23 +36,37 @@ func _ready():
 	_view_toggle.add_item("FEAGI", 1)
 	_view_toggle.selected = 0
 	# Try core SHM path via environment (provided by FEAGI launcher)
+	print("𒓉 [Preview] _ready(): attempting FEAGI_VIZ_SHM shared-memory setup")
 	_try_open_core_visualization_shm()
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	# Prefer shared memory reader if explicitly configured via environment
 	var shm_path: String = OS.get_environment("FEAGI_VIDEO_SHM")
+	print("𒓉 [Preview] setup(): FEAGI_VIDEO_SHM=\"%s\"; SharedMemVideo available? %s" % [shm_path, str(ClassDB.class_exists("SharedMemVideo"))])
+	if shm_path != "":
+		var exists_env := FileAccess.file_exists(shm_path)
+		print("𒓉 [Preview] setup(): FEAGI_VIDEO_SHM exists? ", str(exists_env))
 	if shm_path != "" and ClassDB.class_exists("SharedMemVideo"):
 		var obj = ClassDB.instantiate("SharedMemVideo")
 		_shm_reader = obj
 		if _shm_reader and _shm_reader.open(shm_path):
 			var info: Dictionary = _shm_reader.get_header_info()
-			print("SharedMemVideo header:", info)
+			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", shm_path)
+			print("𒓉 [Preview] SharedMemVideo header:", info)
 			_shm_status.text = "SHM: opened"
 			_use_shared_mem = true
 			set_process(true)
 			return
+		else:
+			var reason := "open() returned false"
+			if _shm_reader == null:
+				reason = "SharedMemVideo.instantiate() returned null"
+			elif not FileAccess.file_exists(shm_path):
+				reason = "file does not exist"
+			print("𒓉 [Preview] setup(): SHM selection failed for FEAGI_VIDEO_SHM (", shm_path, "): ", reason)
 	# Fallback to existing FEAGI visual data stream
+	print("𒓉 [Preview] setup(): falling back to WebSocket visualization stream")
 	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 	
 func _update_preview_texture_from_raw_data(bytes: PackedByteArray) -> void:
@@ -114,22 +129,33 @@ func _process(_dt: float) -> void:
 
 func _try_open_core_visualization_shm() -> void:
 	if not ClassDB.class_exists("SharedMemVideo"):
+		print("𒓉 [Preview] SharedMemVideo GDExtension not found; using WebSocket")
 		_shm_status.text = "SHM: extension missing - using websocket"
 		_fallback_to_websocket()
 		return
 	var core_viz_path: String = OS.get_environment("FEAGI_VIZ_SHM")
 	if core_viz_path == "":
+		print("𒓉 [Preview] FEAGI_VIZ_SHM not set; using WebSocket")
 		_shm_status.text = "SHM: not provided - using websocket"
 		_fallback_to_websocket()
 		return
+	var exists := FileAccess.file_exists(core_viz_path)
+	print("𒓉 [Preview] _try_open_core_visualization_shm(): FEAGI_VIZ_SHM=\"%s\" exists? %s" % [core_viz_path, str(exists)])
 	var obj = ClassDB.instantiate("SharedMemVideo")
 	if obj and obj.open(core_viz_path):
 		_shm_reader = obj
 		_use_shared_mem = true
 		_shm_status.text = "SHM: core visualization"
+		print("𒓉 [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
 		set_process(true)
 		_update_container_to_content()
 	else:
+		var reason2 := "open() returned false"
+		if obj == null:
+			reason2 = "SharedMemVideo.instantiate() returned null"
+		elif not FileAccess.file_exists(core_viz_path):
+			reason2 = "file does not exist"
+		print("𒓉 [Preview] Failed to open SHM at ", core_viz_path, " reason: ", reason2, "; using WebSocket")
 		_shm_status.text = "SHM: open failed - using websocket"
 		_fallback_to_websocket()
 
@@ -165,5 +191,6 @@ func _update_container_to_content() -> void:
 		_preview_container.custom_minimum_size = sz + Vector2(8, 8)
 		
 func _fallback_to_websocket() -> void:
+	print("[Preview] Using WebSocket visualization stream")
 	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 		

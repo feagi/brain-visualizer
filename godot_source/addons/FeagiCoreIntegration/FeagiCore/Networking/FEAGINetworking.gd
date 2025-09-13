@@ -77,6 +77,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	websocket_API.setup(feagi_endpoint_details.full_websocket_address)
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 	websocket_API.connect_websocket()
+
+	# 𒓉 Attempt agent registration to obtain SHM paths
+	_call_register_agent_for_shm()
 	
 	# NOTE: Since websocket startup can have its health set to retrying, we stay in a loop until we get a sucess or failure
 	while true:
@@ -97,6 +100,52 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
 	
 	return true
+
+func _call_register_agent_for_shm() -> void:
+	# Build registration payload
+	var payload := {
+		"agent_type": "visualizer",
+		"agent_id": "brain-visualizer",
+		"agent_data_port": 0,
+		"agent_version": ProjectSettings.get_setting("application/config/version", "dev"),
+		"controller_version": ProjectSettings.get_setting("application/config/version", "dev"),
+		"capabilities": {"visualization": true},
+		"metadata": {"request_shared_memory": true}
+	}
+	var def := APIRequestWorkerDefinition.define_single_POST_call(http_API.address_list.POST_agent_register, payload)
+	var worker := http_API.make_HTTP_call(def)
+	print("𒓉 [REG] Posting /v1/agent/register …")
+	await worker.worker_done
+	var out := worker.retrieve_output_and_close()
+	if out.has_errored or out.has_timed_out:
+		print("𒓉 [REG] Agent register failed or timed out; will continue without SHM auto-config")
+		print("𒓉 [REG] Error? ", out.has_errored, ", Timeout? ", out.has_timed_out)
+		if out.has_errored:
+			var body := out.decode_response_as_dict()
+			print("𒓉 [REG] Error body: ", body)
+		return
+	var resp := out.decode_response_as_dict()
+	var msg := resp.get("message", "")
+	print("𒓉 [REG] Response: ", resp)
+	if typeof(msg) == TYPE_STRING and msg != "":
+		# Server encodes details JSON in message
+		var parsed_any = JSON.parse_string(msg)
+		var parsed: Dictionary = {}
+		if typeof(parsed_any) == TYPE_DICTIONARY:
+			parsed = parsed_any
+		if parsed.has("shared_memory") and typeof(parsed["shared_memory"]) == TYPE_DICTIONARY:
+			var shm: Dictionary = parsed["shared_memory"]
+			# Expected keys might include 'visualization_stream'
+			var viz: String = ""
+			if shm.has("visualization_stream"):
+				viz = str(shm["visualization_stream"]) 
+			if viz != "":
+				print("𒓉 [REG] Using SHM from register: ", viz)
+				# Set env for current process to let WebSocketAPI pick it up
+				OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz)
+				# Ask WS API to (re)initialize SHM now that we have a path
+				if websocket_API and websocket_API.has_method("_init_shm_visualization"):
+					websocket_API._init_shm_visualization()
 	
 ## Completely disconnect all networking systems from FEAGI
 func disconnect_networking() -> void:

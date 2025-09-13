@@ -54,6 +54,7 @@ var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neur
 var POST_region_region: StringName = "/v1/region/region"
 var POST_corticalArea_multi_corticalAreaProperties: StringName = "/v1/cortical_area/multi/cortical_area_properties"
 var POST_input_vision: StringName = "/v1/input/vision"
+var POST_agent_register: StringName = "/v1/agent/register"
 var POST_agent_manualStimulation: StringName = "/v1/agent/manual_stimulation"
 
 # Put Requests

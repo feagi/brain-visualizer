@@ -51,6 +51,17 @@ var _waiting_for_wasm: bool = false
 var _rust_init_attempts: int = 0
 const MAX_RUST_INIT_ATTEMPTS := 5
 
+# 𒓉 Shared memory neuron visualization (FEAGI → Brain Visualizer)
+var _use_shared_mem: bool = false
+var _shm_path: String = ""
+var _shm_file: FileAccess = null
+var _shm_header_size: int = 256
+var _shm_num_slots: int = 0
+var _shm_slot_size: int = 0
+var _shm_last_seq: int = -1
+var _ws_notice_printed: bool = false
+var _shm_notice_printed: bool = false
+
 
 func _ready():
 	# Initialize platform-specific decoding path
@@ -61,6 +72,9 @@ func _ready():
 	else:
 		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
 		_init_rust_deserializer()
+
+	# 𒓉 Try to initialize shared memory visualization (env-provided path)
+	_init_shm_visualization()
 
 func _init_rust_deserializer() -> void:
 	if _rust_deserializer != null:
@@ -86,10 +100,21 @@ func _init_rust_deserializer() -> void:
 		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
 
 func _process(_delta: float):
+	# 𒓉 Poll SHM for neuron visualization bytes if enabled
+	if _use_shared_mem:
+		_poll_shm_once()
+		if not _shm_notice_printed:
+			print("𒓉 [WS] SHM polling active; path=", _shm_path)
+			_shm_notice_printed = true
+	else:
+		# Print once to make it obvious we're on WS path
+		if not _ws_notice_printed:
+			print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled)")
+			_ws_notice_printed = true
 	# On Web, flush queued Type 11 packets once WASM is ready
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
 		# Process all queued before polling socket
-		for i in _pending_type11.size():
+		for i in range(_pending_type11.size()):
 			var qbytes: PackedByteArray = _pending_type11[i]
 			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
 			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
@@ -124,13 +149,38 @@ func _process(_delta: float):
 			
 			while _socket.get_available_packet_count():
 				var raw_packet = _socket.get_packet()
-				var retrieved_ws_data = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
-				
-				# DEBUG: Check if decompression failed
-				if retrieved_ws_data.size() == 0:
-					push_error("FEAGI WebSocket: Decompression failed - received empty data!")
+				var retrieved_ws_data: PackedByteArray
+				var raw_len := raw_packet.size()
+				# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
+				if _is_probably_text(raw_packet):
+					var text_payload := raw_packet.get_string_from_ascii().strip_edges()
+					print("[WS] Text frame: \"", text_payload, "\" len=", raw_len)
+					if text_payload == SOCKET_GENOME_UPDATE_FLAG:
+						print("[WS] Received genome update flag; emitting reset request")
+						feagi_requesting_reset.emit()
+						continue
+					if text_payload.to_lower() == "ping" or text_payload.to_lower() == "pong":
+						# Ignore keepalive pings
+						continue
+					# Unknown small text message - ignore after logging
 					continue
-				
+				# Try DEFLATE first (legacy)
+				var decompressed := raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+				if decompressed.size() > 0:
+					retrieved_ws_data = decompressed
+					print("[WS] Decompressed packet: raw_len=", raw_len, " -> dec_len=", retrieved_ws_data.size())
+				else:
+					# Fallback: some FEAGI builds may send uncompressed data over WS
+					# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
+					if _looks_like_feagi_ws_payload(raw_packet):
+						var first_b := -1
+						if raw_len > 0:
+							first_b = int(raw_packet[0])
+						print("[WS] Fallback: treating packet as UNCOMPRESSED. raw_len=", raw_len, ", first_byte=", first_b)
+						retrieved_ws_data = raw_packet
+					else:
+						push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
+						continue
 				_process_wrapped_byte_structure(retrieved_ws_data)
 				
 		WebSocketPeer.State.STATE_CLOSING:
@@ -205,6 +255,10 @@ func websocket_send(data: Variant) -> void:
 func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 	# DEBUG: Log the structure ID detection
 	var structure_id = bytes[0] if bytes.size() > 0 else -1
+
+	# 𒓉 If SHM is active, ignore WS-delivered neuron visualization (Type 11) to avoid duplicates
+	if _use_shared_mem and structure_id == 11:
+		return
 	
 	# SAFETY CHECK: Ensure we have data before processing
 	if bytes.size() == 0:
@@ -262,7 +316,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			var structure_start_index: int = 0 # cached
 			var structure_length: int = 0 # cached
 			var header_offset: int = 3 # cached, lets us know where to read from the subheader
-			for structure_index in number_contained_structures:
+			for structure_index in range(number_contained_structures):
 				structure_start_index = bytes.decode_u32(header_offset)        # Little Endian by default
 				structure_length = bytes.decode_u32(header_offset + 4)        # Little Endian by default
 				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
@@ -342,6 +396,102 @@ func _reconnect_websocket() -> void:
 	_socket =  WebSocketPeer.new()
 	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
 	_socket.connect_to_url(_socket_web_address)
+	print("[WS] connect_to_url(", _socket_web_address, ") inbound_buffer_size=", DEF_SOCKET_INBOUND_BUFFER_SIZE)
+
+func _looks_like_feagi_ws_payload(bytes: PackedByteArray) -> bool:
+	# FEAGI payload types we handle: 1(JSON),8(img),9(multi),10(SVO),11(neurons)
+	if bytes.size() == 0:
+		return false
+	var t := int(bytes[0])
+	return t == 1 or t == 8 or t == 9 or t == 10 or t == 11
+
+func _is_probably_text(bytes: PackedByteArray) -> bool:
+	# Heuristic: small (<= 256) and all ASCII/whitespace
+	var n := bytes.size()
+	if n == 0 or n > 256:
+		return false
+	for i in range(n):
+		var b := int(bytes[i])
+		if b == 9 or b == 10 or b == 13:
+			continue
+		if b < 32 or b > 126:
+			return false
+	return true
+
+# 𒓉 -------- Shared Memory Visualization Support --------
+func _init_shm_visualization() -> void:
+	# Prefer explicit neuron viz SHM; fallback to generic viz SHM
+	var p := OS.get_environment("FEAGI_VIZ_NEURONS_SHM")
+	if p == "":
+		p = OS.get_environment("FEAGI_VIZ_SHM")
+	if p == "":
+		return
+	if not FileAccess.file_exists(p):
+		print("𒓉 [WS] SHM path not found: ", p)
+		return
+	var f := FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		push_error("𒓉 [WS] Failed to open SHM: " + p)
+		return
+	# Read header once to initialize
+	f.seek(0)
+	var h := f.get_buffer(_shm_header_size)
+	if h.size() < 32:
+		push_error("𒓉 [WS] SHM header too small (" + str(h.size()) + ")")
+		return
+	var magic := ""
+	for i in range(8):
+		magic += char(h[i])
+	if magic != "FEAGIVIS" and magic != "FEAGIBIN" and magic != "FEAGIMOT":
+		push_error("𒓉 [WS] SHM magic invalid: " + magic)
+		return
+	_shm_num_slots = h.decode_u32(12)
+	_shm_slot_size = h.decode_u32(16)
+	_shm_last_seq = _decode_u64_le(h, 20) - 1
+	_shm_file = f
+	_shm_path = p
+	_use_shared_mem = true
+	print("𒓉 [WS] Using SHM neuron visualization: ", p, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size)
+	# Reset path notices to show SHM active on next _process tick
+	_shm_notice_printed = false
+	_ws_notice_printed = false
+
+func _poll_shm_once() -> void:
+	if _shm_file == null:
+		return
+	# Re-read header to get write_index and frame_seq
+	_shm_file.seek(0)
+	var h := _shm_file.get_buffer(_shm_header_size)
+	if h.size() < 32:
+		return
+	var frame_seq := _decode_u64_le(h, 20)
+	if frame_seq <= _shm_last_seq:
+		return
+	var write_index := int(h.decode_u32(28))
+	if _shm_num_slots <= 0 or _shm_slot_size <= 0:
+		return
+	var idx := (write_index - 1) % _shm_num_slots
+	if idx < 0:
+		idx += _shm_num_slots
+	var slot_off := _shm_header_size + idx * _shm_slot_size
+	_shm_file.seek(slot_off)
+	var len_bytes := _shm_file.get_buffer(4)
+	if len_bytes.size() < 4:
+		return
+	var payload_len := len_bytes.decode_u32(0)
+	if payload_len <= 0 or payload_len > (_shm_slot_size - 4):
+		_shm_last_seq = frame_seq
+		return
+	var payload := _shm_file.get_buffer(payload_len)
+	_shm_last_seq = frame_seq
+	print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
+	_process_wrapped_byte_structure(payload)
+
+func _decode_u64_le(bytes: PackedByteArray, offset: int) -> int:
+	# Godot GDScript lacks decode_u64 on some versions; compose from two u32
+	var lo := int(bytes.decode_u32(offset))
+	var hi := int(bytes.decode_u32(offset + 4))
+	return (hi << 32) | (lo & 0xFFFFFFFF)
 
 func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 	# Skip handling missing areas during genome reload/processing to avoid spam
