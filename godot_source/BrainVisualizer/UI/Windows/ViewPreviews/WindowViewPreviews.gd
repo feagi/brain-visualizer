@@ -8,7 +8,6 @@ var _resolution_UI: Label
 var _preview_container: PanelContainer
 var _visual_preview: TextureRect
 var _buttons: HBoxContainer
-var _agent_dropdown: OptionButton
 var _shm_status: Label
 var _view_toggle: OptionButton
 
@@ -28,7 +27,6 @@ func _ready():
 	_preview_container = _window_internals.get_node("PanelContainer")
 	_visual_preview = _window_internals.get_node("PanelContainer/MarginContainer/TextureRect")
 	_buttons = _window_internals.get_node("sizes")
-	_agent_dropdown = _window_internals.get_node("SHMControls/AgentDropdown")
 	_shm_status = _window_internals.get_node("SHMStatus")
 	_view_toggle = _window_internals.get_node("SHMControls/ViewToggle")
 	# Setup toggle options: 0=Raw, 1=FEAGI
@@ -36,12 +34,8 @@ func _ready():
 	_view_toggle.add_item("Raw", 0)
 	_view_toggle.add_item("FEAGI", 1)
 	_view_toggle.selected = 0
-	# Populate dropdown from FEAGI endpoint
-	_agent_dropdown.clear()
-	_agent_dropdown.add_item("Loading...")
-	_agent_dropdown.disabled = true
-	await _populate_agents_with_shared_mem()
-	_agent_dropdown.item_selected.connect(_agent_selected)
+	# Try core SHM path via environment (provided by FEAGI launcher)
+	_try_open_core_visualization_shm()
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -118,26 +112,26 @@ func _process(_dt: float) -> void:
 		print("SharedMemVideo tick: ", info)
 		_shm_status.text = "SHM: tick " + str(info.get("frame_seq", 0))
 
-func _agent_selected(_idx: int) -> void:
+func _try_open_core_visualization_shm() -> void:
 	if not ClassDB.class_exists("SharedMemVideo"):
-		push_error("SharedMemVideo extension not loaded")
+		_shm_status.text = "SHM: extension missing - using websocket"
+		_fallback_to_websocket()
 		return
-	var sel := _agent_dropdown.get_selected()
-	if sel < 0:
-		return
-	var meta: Variant = _agent_dropdown.get_item_metadata(sel)
-	if meta == null:
-		return
-	var path: String = str(meta.get("video_preview_shared_mem_path", ""))
-	if path == "":
+	var core_viz_path: String = OS.get_environment("FEAGI_VIZ_SHM")
+	if core_viz_path == "":
+		_shm_status.text = "SHM: not provided - using websocket"
+		_fallback_to_websocket()
 		return
 	var obj = ClassDB.instantiate("SharedMemVideo")
-	if obj and obj.open(path):
+	if obj and obj.open(core_viz_path):
 		_shm_reader = obj
 		_use_shared_mem = true
-		_shm_status.text = "SHM: opened (" + path + ")"
+		_shm_status.text = "SHM: core visualization"
 		set_process(true)
 		_update_container_to_content()
+	else:
+		_shm_status.text = "SHM: open failed - using websocket"
+		_fallback_to_websocket()
 
 func _crop_half(tex: ImageTexture, left_half: bool) -> ImageTexture:
 	if tex == null:
@@ -170,29 +164,6 @@ func _update_container_to_content() -> void:
 		_visual_preview.custom_minimum_size = sz
 		_preview_container.custom_minimum_size = sz + Vector2(8, 8)
 		
-func _populate_agents_with_shared_mem() -> void:
-	if FeagiCore == null or FeagiCore.network == null or FeagiCore.network.http_API == null:
-		return
-	var req_def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_shared_mem)
-	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req_def)
-	await worker.worker_done
-	var outp: FeagiRequestOutput = worker.retrieve_output_and_close()
-	if outp.has_errored or outp.has_timed_out:
-		return
-	var data: Dictionary = outp.decode_response_as_dict()
-	_agent_dropdown.clear()
-	var added := false
-	for aid in data.keys():
-		var details: Dictionary = data[aid]
-		var shm_path: String = str(details.get("video_preview_shared_mem_path", ""))
-		if shm_path != "":
-			_agent_dropdown.add_item(aid)
-			_agent_dropdown.set_item_metadata(_agent_dropdown.item_count - 1, details)
-			added = true
-	if not added:
-		_agent_dropdown.add_item("No agents with SHM")
-		_agent_dropdown.disabled = true
-	else:
-		_agent_dropdown.disabled = false
-		_agent_dropdown.select(0)
+func _fallback_to_websocket() -> void:
+	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 		

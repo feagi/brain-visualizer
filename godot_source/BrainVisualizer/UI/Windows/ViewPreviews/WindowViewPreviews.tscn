@@ -36,12 +36,6 @@ text = "SHM: idle"
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
-layout_mode = 2
-size_flags_horizontal = 0
-text = "Select Agent"
-custom_minimum_size = Vector2(300, 0)
-
 [node name="ViewLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
 text = "View:"
