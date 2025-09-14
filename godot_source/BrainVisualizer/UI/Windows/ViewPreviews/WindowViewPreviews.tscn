@@ -65,14 +65,18 @@ text = "Streaming Resolution: "
 layout_mode = 2
 text = "0 X 0 (Nothing Playing)"
 
-[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-visible = false
+[node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
+layout_mode = 2
 theme_type_variation = &"NotificationSystemNotification"
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/PanelContainer"]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
@@ -81,7 +85,7 @@ theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer/MarginContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/PanelContainer/MarginContainer"]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 size_flags_horizontal = 0

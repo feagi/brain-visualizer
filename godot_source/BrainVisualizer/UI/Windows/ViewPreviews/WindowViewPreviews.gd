@@ -34,8 +34,9 @@ func _ready():
 	super()
 	print("[Preview] _ready(): initializing View Previews window")
 	_resolution_UI = _window_internals.get_node("HBoxContainer/resolution")
-	_preview_container = _window_internals.get_node("PanelContainer")
-	_visual_preview = _window_internals.get_node("PanelContainer/MarginContainer/TextureRect")
+	# After wrapping preview in a ScrollContainer, path changes
+	_preview_container = _window_internals.get_node("Scroll/PanelContainer")
+	_visual_preview = _window_internals.get_node("Scroll/PanelContainer/MarginContainer/TextureRect")
 	_buttons = _window_internals.get_node("sizes")
 	_shm_status = _window_internals.get_node("SHMStatus")
 	_view_toggle = _window_internals.get_node("SHMControls/ViewToggle")
@@ -105,6 +106,10 @@ func _update_resolution(res: Vector2i) -> void:
 	_current_resolution = res
 	if !_preview_container.visible:
 		_preview_container.visible = true
+		# Ensure ScrollContainer is also revealed
+		var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
+		if sc:
+			sc.visible = true
 		_buttons.visible = true
 		_update_scale_size()
 	_resolution_UI.text = "%d x %d" % [res.x, res.y]
@@ -324,14 +329,19 @@ func _crop_half(tex: ImageTexture, left_half: bool) -> ImageTexture:
 	return out_tex
 
 func _update_container_to_content() -> void:
-	# Clamp the preview panel width/height to the current texture size (+ small padding)
+	# Set preview viewport to 1/5 of active screen and allow scroll
+	var screen_size: Vector2 = DisplayServer.window_get_size()
+	var max_view: Vector2 = screen_size / 5.0
 	if _visual_preview.texture:
-		var sz: Vector2 = _visual_preview.texture.get_size()
+		var tex_sz: Vector2 = _visual_preview.texture.get_size()
 		# Apply current scale factor
-		sz = Vector2(sz.x * float(SCALAR_RES.x * _resolution_scalar_dyn.x), sz.y * float(SCALAR_RES.y * _resolution_scalar_dyn.y))
-		# Set minimum size on the TextureRect and its parent panel to content
-		_visual_preview.custom_minimum_size = sz
-		_preview_container.custom_minimum_size = sz + Vector2(8, 8)
+		var scaled: Vector2 = Vector2(tex_sz.x * float(SCALAR_RES.x * _resolution_scalar_dyn.x), tex_sz.y * float(SCALAR_RES.y * _resolution_scalar_dyn.y))
+		# Content should reflect full scaled size; viewport is clamped via Scroll
+		_visual_preview.custom_minimum_size = scaled
+		_preview_container.custom_minimum_size = scaled
+		var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
+		if sc:
+			sc.custom_minimum_size = max_view
 		
 func _fallback_to_websocket() -> void:
 	print("[Preview] Using WebSocket visualization stream")
