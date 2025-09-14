@@ -32,6 +32,14 @@ var _use_shared_mem: bool = false
 var _shm_reader_raw: Variant = null # Use Variant to avoid hard dependency if extension missing
 var _shm_reader_feagi: Variant = null
 
+# User-resizable viewport (bottom-right drag)
+var _user_view_size: Vector2 = Vector2.ZERO
+var _resizing: bool = false
+var _resize_margin: int = 16
+var _resize_start_mouse: Vector2 = Vector2.ZERO
+var _resize_start_size: Vector2 = Vector2.ZERO
+var _resize_handle: Panel
+
 func _ready():
 	super()
 	print("[Preview] _ready(): initializing View Previews window")
@@ -58,6 +66,31 @@ func _ready():
 	# Try core SHM path via environment (provided by FEAGI launcher)
 	print("𒓉 [Preview] _ready(): attempting FEAGI_VIZ_SHM shared-memory setup")
 	_try_open_core_visualization_shm()
+
+	# Add a visible bottom-right resize handle
+	_resize_handle = Panel.new()
+	_resize_handle.name = "ResizeHandle"
+	_resize_handle.mouse_filter = Control.MOUSE_FILTER_STOP
+	_resize_handle.mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
+	_resize_handle.size = Vector2(18, 18)
+	_resize_handle.z_index = 1000
+	# Make handle top-level so it's not constrained by Container layout and always on top
+	add_child(_resize_handle)
+	_resize_handle.top_level = true
+	_resize_handle.z_index = 10000
+	_resize_handle.visible = true
+	# Position initially and on window resize
+	_position_resize_handle()
+	if is_instance_valid(_window_panel):
+		_window_panel.resized.connect(_position_resize_handle)
+	# Simple visual style
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.85, 0.85, 0.85, 0.95)
+	sb.border_color = Color(0.6, 0.6, 0.6, 1.0)
+	sb.border_width_bottom = 1
+	sb.border_width_right = 1
+	_resize_handle.add_theme_stylebox_override("panel", sb)
+	_resize_handle.gui_input.connect(_on_resize_handle_gui_input)
 	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -335,7 +368,7 @@ func _crop_half(tex: Texture2D, left_half: bool) -> Texture2D:
 func _update_container_to_content() -> void:
 	# Set preview viewport to 1/5 of active screen and allow scroll
 	var screen_size: Vector2 = DisplayServer.window_get_size()
-	var max_view: Vector2 = screen_size / 5.0
+	var default_view: Vector2 = screen_size / 5.0
 	if _visual_preview.texture:
 		var tex_sz: Vector2 = _visual_preview.texture.get_size()
 		# Apply current scale factor
@@ -345,8 +378,66 @@ func _update_container_to_content() -> void:
 		_preview_container.custom_minimum_size = scaled
 		var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
 		if sc:
-			sc.custom_minimum_size = max_view
+			var view_size: Vector2 = _user_view_size if _user_view_size != Vector2.ZERO else default_view
+			sc.custom_minimum_size = view_size
 		
+
+func _gui_input(event):
+	# Handle bottom-right corner resize
+	if event is InputEventMouseMotion:
+		var local_pos: Vector2 = get_local_mouse_position()
+		var near_corner: bool = local_pos.x >= size.x - _resize_margin and local_pos.y >= size.y - _resize_margin
+		mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE if near_corner else Control.CURSOR_ARROW
+		if _resizing:
+			var delta: Vector2 = get_global_mouse_position() - _resize_start_mouse
+			var new_size: Vector2 = _resize_start_size + delta
+			new_size.x = max(160.0, new_size.x)
+			new_size.y = max(120.0, new_size.y)
+			_user_view_size = new_size
+			_update_container_to_content()
+			accept_event()
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				var local_pos2: Vector2 = get_local_mouse_position()
+				var on_corner: bool = local_pos2.x >= size.x - _resize_margin and local_pos2.y >= size.y - _resize_margin
+				if on_corner:
+					_resizing = true
+					_resize_start_mouse = get_global_mouse_position()
+					var sc2: ScrollContainer = _window_internals.get_node_or_null("Scroll")
+					_resize_start_size = sc2.custom_minimum_size if sc2 else Vector2.ZERO
+					accept_event()
+			else:
+				_resizing = false
+				accept_event()
+
+func _position_resize_handle() -> void:
+	if _resize_handle == null:
+		return
+	var r: Rect2 = _window_panel.get_global_rect() if is_instance_valid(_window_panel) else get_global_rect()
+	var margin: Vector2 = Vector2(4, 4)
+	var pos: Vector2 = r.position + r.size - _resize_handle.size - margin
+	_resize_handle.global_position = pos
+
+func _on_resize_handle_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_resizing = true
+			_resize_start_mouse = get_global_mouse_position()
+			var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
+			_resize_start_size = sc.custom_minimum_size if sc else Vector2.ZERO
+			accept_event()
+		else:
+			_resizing = false
+			accept_event()
+	elif event is InputEventMouseMotion and _resizing:
+		var delta: Vector2 = get_global_mouse_position() - _resize_start_mouse
+		var new_size: Vector2 = _resize_start_size + delta
+		new_size.x = max(160.0, new_size.x)
+		new_size.y = max(120.0, new_size.y)
+		_user_view_size = new_size
+		_update_container_to_content()
+		accept_event()
 func _fallback_to_websocket() -> void:
 	print("[Preview] Using WebSocket visualization stream")
 	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
