@@ -25,7 +25,7 @@ var _video_last_error: String = ""
 var _current_resolution: Vector2i = Vector2i(0,0)
 var _preview_image: Image = Image.new()
 var _preview_image_texture: ImageTexture = ImageTexture.new()
-var _resolution_scalar_dyn: Vector2i = Vector2i(1,1)
+var _resolution_scalar_dyn: Vector2 = Vector2(1.0, 1.0)
 
 # Shared memory video support (desktop preview via SharedMemVideo GDExtension)
 var _use_shared_mem: bool = false
@@ -56,6 +56,9 @@ var _default_mod: Vector2 = Vector2(0.85, 0.85)
 
 # Overlay to visualize segmentation preview on top of the FEAGI video
 var _seg_overlay: Control
+var _scale_row: HBoxContainer
+var _scale_raw: float = 1.0
+var _scale_feagi: float = 1.0
 
 # Local overlay class that draws red guide lines showing 3x3 segmentation
 class SegOverlay:
@@ -159,6 +162,7 @@ func _ready():
 	# React to texture changes (resolution/frame) to keep overlay aligned
 	_visual_preview.item_rect_changed.connect(_on_preview_rect_changed)
 	_buttons = _window_internals.get_node("sizes")
+	_setup_scale_buttons()
 	_shm_status = _window_internals.get_node("SHMStatus")
 	_view_toggle = _window_internals.get_node("SHMControls/ViewToggle")
 	_agent_dropdown = _window_internals.get_node("SHMControls/AgentDropdown")
@@ -173,6 +177,8 @@ func _ready():
 	_view_toggle.add_item("FEAGI", 1)
 	_view_toggle.selected = 0
 	_view_toggle.item_selected.connect(_on_view_toggle_selected)
+	# Initialize scale for default view after initial layout
+	call_deferred("_apply_current_scale")
 
 	# Build segmentation UI as its own row (full width)
 	_seg_controls = VBoxContainer.new()
@@ -317,13 +323,29 @@ func _update_resolution(res: Vector2i) -> void:
 		_seg_overlay.queue_redraw()
 	
 func _update_scale_size() -> void:
-	_visual_preview.custom_minimum_size = _current_resolution * SCALAR_RES * _resolution_scalar_dyn
+	var base: Vector2 = Vector2(float(_current_resolution.x * SCALAR_RES.x), float(_current_resolution.y * SCALAR_RES.y))
+	_visual_preview.custom_minimum_size = Vector2(base.x * _resolution_scalar_dyn.x, base.y * _resolution_scalar_dyn.y)
 	_update_container_to_content()
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
 
-func _scale_button_pressed(scalar: int) -> void: # set with custom arguments from TSCN signal
-	_resolution_scalar_dyn = Vector2i(scalar, scalar)
+func _scale_button_pressed(scalar: float) -> void: # set with custom arguments from TSCN signal
+	# Maintain independent scale for Raw vs FEAGI view
+	if _view_toggle and _view_toggle.selected == 0:
+		_scale_raw = scalar
+	else:
+		_scale_feagi = scalar
+	_apply_current_scale()
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.queue_redraw()
+
+func _apply_current_scale() -> void:
+	var active_scale: float = 1.0
+	if _view_toggle and _view_toggle.selected == 0:
+		active_scale = _scale_raw
+	else:
+		active_scale = _scale_feagi
+	_resolution_scalar_dyn = Vector2(active_scale, active_scale)
 	_update_scale_size()
 	
 func _process(_dt: float) -> void:
@@ -602,6 +624,8 @@ func _on_view_toggle_selected(index: int) -> void:
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.visible = (index == 1)
 		_seg_overlay.queue_redraw()
+	# Apply per-view scale when switching
+	_apply_current_scale()
 
 func _on_seg_value_changed(_val: float) -> void:
 	if _ecc_val_label:
@@ -687,4 +711,54 @@ func _is_feagi_view() -> bool:
 func _on_preview_rect_changed() -> void:
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
-		
+
+func _setup_scale_buttons() -> void:
+	# Create or populate a row of scale buttons (1x..4x) above segmentation
+	var container_parent: Control = _window_internals
+	var insertion_index: int = -1
+	if _seg_controls and _seg_controls.get_parent() == _window_internals:
+		insertion_index = _window_internals.get_children().find(_seg_controls)
+	# Use existing sizes container if present (but ensure only one ScaleButtons row exists)
+	if _buttons and _buttons is HBoxContainer:
+		var existing: Node = _buttons.get_node_or_null("ScaleButtons")
+		if existing and existing is HBoxContainer:
+			_scale_row = existing
+			for child in _scale_row.get_children():
+				(child as Node).queue_free()
+		else:
+			# Remove any previously added ScaleButtons directly under _window_internals to avoid duplicates
+			var orphan: Node = _window_internals.get_node_or_null("ScaleButtons")
+			if orphan:
+				orphan.queue_free()
+			_scale_row = HBoxContainer.new()
+			_scale_row.name = "ScaleButtons"
+			_scale_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			_buttons.add_child(_scale_row)
+		_buttons.visible = true
+	else:
+		_scale_row = HBoxContainer.new()
+		_scale_row.name = "ScaleButtons"
+		_scale_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if insertion_index >= 0:
+			_window_internals.add_child(_scale_row)
+			_window_internals.move_child(_scale_row, insertion_index)
+		else:
+			_window_internals.add_child(_scale_row)
+	# Add scale buttons: 1/4x, 1/2x, 1x, 2x, 4x, 8x
+	var lbl := Label.new()
+	lbl.text = "Scale:"
+	_scale_row.add_child(lbl)
+	var entries := [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+	for s in entries:
+		var b := Button.new()
+		if s < 1.0:
+			var denom := int(round(1.0 / s))
+			b.text = "1/" + str(denom) + "x"
+		else:
+			b.text = str(int(s)) + "x"
+		b.toggle_mode = false
+		b.pressed.connect(_on_scale_button.bind(s))
+		_scale_row.add_child(b)
+
+func _on_scale_button(scalar: float) -> void:
+	_scale_button_pressed(scalar)
