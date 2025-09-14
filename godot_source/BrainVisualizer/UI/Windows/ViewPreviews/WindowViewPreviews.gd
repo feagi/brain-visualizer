@@ -113,6 +113,11 @@ class SegOverlay:
 	func _draw() -> void:
 		if is_feagi_view and not is_feagi_view.call():
 			return
+		var parent_tr: TextureRect = get_parent() as TextureRect
+		if parent_tr == null or parent_tr.texture == null:
+			return
+		var draw_rect: Rect2 = _compute_draw_rect(parent_tr, parent_tr.texture)
+		# Read sliders
 		var ecc: Vector2 = Vector2(0.5, 0.5)
 		if get_eccentricity:
 			ecc = get_eccentricity.call()
@@ -123,10 +128,7 @@ class SegOverlay:
 		ecc.y = clamp(ecc.y, 0.0, 1.0)
 		mod.x = clamp(mod.x, 0.0, 1.0)
 		mod.y = clamp(mod.y, 0.0, 1.0)
-		var parent_tr: TextureRect = get_parent() as TextureRect
-		if parent_tr == null or parent_tr.texture == null:
-			return
-		var draw_rect: Rect2 = _compute_draw_rect(parent_tr, parent_tr.texture)
+		# Compute center rectangle from eccentricity (center) and modulation (size)
 		var cx: float = draw_rect.position.x + ecc.x * draw_rect.size.x
 		var cy: float = draw_rect.position.y + ecc.y * draw_rect.size.y
 		var w: float = mod.x * draw_rect.size.x
@@ -142,8 +144,6 @@ class SegOverlay:
 		draw_line(Vector2(x_right, draw_rect.position.y), Vector2(x_right, draw_rect.position.y + draw_rect.size.y), color, thickness)
 		draw_line(Vector2(draw_rect.position.x, y_top), Vector2(draw_rect.position.x + draw_rect.size.x, y_top), color, thickness)
 		draw_line(Vector2(draw_rect.position.x, y_bottom), Vector2(draw_rect.position.x + draw_rect.size.x, y_bottom), color, thickness)
-		# Emphasize central rectangle boundary
-		draw_rect(Rect2(Vector2(x_left, y_top), Vector2(x_right - x_left, y_bottom - y_top)), color, false, thickness)
 
 func _ready():
 	super()
@@ -347,6 +347,7 @@ func _apply_current_scale() -> void:
 		active_scale = _scale_feagi
 	_resolution_scalar_dyn = Vector2(active_scale, active_scale)
 	_update_scale_size()
+	_update_container_to_content()
 	
 func _process(_dt: float) -> void:
 	# Keep resize handle glued to the window position
@@ -741,11 +742,11 @@ func _setup_scale_buttons() -> void:
 		else:
 			for child in _scale_row.get_children():
 				(child as Node).queue_free()
-	# Add scale buttons: 1/4x, 1/2x, 1x, 2x, 4x, 8x
+	# Add scale buttons: 1/2x, 1x, 2x, 4x, 8x
 	var lbl := Label.new()
 	lbl.text = "Scale:"
 	_scale_row.add_child(lbl)
-	var entries := [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+	var entries := [0.5, 1.0, 2.0, 4.0, 8.0]
 	for s in entries:
 		var b := Button.new()
 		if s < 1.0:
