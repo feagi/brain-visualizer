@@ -54,6 +54,94 @@ var _reset_btn: Button
 var _default_ecc: Vector2 = Vector2(0.5, 0.5)
 var _default_mod: Vector2 = Vector2(0.85, 0.85)
 
+# Overlay to visualize segmentation preview on top of the FEAGI video
+var _seg_overlay: Control
+
+# Local overlay class that draws red guide lines showing 3x3 segmentation
+class SegOverlay:
+	extends Control
+	var get_eccentricity: Callable
+	var get_modulation: Callable
+	var is_feagi_view: Callable
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top_level = false
+		z_index = 10000
+		set_anchors_preset(Control.PRESET_FULL_RECT)
+		var p = get_parent()
+		if p and p is Control:
+			(p as Control).item_rect_changed.connect(_on_parent_rect_changed)
+
+	func _on_parent_rect_changed() -> void:
+		queue_redraw()
+
+	func _compute_draw_rect(tr: TextureRect, tex: Texture2D) -> Rect2:
+		var ctrl_size: Vector2 = tr.size
+		var img_size: Vector2 = tex.get_size()
+		if img_size.x <= 0.0 or img_size.y <= 0.0:
+			return Rect2(Vector2.ZERO, ctrl_size)
+		var mode: int = tr.stretch_mode
+		# Default: fill entire rect
+		var rect_pos: Vector2 = Vector2.ZERO
+		var rect_size: Vector2 = ctrl_size
+		match mode:
+			TextureRect.STRETCH_SCALE, TextureRect.STRETCH_TILE:
+				rect_pos = Vector2.ZERO
+				rect_size = ctrl_size
+			TextureRect.STRETCH_KEEP:
+				rect_pos = Vector2.ZERO
+				rect_size = img_size
+			TextureRect.STRETCH_KEEP_CENTERED:
+				rect_size = img_size
+				rect_pos = (ctrl_size - rect_size) * 0.5
+			TextureRect.STRETCH_KEEP_ASPECT, TextureRect.STRETCH_KEEP_ASPECT_CENTERED, TextureRect.STRETCH_KEEP_ASPECT_COVERED:
+				var sx: float = ctrl_size.x / img_size.x
+				var sy: float = ctrl_size.y / img_size.y
+				var s: float = sx
+				if mode == TextureRect.STRETCH_KEEP_ASPECT or mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED:
+					s = min(sx, sy)
+				else:
+					s = max(sx, sy)
+				rect_size = img_size * s
+				rect_pos = (ctrl_size - rect_size) * 0.5
+		return Rect2(rect_pos, rect_size)
+
+	func _draw() -> void:
+		if is_feagi_view and not is_feagi_view.call():
+			return
+		var ecc: Vector2 = Vector2(0.5, 0.5)
+		if get_eccentricity:
+			ecc = get_eccentricity.call()
+		var mod: Vector2 = Vector2(0.85, 0.85)
+		if get_modulation:
+			mod = get_modulation.call()
+		ecc.x = clamp(ecc.x, 0.0, 1.0)
+		ecc.y = clamp(ecc.y, 0.0, 1.0)
+		mod.x = clamp(mod.x, 0.0, 1.0)
+		mod.y = clamp(mod.y, 0.0, 1.0)
+		var parent_tr: TextureRect = get_parent() as TextureRect
+		if parent_tr == null or parent_tr.texture == null:
+			return
+		var draw_rect: Rect2 = _compute_draw_rect(parent_tr, parent_tr.texture)
+		var cx: float = draw_rect.position.x + ecc.x * draw_rect.size.x
+		var cy: float = draw_rect.position.y + ecc.y * draw_rect.size.y
+		var w: float = mod.x * draw_rect.size.x
+		var h: float = mod.y * draw_rect.size.y
+		var x_left: float = clamp(cx - (w * 0.5), draw_rect.position.x, draw_rect.position.x + draw_rect.size.x)
+		var x_right: float = clamp(cx + (w * 0.5), draw_rect.position.x, draw_rect.position.x + draw_rect.size.x)
+		var y_top: float = clamp(cy - (h * 0.5), draw_rect.position.y, draw_rect.position.y + draw_rect.size.y)
+		var y_bottom: float = clamp(cy + (h * 0.5), draw_rect.position.y, draw_rect.position.y + draw_rect.size.y)
+		var color: Color = Color(1.0, 0.0, 0.0, 0.95)
+		var thickness: float = max(2.0, min(draw_rect.size.x, draw_rect.size.y) * 0.003)
+		# Draw full-length grid lines for 3x3 segmentation
+		draw_line(Vector2(x_left, draw_rect.position.y), Vector2(x_left, draw_rect.position.y + draw_rect.size.y), color, thickness)
+		draw_line(Vector2(x_right, draw_rect.position.y), Vector2(x_right, draw_rect.position.y + draw_rect.size.y), color, thickness)
+		draw_line(Vector2(draw_rect.position.x, y_top), Vector2(draw_rect.position.x + draw_rect.size.x, y_top), color, thickness)
+		draw_line(Vector2(draw_rect.position.x, y_bottom), Vector2(draw_rect.position.x + draw_rect.size.x, y_bottom), color, thickness)
+		# Emphasize central rectangle boundary
+		draw_rect(Rect2(Vector2(x_left, y_top), Vector2(x_right - x_left, y_bottom - y_top)), color, false, thickness)
+
 func _ready():
 	super()
 	print("[Preview] _ready(): initializing View Previews window")
@@ -61,6 +149,15 @@ func _ready():
 	# After wrapping preview in a ScrollContainer, path changes
 	_preview_container = _window_internals.get_node("Scroll/PanelContainer")
 	_visual_preview = _window_internals.get_node("Scroll/PanelContainer/MarginContainer/TextureRect")
+	# Inject segmentation overlay over the preview texture
+	_seg_overlay = SegOverlay.new()
+	_seg_overlay.get_eccentricity = Callable(self, "_get_eccentricity")
+	_seg_overlay.get_modulation = Callable(self, "_get_modulation")
+	_seg_overlay.is_feagi_view = Callable(self, "_is_feagi_view")
+	_visual_preview.add_child(_seg_overlay)
+	_seg_overlay.visible = false
+	# React to texture changes (resolution/frame) to keep overlay aligned
+	_visual_preview.item_rect_changed.connect(_on_preview_rect_changed)
 	_buttons = _window_internals.get_node("sizes")
 	_shm_status = _window_internals.get_node("SHMStatus")
 	_view_toggle = _window_internals.get_node("SHMControls/ViewToggle")
@@ -216,10 +313,14 @@ func _update_resolution(res: Vector2i) -> void:
 	_preview_image_texture.set_image(_preview_image)
 	_visual_preview.texture = _preview_image_texture
 	_update_container_to_content()
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.queue_redraw()
 	
 func _update_scale_size() -> void:
 	_visual_preview.custom_minimum_size = _current_resolution * SCALAR_RES * _resolution_scalar_dyn
 	_update_container_to_content()
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.queue_redraw()
 
 func _scale_button_pressed(scalar: int) -> void: # set with custom arguments from TSCN signal
 	_resolution_scalar_dyn = Vector2i(scalar, scalar)
@@ -244,6 +345,8 @@ func _process(_dt: float) -> void:
 			_update_resolution(size)
 		_visual_preview.texture = tex
 		_update_container_to_content()
+		if is_instance_valid(_seg_overlay):
+			_seg_overlay.queue_redraw()
 	else:
 		# Poll header info for debugging
 		var info: Dictionary = reader.get_header_info()
@@ -496,16 +599,22 @@ func _on_view_toggle_selected(index: int) -> void:
 	# Show segmentation controls only for FEAGI view
 	if _seg_controls:
 		_seg_controls.visible = (index == 1)
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.visible = (index == 1)
+		_seg_overlay.queue_redraw()
 
 func _on_seg_value_changed(_val: float) -> void:
 	if _ecc_val_label:
 		_ecc_val_label.text = "(%.2f, %.2f)" % [_eccx_slider.value, _eccy_slider.value]
 	if _mod_val_label:
 		_mod_val_label.text = "(%.2f, %.2f)" % [_modx_slider.value, _mody_slider.value]
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.queue_redraw()
 
 func _on_apply_segmentation() -> void:
 	# UI-only for now: log the intended values. Backend will send via motor stream later.
 	print("𒓉 [SegCtl] Apply eccentricity=(", str(_eccx_slider.value), ", ", str(_eccy_slider.value), ") modularity=(", str(_modx_slider.value), ", ", str(_mody_slider.value), ")")
+	_send_segmentation_to_feagi()
 
 func _on_reset_segmentation() -> void:
 	_eccx_slider.value = _default_ecc.x
@@ -513,6 +622,30 @@ func _on_reset_segmentation() -> void:
 	_modx_slider.value = _default_mod.x
 	_mody_slider.value = _default_mod.y
 	_on_seg_value_changed(0.0)
+
+func _send_segmentation_to_feagi() -> void:
+	# Use existing manual stimulation endpoint to transmit control signals for oecc00 and omod00
+	if not FeagiCore or not FeagiCore.network or not FeagiCore.network.http_API:
+		push_warning("SegCtl: HTTP API not available")
+		return
+	var eccx: float = clamp(_eccx_slider.value, 0.0, 1.0)
+	var eccy: float = clamp(_eccy_slider.value, 0.0, 1.0)
+	var modx: float = clamp(_modx_slider.value, 0.0, 1.0)
+	var mody: float = clamp(_mody_slider.value, 0.0, 1.0)
+	# Encode as simple Z-channels at origin (x=0,y=0): z=0 holds X, z=1 holds Y
+	var stim: Dictionary = {}
+	stim["oecc00"] = [[0,0,0],[0,0,1]]
+	stim["omod00"] = [[0,0,0],[0,0,1]]
+	var payload: Dictionary = {"stimulation_payload": stim}
+	print("𒓉 [SegCtl] Sending control stimulation payload: ", payload)
+	var def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_agent_manualStimulation, payload)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(def)
+	await worker.worker_done
+	var out: FeagiRequestOutput = worker.retrieve_output_and_close()
+	if out.has_errored or out.has_timed_out:
+		push_warning("SegCtl: stimulation send failed")
+	else:
+		print("𒓉 [SegCtl] Stimulation sent OK")
 
 func _on_resize_handle_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -533,7 +666,25 @@ func _on_resize_handle_gui_input(event: InputEvent) -> void:
 		_user_view_size = new_size
 		_update_container_to_content()
 		accept_event()
+		if is_instance_valid(_seg_overlay):
+			_seg_overlay.queue_redraw()
 func _fallback_to_websocket() -> void:
 	print("[Preview] Using WebSocket visualization stream")
 	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.queue_redraw()
+
+# Helper getters for overlay callables
+func _get_eccentricity() -> Vector2:
+	return Vector2(_eccx_slider.value, _eccy_slider.value)
+
+func _get_modulation() -> Vector2:
+	return Vector2(_modx_slider.value, _mody_slider.value)
+
+func _is_feagi_view() -> bool:
+	return _view_toggle and _view_toggle.selected == 1
+
+func _on_preview_rect_changed() -> void:
+	if is_instance_valid(_seg_overlay):
+		_seg_overlay.queue_redraw()
 		
