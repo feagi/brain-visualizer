@@ -36,6 +36,15 @@ text = "SHM: idle"
 layout_mode = 2
 size_flags_horizontal = 0
 
+[node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+layout_mode = 2
+text = "Agent:"
+
+[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
+layout_mode = 2
+disabled = false
+tooltip_text = "Select an agent with a video stream"
+
 [node name="ViewLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
 text = "View:"

@@ -10,6 +10,15 @@ var _visual_preview: TextureRect
 var _buttons: HBoxContainer
 var _shm_status: Label
 var _view_toggle: OptionButton
+var _agent_dropdown: OptionButton
+
+# agent → video_stream mapping
+var _agent_video_map: Dictionary = {}
+
+# Retry state for opening selected agent SHM
+var _video_init_attempts: int = 0
+var _video_init_max_attempts: int = 40
+var _video_last_error: String = ""
 
 # cache
 var _current_resolution: Vector2i = Vector2i(0,0)
@@ -30,11 +39,19 @@ func _ready():
 	_buttons = _window_internals.get_node("sizes")
 	_shm_status = _window_internals.get_node("SHMStatus")
 	_view_toggle = _window_internals.get_node("SHMControls/ViewToggle")
+	_agent_dropdown = _window_internals.get_node("SHMControls/AgentDropdown")
+	if _agent_dropdown:
+		_agent_dropdown.clear()
+		_agent_dropdown.add_item("Select agent…")
+		_agent_dropdown.disabled = true
+		_agent_dropdown.item_selected.connect(_on_agent_dropdown_selected)
 	# Setup toggle options: 0=Raw, 1=FEAGI
 	_view_toggle.clear()
 	_view_toggle.add_item("Raw", 0)
 	_view_toggle.add_item("FEAGI", 1)
 	_view_toggle.selected = 0
+	# Populate agents with video streams
+	_try_fetch_video_shm_from_api()
 	# Try core SHM path via environment (provided by FEAGI launcher)
 	print("𒓉 [Preview] _ready(): attempting FEAGI_VIZ_SHM shared-memory setup")
 	_try_open_core_visualization_shm()
@@ -177,7 +194,7 @@ func _try_fetch_video_shm_from_api() -> void:
 	var http_API = FeagiCore.network.http_API
 	var def = APIRequestWorkerDefinition.define_single_GET_call(http_API.address_list.GET_agent_shared_mem)
 	var worker = http_API.make_HTTP_call(def)
-	print("𒓉 [Preview] Querying /v1/agent/shared_mem for video preview…")
+	print("𒓉 [Preview] Querying /v1/agent/shared_mem for agents with video_stream…")
 	await worker.worker_done
 	var out = worker.retrieve_output_and_close()
 	if out.has_errored or out.has_timed_out:
@@ -185,35 +202,105 @@ func _try_fetch_video_shm_from_api() -> void:
 	var resp: Variant = out.decode_response_as_dict()
 	if typeof(resp) != TYPE_DICTIONARY:
 		return
-	# Heuristic: prefer agents whose id contains 'video-agent' and mapping has 'video_stream'
-	var chosen_path: String = ""
-	var chosen_agent: String = ""
+	# Populate dropdown with agents that have video_stream
+	_agent_video_map.clear()
+	if _agent_dropdown:
+		_agent_dropdown.disabled = true
+		_agent_dropdown.clear()
+		_agent_dropdown.add_item("Select agent…")
+	var count := 0
 	for aid in resp.keys():
 		var mapping = resp[aid]
 		if typeof(mapping) != TYPE_DICTIONARY:
 			continue
-		var path: String = ""
 		if mapping.has("video_stream"):
-			path = str(mapping["video_stream"])
-		elif mapping.has("video_preview_shared_mem_path"):
-			path = str(mapping["video_preview_shared_mem_path"])
-		if path == "":
-			continue
-		# Prefer video-agent*; otherwise first available
-		if chosen_path == "" or (aid is String and aid.findn("video-agent") != -1):
-			chosen_path = path
-			chosen_agent = str(aid)
-			if aid.findn("video-agent") != -1:
-				break
-	if chosen_path != "":
-		var obj = ClassDB.instantiate("SharedMemVideo")
-		if obj and obj.open(chosen_path):
-			_shm_reader = obj
-			_use_shared_mem = true
-			_shm_status.text = "SHM: video preview (API)"
-			print("𒓉 [Preview] Using SHM from API for agent ", chosen_agent, ": ", chosen_path)
-			set_process(true)
-			_update_container_to_content()
+			var path: String = str(mapping["video_stream"])
+			if path != "":
+				_agent_video_map[aid] = path
+				if _agent_dropdown:
+					_agent_dropdown.add_item(str(aid))
+					var idx := _agent_dropdown.get_item_count() - 1
+					_agent_dropdown.set_item_metadata(idx, path)
+					count += 1
+	if _agent_dropdown:
+		_agent_dropdown.disabled = count == 0
+		print("𒓉 [Preview] Agents with video_stream found: ", str(count))
+
+func _on_agent_dropdown_selected(index: int) -> void:
+	if index <= 0:
+		return
+	if not _agent_dropdown:
+		return
+	var md = _agent_dropdown.get_item_metadata(index)
+	var path: String = ""
+	if typeof(md) == TYPE_STRING:
+		path = md
+	if path == "":
+		return
+	_init_agent_video_shm(path)
+
+
+func _open_video_shm_path(path: String) -> void:
+	if not ClassDB.class_exists("SharedMemVideo"):
+		print("𒓉 [Preview] SharedMemVideo not available; cannot open ", path)
+		return
+	var obj = ClassDB.instantiate("SharedMemVideo")
+	if obj and obj.open(path):
+		_shm_reader = obj
+		_use_shared_mem = true
+		_shm_status.text = "SHM: video preview (agent)"
+		print("𒓉 [Preview] Using SHM (agent selection): ", path)
+		set_process(true)
+		_update_container_to_content()
+	else:
+		print("𒓉 [Preview] Failed to open SHM (agent selection): ", path)
+
+func _try_open_video_once(path: String) -> bool:
+	if not FileAccess.file_exists(path):
+		_video_last_error = "file does not exist"
+		return false
+	if not ClassDB.class_exists("SharedMemVideo"):
+		_video_last_error = "SharedMemVideo not available"
+		return false
+	# Probe header readiness
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		_video_last_error = "cannot open file"
+		return false
+	var fsize := f.get_length()
+	if fsize < 256:
+		_video_last_error = "header too small (" + str(fsize) + ") at path: " + path
+		return false
+	f.seek(0)
+	var magic_bytes := f.get_buffer(8)
+	var magic_hex := magic_bytes.hex_encode()
+	# 'FEAGIVID' in hex = 4645414749564944
+	if magic_hex != "4645414749564944":
+		_video_last_error = "invalid magic (" + magic_hex + ")"
+		return false
+	var obj = ClassDB.instantiate("SharedMemVideo")
+	if obj and obj.open(path):
+		_shm_reader = obj
+		_use_shared_mem = true
+		_shm_status.text = "SHM: video preview (agent)"
+		var info: Dictionary = _shm_reader.get_header_info()
+		print("𒓉 [Preview] Opened SHM (agent): ", path, " header=", info)
+		set_process(true)
+		_update_container_to_content()
+		return true
+	_video_last_error = "open() returned false"
+	return false
+
+func _init_agent_video_shm(path: String) -> void:
+	_video_init_attempts = 0
+	_video_last_error = ""
+	for i in range(_video_init_max_attempts):
+		_video_init_attempts = i + 1
+		if _try_open_video_once(path):
+			return
+		print("𒓉 [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": ", _video_last_error)
+		await get_tree().create_timer(0.25).timeout
+	print("𒓉 [Preview] SHM activation failed after ", _video_init_max_attempts, " attempts; last_error=", _video_last_error)
 
 func _crop_half(tex: ImageTexture, left_half: bool) -> ImageTexture:
 	if tex == null:
