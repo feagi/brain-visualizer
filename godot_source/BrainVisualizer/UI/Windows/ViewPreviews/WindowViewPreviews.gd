@@ -41,6 +41,19 @@ var _resize_start_size: Vector2 = Vector2.ZERO
 var _resize_handle: Panel
 var _window_border_pad: int = 12
 
+# Segmentation UI controls (FEAGI view only)
+var _seg_controls: VBoxContainer
+var _eccx_slider: HSlider
+var _eccy_slider: HSlider
+var _modx_slider: HSlider
+var _mody_slider: HSlider
+var _ecc_val_label: Label
+var _mod_val_label: Label
+var _apply_btn: Button
+var _reset_btn: Button
+var _default_ecc: Vector2 = Vector2(0.5, 0.5)
+var _default_mod: Vector2 = Vector2(0.85, 0.85)
+
 func _ready():
 	super()
 	print("[Preview] _ready(): initializing View Previews window")
@@ -62,6 +75,53 @@ func _ready():
 	_view_toggle.add_item("Raw", 0)
 	_view_toggle.add_item("FEAGI", 1)
 	_view_toggle.selected = 0
+	_view_toggle.item_selected.connect(_on_view_toggle_selected)
+
+	# Build segmentation UI as its own row (full width)
+	_seg_controls = VBoxContainer.new()
+	_seg_controls.name = "SegControls"
+	_seg_controls.visible = false
+	_seg_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_seg_controls.custom_minimum_size = Vector2(0, 56)
+	_window_internals.add_child(_seg_controls)
+
+	# Title
+	var title := Label.new()
+	title.text = "Segmentation (FEAGI):"
+	_seg_controls.add_child(title)
+
+	# Eccentricity row
+	var ecc_row := HBoxContainer.new(); ecc_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ecc_lbl := Label.new(); ecc_lbl.text = "Eccentricity"
+	_eccx_slider = HSlider.new(); _eccx_slider.min_value = 0.0; _eccx_slider.max_value = 1.0; _eccx_slider.step = 0.01; _eccx_slider.value = _default_ecc.x; _eccx_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _eccx_slider.custom_minimum_size = Vector2(160, 0)
+	_eccy_slider = HSlider.new(); _eccy_slider.min_value = 0.0; _eccy_slider.max_value = 1.0; _eccy_slider.step = 0.01; _eccy_slider.value = _default_ecc.y; _eccy_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _eccy_slider.custom_minimum_size = Vector2(160, 0)
+	_ecc_val_label = Label.new(); _ecc_val_label.text = "(%.2f, %.2f)" % [_default_ecc.x, _default_ecc.y]
+	ecc_row.add_child(ecc_lbl); ecc_row.add_child(_eccx_slider); ecc_row.add_child(_eccy_slider); ecc_row.add_child(_ecc_val_label)
+	_seg_controls.add_child(ecc_row)
+
+	# Modularity row
+	var mod_row := HBoxContainer.new(); mod_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var mod_lbl := Label.new(); mod_lbl.text = "Modularity"
+	_modx_slider = HSlider.new(); _modx_slider.min_value = 0.0; _modx_slider.max_value = 1.0; _modx_slider.step = 0.01; _modx_slider.value = _default_mod.x; _modx_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _modx_slider.custom_minimum_size = Vector2(160, 0)
+	_mody_slider = HSlider.new(); _mody_slider.min_value = 0.0; _mody_slider.max_value = 1.0; _mody_slider.step = 0.01; _mody_slider.value = _default_mod.y; _mody_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _mody_slider.custom_minimum_size = Vector2(160, 0)
+	_mod_val_label = Label.new(); _mod_val_label.text = "(%.2f, %.2f)" % [_default_mod.x, _default_mod.y]
+	mod_row.add_child(mod_lbl); mod_row.add_child(_modx_slider); mod_row.add_child(_mody_slider); mod_row.add_child(_mod_val_label)
+	_seg_controls.add_child(mod_row)
+
+	# Buttons row
+	var btn_row := HBoxContainer.new()
+	_apply_btn = Button.new(); _apply_btn.text = "Apply"; _apply_btn.tooltip_text = "Apply eccentricity/modularity"
+	_reset_btn = Button.new(); _reset_btn.text = "Reset"
+	btn_row.add_child(_apply_btn); btn_row.add_child(_reset_btn)
+	_seg_controls.add_child(btn_row)
+
+	# Wire signals
+	_eccx_slider.value_changed.connect(_on_seg_value_changed)
+	_eccy_slider.value_changed.connect(_on_seg_value_changed)
+	_modx_slider.value_changed.connect(_on_seg_value_changed)
+	_mody_slider.value_changed.connect(_on_seg_value_changed)
+	_apply_btn.pressed.connect(_on_apply_segmentation)
+	_reset_btn.pressed.connect(_on_reset_segmentation)
 	# Populate agents with video streams
 	_try_fetch_video_shm_from_api()
 	# Try core SHM path via environment (provided by FEAGI launcher)
@@ -431,6 +491,28 @@ func _position_resize_handle() -> void:
 	var margin: Vector2 = Vector2(4, 4)
 	var pos: Vector2 = r.position + r.size - _resize_handle.size - margin
 	_resize_handle.global_position = pos
+
+func _on_view_toggle_selected(index: int) -> void:
+	# Show segmentation controls only for FEAGI view
+	if _seg_controls:
+		_seg_controls.visible = (index == 1)
+
+func _on_seg_value_changed(_val: float) -> void:
+	if _ecc_val_label:
+		_ecc_val_label.text = "(%.2f, %.2f)" % [_eccx_slider.value, _eccy_slider.value]
+	if _mod_val_label:
+		_mod_val_label.text = "(%.2f, %.2f)" % [_modx_slider.value, _mody_slider.value]
+
+func _on_apply_segmentation() -> void:
+	# UI-only for now: log the intended values. Backend will send via motor stream later.
+	print("𒓉 [SegCtl] Apply eccentricity=(", str(_eccx_slider.value), ", ", str(_eccy_slider.value), ") modularity=(", str(_modx_slider.value), ", ", str(_mody_slider.value), ")")
+
+func _on_reset_segmentation() -> void:
+	_eccx_slider.value = _default_ecc.x
+	_eccy_slider.value = _default_ecc.y
+	_modx_slider.value = _default_mod.x
+	_mody_slider.value = _default_mod.y
+	_on_seg_value_changed(0.0)
 
 func _on_resize_handle_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
