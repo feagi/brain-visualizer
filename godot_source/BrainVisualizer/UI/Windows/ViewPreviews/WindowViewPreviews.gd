@@ -83,6 +83,9 @@ func _ready():
 	_position_resize_handle()
 	if is_instance_valid(_window_panel):
 		_window_panel.resized.connect(_position_resize_handle)
+		_window_panel.item_rect_changed.connect(_position_resize_handle)
+	# Reposition when this window moves or changes
+	item_rect_changed.connect(_position_resize_handle)
 	# Simple visual style
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.85, 0.85, 0.85, 0.95)
@@ -162,6 +165,8 @@ func _scale_button_pressed(scalar: int) -> void: # set with custom arguments fro
 	_update_scale_size()
 	
 func _process(_dt: float) -> void:
+	# Keep resize handle glued to the window position
+	_position_resize_handle()
 	if not _use_shared_mem:
 		return
 	var is_raw: bool = _view_toggle.selected == 0
