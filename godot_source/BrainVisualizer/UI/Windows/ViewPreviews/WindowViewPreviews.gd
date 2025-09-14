@@ -14,6 +14,7 @@ var _agent_dropdown: OptionButton
 
 # agent → video_stream mapping
 var _agent_video_map: Dictionary = {}
+var _agent_video_map_feagi: Dictionary = {}
 
 # Retry state for opening selected agent SHM
 var _video_init_attempts: int = 0
@@ -28,7 +29,8 @@ var _resolution_scalar_dyn: Vector2i = Vector2i(1,1)
 
 # Shared memory video support (desktop preview via SharedMemVideo GDExtension)
 var _use_shared_mem: bool = false
-var _shm_reader: Variant = null # Use Variant to avoid hard dependency if extension missing
+var _shm_reader_raw: Variant = null # Use Variant to avoid hard dependency if extension missing
+var _shm_reader_feagi: Variant = null
 
 func _ready():
 	super()
@@ -71,9 +73,9 @@ func setup() -> void:
 		print("𒓉 [Preview] setup(): FEAGI_VIDEO_SHM exists? ", str(exists_env))
 	if shm_path != "" and ClassDB.class_exists("SharedMemVideo"):
 		var obj = ClassDB.instantiate("SharedMemVideo")
-		_shm_reader = obj
-		if _shm_reader and _shm_reader.open(shm_path):
-			var info: Dictionary = _shm_reader.get_header_info()
+		_shm_reader_feagi = obj
+		if _shm_reader_feagi and _shm_reader_feagi.open(shm_path):
+			var info: Dictionary = _shm_reader_feagi.get_header_info()
 			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", shm_path)
 			print("𒓉 [Preview] SharedMemVideo header:", info)
 			_shm_status.text = "SHM: opened"
@@ -82,7 +84,7 @@ func setup() -> void:
 			return
 		else:
 			var reason := "open() returned false"
-			if _shm_reader == null:
+			if _shm_reader_feagi == null:
 				reason = "SharedMemVideo.instantiate() returned null"
 			elif not FileAccess.file_exists(shm_path):
 				reason = "file does not exist"
@@ -129,27 +131,23 @@ func _scale_button_pressed(scalar: int) -> void: # set with custom arguments fro
 func _process(_dt: float) -> void:
 	if not _use_shared_mem:
 		return
-	if _shm_reader == null:
+	var is_raw: bool = _view_toggle.selected == 0
+	var reader: Variant = _shm_reader_raw
+	if not is_raw:
+		reader = _shm_reader_feagi
+	if reader == null:
 		return
-	var tex: ImageTexture = _shm_reader.get_texture()
+	var tex: Texture2D = reader.get_texture()
 	if tex:
 		# Update resolution and UI on first frame or when dimensions change
 		var size: Vector2i = tex.get_size()
 		if size != _current_resolution:
 			_update_resolution(size)
-		# Apply view: left=Raw, right=FEAGI
-		var display_tex: ImageTexture = tex
-		if _view_toggle.selected == 0:
-			# Raw: left half
-			display_tex = _crop_half(display_tex, true)
-		elif _view_toggle.selected == 1:
-			# FEAGI: right half
-			display_tex = _crop_half(display_tex, false)
-		_visual_preview.texture = display_tex
+		_visual_preview.texture = tex
 		_update_container_to_content()
 	else:
 		# Poll header info for debugging
-		var info: Dictionary = _shm_reader.get_header_info()
+		var info: Dictionary = reader.get_header_info()
 		print("SharedMemVideo tick: ", info)
 		_shm_status.text = "SHM: tick " + str(info.get("frame_seq", 0))
 
@@ -164,7 +162,7 @@ func _try_open_core_visualization_shm() -> void:
 	if video_path != "":
 		var obj_v = ClassDB.instantiate("SharedMemVideo")
 		if obj_v and obj_v.open(video_path):
-			_shm_reader = obj_v
+			_shm_reader_feagi = obj_v
 			_use_shared_mem = true
 			_shm_status.text = "SHM: video preview"
 			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", video_path)
@@ -176,7 +174,7 @@ func _try_open_core_visualization_shm() -> void:
 	if core_viz_path != "":
 		var obj = ClassDB.instantiate("SharedMemVideo")
 		if obj and obj.open(core_viz_path):
-			_shm_reader = obj
+			_shm_reader_feagi = obj
 			_use_shared_mem = true
 			_shm_status.text = "SHM: core visualization"
 			print("𒓉 [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
@@ -199,7 +197,7 @@ func _try_fetch_video_shm_from_api() -> void:
 	var http_API = FeagiCore.network.http_API
 	var def = APIRequestWorkerDefinition.define_single_GET_call(http_API.address_list.GET_agent_shared_mem)
 	var worker = http_API.make_HTTP_call(def)
-	print("𒓉 [Preview] Querying /v1/agent/shared_mem for agents with video_stream…")
+	print("𒓉 [Preview] Querying /v1/agent/shared_mem for agents with video preview streams…")
 	await worker.worker_done
 	var out = worker.retrieve_output_and_close()
 	if out.has_errored or out.has_timed_out:
@@ -207,8 +205,9 @@ func _try_fetch_video_shm_from_api() -> void:
 	var resp: Variant = out.decode_response_as_dict()
 	if typeof(resp) != TYPE_DICTIONARY:
 		return
-	# Populate dropdown with agents that have video_stream
+	# Populate dropdown with agents that have video_stream_raw/feagi (or legacy video_stream)
 	_agent_video_map.clear()
+	_agent_video_map_feagi.clear()
 	if _agent_dropdown:
 		_agent_dropdown.disabled = true
 		_agent_dropdown.clear()
@@ -218,18 +217,23 @@ func _try_fetch_video_shm_from_api() -> void:
 		var mapping = resp[aid]
 		if typeof(mapping) != TYPE_DICTIONARY:
 			continue
-		if mapping.has("video_stream"):
-			var path: String = str(mapping["video_stream"])
-			if path != "":
-				_agent_video_map[aid] = path
-				if _agent_dropdown:
-					_agent_dropdown.add_item(str(aid))
-					var idx := _agent_dropdown.get_item_count() - 1
-					_agent_dropdown.set_item_metadata(idx, path)
-					count += 1
+		var raw_path: String = str(mapping.get("video_stream_raw", ""))
+		var feagi_path: String = str(mapping.get("video_stream_feagi", ""))
+		var legacy_path: String = str(mapping.get("video_stream", ""))
+		if raw_path == "" and legacy_path != "":
+			raw_path = legacy_path
+		if raw_path != "" or feagi_path != "":
+			_agent_video_map[aid] = raw_path
+			_agent_video_map_feagi[aid] = feagi_path
+			if _agent_dropdown:
+				_agent_dropdown.add_item(str(aid))
+				var idx := _agent_dropdown.get_item_count() - 1
+				var md := {"raw": raw_path, "feagi": feagi_path}
+				_agent_dropdown.set_item_metadata(idx, md)
+				count += 1
 	if _agent_dropdown:
 		_agent_dropdown.disabled = count == 0
-		print("𒓉 [Preview] Agents with video_stream found: ", str(count))
+		print("𒓉 [Preview] Agents with video streams found: ", str(count))
 
 func _on_agent_dropdown_selected(index: int) -> void:
 	if index <= 0:
@@ -237,93 +241,93 @@ func _on_agent_dropdown_selected(index: int) -> void:
 	if not _agent_dropdown:
 		return
 	var md = _agent_dropdown.get_item_metadata(index)
-	var path: String = ""
-	if typeof(md) == TYPE_STRING:
-		path = md
-	if path == "":
+	var raw_path: String = ""
+	var feagi_path: String = ""
+	if typeof(md) == TYPE_DICTIONARY:
+		raw_path = str(md.get("raw", ""))
+		feagi_path = str(md.get("feagi", ""))
+	if raw_path == "" and feagi_path == "":
 		return
-	_init_agent_video_shm(path)
+	_init_agent_video_shm_dual(raw_path, feagi_path)
 
 
-func _open_video_shm_path(path: String) -> void:
+
+func _open_video_shm_path(path: String) -> Variant:
 	if not ClassDB.class_exists("SharedMemVideo"):
 		print("𒓉 [Preview] SharedMemVideo not available; cannot open ", path)
-		return
+		return null
 	var obj = ClassDB.instantiate("SharedMemVideo")
 	if obj and obj.open(path):
-		_shm_reader = obj
-		_use_shared_mem = true
-		_shm_status.text = "SHM: video preview (agent)"
-		print("𒓉 [Preview] Using SHM (agent selection): ", path)
-		set_process(true)
-		_update_container_to_content()
+		return obj
 	else:
 		print("𒓉 [Preview] Failed to open SHM (agent selection): ", path)
+		return null
 
-func _try_open_video_once(path: String) -> bool:
+func _try_open_video_once(path: String) -> Variant:
 	if not FileAccess.file_exists(path):
 		_video_last_error = "file does not exist"
-		return false
+		return null
 	if not ClassDB.class_exists("SharedMemVideo"):
 		_video_last_error = "SharedMemVideo not available"
-		return false
+		return null
 	# Probe header readiness
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		_video_last_error = "cannot open file"
-		return false
+		return null
 	var fsize := f.get_length()
 	if fsize < 256:
 		_video_last_error = "header too small (" + str(fsize) + ") at path: " + path
-		return false
+		return null
 	f.seek(0)
 	var magic_bytes := f.get_buffer(8)
 	var magic_hex := magic_bytes.hex_encode()
 	# 'FEAGIVID' in hex = 4645414749564944
 	if magic_hex != "4645414749564944":
 		_video_last_error = "invalid magic (" + magic_hex + ")"
-		return false
+		return null
 	var obj = ClassDB.instantiate("SharedMemVideo")
 	if obj and obj.open(path):
-		_shm_reader = obj
-		_use_shared_mem = true
-		_shm_status.text = "SHM: video preview (agent)"
-		var info: Dictionary = _shm_reader.get_header_info()
+		var info: Dictionary = obj.get_header_info()
 		print("𒓉 [Preview] Opened SHM (agent): ", path, " header=", info)
-		set_process(true)
-		_update_container_to_content()
-		return true
+		return obj
 	_video_last_error = "open() returned false"
-	return false
+	return null
 
-func _init_agent_video_shm(path: String) -> void:
+func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 	_video_init_attempts = 0
 	_video_last_error = ""
 	for i in range(_video_init_max_attempts):
 		_video_init_attempts = i + 1
-		if _try_open_video_once(path):
+		var raw_obj: Variant = null
+		var feagi_obj: Variant = null
+		if raw_path != "":
+			raw_obj = _try_open_video_once(raw_path)
+		if feagi_path != "":
+			feagi_obj = _try_open_video_once(feagi_path)
+		if raw_obj != null or feagi_obj != null:
+			_shm_reader_raw = raw_obj
+			_shm_reader_feagi = feagi_obj
+			_use_shared_mem = true
+			_shm_status.text = "SHM: video preview (agent)"
+			set_process(true)
+			_update_container_to_content()
 			return
 		print("𒓉 [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": ", _video_last_error)
 		await get_tree().create_timer(0.25).timeout
 	print("𒓉 [Preview] SHM activation failed after ", _video_init_max_attempts, " attempts; last_error=", _video_last_error)
 
-func _crop_half(tex: ImageTexture, left_half: bool) -> ImageTexture:
+func _crop_half(tex: Texture2D, left_half: bool) -> Texture2D:
 	if tex == null:
 		return tex
+	var sz: Vector2i = tex.get_size()
+	if sz.x <= 1:
+		return tex
+	var half_w: int = int(sz.x / 2)
+	var rect: Rect2i = Rect2i(0, 0, half_w, sz.y) if left_half else Rect2i(sz.x - half_w, 0, half_w, sz.y)
 	var img: Image = tex.get_image()
 	if img == null:
 		return tex
-	var w: int = img.get_width()
-	var h: int = img.get_height()
-	if w <= 1:
-		return tex
-	var half_w: int = int(w / 2)
-	var rect: Rect2i
-	if left_half:
-		rect = Rect2i(0, 0, half_w, h)
-	else:
-		rect = Rect2i(w - half_w, 0, half_w, h)
-	# Godot 4: use get_region() to crop an Image
 	var cropped: Image = img.get_region(rect)
 	var out_tex: ImageTexture = ImageTexture.create_from_image(cropped)
 	return out_tex
