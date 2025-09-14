@@ -718,32 +718,29 @@ func _setup_scale_buttons() -> void:
 	var insertion_index: int = -1
 	if _seg_controls and _seg_controls.get_parent() == _window_internals:
 		insertion_index = _window_internals.get_children().find(_seg_controls)
-	# Use existing sizes container if present (but ensure only one ScaleButtons row exists)
+	# Use existing sizes container if present; repurpose it directly to avoid duplicates
 	if _buttons and _buttons is HBoxContainer:
-		var existing: Node = _buttons.get_node_or_null("ScaleButtons")
-		if existing and existing is HBoxContainer:
-			_scale_row = existing
-			for child in _scale_row.get_children():
+		_scale_row = _buttons
+		# Remove any pre-existing scale UI (legacy buttons/labels)
+		for child in _scale_row.get_children():
+			if child is Button or child is Label or (child is Control and (child as Control).name == "ScaleButtons"):
 				(child as Node).queue_free()
-		else:
-			# Remove any previously added ScaleButtons directly under _window_internals to avoid duplicates
-			var orphan: Node = _window_internals.get_node_or_null("ScaleButtons")
-			if orphan:
-				orphan.queue_free()
+		_buttons.visible = true
+	else:
+		# If there is no dedicated sizes container, create a single ScaleButtons row (only once)
+		_scale_row = _window_internals.get_node_or_null("ScaleButtons") as HBoxContainer
+		if _scale_row == null:
 			_scale_row = HBoxContainer.new()
 			_scale_row.name = "ScaleButtons"
 			_scale_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_buttons.add_child(_scale_row)
-		_buttons.visible = true
-	else:
-		_scale_row = HBoxContainer.new()
-		_scale_row.name = "ScaleButtons"
-		_scale_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if insertion_index >= 0:
-			_window_internals.add_child(_scale_row)
-			_window_internals.move_child(_scale_row, insertion_index)
+			if insertion_index >= 0:
+				_window_internals.add_child(_scale_row)
+				_window_internals.move_child(_scale_row, insertion_index)
+			else:
+				_window_internals.add_child(_scale_row)
 		else:
-			_window_internals.add_child(_scale_row)
+			for child in _scale_row.get_children():
+				(child as Node).queue_free()
 	# Add scale buttons: 1/4x, 1/2x, 1x, 2x, 4x, 8x
 	var lbl := Label.new()
 	lbl.text = "Scale:"
