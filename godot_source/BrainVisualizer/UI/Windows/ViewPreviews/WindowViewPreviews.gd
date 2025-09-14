@@ -39,6 +39,7 @@ var _resize_margin: int = 16
 var _resize_start_mouse: Vector2 = Vector2.ZERO
 var _resize_start_size: Vector2 = Vector2.ZERO
 var _resize_handle: Panel
+var _window_border_pad: int = 12
 
 func _ready():
 	super()
@@ -385,6 +386,13 @@ func _update_container_to_content() -> void:
 		if sc:
 			var view_size: Vector2 = _user_view_size if _user_view_size != Vector2.ZERO else default_view
 			sc.custom_minimum_size = view_size
+			# Ensure the outer window width tracks the viewport width so the titlebar matches
+			if is_instance_valid(_window_panel):
+				_window_panel.custom_minimum_size = Vector2(view_size.x + float(_window_border_pad), _window_panel.custom_minimum_size.y)
+			# Also set this window's minimum size to drive the titlebar width
+			custom_minimum_size = Vector2(view_size.x + float(_window_border_pad), custom_minimum_size.y)
+			if is_instance_valid(_titlebar):
+				_titlebar.custom_minimum_size = Vector2(view_size.x + float(_window_border_pad), _titlebar.custom_minimum_size.y)
 		
 
 func _gui_input(event):
