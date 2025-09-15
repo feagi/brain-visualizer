@@ -669,13 +669,8 @@ func _update_container_to_content() -> void:
 		if sc:
 			var view_size: Vector2 = _user_view_size if _user_view_size != Vector2.ZERO else default_view
 			sc.custom_minimum_size = view_size
-			# Ensure the outer window width tracks the viewport width so the titlebar matches
-			if is_instance_valid(_window_panel):
-				_window_panel.custom_minimum_size = Vector2(view_size.x + float(_window_border_pad), _window_panel.custom_minimum_size.y)
-			# Also set this window's minimum size to drive the titlebar width
-			custom_minimum_size = Vector2(view_size.x + float(_window_border_pad), custom_minimum_size.y)
-			if is_instance_valid(_titlebar):
-				_titlebar.custom_minimum_size = Vector2(view_size.x + float(_window_border_pad), _titlebar.custom_minimum_size.y)
+			# Defer applying width constraints until after layout settles to avoid flicker/disjoin
+			call_deferred("_apply_view_width_constraints", view_size.x)
 		
 
 func _gui_input(event):
@@ -714,6 +709,14 @@ func _position_resize_handle() -> void:
 	var margin: Vector2 = Vector2(4, 4)
 	var pos: Vector2 = r.position + r.size - _resize_handle.size - margin
 	_resize_handle.global_position = pos
+
+func _apply_view_width_constraints(content_width: float) -> void:
+	var w: float = content_width + float(_window_border_pad)
+	if is_instance_valid(_window_panel):
+		_window_panel.custom_minimum_size = Vector2(w, _window_panel.custom_minimum_size.y)
+	custom_minimum_size = Vector2(w, custom_minimum_size.y)
+	if is_instance_valid(_titlebar):
+		_titlebar.custom_minimum_size = Vector2(w, _titlebar.custom_minimum_size.y)
 
 func _on_view_toggle_selected(index: int) -> void:
 	# Show segmentation controls only for FEAGI view
@@ -850,6 +853,10 @@ func _is_feagi_view() -> bool:
 func _on_preview_rect_changed() -> void:
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
+	# Keep titlebar/outer widths in sync if preview width changed
+	var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
+	if sc:
+		call_deferred("_apply_view_width_constraints", sc.custom_minimum_size.x)
 
 func _setup_scale_buttons() -> void:
 	# Create or populate a row of scale buttons (1x..4x) above segmentation
