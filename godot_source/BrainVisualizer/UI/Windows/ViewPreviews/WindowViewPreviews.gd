@@ -60,6 +60,29 @@ var _scale_row: HBoxContainer
 var _scale_raw: float = 1.0
 var _scale_feagi: float = 1.0
 
+# Image Pre-Processing UI controls
+var _preproc_controls: VBoxContainer
+var _brightness_slider: HSlider
+var _contrast_slider: HSlider
+var _grayscale_check: CheckButton
+var _brightness_val_label: Label
+var _contrast_val_label: Label
+var _preproc_apply_btn: Button
+var _preproc_reset_btn: Button
+
+# Motion Detection UI controls
+var _motion_controls: VBoxContainer
+var _pixdiff_slider: HSlider
+var _receptive_slider: HSlider
+var _motion_intensity_slider: HSlider
+var _min_blob_slider: HSlider
+var _pixdiff_val_label: Label
+var _receptive_val_label: Label
+var _motion_intensity_val_label: Label
+var _min_blob_val_label: Label
+var _motion_apply_btn: Button
+var _motion_reset_btn: Button
+
 # Local overlay class that draws red guide lines showing 3x3 segmentation
 class SegOverlay:
 	extends Control
@@ -188,9 +211,10 @@ func _ready():
 	_seg_controls.custom_minimum_size = Vector2(0, 56)
 	_window_internals.add_child(_seg_controls)
 
-	# Title
+	# Title (Gaze Control)
+	var spacer_gc := Control.new(); spacer_gc.custom_minimum_size = Vector2(0, 8); _window_internals.add_child(spacer_gc)
 	var title := Label.new()
-	title.text = "Segmentation (FEAGI):"
+	title.text = "Gaze Control (FEAGI):"
 	_seg_controls.add_child(title)
 
 	# Eccentricity row
@@ -218,6 +242,67 @@ func _ready():
 	btn_row.add_child(_apply_btn); btn_row.add_child(_reset_btn)
 	_seg_controls.add_child(btn_row)
 
+	# Image Pre-Processing group
+	var spacer_pre := Control.new(); spacer_pre.custom_minimum_size = Vector2(0, 8); _window_internals.add_child(spacer_pre)
+	_preproc_controls = VBoxContainer.new()
+	_preproc_controls.name = "PreProcControls"
+	_preproc_controls.visible = false
+	_preproc_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_preproc_controls.custom_minimum_size = Vector2(0, 56)
+	_window_internals.add_child(_preproc_controls)
+	var ptitle := Label.new(); ptitle.text = "Image Pre-Processing:"; _preproc_controls.add_child(ptitle)
+	# Brightness row
+	var br_row := HBoxContainer.new(); br_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var br_lbl := Label.new(); br_lbl.text = "Brightness"
+	_brightness_slider = HSlider.new(); _brightness_slider.min_value = -1.0; _brightness_slider.max_value = 1.0; _brightness_slider.step = 0.01; _brightness_slider.value = 0.0; _brightness_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _brightness_slider.custom_minimum_size = Vector2(160, 0)
+	_brightness_val_label = Label.new(); _brightness_val_label.text = "0.00"
+	br_row.add_child(br_lbl); br_row.add_child(_brightness_slider); br_row.add_child(_brightness_val_label); _preproc_controls.add_child(br_row)
+	# Contrast row
+	var ct_row := HBoxContainer.new(); ct_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ct_lbl := Label.new(); ct_lbl.text = "Contrast"
+	_contrast_slider = HSlider.new(); _contrast_slider.min_value = 0.0; _contrast_slider.max_value = 2.0; _contrast_slider.step = 0.01; _contrast_slider.value = 1.0; _contrast_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _contrast_slider.custom_minimum_size = Vector2(160, 0)
+	_contrast_val_label = Label.new(); _contrast_val_label.text = "1.00"
+	ct_row.add_child(ct_lbl); ct_row.add_child(_contrast_slider); ct_row.add_child(_contrast_val_label); _preproc_controls.add_child(ct_row)
+	# Grayscale row
+	var gs_row := HBoxContainer.new(); gs_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var gs_lbl := Label.new(); gs_lbl.text = "Color to grayscale"
+	_grayscale_check = CheckButton.new(); _grayscale_check.button_pressed = false
+	gs_row.add_child(gs_lbl); gs_row.add_child(_grayscale_check); _preproc_controls.add_child(gs_row)
+	# Buttons
+	var pbtn_row := HBoxContainer.new(); _preproc_apply_btn = Button.new(); _preproc_apply_btn.text = "Apply"; _preproc_reset_btn = Button.new(); _preproc_reset_btn.text = "Reset"; pbtn_row.add_child(_preproc_apply_btn); pbtn_row.add_child(_preproc_reset_btn); _preproc_controls.add_child(pbtn_row)
+
+	# Motion Detection group
+	var spacer_mo := Control.new(); spacer_mo.custom_minimum_size = Vector2(0, 8); _window_internals.add_child(spacer_mo)
+	_motion_controls = VBoxContainer.new(); _motion_controls.name = "MotionControls"; _motion_controls.visible = false; _motion_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _motion_controls.custom_minimum_size = Vector2(0, 56)
+	_window_internals.add_child(_motion_controls)
+	var mtitle := Label.new(); mtitle.text = "Motion Detection:"; _motion_controls.add_child(mtitle)
+	# Pixel intensity difference
+	var pd_row := HBoxContainer.new(); pd_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var pd_lbl := Label.new(); pd_lbl.text = "Pixel intensity difference"
+	_pixdiff_slider = HSlider.new(); _pixdiff_slider.min_value = 0.0; _pixdiff_slider.max_value = 1.0; _pixdiff_slider.step = 0.01; _pixdiff_slider.value = 0.15; _pixdiff_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _pixdiff_slider.custom_minimum_size = Vector2(160, 0)
+	_pixdiff_val_label = Label.new(); _pixdiff_val_label.text = "0.15"
+	pd_row.add_child(pd_lbl); pd_row.add_child(_pixdiff_slider); pd_row.add_child(_pixdiff_val_label); _motion_controls.add_child(pd_row)
+	# Receptive field
+	var rf_row := HBoxContainer.new(); rf_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var rf_lbl := Label.new(); rf_lbl.text = "Receptive field"
+	_receptive_slider = HSlider.new(); _receptive_slider.min_value = 1; _receptive_slider.max_value = 64; _receptive_slider.step = 1; _receptive_slider.value = 8; _receptive_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _receptive_slider.custom_minimum_size = Vector2(160, 0)
+	_receptive_val_label = Label.new(); _receptive_val_label.text = "8"
+	rf_row.add_child(rf_lbl); rf_row.add_child(_receptive_slider); rf_row.add_child(_receptive_val_label); _motion_controls.add_child(rf_row)
+	# Motion intensity
+	var mi_row := HBoxContainer.new(); mi_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var mi_lbl := Label.new(); mi_lbl.text = "Motion intensity"
+	_motion_intensity_slider = HSlider.new(); _motion_intensity_slider.min_value = 0.0; _motion_intensity_slider.max_value = 1.0; _motion_intensity_slider.step = 0.01; _motion_intensity_slider.value = 0.5; _motion_intensity_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _motion_intensity_slider.custom_minimum_size = Vector2(160, 0)
+	_motion_intensity_val_label = Label.new(); _motion_intensity_val_label.text = "0.50"
+	mi_row.add_child(mi_lbl); mi_row.add_child(_motion_intensity_slider); mi_row.add_child(_motion_intensity_val_label); _motion_controls.add_child(mi_row)
+	# Minimum blob size
+	var mb_row := HBoxContainer.new(); mb_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var mb_lbl := Label.new(); mb_lbl.text = "Minimum blob size"
+	_min_blob_slider = HSlider.new(); _min_blob_slider.min_value = 1; _min_blob_slider.max_value = 1024; _min_blob_slider.step = 1; _min_blob_slider.value = 16; _min_blob_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _min_blob_slider.custom_minimum_size = Vector2(160, 0)
+	_min_blob_val_label = Label.new(); _min_blob_val_label.text = "16"
+	mb_row.add_child(mb_lbl); mb_row.add_child(_min_blob_slider); mb_row.add_child(_min_blob_val_label); _motion_controls.add_child(mb_row)
+	# Buttons
+	var mbtn_row := HBoxContainer.new(); _motion_apply_btn = Button.new(); _motion_apply_btn.text = "Apply"; _motion_reset_btn = Button.new(); _motion_reset_btn.text = "Reset"; mbtn_row.add_child(_motion_apply_btn); mbtn_row.add_child(_motion_reset_btn); _motion_controls.add_child(mbtn_row)
+
 	# Wire signals
 	_eccx_slider.value_changed.connect(_on_seg_value_changed)
 	_eccy_slider.value_changed.connect(_on_seg_value_changed)
@@ -225,6 +310,18 @@ func _ready():
 	_mody_slider.value_changed.connect(_on_seg_value_changed)
 	_apply_btn.pressed.connect(_on_apply_segmentation)
 	_reset_btn.pressed.connect(_on_reset_segmentation)
+	# Wire new UI signals
+	_brightness_slider.value_changed.connect(_on_preproc_value_changed)
+	_contrast_slider.value_changed.connect(_on_preproc_value_changed)
+	_grayscale_check.toggled.connect(func(_pressed: bool): _on_preproc_value_changed(0.0))
+	_preproc_apply_btn.pressed.connect(_on_apply_preproc)
+	_preproc_reset_btn.pressed.connect(_on_reset_preproc)
+	_pixdiff_slider.value_changed.connect(_on_motion_value_changed)
+	_receptive_slider.value_changed.connect(_on_motion_value_changed)
+	_motion_intensity_slider.value_changed.connect(_on_motion_value_changed)
+	_min_blob_slider.value_changed.connect(_on_motion_value_changed)
+	_motion_apply_btn.pressed.connect(_on_apply_motion)
+	_motion_reset_btn.pressed.connect(_on_reset_motion)
 	# Populate agents with video streams
 	_try_fetch_video_shm_from_api()
 	# Try core SHM path via environment (provided by FEAGI launcher)
@@ -622,6 +719,10 @@ func _on_view_toggle_selected(index: int) -> void:
 	# Show segmentation controls only for FEAGI view
 	if _seg_controls:
 		_seg_controls.visible = (index == 1)
+	if _preproc_controls:
+		_preproc_controls.visible = (index == 1)
+	if _motion_controls:
+		_motion_controls.visible = (index == 1)
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.visible = (index == 1)
 		_seg_overlay.queue_redraw()
@@ -635,11 +736,48 @@ func _on_seg_value_changed(_val: float) -> void:
 		_mod_val_label.text = "(%.2f, %.2f)" % [_modx_slider.value, _mody_slider.value]
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
+	# Update dependent labels (optional in future)
 
 func _on_apply_segmentation() -> void:
 	# UI-only for now: log the intended values. Backend will send via motor stream later.
 	print("𒓉 [SegCtl] Apply eccentricity=(", str(_eccx_slider.value), ", ", str(_eccy_slider.value), ") modularity=(", str(_modx_slider.value), ", ", str(_mody_slider.value), ")")
 	_send_segmentation_to_feagi()
+
+func _on_preproc_value_changed(_val: float) -> void:
+	if _brightness_val_label:
+		_brightness_val_label.text = "%.2f" % [_brightness_slider.value]
+	if _contrast_val_label:
+		_contrast_val_label.text = "%.2f" % [_contrast_slider.value]
+	# Note: grayscale is a checkbutton; no numeric label needed
+
+func _on_motion_value_changed(_val: float) -> void:
+	if _pixdiff_val_label:
+		_pixdiff_val_label.text = "%.2f" % [_pixdiff_slider.value]
+	if _receptive_val_label:
+		_receptive_val_label.text = "%d" % [int(_receptive_slider.value)]
+	if _motion_intensity_val_label:
+		_motion_intensity_val_label.text = "%.2f" % [_motion_intensity_slider.value]
+	if _min_blob_val_label:
+		_min_blob_val_label.text = "%d" % [int(_min_blob_slider.value)]
+
+func _on_apply_preproc() -> void:
+	print("𒓉 [PreProc] Apply brightness=", _brightness_slider.value, " contrast=", _contrast_slider.value, " grayscale=", _grayscale_check.button_pressed)
+
+func _on_reset_preproc() -> void:
+	_brightness_slider.value = 0.0
+	_contrast_slider.value = 1.0
+	_grayscale_check.button_pressed = false
+	_on_preproc_value_changed(0.0)
+
+func _on_apply_motion() -> void:
+	print("𒓉 [Motion] Apply pix_diff=", _pixdiff_slider.value, " receptive=", int(_receptive_slider.value), " intensity=", _motion_intensity_slider.value, " min_blob=", int(_min_blob_slider.value))
+
+func _on_reset_motion() -> void:
+	_pixdiff_slider.value = 0.15
+	_receptive_slider.value = 8
+	_motion_intensity_slider.value = 0.5
+	_min_blob_slider.value = 16
+	_on_motion_value_changed(0.0)
 
 func _on_reset_segmentation() -> void:
 	_eccx_slider.value = _default_ecc.x
