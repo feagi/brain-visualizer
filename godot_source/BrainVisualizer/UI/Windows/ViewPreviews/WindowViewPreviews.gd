@@ -11,6 +11,7 @@ var _buttons: HBoxContainer
 var _shm_status: Label
 var _view_toggle: OptionButton
 var _agent_dropdown: OptionButton
+var _refresh_btn: Button
 
 # agent → video_stream mapping
 var _agent_video_map: Dictionary = {}
@@ -20,6 +21,7 @@ var _agent_video_map_feagi: Dictionary = {}
 var _video_init_attempts: int = 0
 var _video_init_max_attempts: int = 40
 var _video_last_error: String = ""
+var _is_refreshing: bool = false
 
 # cache
 var _current_resolution: Vector2i = Vector2i(0,0)
@@ -194,6 +196,15 @@ func _ready():
 		_agent_dropdown.add_item("Select agent…")
 		_agent_dropdown.disabled = true
 		_agent_dropdown.item_selected.connect(_on_agent_dropdown_selected)
+	# Create Refresh button next to AgentDropdown
+	var _shm_controls: Node = _window_internals.get_node_or_null("SHMControls")
+	if _shm_controls:
+		_refresh_btn = Button.new()
+		_refresh_btn.name = "RefreshButton"
+		_refresh_btn.text = "Refresh"
+		_refresh_btn.tooltip_text = "Refresh agents with video streams"
+		_shm_controls.add_child(_refresh_btn)
+		_refresh_btn.pressed.connect(_on_refresh_clicked)
 	# Setup toggle options: 0=Raw, 1=FEAGI
 	_view_toggle.clear()
 	_view_toggle.add_item("Raw", 0)
@@ -556,6 +567,21 @@ func _try_fetch_video_shm_from_api() -> void:
 	if _agent_dropdown:
 		_agent_dropdown.disabled = count == 0
 		print("𒓉 [Preview] Agents with video streams found: ", str(count))
+
+func _on_refresh_clicked() -> void:
+	if _is_refreshing:
+		return
+	_is_refreshing = true
+	if _agent_dropdown:
+		_agent_dropdown.disabled = true
+	if _shm_status:
+		_shm_status.text = "SHM: refreshing…"
+	await _try_fetch_video_shm_from_api()
+	if _agent_dropdown:
+		_agent_dropdown.disabled = false
+	_is_refreshing = false
+	if not _use_shared_mem and _shm_status:
+		_shm_status.text = "SHM: select an agent"
 
 func _on_agent_dropdown_selected(index: int) -> void:
 	if index <= 0:
