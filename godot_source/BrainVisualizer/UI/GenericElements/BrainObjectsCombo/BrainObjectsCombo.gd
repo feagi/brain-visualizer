@@ -12,6 +12,9 @@ var _btn_brain_regions_add: TextureButton
 var _btn_cortical_list: BasePanelContainerButton
 var _btn_cortical_add: TextureButton
 
+const HOVER_SCALE := Vector2(1.15, 1.15)
+const NORMAL_SCALE := Vector2(1.0, 1.0)
+
 func _ready() -> void:
 	_btn_brain_regions_list = $BrainRegionsList
 	_btn_brain_regions_add = $TextureButton_BrainRegions
@@ -33,8 +36,24 @@ func _ready() -> void:
 	)
 	_btn_cortical_add.button_down.connect(func(): print("BrainObjectsCombo: button_down cortical add"))
 	_btn_cortical_add.button_up.connect(func(): print("BrainObjectsCombo: button_up cortical add"))
-	_btn_cortical_add.mouse_entered.connect(func(): print("BrainObjectsCombo: hover cortical add"))
-	_btn_cortical_add.mouse_exited.connect(func(): print("BrainObjectsCombo: leave cortical add"))
+	# Hover visuals for Add Cortical Area button
+	_btn_cortical_add.mouse_entered.connect(func():
+		print("BrainObjectsCombo: hover cortical add")
+		_apply_hover_visual(_btn_cortical_add, true)
+	)
+	_btn_cortical_add.mouse_exited.connect(func():
+		print("BrainObjectsCombo: leave cortical add")
+		_apply_hover_visual(_btn_cortical_add, false)
+	)
+	# Hover visuals for Add Circuits (Brain Regions) button
+	_btn_brain_regions_add.mouse_entered.connect(func():
+		print("BrainObjectsCombo: hover circuits add")
+		_apply_hover_visual(_btn_brain_regions_add, true)
+	)
+	_btn_brain_regions_add.mouse_exited.connect(func():
+		print("BrainObjectsCombo: leave circuits add")
+		_apply_hover_visual(_btn_brain_regions_add, false)
+	)
 
 	_update_buttons_state()
 
@@ -85,6 +104,10 @@ func _add_cortical_area() -> void:
 		return
 	print("BrainObjectsCombo: Opening create cortical window for region:", context_region.region_ID)
 	BV.WM.spawn_create_cortical_for_region(context_region)
+
+func _apply_hover_visual(button: Control, hovered: bool) -> void:
+	# Subtle scale-up on hover to match main 3D view visual feedback style
+	button.scale = HOVER_SCALE if hovered else NORMAL_SCALE
 
 func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene._pancake_cam:
