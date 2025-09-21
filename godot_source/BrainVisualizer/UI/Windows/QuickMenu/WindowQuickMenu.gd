@@ -70,7 +70,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			quick_connect_button.visible = false
-			clone_button.visible = false
+			clone_button.visible = true
 			quick_connect_CA_N_button.visible = false
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
@@ -183,7 +183,11 @@ func _button_clone() -> void:
 	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
-		BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
+		match(_mode):
+			GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+				BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
+			GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+				BV.WM.spawn_clone_region((_selection[0] as BrainRegion))
 	close_window()
 
 func _button_add_to_region() -> void:

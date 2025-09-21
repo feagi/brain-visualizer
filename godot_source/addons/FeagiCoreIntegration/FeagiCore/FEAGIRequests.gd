@@ -1149,6 +1149,8 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to clone cortical area %s!" % cloning_area.cortical_ID)
 		return FEAGI_response_data
+
+	# Success path: decode, refresh caches, and ensure placement under correct region
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	var new_id: String = response.get("new_area_id", "")
 	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, new_id])
@@ -1196,6 +1198,35 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 					if scene is UI_BrainMonitor_3DScene:
 						(scene as UI_BrainMonitor_3DScene).force_refresh_all_cortical_connections()
 	return FEAGI_response_data
+
+## Initiate region clone as pending amalgamation (no finalize). Returns amalgamation_id and circuit_size.
+func clone_brain_region_pending(source_region: BrainRegion, region_name: StringName, prefill_position_3D: Vector3i = Vector3i(0, 0, 0), prefill_position_2D: Vector2i = Vector2i(0, 0)) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if source_region == null:
+		push_error("FEAGI Requests: clone_brain_region_pending called with null region")
+		return FeagiRequestOutput.requirement_fail("INVALID_INPUT")
+
+	print("FEAGI REQUEST: Request region clone pending for %s" % source_region.genome_ID)
+	var dict_to_send: Dictionary = {
+		"source_region_id": source_region.genome_ID,
+		"region_name": region_name,
+		# Prefill coordinates for server-side availability if needed; finalize uses destination API
+		"coordinates_3d": [prefill_position_3D.x, prefill_position_3D.y, prefill_position_3D.z],
+		"coordinates_2d": [prefill_position_2D.x, prefill_position_2D.y]
+	}
+	var request_def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
+		FeagiCore.network.http_API.address_list.POST_region_clone, dict_to_send)
+
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(request_def)
+	await worker.worker_done
+	var output: FeagiRequestOutput = worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(output, request_def):
+		push_error("FEAGI Requests: Unable to initiate region clone pending!")
+		return output
+	print("FEAGI REQUEST: Region clone pending initiated.")
+	return output
 
 
 ## Attempts to update the property of a cortical area. Ensure your properties dict is properly formatted for FEAGI!

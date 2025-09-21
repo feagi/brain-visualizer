@@ -80,6 +80,10 @@ func spawn_clone_cortical(cloning_from: AbstractCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_PREFAB_CLONE_CORTICAL, WindowCloneCorticalArea.WINDOW_NAME) as WindowCloneCorticalArea
 	clone_cortical.setup(cloning_from)
 
+func spawn_clone_region(source_region: BrainRegion) -> void:
+	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_PREFAB_IMPORT_AMALGAMATION, WindowAmalgamationRequest.WINDOW_NAME) as WindowAmalgamationRequest
+	import_amalgamation.setup_for_clone(source_region, source_region.friendly_name + &"_clone")
+
 func spawn_quick_connect(initial_source_area: AbstractCorticalArea = null) -> void:
 	var quick_connect: WindowQuickConnect = _default_spawn_window(_PREFAB_QUICK_CONNECT, WindowQuickConnect.WINDOW_NAME) as WindowQuickConnect
 	quick_connect.setup(initial_source_area)
