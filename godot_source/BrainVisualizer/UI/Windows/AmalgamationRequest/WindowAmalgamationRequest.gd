@@ -53,6 +53,7 @@ func setup_for_clone(source_region: BrainRegion, suggested_title: StringName) ->
 	_source_region_for_clone = source_region
 	_amalgamation_ID = &"" # No pending yet
 	_circuit_size = Vector3i(1,1,1) # Unknown until server computes; preview minimal
+	# Default suggested title editable by user
 	_field_title.text = suggested_title
 	var closed_signals: Array[Signal] = [close_window_requested, FeagiCore.about_to_reload_genome]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
@@ -111,6 +112,7 @@ func _import_pressed():
 	
 	# Pre-submit clone mode: initiate clone pending first, then finalize
 	if _is_pre_submit_clone:
+		# Pass user-edited title through to pending clone so server sets the clone name
 		var pending_out: FeagiRequestOutput = await FeagiCore.requests.clone_brain_region_pending(_source_region_for_clone, _field_title.text, _field_3d_location.current_vector, Vector2i(0,0))
 		if FeagiCore.requests._return_if_HTTP_failed_and_automatically_handle(pending_out):
 			push_error("WindowAmalgamationRequest: Failed to initiate region clone pending")

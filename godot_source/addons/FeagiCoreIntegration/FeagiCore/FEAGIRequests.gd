@@ -2212,13 +2212,27 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 	print("FEAGI REQUEST: Request confirming amalgamation of ID %s" % amalgamation_ID)
-	
+	# Map UI wiring_mode to server enum values
+	var rewire_mode_param: String = "rewire_all"
+	var wm: String = str(wiring_mode).to_lower()
+	match wm:
+		"all":
+			rewire_mode_param = "rewire_all"
+		"none":
+			rewire_mode_param = "no_rewiring"
+		"system":
+			push_warning("FEAGI Requests: 'system' wiring maps to 'rewire_all' (server supports rewire_all|no_rewiring)")
+			rewire_mode_param = "rewire_all"
+		_:
+			push_warning("FEAGI Requests: Unknown wiring_mode '%s', defaulting to 'rewire_all'" % wm)
+			rewire_mode_param = "rewire_all"
+
 	# Define Request #TODO why are the parameters in the URL
 	var dict_to_send: Dictionary = 	{
 		"brain_region_id": parent_region_ID
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
-		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID + "&rewire_mode=" + wiring_mode
+		FeagiCore.network.http_API.address_list.POST_genome_amalgamationDestination + "?circuit_origin_x=" + str(position.x) + "&circuit_origin_y=" + str(position.y) + "&circuit_origin_z=" + str(position.z) + "&amalgamation_id=" + amalgamation_ID + "&rewire_mode=" + rewire_mode_param
 		, dict_to_send)
 	
 	# Send request and await results
