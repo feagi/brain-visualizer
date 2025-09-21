@@ -112,7 +112,13 @@ func _call_register_agent_for_shm() -> void:
 		"capabilities": {"visualization": true},
 		"metadata": {"request_shared_memory": true}
 	}
-	var def := APIRequestWorkerDefinition.define_single_POST_call(http_API.address_list.POST_agent_register, payload)
+	# Avoid chained member resolution at parse time; guard address_list
+	var addr_list = http_API.get("address_list")
+	if addr_list == null:
+		push_warning("FEAGI NETWORK: HTTP address list not initialized; skipping agent register")
+		return
+	var post_url: StringName = addr_list.POST_agent_register
+	var def := APIRequestWorkerDefinition.define_single_POST_call(post_url, payload)
 	var worker := http_API.make_HTTP_call(def)
 	print("𒓉 [REG] Posting /v1/agent/register …")
 	await worker.worker_done

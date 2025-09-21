@@ -110,9 +110,18 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	print("FEAGICORE: [3D_SCENE_DEBUG] Starting health check worker...")
 	network.http_API.kill_polling_healthcheck_worker() # Ensure theres only 1 worker
 	
-	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
-		FeagiCore.network.http_API.address_list.GET_system_healthCheck,
-	)
+	# SAFETY: Ensure HTTP API and address list are constructed before referencing
+	var http_api = network.http_API if network != null else null
+	if http_api == null:
+		push_error("FEAGICORE: HTTP API not initialized before health check request")
+		return
+	var addr_list = http_api.get("address_list")
+	if addr_list == null:
+		push_error("FEAGICORE: HTTP API address list not initialized before health check request")
+		return
+	# Use locals to avoid chained member resolution at parse time
+	var health_url: StringName = addr_list.GET_system_healthCheck
+	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(health_url)
 	
 	var process_output_for_cache: Callable = func(polled_result: FeagiRequestOutput) :  # Functional Programming my beloved
 		if polled_result.has_timed_out:

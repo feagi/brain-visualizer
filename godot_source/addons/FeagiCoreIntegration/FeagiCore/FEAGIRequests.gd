@@ -1208,6 +1208,24 @@ func clone_brain_region_pending(source_region: BrainRegion, region_name: StringN
 		push_error("FEAGI Requests: clone_brain_region_pending called with null region")
 		return FeagiRequestOutput.requirement_fail("INVALID_INPUT")
 
+	# Defensive clear: if a pending amalgamation exists, cancel it before starting a new one
+	var health: FeagiRequestOutput = await single_health_check_call(false)
+	if health != null and health.success:
+		var health_dict: Dictionary = health.decode_response_as_dict()
+		if "amalgamation_pending" in health_dict and health_dict["amalgamation_pending"]:
+			var amalgamation_id: String = str(health_dict.get("amalgamation_id", ""))
+			print("⚠️ FEAGI REQUEST: Pending amalgamation detected (%s). Auto-cancelling before new clone..." % amalgamation_id)
+			var cancel_def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(
+				FeagiCore.network.http_API.address_list.DELETE_GE_amalgamationCancellation + "?amalgamation_id=" + amalgamation_id, {}
+			)
+			var cancel_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cancel_def)
+			await cancel_worker.worker_done
+			var cancel_out: FeagiRequestOutput = cancel_worker.retrieve_output_and_close()
+			if cancel_out.has_errored:
+				push_warning("FEAGI Requests: Auto-cancel of previous pending amalgamation reported an error; proceeding with new clone anyway.")
+			else:
+				print("FEAGI REQUEST: Previous pending amalgamation cancelled.")
+
 	print("FEAGI REQUEST: Request region clone pending for %s" % source_region.genome_ID)
 	var dict_to_send: Dictionary = {
 		"source_region_id": source_region.genome_ID,
