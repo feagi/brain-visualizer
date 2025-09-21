@@ -13,6 +13,7 @@ const OFFSET_2D: Vector2i = Vector2i(10,10)
 var _field_cortical_name: TextInput
 var _field_3d_location: Vector3iSpinboxField
 var _field_2d_location: Vector2iSpinboxField
+var _field_wiring_toggle: CheckBox
 var _cloning_cortical_area: AbstractCorticalArea
 var _preview: UI_BrainMonitor_InteractivePreview
 
@@ -21,6 +22,7 @@ func _ready() -> void:
 	_field_cortical_name = _window_internals.get_node('HBoxContainer/Cortical_Name')
 	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
 	_field_2d_location = _window_internals.get_node('HBoxContainer3/Coordinates_2D')
+	_field_wiring_toggle = _window_internals.get_node('HBoxContainer4/AutoWiring')
 	# Connect to window close signal to ensure preview cleanup
 	close_window_requested.connect(_cleanup_preview_on_close)
 
@@ -49,7 +51,7 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 
 func _clone_pressed():
 	#TODO check for conflicting name and alert user
-	await FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, FeagiCore.feagi_local_cache.brain_regions.get_root_region()) #TODO remove root region
+	await FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _field_wiring_toggle.button_pressed) #TODO remove root region
 	# Explicitly clean up preview before closing window
 	_cleanup_preview()
 	close_window()

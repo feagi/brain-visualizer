@@ -1118,7 +1118,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 
 
 ## Clone a given cortical area
-func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i, parent_region: BrainRegion) -> FeagiRequestOutput:
+func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringName, new_position_2D: Vector2i, new_position_3D: Vector3i, parent_region: BrainRegion, clone_cortical_mapping: bool = true) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -1131,25 +1131,58 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 		return FeagiRequestOutput.requirement_fail("CLONE_NOT_ALLOWED")
 	print("User requested cloning cortical area " + cloning_area.cortical_ID)
 	
-	var FEAGI_response_data: FeagiRequestOutput
-	
-	match(cloning_area.cortical_type):
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			print("FEAGI REQUEST: Request copying memory cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_memory_cortical_area(new_name, new_position_3D, cloning_area.dimensions_3D, parent_region, true, new_position_2D)
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			print("FEAGI REQUEST: Request copying custom cortical area %s as new area with name %s" % [cloning_area.cortical_ID, new_name])
-			FEAGI_response_data = await add_custom_cortical_area(new_name, new_position_3D, cloning_area.dimensions_3D, parent_region, true, new_position_2D)
-		_:
-			push_error("FEAGI Requests: No procedure for cloning a cortical area of type %s" % cloning_area.type_as_string)
-			return FeagiRequestOutput.requirement_fail("TYPE_NOT_ALLOWED")
-	
-	if !FEAGI_response_data.success:
-		print("FEAGI REQUEST: Unable to clone cortical area %s" % [cloning_area.cortical_ID])
+	# New unified clone endpoint
+	var dict_to_send: Dictionary = {
+		"source_area_id": cloning_area.cortical_ID,
+		"clone_cortical_mapping": clone_cortical_mapping,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(new_position_3D),
+		"coordinates_2d": FEAGIUtils.vector2i_to_array(new_position_2D)
+	}
+	# Double-check network components
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_corticalArea_clone, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to clone cortical area %s!" % cloning_area.cortical_ID)
 		return FEAGI_response_data
-	
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, response["cortical_id"]])
+	var new_id: String = response.get("new_area_id", "")
+	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, new_id])
+	# Refresh area details and region membership incrementally
+	if new_id != "":
+		await get_cortical_area(new_id)
+		var regions_summary: FeagiRequestOutput = await get_regions_summary()
+		if regions_summary != null and regions_summary.success:
+			var regions_dict: Dictionary = regions_summary.decode_response_as_dict()
+			# Update partial mapping sets (inputs/outputs) for regions
+			FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_partial_mapping_sets(regions_dict)
+			# Determine the correct parent region for the new area from the regions summary
+			var target_region_id: StringName = &""
+			for region_id in regions_dict.keys():
+				var region_info: Dictionary = regions_dict[region_id]
+				if region_info.has("areas"):
+					var listed_areas: Array = []
+					listed_areas.assign(region_info["areas"])
+					if listed_areas.has(new_id):
+						target_region_id = StringName(region_id)
+						break
+			# If we found a target region, move the area in local cache so 3D placement is correct
+			if target_region_id != &"":
+				if FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.has(target_region_id):
+					var target_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[target_region_id]
+					var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
+					if new_area_obj != null and new_area_obj.current_parent_region != target_region:
+						print("FEAGI REQUEST: Moving cloned area %s under region %s" % [new_id, target_region.region_ID])
+						new_area_obj.FEAGI_change_parent_brain_region(target_region)
+						# If the region's Brain Monitor is open, ensure the visualization is added immediately
+						if BV.UI:
+							var bm_target: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(target_region)
+							if bm_target != null:
+								bm_target._add_cortical_area(new_area_obj)
 	return FEAGI_response_data
 
 
