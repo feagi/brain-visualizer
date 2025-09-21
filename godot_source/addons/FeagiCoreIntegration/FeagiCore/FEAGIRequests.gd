@@ -1183,6 +1183,18 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 							var bm_target: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(target_region)
 							if bm_target != null:
 								bm_target._add_cortical_area(new_area_obj)
+		# Refresh mapping cache so UI components (3D scene, Circuit Builder) see new connections
+		var mapping_summary: FeagiRequestOutput = await get_mapping_summary()
+		if mapping_summary != null and mapping_summary.success:
+			var mapping_dict: Dictionary = mapping_summary.decode_response_as_dict()
+			FeagiCore.feagi_local_cache.mapping_data.FEAGI_load_all_mappings(mapping_dict)
+			# Proactively refresh any visible brain monitor connection visuals
+			var scene_tree = Engine.get_main_loop() as SceneTree
+			if scene_tree and scene_tree.root:
+				var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
+				for scene in brain_monitor_scenes:
+					if scene is UI_BrainMonitor_3DScene:
+						(scene as UI_BrainMonitor_3DScene).force_refresh_all_cortical_connections()
 	return FEAGI_response_data
 
 
