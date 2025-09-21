@@ -184,7 +184,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	# Connect to cache reload events to refresh all cortical area connections
 	if FeagiCore.feagi_local_cache:
 		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
-		# print("BrainMonitor 3D Scene: 🔗 CONNECTED to cache reload signal for global connection refresh")  # Suppressed - causes output overflow
+		print("BrainMonitor 3D Scene: 🔗 CONNECTED to cache reload signal for region: %s" % (_representing_region.friendly_name if _representing_region else "unknown"))
 
 	# Update combo context after setup has region
 	if _combo:
@@ -676,9 +676,14 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 	# print("    ❌ Area %s is NOT I/O of any child region" % area.cortical_ID)  # Suppressed - too spammy
 	return false
 
-## Cache reload event handler - refreshes all cortical area connections
+## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
 func _on_cache_reloaded_refresh_all_connections() -> void:
-	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD detected - refreshing all cortical area connections")
+	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD detected - refreshing all cortical area connections and checking for new brain regions")
+	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD - This is brain monitor instance %d representing region %s" % [get_instance_id(), _representing_region.friendly_name if _representing_region else "null"])
+	
+	# CRITICAL: Check for new brain regions that need visualization after cloning
+	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD - About to call _create_missing_brain_region_visualizations()")
+	_create_missing_brain_region_visualizations()
 	
 	# Force refresh connections for all currently hovered cortical areas
 	var refreshed_count = 0
@@ -691,9 +696,71 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 	
 	print("BrainMonitor 3D Scene: ✅ Refreshed connections for ", refreshed_count, " hovered cortical areas")
 
+## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)
+func _create_missing_brain_region_visualizations() -> void:
+	print("🔍 DEBUG: _create_missing_brain_region_visualizations() called")
+	
+	if not FeagiCore.feagi_local_cache or not FeagiCore.feagi_local_cache.brain_regions:
+		print("❌ DEBUG: No cache or brain_regions available")
+		return
+	
+	var all_regions = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	var new_regions_created = 0
+	
+	print("🔍 DEBUG: Found %d total regions in cache" % all_regions.size())
+	print("🔍 DEBUG: This scene represents region: %s" % (_representing_region.friendly_name if _representing_region else "null"))
+	print("🔍 DEBUG: Root region: %s" % (root_region.friendly_name if root_region else "null"))
+	print("🔍 DEBUG: Current visualizations: %s" % _brain_region_visualizations_by_ID.keys())
+	
+	for region_id in all_regions.keys():
+		var region = all_regions[region_id]
+		print("🔍 DEBUG: Processing region %s (%s)" % [region_id, region.friendly_name])
+		
+		# Skip if visualization already exists
+		if region_id in _brain_region_visualizations_by_ID:
+			print("  ⏭️ DEBUG: Skipping - visualization already exists")
+			continue
+		
+		# CRITICAL: Skip root region - it should NEVER have a plate visualization
+		if region == root_region:
+			print("  ⏭️ DEBUG: Skipping - this is the root region")
+			continue
+		
+		# Skip if this region is not a child of our representing region
+		if _representing_region != null and region != _representing_region:
+			var is_child = false
+			print("  🔍 DEBUG: Checking if region is child of %s" % _representing_region.friendly_name)
+			print("  🔍 DEBUG: Representing region has %d child regions" % _representing_region.contained_regions.size())
+			for child_region in _representing_region.contained_regions:
+				print("    🔍 DEBUG: Child region: %s (%s)" % [child_region.region_ID, child_region.friendly_name])
+				if child_region.region_ID == region_id:
+					is_child = true
+					break
+			if not is_child:
+				print("  ⏭️ DEBUG: Skipping - not a child of representing region")
+				continue
+			else:
+				print("  ✅ DEBUG: Confirmed as child region")
+		
+		# Create visualization for this new region
+		print("🆕 DEBUG: Creating visualization for new brain region: %s" % region.friendly_name)
+		_add_brain_region_frame(region)
+		new_regions_created += 1
+	
+	if new_regions_created > 0:
+		print("BrainMonitor 3D Scene: ✅ Created %d new brain region visualizations" % new_regions_created)
+	else:
+		print("BrainMonitor 3D Scene: ℹ️ No new brain regions to visualize")
+
 ## Manual force refresh of all cortical area connections (for debugging/troubleshooting)
 func force_refresh_all_cortical_connections() -> void:
 	print("BrainMonitor 3D Scene: 🔧 MANUAL REFRESH - Force refreshing all cortical area connections")
+
+## Manual trigger for creating missing brain region visualizations (for debugging)
+func force_create_missing_regions() -> void:
+	print("BrainMonitor 3D Scene: 🔧 MANUAL TRIGGER - Force creating missing brain region visualizations")
+	_create_missing_brain_region_visualizations()
 	
 	var refreshed_count = 0
 	for cortical_viz in _cortical_visualizations_by_ID.values():

@@ -2179,6 +2179,33 @@ func _enable_local_cache_refresh_signals() -> void:
 	# doesnt exist, create
 	
 
+## Immediately trigger visualization creation for new brain regions after successful cloning
+func _trigger_immediate_region_visualization_update() -> void:
+	print("🎯 IMMEDIATE UPDATE: Finding all 3D brain monitor scenes to update...")
+	
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if not scene_tree or not scene_tree.root:
+		print("❌ IMMEDIATE UPDATE: No scene tree available")
+		return
+	
+	# Find all brain monitor 3D scenes
+	var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
+	print("🎯 IMMEDIATE UPDATE: Found %d brain monitor scenes" % brain_monitor_scenes.size())
+	
+	for scene in brain_monitor_scenes:
+		if scene is UI_BrainMonitor_3DScene:
+			var monitor_scene = scene as UI_BrainMonitor_3DScene
+			print("🎯 IMMEDIATE UPDATE: Updating brain monitor instance %d (represents: %s)" % [monitor_scene.get_instance_id(), monitor_scene._representing_region.friendly_name if monitor_scene._representing_region else "null"])
+			monitor_scene._create_missing_brain_region_visualizations()
+	
+	print("✅ IMMEDIATE UPDATE: All brain monitor scenes updated")
+
+## Manual test function - call this from Godot console to force region visualization update
+func manual_force_region_update() -> void:
+	print("🔧 MANUAL TEST: Forcing region visualization update...")
+	_trigger_immediate_region_visualization_update()
+	print("🔧 MANUAL TEST: Update completed")
+
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
 func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: SingleMappingDefinition) -> FeagiRequestOutput:
 	var current_mappings: Array[SingleMappingDefinition] = source_area.get_mapping_array_toward_cortical_area(destination_area)
@@ -2243,9 +2270,35 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 		push_error("FEAGI Requests: Unable to confirm amalgamation %s!" % amalgamation_ID)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
+	
+	# CRITICAL: Manually set the pending amalgamation in cache to ensure completion detection works
+	print("FEAGI REQUEST: 🎯 Manually setting pending amalgamation in cache: %s" % amalgamation_ID)
+	FeagiCore.feagi_local_cache._pending_amalgamation = amalgamation_ID
+	print("FEAGI REQUEST: 🎯 Cache _pending_amalgamation is now: '%s'" % FeagiCore.feagi_local_cache._pending_amalgamation)
+	
+	print("FEAGI REQUEST: Waiting for amalgamation_no_longer_pending signal...")
 	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
 	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	FeagiCore.reload_genome_await()
+	print("FEAGI REQUEST: Calling FeagiCore.reload_genome_await()...")
+	await FeagiCore.reload_genome_await()
+	print("FEAGI REQUEST: Genome reload completed successfully!")
+	
+	# DEBUG: Check what regions are actually in the cache now
+	print("FEAGI REQUEST: 🔍 CACHE DEBUG - Checking regions in cache after reload...")
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var all_regions = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
+		print("FEAGI REQUEST: 🔍 CACHE DEBUG - Found %d regions total:" % all_regions.size())
+		for region_id in all_regions.keys():
+			var region = all_regions[region_id]
+			print("  - Region: %s (%s)" % [region_id, region.friendly_name])
+	else:
+		print("FEAGI REQUEST: ❌ CACHE DEBUG - No cache or brain_regions available!")
+	
+	# CRITICAL: Immediately trigger visualization creation for new regions
+	print("FEAGI REQUEST: 🎯 Triggering immediate visualization creation for cloned regions...")
+	# Use call_deferred to ensure this happens after the scene tree is fully updated
+	call_deferred("_trigger_immediate_region_visualization_update")
+	print("FEAGI REQUEST: ✅ Region visualization update scheduled")
 	return FEAGI_response_data
 	
 

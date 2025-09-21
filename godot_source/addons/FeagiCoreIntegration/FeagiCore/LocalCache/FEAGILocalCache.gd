@@ -80,7 +80,9 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	_load_mapping_restrictions_async()
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
+	print("FEAGI CACHE: 📡 Emitting cache_reloaded signal...")
 	cache_reloaded.emit()
+	print("FEAGI CACHE: ✅ cache_reloaded signal emitted successfully")
 
 # Helper function to load mapping restrictions asynchronously
 func _load_mapping_restrictions_async() -> void:
@@ -322,6 +324,16 @@ var _pending_amalgamation: StringName = ""
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	
+	# DEBUG: Show health check details for amalgamation tracking
+	if health.has("amalgamation_pending"):
+		print("FEAGI Cache: 🔍 HEALTH DEBUG - amalgamation_pending in health: %s" % health["amalgamation_pending"])
+	else:
+		if _pending_amalgamation != "":
+			print("FEAGI Cache: 🔍 HEALTH DEBUG - No amalgamation_pending in health data (expecting completion)")
+	
+	print("FEAGI Cache: 🔍 HEALTH DEBUG - Currently tracking pending amalgamation: '%s'" % _pending_amalgamation)
+	print("FEAGI Cache: 🔍 HEALTH DEBUG - _pending_amalgamation empty? %s" % (_pending_amalgamation == ""))
+	
 	if "genome_availability" in health and "brain_readiness" in health:
 		var genome_avail = health["genome_availability"]
 		var brain_ready = health["brain_readiness"]
@@ -402,6 +414,9 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
+	
+	# Check if there's an active amalgamation in the health data
+	var has_active_amalgamation = false
 	if "amalgamation_pending" in health and health["amalgamation_pending"] != null:
 		var dict: Dictionary = health["amalgamation_pending"]
 		if "amalgamation_id" not in dict:
@@ -423,13 +438,22 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 			return
 		if _pending_amalgamation == "":
 			print("FEAGI Cache: Detected Amalgamation request %s from healthcheck!" % amal_ID)
+			print("FEAGI Cache: 🎯 SETTING _pending_amalgamation to: %s" % amal_ID)
 			amalgamation_pending.emit(amal_ID, amal_name, dimensions)
 			_pending_amalgamation = amal_ID
-	else:
-		if _pending_amalgamation != "":
-			# An amalgamation was pending, now its not (either due to confirmation OR deletion
-			_pending_amalgamation = ""
-			amalgamation_no_longer_pending.emit(_pending_amalgamation)
+			print("FEAGI Cache: 🎯 CONFIRMED _pending_amalgamation is now: '%s'" % _pending_amalgamation)
+		
+		has_active_amalgamation = true
+	
+	# If no active amalgamation but we were tracking one, it's complete
+	if not has_active_amalgamation and _pending_amalgamation != "":
+		# An amalgamation was pending, now its not (either due to confirmation OR deletion
+		var completed_amalgamation_id = _pending_amalgamation
+		print("FEAGI Cache: 🎯 CRITICAL - Amalgamation %s is no longer pending - emitting completion signal" % completed_amalgamation_id)
+		_pending_amalgamation = ""
+		print("FEAGI Cache: 🎯 CRITICAL - About to emit amalgamation_no_longer_pending signal with ID: %s" % completed_amalgamation_id)
+		amalgamation_no_longer_pending.emit(completed_amalgamation_id)
+		print("FEAGI Cache: 🎯 CRITICAL - amalgamation_no_longer_pending signal emitted successfully")
 			
 	
 

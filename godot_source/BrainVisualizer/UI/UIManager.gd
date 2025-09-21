@@ -151,6 +151,19 @@ func FEAGI_confirmed_genome() -> void:
 	temp_root_bm = brain_monitor
 	print("🔥🔥🔥 MAIN BRAIN MONITOR INSTANCE ID: %d 🔥🔥🔥" % brain_monitor.get_instance_id())
 	
+	# CRITICAL: Create visualizations for any missing child regions (e.g., after cloning)
+	# This ensures cloned regions appear immediately after genome reload
+	# NOTE: Root region is explicitly excluded - only child regions get plate visualizations
+	print("UIMANAGER: [3D_SCENE_DEBUG] Creating visualizations for any missing child regions...")
+	print("UIMANAGER: [3D_SCENE_DEBUG] About to call _create_missing_brain_region_visualizations() on brain_monitor instance %d" % brain_monitor.get_instance_id())
+	brain_monitor._create_missing_brain_region_visualizations()
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Missing child region visualizations created")
+	
+	# ADDITIONAL: Also schedule a deferred update to catch any regions that might be added after this
+	print("UIMANAGER: [3D_SCENE_DEBUG] Scheduling deferred region visualization update...")
+	brain_monitor.call_deferred("_create_missing_brain_region_visualizations")
+	print("UIMANAGER: [3D_SCENE_DEBUG] Deferred update scheduled")
+	
 	print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position if available...")
 	if _temp_bm_camera_pos.length() > 0.01:
 		print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position: ", _temp_bm_camera_pos, " rotation: ", _temp_bm_camera_rot)
