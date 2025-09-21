@@ -513,7 +513,7 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	print("    - Is directly in root: %s" % is_directly_in_root)
 	print("    - Is I/O of child region: %s" % is_io_of_child_region)
 	
-	# Only create if the area is directly in root OR it's needed as I/O for a child region
+	# Only create if the area is directly in this region OR it's needed as I/O for a child region
 	if not is_directly_in_root and not is_io_of_child_region:
 		print("  ⏭️  Skipping cortical area %s - not directly in root region and not I/O of child region" % area.cortical_ID)
 		return null

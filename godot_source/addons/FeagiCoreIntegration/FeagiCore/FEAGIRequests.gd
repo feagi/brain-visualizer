@@ -867,6 +867,15 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Checking if %s exists in cache (current cache size: %d)" % [checking_cortical_ID, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size()])
 	if checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		print("FEAGI REQUEST: %s already exists - updating" % checking_cortical_ID)
+		# Prevent incorrect reassignment to root if backend omits true parent region
+		# If server reports parent_region_id as root but cache shows a non-root parent, trust cache
+		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[checking_cortical_ID]
+		if properties_dict.has("parent_region_id"):
+			var reported_parent: StringName = properties_dict["parent_region_id"]
+			var current_parent: StringName = existing_area.current_parent_region.region_ID if existing_area != null and existing_area.current_parent_region != null else BrainRegion.ROOT_REGION_ID
+			if reported_parent == BrainRegion.ROOT_REGION_ID and current_parent != BrainRegion.ROOT_REGION_ID:
+				print("FEAGI REQUEST: Overriding incorrect parent_region_id 'root' with existing parent '%s' for %s" % [current_parent, checking_cortical_ID])
+				properties_dict["parent_region_id"] = current_parent
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
 	else:
 		print("FEAGI REQUEST: %s does not exist - creating new cortical area" % checking_cortical_ID)
