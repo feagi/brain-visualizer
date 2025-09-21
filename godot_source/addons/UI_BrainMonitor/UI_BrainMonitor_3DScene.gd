@@ -107,6 +107,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			_combo = combo_scene.instantiate()
 			_combo.name = "BrainObjectsCombo"
 			top_row.add_child(_combo)
+			_combo.mouse_filter = Control.MOUSE_FILTER_STOP
 			_combo.set_3d_context(self, _representing_region)
 	
 

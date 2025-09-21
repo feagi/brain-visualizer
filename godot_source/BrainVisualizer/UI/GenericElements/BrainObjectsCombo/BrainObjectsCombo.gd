@@ -18,13 +18,23 @@ func _ready() -> void:
 	_btn_cortical_list = $CorticalAreasList
 	_btn_cortical_add = $TextureButton_Cortical
 
-	# Ensure the combo doesn't block underlying 3D interactions except on actual clicks
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	# Ensure the combo captures events within its bounds; individual buttons will stop events
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	_btn_cortical_add.mouse_filter = Control.MOUSE_FILTER_STOP
+	_btn_cortical_add.z_index = 100
 
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
 	_btn_cortical_list.pressed.connect(_open_cortical_areas)
-	_btn_cortical_add.pressed.connect(_add_cortical_area)
+	# Robust press handling with debug
+	_btn_cortical_add.pressed.connect(func():
+		print("BrainObjectsCombo: pressed cortical add")
+		_add_cortical_area()
+	)
+	_btn_cortical_add.button_down.connect(func(): print("BrainObjectsCombo: button_down cortical add"))
+	_btn_cortical_add.button_up.connect(func(): print("BrainObjectsCombo: button_up cortical add"))
+	_btn_cortical_add.mouse_entered.connect(func(): print("BrainObjectsCombo: hover cortical add"))
+	_btn_cortical_add.mouse_exited.connect(func(): print("BrainObjectsCombo: leave cortical add"))
 
 	_update_buttons_state()
 
@@ -47,8 +57,8 @@ func _update_buttons_state() -> void:
 		_btn_cortical_list.disabled = true
 		_btn_cortical_add.disabled = true
 		return
-		# Allow cortical area creation in any region; enforce type restrictions in creation window
-		_btn_cortical_add.disabled = false
+	# Allow cortical area creation in any region; enforce type restrictions in creation window
+	_btn_cortical_add.disabled = false
 	# Listing is always enabled (direct-only; will be empty if none)
 	_btn_brain_regions_list.disabled = false
 	_btn_cortical_list.disabled = false
@@ -73,7 +83,8 @@ func _open_cortical_areas() -> void:
 func _add_cortical_area() -> void:
 	if context_region == null:
 		return
-		BV.WM.spawn_create_cortical_for_region(context_region)
+	print("BrainObjectsCombo: Opening create cortical window for region:", context_region.region_ID)
+	BV.WM.spawn_create_cortical_for_region(context_region)
 
 func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene._pancake_cam:

@@ -66,6 +66,7 @@ func spawn_create_cortical_with_type(cortical_type: int) -> void:
 func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup_for_region(context_region)
+	bring_window_to_top(create_cortical)
 
 func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int) -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
