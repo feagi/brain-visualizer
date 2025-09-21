@@ -19,7 +19,7 @@ func _ready() -> void:
 	_iopu_image = $HBoxContainer/TextureRect
 	
 
-func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal]) -> void:
+func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal], host_bm = null) -> void:
 	dropdown.load_cortical_type_options(cortical_type)
 	_is_IPU_not_OPU = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 	
@@ -39,7 +39,7 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["i__inf"])
 	else:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["o__mot"])
-	var active_bm = BV.UI.get_active_brain_monitor()
+	var active_bm = host_bm if host_bm != null else BV.UI.get_active_brain_monitor()
 	if active_bm == null:
 		push_error("PartSpawnCorticalAreaIOPU: No brain monitor available for preview creation!")
 		return

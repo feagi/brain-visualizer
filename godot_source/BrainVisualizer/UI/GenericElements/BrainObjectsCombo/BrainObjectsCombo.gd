@@ -47,8 +47,8 @@ func _update_buttons_state() -> void:
 		_btn_cortical_list.disabled = true
 		_btn_cortical_add.disabled = true
 		return
-	# Cortical add allowed only at root (IPU/OPU/Core creation is root-only)
-	_btn_cortical_add.disabled = not context_region.is_root_region()
+		# Allow cortical area creation in any region; enforce type restrictions in creation window
+		_btn_cortical_add.disabled = false
 	# Listing is always enabled (direct-only; will be empty if none)
 	_btn_brain_regions_list.disabled = false
 	_btn_cortical_list.disabled = false
@@ -73,9 +73,7 @@ func _open_cortical_areas() -> void:
 func _add_cortical_area() -> void:
 	if context_region == null:
 		return
-	if not context_region.is_root_region():
-		return
-	BV.WM.spawn_create_cortical()
+		BV.WM.spawn_create_cortical_for_region(context_region)
 
 func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene._pancake_cam:

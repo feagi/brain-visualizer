@@ -6,12 +6,13 @@ const WINDOW_NAME: StringName = "create_cortical"
 var _header: HBoxContainer
 var _selection: VBoxContainer
 var _selection_options: PartSpawnCorticalAreaSelection
-var _IOPU_definition: PartSpawnCorticalAreaIOPU
-var _custom_definition: PartSpawnCorticalAreaCustom
-var _memory_definition: PartSpawnCorticalAreaMemory
+var _IOPU_definition
+var _custom_definition
+var _memory_definition
 var _buttons: HBoxContainer
 var _type_selected: AbstractCorticalArea.CORTICAL_AREA_TYPE
 var _BM_preview: UI_BrainMonitor_InteractivePreview
+var _context_region: BrainRegion = null
 
 
 func _ready() -> void:
@@ -35,6 +36,14 @@ func setup_with_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> 
 	_setup_base_window(WINDOW_NAME)
 	_step_2_set_details(cortical_type)
 
+func setup_for_region(context_region: BrainRegion) -> void:
+	_context_region = context_region
+	setup()
+
+func setup_with_type_for_region(context_region: BrainRegion, cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
+	_context_region = context_region
+	setup_with_type(cortical_type)
+
 func _step_1_pick_type() -> void:
 	_IOPU_definition.visible = false
 	_custom_definition.visible = false
@@ -54,6 +63,13 @@ func _step_2_set_details(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE)
 		close_window_requesed_no_arg
 	]
 	
+	# Determine the brain monitor to host previews: prefer region's BM if provided
+	var host_bm: UI_BrainMonitor_3DScene = null
+	if _context_region != null:
+		host_bm = BV.UI.get_brain_monitor_for_region(_context_region)
+	if host_bm == null:
+		host_bm = BV.UI.get_active_brain_monitor()
+	
 	_IOPU_definition.visible = cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]
 	_custom_definition.visible = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 	_memory_definition.visible = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
@@ -61,13 +77,13 @@ func _step_2_set_details(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE)
 	
 	match(cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals)
+			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals, host_bm)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals)
+			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals, host_bm)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			_custom_definition.cortical_type_selected(cortical_type, close_preview_signals)
+			_custom_definition.cortical_type_selected(cortical_type, close_preview_signals, host_bm)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			_memory_definition.cortical_type_selected(cortical_type, close_preview_signals)
+			_memory_definition.cortical_type_selected(cortical_type, close_preview_signals, host_bm)
 	
 
 func _set_header(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
@@ -110,7 +126,7 @@ func _user_requesing_creation() -> void:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
 			var device_count: int = int(_IOPU_definition.device_count.value)
-	
+			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
@@ -127,7 +143,7 @@ func _user_requesing_creation() -> void:
 					# update area
 					var new_dimension_property: Dictionary = {"cortical_dimensions" = FEAGIUtils.vector3i_to_array(template.calculate_IOPU_dimension(device_count))}
 					FeagiCore.requests.update_cortical_area(area.cortical_ID, new_dimension_property)
-
+			
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
@@ -141,7 +157,7 @@ func _user_requesing_creation() -> void:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
 			var device_count: int = int(_IOPU_definition.device_count.value)
-	
+			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
@@ -158,7 +174,7 @@ func _user_requesing_creation() -> void:
 					# update area
 					var new_dimension_property: Dictionary = {"cortical_dimensions" = FEAGIUtils.vector3i_to_array(template.calculate_IOPU_dimension(device_count))}
 					FeagiCore.requests.update_cortical_area(area.cortical_ID, new_dimension_property)
-
+			
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
@@ -187,11 +203,12 @@ func _user_requesing_creation() -> void:
 				return
 			
 			#Create
+			var parent_region: BrainRegion = _context_region if _context_region != null else FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 			FeagiCore.requests.add_custom_cortical_area(
 				_custom_definition.cortical_name.text,
 				_custom_definition.location.current_vector,
 				_custom_definition.dimensions.current_vector,
-				FeagiCore.feagi_local_cache.brain_regions.get_root_region(), #TODO TEMP
+				parent_region,
 				true,
 				pos_2d
 				)
@@ -213,11 +230,12 @@ func _user_requesing_creation() -> void:
 				return
 			
 			#Create
+			var parent_region_mem: BrainRegion = _context_region if _context_region != null else FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 			FeagiCore.requests.add_custom_memory_cortical_area(
 				_memory_definition.cortical_name.text,
 				_memory_definition.location.current_vector,
 				Vector3i(1,1,1),
-				FeagiCore.feagi_local_cache.brain_regions.get_root_region(), #TODO temp!
+				parent_region_mem,
 				true,
 				pos_2d
 			)

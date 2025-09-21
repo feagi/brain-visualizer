@@ -13,10 +13,10 @@ func _ready() -> void:
 	dimensions = $PanelContainer/dimensions/dimensions
 	cortical_name = $name/name
 
-func cortical_type_selected(_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal]) -> void:
+func cortical_type_selected(_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal], host_bm = null) -> void:
 	var move_signals: Array[Signal] = [location.user_updated_vector]
 	var resize_signals: Array[Signal] = [dimensions.user_updated_vector]
-	var active_bm = BV.UI.get_active_brain_monitor()
+	var active_bm = host_bm if host_bm != null else BV.UI.get_active_brain_monitor()
 	if active_bm == null:
 		push_error("PartSpawnCorticalAreaMemory: No brain monitor available for preview creation!")
 		return

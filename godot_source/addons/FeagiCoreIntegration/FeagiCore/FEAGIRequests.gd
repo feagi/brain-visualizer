@@ -985,6 +985,14 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	
 	# Automatically fetch detailed properties for the newly created cortical area
 	await get_cortical_area(response["cortical_id"])
+	# Ensure the created area appears in the correct region's 3D view immediately
+	if parent_region != null:
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(parent_region)
+		if bm != null:
+			# Force-add if not present due to filter timing
+			var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(response["cortical_id"], null)
+			if new_area_obj != null:
+				bm._add_cortical_area(new_area_obj)
 	print("FEAGI REQUEST: Fetched detailed properties for newly created cortical area %s" % response["cortical_id"])
 	
 	return FEAGI_response_data
@@ -1032,6 +1040,13 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 	
 	# Automatically fetch detailed properties for the newly created cortical area
 	await get_cortical_area(response["cortical_id"])
+	# Ensure the created area appears in the correct region's 3D view immediately
+	if parent_region != null:
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(parent_region)
+		if bm != null:
+			var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(response["cortical_id"], null)
+			if new_area_obj != null:
+				bm._add_cortical_area(new_area_obj)
 	print("FEAGI REQUEST: Fetched detailed properties for newly created memory cortical area %s" % response["cortical_id"])
 	
 	return FEAGI_response_data

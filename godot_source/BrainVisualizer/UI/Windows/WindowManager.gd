@@ -63,6 +63,14 @@ func spawn_create_cortical_with_type(cortical_type: int) -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup_with_type(cortical_type)
 
+func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
+	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+	create_cortical.setup_for_region(context_region)
+
+func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int) -> void:
+	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+	create_cortical.setup_with_type_for_region(context_region, cortical_type)
+
 func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> void:
 	var confirm_deletion: WindowConfirmDeletion = _default_spawn_window(_PREFAB_CONFIRM_DELETION, WindowConfirmDeletion.WINDOW_NAME) as WindowConfirmDeletion
 	confirm_deletion.setup(objects_to_delete, is_deleting_single_region_internals_instead_of_raising)
