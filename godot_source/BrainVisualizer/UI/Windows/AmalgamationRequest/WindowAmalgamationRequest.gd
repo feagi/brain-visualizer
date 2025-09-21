@@ -14,6 +14,7 @@ var _amalgamation_ID: StringName
 var _circuit_size: Vector3i
 var _is_pre_submit_clone: bool = false
 var _source_region_for_clone: BrainRegion = null
+var _region_preview: UI_BrainMonitor_BrainRegionPreview = null
 
 
 func _ready() -> void:
@@ -62,8 +63,24 @@ func setup_for_clone(source_region: BrainRegion, suggested_title: StringName) ->
 	if active_bm == null:
 		push_error("WindowAmalgamationRequest: No brain monitor available for preview creation!")
 		return
-	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(Vector3i(0,0,0), _circuit_size, false)
-	preview.connect_UI_signals(move_signals, resize_signals, closed_signals)
+	# Use brain region preview (dual plates) instead of voxel preview
+	_region_preview = active_bm.create_brain_region_preview(_source_region_for_clone, Vector3i(0,0,0))
+	# Connect movement from the 3D coordinate field to update the preview position
+	_field_3d_location.user_updated_vector.connect(func(new_vec: Vector3i):
+		if _region_preview != null:
+			_region_preview.update_position_with_new_FEAGI_coordinate(new_vec)
+	)
+	# Ensure preview is cleaned up when window closes or genome reloads
+	close_window_requested.connect(func(_wname: StringName = WINDOW_NAME):
+		if _region_preview != null:
+			_region_preview.cleanup()
+			_region_preview = null
+	)
+	FeagiCore.about_to_reload_genome.connect(func():
+		if _region_preview != null:
+			_region_preview.cleanup()
+			_region_preview = null
+	)
 
 
 func _import_pressed():
@@ -110,4 +127,8 @@ func _import_pressed():
 func close_window(request_cancel: bool = true) -> void:
 	if request_cancel and _amalgamation_ID != &"":
 		FeagiCore.requests.cancel_pending_amalgamation(_amalgamation_ID)
+	# Always cleanup preview if present
+	if _region_preview != null:
+		_region_preview.cleanup()
+		_region_preview = null
 	super()
