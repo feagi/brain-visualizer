@@ -1628,44 +1628,30 @@ func _get_input_cortical_areas_raw() -> Array[AbstractCorticalArea]:
 func _get_input_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 	var input_areas: Array[AbstractCorticalArea] = []
 	
-	print("🔍 Analyzing input areas for region '%s':" % _representing_region.friendly_name)
-	print("  📋 input_open_chain_links count: %d" % _representing_region.input_open_chain_links.size())
 	
 	# Method 1: Check input_open_chain_links for areas that receive input
 	for i in range(_representing_region.input_open_chain_links.size()):
 		var link: ConnectionChainLink = _representing_region.input_open_chain_links[i]
-		print("    🔗 Input link %d: source=%s, destination=%s" % [i, 
-			link.source.genome_ID if link.source else "null",
-			link.destination.genome_ID if link.destination else "null"])
 		
 		if link.destination and link.destination is AbstractCorticalArea:
 			var area = link.destination as AbstractCorticalArea
 			if area not in input_areas:
 				input_areas.append(area)
-				print("      ✅ Added input area: %s (%s)" % [area.cortical_ID, area.type_as_string])
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
-	print("  📋 partial_mappings count: %d" % _representing_region.partial_mappings.size())
 	for i in range(_representing_region.partial_mappings.size()):
 		var partial_mapping = _representing_region.partial_mappings[i]
-		print("    📋 Partial mapping %d: is_input=%s, target_area=%s" % [i, partial_mapping.is_region_input, partial_mapping.internal_target_cortical_area.cortical_ID])
 		if partial_mapping.is_region_input:
 			var area = partial_mapping.internal_target_cortical_area
 			if area not in input_areas:
 				input_areas.append(area)
-				print("      ✅ Added input area via partial mapping: %s (%s)" % [area.cortical_ID, area.type_as_string])
 	
 	# Method 3: If no chain links, fall back to checking IPU types and making educated guesses
 	if _representing_region.input_open_chain_links.size() == 0:
-		print("  ⚠️  No input chain links found. Using fallback detection methods...")
-		
 		# Check for IPU type areas directly contained in this brain region
-		print("  🔍 Checking directly contained cortical areas for IPU types...")
 		for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
-			print("    📦 Contained area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
 			if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU and area not in input_areas:
 				input_areas.append(area)
-				print("      ✅ Added IPU input area: %s" % area.cortical_ID)
 		
 		# TEMPORARY: Aggressive fallback for debugging (will restore conservative logic after)
 		if input_areas.size() == 0 and _representing_region.contained_cortical_areas.size() == 2:
@@ -1681,7 +1667,6 @@ func _get_input_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 			# NOTE: Since FEAGI says "inputs": [], we expect 0 input areas
 			# This aggressive test is just to see if detection logic works
 	
-	print("🔍 Total input areas found for '%s': %d" % [_representing_region.friendly_name, input_areas.size()])
 	return input_areas
 
 ## Gets input cortical areas (FILTERED - excludes conflicts that appear in both inputs and outputs)
@@ -1711,47 +1696,30 @@ func _get_output_cortical_areas_raw() -> Array[AbstractCorticalArea]:
 func _get_output_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 	var output_areas: Array[AbstractCorticalArea] = []
 	
-	print("🔍 Analyzing output areas for region '%s':" % _representing_region.friendly_name)
-	print("  📋 output_open_chain_links count: %d" % _representing_region.output_open_chain_links.size())
-	print("  📋 contained_cortical_areas count: %d" % _representing_region.contained_cortical_areas.size())
-	for area in _representing_region.contained_cortical_areas:
-		print("    🔍 Contained area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
 	
 	# Method 1: Check output_open_chain_links for areas that provide output
 	for i in range(_representing_region.output_open_chain_links.size()):
 		var link: ConnectionChainLink = _representing_region.output_open_chain_links[i]
-		print("    🔗 Output link %d: source=%s, destination=%s" % [i,
-			link.source.genome_ID if link.source else "null", 
-			link.destination.genome_ID if link.destination else "null"])
 		
 		if link.source and link.source is AbstractCorticalArea:
 			var area = link.source as AbstractCorticalArea
 			if area not in output_areas:
 				output_areas.append(area)
-				print("      ✅ Added output area: %s (%s)" % [area.cortical_ID, area.type_as_string])
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
-	print("  📋 partial_mappings count: %d" % _representing_region.partial_mappings.size())
 	for i in range(_representing_region.partial_mappings.size()):
 		var partial_mapping = _representing_region.partial_mappings[i]
-		print("    📋 Partial mapping %d: is_input=%s, target_area=%s" % [i, partial_mapping.is_region_input, partial_mapping.internal_target_cortical_area.cortical_ID])
 		if not partial_mapping.is_region_input:  # Output mapping
 			var area = partial_mapping.internal_target_cortical_area
 			if area not in output_areas:
 				output_areas.append(area)
-				print("      ✅ Added output area via partial mapping: %s (%s)" % [area.cortical_ID, area.type_as_string])
 	
 	# Method 3: If no chain links, fall back to checking OPU types and making educated guesses
 	if _representing_region.output_open_chain_links.size() == 0:
-		print("  ⚠️  No output chain links found. Using fallback detection methods...")
-		
 		# Check for OPU type areas directly contained in this brain region
-		print("  🔍 Checking directly contained cortical areas for OPU types...")
 		for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
-			print("    📦 Contained area: %s (type: %s)" % [area.cortical_ID, area.type_as_string])
 			if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU and area not in output_areas:
 				output_areas.append(area)
-				print("      ✅ Added OPU output area: %s" % area.cortical_ID)
 		
 		# TEMPORARY: Aggressive fallback for debugging (will restore conservative logic after)
 		if output_areas.size() == 0 and _representing_region.contained_cortical_areas.size() == 2:
@@ -1769,7 +1737,6 @@ func _get_output_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 					print("      🎯 AGGRESSIVE: Selected as output (name heuristic for rig): %s" % area.cortical_ID)
 					break
 	
-	print("🔍 Total output areas found for '%s': %d" % [_representing_region.friendly_name, output_areas.size()])
 	return output_areas
 
 ## Gets output cortical areas (FILTERED - excludes conflicts that appear in both inputs and outputs)
@@ -1797,9 +1764,6 @@ func _get_conflict_cortical_areas() -> Array[AbstractCorticalArea]:
 	var output_areas = _get_output_cortical_areas_internal()  # Get raw outputs without conflict filtering
 	var conflict_areas: Array[AbstractCorticalArea] = []
 	
-	print("🔍 Detecting conflict areas for region '%s':" % _representing_region.friendly_name)
-	print("  📥 Raw input areas: %d" % input_areas.size())
-	print("  📤 Raw output areas: %d" % output_areas.size())
 	
 	# Find areas that appear in both input and output lists
 	for input_area in input_areas:
@@ -1807,9 +1771,7 @@ func _get_conflict_cortical_areas() -> Array[AbstractCorticalArea]:
 			if input_area.cortical_ID == output_area.cortical_ID:
 				if input_area not in conflict_areas:
 					conflict_areas.append(input_area)
-					print("  ⚠️  CONFLICT DETECTED: Area %s appears in both inputs and outputs" % input_area.cortical_ID)
 	
-	print("🔍 Total conflict areas found for '%s': %d" % [_representing_region.friendly_name, conflict_areas.size()])
 	return conflict_areas
 
 ## Adjusts frame size based on contained cortical areas
