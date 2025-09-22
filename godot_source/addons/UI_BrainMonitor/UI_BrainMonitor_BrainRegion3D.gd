@@ -144,7 +144,6 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var conflict_start_y = AREA_ABOVE_PLATE_GAP
 	var conflict_start_z = PLATE_FRONT_BACK_MARGIN  # Start just behind the front edge
 	
-	print("  📥 Processing %d INPUT areas (front-left corner positioning):" % input_areas.size())
 	var current_input_x = input_start_x  # Start at plate front-left + margin
 	for i in input_areas.size():
 		var area = input_areas[i]
@@ -512,14 +511,11 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if not _representing_region:
 		return
 		
-	print("🔧 DIMENSION CHANGE UPDATE: Recalculating plates and repositioning all I/O areas...")
 	
 	# 1. Regenerate I/O coordinates with new dimensions (includes new plate size calculations)
-	print("  📊 Step 1: Regenerating I/O coordinates with updated dimensions...")
 	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
 	
 	# 2. Remove entire existing RegionAssembly containers to avoid duplicates lingering
-	print("  🗑️ Step 2: Removing any existing RegionAssembly nodes (full rebuild)...")
 	if _frame_container:
 		_frame_container.queue_free()
 		_frame_container = null
@@ -537,7 +533,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	await get_tree().process_frame
 	
 	# 3. Recreate plates with new sizes
-	print("  🏗️ Step 3: Recreating plates with updated sizes...")
 	# Recreate the main frame container before adding plates
 	_frame_container = Node3D.new()
 	_frame_container.name = "RegionAssembly"
@@ -688,7 +683,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
 		print("    📍 Label repositioned near front edge: world pos (%.1f, %.1f, %.1f)" % [_region_name_label.global_position.x, _region_name_label.global_position.y, _region_name_label.global_position.z])
 	
-	print("  ✅ Comprehensive plate and positioning update completed!")
 
 ## Repositions a single cortical area on its plate using new relative coordinates
 func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea, new_position: Vector3, is_input: bool) -> void:
@@ -1666,7 +1660,6 @@ func _get_input_cortical_areas() -> Array[AbstractCorticalArea]:
 		if not is_conflict:
 			pure_input_areas.append(area)
 	
-	print("🔍 Pure input areas (after conflict filtering) for '%s': %d" % [_representing_region.friendly_name, pure_input_areas.size()])
 	return pure_input_areas
 
 ## Gets RAW output cortical areas (before conflict filtering) - used internally
@@ -1736,7 +1729,6 @@ func _get_output_cortical_areas() -> Array[AbstractCorticalArea]:
 		if not is_conflict:
 			pure_output_areas.append(area)
 	
-	print("🔍 Pure output areas (after conflict filtering) for '%s': %d" % [_representing_region.friendly_name, pure_output_areas.size()])
 	return pure_output_areas
 
 ## Gets cortical areas that appear in both inputs and outputs (conflicted areas)
