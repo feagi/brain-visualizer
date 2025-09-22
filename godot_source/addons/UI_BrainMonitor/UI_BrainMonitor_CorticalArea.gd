@@ -137,10 +137,7 @@ func set_new_position(new_position: Vector3i) -> void:
 		_directpoints_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 
 func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = false) -> void:
-	print("🖱️ HOVER STATE CHANGE for ", _representing_cortial_area.cortical_ID, ": ", is_moused_over, " (global: ", is_global_mode, ")")
-	
 	if is_moused_over == _is_volume_moused_over:
-		print("   🔄 Same hover state, skipping")
 		return
 	_is_volume_moused_over = is_moused_over
 	if _dda_renderer != null:
@@ -150,10 +147,8 @@ func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = fa
 	
 	# Show/hide neural connection curves on hover
 	if is_moused_over:
-		print("   🔗 Calling _show_neural_connections() with global mode: ", is_global_mode)
 		_show_neural_connections(is_global_mode)
 	else:
-		print("   🔗 Calling _hide_neural_connections()")
 		_hide_neural_connections()
 
 func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
@@ -237,56 +232,31 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 ## Show 3D curves connecting this cortical area to all its destinations
 func _show_neural_connections(is_global_mode: bool = false) -> void:
 	if _are_connections_visible:
-		print("   🔄 Connections already visible, skipping")
 		return  # Already showing connections
-	
-	print("🔗 SHOWING neural connections for: ", _representing_cortial_area.cortical_ID)
-	print("   🔍 Cortical area type: ", _representing_cortial_area.cortical_type)
-	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		print("   🔮 This is a MEMORY cortical area - checking connections...")
 	
 	# Clear any existing pulse tweens
 	_pulse_tweens.clear()
 	
-	# Debug: Check if we have the cortical area object
+	# Check if we have the cortical area object
 	if _representing_cortial_area == null:
-		print("   ❌ ERROR: _representing_cortial_area is null!")
 		return
 	
 	# Get all efferent (outgoing) connections from this cortical area
 	var efferent_mappings = _representing_cortial_area.efferent_mappings
-	print("   🔍 DEBUG: efferent_mappings type: ", typeof(efferent_mappings))
-	print("   🔍 DEBUG: efferent_mappings size: ", efferent_mappings.size())
-	
-	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		print("   🔮 MEMORY AREA DEBUG:")
-		print("     📊 Efferent mappings: ", efferent_mappings.size())
-		if efferent_mappings.size() > 0:
-			print("     🎯 Memory area HAS outgoing connections!")
-			for dest_area in efferent_mappings.keys():
-				print("       → ", dest_area.cortical_ID)
-		else:
-			print("     ❌ Memory area has NO outgoing connections")
 	
 	# Get the center position of this cortical area (needed for both efferent and afferent connections)
 	var source_position = _get_cortical_area_center_position()
-	print("   🎯 Source position: ", source_position)
 	
 	if source_position == Vector3.ZERO:
-		print("   ❌ ERROR: Could not get source position!")
 		return
 	
 	var curves_created = 0
 	
 	# Process efferent (outgoing) connections if they exist
 	if not efferent_mappings.is_empty():
-		print("   📊 Found ", efferent_mappings.size(), " efferent connections")
-		
 		# Create curves to all destination cortical areas (OUTGOING)
 		for destination_area: AbstractCorticalArea in efferent_mappings.keys():
-			print("   🎯 Processing OUTGOING to: ", destination_area.cortical_ID)
 			var destination_position = _get_cortical_area_center_position_for_area(destination_area)
-			print("   📍 Destination position: ", destination_position)
 			
 			if destination_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
@@ -294,24 +264,14 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
-				print("   ✅ Created OUTGOING curve to: ", destination_area.cortical_ID)
-			else:
-				print("   ⚠️ Skipped outgoing connection to ", destination_area.cortical_ID, " - invalid position")
-	else:
-		print("   ❌ No efferent connections found for: ", _representing_cortial_area.cortical_ID)
 	
 	# Get all afferent (incoming) connections to this cortical area
 	var afferent_mappings = _representing_cortial_area.afferent_mappings
-	print("   🔍 DEBUG: afferent_mappings size: ", afferent_mappings.size())
 	
 	if not afferent_mappings.is_empty():
-		print("   📊 Found ", afferent_mappings.size(), " afferent (incoming) connections")
-		
 		# Create curves from all source cortical areas (INCOMING)
 		for source_area: AbstractCorticalArea in afferent_mappings.keys():
-			print("   🎯 Processing INCOMING from: ", source_area.cortical_ID)
 			var source_area_position = _get_cortical_area_center_position_for_area(source_area)
-			print("   📍 Source position: ", source_area_position)
 			
 			if source_area_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = afferent_mappings[source_area]
@@ -319,43 +279,26 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
-				print("   ✅ Created INCOMING curve from: ", source_area.cortical_ID)
-			else:
-				print("   ⚠️ Skipped incoming connection from ", source_area.cortical_ID, " - invalid position")
-	else:
-		print("   ❌ No afferent (incoming) connections found")
 	
 	# Get all recursive (self) connections within this cortical area
 	var recursive_mappings = _representing_cortial_area.recursive_mappings
-	print("   🔍 DEBUG: recursive_mappings size: ", recursive_mappings.size())
 	
 	if not recursive_mappings.is_empty():
-		print("   📊 Found ", recursive_mappings.size(), " recursive (self) connections")
-		
 		# Create looping curves for recursive connections
 		for recursive_area: AbstractCorticalArea in recursive_mappings.keys():
-			print("   🎯 Processing RECURSIVE connection in: ", recursive_area.cortical_ID)
-			
 			# Create a self-looping curve
 			var mapping_set: InterCorticalMappingSet = recursive_mappings[recursive_area]
 			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID, mapping_set, is_global_mode)
 			_connection_curves.append(loop_node)
 			add_child(loop_node)
 			curves_created += 1
-			print("   ✅ Created RECURSIVE loop for: ", recursive_area.cortical_ID)
-	else:
-		print("   ❌ No recursive (self) connections found")
 	
 	_are_connections_visible = true
-	var total_connections = efferent_mappings.size() + afferent_mappings.size() + recursive_mappings.size()
-	print("   🎯 Total curves created: ", curves_created, " out of ", total_connections, " connections (", efferent_mappings.size(), " outgoing + ", afferent_mappings.size(), " incoming + ", recursive_mappings.size(), " recursive)")
 
 ## Hide all neural connection curves
 func _hide_neural_connections() -> void:
 	if not _are_connections_visible:
 		return  # Already hidden
-	
-	print("🔗 HIDING neural connections for: ", _representing_cortial_area.cortical_ID)
 	
 	# Stop all pulse animations
 	for tween in _pulse_tweens:
@@ -370,7 +313,6 @@ func _hide_neural_connections() -> void:
 	
 	_connection_curves.clear()
 	_are_connections_visible = false
-	print("   ✅ All connection curves and pulse animations removed")
 
 ## Get the center position of this cortical area in world space
 func _get_cortical_area_center_position() -> Vector3:
@@ -433,7 +375,6 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
 	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
 	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
-	print("     🎨 Creating 3D curve ", connection_type, " ", plasticity_type, " to ", connection_id, ": ", start_pos, " → ", end_pos)
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
@@ -452,8 +393,6 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	
 	# For plastic connections, add wobble effect by modifying control point and segments
 	var is_wobbly = is_plastic
-	
-	print("     🌈 Arc height: ", arc_height, " Control point: ", control_point)
 	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
@@ -795,17 +734,14 @@ func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = 
 		# Global mode - Gray color for all connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
 		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
-		print("     ⚪ Using GRAY material for GLOBAL mode connection")
 	elif is_inhibitory:
 		# Inhibitory connections - Red color
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
 		material.emission_color = Color(0.8, 0.1, 0.1)
-		print("     🔴 Using RED material for INHIBITORY connection")
 	else:
 		# Excitatory (non-inhibitory) connections - Green color
 		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
 		material.emission_color = Color(0.1, 0.8, 0.2)
-		print("     🟢 Using GREEN material for EXCITATORY connection")
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.0
@@ -816,8 +752,6 @@ func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = 
 
 ## Create pulse animation along the curve
 func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], connection_id: StringName, is_inhibitory: bool = false) -> void:
-	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
-	print("     ⚡ Creating pulse animation for ", connection_type, " connection: ", connection_id)
 	
 	# Create multiple pulse spheres for continuous animation
 	var num_pulses = 3  # Multiple pulses traveling at once
@@ -837,16 +771,9 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		
 		# Create bright pulsing material with different colors based on connection type
 		var pulse_material = StandardMaterial3D.new()
-		if is_inhibitory:
-			# Inhibitory pulses - Bright white for better visibility
-			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
-			print("       ⚪ Creating WHITE pulse for INHIBITORY connection")
-		else:
-			# Excitatory pulses - Bright white for better visibility
-			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
-			print("       ⚪ Creating WHITE pulse for EXCITATORY connection")
+		# Both inhibitory and excitatory pulses - Bright white for better visibility
+		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
+		pulse_material.emission_color = Color(1.0, 1.0, 1.0)
 		
 		pulse_material.emission_enabled = true
 		pulse_material.emission_energy = 4.0
@@ -1043,8 +970,6 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 
 ## Create pulse animation for recursive loops
 func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vector3], area_id: StringName, is_inhibitory: bool = false) -> void:
-	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
-	print("     ⚡ Creating ", connection_type, " recursive pulse animation for: ", area_id)
 	
 	# Create multiple pulses traveling around the loop
 	var num_pulses = 2  # Fewer pulses for cleaner loop animation
@@ -1070,16 +995,9 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		pulse_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		pulse_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 		
-		if is_inhibitory:
-			# Inhibitory recursive - Bright white for visibility
-			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
-			print("       ⚪ Creating WHITE pulse for INHIBITORY RECURSIVE connection")
-		else:
-			# Excitatory recursive - Bright white to match inhibitory
-			pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-			pulse_material.emission_color = Color(1.0, 1.0, 1.0)
-			print("       ⚪ Creating WHITE pulse for EXCITATORY RECURSIVE connection")
+		# Both inhibitory and excitatory recursive - Bright white for visibility
+		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
+		pulse_material.emission_color = Color(1.0, 1.0, 1.0)
 		
 		pulse_sphere.material_override = pulse_material
 		
@@ -1320,23 +1238,15 @@ func _cleanup_cache_connections() -> void:
 
 ## Called when the cache is reloaded to refresh connection curves
 func _on_cache_reloaded() -> void:
-	print("🔄 CACHE RELOAD: Refreshing connection curves for cortical area: ", _representing_cortial_area.cortical_ID)
-	
 	# If we're currently showing connections, refresh them with updated cache data
 	if _is_volume_moused_over:
-		print("   📊 Area is hovered, refreshing curves with new cache data")
 		_hide_neural_connections()  # Clear old curves
 		_show_neural_connections()  # Rebuild with fresh cache data
-	else:
-		print("   📊 Area not hovered, curves will refresh on next hover")
 
 ## Called when mapping connections change in real-time
 func _on_mapping_changed(_area = null, _mapping_set = null) -> void:
-	print("🔗 MAPPING CHANGE: Detected mapping change for cortical area: ", _representing_cortial_area.cortical_ID)
-	
 	# If we're currently showing connections, refresh them immediately
 	if _is_volume_moused_over:
-		print("   📊 Area is hovered, immediately refreshing curves due to mapping change")
 		_hide_neural_connections()  # Clear old curves
 		_show_neural_connections()  # Rebuild with updated mappings
 		

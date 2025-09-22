@@ -99,25 +99,16 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	
 	_preview_container.add_child(_region_name_label)
 	
-	print("  🟩 PREVIEW InputPlate: %s semi-transparent (size: %.1f x %.1f x %.1f)" % ["solid" if input_areas.size() > 0 else "wireframe placeholder", actual_input_width, plate_height, input_plate_size.z if input_areas.size() > 0 else 5.0])
-	print("  🟩 PREVIEW OutputPlate: %s semi-transparent at X=%.1f (size: %.1f x %.1f x %.1f)" % ["solid" if output_areas.size() > 0 else "wireframe placeholder", output_front_left_x, actual_output_width, plate_height, output_plate_size.z if output_areas.size() > 0 else 5.0])
-	print("  🏷️ PREVIEW Label positioned at X=%.1f between plates" % center_x)
 	
 	# Set initial position
 	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position)
 	
-	print("🔮 Brain region preview setup completed for: %s (HIGH VISIBILITY plates with emission)" % brain_region.friendly_name)
 
 ## Updates the preview position when coordinates change
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i) -> void:
 	# Convert FEAGI coordinates to Godot space (flip Z-axis)
 	var godot_position = Vector3(new_FEAGI_coordinate.x, new_FEAGI_coordinate.y, -new_FEAGI_coordinate.z)
 	
-	print("🔮 DEBUG PREVIEW: About to set position for '%s'" % _brain_region.friendly_name)
-	print("  📍 FEAGI coords: %s" % new_FEAGI_coordinate)
-	print("  📍 Calculated godot_position: %s" % godot_position)
-	print("  📍 Current global_position BEFORE: %s" % global_position)
-	print("  📍 Current position BEFORE: %s" % position)
 	print("  🔍 Parent: %s" % (get_parent().name if get_parent() else "none"))
 	print("  🔍 Parent global_position: %s" % (get_parent().global_position if get_parent() else "none"))
 	print("  🔍 Parent position: %s" % (get_parent().position if get_parent() else "none"))

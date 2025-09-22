@@ -581,16 +581,13 @@ func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_B
 	print("  🔧 Calling region_frame.setup()...")
 	print("  🔍 DEBUG: Brain region coordinates before setup: %s" % brain_region.coordinates_3D)
 	region_frame.setup(brain_region)
-	print("  💾 Storing in _brain_region_visualizations_by_ID...")
 	_brain_region_visualizations_by_ID[brain_region.region_ID] = region_frame
 	
 	# Connect region frame signals
-	print("  🔗 Connecting signals...")
 	region_frame.region_double_clicked.connect(_on_brain_region_double_clicked)
 	region_frame.region_hover_changed.connect(_on_brain_region_hover_changed)
 	brain_region.about_to_be_deleted.connect(_remove_brain_region_frame.bind(brain_region))
 	
-	print("  ✅ Brain region frame setup complete for: %s" % brain_region.friendly_name)
 	return region_frame
 
 func _remove_brain_region_frame(brain_region: BrainRegion) -> void:
@@ -602,11 +599,11 @@ func _remove_brain_region_frame(brain_region: BrainRegion) -> void:
 	_brain_region_visualizations_by_ID.erase(brain_region.region_ID)
 
 func _on_brain_region_double_clicked(brain_region: BrainRegion) -> void:
-	print("🧠 BrainMonitor: Brain region double-clicked: %s" % brain_region.friendly_name)
 	# TODO: Implement navigation/diving into brain region (future tab system)
+	pass
 	
 func _on_brain_region_hover_changed(brain_region: BrainRegion, is_hovered: bool) -> void:
-	print("🧠 BrainMonitor: Brain region hover changed: %s, hovered: %s" % [brain_region.friendly_name, is_hovered])
+	pass
 
 ## Checks if a cortical area is I/O of a specific child region (using same logic as brain region)
 func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, child_region: BrainRegion) -> bool:
@@ -678,23 +675,14 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 
 ## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
 func _on_cache_reloaded_refresh_all_connections() -> void:
-	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD detected - refreshing all cortical area connections and checking for new brain regions")
-	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD - This is brain monitor instance %d representing region %s" % [get_instance_id(), _representing_region.friendly_name if _representing_region else "null"])
-	
 	# CRITICAL: Check for new brain regions that need visualization after cloning
-	print("BrainMonitor 3D Scene: 🔄 CACHE RELOAD - About to call _create_missing_brain_region_visualizations()")
 	_create_missing_brain_region_visualizations()
 	
 	# Force refresh connections for all currently hovered cortical areas
-	var refreshed_count = 0
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz._is_volume_moused_over:
-			print("   🔗 Refreshing connections for hovered area: ", cortical_viz.cortical_area.cortical_ID)
 			cortical_viz._hide_neural_connections()
 			cortical_viz._show_neural_connections()
-			refreshed_count += 1
-	
-	print("BrainMonitor 3D Scene: ✅ Refreshed connections for ", refreshed_count, " hovered cortical areas")
 
 ## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)
 func _create_missing_brain_region_visualizations() -> void:

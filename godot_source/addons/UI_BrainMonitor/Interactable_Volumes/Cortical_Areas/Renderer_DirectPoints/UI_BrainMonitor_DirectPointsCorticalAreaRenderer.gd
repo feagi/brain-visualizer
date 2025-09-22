@@ -572,13 +572,11 @@ func does_world_position_map_to_neuron_coordinate(world_position: Vector3) -> bo
 			local_pos.z >= -half_scale.z and local_pos.z <= half_scale.z)
 
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
-	print("   🔍 DEBUG: set_cortical_area_mouse_over_highlighting called with is_highlighted=", is_highlighted, " for area: ", _cortical_area_id)
 	_is_hovered_over = is_highlighted
 	_update_cortical_area_outline()
 	
 	# Activate tesla coil effect for power areas on hover
 	if _cortical_area_id == "_power":
-		print("   🔍 DEBUG: Power area detected, calling _set_tesla_coil_active")
 		_set_tesla_coil_active(is_highlighted)
 
 func set_cortical_area_selection(is_selected: bool) -> void:
