@@ -31,6 +31,9 @@ var _socket: WebSocketPeer
 var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
 var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
+var _last_connect_time: int = 0  # Track when we last attempted to connect
+var _retry_timer_active: bool = false  # Track if a retry timer is already running
+var _last_disconnect_time: int = 0  # Track last disconnect to prevent rapid processing
 var _temp_genome_ID: float = 0.0
 var _temp_genome_num: int = 0
 
@@ -204,25 +207,63 @@ func _process(_delta: float):
 			pass
 		WebSocketPeer.State.STATE_CLOSED:
 			# Closed Connection to FEAGI
+			var current_time = Time.get_ticks_msec()
+			var connection_duration = current_time - _last_connect_time
+			var is_immediate_failure = connection_duration < 2000  # Less than 2 seconds
+			
+			# Prevent rapid processing of the same disconnection event
+			if current_time - _last_disconnect_time < 1000:  # Less than 1 second since last disconnect
+				# Don't spam logs for the same disconnection
+				return
+			_last_disconnect_time = current_time
+			
+			print("[%s] 🔌 [WS] STATE_CLOSED detected - purposeful_disconnect: %s, retry_count: %d, duration: %dms, immediate_failure: %s" % 
+				[_get_timestamp(), _is_purposfully_disconnecting, _retry_count, connection_duration, is_immediate_failure])
+			
 			if  _socket.get_available_packet_count() > 0:
 				# There was some remenant data
 				_socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 			#TODO FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii())) # Add to erase neurons
 			if _is_purposfully_disconnecting:
+				print("[%s] 🔌 [WS] Purposeful disconnect - stopping process" % _get_timestamp())
 				_is_purposfully_disconnecting = false
 				set_process(false)
 				return
+			
+			# If we've had too many immediate failures, give up faster
+			if is_immediate_failure and _retry_count > 10:
+				print("[%s] ❌ [WS] Too many immediate failures - FEAGI websocket likely not available" % _get_timestamp())
+				push_error("FEAGI Websocket: Repeated immediate failures - websocket service may be down!")
+				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
+				set_process(false)
+				return
+			
 			# Try to retry the WS connection to save it
 			if _retry_count < FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections:
+				print("[%s] 🔄 [WS] Attempting retry %d / %d" % [_get_timestamp(), _retry_count + 1, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections])
 				if _socket_health != WEBSOCKET_HEALTH.RETRYING:
 					_set_socket_health(WEBSOCKET_HEALTH.RETRYING)
 				FEAGI_socket_retrying_connection.emit(_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections)
-				get_tree().create_timer(1.0).timeout.connect(_reconnect_websocket) # this is dum. what can be causing the skips though?
+				
+				# Don't create multiple timers
+				if _retry_timer_active:
+					print("[%s] ⚠️ [WS] Retry timer already active - not creating another one" % _get_timestamp())
+					return
+				
+				# Fixed 2-second retry interval
+				var retry_delay = 2.0
+				print("[%s] 🔄 [WS] Retrying in %.1f seconds..." % [_get_timestamp(), retry_delay])
+				_retry_timer_active = true
+				get_tree().create_timer(retry_delay).timeout.connect(func():
+					_retry_timer_active = false
+					_reconnect_websocket()
+				)
 				push_warning("FEAGI Websocket: Recovered from the retrying state! Retry %d / %d" % [_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections]) # using warning to make things easier to read
 				_retry_count += 1
 				return
 			else:
 				# Ran out of retries
+				print("[%s] ❌ [WS] Exhausted all retry attempts - giving up" % _get_timestamp())
 				push_error("FEAGI Websocket: Websocket failed to recover!")
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
@@ -235,8 +276,15 @@ func setup(feagi_socket_address: StringName) -> void:
 func connect_websocket() -> void:
 	if _socket_web_address == "":
 		push_error("FEAGI WS: No address specified!")
+		return
+		
+	print("[%s] 🔌 [WS] connect_websocket() called - resetting state" % _get_timestamp())
 	_is_purposfully_disconnecting = false
 	_retry_count = 0
+	_retry_timer_active = false  # Reset timer flag
+	_last_disconnect_time = 0  # Reset disconnect tracking
+	_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)  # Reset health
+	
 	# On Web, ensure WASM is initialized before opening the socket to avoid early packets
 	if OS.has_feature("web") and not WASMDecoder.is_wasm_ready():
 		WASMDecoder.ensure_wasm_loaded()
@@ -325,31 +373,15 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				var dict_status = dict["status"]
 				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
 				
-				# Check for genome changes via timestamp OR genome_num counter
-				var genome_changed = false
+				# DEPRECATED: Old websocket-based genome change detection (replaced by health check detection)
+				# This is disabled in favor of more reliable HTTP health check-based detection
+				# using feagi_session + genome_num in FEAGILocalCache.update_health_from_FEAGI_dict()
 				
+				# Keep the genome tracking variables for potential future use, but don't trigger reloads
 				if dict_status.has("genome_timestamp"):
-					if (!is_zero_approx(_temp_genome_ID - dict_status["genome_timestamp"])):
-						if !is_zero_approx(_temp_genome_ID):
-							print("🔄 GENOME RESET DETECTED: genome_timestamp changed from ", _temp_genome_ID, " to ", dict_status["genome_timestamp"])
-							genome_changed = true
-						_temp_genome_ID = dict_status["genome_timestamp"]
-				
+					_temp_genome_ID = dict_status["genome_timestamp"]
 				if dict_status.has("genome_num"):
-					var current_genome_num = dict_status["genome_num"]
-					if _temp_genome_num > 0 and current_genome_num != _temp_genome_num:
-						print("🔄 GENOME RESET DETECTED: genome_num changed from ", _temp_genome_num, " to ", current_genome_num)
-						genome_changed = true
-					_temp_genome_num = current_genome_num
-				
-				# Trigger reset and clear stale cache if genome changed
-				if genome_changed:
-					print("🗑️ CLEARING stale missing cortical areas cache (had ", _missing_cortical_areas.size(), " entries)")
-					_missing_cortical_areas.clear()
-					_case_mapping_cache.clear()
-					print("📡 WEBSOCKET: Emitting feagi_requesting_reset signal...")
-					feagi_requesting_reset.emit()
-					print("✅ WEBSOCKET: feagi_requesting_reset signal emitted")
+					_temp_genome_num = dict_status["genome_num"]
 						
 					
 		7: # ActivatedNeuronLocation
@@ -439,12 +471,33 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
 			push_error("Unknown data type %d recieved!" % bytes[0])
 
+func _get_timestamp() -> String:
+	var time = Time.get_time_dict_from_system()
+	return "%02d:%02d:%02d.%03d" % [time.hour, time.minute, time.second, Time.get_ticks_msec() % 1000]
+
 func _reconnect_websocket() -> void:
+	# Debug call stack to see what's triggering multiple calls
+	var stack = get_stack()
+	var caller = "unknown"
+	if stack.size() > 1:
+		caller = stack[1].get("source", "unknown") + ":" + str(stack[1].get("line", 0))
+	
+	print("[%s] 🔌 [WS] _reconnect_websocket() called - retry_count: %d, health: %s, caller: %s" % [_get_timestamp(), _retry_count, WEBSOCKET_HEALTH.keys()[_socket_health], caller])
+	
+	# Don't reconnect if we're already connected, or if we've given up completely
+	if _socket_health == WEBSOCKET_HEALTH.CONNECTED:
+		print("[%s] ⚠️ [WS] Already connected - ignoring reconnect request" % _get_timestamp())
+		return
+	if _socket_health == WEBSOCKET_HEALTH.NO_CONNECTION and _retry_count > 10:
+		print("[%s] ⚠️ [WS] Already gave up after immediate failures - ignoring reconnect request (retry_count: %d)" % [_get_timestamp(), _retry_count])
+		return
+		
 	_socket = null # enforce dereference
 	_socket =  WebSocketPeer.new()
 	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
+	_last_connect_time = Time.get_ticks_msec()
 	_socket.connect_to_url(_socket_web_address)
-	print("[WS] connect_to_url(", _socket_web_address, ") inbound_buffer_size=", DEF_SOCKET_INBOUND_BUFFER_SIZE)
+	print("[%s] [WS] connect_to_url(%s) inbound_buffer_size=%d" % [_get_timestamp(), _socket_web_address, DEF_SOCKET_INBOUND_BUFFER_SIZE])
 
 func _looks_like_feagi_ws_payload(bytes: PackedByteArray) -> bool:
 	# FEAGI payload types we handle: 1(JSON),8(img),9(multi),10(SVO),11(neurons)

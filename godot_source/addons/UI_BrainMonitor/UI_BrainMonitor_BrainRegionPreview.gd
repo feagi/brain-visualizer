@@ -141,9 +141,12 @@ func _get_input_areas() -> Array[AbstractCorticalArea]:
 	
 	# Method 1: Check chain links
 	for link in _brain_region.input_open_chain_links:
-		if link.destination in _brain_region.contained_cortical_areas:
-			if not input_areas.has(link.destination):
-				input_areas.append(link.destination)
+		# Ensure destination is a cortical area before checking/adding
+		if link.destination is AbstractCorticalArea:
+			var dest_area = link.destination as AbstractCorticalArea
+			if dest_area in _brain_region.contained_cortical_areas:
+				if not input_areas.has(dest_area):
+					input_areas.append(dest_area)
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays)
 	for partial_mapping in _brain_region.partial_mappings:
@@ -167,9 +170,12 @@ func _get_output_areas() -> Array[AbstractCorticalArea]:
 	
 	# Method 1: Check chain links
 	for link in _brain_region.output_open_chain_links:
-		if link.source in _brain_region.contained_cortical_areas:
-			if not output_areas.has(link.source):
-				output_areas.append(link.source)
+		# Ensure source is a cortical area before checking/adding
+		if link.source is AbstractCorticalArea:
+			var source_area = link.source as AbstractCorticalArea
+			if source_area in _brain_region.contained_cortical_areas:
+				if not output_areas.has(source_area):
+					output_areas.append(source_area)
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays)
 	for partial_mapping in _brain_region.partial_mappings:

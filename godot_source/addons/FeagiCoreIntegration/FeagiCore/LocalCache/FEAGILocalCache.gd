@@ -237,6 +237,7 @@ signal genome_validity_changed(new_val: bool)
 signal brain_readiness_changed(new_val: bool)
 signal genome_availability_or_brain_readiness_changed(available: bool, ready: bool)
 signal simulation_timestep_changed(new_timestep: float)
+signal genome_refresh_needed(feagi_session: int, genome_num: int, reason: String)
 
 var burst_engine: bool:
 	get: return _burst_engine
@@ -319,10 +320,58 @@ var _simulation_timestep: float = 0.05  # Default 50ms
 var memory_area_stats: Dictionary = {}  # cortical_id -> {neuron_count, created_total, deleted_total, last_updated}
 signal memory_area_stats_updated(stats: Dictionary)
 
+# Genome change detection tracking
+var _previous_feagi_session: int = 0
+var _previous_genome_num: int = 0
+var _last_genome_change_time: int = 0  # Time of last change detection
+var _genome_change_cooldown_ms: int = 10000  # 10 second cooldown
+
 var _pending_amalgamation: StringName = ""
 
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
+	
+	# GENOME CHANGE DETECTION: Check feagi_session and genome_num for changes
+	if "feagi_session" in health and "genome_num" in health:
+		var current_feagi_session = int(health["feagi_session"])
+		var current_genome_num = int(health["genome_num"])
+		
+		var session_changed = (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session)
+		var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
+		
+		if session_changed or genome_changed:
+			# Check cooldown to prevent rapid-fire reloads
+			var current_time = Time.get_ticks_msec()
+			if current_time - _last_genome_change_time < _genome_change_cooldown_ms:
+				var remaining_cooldown = (_genome_change_cooldown_ms - (current_time - _last_genome_change_time)) / 1000.0
+				print("⚠️ FEAGI CACHE: Genome change detected but still in cooldown period (%.1fs remaining)" % remaining_cooldown)
+				# Update tracking variables but don't trigger reload
+				_previous_feagi_session = current_feagi_session
+				_previous_genome_num = current_genome_num
+				return
+			
+			# Check if genome is already reloading
+			if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
+				print("⚠️ FEAGI CACHE: Genome change detected but reload already in progress - ignoring")
+				# Update tracking variables but don't trigger another reload
+				_previous_feagi_session = current_feagi_session
+				_previous_genome_num = current_genome_num
+				return
+			
+			var reason = ""
+			if session_changed:
+				reason = "FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session]
+			if genome_changed:
+				if reason != "":
+					reason += " & "
+				reason += "genome changed (num: %d → %d)" % [_previous_genome_num, current_genome_num]
+			
+			print("🔄 FEAGI CACHE: GENOME REFRESH NEEDED - %s" % reason)
+			_last_genome_change_time = current_time
+			genome_refresh_needed.emit(current_feagi_session, current_genome_num, reason)
+		
+		_previous_feagi_session = current_feagi_session
+		_previous_genome_num = current_genome_num
 	
 	# DEBUG: Show health check details for amalgamation tracking (only when relevant)
 	if _pending_amalgamation != "":

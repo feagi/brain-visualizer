@@ -239,6 +239,11 @@ func _calculate_clone_default_position(source_region: BrainRegion) -> Vector3i:
 	# Calculate the rightmost X coordinate of the source region
 	var rightmost_x = _calculate_region_rightmost_x(source_region)
 	
+	print("🎯 CLONE POSITIONING DEBUG:")
+	print("  Source region: %s at %s" % [source_region.friendly_name, source_coords])
+	print("  Calculated rightmost X: %d" % rightmost_x)
+	print("  New position will be: (%d, %d, %d)" % [rightmost_x + 10, source_coords.y, source_coords.z])
+	
 	# Default position: same Y and Z, X = rightmost + 10 unit gap
 	return Vector3i(rightmost_x + 10, source_coords.y, source_coords.z)
 
@@ -255,6 +260,7 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 	var conflict_areas: Array[AbstractCorticalArea] = []
 	
 	# Get areas from the region's partial mappings
+	print("  🔍 DEBUG: Region has %d partial mappings" % region.partial_mappings.size())
 	for partial_mapping in region.partial_mappings:
 		var target_area = partial_mapping.internal_target_cortical_area
 		if target_area != null:
@@ -262,10 +268,12 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 				# This is an input to the region (external -> internal)
 				if target_area not in input_areas:
 					input_areas.append(target_area)
+					print("    📥 Added input area: %s (dims: %s)" % [target_area.cortical_ID, target_area.dimensions_3D])
 			else:
 				# This is an output from the region (internal -> external)
 				if target_area not in output_areas:
 					output_areas.append(target_area)
+					print("    📤 Added output area: %s (dims: %s)" % [target_area.cortical_ID, target_area.dimensions_3D])
 	
 	# Check for conflicts (areas in both input and output)
 	for area in input_areas:
@@ -284,9 +292,13 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 	const PLATE_GAP = 2.0
 	const PLACEHOLDER_PLATE_SIZE = Vector3(5.0, 1.0, 5.0)
 	
+	print("  📊 Found %d inputs, %d outputs, %d conflicts" % [input_areas.size(), output_areas.size(), conflict_areas.size()])
+	
 	var input_plate_size = _calculate_plate_size_for_areas_helper(input_areas)
 	var output_plate_size = _calculate_plate_size_for_areas_helper(output_areas)
 	var conflict_plate_size = _calculate_plate_size_for_areas_helper(conflict_areas)
+	
+	print("  📐 Plate sizes - Input: %s, Output: %s, Conflict: %s" % [input_plate_size, output_plate_size, conflict_plate_size])
 	
 	# Calculate the rightmost edge by finding the end of the last plate
 	# This matches the exact logic in UI_BrainMonitor_BrainRegion3D:
@@ -297,13 +309,17 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 		# Conflict plate exists - it's the rightmost
 		var conflict_plate_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP
 		rightmost_edge = conflict_plate_x + conflict_plate_size.x
+		print("  🔴 Conflict plate at X=%f, rightmost edge: %f" % [conflict_plate_x, rightmost_edge])
 	else:
 		# No conflict plate - output plate is rightmost
 		var output_plate_x = input_plate_size.x + PLATE_GAP
 		rightmost_edge = output_plate_x + output_plate_size.x
+		print("  🔵 Output plate at X=%f, rightmost edge: %f" % [output_plate_x, rightmost_edge])
 	
 	# Rightmost X = region's starting X + rightmost edge position
-	return int(region_x + rightmost_edge)
+	var final_rightmost = int(region_x + rightmost_edge)
+	print("  ➡️ Final calculation: %d + %f = %d" % [region_x, rightmost_edge, final_rightmost])
+	return final_rightmost
 
 ## Helper function to calculate plate size for areas (mimics UI_BrainMonitor_BrainRegion3D logic)
 func _calculate_plate_size_for_areas_helper(areas: Array[AbstractCorticalArea]) -> Vector3:

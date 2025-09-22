@@ -61,6 +61,7 @@ func _enter_tree():
 		network.genome_reset_request_recieved.connect(_recieve_genome_reset_request)
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
+	feagi_local_cache.genome_refresh_needed.connect(_on_genome_refresh_needed)
 	requests = FEAGIRequests.new()
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
@@ -330,5 +331,16 @@ func _recieve_genome_reset_request():
 	else:
 		print("⚠️ FEAGICORE: Ignoring genome reset request - current state doesn't warrant reload: %s" % GENOME_LOAD_STATE.keys()[genome_load_state])
 		print("   💡 NOTE: Reset requests only trigger from GENOME_READY or GENOME_PROCESSING states")
+
+func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: String):
+	print("🔄 FEAGICORE: Health check detected genome refresh needed - %s" % reason)
+	print("   📊 Session: %d, Genome: %d, Current state: %s" % [feagi_session, genome_num, GENOME_LOAD_STATE.keys()[genome_load_state]])
+	
+	# Double-check that we're not already reloading (safety check)
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
+		print("⚠️ FEAGICORE: Already in GENOME_RELOADING state - ignoring duplicate refresh request")
+		return
+	
+	_recieve_genome_reset_request()
 
 #endregion
