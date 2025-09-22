@@ -31,8 +31,6 @@ func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRe
 
 ## FAST initial health check for startup - bypasses global timeout/retry settings for instant response
 func fast_initial_health_check() -> FeagiRequestOutput:
-	print("FEAGI REQUESTS: 🚀 Running FAST initial health check for startup...")
-	
 	# Check if network components are properly initialized
 	if not FeagiCore.network:
 		push_error("FEAGI Requests: FeagiCore.network is null")
@@ -55,16 +53,13 @@ func fast_initial_health_check() -> FeagiRequestOutput:
 	fast_health_check_request.data_to_send_to_FEAGI = null
 	
 	# FAST settings for startup
-	fast_health_check_request.http_timeout = 2.0  # Only 2 seconds timeout 
-	fast_health_check_request.number_of_retries_allowed = 1  # Only 1 retry - total time ~4 seconds max
+	fast_health_check_request.http_timeout = 2.0
+	fast_health_check_request.number_of_retries_allowed = 1
 	
-	print("FEAGI REQUESTS: 📡 Initial health check using fast settings (2s timeout, 1 retry)")
 	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(fast_health_check_request)
-	
 	await health_check_worker.worker_done
 	
 	var response_data: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
-	print("FEAGI REQUESTS: ⚡ Fast initial health check completed - success: %s" % response_data.success)
 	return response_data
 
 
