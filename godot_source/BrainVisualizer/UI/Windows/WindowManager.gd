@@ -82,7 +82,11 @@ func spawn_clone_cortical(cloning_from: AbstractCorticalArea) -> void:
 
 func spawn_clone_region(source_region: BrainRegion) -> void:
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_PREFAB_IMPORT_AMALGAMATION, WindowAmalgamationRequest.WINDOW_NAME) as WindowAmalgamationRequest
-	import_amalgamation.setup_for_clone(source_region, source_region.friendly_name + &"_clone")
+	
+	# Calculate default position: same Y and Z as source, X = rightmost edge + 10 unit gap
+	var default_position = _calculate_clone_default_position(source_region)
+	
+	import_amalgamation.setup_for_clone(source_region, source_region.friendly_name + &"_clone", default_position)
 
 func spawn_quick_connect(initial_source_area: AbstractCorticalArea = null) -> void:
 	var quick_connect: WindowQuickConnect = _default_spawn_window(_PREFAB_QUICK_CONNECT, WindowQuickConnect.WINDOW_NAME) as WindowQuickConnect
@@ -227,3 +231,104 @@ func _bring_window_to_top_str(window_name: StringName) -> void:
 		push_error("WindowManager: Unknown window %s!" % window_name)
 		return
 	bring_window_to_top(loaded_windows[window_name])
+
+## Calculate default position for cloned region: same Y/Z as source, X = rightmost edge + 10 unit gap
+func _calculate_clone_default_position(source_region: BrainRegion) -> Vector3i:
+	var source_coords = source_region.coordinates_3D
+	
+	# Calculate the rightmost X coordinate of the source region
+	var rightmost_x = _calculate_region_rightmost_x(source_region)
+	
+	# Default position: same Y and Z, X = rightmost + 10 unit gap
+	return Vector3i(rightmost_x + 10, source_coords.y, source_coords.z)
+
+## Calculate the rightmost X coordinate of a brain region (including all its plates)
+func _calculate_region_rightmost_x(region: BrainRegion) -> int:
+	var region_x = region.coordinates_3D.x
+	
+	# We need to calculate the total width of the region's plates
+	# This mimics the logic from UI_BrainMonitor_BrainRegion3D.generate_io_coordinates_for_brain_region
+	
+	# Get I/O areas for this region (we need to access the partial mappings)
+	var input_areas: Array[AbstractCorticalArea] = []
+	var output_areas: Array[AbstractCorticalArea] = []
+	var conflict_areas: Array[AbstractCorticalArea] = []
+	
+	# Get areas from the region's partial mappings
+	for partial_mapping in region.partial_mappings:
+		var target_area = partial_mapping.internal_target_cortical_area
+		if target_area != null:
+			if partial_mapping.is_region_input:
+				# This is an input to the region (external -> internal)
+				if target_area not in input_areas:
+					input_areas.append(target_area)
+			else:
+				# This is an output from the region (internal -> external)
+				if target_area not in output_areas:
+					output_areas.append(target_area)
+	
+	# Check for conflicts (areas in both input and output)
+	for area in input_areas:
+		if area in output_areas:
+			conflict_areas.append(area)
+	
+	# Remove conflict areas from input/output lists
+	for area in conflict_areas:
+		input_areas.erase(area)
+		output_areas.erase(area)
+	
+	# Calculate plate sizes using the same constants as UI_BrainMonitor_BrainRegion3D
+	const PLATE_SIDE_MARGIN = 1.0
+	const AREA_BUFFER_DISTANCE = 1.0
+	const PLATE_FRONT_BACK_MARGIN = 1.0
+	const PLATE_GAP = 2.0
+	const PLACEHOLDER_PLATE_SIZE = Vector3(5.0, 1.0, 5.0)
+	
+	var input_plate_size = _calculate_plate_size_for_areas_helper(input_areas)
+	var output_plate_size = _calculate_plate_size_for_areas_helper(output_areas)
+	var conflict_plate_size = _calculate_plate_size_for_areas_helper(conflict_areas)
+	
+	# Calculate the rightmost edge by finding the end of the last plate
+	# This matches the exact logic in UI_BrainMonitor_BrainRegion3D:
+	
+	var rightmost_edge: float
+	
+	if conflict_areas.size() > 0:
+		# Conflict plate exists - it's the rightmost
+		var conflict_plate_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP
+		rightmost_edge = conflict_plate_x + conflict_plate_size.x
+	else:
+		# No conflict plate - output plate is rightmost
+		var output_plate_x = input_plate_size.x + PLATE_GAP
+		rightmost_edge = output_plate_x + output_plate_size.x
+	
+	# Rightmost X = region's starting X + rightmost edge position
+	return int(region_x + rightmost_edge)
+
+## Helper function to calculate plate size for areas (mimics UI_BrainMonitor_BrainRegion3D logic)
+func _calculate_plate_size_for_areas_helper(areas: Array[AbstractCorticalArea]) -> Vector3:
+	const PLATE_SIDE_MARGIN = 1.0
+	const AREA_BUFFER_DISTANCE = 1.0
+	const PLATE_FRONT_BACK_MARGIN = 1.0
+	const PLACEHOLDER_PLATE_SIZE = Vector3(5.0, 1.0, 5.0)
+	
+	# If no areas, use placeholder size
+	if areas.size() == 0:
+		return PLACEHOLDER_PLATE_SIZE
+	
+	# Calculate width: sum of all area widths + buffers + margins
+	var total_width = 0.0
+	var max_depth = 0.0
+	
+	for area in areas:
+		total_width += area.dimensions_3D.x  # Sum all widths
+		max_depth = max(max_depth, area.dimensions_3D.z)  # Find max depth
+	
+	# Width calculation: sum_of_widths + (count-1)*BUFFER + SIDE_MARGINS
+	var plate_width = total_width + (areas.size() - 1) * AREA_BUFFER_DISTANCE + (PLATE_SIDE_MARGIN * 2.0)
+	
+	# Depth calculation: max_depth + FRONT_BACK_MARGINS  
+	var plate_depth = max_depth + (PLATE_FRONT_BACK_MARGIN * 2.0)
+	
+	# Height is always 1.0 for plates
+	return Vector3(plate_width, 1.0, plate_depth)

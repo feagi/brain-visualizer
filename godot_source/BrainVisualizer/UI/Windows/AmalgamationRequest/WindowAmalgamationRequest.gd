@@ -52,7 +52,7 @@ func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: 
 	#BV.UI.start_cortical_area_preview(_field_3d_location.current_vector, _circuit_size, move_signals, resize_signals, closed_signals)
 
 
-func setup_for_clone(source_region: BrainRegion, suggested_title: StringName) -> void:
+func setup_for_clone(source_region: BrainRegion, suggested_title: StringName, default_position: Vector3i = Vector3i(0, 0, 0)) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_is_pre_submit_clone = true
 	_source_region_for_clone = source_region
@@ -60,6 +60,10 @@ func setup_for_clone(source_region: BrainRegion, suggested_title: StringName) ->
 	_circuit_size = Vector3i(1,1,1) # Unknown until server computes; preview minimal
 	# Default suggested title editable by user
 	_field_title.text = suggested_title
+	
+	# Set default position in the 3D location field
+	_field_3d_location.current_vector = default_position
+	
 	var closed_signals: Array[Signal] = [close_window_requested, FeagiCore.about_to_reload_genome]
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimchange_signal]
@@ -69,8 +73,8 @@ func setup_for_clone(source_region: BrainRegion, suggested_title: StringName) ->
 	if active_bm == null:
 		push_error("WindowAmalgamationRequest: No brain monitor available for preview creation!")
 		return
-	# Use brain region preview (dual plates) instead of voxel preview
-	_region_preview = active_bm.create_brain_region_preview(_source_region_for_clone, Vector3i(0,0,0))
+	# Use brain region preview (dual plates) instead of voxel preview with calculated default position
+	_region_preview = active_bm.create_brain_region_preview(_source_region_for_clone, default_position)
 	# Connect movement from the 3D coordinate field to update the preview position
 	_field_3d_location.user_updated_vector.connect(func(new_vec: Vector3i):
 		if _region_preview != null:
