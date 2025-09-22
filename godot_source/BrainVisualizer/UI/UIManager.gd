@@ -62,6 +62,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
+	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	
@@ -96,6 +97,36 @@ func FEAGI_no_genome() -> void:
 	window_manager.force_close_all_windows()
 	top_bar.toggle_buttons_interactability(false)
 
+
+## Handle connection state changes to show/hide loading screen
+func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE, new_state: FEAGINetworking.CONNECTION_STATE) -> void:
+	print("UIMANAGER: Connection state changed to: ", FEAGINetworking.CONNECTION_STATE.keys()[new_state])
+	
+	# Show loading screen when disconnected or retrying
+	match(new_state):
+		FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
+			print("UIMANAGER: Showing loading screen due to disconnected state")
+			toggle_loading_screen(true)
+		FEAGINetworking.CONNECTION_STATE.RETRYING_WS:
+			print("UIMANAGER: Showing loading screen due to websocket retrying")
+			toggle_loading_screen(true)
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP:
+			print("UIMANAGER: Showing loading screen due to HTTP retrying")
+			toggle_loading_screen(true)
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_WS:
+			print("UIMANAGER: Showing loading screen due to both retrying")
+			toggle_loading_screen(true)
+		FEAGINetworking.CONNECTION_STATE.HEALTHY:
+			# Only hide loading screen if brain is also ready
+			var brain_is_ready = FeagiCore.feagi_local_cache.brain_readiness
+			print("UIMANAGER: Connection healthy, brain_readiness: ", brain_is_ready)
+			if brain_is_ready:
+				print("UIMANAGER: Hiding loading screen - connection healthy and brain ready")
+				toggle_loading_screen(false)
+		_:
+			# For other states (probing), keep loading screen visible
+			print("UIMANAGER: Keeping loading screen visible for state: ", FEAGINetworking.CONNECTION_STATE.keys()[new_state])
+			toggle_loading_screen(true)
 
 ## Called from above when we confirmed genome to feagi, enable UI elements that connect to it
 func FEAGI_confirmed_genome() -> void:

@@ -162,8 +162,9 @@ func _process(_delta: float):
 			# Connection active with FEAGI
 			if _socket_health != WEBSOCKET_HEALTH.CONNECTED:
 				if _retry_count != 0:
-					push_warning("FEAGI Websocket: Recovered from the retrying state!") # using warning to make things easier to read
+					print("[%s] ✅ [WS] Recovered from retrying state after %d attempts!" % [_get_timestamp(), _retry_count])
 					_retry_count = 0
+				print("[%s] ✅ [WS] Transitioning to CONNECTED state - notifying network layer" % _get_timestamp())
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
 			while _socket.get_available_packet_count():
@@ -233,6 +234,7 @@ func _process(_delta: float):
 			# If we've had too many immediate failures, give up faster
 			if is_immediate_failure and _retry_count > 10:
 				print("[%s] ❌ [WS] Too many immediate failures - FEAGI websocket likely not available" % _get_timestamp())
+				print("[%s] 🔌 [WS] Notifying network layer about websocket failure" % _get_timestamp())
 				push_error("FEAGI Websocket: Repeated immediate failures - websocket service may be down!")
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
@@ -242,6 +244,7 @@ func _process(_delta: float):
 			if _retry_count < FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections:
 				print("[%s] 🔄 [WS] Attempting retry %d / %d" % [_get_timestamp(), _retry_count + 1, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections])
 				if _socket_health != WEBSOCKET_HEALTH.RETRYING:
+					print("[%s] 🔄 [WS] Transitioning to RETRYING state - notifying network layer" % _get_timestamp())
 					_set_socket_health(WEBSOCKET_HEALTH.RETRYING)
 				FEAGI_socket_retrying_connection.emit(_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections)
 				
@@ -264,6 +267,7 @@ func _process(_delta: float):
 			else:
 				# Ran out of retries
 				print("[%s] ❌ [WS] Exhausted all retry attempts - giving up" % _get_timestamp())
+				print("[%s] 🔌 [WS] Notifying network layer about websocket failure (exhausted retries)" % _get_timestamp())
 				push_error("FEAGI Websocket: Websocket failed to recover!")
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
@@ -807,6 +811,8 @@ func _on_genome_reloaded() -> void:
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
 	_socket_health = new_health
+	print("[%s] 🔌 [WS] _set_socket_health: %s → %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[prev_health], WEBSOCKET_HEALTH.keys()[new_health]])
+	print("[%s] 📡 [WS] Emitting FEAGI_socket_health_changed signal" % _get_timestamp())
 	FEAGI_socket_health_changed.emit(prev_health, new_health)
 
 # All deserialization is now handled by the Rust extension
