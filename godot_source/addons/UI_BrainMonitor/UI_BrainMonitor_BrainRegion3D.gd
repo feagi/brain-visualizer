@@ -202,15 +202,8 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.outputs.append(output_data)
 		
-		print("    🔴 OUTPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
-		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position))
-		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
-		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
-		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
 	# CONFLICT PLATE: Process areas that appear in both inputs and outputs
-	print("  ⚠️  Processing %d CONFLICT areas (front-left corner positioning):" % conflict_areas.size())
 	var current_conflict_x = conflict_start_x  # Start at conflict plate front-left + margin
 	for i in conflict_areas.size():
 		var area_c = conflict_areas[i]
@@ -238,24 +231,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.conflicts.append(conflict_data)
 		
-		print("    🔴 CONFLICT: %s (%s) - dims=%s" % [area_c.cortical_ID, area_c.type_as_string, area_size_c])
-		print("      📍 Original coordinates: %s" % area_c.coordinates_3D)
-		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position_c))
-		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
-		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
-		print("      📐 Offset from region: %s" % (new_position_c - region_origin))
 	
-	print("🏁 Coordinate generation complete for region: %s" % brain_region.friendly_name)
-	print("  📊 Generated %d input + %d output + %d conflict coordinates" % [input_areas.size(), output_areas.size(), conflict_areas.size()])
-	print("  ✅ === POSITIONING SUMMARY ===")
-	print("    🟢 Input areas: Front-left corners start at margins, CENTER positioning used for renderers")
-	print("    🔵 Output areas: Front-left corners start at margins, CENTER positioning used for renderers")
-	print("    🔴 Conflict areas: Front-left corners start at margins, CENTER positioning used for renderers")  
-	print("    🎯 CENTER coordinates: X,Y = front-left + size/2, Z = front-left - size/2 (Godot Z-flip)")
-	var input_plate_center_z_feagi = brain_region.coordinates_3D.z + input_plate_size.z / 2.0
-	var output_plate_center_z_feagi = brain_region.coordinates_3D.z + output_plate_size.z / 2.0
-	var conflict_plate_center_z_feagi = brain_region.coordinates_3D.z + conflict_plate_size.z / 2.0
-	print("    📍 Front edge Z (FEAGI): %.1f | Plate centers Z (FEAGI): input=%.1f, output=%.1f, conflict=%.1f | Area start Z (FEAGI): %.1f" % [brain_region.coordinates_3D.z, input_plate_center_z_feagi, output_plate_center_z_feagi, conflict_plate_center_z_feagi, input_start_z])
 	
 	return result
 
@@ -790,20 +766,6 @@ func _create_3d_plate() -> void:
 	# Work directly with front-edge positioning (no center calculations)
 	# Godot requires center positioning, so we'll apply the offset when setting position
 	
-	print("  📐 Input plate size: %s (for %d areas)" % [input_plate_size, input_areas.size()])  
-	print("  📐 Output plate size: %s (for %d areas)" % [output_plate_size, output_areas.size()])
-	print("  📐 Conflict plate size: %s (for %d areas)" % [conflict_plate_size, conflict_areas.size()])
-	print("  📍 Brain region coordinates: %s" % _representing_region.coordinates_3D)
-	
-	print("  🎯 === FEAGI FRONT-LEFT CORNER POSITIONING (3-PLATE SYSTEM) ===")
-	print("  🎯 Input plate: Front-left corner at brain region coordinates (X=0)")
-	print("  🎯 Output plate: Front-left corner at X=%.1f (input_width + gap)" % (input_plate_size.x + PLATE_GAP))
-	print("  🎯 Conflict plate: Front-left corner at X=%.1f (input + gap + output + gap)" % (input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP))
-	print("  📐 Layout: [Input:%.1f] --%.1f-- [Output:%.1f] --%.1f-- [Conflict:%.1f]" % [input_plate_size.x, PLATE_GAP, output_plate_size.x, PLATE_GAP, conflict_plate_size.x])
-	print("  🎯 Input plate depth: %.1f units" % input_plate_size.z)
-	print("  🎯 Output plate depth: %.1f units" % output_plate_size.z)
-	print("  🎯 Conflict plate depth: %.1f units" % conflict_plate_size.z)
-	print("  📦 All plates extend from front-left corner toward higher x,y,z values")
 	
 	# Create the main frame container
 	_frame_container = Node3D.new()
@@ -850,14 +812,6 @@ func _create_3d_plate() -> void:
 		conflict_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as other plates (Godot center)
 		# Use global Z set through transform later to allow querying exact plate Z
 		_frame_container.add_child(conflict_plate)
-		print("  🔴 CONFLICT PLATE: Created red conflict plate for %d conflicted areas" % conflict_areas.size())
-		print("  🔴 CONFLICT PLATE POSITIONING:")
-		print("    📍 Input plate width: %.1f" % input_plate_size.x)
-		print("    📍 First gap: %.1f" % PLATE_GAP)
-		print("    📍 Output plate width: %.1f" % output_plate_size.x)
-		print("    📍 Second gap: %.1f" % PLATE_GAP)
-		print("    📍 Conflict plate front-left X: %.1f" % conflict_plate_x)
-		print("    📍 Conflict plate center X: %.1f" % conflict_plate.position.x)
 
 	# After adding plates, set their global Z so front edges align at brain region Z
 	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
@@ -1205,11 +1159,9 @@ func _create_connecting_bridge(input_size: Vector3, output_size: Vector3, spacin
 
 ## Calculates plate size for specific areas using new precise specifications
 func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_type: String) -> Vector3:
-	print("  🔧 Calculating %s plate size for %d areas" % [plate_type, areas.size()])
 	
 	# If no areas, create yellow placeholder
 	if areas.size() == 0:
-		print("    ⚠️  No %s areas found, using %.1fx%.1fx%.1f yellow placeholder" % [plate_type, PLACEHOLDER_PLATE_SIZE.x, PLACEHOLDER_PLATE_SIZE.y, PLACEHOLDER_PLATE_SIZE.z])
 		return PLACEHOLDER_PLATE_SIZE
 	
 	# Calculate width: sum of all area widths + buffers + margins
@@ -1230,13 +1182,6 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	# Height is always constant
 	var plate_height = PLATE_HEIGHT
 	
-	print("    📐 %s plate calculation:" % plate_type)
-	print("      • Total area widths: %.1f" % total_width)
-	print("      • Buffer between areas: %d areas × %.1f units = %.1f" % [(areas.size() - 1), AREA_BUFFER_DISTANCE, (areas.size() - 1) * AREA_BUFFER_DISTANCE])
-	print("      • Side margins: %.1f units (%.1f each side)" % [PLATE_SIDE_MARGIN * 2.0, PLATE_SIDE_MARGIN])
-	print("      • Final width: %.1f + %.1f + %.1f = %.1f" % [total_width, (areas.size() - 1) * AREA_BUFFER_DISTANCE, PLATE_SIDE_MARGIN * 2.0, plate_width])
-	print("      • Max depth: %.1f + %.1f margin = %.1f" % [max_depth, PLATE_FRONT_BACK_MARGIN * 2.0, plate_depth])
-	print("      • Height: %.1f (constant)" % plate_height)
 	
 	return Vector3(plate_width, plate_height, plate_depth)
 
