@@ -324,15 +324,13 @@ var _pending_amalgamation: StringName = ""
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	
-	# DEBUG: Show health check details for amalgamation tracking
-	if health.has("amalgamation_pending"):
-		print("FEAGI Cache: 🔍 HEALTH DEBUG - amalgamation_pending in health: %s" % health["amalgamation_pending"])
-	else:
-		if _pending_amalgamation != "":
+	# DEBUG: Show health check details for amalgamation tracking (only when relevant)
+	if _pending_amalgamation != "":
+		if health.has("amalgamation_pending"):
+			print("FEAGI Cache: 🔍 HEALTH DEBUG - amalgamation_pending in health: %s" % health["amalgamation_pending"])
+		else:
 			print("FEAGI Cache: 🔍 HEALTH DEBUG - No amalgamation_pending in health data (expecting completion)")
-	
-	print("FEAGI Cache: 🔍 HEALTH DEBUG - Currently tracking pending amalgamation: '%s'" % _pending_amalgamation)
-	print("FEAGI Cache: 🔍 HEALTH DEBUG - _pending_amalgamation empty? %s" % (_pending_amalgamation == ""))
+		print("FEAGI Cache: 🔍 HEALTH DEBUG - Currently tracking pending amalgamation: '%s'" % _pending_amalgamation)
 	
 	if "genome_availability" in health and "brain_readiness" in health:
 		var genome_avail = health["genome_availability"]

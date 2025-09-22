@@ -49,8 +49,11 @@ func reload_genome() -> FeagiRequestOutput:
 	
 	# Get Cortical Area Data
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 Making HTTP call to: %s" % FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call initiated, waiting for response...")
 	await cortical_worker.worker_done
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call completed, retrieving data...")
 	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(cortical_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 1: Cortical area data request failed!")
@@ -2206,6 +2209,26 @@ func manual_force_region_update() -> void:
 	_trigger_immediate_region_visualization_update()
 	print("🔧 MANUAL TEST: Update completed")
 
+## Stop all flashing previews across all amalgamation windows
+func _stop_all_flashing_previews() -> void:
+	print("🔄 FLASH: Searching for amalgamation windows to stop flashing previews...")
+	
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if not scene_tree or not scene_tree.root:
+		print("❌ FLASH: No scene tree available")
+		return
+	
+	# Find all amalgamation request windows
+	var amalgamation_windows = scene_tree.root.find_children("*", "WindowAmalgamationRequest", true, false)
+	print("🔄 FLASH: Found %d amalgamation windows" % amalgamation_windows.size())
+	
+	for window in amalgamation_windows:
+		if window.has_method("_stop_flashing_preview"):
+			print("🔄 FLASH: Stopping flashing preview in window: %s" % window.name)
+			window._stop_flashing_preview()
+	
+	print("✅ FLASH: All flashing previews stopped")
+
 ## Append a mapping betwseen 2 cortical areas. Assumes the current mapping information is up to date
 func append_mapping_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mapping: SingleMappingDefinition) -> FeagiRequestOutput:
 	var current_mappings: Array[SingleMappingDefinition] = source_area.get_mapping_array_toward_cortical_area(destination_area)
@@ -2235,6 +2258,9 @@ func delete_mappings_between_corticals(source_area: AbstractCorticalArea, destin
 #TODO move wiring mode to enum!
 ## Confirm the import of a pending amalgamation at a specific coordinate
 func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName, parent_region_ID: StringName, wiring_mode: StringName) -> FeagiRequestOutput:
+	print("🚨 CRITICAL DEBUG: request_import_amalgamation() ENTRY - amalgamation_ID: %s" % amalgamation_ID)
+	print("🚨 CRITICAL DEBUG: Parameters - position: %s, parent_region_ID: %s, wiring_mode: %s" % [position, parent_region_ID, wiring_mode])
+	
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -2271,13 +2297,52 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
 	
-	# CRITICAL: Manually set the pending amalgamation in cache to ensure completion detection works
-	print("FEAGI REQUEST: 🎯 Manually setting pending amalgamation in cache: %s" % amalgamation_ID)
-	FeagiCore.feagi_local_cache._pending_amalgamation = amalgamation_ID
-	print("FEAGI REQUEST: 🎯 Cache _pending_amalgamation is now: '%s'" % FeagiCore.feagi_local_cache._pending_amalgamation)
+	# CRITICAL: Check if amalgamation is already complete before waiting
+	print("FEAGI REQUEST: 🎯 Checking if amalgamation %s is already complete..." % amalgamation_ID)
+	print("🚨 CRITICAL DEBUG: About to call single_health_check_call()")
 	
-	print("FEAGI REQUEST: Waiting for amalgamation_no_longer_pending signal...")
-	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
+	# Get current health status to check if amalgamation is still pending
+	var health_check_result = await FeagiCore.requests.single_health_check_call()
+	if not FeagiCore.requests._return_if_HTTP_failed_and_automatically_handle(health_check_result):
+		var health_data = health_check_result.decode_response_as_dict()
+		var amalgamation_pending = health_data.get("amalgamation_pending", null)
+		
+		if amalgamation_pending == null:
+			print("FEAGI REQUEST: 🎯 Amalgamation %s already completed - proceeding directly to genome reload" % amalgamation_ID)
+		else:
+			print("FEAGI REQUEST: 🎯 Amalgamation %s still pending - setting up completion detection" % amalgamation_ID)
+			
+			# Set pending amalgamation for completion detection
+			FeagiCore.feagi_local_cache._pending_amalgamation = amalgamation_ID
+			print("FEAGI REQUEST: 🎯 Cache _pending_amalgamation set to: '%s'" % FeagiCore.feagi_local_cache._pending_amalgamation)
+			
+			print("FEAGI REQUEST: Waiting for amalgamation_no_longer_pending signal...")
+			
+			# Simple timeout approach
+			var signal_received = false
+			var start_time = Time.get_ticks_msec()
+			var timeout_ms = 3000  # 3 second timeout
+			
+			var signal_handler = func(completed_id): 
+				signal_received = true
+				print("FEAGI REQUEST: Amalgamation %s completion signal received!" % amalgamation_ID)
+			
+			FeagiCore.feagi_local_cache.amalgamation_no_longer_pending.connect(signal_handler, CONNECT_ONE_SHOT)
+			
+			# Poll for signal or timeout
+			var scene_tree = Engine.get_main_loop() as SceneTree
+			while not signal_received and (Time.get_ticks_msec() - start_time) < timeout_ms:
+				if scene_tree:
+					await scene_tree.process_frame
+			
+			# Cleanup
+			if not signal_received:
+				if FeagiCore.feagi_local_cache.amalgamation_no_longer_pending.is_connected(signal_handler):
+					FeagiCore.feagi_local_cache.amalgamation_no_longer_pending.disconnect(signal_handler)
+				print("FEAGI REQUEST: Timeout waiting for signal - assuming amalgamation %s completed" % amalgamation_ID)
+	else:
+		print("FEAGI REQUEST: ⚠️ Health check failed - assuming amalgamation %s completed" % amalgamation_ID)
+	
 	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
 	print("FEAGI REQUEST: Calling FeagiCore.reload_genome_await()...")
 	await FeagiCore.reload_genome_await()
@@ -2299,6 +2364,11 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	# Use call_deferred to ensure this happens after the scene tree is fully updated
 	call_deferred("_trigger_immediate_region_visualization_update")
 	print("FEAGI REQUEST: ✅ Region visualization update scheduled")
+	
+	# CRITICAL: Stop any flashing previews - cloning completed successfully
+	print("FEAGI REQUEST: 🔄 Stopping flashing previews - cloning completed successfully")
+	_stop_all_flashing_previews()
+	
 	return FEAGI_response_data
 	
 
