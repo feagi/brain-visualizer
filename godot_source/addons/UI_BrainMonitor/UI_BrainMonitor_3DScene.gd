@@ -347,6 +347,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				# Process FIRE_SELECTED_NEURONS event
 				var dict: Dictionary[StringName, Array] = {}
 				for BM_cortical_area in _cortical_visualizations_by_ID.values():
+					# Check if the cortical area object is still valid before accessing it
+					if not is_instance_valid(BM_cortical_area) or not BM_cortical_area.cortical_area:
+						continue
 					var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
 					if !selected_neurons.is_empty():
 						dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
@@ -355,6 +358,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				return
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when clearing all neurons
 				for bm_cortical_area in _cortical_visualizations_by_ID.values():
+					# Check if the cortical area object is still valid before accessing it
+					if not is_instance_valid(bm_cortical_area):
+						continue
 					bm_cortical_area.clear_all_neuron_selection_states() # slow but I dont care right now
 			
 			
@@ -382,12 +388,17 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
 					if bm_input_event.button_pressed:
 						if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
+							# Additional safety check - object might have been freed between initial check and method calls
+							if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
+								continue
 							var is_neuron_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
 							cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
 							cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
 						else:
 							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-								
+								# Additional safety check - object might have been freed
+								if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
+									continue
 								BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
 								BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
 								#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)

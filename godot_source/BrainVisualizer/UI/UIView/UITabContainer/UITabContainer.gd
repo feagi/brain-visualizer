@@ -74,6 +74,10 @@ func spawn_BM_of_region(region: BrainRegion) -> void:
 	print("🧠 UITabContainer: Deferring setup for brain monitor: %s" % region.friendly_name)
 	new_bm.call_deferred("setup", region)
 	
+	# CRITICAL: Connect neuron firing signal to FEAGI handler (same as main brain monitor)
+	new_bm.requesting_to_fire_selected_neurons.connect(BV.UI._send_activations_to_FEAGI)
+	print("🔥 UITabContainer: Connected neuron firing signal for brain region tab: %s" % region.friendly_name)
+	
 	# Set tab title after setup is complete
 	new_bm.call_deferred("_update_tab_title_after_setup")
 	
