@@ -873,13 +873,22 @@ func _create_3d_plate() -> void:
 	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
 	if input_plate:
 		var input_center_z = region_world.z - input_plate_size.z / 2.0
-		input_plate.global_position.z = input_center_z
+		if input_plate.is_inside_tree():
+			input_plate.global_position.z = input_center_z
+		else:
+			input_plate.position.z = input_center_z
 	if output_plate:
 		var output_center_z = region_world.z - output_plate_size.z / 2.0
-		output_plate.global_position.z = output_center_z
+		if output_plate.is_inside_tree():
+			output_plate.global_position.z = output_center_z
+		else:
+			output_plate.position.z = output_center_z
 	if conflict_plate:
 		var conflict_center_z = region_world.z - conflict_plate_size.z / 2.0
-		conflict_plate.global_position.z = conflict_center_z
+		if conflict_plate.is_inside_tree():
+			conflict_plate.global_position.z = conflict_center_z
+		else:
+			conflict_plate.position.z = conflict_center_z
 
 	# Create region name label below the plates
 	_region_name_label = Label3D.new()
@@ -896,7 +905,11 @@ func _create_3d_plate() -> void:
 	# Use a tiny epsilon toward the viewer so it renders in front
 	var front_edge_world_z = -_representing_region.coordinates_3D.z
 	var label_world_z = front_edge_world_z - 0.5  # 0.5 units closer to viewer
-	_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
+	if is_inside_tree():
+		_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
+	else:
+		# Use local position if not in tree yet
+		_region_name_label.position = Vector3(center_x, -3.0, label_world_z)
 	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
@@ -911,7 +924,10 @@ func _create_3d_plate() -> void:
 	# DEBUG: Log positions AFTER adding to scene tree for accurate global_position
 	print("🔍 DEBUG LABEL POSITIONING (AFTER ADDING TO TREE):")
 	print("    🧠 Brain region FEAGI coordinates: %s" % _representing_region.coordinates_3D)
-	print("    🧠 Brain region global_position: %s" % global_position)
+	if is_inside_tree():
+		print("    🧠 Brain region global_position: %s" % global_position)
+	else:
+		print("    🧠 Brain region position (not in tree): %s" % position)
 	print("    🏷️ Label local position: %s" % _region_name_label.position)
 	print("    🏷️ Label global_position: %s" % _region_name_label.global_position)
 	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)

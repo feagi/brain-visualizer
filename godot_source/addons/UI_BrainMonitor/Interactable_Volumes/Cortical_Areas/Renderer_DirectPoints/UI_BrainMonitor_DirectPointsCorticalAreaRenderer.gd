@@ -719,7 +719,10 @@ func _create_tesla_coil_spikes() -> void:
 		var offset_position = spark_direction.normalized() * convergence_offset
 		
 		spike.position = tip_position + offset_position
-		spike.look_at(tip_position + spark_direction * 2.0, Vector3.UP)
+		if spike.is_inside_tree():
+			spike.look_at(tip_position + spark_direction * 2.0, Vector3.UP)
+		else:
+			spike.look_at_from_position(tip_position + offset_position, tip_position + spark_direction * 2.0, Vector3.UP)
 		
 		# Add more random rotation for wider spread and natural lightning look
 		spike.rotation_degrees += Vector3(

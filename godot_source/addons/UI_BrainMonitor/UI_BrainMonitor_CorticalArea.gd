@@ -75,43 +75,58 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# setup signals to update properties automatically for renderers
 	if _dda_renderer != null:
-		defined_cortical_area.friendly_name_updated.connect(_dda_renderer.update_friendly_name)
-		defined_cortical_area.coordinates_3D_updated.connect(_dda_renderer.update_position_with_new_FEAGI_coordinate)
-		defined_cortical_area.dimensions_3D_updated.connect(_dda_renderer.update_dimensions)
+		if not defined_cortical_area.friendly_name_updated.is_connected(_dda_renderer.update_friendly_name):
+			defined_cortical_area.friendly_name_updated.connect(_dda_renderer.update_friendly_name)
+		if not defined_cortical_area.coordinates_3D_updated.is_connected(_dda_renderer.update_position_with_new_FEAGI_coordinate):
+			defined_cortical_area.coordinates_3D_updated.connect(_dda_renderer.update_position_with_new_FEAGI_coordinate)
+		if not defined_cortical_area.dimensions_3D_updated.is_connected(_dda_renderer.update_dimensions):
+			defined_cortical_area.dimensions_3D_updated.connect(_dda_renderer.update_dimensions)
 	
 	if _directpoints_renderer != null:
-		defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
-		defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
+		if not defined_cortical_area.coordinates_3D_updated.is_connected(_directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+			defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+		if not defined_cortical_area.dimensions_3D_updated.is_connected(_directpoints_renderer.update_dimensions):
+			defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
 	
 	# Connect legacy SVO visualization data to DDA renderer (for translucent structure)
 	if _dda_renderer != null:
-		defined_cortical_area.recieved_new_neuron_activation_data.connect(_dda_renderer.update_visualization_data)
+		if not defined_cortical_area.recieved_new_neuron_activation_data.is_connected(_dda_renderer.update_visualization_data):
+			defined_cortical_area.recieved_new_neuron_activation_data.connect(_dda_renderer.update_visualization_data)
 	
 	# Connect direct points data to DirectPoints renderer (for individual firing neurons)
 	if _directpoints_renderer.has_method("_on_received_direct_neural_points"):
-		defined_cortical_area.recieved_new_direct_neural_points.connect(_directpoints_renderer._on_received_direct_neural_points)
-		# print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DirectPoints renderer")  # Suppressed - causes output overflow
+		if not defined_cortical_area.recieved_new_direct_neural_points.is_connected(_directpoints_renderer._on_received_direct_neural_points):
+			defined_cortical_area.recieved_new_direct_neural_points.connect(_directpoints_renderer._on_received_direct_neural_points)
+			# print("🔗 CONNECTED: Type 11 (Direct Neural Points) signal for DirectPoints renderer")  # Suppressed - causes output overflow
 	
 	# Connect bulk direct points data for optimized processing
 	if _directpoints_renderer.has_method("_on_received_direct_neural_points_bulk"):
-		defined_cortical_area.recieved_new_direct_neural_points_bulk.connect(_directpoints_renderer._on_received_direct_neural_points_bulk)
-		# print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")  # Suppressed - causes output overflow
+		if not defined_cortical_area.recieved_new_direct_neural_points_bulk.is_connected(_directpoints_renderer._on_received_direct_neural_points_bulk):
+			defined_cortical_area.recieved_new_direct_neural_points_bulk.connect(_directpoints_renderer._on_received_direct_neural_points_bulk)
+			# print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")  # Suppressed - causes output overflow
 	
 	# print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")  # Suppressed - causes output overflow
 	
 	# Connect to cache reload events to refresh connection curves
 	if FeagiCore.feagi_local_cache:
-		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
-		# print("🔗 CONNECTED: Cache reload signal for connection curve refresh")  # Suppressed - causes output overflow
+		if not FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
+			FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
+			# print("🔗 CONNECTED: Cache reload signal for connection curve refresh")  # Suppressed - causes output overflow
 	
 	# Connect to mapping change signals for real-time updates
 	if defined_cortical_area:
-		defined_cortical_area.afferent_input_cortical_area_added.connect(_on_mapping_changed)
-		defined_cortical_area.afferent_input_cortical_area_removed.connect(_on_mapping_changed)
-		defined_cortical_area.efferent_input_cortical_area_added.connect(_on_mapping_changed)
-		defined_cortical_area.efferent_input_cortical_area_removed.connect(_on_mapping_changed)
-		defined_cortical_area.recursive_cortical_area_added.connect(_on_mapping_changed)
-		defined_cortical_area.recursive_cortical_area_removed.connect(_on_mapping_changed)
+		if not defined_cortical_area.afferent_input_cortical_area_added.is_connected(_on_mapping_changed):
+			defined_cortical_area.afferent_input_cortical_area_added.connect(_on_mapping_changed)
+		if not defined_cortical_area.afferent_input_cortical_area_removed.is_connected(_on_mapping_changed):
+			defined_cortical_area.afferent_input_cortical_area_removed.connect(_on_mapping_changed)
+		if not defined_cortical_area.efferent_input_cortical_area_added.is_connected(_on_mapping_changed):
+			defined_cortical_area.efferent_input_cortical_area_added.connect(_on_mapping_changed)
+		if not defined_cortical_area.efferent_input_cortical_area_removed.is_connected(_on_mapping_changed):
+			defined_cortical_area.efferent_input_cortical_area_removed.connect(_on_mapping_changed)
+		if not defined_cortical_area.recursive_cortical_area_added.is_connected(_on_mapping_changed):
+			defined_cortical_area.recursive_cortical_area_added.connect(_on_mapping_changed)
+		if not defined_cortical_area.recursive_cortical_area_removed.is_connected(_on_mapping_changed):
+			defined_cortical_area.recursive_cortical_area_removed.connect(_on_mapping_changed)
 		# print("🔗 CONNECTED: Mapping change signals for real-time curve updates")  # Suppressed - causes output overflow
 
 ## Sets new position (in FEAGI space)

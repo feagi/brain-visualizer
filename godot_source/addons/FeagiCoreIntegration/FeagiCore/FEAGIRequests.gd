@@ -2367,16 +2367,65 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 			if region_data.has("region_id"):
 				var region_id = region_data["region_id"]
 				brain_regions_dict[region_id] = region_data
+				
+				# DEBUG: Show parent-child relationships for new regions
+				if "clone" in str(region_data.get("title", "")).to_lower():
+					print("FEAGI REQUEST: 🔍 NEW CLONED REGION: %s (%s)" % [region_id, region_data.get("title", "No Title")])
+					print("  - Parent: %s" % region_data.get("parent_region_id", "None"))
+					print("  - Regions (children): %s" % str(region_data.get("regions", [])))
 		
 		print("FEAGI REQUEST: 🔄 Converted %d regions from list to dictionary format" % brain_regions_dict.size())
+		
+		# DEBUG: Also check what the root region's children are after update
+		if "root" in brain_regions_dict:
+			var root_region = brain_regions_dict["root"]
+			print("FEAGI REQUEST: 🔍 ROOT REGION after update:")
+			print("  - Title: %s" % root_region.get("title", "No Title"))
+			print("  - Children (regions): %s" % str(root_region.get("regions", [])))
 		var cortical_area_IDs_mapped_to_parent_regions_IDs = FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(brain_regions_dict)
 		print("FEAGI REQUEST: ✅ Brain regions cache updated with fresh data")
+		
+		# CRITICAL: Update the cache with the new cortical areas using the same method as normal genome loading
+		print("FEAGI REQUEST: 🔄 Fetching fresh cortical area data to update cache...")
+		
+		# Fetch ALL cortical area data (same as normal genome loading)
+		var cortical_area_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
+		var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
+		await cortical_worker.worker_done
+		var cortical_areas_response: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
+		
+		if cortical_areas_response.success:
+			print("FEAGI REQUEST: ✅ Cortical area data fetched successfully")
+			
+			# Update the cortical areas cache using the same method as normal genome loading
+			print("FEAGI REQUEST: 🔄 Updating cortical areas cache...")
+			FeagiCore.feagi_local_cache.cortical_areas.FEAGI_load_all_cortical_areas(
+				cortical_areas_response.decode_response_as_dict(), 
+				cortical_area_IDs_mapped_to_parent_regions_IDs
+			)
+			print("FEAGI REQUEST: ✅ Cortical areas cache updated successfully")
+		else:
+			print("FEAGI REQUEST: ❌ Failed to fetch cortical area data: %s" % cortical_areas_response.decode_response_as_generic_error_code())
 		
 		# Now trigger visualization creation with the updated cache
 		if BV.UI and BV.UI.temp_root_bm:
 			var brain_monitor = BV.UI.temp_root_bm
 			print("FEAGI REQUEST: 🔍 Found brain monitor: %s" % brain_monitor.name)
 			print("FEAGI REQUEST: 🔍 Brain monitor represents region: %s" % (brain_monitor._representing_region.friendly_name if brain_monitor._representing_region else "null"))
+			
+			# CRITICAL FIX: Update the brain monitor's _representing_region reference 
+			# because the cache update creates new BrainRegion objects
+			var old_region_id = brain_monitor._representing_region.region_ID if brain_monitor._representing_region else "unknown"
+			var fresh_representing_region = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(old_region_id)
+			if fresh_representing_region:
+				brain_monitor._representing_region = fresh_representing_region
+				print("FEAGI REQUEST: 🔄 Updated brain monitor's _representing_region reference to fresh cache object")
+				print("FEAGI REQUEST: 🔍 Fresh representing region has %d child regions" % fresh_representing_region.contained_regions.size())
+				for child_region in fresh_representing_region.contained_regions:
+					print("FEAGI REQUEST: 🔍   - Child: %s (%s)" % [child_region.region_ID, child_region.friendly_name])
+			else:
+				print("FEAGI REQUEST: ❌ Could not find fresh representing region for ID: %s" % old_region_id)
+			
 			print("FEAGI REQUEST: 🔍 Current visualizations before update: %s" % str(brain_monitor._brain_region_visualizations_by_ID.keys()))
 			
 			# Force the brain monitor to check for and create any missing region visualizations
@@ -2384,7 +2433,40 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 			brain_monitor._create_missing_brain_region_visualizations()
 			
 			print("FEAGI REQUEST: 🔍 Current visualizations after update: %s" % str(brain_monitor._brain_region_visualizations_by_ID.keys()))
-			print("FEAGI REQUEST: ✅ Region visualization creation triggered with updated cache")
+			
+			# CRITICAL: Also create cortical area visualizations for the newly cloned region
+			print("FEAGI REQUEST: 🎯 Creating cortical area visualizations for newly cloned region...")
+			
+			# Find the newly created region (it should be the one that was just added)
+			var new_region_ids = []
+			for region_id in brain_regions_dict.keys():
+				if region_id != "root":  # Skip root region
+					new_region_ids.append(region_id)
+			
+			print("FEAGI REQUEST: 🔍 Processing %d regions for cortical area visualization..." % new_region_ids.size())
+			
+			for region_id in new_region_ids:
+				var region = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(region_id)
+				if region and region.contained_cortical_areas.size() > 0:
+					print("FEAGI REQUEST: 🔍 Region %s has %d cortical areas, creating visualizations..." % [region_id, region.contained_cortical_areas.size()])
+					var areas_created = 0
+					for area in region.contained_cortical_areas:
+						# Check if visualization already exists
+						if not brain_monitor.has_cortical_area_visualization(area.cortical_ID):
+							print("FEAGI REQUEST: 🆕 Creating visualization for cortical area %s in region %s" % [area.cortical_ID, region_id])
+							var created_viz = brain_monitor._add_cortical_area(area)
+							if created_viz:
+								areas_created += 1
+								print("FEAGI REQUEST: ✅ Successfully created visualization for %s" % area.cortical_ID)
+							else:
+								print("FEAGI REQUEST: ❌ Failed to create visualization for %s" % area.cortical_ID)
+						else:
+							print("FEAGI REQUEST: ⏭️ Visualization already exists for cortical area %s" % area.cortical_ID)
+					print("FEAGI REQUEST: 📊 Created %d/%d cortical area visualizations for region %s" % [areas_created, region.contained_cortical_areas.size(), region_id])
+				else:
+					print("FEAGI REQUEST: ⚠️ Region %s has no cortical areas to visualize" % region_id)
+			
+			print("FEAGI REQUEST: ✅ Region and cortical area visualization creation completed")
 		else:
 			print("FEAGI REQUEST: ❌ No brain monitor available for visualization")
 			print("FEAGI REQUEST: 🔍 BV.UI exists: %s" % (BV.UI != null))

@@ -745,7 +745,10 @@ func _create_missing_brain_region_visualizations() -> void:
 		
 		# Create visualization for this new region
 		print("🆕 DEBUG: Creating visualization for new brain region: %s" % region.friendly_name)
+		print("🆕 DEBUG: Region has %d cortical areas" % region.contained_cortical_areas.size())
+		print("🆕 DEBUG: Region position 3D: %s" % region.coordinates_3D)
 		_add_brain_region_frame(region)
+		print("🆕 DEBUG: _add_brain_region_frame() completed for %s" % region.friendly_name)
 		new_regions_created += 1
 	
 	if new_regions_created > 0:
