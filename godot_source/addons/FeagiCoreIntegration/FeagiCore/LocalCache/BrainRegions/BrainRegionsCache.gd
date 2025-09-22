@@ -68,10 +68,12 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, false)
 			
 
-### Clears all regions from the cache
-#func FEAGI_clear_all_regions() -> void:
-#	for region_ID: StringName in _available_brain_regions.keys():
-#		FEAGI_remove_region_and_internals(region_ID)
+## Clears all regions from the cache - used during full genome reload
+func FEAGI_clear_all_regions() -> void:
+	print("   🗑️ BRAIN REGIONS: Clearing all %d brain regions from cache" % _available_brain_regions.size())
+	# Simple clear since we're doing a full reload - don't need complex deletion logic
+	_available_brain_regions.clear()
+	print("   ✅ BRAIN REGIONS: Cache cleared - now contains %d regions" % _available_brain_regions.size())
 
 func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []) -> void:
 	if region_ID in _available_brain_regions.keys():

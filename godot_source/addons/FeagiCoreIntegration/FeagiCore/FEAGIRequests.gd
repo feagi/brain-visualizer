@@ -29,6 +29,44 @@ func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRe
 		FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(response_data.decode_response_as_dict())
 	return response_data
 
+## FAST initial health check for startup - bypasses global timeout/retry settings for instant response
+func fast_initial_health_check() -> FeagiRequestOutput:
+	print("FEAGI REQUESTS: 🚀 Running FAST initial health check for startup...")
+	
+	# Check if network components are properly initialized
+	if not FeagiCore.network:
+		push_error("FEAGI Requests: FeagiCore.network is null")
+		return FeagiRequestOutput.requirement_fail("NETWORK_NULL")
+	
+	if not FeagiCore.network.http_API:
+		push_error("FEAGI Requests: FeagiCore.network.http_API is null")
+		return FeagiRequestOutput.requirement_fail("HTTP_API_NULL")
+	
+	if not FeagiCore.network.http_API.address_list:
+		push_error("FEAGI Requests: FeagiCore.network.http_API.address_list is null")
+		return FeagiRequestOutput.requirement_fail("ADDRESS_LIST_NULL")
+	
+	# Create FAST health check - manual settings to bypass global defaults
+	var health_url: StringName = FeagiCore.network.http_API.address_list.GET_system_healthCheck
+	var fast_health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.new()
+	fast_health_check_request.full_address = health_url
+	fast_health_check_request.method = HTTPClient.Method.METHOD_GET
+	fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
+	fast_health_check_request.data_to_send_to_FEAGI = null
+	
+	# FAST settings for startup
+	fast_health_check_request.http_timeout = 2.0  # Only 2 seconds timeout 
+	fast_health_check_request.number_of_retries_allowed = 1  # Only 1 retry - total time ~4 seconds max
+	
+	print("FEAGI REQUESTS: 📡 Initial health check using fast settings (2s timeout, 1 retry)")
+	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(fast_health_check_request)
+	
+	await health_check_worker.worker_done
+	
+	var response_data: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
+	print("FEAGI REQUESTS: ⚡ Fast initial health check completed - success: %s" % response_data.success)
+	return response_data
+
 
 #WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful

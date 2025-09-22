@@ -55,6 +55,12 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	if _stack.size() > 1 and _stack[1] is Dictionary and (_stack[1] as Dictionary).has("source"):
 		_caller = String((_stack[1] as Dictionary)["source"])
 	print("\n🔄 FEAGI CACHE: Replacing the ENTIRE local cached genome! (called from: %s)" % _caller)
+	print("   🔍 Input data sizes - Cortical areas: %d, Brain regions: %d, Morphologies: %d, Mappings: %d" % [
+		cortical_area_summary.size(),
+		regions_summary.size(), 
+		morphologies_summary.size(),
+		mapping_summary.size()
+	])
 	cache_about_to_reload.emit()
 	clear_whole_genome()
 	
@@ -80,6 +86,11 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	_load_mapping_restrictions_async()
 	
 	print("FEAGI CACHE: DONE Replacing the ENTIRE local cached genome!\n")
+	print("   📊 Final cache state - Cortical areas: %d, Brain regions: %d" % [cortical_areas.available_cortical_areas.size(), brain_regions.available_brain_regions.size()])
+	print("   🔍 Root region available: %s" % brain_regions.is_root_available())
+	if brain_regions.is_root_available():
+		var root = brain_regions.get_root_region()
+		print("   📍 Root region name: '%s'" % root.friendly_name)
 	print("FEAGI CACHE: 📡 Emitting cache_reloaded signal...")
 	cache_reloaded.emit()
 	print("FEAGI CACHE: ✅ cache_reloaded signal emitted successfully")
@@ -97,14 +108,21 @@ func clear_whole_genome() -> void:
 	if _stack.size() > 1 and _stack[1] is Dictionary and (_stack[1] as Dictionary).has("source"):
 		_caller = String((_stack[1] as Dictionary)["source"])
 	print("\n🗑️ FEAGI CACHE: REMOVING the ENTIRE local cached genome! (called from: %s)" % _caller)
+	print("   📊 Before clear - Cortical areas: %d, Brain regions: %d" % [cortical_areas.available_cortical_areas.size(), brain_regions.available_brain_regions.size()])
+	
 	mapping_data.FEAGI_delete_all_mappings()
 	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
+	
+	# CRITICAL: Ensure brain regions are also completely cleared  
+	brain_regions.FEAGI_clear_all_regions()
+	
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
 	
 	# Clear mapping restrictions cache
 	MappingRestrictionsAPI.clear_cache()
 	
+	print("   📊 After clear - Cortical areas: %d, Brain regions: %d" % [cortical_areas.available_cortical_areas.size(), brain_regions.available_brain_regions.size()])
 	print("🗑️ FEAGI CACHE: DONE REMOVING the ENTIRE local cached genome!\n")
 	cache_reloaded.emit()
 	return
@@ -336,37 +354,98 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var current_feagi_session = int(health["feagi_session"])
 		var current_genome_num = int(health["genome_num"])
 		
-		var session_changed = (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session)
+		# Cache and health status checks
+		var health_genome_available = health.get("genome_availability", false)
+		var health_brain_ready = health.get("brain_readiness", false) 
+		var cache_is_empty = (cortical_areas.available_cortical_areas.size() == 0 and brain_regions.available_brain_regions.size() == 0)
+		
+		print("FEAGI CACHE: [CHANGE_DETECTION] Checking for genome changes...")
+		print("  - Previous: session=%d, genome=%d" % [_previous_feagi_session, _previous_genome_num])
+		print("  - Current:  session=%d, genome=%d" % [current_feagi_session, current_genome_num])
+		print("  - Cache status: cortical_areas=%d, brain_regions=%d, cache_empty=%s" % [cortical_areas.available_cortical_areas.size(), brain_regions.available_brain_regions.size(), cache_is_empty])
+		print("  - FEAGI reports: genome_availability=%s, brain_readiness=%s" % [health_genome_available, health_brain_ready])
+		
+		# Session changes: detect both initial connection (0 → new) and FEAGI restarts (old → new)  
+		var session_changed = ((_previous_feagi_session == 0 and current_feagi_session > 0) or 
+		                      (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session))
+		                      
+		# Genome changes: only detect actual changes (not initial from 0)
 		var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
 		
-		if session_changed or genome_changed:
-			# Check cooldown to prevent rapid-fire reloads
-			var current_time = Time.get_ticks_msec()
-			if current_time - _last_genome_change_time < _genome_change_cooldown_ms:
-				var remaining_cooldown = (_genome_change_cooldown_ms - (current_time - _last_genome_change_time)) / 1000.0
-				print("⚠️ FEAGI CACHE: Genome change detected but still in cooldown period (%.1fs remaining)" % remaining_cooldown)
-				# Update tracking variables but don't trigger reload
-				_previous_feagi_session = current_feagi_session
-				_previous_genome_num = current_genome_num
-				return
+		# Special case: If we have genome data but both session and genome are different from what we expect,
+		# this might be a FEAGI restart that we missed - force a reload
+		var force_reload_needed = false
+		if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY and current_feagi_session > 0 and current_genome_num > 0:
+			if _previous_feagi_session != current_feagi_session or _previous_genome_num != current_genome_num:
+				print("  - WARNING: Loaded genome state but session/genome mismatch - forcing reload")
+				force_reload_needed = true
+		
+		if health_genome_available and health_brain_ready and cache_is_empty and current_genome_num > 0:
+			print("  - CRITICAL: FEAGI reports genome ready but cache is EMPTY! Forcing reload...")
+			print("    - Cortical areas in cache: %d" % cortical_areas.available_cortical_areas.size())
+			print("    - Brain regions in cache: %d" % brain_regions.available_brain_regions.size())
+			print("    - Current genome state: %s" % FeagiCore.GENOME_LOAD_STATE.keys()[FeagiCore.genome_load_state])
+			force_reload_needed = true
+		
+		print("  - Session changed: %s, Genome changed: %s, Force reload: %s" % [session_changed, genome_changed, force_reload_needed])
+		
+		if session_changed or genome_changed or force_reload_needed:
+			# CRITICAL FIX: Never apply cooldown to initial startup (when _previous_feagi_session was 0)
+			var is_initial_startup = (_previous_feagi_session == 0)
 			
-			# Check if genome is already reloading
+			if not is_initial_startup:  # Only apply cooldown after initial startup
+				# Check cooldown to prevent rapid-fire reloads (but NOT on initial startup!)
+				var current_time = Time.get_ticks_msec()
+				if current_time - _last_genome_change_time < _genome_change_cooldown_ms:
+					var remaining_cooldown = (_genome_change_cooldown_ms - (current_time - _last_genome_change_time)) / 1000.0
+					print("⚠️ FEAGI CACHE: Genome change detected but still in cooldown period (%.1fs remaining)" % remaining_cooldown)
+					# Update tracking variables but don't trigger reload
+					_previous_feagi_session = current_feagi_session
+					_previous_genome_num = current_genome_num
+					return
+			
+			# Check if genome is already reloading (but allow force reload to override stuck reloads)
 			if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
-				print("⚠️ FEAGI CACHE: Genome change detected but reload already in progress - ignoring")
-				# Update tracking variables but don't trigger another reload
-				_previous_feagi_session = current_feagi_session
-				_previous_genome_num = current_genome_num
-				return
+				if force_reload_needed and cache_is_empty:
+					print("🚨 FEAGI CACHE: STUCK RELOAD DETECTED! Cache empty despite GENOME_RELOADING state")
+					print("   🔧 FORCE RELOADING to break out of stuck state")
+					# Don't return - allow the reload to proceed and break the deadlock
+				else:
+					print("⚠️ FEAGI CACHE: Genome change detected but reload already in progress - ignoring")
+					# Update tracking variables but don't trigger another reload
+					_previous_feagi_session = current_feagi_session
+					_previous_genome_num = current_genome_num
+					return
 			
 			var reason = ""
 			if session_changed:
-				reason = "FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session]
+				if is_initial_startup:
+					reason = "Initial BV startup (session: %d)" % current_feagi_session
+				else:
+					reason = "FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session]
 			if genome_changed:
 				if reason != "":
 					reason += " & "
 				reason += "genome changed (num: %d → %d)" % [_previous_genome_num, current_genome_num]
+			if force_reload_needed:
+				if reason != "":
+					reason += " & "
+				if cache_is_empty:
+					if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
+						reason += "STUCK RELOAD - cache empty despite GENOME_RELOADING state"
+					else:
+						reason += "cache empty despite genome ready"
+				else:
+					reason += "state mismatch detected"
 			
 			print("🔄 FEAGI CACHE: GENOME REFRESH NEEDED - %s" % reason)
+			if is_initial_startup:
+				print("   🚀 SKIPPING cooldown for initial startup - loading immediately!")
+			elif force_reload_needed and cache_is_empty and FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
+				print("   🚨 BREAKING DEADLOCK - force restarting stuck genome reload!")
+			else:
+				print("   🔥 FEAGI SESSION CHANGED - triggering FULL GENOME RELOAD!")
+			var current_time = Time.get_ticks_msec()
 			_last_genome_change_time = current_time
 			genome_refresh_needed.emit(current_feagi_session, current_genome_num, reason)
 		

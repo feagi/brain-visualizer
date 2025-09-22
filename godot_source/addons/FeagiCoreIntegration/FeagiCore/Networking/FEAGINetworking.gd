@@ -163,10 +163,8 @@ func disconnect_networking() -> void:
 
 
 func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
-	print("FEAGI NETWORK: 🌐 HTTP health changed: %s → %s" % [FEAGIHTTPAPI.HTTP_HEALTH.keys()[_prev_health], FEAGIHTTPAPI.HTTP_HEALTH.keys()[current_health]])
 	match current_health:
 		FEAGIHTTPAPI.HTTP_HEALTH.NO_CONNECTION:
-			print("FEAGI NETWORK: 🌐 HTTP NO_CONNECTION - changing to DISCONNECTED state")
 			# Only relevant time this fires is if a retrying worker fails to recover
 			# NOTE: Technically also if on "confirm_connectivity" we time out, however the signal to this method is not active during that time
 			# Ergo, only path to this is from HTTP_HEALTH.RETRYING
@@ -187,27 +185,27 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 
 
 func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, current_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
-	print("FEAGI NETWORK: 🔌 Websocket health changed: %s → %s" % [FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[_previous_health], FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[current_health]])
+	print("FEAGI NETWORK: 📡 _WS_health_changed received: %s → %s" % [FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[_previous_health], FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[current_health]])
+	print("FEAGI NETWORK: Current connection state before WS change: %s" % CONNECTION_STATE.keys()[_connection_state])
 	match current_health:
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.NO_CONNECTION:
-			print("FEAGI NETWORK: 🔌 Websocket NO_CONNECTION detected - changing to DISCONNECTED state")
+			print("FEAGI NETWORK: WS NO_CONNECTION → Changing to DISCONNECTED")
 			# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
 			_change_connection_state(CONNECTION_STATE.DISCONNECTED)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
-			print("FEAGI NETWORK: 🔌 Websocket CONNECTED - changing to HEALTHY state")
+			print("FEAGI NETWORK: WS CONNECTED → Changing to HEALTHY")
 			# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
 			_change_connection_state(CONNECTION_STATE.HEALTHY)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.RETRYING:
-			print("FEAGI NETWORK: 🔌 Websocket RETRYING - changing to RETRYING_WS state")
+			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_WS")
 			 # Only path to this is from WEBSOCKET_HEALTH.CONNECTED
 			_change_connection_state(CONNECTION_STATE.RETRYING_WS)
 
 
 func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 	var prev_state: CONNECTION_STATE = _connection_state
-	print("FEAGI NETWORK: 🔄 _change_connection_state called: %s → %s" % [CONNECTION_STATE.keys()[prev_state], CONNECTION_STATE.keys()[new_state]])
 	
 	# NOTE: Due to WS and HTTP possibly failing/recovering at similar times, we may do some silly things between switching from 1 or both them failing in the enum value
 	var scanning_state: CONNECTION_STATE = new_state # NOTE: Since we may manipulate new_state, we dont want to mess up the match case
@@ -236,5 +234,4 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
 	
 	_connection_state = new_state
-	print("FEAGI NETWORK: 📡 Emitting connection_state_changed: %s → %s" % [CONNECTION_STATE.keys()[prev_state], CONNECTION_STATE.keys()[new_state]])
 	connection_state_changed.emit(prev_state, new_state)

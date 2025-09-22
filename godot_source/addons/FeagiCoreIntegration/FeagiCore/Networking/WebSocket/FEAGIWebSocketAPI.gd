@@ -164,6 +164,7 @@ func _process(_delta: float):
 				if _retry_count != 0:
 					print("[%s] ✅ [WS] Recovered from retrying state after %d attempts!" % [_get_timestamp(), _retry_count])
 					_retry_count = 0
+				print("[%s] ✅ [WS] STATE_OPEN detected - current _socket_health: %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[_socket_health]])
 				print("[%s] ✅ [WS] Transitioning to CONNECTED state - notifying network layer" % _get_timestamp())
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
@@ -812,7 +813,7 @@ func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
 	_socket_health = new_health
 	print("[%s] 🔌 [WS] _set_socket_health: %s → %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[prev_health], WEBSOCKET_HEALTH.keys()[new_health]])
-	print("[%s] 📡 [WS] Emitting FEAGI_socket_health_changed signal" % _get_timestamp())
+	print("[%s] 📡 [WS] Emitting FEAGI_socket_health_changed signal (connected listeners: %d)" % [_get_timestamp(), FEAGI_socket_health_changed.get_connections().size()])
 	FEAGI_socket_health_changed.emit(prev_health, new_health)
 
 # All deserialization is now handled by the Rust extension

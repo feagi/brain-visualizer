@@ -54,15 +54,22 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 func confirm_connectivity() -> void:
 	# NOTE: This FEAGI request does not modify anything in FEAGI state on its own, we have full control here
 	# NOTE: The signals for retrying are purposfully not connected, since we dont want to trigger those paths yet
-	var response_data: FeagiRequestOutput = await FeagiCore.requests.single_health_check_call()
+	print("FEAGI HTTP API: 🚀 Starting FAST initial connectivity test...")
+	var response_data: FeagiRequestOutput = await FeagiCore.requests.fast_initial_health_check()
 
 	if response_data.has_timed_out:
+		print("FEAGI HTTP API: ❌ Fast initial health check timed out")
 		_request_state_change(HTTP_HEALTH.NO_CONNECTION)
 		return
 	if response_data.has_errored:
+		print("FEAGI HTTP API: ❌ Fast initial health check errored")
 		_request_state_change(HTTP_HEALTH.ERROR)
 		return
 
+	print("FEAGI HTTP API: ✅ Fast initial health check SUCCESS - updating cache immediately")
+	# Update cache with health data for immediate genome state evaluation
+	FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(response_data.decode_response_as_dict())
+	
 	_request_state_change(HTTP_HEALTH.CONNECTABLE)
 
 ## Requests killing the health check polling worker specifically

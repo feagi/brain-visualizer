@@ -183,36 +183,50 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
 
 func _start_periodic_simulation_timestep_check() -> void:
-	"""Start periodic HTTP health check to get simulation_timestep (websocket doesn't provide it)"""
+	"""Start persistent HTTP health check - this should NEVER stop as long as BV is running"""
+	print("FEAGICORE: [HEALTH_CHECK] Starting persistent health check timer...")
+	
 	# Check if network components are ready
 	if not network or not network.http_API or not requests:
-		push_warning("FEAGI CORE: Network not ready - skipping simulation_timestep periodic check")
+		print("FEAGICORE: [HEALTH_CHECK] ⚠️ Network not ready - will retry health check startup in 2 seconds")
+		# If network isn't ready, try again in 2 seconds - NEVER give up!
+		get_tree().create_timer(2.0).timeout.connect(_start_periodic_simulation_timestep_check)
 		return
 
 	if _simulation_timestep_timer:
+		print("FEAGICORE: [HEALTH_CHECK] Replacing existing health check timer...")
 		_simulation_timestep_timer.queue_free()
 
 	_simulation_timestep_timer = Timer.new()
 	_simulation_timestep_timer.name = "SimulationTimestepTimer"
 	_simulation_timestep_timer.wait_time = 2.0  # Check every 2 seconds for faster disconnect detection
 	_simulation_timestep_timer.timeout.connect(_fetch_simulation_timestep)
+	_simulation_timestep_timer.autostart = false
 	add_child(_simulation_timestep_timer)
 	
 	_simulation_timestep_timer.start()
+	print("FEAGICORE: [HEALTH_CHECK] ✅ Health check timer started - will run every 2 seconds")
 
 	# Also fetch it immediately
 	_fetch_simulation_timestep()
 
 func _fetch_simulation_timestep() -> void:
 	"""Fetch simulation_timestep from HTTP health check with fast failure detection"""
+	print("FEAGICORE: [HEALTH_CHECK] 🔍 Running periodic health check...")
+	
+	# SAFETY CHECK: Ensure health check timer is still running - restart if needed
+	if not _simulation_timestep_timer or not _simulation_timestep_timer.is_inside_tree():
+		print("FEAGICORE: [HEALTH_CHECK] ⚠️ Health check timer missing - restarting!")
+		_start_periodic_simulation_timestep_check()
+		return
+	
 	# Check if network components are available
 	if not network or not network.http_API:
-		push_error("FEAGI CORE: Network components not available - cannot fetch simulation_timestep")
+		print("FEAGICORE: [HEALTH_CHECK] ❌ Network components not available - cannot fetch simulation_timestep")
 		return
 	
 	# If disconnected, try to restore the address list for reconnection attempts
 	if not network.http_API.address_list and _in_use_endpoint_details:
-		print("FEAGI CORE: Restoring address list for reconnection attempt")
 		var addr_class = load("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/FEAGIHTTPAddressList.gd")
 		network.http_API.address_list = addr_class.new(_in_use_endpoint_details.full_http_address)
 	
@@ -237,28 +251,33 @@ func _fetch_simulation_timestep() -> void:
 	
 	var response: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
 	if response.success:
+		print("FEAGICORE: [HEALTH_CHECK] ✅ Health check SUCCESS - updating cache and connection states")
 		# Reset failure counter on success
 		_consecutive_health_failures = 0
 		
 		# Update cache with health data for genome change detection
-		feagi_local_cache.update_health_from_FEAGI_dict(response.decode_response_as_dict())
+		var health_data: Dictionary = response.decode_response_as_dict()
+		print("FEAGICORE: [HEALTH_CHECK] 📊 Health data: genome_availability=%s, brain_readiness=%s, feagi_session=%s, genome_num=%s" % [
+			health_data.get("genome_availability", "?"), 
+			health_data.get("brain_readiness", "?"),
+			health_data.get("feagi_session", "?"),
+			health_data.get("genome_num", "?")
+		])
+		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 		
-		# If we were disconnected and health check succeeds, try to restore full connection
+		# If we were disconnected and health check succeeds, restore connection states
 		if network.connection_state == FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
-			print("FEAGI CORE: Health check succeeded while disconnected - attempting reconnection")
-			# Restore HTTP health first
+			# Restore HTTP health to CONNECTABLE
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
-			# Then try to reconnect websocket - reset it properly first
+			
+			# Also ensure websocket gets reconnected if needed
 			if network.websocket_API.socket_health == network.websocket_API.WEBSOCKET_HEALTH.NO_CONNECTION:
-				# Setup websocket with the original endpoint details
 				if _in_use_endpoint_details:
 					network.websocket_API.setup(_in_use_endpoint_details.full_websocket_address)
 					network.websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
-					
-					# Ensure websocket health signals are connected for proper state management
+					# Ensure signal is connected
 					if not network.websocket_API.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
 						network.websocket_API.FEAGI_socket_health_changed.connect(network._WS_health_changed)
-					
 					network.websocket_API.connect_websocket()
 		elif network.http_API.http_health == network.http_API.HTTP_HEALTH.NO_CONNECTION:
 			# Just restore HTTP health if it was down but connection wasn't fully disconnected
@@ -266,14 +285,12 @@ func _fetch_simulation_timestep() -> void:
 	else:
 		# Increment failure counter
 		_consecutive_health_failures += 1
-		print("FEAGI CORE: ❌ Health check FAILED - failure %d/%d" % [_consecutive_health_failures, MAX_HEALTH_FAILURES_BEFORE_DISCONNECT])
+		print("FEAGICORE: [HEALTH_CHECK] ❌ Health check FAILED - failure %d/%d" % [_consecutive_health_failures, MAX_HEALTH_FAILURES_BEFORE_DISCONNECT])
 		
 		# Only trigger disconnect EXACTLY on the 3rd failure, not on subsequent failures
 		if _consecutive_health_failures == MAX_HEALTH_FAILURES_BEFORE_DISCONNECT:
-			print("FEAGI CORE: 🚨 3rd failure reached - triggering DISCONNECTED state")
-			print("FEAGI CORE: Before state change - HTTP health: %s, Connection state: %s" % [network.http_API.HTTP_HEALTH.keys()[network.http_API.http_health], FEAGINetworking.CONNECTION_STATE.keys()[network.connection_state]])
+			print("FEAGICORE: [HEALTH_CHECK] 💀 3rd failure reached - triggering DISCONNECTED state")
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.NO_CONNECTION)
-			print("FEAGI CORE: After state change - HTTP health: %s, Connection state: %s" % [network.http_API.HTTP_HEALTH.keys()[network.http_API.http_health], FEAGINetworking.CONNECTION_STATE.keys()[network.connection_state]])
 
 
 # Disconnect from FEAGI
@@ -306,7 +323,9 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			feagi_local_cache.clear_whole_genome()
 		GENOME_LOAD_STATE.GENOME_RELOADING:
 			# Can come from Unknown, No_Genome_Available, Genome_Processing, or Genome_Ready
-			print("FEAGICORE: [3D_SCENE_DEBUG] State GENOME_RELOADING: Starting genome download...")
+			print("FEAGICORE: [3D_SCENE_DEBUG] State GENOME_RELOADING: Starting FULL genome download...")
+			print("FEAGICORE: [3D_SCENE_DEBUG] 🔥 This will be a COMPLETE reload - same as fresh BV startup!")
+			print("FEAGICORE: [3D_SCENE_DEBUG] 📊 Current cache will be wiped and rebuilt from scratch")
 			about_to_reload_genome.emit()
 			feagi_local_cache.clear_whole_genome()
 			reload_genome_await()
@@ -328,23 +347,118 @@ func reload_genome_await():
 	var start_time = Time.get_time_dict_from_system()
 	var timeout_seconds = 30.0  # 30 second timeout
 	
-	# Create a timer to track progress
+	# Create a timer to track progress AND monitor FEAGI health during reload
 	var timer = Timer.new()
-	timer.wait_time = 5.0  # Report every 5 seconds
+	timer.wait_time = 5.0  # Check every 5 seconds
 	var start_ticks = Time.get_ticks_msec()
+	var reload_aborted = false
+	
 	timer.timeout.connect(func(): 
 		var elapsed_ms = Time.get_ticks_msec() - start_ticks
 		var elapsed_seconds = elapsed_ms / 1000.0
 		print("FEAGICORE: [3D_SCENE_DEBUG] ⏳ Genome reload still in progress... (", int(elapsed_seconds), "s elapsed)")
+		
+		# CRITICAL: Check if FEAGI is still alive during reload
+		print("FEAGICORE: [3D_SCENE_DEBUG] 🩺 Checking FEAGI health during reload...")
+		
+		# Quick health check during reload
+		if not network or not network.http_API or not network.http_API.address_list:
+			print("FEAGICORE: [3D_SCENE_DEBUG] 🚨 Network components unavailable during reload - aborting!")
+			reload_aborted = true
+			timer.stop()
+			return
+			
+		# Fast health check (same as main system)
+		var fast_health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.new()
+		fast_health_check_request.full_address = network.http_API.address_list.GET_system_healthCheck
+		fast_health_check_request.method = HTTPClient.Method.METHOD_GET
+		fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
+		fast_health_check_request.data_to_send_to_FEAGI = null
+		fast_health_check_request.http_timeout = 3.0  # Fast timeout
+		fast_health_check_request.number_of_retries_allowed = 1  # Only 1 retry
+		
+		var health_worker: APIRequestWorker = network.http_API.make_HTTP_call(fast_health_check_request)
+		await health_worker.worker_done
+		
+		var health_response: FeagiRequestOutput = health_worker.retrieve_output_and_close()
+		if not health_response.success:
+			print("FEAGICORE: [3D_SCENE_DEBUG] 🚨 FEAGI went down during genome reload - aborting!")
+			reload_aborted = true
+			timer.stop()
+			# Trigger disconnect state
+			_consecutive_health_failures = MAX_HEALTH_FAILURES_BEFORE_DISCONNECT
+			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.NO_CONNECTION)
+		else:
+			print("FEAGICORE: [3D_SCENE_DEBUG] ✅ FEAGI still healthy - checking if reload is actually needed...")
+			
+		# SMART CHECK: Maybe we don't need to reload at all!
+		var health_data = health_response.decode_response_as_dict()
+		if "feagi_session" in health_data and "genome_num" in health_data:
+			var current_session = int(health_data["feagi_session"])
+			var current_genome_num = int(health_data["genome_num"])
+			var cached_session = feagi_local_cache._previous_feagi_session
+			var cached_genome_num = feagi_local_cache._previous_genome_num
+			
+			# Check if genome is actually available and brain is ready
+			var genome_available = health_data.get("genome_availability", false)
+			var brain_ready = health_data.get("brain_readiness", false)
+			
+			# Only restore scene if: same session+genome AND genome is actually available AND brain is ready
+			if cached_session == current_session and cached_genome_num == current_genome_num and genome_available and brain_ready and current_genome_num > 0:
+				print("FEAGICORE: [3D_SCENE_DEBUG] 🎯 Same session (%d), genome (%d), and FEAGI is fully ready - no reload needed!" % [current_session, current_genome_num])
+				print("FEAGICORE: [3D_SCENE_DEBUG] 🚀 Skipping reload and directly restoring scene...")
+				reload_aborted = true  # Stop the unnecessary reload
+				timer.stop()
+				
+				# Update health cache and transition directly to READY
+				feagi_local_cache.update_health_from_FEAGI_dict(health_data)
+				_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+				return
+			elif cached_session == current_session and cached_genome_num == current_genome_num:
+				print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but FEAGI not ready (available: %s, ready: %s) - waiting..." % [current_session, current_genome_num, genome_available, brain_ready])
+			else:
+				print("FEAGICORE: [3D_SCENE_DEBUG] 🔄 Session or genome changed (session: %d→%d, genome: %d→%d) - reload needed" % [cached_session, current_session, cached_genome_num, current_genome_num])
+			
+			print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Continuing with full genome reload...")
 	)
 	add_child(timer)
 	timer.start()
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] Calling requests.reload_genome()...")
-	await requests.reload_genome()
-	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ requests.reload_genome() completed successfully")
+	var genome_result = await requests.reload_genome()
 	
 	timer.queue_free()  # Clean up timer
+	
+	# Check if reload was aborted due to FEAGI failure during the process
+	if reload_aborted:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Genome reload was ABORTED due to FEAGI failure during process")
+		print("FEAGICORE: [3D_SCENE_DEBUG] 🔄 System will return to disconnected state and wait for FEAGI recovery")
+		return  # Don't transition to GENOME_READY - stay in current state for retry
+	
+	# Check if reload failed for other reasons
+	if not genome_result.success:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Genome reload FAILED")
+		if genome_result.has_timed_out:
+			print("FEAGICORE: [3D_SCENE_DEBUG] - Reason: Request timed out")
+		elif genome_result.has_errored:
+			print("FEAGICORE: [3D_SCENE_DEBUG] - Reason: HTTP error occurred")
+		else:
+			print("FEAGICORE: [3D_SCENE_DEBUG] - Reason: Unknown error")
+		print("FEAGICORE: [3D_SCENE_DEBUG] 🔄 Will retry when conditions improve")
+		return  # Don't transition to GENOME_READY
+	
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ requests.reload_genome() completed successfully")
+	
+	# DEBUG: Check what we actually loaded
+	print("FEAGICORE: [3D_SCENE_DEBUG] 🔍 Genome reload debug info:")
+	print("  - Cortical areas loaded: %d" % feagi_local_cache.cortical_areas.available_cortical_areas.size())
+	print("  - Brain regions loaded: %d" % feagi_local_cache.brain_regions.available_brain_regions.size())
+	print("  - Root region available: %s" % feagi_local_cache.brain_regions.is_root_available())
+	if feagi_local_cache.brain_regions.is_root_available():
+		var root = feagi_local_cache.brain_regions.get_root_region()
+		print("  - Root region name: %s" % root.friendly_name)
+	else:
+		print("  - ❌ NO ROOT REGION FOUND - This explains why 3D scene can't initialize!")
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] Transitioning to GENOME_READY state...")
 	_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
@@ -393,11 +507,31 @@ func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: Stri
 	print("🔄 FEAGICORE: Health check detected genome refresh needed - %s" % reason)
 	print("   📊 Session: %d, Genome: %d, Current state: %s" % [feagi_session, genome_num, GENOME_LOAD_STATE.keys()[genome_load_state]])
 	
-	# Double-check that we're not already reloading (safety check)
+	# Allow force reloads to override stuck GENOME_RELOADING state
 	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
-		print("⚠️ FEAGICORE: Already in GENOME_RELOADING state - ignoring duplicate refresh request")
-		return
+		if "cache empty" in reason or "STUCK RELOAD" in reason:
+			print("🚨 FEAGICORE: FORCE RELOAD detected - restarting stuck genome reload")
+			print("   🔧 Current GENOME_RELOADING state will be reset and restarted")
+			# Continue to reload logic below instead of returning
+		else:
+			print("⚠️ FEAGICORE: Already in GENOME_RELOADING state - ignoring duplicate refresh request")
+			return
 	
-	_recieve_genome_reset_request()
+	# Health check-triggered reloads are different from user-initiated reloads
+	# They can happen from any state when FEAGI reports genome is ready but cache is empty
+	match genome_load_state:
+		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE:
+			print("✅ FEAGICORE: Empty cache detected - triggering genome reload from NO_GENOME_AVAILABLE state")
+			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+		GENOME_LOAD_STATE.GENOME_READY, GENOME_LOAD_STATE.GENOME_PROCESSING:
+			print("✅ FEAGICORE: Triggering genome reload from %s state" % GENOME_LOAD_STATE.keys()[genome_load_state])
+			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+		GENOME_LOAD_STATE.GENOME_RELOADING:
+			print("🚨 FEAGICORE: FORCE RESTARTING stuck genome reload")
+			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)  # This will restart the process
+		GENOME_LOAD_STATE.UNKNOWN:
+			print("⚠️ FEAGICORE: Cannot reload from UNKNOWN state - connection issues?")
+		_:
+			print("⚠️ FEAGICORE: Unexpected state %s for genome refresh" % GENOME_LOAD_STATE.keys()[genome_load_state])
 
 #endregion
