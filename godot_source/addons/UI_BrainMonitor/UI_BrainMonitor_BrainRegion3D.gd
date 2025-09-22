@@ -618,7 +618,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		conflict_plate.position.y = PLATE_HEIGHT / 2.0
 		if conflict_plate.get_parent() != _frame_container:
 			_frame_container.add_child(conflict_plate)
-		print("  🔴 Conflict plate created at front-left X=%.1f, center X=%.1f" % [conflict_front_left_x, conflict_plate.position.x])
 
 	# Align plate global Z to match front-edge at brain region Z
 	var region_world = Vector3(_representing_region.coordinates_3D.x, _representing_region.coordinates_3D.y, -_representing_region.coordinates_3D.z)
@@ -639,7 +638,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	call_deferred("_update_label_position_after_refresh")
 
 	# 4. Reposition all I/O cortical areas using new coordinates
-	print("  📍 Step 4: Repositioning all I/O cortical areas with new calculations...")
 	for cortical_id in _cortical_area_visualizations.keys():
 		var cortical_viz = _cortical_area_visualizations[cortical_id]
 		
@@ -666,7 +664,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 					var relative_position = absolute_feagi_coords - brain_region_coords
 					_reposition_cortical_area_on_plate(cortical_viz, relative_position, false)  # false = output
 					found_new_position = true
-					print("    📤 Repositioned OUTPUT %s to: %s" % [cortical_id, relative_position])
 					break
 
 		# Check conflicts if not found in inputs or outputs
@@ -679,14 +676,10 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 					# Use output-style Z flip logic inside reposition helper
 					_reposition_cortical_area_on_plate(cortical_viz, relative_position, false)
 					found_new_position = true
-					print("    🔴 Repositioned CONFLICT %s to: %s" % [cortical_id, relative_position])
 					break
 		
-		if not found_new_position:
-			print("    ⚠️ Could not find new position for cortical area: %s" % cortical_id)
 	
 	# 5. Update region label position to stay centered between new plates
-	print("  🏷️ Step 5: Updating region label position...")
 	if _region_name_label:
 		var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
 		var center_x = total_width / 2.0
@@ -1171,7 +1164,6 @@ func _calculate_plate_size_for_areas(areas: Array[AbstractCorticalArea], plate_t
 	for area in areas:
 		total_width += area.dimensions_3D.x  # Sum all widths
 		max_depth = max(max_depth, area.dimensions_3D.z)  # Find max depth
-		print("    📦 Area %s: width=%.1f, depth=%.1f" % [area.cortical_ID, area.dimensions_3D.x, area.dimensions_3D.z])
 	
 	# Width calculation: sum_of_widths + (count-1)*BUFFER + SIDE_MARGINS
 	var plate_width = total_width + (areas.size() - 1) * AREA_BUFFER_DISTANCE + (PLATE_SIDE_MARGIN * 2.0)
@@ -1246,16 +1238,6 @@ func _populate_cortical_areas() -> void:
 	var output_areas = _get_output_cortical_areas()
 	var conflict_areas = _get_conflict_cortical_areas()
 	
-	print("🧠 BrainRegion3D: Populating region '%s' plate with I/O areas:" % _representing_region.friendly_name)
-	print("  📥 Input areas to show on plate: %d" % input_areas.size())
-	for area in input_areas:
-		print("    🔵 %s (%s) - will be positioned on INPUT plate (left, light green)" % [area.cortical_ID, area.type_as_string])
-	print("  📤 Output areas to show on plate: %d" % output_areas.size()) 
-	for area in output_areas:
-		print("    🔴 %s (%s) - will be positioned on OUTPUT plate (middle, darker green)" % [area.cortical_ID, area.type_as_string])
-	print("  ⚠️  Conflict areas to show on plate: %d" % conflict_areas.size()) 
-	for area in conflict_areas:
-		print("    🔴 %s (%s) - will be positioned on CONFLICT plate (right, red)" % [area.cortical_ID, area.type_as_string])
 	
 	if input_areas.size() == 0 and output_areas.size() == 0 and conflict_areas.size() == 0:
 		print("  ⚠️  No I/O areas found! Plates will have no overlying cortical areas.")
@@ -1538,7 +1520,6 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 			var relative_position = absolute_feagi_coords - brain_region_coords
 			new_position = Vector3(relative_position.x, relative_position.y, relative_position.z)  # Use generated Y coordinate
 			found_generated_coords = true
-			print("    📍 Using generated coords for %s: absolute %s -> relative %s" % [cortical_id, absolute_feagi_coords, new_position])
 			break
 	
 	if not found_generated_coords:
@@ -1954,7 +1935,6 @@ func _update_io_area_positions_DISABLED() -> void:
 				var input_offset = Vector3(1.0, 0.0, 0.0)  # Same offset as coordinate generation
 				new_position = Vector3(input_offset.x, 0.0, input_offset.z)  # Y=0 for plate surface
 				found_coords = true
-				print("      📍 Repositioned INPUT %s to relative position %s" % [cortical_id, new_position])
 				break
 		
 		# Check outputs if not found in inputs
@@ -1966,7 +1946,6 @@ func _update_io_area_positions_DISABLED() -> void:
 					var output_offset = Vector3(5.0, 0.0, 0.0)  # Same offset as coordinate generation
 					new_position = Vector3(output_offset.x, 0.0, output_offset.z)  # Y=0 for plate surface
 					found_coords = true
-					print("      📍 Repositioned OUTPUT %s to relative position %s" % [cortical_id, new_position])
 					break
 		
 		if found_coords:
