@@ -51,6 +51,10 @@ var _supression_threshold: int = 0
 # Timer for periodic simulation_timestep checks
 var _simulation_timestep_timer: Timer
 
+# Health check failure tracking
+var _consecutive_health_failures: int = 0
+const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 3
+
 
 
 # FEAGICore initialization starts here before any external action
@@ -190,33 +194,86 @@ func _start_periodic_simulation_timestep_check() -> void:
 
 	_simulation_timestep_timer = Timer.new()
 	_simulation_timestep_timer.name = "SimulationTimestepTimer"
-	_simulation_timestep_timer.wait_time = 5.0  # Check every 5 seconds
+	_simulation_timestep_timer.wait_time = 2.0  # Check every 2 seconds for faster disconnect detection
 	_simulation_timestep_timer.timeout.connect(_fetch_simulation_timestep)
 	add_child(_simulation_timestep_timer)
+	
 	_simulation_timestep_timer.start()
 
 	# Also fetch it immediately
 	_fetch_simulation_timestep()
 
 func _fetch_simulation_timestep() -> void:
-	"""Fetch simulation_timestep from HTTP health check"""
-	# Check if requests object is available
-	if not requests:
-		push_error("FEAGI CORE: requests object is null - cannot fetch simulation_timestep")
+	"""Fetch simulation_timestep from HTTP health check with fast failure detection"""
+	# Check if network components are available
+	if not network or not network.http_API:
+		push_error("FEAGI CORE: Network components not available - cannot fetch simulation_timestep")
+		return
+	
+	# If disconnected, try to restore the address list for reconnection attempts
+	if not network.http_API.address_list and _in_use_endpoint_details:
+		print("FEAGI CORE: Restoring address list for reconnection attempt")
+		var addr_class = load("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/FEAGIHTTPAddressList.gd")
+		network.http_API.address_list = addr_class.new(_in_use_endpoint_details.full_http_address)
+	
+	if not network.http_API.address_list:
+		push_warning("FEAGI CORE: No address list available - cannot fetch simulation_timestep")
 		return
 
-	var response = await requests.single_health_check_call(true)
-	if not response.success:
-		var error_details = ""
-		if response.has_timed_out:
-			error_details = "Request timed out"
-		elif response.has_errored:
-			error_details = "HTTP error occurred"
-		elif response.failed_requirement:
-			error_details = "Requirement failed: " + str(response.failed_requirement_key)
-		else:
-			error_details = "Unknown error"
-		push_warning("FEAGI CORE: Failed to fetch simulation_timestep from HTTP health check: " + error_details)
+	# Create a fast-failing health check request for disconnect detection - do it manually to bypass global settings
+	var health_url: StringName = network.http_API.address_list.GET_system_healthCheck
+	var fast_health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.new()
+	fast_health_check_request.full_address = health_url
+	fast_health_check_request.method = HTTPClient.Method.METHOD_GET
+	fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
+	fast_health_check_request.data_to_send_to_FEAGI = null
+	
+	# Set custom fast-failing settings (bypassing global defaults)
+	fast_health_check_request.http_timeout = 3.0  # Fast timeout: 3 seconds instead of 10
+	fast_health_check_request.number_of_retries_allowed = 1  # Only 1 retry instead of 5 (bypasses global setting)
+	
+	var health_check_worker: APIRequestWorker = network.http_API.make_HTTP_call(fast_health_check_request)
+	await health_check_worker.worker_done
+	
+	var response: FeagiRequestOutput = health_check_worker.retrieve_output_and_close()
+	if response.success:
+		# Reset failure counter on success
+		_consecutive_health_failures = 0
+		
+		# Update cache with health data for genome change detection
+		feagi_local_cache.update_health_from_FEAGI_dict(response.decode_response_as_dict())
+		
+		# If we were disconnected and health check succeeds, try to restore full connection
+		if network.connection_state == FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
+			print("FEAGI CORE: Health check succeeded while disconnected - attempting reconnection")
+			# Restore HTTP health first
+			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
+			# Then try to reconnect websocket - reset it properly first
+			if network.websocket_API.socket_health == network.websocket_API.WEBSOCKET_HEALTH.NO_CONNECTION:
+				# Setup websocket with the original endpoint details
+				if _in_use_endpoint_details:
+					network.websocket_API.setup(_in_use_endpoint_details.full_websocket_address)
+					network.websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+					
+					# Ensure websocket health signals are connected for proper state management
+					if not network.websocket_API.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+						network.websocket_API.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+					
+					network.websocket_API.connect_websocket()
+		elif network.http_API.http_health == network.http_API.HTTP_HEALTH.NO_CONNECTION:
+			# Just restore HTTP health if it was down but connection wasn't fully disconnected
+			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
+	else:
+		# Increment failure counter
+		_consecutive_health_failures += 1
+		print("FEAGI CORE: ❌ Health check FAILED - failure %d/%d" % [_consecutive_health_failures, MAX_HEALTH_FAILURES_BEFORE_DISCONNECT])
+		
+		# Only trigger disconnect EXACTLY on the 3rd failure, not on subsequent failures
+		if _consecutive_health_failures == MAX_HEALTH_FAILURES_BEFORE_DISCONNECT:
+			print("FEAGI CORE: 🚨 3rd failure reached - triggering DISCONNECTED state")
+			print("FEAGI CORE: Before state change - HTTP health: %s, Connection state: %s" % [network.http_API.HTTP_HEALTH.keys()[network.http_API.http_health], FEAGINetworking.CONNECTION_STATE.keys()[network.connection_state]])
+			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.NO_CONNECTION)
+			print("FEAGI CORE: After state change - HTTP health: %s, Connection state: %s" % [network.http_API.HTTP_HEALTH.keys()[network.http_API.http_health], FEAGINetworking.CONNECTION_STATE.keys()[network.connection_state]])
 
 
 # Disconnect from FEAGI

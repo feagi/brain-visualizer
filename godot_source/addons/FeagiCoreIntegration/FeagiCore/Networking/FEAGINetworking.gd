@@ -97,7 +97,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# both HTTP and WS are functioning! We are good to go!
 	# connect signals for future changes
-	#http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
+	print("FEAGI NETWORK: Connecting to HTTP health signals for ongoing monitoring") 
+	http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
 	print("FEAGI NETWORK: Connecting to websocket health signals for ongoing monitoring")
 	websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
 	
@@ -162,8 +163,10 @@ func disconnect_networking() -> void:
 
 
 func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health: FEAGIHTTPAPI.HTTP_HEALTH) -> void:
+	print("FEAGI NETWORK: 🌐 HTTP health changed: %s → %s" % [FEAGIHTTPAPI.HTTP_HEALTH.keys()[_prev_health], FEAGIHTTPAPI.HTTP_HEALTH.keys()[current_health]])
 	match current_health:
 		FEAGIHTTPAPI.HTTP_HEALTH.NO_CONNECTION:
+			print("FEAGI NETWORK: 🌐 HTTP NO_CONNECTION - changing to DISCONNECTED state")
 			# Only relevant time this fires is if a retrying worker fails to recover
 			# NOTE: Technically also if on "confirm_connectivity" we time out, however the signal to this method is not active during that time
 			# Ergo, only path to this is from HTTP_HEALTH.RETRYING
