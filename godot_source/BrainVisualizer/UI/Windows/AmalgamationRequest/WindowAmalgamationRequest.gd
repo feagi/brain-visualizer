@@ -117,9 +117,13 @@ func _import_pressed():
 	
 	# CRITICAL: Start flashing preview to show progress
 	print("🔧 DEBUG: Starting flashing preview for cloning progress...")
+	print("🔧 DEBUG: _source_region_for_clone: %s" % (_source_region_for_clone.friendly_name if _source_region_for_clone else "null"))
+	print("🔧 DEBUG: _is_pre_submit_clone: %s" % _is_pre_submit_clone)
 	print("🔧 DEBUG: About to call _start_flashing_preview()")
 	_start_flashing_preview()
 	print("🔧 DEBUG: _start_flashing_preview() completed")
+	print("🔧 DEBUG: _is_flashing after start: %s" % _is_flashing)
+	print("🔧 DEBUG: _flashing_preview after start: %s" % (_flashing_preview.name if _flashing_preview else "null"))
 	
 	# Pre-submit clone mode: initiate clone pending first, then finalize
 	if _is_pre_submit_clone:

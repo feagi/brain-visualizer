@@ -2343,31 +2343,60 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	else:
 		print("FEAGI REQUEST: ⚠️ Health check failed - assuming amalgamation %s completed" % amalgamation_ID)
 	
-	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	print("FEAGI REQUEST: Calling FeagiCore.reload_genome_await()...")
-	await FeagiCore.reload_genome_await()
-	print("FEAGI REQUEST: Genome reload completed successfully!")
+	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Adding new region visualization directly..." % amalgamation_ID)
 	
-	# DEBUG: Check what regions are actually in the cache now
-	print("FEAGI REQUEST: 🔍 CACHE DEBUG - Checking regions in cache after reload...")
-	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
-		var all_regions = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
-		print("FEAGI REQUEST: 🔍 CACHE DEBUG - Found %d regions total:" % all_regions.size())
-		for region_id in all_regions.keys():
-			var region = all_regions[region_id]
-			print("  - Region: %s (%s)" % [region_id, region.friendly_name])
+	# SIMPLE: Use the brain region registry from the 200 response to update cache and add visualization
+	print("FEAGI REQUEST: 🎯 Using brain region registry from response to update cache and add visualization...")
+	
+	# Decode the response to get the brain region registry
+	var response_dict = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: 🔍 Full response keys: %s" % str(response_dict.keys()))
+	print("FEAGI REQUEST: 🔍 Response has brain_regions: %s" % response_dict.has("brain_regions"))
+	if response_dict.has("message"):
+		print("FEAGI REQUEST: 🔍 Response message: %s" % response_dict["message"])
+	
+	if response_dict.has("brain_regions"):
+		print("FEAGI REQUEST: 🔍 Found brain_regions in response, updating cache...")
+		
+		# Update the brain regions cache with the fresh data from FEAGI
+		var brain_regions_list = response_dict["brain_regions"]
+		
+		# Convert list format to dictionary format expected by cache
+		var brain_regions_dict = {}
+		for region_data in brain_regions_list:
+			if region_data.has("region_id"):
+				var region_id = region_data["region_id"]
+				brain_regions_dict[region_id] = region_data
+		
+		print("FEAGI REQUEST: 🔄 Converted %d regions from list to dictionary format" % brain_regions_dict.size())
+		var cortical_area_IDs_mapped_to_parent_regions_IDs = FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(brain_regions_dict)
+		print("FEAGI REQUEST: ✅ Brain regions cache updated with fresh data")
+		
+		# Now trigger visualization creation with the updated cache
+		if BV.UI and BV.UI.temp_root_bm:
+			var brain_monitor = BV.UI.temp_root_bm
+			print("FEAGI REQUEST: 🔍 Found brain monitor: %s" % brain_monitor.name)
+			print("FEAGI REQUEST: 🔍 Brain monitor represents region: %s" % (brain_monitor._representing_region.friendly_name if brain_monitor._representing_region else "null"))
+			print("FEAGI REQUEST: 🔍 Current visualizations before update: %s" % str(brain_monitor._brain_region_visualizations_by_ID.keys()))
+			
+			# Force the brain monitor to check for and create any missing region visualizations
+			print("FEAGI REQUEST: 🎯 Calling _create_missing_brain_region_visualizations()...")
+			brain_monitor._create_missing_brain_region_visualizations()
+			
+			print("FEAGI REQUEST: 🔍 Current visualizations after update: %s" % str(brain_monitor._brain_region_visualizations_by_ID.keys()))
+			print("FEAGI REQUEST: ✅ Region visualization creation triggered with updated cache")
+		else:
+			print("FEAGI REQUEST: ❌ No brain monitor available for visualization")
+			print("FEAGI REQUEST: 🔍 BV.UI exists: %s" % (BV.UI != null))
+			print("FEAGI REQUEST: 🔍 BV.UI.temp_root_bm exists: %s" % (BV.UI.temp_root_bm != null if BV.UI else "BV.UI is null"))
 	else:
-		print("FEAGI REQUEST: ❌ CACHE DEBUG - No cache or brain_regions available!")
-	
-	# CRITICAL: Immediately trigger visualization creation for new regions
-	print("FEAGI REQUEST: 🎯 Triggering immediate visualization creation for cloned regions...")
-	# Use call_deferred to ensure this happens after the scene tree is fully updated
-	call_deferred("_trigger_immediate_region_visualization_update")
-	print("FEAGI REQUEST: ✅ Region visualization update scheduled")
+		print("FEAGI REQUEST: ❌ No brain_regions found in response - cannot update cache")
 	
 	# CRITICAL: Stop any flashing previews - cloning completed successfully
 	print("FEAGI REQUEST: 🔄 Stopping flashing previews - cloning completed successfully")
+	print("FEAGI REQUEST: 🔍 About to call _stop_all_flashing_previews()...")
 	_stop_all_flashing_previews()
+	print("FEAGI REQUEST: ✅ _stop_all_flashing_previews() completed")
 	
 	return FEAGI_response_data
 	
