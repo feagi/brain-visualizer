@@ -519,18 +519,10 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
 	
-	print("  🔍 FILTERING ANALYSIS for area %s:" % area.cortical_ID)
-	print("    - Representing region: %s" % _representing_region.friendly_name)
-	print("    - Area region: %s" % (area.current_parent_region.friendly_name if area.current_parent_region else "None"))
-	print("    - Is directly in root: %s" % is_directly_in_root)
-	print("    - Is I/O of child region: %s" % is_io_of_child_region)
 	
 	# Only create if the area is directly in this region OR it's needed as I/O for a child region
 	if not is_directly_in_root and not is_io_of_child_region:
-		print("  ⏭️  Skipping cortical area %s - not directly in root region and not I/O of child region" % area.cortical_ID)
 		return null
-	
-	print("  ✅ Creating cortical area %s - directly_in_root: %s, io_of_child: %s" % [area.cortical_ID, is_directly_in_root, is_io_of_child_region])
 	# print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])  # Suppressed - too verbose
 	# print("  🎯 INSTANCE: Adding to brain monitor instance %d" % get_instance_id())  # Suppressed - too verbose
 	# print("  🎯 INSTANCE: Adding to 3D root %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])  # Suppressed - too verbose
@@ -541,7 +533,6 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	rendering_area.setup(area)
 	_cortical_visualizations_by_ID[area.cortical_ID] = rendering_area
 	
-	print("  ✅ SUCCESS: Cortical area %s added to brain monitor %s" % [area.cortical_ID, name])
 	# print("  📍 Area coordinates: %s" % area.coordinates_3D)  # Suppressed - too frequent
 	# print("  🎯 Total areas in this brain monitor: %d" % _cortical_visualizations_by_ID.size())  # Suppressed - too frequent
 	
@@ -550,8 +541,7 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	# If this area is I/O of a child region, it will be moved later by the brain region component
 	# For now, position it normally - it will be repositioned when brain regions populate
-	if is_io_of_child_region:
-		print("  🔧 Created I/O area %s - will be repositioned by brain region wireframe" % area.cortical_ID)
+	pass  # I/O areas will be repositioned by brain region wireframes
 	
 	return rendering_area
 

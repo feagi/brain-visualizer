@@ -117,18 +117,15 @@ func setup(area: AbstractCorticalArea) -> void:
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
-		print("   ⚡ Power area uses invisible neuron voxels - firing shown on cone!")
 	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Use invisible mesh for memory areas (firing animation is on the sphere itself)
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
-		print("   🔮 Memory area uses invisible neuron voxels - firing shown on sphere!")
 	else:
 		var voxel_mesh = BoxMesh.new()
 		voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
 		_multi_mesh.mesh = voxel_mesh
-		print("   📦 Standard area uses visible neuron cube voxels")
 	
 	# Create material for neuron voxels with Z-DEPTH COLORING support
 	var neuron_material = StandardMaterial3D.new()
@@ -264,7 +261,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	_visibility_timer.timeout.connect(_on_visibility_timeout)
 	add_child(_visibility_timer)
 	
-	print("DirectPoints voxel renderer setup completed for area: ", area.cortical_ID, " (optimized for bulk processing)")
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = new_name

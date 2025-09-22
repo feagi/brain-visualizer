@@ -186,8 +186,9 @@ func FEAGI_confirmed_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with Main circuit...")
 	brain_monitor.setup(root_region, false)  # false = don't show combo buttons in main scene
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
+	# NOTE: Main brain monitor does NOT connect to central handlers to avoid infinite recursion
+	# Only brain region tab monitors connect to central handlers, which then forward to main monitor
 	temp_root_bm = brain_monitor
-	print("🔥🔥🔥 MAIN BRAIN MONITOR INSTANCE ID: %d 🔥🔥🔥" % brain_monitor.get_instance_id())
 	
 	# CRITICAL: Create visualizations for any missing child regions (e.g., after cloning)
 	# This ensures cloned regions appear immediately after genome reload
@@ -233,59 +234,34 @@ func get_temp_root_bm() -> UI_BrainMonitor_3DScene:
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
 	# Sending neuron activations to FEAGI via HTTP POST
-	print("🔥 NEURON FIRING: === MANUAL STIMULATION REQUESTED ===")
-	print("🔥 NEURON FIRING: Sending manual stimulation for ", area_IDs_and_neuron_coordinates.size(), " cortical area(s)")
 	
 	# Verify we actually have neurons to fire
 	if area_IDs_and_neuron_coordinates.is_empty():
-		push_error("🔥 NEURON FIRING: ❌ No cortical areas provided for manual stimulation!")
-		push_error("🔥 NEURON FIRING: ❌ Make sure neurons are selected (shift+click on voxels) before pressing space")
+		push_error("Manual stimulation: No cortical areas provided")
 		return
 	
 	var total_neurons = 0
 	for area_id in area_IDs_and_neuron_coordinates:
 		var neuron_array = area_IDs_and_neuron_coordinates[area_id]
 		total_neurons += neuron_array.size()
-		print("🔥 NEURON FIRING: Area '", area_id, "': ", neuron_array.size(), " selected neurons")
 	
 	if total_neurons == 0:
-		push_error("🔥 NEURON FIRING: ❌ No neurons selected for manual stimulation!")
-		push_error("🔥 NEURON FIRING: ❌ Make sure to shift+click on voxels to select neurons before pressing space")
+		push_error("Manual stimulation: No neurons selected")
 		return
-		
-	print("🔥 NEURON FIRING: ✅ Total neurons to stimulate: ", total_neurons)
 	
 	# Check if network components are available
-	if not FeagiCore:
-		push_error("🔥 NEURON FIRING: FeagiCore is null!")
-		return
-	if not FeagiCore.network:
-		push_error("🔥 NEURON FIRING: FeagiCore.network is null!")
-		return
-	if not FeagiCore.network.http_API:
-		push_error("🔥 NEURON FIRING: FeagiCore.network.http_API is null!")
+	if not FeagiCore or not FeagiCore.network or not FeagiCore.network.http_API:
+		push_error("Manual stimulation: Network not available")
 		return
 	
-	# Check HTTP API health with detailed status reporting
+	# Check HTTP API health
 	var api_health = FeagiCore.network.http_API.http_health
-	print("🔥 NEURON FIRING: HTTP API health: ", api_health)
-	
 	match api_health:
 		FeagiCore.network.http_API.HTTP_HEALTH.NO_CONNECTION:
-			push_error("🔥 NEURON FIRING: ❌ HTTP API has NO_CONNECTION - FEAGI is not reachable")
-			push_error("🔥 NEURON FIRING: ❌ Check if FEAGI server is running and network connection is available")
+			push_error("Manual stimulation: FEAGI not reachable")
 			return
 		FeagiCore.network.http_API.HTTP_HEALTH.ERROR:
-			push_error("🔥 NEURON FIRING: ❌ HTTP API is in ERROR state - Connection failed with errors")
-			push_error("🔥 NEURON FIRING: ❌ Check FEAGI server logs and network configuration")
-			return
-		FeagiCore.network.http_API.HTTP_HEALTH.RETRYING:
-			push_error("🔥 NEURON FIRING: ⚠️ HTTP API is RETRYING - Connection is unstable")
-			push_error("🔥 NEURON FIRING: ⚠️ Proceeding but expect potential delays or failures")
-		FeagiCore.network.http_API.HTTP_HEALTH.CONNECTABLE:
-			print("🔥 NEURON FIRING: ✅ HTTP API is CONNECTABLE - Ready to send request")
-		_:
-			push_error("🔥 NEURON FIRING: ❌ Unknown HTTP API health state: ", api_health)
+			push_error("Manual stimulation: Connection error")
 			return
 	
 	# Build the correct payload format for manual stimulation API
@@ -294,88 +270,55 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 		var arr: Array[Array] = []
 		for vector in area_IDs_and_neuron_coordinates[area_ID]:
 			arr.append([vector.x, vector.y, vector.z])
-		# Convert StringName to String for proper JSON serialization
 		var area_id_string: String = str(area_ID)
 		stimulation_payload[area_id_string] = arr
-		print("🔥 NEURON FIRING: Area %s (converted from StringName): %d neurons" % [area_id_string, arr.size()])
 	
 	var payload_to_send: Dictionary = {"stimulation_payload": stimulation_payload}
-	print("🔥 NEURON FIRING: Final payload: ", payload_to_send)
 	
 	# Send via HTTP POST to /v1/agent/manual_stimulation
-	print("🔥 NEURON FIRING: Creating API request definition...")
-	
-	# Debug: Print the complete endpoint URL
-	var full_endpoint_url = FeagiCore.network.http_API.address_list.POST_agent_manualStimulation
-	print("🔥 NEURON FIRING: Full endpoint URL: ", full_endpoint_url)
-	print("🔥 NEURON FIRING: (This URL already contains the complete address including base URL)")
-	
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_agent_manualStimulation, payload_to_send)
-	print("🔥 NEURON FIRING: Making HTTP call...")
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	print("🔥 NEURON FIRING: Waiting for worker to complete...")
 	
 	# Add timeout mechanism
 	var worker_completed = false
 	var timeout_occurred = false
 	
-	# Set up timeout with more detailed logging
-	print("🔥 NEURON FIRING: Setting up 10-second timeout...")
 	get_tree().create_timer(10.0).timeout.connect(func():
 		if not worker_completed:
 			timeout_occurred = true
-			push_error("🔥 NEURON FIRING: ❌ HTTP request timed out after 10 seconds!")
-			push_error("🔥 NEURON FIRING: ❌ This usually means FEAGI is not responding or network connectivity issues")
-			push_error("🔥 NEURON FIRING: ❌ Check FEAGI server status and network connection")
+			push_error("Manual stimulation: Request timed out")
 			if HTTP_FEAGI_request_worker != null:
 				HTTP_FEAGI_request_worker.kill_worker()
-				print("🔥 NEURON FIRING: ❌ Killed the HTTP worker due to timeout")
-		else:
-			print("🔥 NEURON FIRING: ⏰ Timeout timer fired but worker already completed")
 	)
 	
-	print("🔥 NEURON FIRING: About to await worker_done signal...")
-	# Wait for worker completion
 	await HTTP_FEAGI_request_worker.worker_done
 	worker_completed = true
-	print("🔥 NEURON FIRING: ✅ Worker done signal received!")
 	
 	if timeout_occurred:
-		push_error("🔥 NEURON FIRING: ❌ Exiting due to timeout")
 		return
-		
-	print("🔥 NEURON FIRING: ✅ Worker completed without timeout!")
-		
-	print("🔥 NEURON FIRING: Retrieving HTTP response output...")
+	
 	var request_output: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	print("🔥 NEURON FIRING: Got output, analyzing response...")
 	
-	# More detailed success/failure analysis
-	print("🔥 NEURON FIRING: Response success status: ", request_output.success)
-	print("🔥 NEURON FIRING: Response has_timed_out: ", request_output.has_timed_out)
-	print("🔥 NEURON FIRING: Response has_errored: ", request_output.has_errored)
-	
-	if request_output.success:
-		print("🔥 NEURON FIRING: ✅ Manual stimulation sent successfully!")
-		var response_string = request_output.decode_response_as_string()
-		print("🔥 NEURON FIRING: ✅ FEAGI Response: ", response_string)
-		print("🔥 NEURON FIRING: ✅ This confirms FEAGI received and processed the manual stimulation!")
-	else:
-		push_error("🔥 NEURON FIRING: ❌ Manual stimulation failed!")
-		push_error("🔥 NEURON FIRING: ❌ Has timed out: ", request_output.has_timed_out)
-		push_error("🔥 NEURON FIRING: ❌ Has errored: ", request_output.has_errored)
-		push_error("🔥 NEURON FIRING: ❌ Failed requirement: ", request_output.failed_requirement)
-		
-		if request_output.has_errored:
-			push_error("🔥 NEURON FIRING: ❌ Processing error details...")
-			var error_info = request_output.decode_response_as_generic_error_code()
-			push_error("🔥 NEURON FIRING: ❌ Error code: ", error_info[0] if error_info.size() > 0 else "UNKNOWN")
-			push_error("🔥 NEURON FIRING: ❌ Error message: ", error_info[1] if error_info.size() > 1 else "UNKNOWN")
-			push_error("🔥 NEURON FIRING: ❌ This suggests FEAGI rejected the request or encountered an internal error")
-		else:
-			var response_body = request_output.decode_response_as_string()
-			push_error("🔥 NEURON FIRING: ❌ Response body: ", response_body)
-			push_error("🔥 NEURON FIRING: ❌ This suggests a network or protocol-level issue")
+	if not request_output.success:
+		push_error("Manual stimulation failed: %s" % request_output.failed_requirement)
+
+# CRITICAL: Central voxel selection handlers for QuickConnect functionality
+# These receive signals ONLY from brain region tab monitors and forward to main monitor
+# Main monitor does NOT connect to these handlers to avoid infinite recursion
+
+## Central handler for full neuron selection state changes (used by QuickConnect)
+func _handle_voxel_selection_changed(area: AbstractCorticalArea, selected_neuron_coordinates: Array[Vector3i]) -> void:
+	# Re-emit this signal through the main brain monitor so QuickConnect systems receive it
+	# This is only called by brain region tab monitors, never by the main monitor
+	if temp_root_bm:
+		temp_root_bm.cortical_area_selected_neurons_changed.emit(area, selected_neuron_coordinates)
+
+## Central handler for individual voxel selection changes (used by QuickConnectNeuron)
+func _handle_voxel_selection_changed_delta(area: AbstractCorticalArea, neuron_coordinate: Vector3i, is_added: bool) -> void:
+	# Re-emit this signal through the main brain monitor so QuickConnectNeuron receives it
+	# This is only called by brain region tab monitors, never by the main monitor
+	if temp_root_bm:
+		temp_root_bm.cortical_area_selected_neurons_changed_delta.emit(area, neuron_coordinate, is_added)
 
 
 

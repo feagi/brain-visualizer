@@ -242,19 +242,15 @@ func _button_open_3d_tab() -> void:
 	close_window()
 
 func _on_focus_lost() -> void:
-	print("🔍 QuickMenu: Focus lost, closing window. Selection size: %d" % _selection.size())
 	close_window()
 
 # Debug function to check selection state
 func _debug_selection_state(context: String) -> void:
-	print("🔍 QuickMenu [%s]: Selection size: %d" % [context, _selection.size()])
-	if _selection.size() > 0:
-		print("    First object type: %s, ID: %s" % [_selection[0].get_class(), _selection[0].friendly_name if _selection[0].has_method("friendly_name") else "N/A"])
+	pass
 
 # Override close_window to add safety debugging
 func close_window() -> void:
 	_debug_selection_state("close_window")
 	if _selection.size() == 0:
-		print("⚠️  QuickMenu: Selection is empty during close - this may indicate when the array gets cleared!")
-		print_stack()  # Print call stack to see what led to this
+		pass
 	super.close_window()

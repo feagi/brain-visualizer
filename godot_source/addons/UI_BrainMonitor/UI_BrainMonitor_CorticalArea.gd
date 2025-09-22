@@ -207,26 +207,13 @@ func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
-	print("🎮 BRAIN VISUALIZER RENDERER SELECTION:")
-	print("   📊 Cortical Area: ", defined_cortical_area.cortical_ID)
-	print("   🔍 Cortical Type: ", defined_cortical_area.cortical_type)
-	
 	# Special cases: Memory and Power cortical areas use DirectPoints rendering
 	if defined_cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		print("   🔮 USING: Memory Sphere Renderer")
-		print("   📝 Expected data format: Type 11 (Direct Points)")
-		print("   🎯 Features: Sphere mesh, memory-specific visualization")
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 	elif defined_cortical_area.cortical_ID == "_power":
-		print("   ⚡ USING: Power Cone Renderer")
-		print("   📝 Expected data format: Type 11 (Direct Points)")
-		print("   🎯 Features: Cone mesh, power-specific visualization with firing animation")
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 	else:
 		# Use DDA renderer for all other cortical area types
-		print("   🔄 USING: DDA Renderer (Sparse Voxel Octree)")
-		print("   📝 Expected data format: Type 10 (NEURON_FLAT/SVO)")
-		print("   🎯 Features: Translucent voxel structure, shader-based rendering")
 		return UI_BrainMonitor_DDACorticalAreaRenderer.new()
 
 ## Show 3D curves connecting this cortical area to all its destinations
@@ -836,7 +823,6 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
 	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
 	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
-	print("     🔄 Creating recursive loop ", connection_type, " ", plasticity_type, " for: ", area_id, " at position: ", center_pos)
 	
 	# Create a container for the loop
 	var loop_node = Node3D.new()
@@ -933,12 +919,10 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 			var segment = _create_curve_segment(point1, point2, i, loop_material)
 			loop_node.add_child(segment)
 		
-		print("     ⚪ Created non-plastic recursive loop with ", num_segments, " segments")
 	
 	# Create recursive pulse animation
 	_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
 	
-	print("     ✨ Created recursive loop with ", num_segments, " segments")
 	return loop_node
 
 ## Create material for recursive connections based on inhibitory/excitatory properties
@@ -949,17 +933,14 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 		# Global mode - Gray color for recursive connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
 		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
-		print("     ⚪ Using GRAY material for GLOBAL mode RECURSIVE connection")
 	elif is_inhibitory:
 		# Inhibitory recursive connections - Dark red/maroon
 		material.albedo_color = Color(0.8, 0.2, 0.2, 0.9)  # Dark red
 		material.emission_color = Color(0.6, 0.1, 0.1)
-		print("     🟤 Using DARK RED material for INHIBITORY RECURSIVE connection")
 	else:
 		# Excitatory recursive connections - Purple/Magenta color (distinct from regular green)
 		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
 		material.emission_color = Color(0.8, 0.2, 0.8)
-		print("     🟣 Using MAGENTA material for EXCITATORY RECURSIVE connection")
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.5
@@ -1047,7 +1028,6 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		# Brief pause before restarting
 		pulse_tween.tween_interval(0.2)
 	
-	print("     ✨ Created ", num_pulses, " recursive animated pulses")
 
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
