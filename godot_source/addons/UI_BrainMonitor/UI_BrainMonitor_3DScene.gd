@@ -479,8 +479,8 @@ func _preview_closing(preview: UI_BrainMonitor_InteractivePreview):
 	_active_previews.erase(preview)
 
 ## Called when a brain region preview is about to be freed
-func _brain_region_preview_closing(preview: UI_BrainMonitor_BrainRegionPreview):
-	print("🔮 Brain region preview closing: %s" % preview.name)
+func _brain_region_preview_closing():
+	pass  # Preview cleanup is handled automatically when the node is freed
 
 
 #endregion

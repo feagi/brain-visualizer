@@ -135,7 +135,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	neuron_material.flags_unshaded = true  # Make it completely unshaded
 	neuron_material.albedo_color = Color(1.0, 0.0, 0.0, 1.0)  # Red base color for fallback
 	neuron_material.emission_enabled = true
-	neuron_material.emission_color = Color(1.0, 0.0, 0.0)  # Red emission for fallback
+	neuron_material.emission = Color(1.0, 0.0, 0.0)  # Red emission for fallback
 	neuron_material.emission_energy = 1.5  # Moderate emission energy
 	neuron_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED  # No transparency
 	neuron_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Show all faces
@@ -191,8 +191,8 @@ func setup(area: AbstractCorticalArea) -> void:
 		_outline_mesh_instance.visible = true  # Always visible for power cone
 		_outline_mat = null  # Power areas don't use the outline shader material
 		
-		# Create tween for firing animation
-		_firing_tween = create_tween()
+		# Tween will be created when needed in animate_power_firing()
+		_firing_tween = null
 		
 		# Create tesla coil electrical spikes for hover effect
 		_create_tesla_coil_spikes()
@@ -691,7 +691,7 @@ func _create_tesla_coil_spikes() -> void:
 		var lightning_material = StandardMaterial3D.new()
 		lightning_material.albedo_color = Color(0.8, 0.9, 1.0, 0.9)  # Blue-white electrical color
 		lightning_material.emission_enabled = true
-		lightning_material.emission_color = Color(0.9, 0.95, 1.0)  # Bright electrical glow
+		lightning_material.emission = Color(0.9, 0.95, 1.0)  # Bright electrical glow
 		lightning_material.emission_energy = 3.0  # Very bright
 		lightning_material.flags_unshaded = true
 		lightning_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -784,7 +784,7 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	# Add glow effect for special areas
 	if area.cortical_ID == "_death":
 		icon_material.emission_enabled = true
-		icon_material.emission_color = Color(1.0, 0.2, 0.2)  # Red glow for death
+		icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
 		icon_material.emission_energy = 0.5
 	
 	icon_mesh_instance.material_override = icon_material
