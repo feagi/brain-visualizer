@@ -711,7 +711,7 @@ func _create_missing_brain_region_visualizations() -> void:
 	print("🔍 DEBUG: Found %d total regions in cache" % all_regions.size())
 	print("🔍 DEBUG: This scene represents region: %s" % (_representing_region.friendly_name if _representing_region else "null"))
 	print("🔍 DEBUG: Root region: %s" % (root_region.friendly_name if root_region else "null"))
-	print("🔍 DEBUG: Current visualizations: %s" % _brain_region_visualizations_by_ID.keys())
+	print("🔍 DEBUG: Current visualizations: %s" % str(_brain_region_visualizations_by_ID.keys()))
 	
 	for region_id in all_regions.keys():
 		var region = all_regions[region_id]

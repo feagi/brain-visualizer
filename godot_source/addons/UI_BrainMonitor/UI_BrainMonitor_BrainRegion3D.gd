@@ -109,9 +109,6 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var conflict_areas = _get_conflict_cortical_areas()
 	
 	# FEAGI coordinates = front-left corner (lowest x,y,z) - NO extra offsets
-	print("🎯 Generating coordinates: %d inputs, %d outputs, %d conflicts for region '%s'" % [input_areas.size(), output_areas.size(), conflict_areas.size(), brain_region.friendly_name])
-	print("    📍 FEAGI brain region coordinates = front-left corner of input plate: %s" % brain_region.coordinates_3D)
-	print("    🎯 All positioning relative to this front-left corner (lowest x,y,z)")
 	
 	var result = {
 		"region_id": brain_region.region_ID,
@@ -176,14 +173,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 		}
 		result.inputs.append(input_data)
 		
-		print("    🔵 INPUT: %s (%s) - dims=%s" % [area.cortical_ID, area.type_as_string, area_size])
-		print("      📍 Original coordinates: %s" % area.coordinates_3D)
-		print("      📍 NEW coordinates: %s (CENTER position for renderer)" % Vector3i(new_position))
-		print("      🎯 FRONT-LEFT CORNER: (%.1f, %.1f, %.1f)" % [area_front_left_x, area_front_left_y, area_front_left_z])
-		print("      🎯 CENTER POSITION: (%.1f, %.1f, %.1f)" % [area_center_x, area_center_y, area_center_z])
-		print("      📐 Offset from region: %s" % (new_position - region_origin))
 	
-	print("  📤 Processing %d OUTPUT areas (front-left corner positioning):" % output_areas.size())
 	var current_output_x = output_start_x  # Start at output plate front-left + margin
 	for i in output_areas.size():
 		var area = output_areas[i]
@@ -905,11 +895,8 @@ func _create_3d_plate() -> void:
 	# Use a tiny epsilon toward the viewer so it renders in front
 	var front_edge_world_z = -_representing_region.coordinates_3D.z
 	var label_world_z = front_edge_world_z - 0.5  # 0.5 units closer to viewer
-	if is_inside_tree():
-		_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
-	else:
-		# Use local position if not in tree yet
-		_region_name_label.position = Vector3(center_x, -3.0, label_world_z)
+	# Use local position relative to this brain region node (avoids global_position issues)
+	_region_name_label.position = Vector3(center_x, -3.0, label_world_z)
 	
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
@@ -921,16 +908,6 @@ func _create_3d_plate() -> void:
 	
 	_frame_container.add_child(_region_name_label)
 	
-	# DEBUG: Log positions AFTER adding to scene tree for accurate global_position
-	print("🔍 DEBUG LABEL POSITIONING (AFTER ADDING TO TREE):")
-	print("    🧠 Brain region FEAGI coordinates: %s" % _representing_region.coordinates_3D)
-	if is_inside_tree():
-		print("    🧠 Brain region global_position: %s" % global_position)
-	else:
-		print("    🧠 Brain region position (not in tree): %s" % position)
-	print("    🏷️ Label local position: %s" % _region_name_label.position)
-	print("    🏷️ Label global_position: %s" % _region_name_label.global_position)
-	print("  🏷️ RegionLabel: Created name label '%s' at Y=-3.0 with font size 192" % _representing_region.friendly_name)
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
 	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, conflict_plate_size, conflict_areas.size() > 0, PLATE_GAP)
@@ -1069,7 +1046,10 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	if input_plate_node == null:
 		input_plate_node = get_node_or_null("RegionAssembly/InputPlate_Wireframe") as Node3D
 	if input_plate_node != null:
-		input_collision.global_position = input_plate_node.global_position
+		if input_plate_node.is_inside_tree():
+			input_collision.global_position = input_plate_node.global_position
+		else:
+			input_collision.position = input_plate_node.position
 	# Hover wiring for input plate
 	if has_node("RegionAssembly/InputPlate"):
 		var plate: MeshInstance3D = get_node("RegionAssembly/InputPlate")
@@ -1111,7 +1091,10 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	if output_plate_node == null:
 		output_plate_node = get_node_or_null("RegionAssembly/OutputPlate_Wireframe") as Node3D
 	if output_plate_node != null:
-		output_collision.global_position = output_plate_node.global_position
+		if output_plate_node.is_inside_tree():
+			output_collision.global_position = output_plate_node.global_position
+		else:
+			output_collision.position = output_plate_node.position
 	# Hover wiring for output plate
 	if has_node("RegionAssembly/OutputPlate"):
 		var plate_o: MeshInstance3D = get_node("RegionAssembly/OutputPlate")
@@ -1152,7 +1135,10 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 		# Snap collider center to the actual plate's global center (ensures exact Z match)
 		var conflict_plate_node: Node3D = get_node_or_null("RegionAssembly/ConflictPlate") as Node3D
 		if conflict_plate_node != null:
-			conflict_collision.global_position = conflict_plate_node.global_position
+			if conflict_plate_node.is_inside_tree():
+				conflict_collision.global_position = conflict_plate_node.global_position
+			else:
+				conflict_collision.position = conflict_plate_node.position
 		# Hover wiring for conflict plate
 		if has_node("RegionAssembly/ConflictPlate"):
 			var plate_c: MeshInstance3D = get_node("RegionAssembly/ConflictPlate")
@@ -1190,16 +1176,6 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	label_collision.add_child(label_collision_shape)
 	add_child(label_collision)  # Direct child of BrainRegion3D
 	
-	# DEBUG: Log collision position AFTER adding to scene tree
-	print("    🎯 Collision local position: %s" % label_collision.position)
-	print("    🎯 Collision global_position: %s" % label_collision.global_position)
-	
-	if has_conflict_plate:
-		print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), ConflictPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
-			[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z, conflict_plate_size.x, conflict_plate_size.z])
-	else:
-		print("    🎯 Added collision detection: InputPlate (%.1f x 1.0 x %.1f), OutputPlate (%.1f x 1.0 x %.1f), Label (8.0 x 2.0 x 1.0)" % 
-			[input_plate_size.x, input_plate_size.z, output_plate_size.x, output_plate_size.z])
 
 ## Creates a connecting bridge between input and output plates  
 func _create_connecting_bridge(input_size: Vector3, output_size: Vector3, spacing: float) -> void:

@@ -2404,6 +2404,29 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 				cortical_area_IDs_mapped_to_parent_regions_IDs
 			)
 			print("FEAGI REQUEST: ✅ Cortical areas cache updated successfully")
+			
+			# CRITICAL: Process inputs/outputs arrays from the response to create partial_mappings
+			print("FEAGI REQUEST: 🔄 Processing inputs/outputs arrays to create partial mappings...")
+			for region_data in brain_regions_list:
+				if region_data.has("region_id") and (region_data.has("inputs") or region_data.has("outputs")):
+					var region_id = region_data["region_id"]
+					var inputs = region_data.get("inputs", [])
+					var outputs = region_data.get("outputs", [])
+					
+					print("FEAGI REQUEST: 🔍 Processing I/O for region %s: %d inputs, %d outputs" % [region_id, inputs.size(), outputs.size()])
+					
+					# Create the seed data for partial mappings
+					var seed: Dictionary = {}
+					seed[region_id] = {
+						"inputs": inputs,
+						"outputs": outputs
+					}
+					
+					# Load the partial mappings (this creates the partial_mappings that the visualization uses)
+					FeagiCore.feagi_local_cache.brain_regions.FEAGI_load_all_partial_mapping_sets(seed)
+					print("FEAGI REQUEST: ✅ Loaded I/O mappings for region %s - inputs: %d, outputs: %d" % [region_id, inputs.size(), outputs.size()])
+			
+			print("FEAGI REQUEST: ✅ All partial mappings processed successfully")
 		else:
 			print("FEAGI REQUEST: ❌ Failed to fetch cortical area data: %s" % cortical_areas_response.decode_response_as_generic_error_code())
 		
