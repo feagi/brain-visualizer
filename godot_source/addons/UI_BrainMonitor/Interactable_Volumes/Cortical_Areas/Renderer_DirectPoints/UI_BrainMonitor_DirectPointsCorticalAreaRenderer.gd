@@ -657,7 +657,6 @@ func _create_tesla_coil_spikes() -> void:
 	if _cortical_area_id != "_power":
 		return
 	
-	print("   ⚡ Creating tesla coil electrical spikes for power cone!")
 	
 	# Load tesla coil material
 	_tesla_coil_material = load(TESLA_COIL_MAT_PATH).duplicate()
@@ -725,7 +724,6 @@ func _create_tesla_coil_spikes() -> void:
 			randf_range(-30, 30)   # Increased from -15,15
 		)
 		
-		print("   🔍 DEBUG: Created spike ", i, " at position: ", spike.position, " with height: ", spike_mesh.height)
 		
 		# Start invisible - only show on hover
 		spike.visible = false
@@ -733,7 +731,6 @@ func _create_tesla_coil_spikes() -> void:
 		_tesla_coil_spikes.append(spike)
 		_static_body.add_child(spike)
 	
-	print("   ⚡ Created ", spike_count, " tesla coil spikes!")
 
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
@@ -975,22 +972,16 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""
-	print("   🔍 DEBUG: _set_tesla_coil_active called with active=", active)
-	print("   🔍 DEBUG: _cortical_area_id=", _cortical_area_id)
-	print("   🔍 DEBUG: _tesla_coil_spikes.size()=", _tesla_coil_spikes.size())
 	
 	if _cortical_area_id != "_power":
-		print("   ❌ Not a power area, skipping tesla coil")
 		return
 		
 	if _tesla_coil_spikes.is_empty():
-		print("   ❌ No tesla coil spikes created, skipping")
 		return
 	
 	_is_tesla_coil_active = active
 	
 	if active:
-		print("   ⚡ ACTIVATING tesla coil spikes - electrical arcs ON!")
 		
 		# Clear any existing tweens first
 		_tesla_coil_tweens.clear()
@@ -1047,7 +1038,6 @@ func _set_tesla_coil_active(active: bool) -> void:
 				movement_speed
 			)
 	else:
-		print("   ⚡ DEACTIVATING tesla coil spikes - electrical arcs OFF!")
 		
 		# Stop all active tweens to prevent infinite animation
 		for tween in _tesla_coil_tweens:
@@ -1071,5 +1061,4 @@ func _create_transparent_memory_material() -> ShaderMaterial:
 	inactive_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow like cortical areas
 	inactive_material.set_shader_parameter("rim_intensity", 0.8)  # Moderate rim lighting
 	
-	print("   🔮 Created inactive memory material: light blue cortical color")
 	return inactive_material 
