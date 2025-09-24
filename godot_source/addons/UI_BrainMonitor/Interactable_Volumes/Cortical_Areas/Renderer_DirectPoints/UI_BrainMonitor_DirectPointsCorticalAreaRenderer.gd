@@ -155,7 +155,6 @@ func setup(area: AbstractCorticalArea) -> void:
 		sphere_mesh.radial_segments = 16  # Good balance of quality vs performance
 		sphere_mesh.rings = 8
 		_outline_mesh_instance.mesh = sphere_mesh
-		print("   🔮 Created 3x larger sphere outline for memory cortical area")
 	elif area.cortical_ID == "_power":
 		var cone_mesh = CylinderMesh.new()
 		cone_mesh.top_radius = 0.0  # Point at the top for cone shape
@@ -164,12 +163,10 @@ func setup(area: AbstractCorticalArea) -> void:
 		cone_mesh.radial_segments = 16  # Smoother cone for larger size
 		cone_mesh.rings = 1  # Simple cone structure
 		_outline_mesh_instance.mesh = cone_mesh
-		print("   ⚡ Created 3x larger CONE outline for power cortical area - NO CUBE!")
 	else:
 		var box_mesh = BoxMesh.new()
 		box_mesh.size = Vector3.ONE
 		_outline_mesh_instance.mesh = box_mesh
-		print("   📦 Created standard BOX outline for cortical area: ", area.cortical_ID)
 	# Use different materials based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Create both transparent and active materials for memory spheres
@@ -180,7 +177,6 @@ func setup(area: AbstractCorticalArea) -> void:
 		_outline_mesh_instance.material_override = _memory_transparent_material
 		_outline_mesh_instance.visible = true  # Always visible with light blue cortical color
 		_outline_mat = null  # Memory areas don't use the outline shader material
-		print("   🔮 Memory sphere created with LIGHT BLUE cortical material by default")
 	elif area.cortical_ID == "_power":
 		# Use custom neon blue material for power cone
 		_power_material = load(POWER_NEON_MAT_PATH).duplicate()

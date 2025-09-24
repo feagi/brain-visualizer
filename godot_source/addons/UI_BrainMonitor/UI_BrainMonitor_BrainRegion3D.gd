@@ -38,7 +38,6 @@ func _log_io_area_dimensions(brain_region: BrainRegion) -> void:
 	var input_areas = _get_input_cortical_areas_for_logging(brain_region)
 	var output_areas = _get_output_cortical_areas_for_logging(brain_region)
 	
-	print("    📊 Found %d inputs + %d outputs = %d total I/O areas" % [input_areas.size(), output_areas.size(), input_areas.size() + output_areas.size()])
 	# Detailed area dimensions logged only if needed for debugging:
 	# for area in input_areas: print("      🔵 %s: dims %s, coords %s" % [area.cortical_ID, area.dimensions_3D, area.coordinates_3D])
 	# for area in output_areas: print("      🔴 %s: dims %s, coords %s" % [area.cortical_ID, area.dimensions_3D, area.coordinates_3D])
@@ -262,25 +261,8 @@ static func _find_all_brain_region_nodes(node: Node) -> Array:
 
 ## DEBUG: Manually check label positions
 func debug_label_positions() -> void:
-	print("🔍 MANUAL LABEL DEBUG CHECK:")
-	if _representing_region:
-		print("    🧠 Brain region FEAGI coordinates: %s" % _representing_region.coordinates_3D)
-		print("    🧠 Brain region global_position: %s" % global_position)
-	else:
-		print("    ❌ No representing region!")
-		
-	if _region_name_label:
-		print("    🏷️ Label exists: YES")
-		print("    🏷️ Label local position: %s" % _region_name_label.position)
-		print("    🏷️ Label global_position: %s" % _region_name_label.global_position)
-		print("    🏷️ Label parent: %s" % _region_name_label.get_parent().name)
-	else:
-		print("    ❌ No region name label found!")
-		
-	print("    📦 Total BrainRegion3D children: %d" % get_child_count())
-	for i in get_child_count():
-		var child = get_child(i)
-		print("        - Child %d: %s (type: %s)" % [i, child.name, child.get_class()])
+	# Label debugging disabled to reduce log spam
+	pass
 
 ## Returns the generated I/O coordinates for this brain region
 func get_generated_io_coordinates() -> Dictionary:
@@ -288,23 +270,13 @@ func get_generated_io_coordinates() -> Dictionary:
 
 ## Setup the 3D brain region visualization
 func setup(brain_region: BrainRegion) -> void:
-	print("🏗️ BrainRegion3D Setup started for region: %s" % brain_region.friendly_name)
-	print("  📊 Region info:")
-	print("    - Region ID: %s" % brain_region.region_ID)
-	print("    - 3D Coordinates: %s" % brain_region.coordinates_3D)
-	print("    - Contains %d cortical areas" % brain_region.contained_cortical_areas.size())
-	print("    - Contains %d subregions" % brain_region.contained_regions.size())
-	print("    - Has %d input chain links" % brain_region.input_open_chain_links.size())
-	print("    - Has %d output chain links" % brain_region.output_open_chain_links.size())
 	
-	print("  📏 Analyzing I/O cortical area dimensions for plate sizing:")
 	_log_io_area_dimensions(brain_region)
 	
 	# 🚨 CRITICAL FIX: Set _representing_region BEFORE coordinate generation 
 	# because I/O detection functions depend on it!
 	_representing_region = brain_region
 	
-	print("  🎯 Generating new coordinates for I/O areas:")
 	_generated_io_coordinates = generate_io_coordinates_for_brain_region(brain_region)
 	name = "BrainRegion3D_" + brain_region.region_ID
 	
@@ -313,7 +285,6 @@ func setup(brain_region: BrainRegion) -> void:
 	_create_containers()
 	
 	# Populate with cortical areas
-	print("  👥 Populating cortical areas...")
 	_populate_cortical_areas()
 
 	# Deferred hydration check: ensure I/O areas are properly detected and displayed
@@ -329,9 +300,7 @@ func setup(brain_region: BrainRegion) -> void:
 	_start_connection_monitoring()
 	
 	# Set initial position using FEAGI coordinates
-	print("  📍 Setting position...")
 	var coords = _representing_region.coordinates_3D
-	print("  🔍 DEBUG SETUP: Brain region coordinates from object: %s" % coords)
 	var distance_from_origin = Vector3(coords).length()
 	
 	if distance_from_origin > 100.0:
@@ -341,10 +310,7 @@ func setup(brain_region: BrainRegion) -> void:
 		print("    💡 This might make the brain region invisible in the camera view.")
 		print("    💡 Try moving the camera or adjusting the brain region coordinates.")
 	
-	print("  🚀 DEBUG SETUP: About to call _update_position with coords: %s" % coords)
 	_update_position(_representing_region.coordinates_3D)
-	print("  ✅ DEBUG SETUP: _update_position call completed")
-	print("🏁 BrainRegion3D Setup completed for region: %s" % _representing_region.friendly_name)
 
 	# Defer a post-build sync to ensure all child renderers and plates are fully in tree
 	call_deferred("_post_initial_build_sync")
@@ -769,7 +735,6 @@ func _create_3d_plate() -> void:
 	input_plate.position.y = PLATE_HEIGHT / 2.0  # Half-height to align bottom at origin
 	# Use global Z set through transform later to allow querying exact plate Z
 	_frame_container.add_child(input_plate)
-	print("  🟢 INPUT PLATE: Front-left X=0.0, Center X=%.1f" % input_plate.position.x)
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
 	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green with opacity
@@ -784,7 +749,6 @@ func _create_3d_plate() -> void:
 	output_plate.position.y = PLATE_HEIGHT / 2.0  # Same Y as input plate (Godot center)
 	# Use global Z set through transform later to allow querying exact plate Z
 	_frame_container.add_child(output_plate)
-	print("  🟢 OUTPUT PLATE: Front-left X=%.1f, Center X=%.1f" % [output_front_left_x, output_plate.position.x])
 	
 	# CONFLICT PLATE: Only create if there are conflicted areas  
 	var conflict_plate = null
@@ -852,7 +816,6 @@ func _create_3d_plate() -> void:
 	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, conflict_plate_size, conflict_areas.size() > 0, PLATE_GAP)
 	
 	var plate_count = 2 + (1 if conflict_areas.size() > 0 else 0)
-	print("  🏗️ RegionAssembly: Created %d-plate design for region '%s' (%d input, %d output, %d conflict areas)" % [plate_count, _representing_region.friendly_name, input_areas.size(), output_areas.size(), conflict_areas.size()])
 	
 	# DEBUG: Call manual label debug check after plate creation
 	debug_label_positions()

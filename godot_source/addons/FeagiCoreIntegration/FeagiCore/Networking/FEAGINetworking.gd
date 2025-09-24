@@ -144,10 +144,11 @@ func _call_register_agent_for_shm() -> void:
 			parsed = parsed_any
 		if parsed.has("shared_memory") and typeof(parsed["shared_memory"]) == TYPE_DICTIONARY:
 			var shm: Dictionary = parsed["shared_memory"]
-			# Expected keys might include 'visualization_stream'
+			# Expected keys might include 'visualization' (canonical)
 			var viz: String = ""
-			if shm.has("visualization_stream"):
-				viz = str(shm["visualization_stream"]) 
+			# Canonical key: 'visualization'
+			if shm.has("visualization"):
+				viz = str(shm["visualization"]) 
 			if viz != "":
 				print("𒓉 [REG] Using SHM from register: ", viz)
 				# Set env for current process to let WebSocketAPI pick it up

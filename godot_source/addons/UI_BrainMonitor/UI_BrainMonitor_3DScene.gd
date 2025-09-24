@@ -119,18 +119,11 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		_add_cortical_area(area)
 	
 	# Check cortical areas in child regions that might be I/O areas
-	print("🔍 SETUP: Checking child regions for I/O cortical areas...")
 	for child_region in _representing_region.contained_regions:
-		print("  🏗️ Child region: %s (contains %d areas)" % [child_region.friendly_name, child_region.contained_cortical_areas.size()])
 		for area in child_region.contained_cortical_areas:
-			print("    🔍 Checking area: %s" % area.cortical_ID)
 			var is_io = _is_area_input_output_of_specific_child_region(area, child_region)
-			print("    📋 Is I/O area: %s" % is_io)
 			if is_io:
-				print("    ✅ Creating visualization for I/O area: %s" % area.cortical_ID)
 				_add_cortical_area(area)
-			else:
-				print("    ⏭️ Skipping non-I/O area: %s" % area.cortical_ID)
 	
 	# Create child brain region frames
 	for child_region in _representing_region.contained_regions:
@@ -565,22 +558,13 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
-	print("  🔧 _add_brain_region_frame called for: %s" % brain_region.friendly_name)
-	print("  📍 Brain region coordinates: 2D=%s, 3D=%s" % [brain_region.coordinates_2D, brain_region.coordinates_3D])
-	
 	if brain_region.region_ID in _brain_region_visualizations_by_ID:
 		push_warning("Unable to add to BM already existing brain region of ID %s!" % brain_region.region_ID)
 		return null
 	
-	print("  🏭 Creating UI_BrainMonitor_BrainRegion3D instance...")
 	var brain_region_script = load("res://addons/UI_BrainMonitor/UI_BrainMonitor_BrainRegion3D.gd")
 	var region_frame = brain_region_script.new()  # UI_BrainMonitor_BrainRegion3D
-	print("  📍 Adding to _node_3D_root...")
 	_node_3D_root.add_child(region_frame)
-	print("  📍 DEBUG: Main region parent: %s" % region_frame.get_parent().name)
-	print("  📍 DEBUG: Main region parent transform: %s" % region_frame.get_parent().transform)
-	print("  🔧 Calling region_frame.setup()...")
-	print("  🔍 DEBUG: Brain region coordinates before setup: %s" % brain_region.coordinates_3D)
 	region_frame.setup(brain_region)
 	_brain_region_visualizations_by_ID[brain_region.region_ID] = region_frame
 	
@@ -620,39 +604,29 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 	# print("        📤 Checking %d output_open_chain_links..." % child_region.output_open_chain_links.size())  # Suppressed - too spammy
 	for link: ConnectionChainLink in child_region.output_open_chain_links:
 		if link.source == area:
-			print("        ✅ Found as OUTPUT via chain link!")
 			return true
 	
 	# Method 2: Check partial mappings (from FEAGI direct inputs/outputs arrays) - CRITICAL FIX!
 	for partial_mapping in child_region.partial_mappings:
 		if partial_mapping.internal_target_cortical_area == area:
-			if partial_mapping.is_region_input:
-				print("        ✅ Found as INPUT via partial mapping (FEAGI inputs array)!")
-			else:
-				print("        ✅ Found as OUTPUT via partial mapping (FEAGI outputs array)!")
 			return true
 	
 	# Method 3: Check IPU/OPU types
 	if area in child_region.contained_cortical_areas:
 		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			print("        ✅ Found as IPU type directly in child region!")
 			return true
 		elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			print("        ✅ Found as OPU type directly in child region!")
 			return true
 	
 	# Method 4: TEMPORARY aggressive naming heuristics (for debugging - will restore conservative logic after)
 	if child_region.input_open_chain_links.size() == 0 and child_region.output_open_chain_links.size() == 0:
 		if area in child_region.contained_cortical_areas and child_region.contained_cortical_areas.size() == 2:
-			print("        💡 TEMPORARY: Using aggressive naming heuristics for debugging...")
 			var area_id = area.cortical_ID.to_lower()
 			# Check for input patterns  
 			if "lef" in area_id or "left" in area_id or "input" in area_id or "in" in area_id:
-				print("        ✅ AGGRESSIVE: Found as INPUT via naming heuristic (contains '%s')!" % area_id)
 				return true
 			# Check for output patterns (c__rig should be output per FEAGI data)
 			if "rig" in area_id or "right" in area_id or "output" in area_id or "out" in area_id:
-				print("        ✅ AGGRESSIVE: Found as OUTPUT via naming heuristic (contains '%s')!" % area_id)
 				return true
 	
 	# print("        ❌ Area %s is NOT I/O of child region '%s'" % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
@@ -668,7 +642,6 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 		
 		# Use the SAME logic as _is_area_input_output_of_specific_child_region
 		if _is_area_input_output_of_specific_child_region(area, child_region):
-			print("      ✅ Found as I/O of child region '%s'!" % child_region.friendly_name)
 			return true
 	
 	# print("    ❌ Area %s is NOT I/O of any child region" % area.cortical_ID)  # Suppressed - too spammy
@@ -697,53 +670,31 @@ func _create_missing_brain_region_visualizations() -> void:
 	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	var new_regions_created = 0
 	
-	print("🔍 DEBUG: Found %d total regions in cache" % all_regions.size())
-	print("🔍 DEBUG: This scene represents region: %s" % (_representing_region.friendly_name if _representing_region else "null"))
-	print("🔍 DEBUG: Root region: %s" % (root_region.friendly_name if root_region else "null"))
-	print("🔍 DEBUG: Current visualizations: %s" % str(_brain_region_visualizations_by_ID.keys()))
 	
 	for region_id in all_regions.keys():
 		var region = all_regions[region_id]
-		print("🔍 DEBUG: Processing region %s (%s)" % [region_id, region.friendly_name])
-		
 		# Skip if visualization already exists
 		if region_id in _brain_region_visualizations_by_ID:
-			print("  ⏭️ DEBUG: Skipping - visualization already exists")
 			continue
 		
 		# CRITICAL: Skip root region - it should NEVER have a plate visualization
 		if region == root_region:
-			print("  ⏭️ DEBUG: Skipping - this is the root region")
 			continue
 		
 		# Skip if this region is not a child of our representing region
 		if _representing_region != null and region != _representing_region:
 			var is_child = false
-			print("  🔍 DEBUG: Checking if region is child of %s" % _representing_region.friendly_name)
-			print("  🔍 DEBUG: Representing region has %d child regions" % _representing_region.contained_regions.size())
 			for child_region in _representing_region.contained_regions:
-				print("    🔍 DEBUG: Child region: %s (%s)" % [child_region.region_ID, child_region.friendly_name])
 				if child_region.region_ID == region_id:
 					is_child = true
 					break
 			if not is_child:
-				print("  ⏭️ DEBUG: Skipping - not a child of representing region")
 				continue
-			else:
-				print("  ✅ DEBUG: Confirmed as child region")
 		
 		# Create visualization for this new region
-		print("🆕 DEBUG: Creating visualization for new brain region: %s" % region.friendly_name)
-		print("🆕 DEBUG: Region has %d cortical areas" % region.contained_cortical_areas.size())
-		print("🆕 DEBUG: Region position 3D: %s" % region.coordinates_3D)
 		_add_brain_region_frame(region)
-		print("🆕 DEBUG: _add_brain_region_frame() completed for %s" % region.friendly_name)
 		new_regions_created += 1
 	
-	if new_regions_created > 0:
-		print("BrainMonitor 3D Scene: ✅ Created %d new brain region visualizations" % new_regions_created)
-	else:
-		print("BrainMonitor 3D Scene: ℹ️ No new brain regions to visualize")
 
 ## Manual force refresh of all cortical area connections (for debugging/troubleshooting)
 func force_refresh_all_cortical_connections() -> void:
