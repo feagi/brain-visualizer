@@ -538,7 +538,7 @@ func _try_fetch_video_shm_from_api() -> void:
 	var resp: Variant = out.decode_response_as_dict()
 	if typeof(resp) != TYPE_DICTIONARY:
 		return
-	# Populate dropdown with agents that have video_stream_raw/feagi (or legacy video_stream)
+	# Populate dropdown with agents that have canonical 'video' capability (fallback to legacy keys if present)
 	_agent_video_map.clear()
 	_agent_video_map_feagi.clear()
 	if _agent_dropdown:
@@ -550,11 +550,19 @@ func _try_fetch_video_shm_from_api() -> void:
 		var mapping = resp[aid]
 		if typeof(mapping) != TYPE_DICTIONARY:
 			continue
-		var raw_path: String = str(mapping.get("video_stream_raw", ""))
-		var feagi_path: String = str(mapping.get("video_stream_feagi", ""))
-		var legacy_path: String = str(mapping.get("video_stream", ""))
-		if raw_path == "" and legacy_path != "":
-			raw_path = legacy_path
+		# Canonical key: 'video' (agent-owned preview stream)
+		var raw_path: String = str(mapping.get("video", ""))
+		# Optional FEAGI-provided preview (not canonical; keep as empty unless core exposes one)
+		var feagi_path: String = str(mapping.get("video_feagi", ""))
+		# Backward compatibility with legacy keys
+		if raw_path == "":
+			var legacy_raw := str(mapping.get("video_stream_raw", ""))
+			var legacy_alt := str(mapping.get("video_stream", ""))
+			if legacy_raw != "":
+				raw_path = legacy_raw
+			elif legacy_alt != "":
+				raw_path = legacy_alt
+		# Accept if either raw or feagi path is available
 		if raw_path != "" or feagi_path != "":
 			_agent_video_map[aid] = raw_path
 			_agent_video_map_feagi[aid] = feagi_path
