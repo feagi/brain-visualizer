@@ -11,59 +11,61 @@ var _is_ipu: bool = true
 var _context_region: BrainRegion = null
 
 func _ready() -> void:
-    super()
-    _cancel_button = _window_internals.get_node("Buttons/Cancel")
-    _icon_grid = _window_internals.get_node("Scroll/IconGrid")
-    _cancel_button.pressed.connect(_on_cancel)
+	super()
+	_cancel_button = _window_internals.get_node("Buttons/Cancel")
+	_icon_grid = _window_internals.get_node("Scroll/IconGrid")
+	_cancel_button.pressed.connect(_on_cancel)
 
 func setup_for_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, context_region: BrainRegion = null) -> void:
-    _setup_base_window(WINDOW_NAME)
-    _context_region = context_region
-    _is_ipu = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
-    _populate_grid(cortical_type)
+	_setup_base_window(WINDOW_NAME)
+	_context_region = context_region
+	_is_ipu = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+	_populate_grid(cortical_type)
 
 func _on_cancel() -> void:
-    close_window()
+	close_window()
 
 func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
-    for child in _icon_grid.get_children():
-        child.queue_free()
-    var templates: Array[CorticalTemplate] = []
-    match cortical_type:
-        AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-            for t: CorticalTemplate in FeagiCore.feagi_local_cache.IPU_templates.values():
-                if t.is_enabled:
-                    templates.append(t)
-        AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-            for t: CorticalTemplate in FeagiCore.feagi_local_cache.OPU_templates.values():
-                if t.is_enabled:
-                    templates.append(t)
-        _:
-            push_error("WindowSelectCorticalTemplate: Unknown cortical type")
-            return
-    templates.sort_custom(func(a: CorticalTemplate, b: CorticalTemplate): return a.cortical_name < b.cortical_name)
-    for template: CorticalTemplate in templates:
-        _add_tile(template)
+	for child in _icon_grid.get_children():
+		child.queue_free()
+	var templates: Array[CorticalTemplate] = []
+	match cortical_type:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			for t: CorticalTemplate in FeagiCore.feagi_local_cache.IPU_templates.values():
+				if t.is_enabled:
+					templates.append(t)
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			for t: CorticalTemplate in FeagiCore.feagi_local_cache.OPU_templates.values():
+				if t.is_enabled:
+					templates.append(t)
+		_:
+			push_error("WindowSelectCorticalTemplate: Unknown cortical type")
+			return
+	templates.sort_custom(func(a: CorticalTemplate, b: CorticalTemplate): return a.cortical_name < b.cortical_name)
+	for template: CorticalTemplate in templates:
+		_add_tile(template)
+	# Ensure window is wide enough for 4 tiles (128 each) plus 10% gaps between tiles
+	var min_width = 640
+	if size.x < min_width:
+		custom_minimum_size.x = float(min_width)
 
 func _add_tile(template: CorticalTemplate) -> void:
-    var tile := VBoxContainer.new()
-    var btn := TextureButton.new()
-    btn.custom_minimum_size = Vector2(128, 128)
-    btn.ignore_texture_size = true
-    btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-    btn.texture_normal = UIManager.get_icon_texture_by_ID(template.ID, _is_ipu)
-    btn.texture_hover = btn.texture_normal
-    btn.texture_pressed = btn.texture_normal
-    btn.pressed.connect(func(): _choose(template))
-    var name_label := Label.new()
-    name_label.text = template.cortical_name
-    name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    tile.add_child(btn)
-    tile.add_child(name_label)
-    _icon_grid.add_child(tile)
+	var tile := VBoxContainer.new()
+	var btn := TextureButton.new()
+	btn.custom_minimum_size = Vector2(128, 128)
+	btn.ignore_texture_size = true
+	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn.texture_normal = UIManager.get_icon_texture_by_ID(template.ID, _is_ipu)
+	btn.texture_hover = btn.texture_normal
+	btn.texture_pressed = btn.texture_normal
+	btn.pressed.connect(func(): _choose(template))
+	var name_label := Label.new()
+	name_label.text = template.cortical_name
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tile.add_child(btn)
+	tile.add_child(name_label)
+	_icon_grid.add_child(tile)
 
 func _choose(template: CorticalTemplate) -> void:
-    template_chosen.emit(template)
-    close_window()
-
-
+	template_chosen.emit(template)
+	close_window()
