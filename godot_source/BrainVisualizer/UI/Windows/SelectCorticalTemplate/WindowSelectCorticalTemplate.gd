@@ -60,7 +60,7 @@ func _add_tile(template: CorticalTemplate) -> void:
 	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tile.custom_minimum_size.x = 128
-	tile.alignment = BoxContainer.ALIGNMENT_CENTER
+	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
 	var btn := TextureButton.new()
 	btn.custom_minimum_size = Vector2(128, 128)
 	btn.ignore_texture_size = true
@@ -74,6 +74,9 @@ func _add_tile(template: CorticalTemplate) -> void:
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	name_label.custom_minimum_size.x = 128
+	# Reserve space for two lines to keep icon tops aligned across the row
+	name_label.custom_minimum_size.y = 40
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	name_label.max_lines_visible = 2
 	tile.add_child(btn)
