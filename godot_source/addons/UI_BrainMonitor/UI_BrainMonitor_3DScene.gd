@@ -207,10 +207,10 @@ func _play_startup_camera_intro() -> void:
 	_pancake_cam.fov = start_fov
 	
 	# Adjust final stop to be slightly farther from the center (stop sooner horizontally), and lower final height a bit
-	var final_y_target: float = final_pos.y - 40.0
+	var final_y_target: float = final_pos.y - 10.0
 	var horizontal_to_center: Vector3 = Vector3(_startup_intro_center.x - final_pos.x, 0.0, _startup_intro_center.z - final_pos.z)
 	var dir_to_center_xz: Vector3 = (horizontal_to_center.normalized() if horizontal_to_center.length() > 0.001 else Vector3.FORWARD)
-	var stop_back_distance: float = 60.0
+	var stop_back_distance: float = 100.0
 	final_pos = final_pos - (dir_to_center_xz * stop_back_distance)
 	final_pos.y = final_y_target
 	_intro_start_rot = _pancake_cam.quaternion
