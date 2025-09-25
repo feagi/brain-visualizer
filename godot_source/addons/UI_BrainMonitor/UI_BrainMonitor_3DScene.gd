@@ -45,6 +45,8 @@ var _intro_control_pos: Vector3
 var _intro_final_pos: Vector3
 var _intro_start_fov: float
 var _intro_final_fov: float
+var _intro_start_rot: Quaternion
+var _intro_target_rot: Quaternion
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -182,7 +184,7 @@ func _play_startup_camera_intro() -> void:
 	
 	# Compute a start transform: higher in Y and slightly farther back along view direction
 	var drop_height: float = 150.0
-	var zoom_back_distance: float = 120.0
+	var zoom_back_distance: float = 240.0
 	var dir_to_center: Vector3 = (_startup_intro_center - final_pos).normalized()
 	var start_pos: Vector3 = final_pos - (dir_to_center * zoom_back_distance) + Vector3(0.0, drop_height, 0.0)
 	
@@ -198,13 +200,31 @@ func _play_startup_camera_intro() -> void:
 	var start_fov: float = clamp(final_fov * 1.25, 20.0, 90.0)
 	_pancake_cam.fov = start_fov
 	
+	# Adjust final stop to be slightly farther from the center (stop sooner horizontally, keep height)
+	var horizontal_to_center: Vector3 = Vector3(_startup_intro_center.x - final_pos.x, 0.0, _startup_intro_center.z - final_pos.z)
+	var dir_to_center_xz: Vector3 = (horizontal_to_center.normalized() if horizontal_to_center.length() > 0.001 else Vector3.FORWARD)
+	var stop_back_distance: float = 60.0
+	final_pos = final_pos - (dir_to_center_xz * stop_back_distance)
+	final_pos.y = _pancake_cam.position.y - drop_height # ensure final height remains the precomputed target Y
+	_intro_start_rot = _pancake_cam.quaternion
+	# Compute a level (horizontal) final orientation that faces the center in XZ only
+	var horizontal_dir: Vector3 = Vector3(_startup_intro_center.x, final_pos.y, _startup_intro_center.z) - final_pos
+	if horizontal_dir.length() < 0.001:
+		# Fallback: use current forward flattened
+		horizontal_dir = (-_pancake_cam.global_transform.basis.z)
+		horizontal_dir.y = 0.0
+	if horizontal_dir.length() > 0.001:
+		horizontal_dir = horizontal_dir.normalized()
+	var target_basis: Basis = Basis().looking_at(horizontal_dir, Vector3.UP)
+	_intro_target_rot = target_basis.get_rotation_quaternion()
+	
 	# Create tween for smooth curved motion and FOV change (single stage)
 	if _startup_tween != null:
 		_startup_tween.kill()
 	_startup_tween = create_tween()
 	_startup_tween.set_trans(Tween.TRANS_SINE)
 	_startup_tween.set_ease(Tween.EASE_OUT)
-	var duration: float = 1.8 * 1.5 # 50% slower
+	var duration: float = 1.8 * 1.8 # a bit slower than before
 	
 	# Define a quadratic Bézier control point to create a descending curve
 	_intro_start_pos = start_pos
@@ -224,7 +244,7 @@ func _play_startup_camera_intro() -> void:
 	_startup_tween.finished.connect(func():
 		_startup_intro_animating = false
 		_pancake_cam.position = final_pos
-		_pancake_cam.rotation = final_rot
+		_pancake_cam.quaternion = _intro_target_rot
 		_pancake_cam.fov = final_fov
 		_pancake_cam.movement_mode = _startup_prev_cam_mode
 		_pancake_cam.allow_user_control = true
@@ -237,7 +257,8 @@ func _update_startup_camera_bezier(t: float) -> void:
 	var b: Vector3 = _intro_control_pos.lerp(_intro_final_pos, t)
 	var bezier_pos: Vector3 = a.lerp(b, t)
 	_pancake_cam.position = bezier_pos
-	_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
+	# Smoothly slerp rotation toward horizontal orientation
+	_pancake_cam.quaternion = _intro_start_rot.slerp(_intro_target_rot, t)
 	# Smooth FOV easing in sync
 	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
 
