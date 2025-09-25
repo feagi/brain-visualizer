@@ -209,6 +209,7 @@ func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMor
 	print("QC: CORE ICON BAR → populating...")
 	print("  - cache size:", FeagiCore.feagi_local_cache.morphologies.available_morphologies.size())
 	print("  - restrictions: allowed=", allowed_names, " disallowed=", disallowed_names)
+	var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 
 	# Iterate available morphologies by ID (cache key) and add CORE ones with valid icons
 	var total_core_seen: int = 0
@@ -220,6 +221,10 @@ func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMor
 			continue
 		total_core_seen += 1
 		print("  - CORE candidate:", morphology_name)
+		# Exclude memory morphology if destination is not a memory area
+		if not destination_is_memory and String(morphology_name).to_lower() == "memory":
+			print("    > excluded 'memory' for non-memory destination")
+			continue
 		if len(allowed_names) > 0 and morphology_name not in allowed_names:
 			print("    > excluded by allowed list (not in allowed)")
 			continue
