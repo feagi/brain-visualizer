@@ -11,7 +11,7 @@ const PREFAB_CB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/
 ## public var references and init for this object
 #region References and Init
 
-var window_manager: WindowManager:
+var window_manager:
 	get: return _window_manager
 var notification_system: NotificationSystem:
 	get: return _notification_system
@@ -25,7 +25,7 @@ var selection_system: SelectionSystem:
 var temp_root_bm: UI_BrainMonitor_3DScene = null
 
 var _top_bar: TopBar
-var _window_manager: WindowManager
+var _window_manager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
@@ -554,8 +554,15 @@ const KNOWN_ICON_PATHS : Dictionary = {
 
 ## Gets the icon texture given the cortical ID
 static func get_icon_texture_by_ID(cortical_ID: StringName, fallback_is_input: bool = true) -> Texture:
+	# First try dynamic lookup in knowns/<ID>.png as per asset naming convention
+	var knowns_base: String = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/"
+	var candidate_path: String = knowns_base + String(cortical_ID) + ".png"
+	if ResourceLoader.exists(candidate_path):
+		return (load(candidate_path) as Texture)
+	# Fallback to curated mapping table (legacy)
 	if cortical_ID in KNOWN_ICON_PATHS:
 		return (load(KNOWN_ICON_PATHS[cortical_ID]) as Texture)
+	# Final fallback to placeholders in unknowns/
 	if fallback_is_input:
 		return  (load(ICON_CUSTOM_INPUT) as Texture)
 	else:

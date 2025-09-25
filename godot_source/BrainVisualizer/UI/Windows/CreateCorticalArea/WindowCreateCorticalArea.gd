@@ -124,7 +124,11 @@ func _user_requesing_creation() -> void:
 	
 	match(_type_selected):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
+			var template: CorticalTemplate = _IOPU_definition.get_selected_template()
+			if template == null:
+				var popup_definition_ipu: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please select an input device", "OK")
+				BV.WM.spawn_popup(popup_definition_ipu)
+				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
@@ -148,14 +152,18 @@ func _user_requesing_creation() -> void:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
 					FeagiCore.requests.add_IOPU_cortical_area(
-						_IOPU_definition.dropdown.get_selected_template(),
+						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
 						pos_2d
 					)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			var template: CorticalTemplate = _IOPU_definition.dropdown.get_selected_template()
+			var template: CorticalTemplate = _IOPU_definition.get_selected_template()
+			if template == null:
+				var popup_definition_opu: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please select an output device", "OK")
+				BV.WM.spawn_popup(popup_definition_opu)
+				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
@@ -179,7 +187,7 @@ func _user_requesing_creation() -> void:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
 					FeagiCore.requests.add_IOPU_cortical_area(
-						_IOPU_definition.dropdown.get_selected_template(),
+						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,

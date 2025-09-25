@@ -4,34 +4,24 @@ class_name PartSpawnCorticalAreaIOPU
 signal calculated_dimensions_updated(new_size: Vector3i)
 signal location_changed_from_dropdown(new_location: Vector3i)
 
-
-var dropdown: TemplateDropDown
 var location: Vector3iSpinboxField
 var device_count: SpinBox
 var _iopu_image: TextureRect
 var _current_dimensions_as_per_device_count: Vector3i = Vector3i(1,1,1)
 var _is_IPU_not_OPU: bool
+var _selected_template: CorticalTemplate = null
 
 func _ready() -> void:
-	dropdown = $HBoxContainer2/TopSection/TemplateDropDown
 	location = $HBoxContainer/Fields/Location
 	device_count = $HBoxContainer/Fields/ChannelCount
 	_iopu_image = $HBoxContainer/TextureRect
 	
 
+
 func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal], host_bm = null) -> void:
-	dropdown.load_cortical_type_options(cortical_type)
 	_is_IPU_not_OPU = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
-	
-	var selected_template = dropdown.get_selected_template()
-	if selected_template == null:
-		push_warning("PartSpawnCorticalAreaIOPU: No template selected, using default values")
-		_current_dimensions_as_per_device_count = Vector3i(1, 1, 1)
-	else:
-		if selected_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-			location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[selected_template.ID].coordinates_3D
-			location_changed_from_dropdown.emit(location.current_vector)
-		_current_dimensions_as_per_device_count = selected_template.calculate_IOPU_dimension(int(device_count.value))
+	_selected_template = null
+	_current_dimensions_as_per_device_count = Vector3i(1, 1, 1)
 	
 	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
@@ -47,11 +37,17 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 
 
+
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
+	# Backward-compatibility: if invoked by legacy signal, apply selection
+	_apply_template_selection(cortical_template)
+
+
+func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	if cortical_template == null:
 		push_warning("PartSpawnCorticalAreaIOPU: Received null cortical template")
 		return
-		
+	_selected_template = cortical_template
 	_current_dimensions_as_per_device_count = cortical_template.calculate_IOPU_dimension(int(device_count.value))
 	calculated_dimensions_updated.emit(_current_dimensions_as_per_device_count)
 	_iopu_image.texture = UIManager.get_icon_texture_by_ID(cortical_template.ID, _is_IPU_not_OPU)
@@ -62,10 +58,18 @@ func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
 	
 
 func _proxy_device_count_changes(_new_device_count: int) -> void:
-	var selected_template = dropdown.get_selected_template()
+	var selected_template = _selected_template
 	if selected_template == null:
 		push_warning("PartSpawnCorticalAreaIOPU: No template selected, cannot update device count")
 		return
 		
 	_current_dimensions_as_per_device_count = selected_template.calculate_IOPU_dimension(int(device_count.value))
 	calculated_dimensions_updated.emit(_current_dimensions_as_per_device_count)
+
+
+func get_selected_template() -> CorticalTemplate:
+	return _selected_template
+
+
+func apply_preselected_template(template: CorticalTemplate) -> void:
+	_apply_template_selection(template)

@@ -6,6 +6,7 @@ const _PREFAB_CREATE_MORPHOLOGY: PackedScene = preload("res://BrainVisualizer/UI
 const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.tscn")
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
 const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.tscn")
+const _PREFAB_SELECT_CORTICAL_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.tscn")
 const _PREFAB_QUICK_CONNECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.tscn")
 const _PREFAB_QUICK_CONNECT_NEURON: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.tscn")
 const _PREFAB_CORTICAL_VIEW: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
@@ -60,8 +61,13 @@ func spawn_create_cortical() -> void:
 	create_cortical.setup()
 
 func spawn_create_cortical_with_type(cortical_type: int) -> void:
-	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
-	create_cortical.setup_with_type(cortical_type)
+    var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME) as WindowSelectCorticalTemplate
+    selector.setup_for_type(cortical_type)
+    selector.template_chosen.connect(func(template: CorticalTemplate):
+        var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+        create_cortical.setup_with_type(cortical_type)
+        create_cortical._IOPU_definition.apply_preselected_template(template)
+    )
 
 func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
@@ -69,8 +75,13 @@ func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
 	bring_window_to_top(create_cortical)
 
 func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int) -> void:
-	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
-	create_cortical.setup_with_type_for_region(context_region, cortical_type)
+    var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME) as WindowSelectCorticalTemplate
+    selector.setup_for_type(cortical_type, context_region)
+    selector.template_chosen.connect(func(template: CorticalTemplate):
+        var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+        create_cortical.setup_with_type_for_region(context_region, cortical_type)
+        create_cortical._IOPU_definition.apply_preselected_template(template)
+    )
 
 func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> void:
 	var confirm_deletion: WindowConfirmDeletion = _default_spawn_window(_PREFAB_CONFIRM_DELETION, WindowConfirmDeletion.WINDOW_NAME) as WindowConfirmDeletion

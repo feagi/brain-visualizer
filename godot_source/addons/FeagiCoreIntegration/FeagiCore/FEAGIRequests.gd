@@ -627,8 +627,16 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		FeagiCore.feagi_local_cache.brain_regions.emit_region_added_signal(new_region)
 		
 		# Ask UI to open or refresh BM for the new region so areas appear immediately
-		if BV.UI and BV.UI.temp_root_bm:
-			BV.WM.spawn_3d_brain_monitor_tab(new_region)
+		# Avoid static typing to prevent parser issues in plugin context
+		var wm = null
+		var main_loop := Engine.get_main_loop()
+		if main_loop != null and main_loop is SceneTree:
+			var root: SceneTree = main_loop as SceneTree
+			var wm_node = root.root.get_node_or_null("BrainVisualizer/UIManager/WindowManager")
+			if wm_node != null and wm_node.has_method("spawn_3d_brain_monitor_tab"):
+				wm = wm_node
+		if wm != null:
+			wm.spawn_3d_brain_monitor_tab(new_region)
 	
 	print("✅ Region '%s' created at %s" % [region_name, feagi_coords_3d])
 	return FEAGI_response_data
