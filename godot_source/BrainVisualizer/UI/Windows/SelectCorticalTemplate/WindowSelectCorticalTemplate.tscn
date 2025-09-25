@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://select_ct_template"]
+[gd_scene load_steps=3 format=3 uid="uid://select_ct_template"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 
 [node name="WindowSelectCorticalTemplate" type="VBoxContainer"]
 offset_right = 600.0
@@ -8,7 +9,7 @@ offset_bottom = 520.0
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" type="HBoxContainer" parent="."]
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
 layout_mode = 2
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
