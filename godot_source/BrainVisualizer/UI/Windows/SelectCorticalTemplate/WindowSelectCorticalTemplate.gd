@@ -13,7 +13,7 @@ var _context_region: BrainRegion = null
 func _ready() -> void:
 	super()
 	_cancel_button = _window_internals.get_node("Buttons/Cancel")
-	_icon_grid = _window_internals.get_node("Scroll/IconGrid")
+	_icon_grid = _window_internals.get_node("Scroll/ContentMargin/IconGrid")
 	_cancel_button.pressed.connect(_on_cancel)
 
 func setup_for_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, context_region: BrainRegion = null) -> void:

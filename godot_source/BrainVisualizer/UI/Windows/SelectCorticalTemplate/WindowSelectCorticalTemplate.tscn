@@ -19,6 +19,10 @@ layout_mode = 2
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
@@ -30,7 +34,14 @@ horizontal_scroll_mode = 0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
+[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/ContentMargin"]
 layout_mode = 2
 columns = 4
 theme_override_constants/h_separation = 30
