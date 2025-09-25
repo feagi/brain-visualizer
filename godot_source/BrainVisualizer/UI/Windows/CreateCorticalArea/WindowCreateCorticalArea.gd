@@ -112,6 +112,15 @@ func _set_header(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void
 			_header.visible = true
 		
 func _back_pressed() -> void:
+	# If user was selecting an IPU/OPU template via the icon selector, return to that selector
+	if _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		close_window()
+		if _context_region != null:
+			BV.WM.spawn_create_cortical_with_type_for_region(_context_region, _type_selected)
+		else:
+			BV.WM.spawn_create_cortical_with_type(_type_selected)
+		return
+	# Otherwise fall back to the internal type selection step
 	_step_1_pick_type()
 
 func _user_requesting_exit() -> void:
