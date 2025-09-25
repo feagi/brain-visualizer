@@ -34,6 +34,18 @@ var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_Co
 
 
 
+## Startup camera intro configuration and state
+@export var enable_startup_camera_intro: bool = true ## If true, plays a brief drop-and-zoom on first scene init
+var _startup_intro_animating: bool = false
+var _startup_intro_center: Vector3 = Vector3.ZERO
+var _startup_tween: Tween = null
+var _startup_prev_cam_mode: UI_BrainMonitor_PancakeCamera.MODE = UI_BrainMonitor_PancakeCamera.MODE.TANK
+var _intro_start_pos: Vector3
+var _intro_control_pos: Vector3
+var _intro_final_pos: Vector3
+var _intro_start_fov: float
+var _intro_final_fov: float
+
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return load(SCENE_BRAIN_MONITOR_PATH).instantiate()
@@ -150,29 +162,90 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		center_pos /= region.contained_cortical_areas.size()
 		_pancake_cam.position = center_pos + Vector3(0, 50, 100)
 		_pancake_cam.look_at(center_pos, Vector3.UP)
+		# Optionally play startup intro (drop from sky + gentle zoom) on first setup
+		if enable_startup_camera_intro:
+			_startup_intro_center = center_pos
+			_play_startup_camera_intro()
+
+## Plays a brief camera intro that drops from above and gently zooms into the scene
+## The camera ends exactly at its current transform, which is assumed to be the intended initial view
+func _play_startup_camera_intro() -> void:
+	if _pancake_cam == null:
+		return
+	if _startup_intro_animating:
+		return
 	
-	# Add subtle label for non-root regions (tab brain monitors)
-	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	if region != root_region:
-		var label_3d = Label3D.new()
-		label_3d.text = "TAB: %s\n%d areas from this region" % [region.friendly_name, region.contained_cortical_areas.size()]
-		label_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		label_3d.modulate = Color.YELLOW
-		label_3d.pixel_size = 0.01
-		label_3d.font_size = 32
-		label_3d.outline_size = 4
-		label_3d.outline_modulate = Color.BLACK
-		
-		if region.contained_cortical_areas.size() > 0:
-			var center_pos = Vector3.ZERO
-			for area in region.contained_cortical_areas:
-				center_pos += Vector3(area.coordinates_3D)
-			center_pos /= region.contained_cortical_areas.size()
-			label_3d.position = center_pos + Vector3(0, 30, 0)
-		else:
-			label_3d.position = Vector3(0, 30, 0)
-		
-		_node_3D_root.add_child(label_3d)
+	# Capture final transform (already positioned and oriented to look at center)
+	var final_pos: Vector3 = _pancake_cam.position
+	var final_rot: Vector3 = _pancake_cam.rotation
+	var final_fov: float = _pancake_cam.fov
+	
+	# Compute a start transform: higher in Y and slightly farther back along view direction
+	var drop_height: float = 150.0
+	var zoom_back_distance: float = 120.0
+	var dir_to_center: Vector3 = (_startup_intro_center - final_pos).normalized()
+	var start_pos: Vector3 = final_pos - (dir_to_center * zoom_back_distance) + Vector3(0.0, drop_height, 0.0)
+	
+	# Temporarily lock camera control to animation
+	_startup_prev_cam_mode = _pancake_cam.movement_mode
+	_pancake_cam.movement_mode = UI_BrainMonitor_PancakeCamera.MODE.ANIMATION
+	_pancake_cam.allow_user_control = false
+	_startup_intro_animating = true
+	
+	# Apply start transform and widened FOV, keep looking at the center during motion
+	_pancake_cam.position = start_pos
+	_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
+	var start_fov: float = clamp(final_fov * 1.25, 20.0, 90.0)
+	_pancake_cam.fov = start_fov
+	
+	# Create tween for smooth curved motion and FOV change (single stage)
+	if _startup_tween != null:
+		_startup_tween.kill()
+	_startup_tween = create_tween()
+	_startup_tween.set_trans(Tween.TRANS_SINE)
+	_startup_tween.set_ease(Tween.EASE_OUT)
+	var duration: float = 1.8 * 1.5 # 50% slower
+	
+	# Define a quadratic Bézier control point to create a descending curve
+	_intro_start_pos = start_pos
+	_intro_final_pos = final_pos
+	_intro_start_fov = start_fov
+	_intro_final_fov = final_fov
+	_intro_control_pos = Vector3(
+		lerp(start_pos.x, final_pos.x, 0.55),
+		lerp(start_pos.y, final_pos.y, 0.25), # keep higher Y early, descend smoothly
+		lerp(start_pos.z, final_pos.z, 0.55)
+	)
+	
+	# Drive the animation via a single tweened method from t=0..1
+	_startup_tween.tween_method(Callable(self, "_update_startup_camera_bezier"), 0.0, 1.0, duration)
+	
+	# Cleanup when finished
+	_startup_tween.finished.connect(func():
+		_startup_intro_animating = false
+		_pancake_cam.position = final_pos
+		_pancake_cam.rotation = final_rot
+		_pancake_cam.fov = final_fov
+		_pancake_cam.movement_mode = _startup_prev_cam_mode
+		_pancake_cam.allow_user_control = true
+	)
+
+## Updates camera along a quadratic Bézier curve and eases FOV
+func _update_startup_camera_bezier(t: float) -> void:
+	# Quadratic Bézier interpolation
+	var a: Vector3 = _intro_start_pos.lerp(_intro_control_pos, t)
+	var b: Vector3 = _intro_control_pos.lerp(_intro_final_pos, t)
+	var bezier_pos: Vector3 = a.lerp(b, t)
+	_pancake_cam.position = bezier_pos
+	_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
+	# Smooth FOV easing in sync
+	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
+
+## While the intro is running, keep the camera aimed at the scene center as it moves
+func _process(delta: float) -> void:
+	if _startup_intro_animating and _pancake_cam != null:
+		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
+	
 	
 	# Connect to cache reload events to refresh all cortical area connections
 	if FeagiCore.feagi_local_cache:

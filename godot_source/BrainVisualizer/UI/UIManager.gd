@@ -189,6 +189,10 @@ func FEAGI_confirmed_genome() -> void:
 	# NOTE: Main brain monitor does NOT connect to central handlers to avoid infinite recursion
 	# Only brain region tab monitors connect to central handlers, which then forward to main monitor
 	temp_root_bm = brain_monitor
+
+	# If we restored a previous camera position (e.g., genome reload), disable the startup intro this time
+	if _temp_bm_camera_pos.length() > 0.01:
+		brain_monitor.enable_startup_camera_intro = false
 	
 	# CRITICAL: Create visualizations for any missing child regions (e.g., after cloning)
 	# This ensures cloned regions appear immediately after genome reload
@@ -208,6 +212,9 @@ func FEAGI_confirmed_genome() -> void:
 		print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position: ", _temp_bm_camera_pos, " rotation: ", _temp_bm_camera_rot)
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation = _temp_bm_camera_rot
+		# Clear saved camera markers so next fresh init can play intro again if desired
+		_temp_bm_camera_pos = Vector3(0,0,0)
+		_temp_bm_camera_rot = Vector3(0,0,0)
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Brain Monitor 3D scene setup complete")
 	
