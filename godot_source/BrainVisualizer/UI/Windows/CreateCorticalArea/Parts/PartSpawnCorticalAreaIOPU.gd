@@ -7,6 +7,7 @@ signal location_changed_from_dropdown(new_location: Vector3i)
 var location: Vector3iSpinboxField
 var device_count: SpinBox
 var _iopu_image: TextureRect
+var _device_name_label: Label
 var _current_dimensions_as_per_device_count: Vector3i = Vector3i(1,1,1)
 var _is_IPU_not_OPU: bool
 var _selected_template: CorticalTemplate = null
@@ -15,6 +16,7 @@ func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
 	device_count = $HBoxContainer/Fields/ChannelCount
 	_iopu_image = $HBoxContainer/TextureRect
+	_device_name_label = $HBoxContainer2/TopSection/DeviceName
 	
 
 
@@ -22,6 +24,8 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	_is_IPU_not_OPU = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
 	_selected_template = null
 	_current_dimensions_as_per_device_count = Vector3i(1, 1, 1)
+	if _device_name_label != null:
+		_device_name_label.text = ""
 	
 	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
@@ -51,6 +55,8 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	_current_dimensions_as_per_device_count = cortical_template.calculate_IOPU_dimension(int(device_count.value))
 	calculated_dimensions_updated.emit(_current_dimensions_as_per_device_count)
 	_iopu_image.texture = UIManager.get_icon_texture_by_ID(cortical_template.ID, _is_IPU_not_OPU)
+	if _device_name_label != null:
+		_device_name_label.text = str(cortical_template.cortical_name)
 	
 	if cortical_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_template.ID].coordinates_3D

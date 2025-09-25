@@ -20,7 +20,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="HBoxContainer2/TopLabels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Select Device:"
+text = "Device Name:"
 vertical_alignment = 1
 
 [node name="TopSection" type="VBoxContainer" parent="HBoxContainer2"]
@@ -29,6 +29,11 @@ size_flags_horizontal = 3
 
 [node name="Spacer" type="Control" parent="HBoxContainer2/TopSection"]
 layout_mode = 2
+
+[node name="DeviceName" type="Label" parent="HBoxContainer2/TopSection"]
+layout_mode = 2
+vertical_alignment = 1
+autowrap_mode = 1
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
