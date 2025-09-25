@@ -134,7 +134,8 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 		POSSIBLE_STATES.IDLE:
 			_toggle_add_buttons(true)
 			_step4_button.disabled = false
-			_core_bar.visible = false
+			# Keep the core morphology icon bar visible so user can reselect
+			_core_bar.visible = true
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -322,6 +323,8 @@ func _set_morphology(morphology: BaseMorphology) -> void:
 	_step3_morphology_view.load_morphology(morphology)
 	_step3_morphology_details.load_morphology(morphology)
 	_finished_selecting = true
+	# Return to IDLE so edit buttons reappear and Establish is enabled.
+	# IDLE keeps the core icon bar visible (we adjusted this earlier).
 	current_state = POSSIBLE_STATES.IDLE
 
 
