@@ -27,7 +27,8 @@ func setup_with_context(context_region: BrainRegion, on_focus: Callable) -> void
 		_region_added(region)
 
 func _press_add_region() -> void:
-	BV.WM.spawn_create_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), [])
+	var selection: Array[GenomeObject] = []
+	BV.WM.spawn_create_region(FeagiCore.feagi_local_cache.brain_regions.get_root_region(), selection)
 	close_window()
 
 func _region_added(region: BrainRegion) -> void:
