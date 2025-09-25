@@ -1,0 +1,46 @@
+[gd_scene load_steps=2 format=3 uid="uid://select_ct_template"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.gd" id="1_script"]
+
+[node name="WindowSelectCorticalTemplate" type="VBoxContainer"]
+offset_right = 600.0
+offset_bottom = 520.0
+theme_override_constants/separation = 0
+script = ExtResource("1_script")
+
+[node name="TitleBar" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 460)
+layout_mode = 2
+
+[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
+layout_mode = 2
+columns = 4
+
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 48)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+
