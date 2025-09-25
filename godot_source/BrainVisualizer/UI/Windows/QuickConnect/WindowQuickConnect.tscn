@@ -125,6 +125,18 @@ stretch_mode = 0
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
+[node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="Icons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/CoreMorphologiesBar"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+
 [node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2

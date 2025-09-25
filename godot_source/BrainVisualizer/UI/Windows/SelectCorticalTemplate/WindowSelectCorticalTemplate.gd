@@ -20,6 +20,13 @@ func setup_for_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, cont
 	_setup_base_window(WINDOW_NAME)
 	_context_region = context_region
 	_is_ipu = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+	# Update window title accordingly
+	var tb = get_node("TitleBar")
+	if tb != null:
+		if _is_ipu:
+			tb.set("title", "Add Input Cortical Area")
+		else:
+			tb.set("title", "Add Output Cortical Area")
 	_populate_grid(cortical_type)
 
 func _on_cancel() -> void:

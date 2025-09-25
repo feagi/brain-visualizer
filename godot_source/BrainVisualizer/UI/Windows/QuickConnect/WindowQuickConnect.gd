@@ -36,6 +36,10 @@ var _step3_morphology_view: UIMorphologyDefinition
 var _step3_morphology_details: MorphologyGenericDetails
 var _step4_button: Button
 
+# Horizontal icon shortcut bar for Core (system) morphologies
+var _core_bar: ScrollContainer
+var _core_icons: HBoxContainer
+
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false
 
@@ -59,8 +63,13 @@ func _ready() -> void:
 	_step3_morphology_view = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView")
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
+	_core_bar = _window_internals.get_node("CoreMorphologiesBar")
+	_core_icons = _window_internals.get_node("CoreMorphologiesBar/Icons")
 	
 	_step3_scroll.morphology_selected.connect(_set_morphology)
+	# Update icon bar reactively when morphologies change (e.g., when 'class' becomes 'core')
+	FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_on_morphology_cache_changed)
+	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_on_morphology_cache_changed)
 	
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	BV.UI.selection_system.objects_selection_event_called.connect(_on_user_selection)
@@ -105,16 +114,19 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 		POSSIBLE_STATES.SOURCE:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
+			_core_bar.visible = false
 			_setting_source()
 
 		POSSIBLE_STATES.DESTINATION:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
+			_core_bar.visible = false
 			_setting_destination()
 
 		POSSIBLE_STATES.MORPHOLOGY:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
+			_core_bar.visible = true
 			_setting_morphology()
 		POSSIBLE_STATES.EDIT_MORPHOLOGY:
 			_step3_morphology_container.visible = !_step3_morphology_container.visible
@@ -122,6 +134,7 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 		POSSIBLE_STATES.IDLE:
 			_toggle_add_buttons(true)
 			_step4_button.disabled = false
+			_core_bar.visible = false
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -150,6 +163,8 @@ func _setting_morphology() -> void:
 	
 	# ✅ CRITICAL FIX: Make the morphology container visible so the list appears
 	_step3_morphology_container.visible = true
+	# Show and (re)populate the Core Morphologies icon bar
+	_core_bar.visible = true
 	
 	# Get restrictions with proper null checking
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
@@ -159,10 +174,122 @@ func _setting_morphology() -> void:
 	else:
 		# No restrictions - populate with all available morphologies from cache
 		_step3_scroll.repopulate_from_cache()
+	# Populate core morph icon shortcuts (respecting restrictions if any)
+	_populate_core_morphology_icons(restrictions)
 	
 	# Auto-select default morphology if available
 	if mapping_defaults != null and mapping_defaults.try_get_default_morphology() != null:
 		_step3_scroll.select_morphology(mapping_defaults.try_get_default_morphology())
+
+## Repopulate icons when cache updates, only if we're in morphology selection view
+func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
+	if _current_state != POSSIBLE_STATES.MORPHOLOGY:
+		return
+	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
+	_populate_core_morphology_icons(restrictions)
+
+## Populates the horizontal icon bar with only CORE (system) morphologies.
+## If restrictions are provided, the set is intersected with allowed names and excludes disallowed ones.
+func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMorphology = null) -> void:
+	# Clear previous icons
+	for child in _core_icons.get_children():
+		child.queue_free()
+
+	# Determine allowed names if restricted
+	var allowed_names: Array[StringName] = []
+	var disallowed_names: Array[StringName] = []
+	if restrictions != null:
+		if restrictions.has_restricted_morphologies():
+			allowed_names = restrictions.restricted_to_morphology_of_names.duplicate()
+		if restrictions.has_disallowed_morphologies():
+			disallowed_names = restrictions.disallowed_morphology_names.duplicate()
+
+	# Debug logging
+	print("QC: CORE ICON BAR → populating...")
+	print("  - cache size:", FeagiCore.feagi_local_cache.morphologies.available_morphologies.size())
+	print("  - restrictions: allowed=", allowed_names, " disallowed=", disallowed_names)
+
+	# Iterate available morphologies by ID (cache key) and add CORE ones with valid icons
+	var total_core_seen: int = 0
+	var total_core_after_filter: int = 0
+	var total_icons_added: int = 0
+	for morphology_name in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+		var morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name]
+		if morphology.internal_class != BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE:
+			continue
+		total_core_seen += 1
+		print("  - CORE candidate:", morphology_name)
+		if len(allowed_names) > 0 and morphology_name not in allowed_names:
+			print("    > excluded by allowed list (not in allowed)")
+			continue
+		if len(disallowed_names) > 0 and morphology_name in disallowed_names:
+			print("    > excluded by disallowed list")
+			continue
+		total_core_after_filter += 1
+		var icon_widget: Control = _create_icon_widget_for_morphology(morphology_name, morphology)
+		if icon_widget != null:
+			_core_icons.add_child(icon_widget)
+			total_icons_added += 1
+			print("    > icon added for:", morphology_name)
+
+	print("QC: CORE ICON BAR → summary: core_seen=", total_core_seen, ", after_filter=", total_core_after_filter, ", icons_added=", total_icons_added)
+
+## Creates an icon+label widget (VBoxContainer) for a morphology.
+## Uses morphology ID (cache key / name string) to match icon filenames.
+## Falls back to a default icon if specific icon is missing.
+func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: BaseMorphology) -> Control:
+	var base_path: StringName = &"res://BrainVisualizer/UI/GenericResources/MorphologyIcons/"
+	var texture: Texture2D = null
+	# Try by ID, then by display name, then progressively shortened ID prefixes
+	var candidates: Array[StringName] = []
+	candidates.append(morphology_id)
+	if morphology.name != morphology_id:
+		candidates.append(morphology.name)
+	var tmp: String = String(morphology_id)
+	while tmp.find("_") != -1:
+		tmp = tmp.left(tmp.rfind("_"))
+		if tmp.length() == 0:
+			break
+		candidates.append(tmp)
+	for c in candidates:
+		var candidate_path: StringName = base_path + c + &".png"
+		var t: Texture2D = load(candidate_path)
+		if t != null:
+			print("    > using icon for:", morphology_id, " matched by '", c, "'")
+			texture = t
+			break
+	if texture == null:
+		var default_icon_path: StringName = base_path + &"placeholder.png"
+		var fallback: Texture2D = load(default_icon_path)
+		if fallback != null:
+			print("    > using default icon for:", morphology_id)
+			texture = fallback
+		else:
+			push_warning("QC: CORE ICON BAR → default icon missing at '" + String(default_icon_path) + "'")
+			return null
+	var button := TextureButton.new()
+	button.texture_normal = texture
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.custom_minimum_size = Vector2(160, 160) # leave room for label inside 100px row
+	button.tooltip_text = str(morphology_id)
+	button.pressed.connect(Callable(self, "_on_core_icon_pressed").bind(morphology))
+	var name_label := Label.new()
+	name_label.text = str(morphology.name)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var slot := VBoxContainer.new()
+	slot.custom_minimum_size = Vector2(90, 100)
+	slot.size_flags_vertical = 0
+	slot.alignment = BoxContainer.ALIGNMENT_CENTER
+	slot.add_child(button)
+	slot.add_child(name_label)
+	return slot
+
+## When a core-icon shortcut is pressed, select it in the list to drive existing flows.
+func _on_core_icon_pressed(morphology: BaseMorphology) -> void:
+	if morphology == null:
+		return
+	_step3_scroll.select_morphology(morphology)
 
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area
