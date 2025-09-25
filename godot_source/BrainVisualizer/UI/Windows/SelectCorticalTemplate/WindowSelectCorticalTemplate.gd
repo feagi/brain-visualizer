@@ -30,6 +30,10 @@ func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> v
 		child.queue_free()
 	# Ensure vertical gap between rows (icons are 128px)
 	_icon_grid.add_theme_constant_override("v_separation", 30)
+	# Increase scroll height to keep 4 rows visible (approx 4 * 128 + gaps)
+	var scroll: ScrollContainer = _window_internals.get_node("Scroll")
+	if scroll:
+		scroll.custom_minimum_size.y = 720.0
 	var templates: Array[CorticalTemplate] = []
 	match cortical_type:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:

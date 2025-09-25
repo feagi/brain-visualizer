@@ -6,7 +6,7 @@
 [node name="WindowSelectCorticalTemplate" type="VBoxContainer"]
 offset_right = 600.0
 offset_bottom = 520.0
-custom_minimum_size = Vector2(640, 520)
+custom_minimum_size = Vector2(640, 800)
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
@@ -24,10 +24,11 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 layout_mode = 2
 
 [node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(0, 460)
+custom_minimum_size = Vector2(0, 720)
 layout_mode = 2
 horizontal_scroll_mode = 0
 size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
 layout_mode = 2
