@@ -156,6 +156,12 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_representing_region.subregion_added_to_region.connect(_add_brain_region_frame)
 	_representing_region.subregion_removed_from_region.connect(_remove_brain_region_frame)
 
+	# Connect to cache reload events ONCE (guarded) to refresh cortical connections
+	if FeagiCore.feagi_local_cache:
+		var cache = FeagiCore.feagi_local_cache
+		if not cache.cache_reloaded.is_connected(_on_cache_reloaded_refresh_all_connections):
+			cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
+
 	# Position camera to focus on region's areas
 	if _pancake_cam and region.contained_cortical_areas.size() > 0:
 		var center_pos = Vector3.ZERO
@@ -182,8 +188,8 @@ func _play_startup_camera_intro() -> void:
 	var final_rot: Vector3 = _pancake_cam.rotation
 	var final_fov: float = _pancake_cam.fov
 	
-	# Compute a start transform: higher in Y and slightly farther back along view direction
-	var drop_height: float = 150.0
+	# Compute a start transform: slightly higher in Y and farther back along view direction (lowered overall height)
+	var drop_height: float = 40.0
 	var zoom_back_distance: float = 240.0
 	var dir_to_center: Vector3 = (_startup_intro_center - final_pos).normalized()
 	var start_pos: Vector3 = final_pos - (dir_to_center * zoom_back_distance) + Vector3(0.0, drop_height, 0.0)
@@ -200,12 +206,13 @@ func _play_startup_camera_intro() -> void:
 	var start_fov: float = clamp(final_fov * 1.25, 20.0, 90.0)
 	_pancake_cam.fov = start_fov
 	
-	# Adjust final stop to be slightly farther from the center (stop sooner horizontally, keep height)
+	# Adjust final stop to be slightly farther from the center (stop sooner horizontally), and lower final height a bit
+	var final_y_target: float = final_pos.y - 40.0
 	var horizontal_to_center: Vector3 = Vector3(_startup_intro_center.x - final_pos.x, 0.0, _startup_intro_center.z - final_pos.z)
 	var dir_to_center_xz: Vector3 = (horizontal_to_center.normalized() if horizontal_to_center.length() > 0.001 else Vector3.FORWARD)
 	var stop_back_distance: float = 60.0
 	final_pos = final_pos - (dir_to_center_xz * stop_back_distance)
-	final_pos.y = _pancake_cam.position.y - drop_height # ensure final height remains the precomputed target Y
+	final_pos.y = final_y_target
 	_intro_start_rot = _pancake_cam.quaternion
 	# Compute a level (horizontal) final orientation that faces the center in XZ only
 	var horizontal_dir: Vector3 = Vector3(_startup_intro_center.x, final_pos.y, _startup_intro_center.z) - final_pos
@@ -268,11 +275,6 @@ func _process(delta: float) -> void:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
 	
 	
-	# Connect to cache reload events to refresh all cortical area connections
-	if FeagiCore.feagi_local_cache:
-		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
-		print("BrainMonitor 3D Scene: 🔗 CONNECTED to cache reload signal for region: %s" % (_representing_region.friendly_name if _representing_region else "unknown"))
-
 	# Update combo context after setup has region
 	if _combo:
 		_combo.set_3d_context(self, _representing_region)
