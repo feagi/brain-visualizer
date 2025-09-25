@@ -28,6 +28,8 @@ func _on_cancel() -> void:
 func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	for child in _icon_grid.get_children():
 		child.queue_free()
+	# Ensure vertical gap between rows (icons are 128px)
+	_icon_grid.add_theme_constant_override("v_separation", 30)
 	var templates: Array[CorticalTemplate] = []
 	match cortical_type:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
