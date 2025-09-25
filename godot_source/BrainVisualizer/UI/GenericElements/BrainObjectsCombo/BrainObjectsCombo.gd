@@ -121,6 +121,9 @@ func _ready() -> void:
 	)
 
 	_update_buttons_state()
+	queue_redraw()
+	# Ensure background redraws on resize/theme changes for consistent back plate
+	resized.connect(func(): queue_redraw())
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
 	_is_3d_context = true
@@ -268,6 +271,17 @@ func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs
 func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	# Subtle scale-up on hover to match main 3D view visual feedback style
 	button.scale = HOVER_SCALE if hovered else NORMAL_SCALE
+
+func _draw() -> void:
+	# Draw a themed back plate behind the combo buttons, matching root scene styling
+	var back_rect: Rect2 = Rect2(Vector2.ZERO, size)
+	# Try to reuse the panel style used by BasePanelContainerButton to keep consistent visuals
+	if has_theme_stylebox("panel", "BasePanelContainerButton"):
+		var style: StyleBox = get_theme_stylebox("panel", "BasePanelContainerButton")
+		draw_style_box(style, back_rect)
+		return
+	# Fallback: simple semi-transparent rounded rect (should rarely be used if theme is loaded)
+	draw_rect(back_rect, Color(0, 0, 0, 0.25), true)
 
 func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene._pancake_cam:
