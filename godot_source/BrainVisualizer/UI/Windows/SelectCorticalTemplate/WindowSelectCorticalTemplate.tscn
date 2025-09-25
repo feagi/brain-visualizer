@@ -33,7 +33,7 @@ size_flags_vertical = 3
 [node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
 layout_mode = 2
 columns = 4
-theme_override_constants/h_separation = 13
+theme_override_constants/h_separation = 30
 theme_override_constants/v_separation = 13
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]

@@ -29,7 +29,7 @@ func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> v
 	for child in _icon_grid.get_children():
 		child.queue_free()
 	# Ensure vertical gap between rows (icons are 128px)
-	_icon_grid.add_theme_constant_override("v_separation", 30)
+	_icon_grid.add_theme_constant_override("v_separation", 40)
 	# Increase scroll height to keep 4 rows visible (approx 4 * 128 + gaps)
 	var scroll: ScrollContainer = _window_internals.get_node("Scroll")
 	if scroll:
@@ -57,6 +57,10 @@ func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> v
 
 func _add_tile(template: CorticalTemplate) -> void:
 	var tile := VBoxContainer.new()
+	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tile.custom_minimum_size.x = 128
+	tile.alignment = BoxContainer.ALIGNMENT_CENTER
 	var btn := TextureButton.new()
 	btn.custom_minimum_size = Vector2(128, 128)
 	btn.ignore_texture_size = true
@@ -68,6 +72,10 @@ func _add_tile(template: CorticalTemplate) -> void:
 	var name_label := Label.new()
 	name_label.text = template.cortical_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	name_label.custom_minimum_size.x = 128
+	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	name_label.max_lines_visible = 2
 	tile.add_child(btn)
 	tile.add_child(name_label)
 	_icon_grid.add_child(tile)
