@@ -1225,6 +1225,9 @@ func _update_or_create_bridge_segment(start_pos: Vector3, end_pos: Vector3) -> v
 		_qc_bridge_node = Node3D.new()
 		_qc_bridge_node.name = "QC_Bridge"
 		_node_3D_root.add_child(_qc_bridge_node)
+	# Ensure we have a white guide material in this scene too
+	if _qc_guide_material == null:
+		_qc_guide_material = _create_qc_guide_material()
 	_qc_bridge_active = true
 	# Rebuild curved bridge using SAME logic as main guide
 	_rebuild_qc_bridge_curve(start_pos, end_pos)
