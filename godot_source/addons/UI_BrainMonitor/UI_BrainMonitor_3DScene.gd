@@ -444,6 +444,10 @@ func _auto_frame_camera_to_objects() -> void:
 	await get_tree().process_frame
 	# Prefer tight bounds from cortical area data (ignores huge placeholder frames)
 	var aabb := _compute_cortical_data_aabb()
+	# Always include any active previews so framing contains in-progress placements
+	var previews_aabb := _compute_previews_aabb()
+	if previews_aabb.size != Vector3.ZERO or !previews_aabb.position.is_equal_approx(Vector3.ZERO):
+		aabb = previews_aabb if aabb.size == Vector3.ZERO else aabb.merge(previews_aabb)
 	if aabb.size == Vector3.ZERO:
 		# Fallback to visual bounds
 		aabb = _compute_scene_aabb()
@@ -555,6 +559,27 @@ func _compute_cortical_data_aabb() -> AABB:
 		var a := AABB(min_g, max_g - min_g)
 		merged = a if !have else merged.merge(a)
 		have = true
+	return merged if have else AABB()
+
+## Computes AABB over active previews (interactive and brain-region previews)
+func _compute_previews_aabb() -> AABB:
+	var have := false
+	var merged := AABB()
+	# Interactive previews tracked in _active_previews
+	for p in _active_previews:
+		if p == null:
+			continue
+		var a := _compute_world_aabb(p)
+		if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
+			merged = a if !have else merged.merge(a)
+			have = true
+	# Brain region previews are added as children but not tracked; include any matching class
+	for child in _node_3D_root.get_children():
+		if child is UI_BrainMonitor_BrainRegionPreview:
+			var a2 := _compute_world_aabb(child)
+			if a2.size != Vector3.ZERO or !a2.position.is_equal_approx(Vector3.ZERO):
+				merged = a2 if !have else merged.merge(a2)
+				have = true
 	return merged if have else AABB()
 
 ## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
@@ -873,6 +898,16 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	preview.tree_exiting.connect(_preview_closing)
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
+	# Keep camera framing valid while preview is added or moved/resized by user
+	preview.user_moved_preview.connect(func(_pos: Vector3i):
+		# Debounce a little by deferring to next frame; multiple moves in one frame coalesce
+		await get_tree().process_frame
+		await _auto_frame_camera_to_objects()
+	)
+	preview.user_resized_preview.connect(func(_dim: Vector3i):
+		await get_tree().process_frame
+		await _auto_frame_camera_to_objects()
+	)
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates

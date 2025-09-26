@@ -24,6 +24,10 @@ func connect_UI_signals(move_signals: Array[Signal], resize_signals: Array[Signa
 
 func set_new_position(new_position_FEAGI_space: Vector3i) -> void:
 	_renderer.update_position_with_new_FEAGI_coordinate(new_position_FEAGI_space)
+	# Notify listeners (e.g., BM scene) so camera can keep previews in frame
+	user_moved_preview.emit(new_position_FEAGI_space)
 
 func set_new_dimensions(new_dimensions: Vector3i) -> void:
 	_renderer.update_dimensions(new_dimensions)
+	# Notify listeners (e.g., BM scene) so camera can keep previews in frame
+	user_resized_preview.emit(new_dimensions)
