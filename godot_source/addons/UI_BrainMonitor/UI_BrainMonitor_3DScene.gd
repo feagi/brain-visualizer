@@ -48,6 +48,7 @@ var _intro_final_fov: float
 var _intro_start_rot: Quaternion
 var _intro_target_rot: Quaternion
 var _active_preview_indicators: Array[Node3D] = []
+var _last_scene_center: Vector3 = Vector3.ZERO
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -163,17 +164,12 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		if not cache.cache_reloaded.is_connected(_on_cache_reloaded_refresh_all_connections):
 			cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
 
-	# Position camera to focus on region's areas
+	# Position camera to frame all 3D objects in this scene
 	if _pancake_cam and region.contained_cortical_areas.size() > 0:
-		var center_pos = Vector3.ZERO
-		for area in region.contained_cortical_areas:
-			center_pos += Vector3(area.coordinates_3D)
-		center_pos /= region.contained_cortical_areas.size()
-		_pancake_cam.position = center_pos + Vector3(0, 50, 100)
-		_pancake_cam.look_at(center_pos, Vector3.UP)
+		await _auto_frame_camera_to_objects()
 		# Optionally play startup intro (drop from sky + gentle zoom) on first setup
 		if enable_startup_camera_intro:
-			_startup_intro_center = center_pos
+			_startup_intro_center = _last_scene_center
 			_play_startup_camera_intro()
 
 ## Plays a brief camera intro that drops from above and gently zooms into the scene
@@ -432,6 +428,143 @@ func _create_world3d_with_environment() -> World3D:
 	new_world.environment = environment
 	
 	return new_world
+
+
+## Computes scene bounds and positions camera so all objects fit in view with sensible padding
+func _auto_frame_camera_to_objects() -> void:
+	# Ensure transforms are current
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var aabb := _compute_scene_aabb()
+	# Retry a few frames until bounds become valid
+	var tries := 0
+	while (aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01) and tries < 8:
+		await get_tree().process_frame
+		aabb = _compute_scene_aabb()
+		tries += 1
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		# Fallback to legacy heuristic using FEAGI coordinates
+		if _representing_region and _representing_region.contained_cortical_areas.size() > 0:
+			var center_pos := Vector3.ZERO
+			for area in _representing_region.contained_cortical_areas:
+				center_pos += Vector3(area.coordinates_3D)
+			center_pos /= _representing_region.contained_cortical_areas.size()
+			_last_scene_center = center_pos
+			var legacy_cam := center_pos + Vector3(0, 50, 100)
+			_pancake_cam.global_position = legacy_cam
+			_pancake_cam.look_at(center_pos, Vector3.UP)
+			_pancake_cam.current = true
+			_pancake_cam.near = 0.05
+			_log_objects_relative_to_camera("fallback_legacy")
+		return
+	var center := aabb.position + (aabb.size / 2.0)
+	_last_scene_center = center
+	# Choose an oblique view: from +Y and +Z
+	var up := Vector3.UP
+	var dir_hint := Vector3(0.8, 0.6, 1).normalized()
+	# Compute FOVs (guard bad/zero FOV)
+	var fov_used: float = _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad: float = deg_to_rad(fov_used)
+	var vp_size := get_viewport().get_visible_rect().size
+	var aspect: float = vp_size.x / max(1.0, vp_size.y)
+	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	# Half extents
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	# Required distances to fit width and height
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	var distance: float = max(dist_by_h, dist_by_w)
+	# Add depth margin so camera is outside the bounds along view direction
+	distance += half_d * 1.0
+	# Padding and clamps
+	var padding: float = 1.35
+	distance *= padding
+	var min_dist: float = 2.0
+	var max_dist: float = 3000.0
+	# Also cap distance relative to scene size to avoid absurdly far framing
+	var diag: float = aabb.size.length()
+	var rel_cap: float = diag * 3.0 + half_d
+	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Set camera position and orientation
+	var cam_pos := center + (dir_hint * distance)
+	_pancake_cam.global_position = cam_pos
+	_pancake_cam.look_at(center, up)
+	_pancake_cam.current = true
+	_pancake_cam.near = 0.05
+	print("[CAMERA_FRAME] vfov=", fov_used, " distance=", distance, " center=", center, " aabb.size=", aabb.size)
+	_log_objects_relative_to_camera("after_auto_frame")
+
+## Computes AABB only over cortical and brain region visualizations for reliable framing
+func _compute_scene_aabb() -> AABB:
+	var have: bool = false
+	var merged := AABB()
+	# Merge cortical area visualizations
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz is Node:
+			var a := _compute_world_aabb(viz)
+			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
+				merged = a if !have else merged.merge(a)
+				have = true
+	# Merge brain region frames
+	for viz in _brain_region_visualizations_by_ID.values():
+		if viz is Node:
+			var a := _compute_world_aabb(viz)
+			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
+				merged = a if !have else merged.merge(a)
+				have = true
+	# Fallback to entire 3D root
+	if !have:
+		return _compute_world_aabb(_node_3D_root)
+	return merged
+
+## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
+func _log_objects_relative_to_camera(context: String = "") -> void:
+	if _pancake_cam == null:
+		return
+	var cam_pos: Vector3 = _pancake_cam.global_position
+	var cam_fwd: Vector3 = -_pancake_cam.global_transform.basis.z
+	var in_front: Array[String] = []
+	var behind: Array[String] = []
+
+	# Collect cortical area viz
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz is Node:
+			var a := _compute_world_aabb(viz)
+			var center := a.position + (a.size / 2.0)
+			var v := center - cam_pos
+			var d: float = v.length()
+			var dotv: float = v.normalized().dot(cam_fwd)
+			var name_str: String = (str(viz.name) if viz != null else "unknown")
+			var label: String = name_str + " d=" + str(snapped(d, 0.01))
+			if dotv >= 0.0:
+				in_front.append(label)
+			else:
+				behind.append(label)
+
+	# Collect brain region frames
+	for viz in _brain_region_visualizations_by_ID.values():
+		if viz is Node:
+			var a := _compute_world_aabb(viz)
+			var center := a.position + (a.size / 2.0)
+			var v := center - cam_pos
+			var d: float = v.length()
+			var dotv: float = v.normalized().dot(cam_fwd)
+			var name_str2: String = (str(viz.name) if viz != null else "unknown")
+			var label: String = name_str2 + " d=" + str(snapped(d, 0.01))
+			if dotv >= 0.0:
+				in_front.append(label)
+			else:
+				behind.append(label)
+
+	print("[CAMERA_VIS] ", context, " in_front=", in_front.size(), " behind=", behind.size())
+	if in_front.size() > 0:
+		print("[CAMERA_VIS] front samples: ", ", ".join(in_front.slice(0, min(5, in_front.size()))))
+	if behind.size() > 0:
+		print("[CAMERA_VIS] behind samples: ", ", ".join(behind.slice(0, min(5, behind.size()))))
 
 
 func _update_tab_title_after_setup() -> void:

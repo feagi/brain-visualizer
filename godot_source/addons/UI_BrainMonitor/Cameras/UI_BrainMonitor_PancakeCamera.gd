@@ -264,6 +264,7 @@ func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -
 func reset_camera() -> void:
 	position = _initial_position
 	rotation = _initial_euler_rotation
+	current = true
 
 func _mouse_button_to_BM_CLICK_BUTTON(mouse_button: MouseButton) -> UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON:
 	match(mouse_button):
