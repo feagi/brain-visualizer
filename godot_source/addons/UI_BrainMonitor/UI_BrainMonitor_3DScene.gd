@@ -34,6 +34,9 @@ var _qc_guide_active: bool = false
 var _qc_guide_node: Node3D = null
 var _qc_guide_start: Vector3 = Vector3.ZERO
 var _qc_guide_material: StandardMaterial3D = null
+var _qc_guide_radius_thin: float = 0.10
+var _qc_guide_radius_thick: float = 0.25
+var _qc_guide_current_radius: float = 0.10
 
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -703,8 +706,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					end_point = hit[&"position"]
 					var collider_parent = (hit[&"collider"] as Node).get_parent()
 					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
-				update_quick_connect_guide(end_point)
 				_set_quick_connect_guide_color(is_over_cortical)
+				update_quick_connect_guide(end_point)
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
@@ -1067,8 +1070,8 @@ func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) ->
 	var seg_len := max(0.001, direction.length())
 	var center := (start_pos + end_pos) / 2.0
 	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.20
-	cyl.bottom_radius = 0.20
+	cyl.top_radius = _qc_guide_current_radius
+	cyl.bottom_radius = _qc_guide_current_radius
 	cyl.height = seg_len
 	cyl.radial_segments = 6
 	cyl.rings = 1
@@ -1089,10 +1092,10 @@ func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) ->
 ## Internal: material for the guide (neutral bright, semi-transparent)
 func _create_qc_guide_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(1.0, 0.2, 0.2, 0.9)
-	m.emission_color = Color(1.0, 0.1, 0.1)
+	m.albedo_color = Color(1.0, 1.0, 1.0, 0.9)
+	m.emission_color = Color(0.9, 0.9, 0.9)
 	m.emission_enabled = true
-	m.emission_energy = 2.8
+	m.emission_energy = 2.4
 	m.flags_unshaded = true
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -1102,14 +1105,10 @@ func _create_qc_guide_material() -> StandardMaterial3D:
 func _set_quick_connect_guide_color(is_valid_target: bool) -> void:
 	if _qc_guide_material == null:
 		return
-	if is_valid_target:
-		_qc_guide_material.albedo_color = Color(0.2, 1.0, 0.3, 0.95)
-		_qc_guide_material.emission_color = Color(0.1, 0.8, 0.2)
-		_qc_guide_material.emission_energy = 3.0
-	else:
-		_qc_guide_material.albedo_color = Color(1.0, 0.2, 0.2, 0.95)
-		_qc_guide_material.emission_color = Color(0.9, 0.1, 0.1)
-		_qc_guide_material.emission_energy = 2.6
+	# Adjust thickness instead of color to avoid confusion with conn. semantics
+	_qc_guide_current_radius = _qc_guide_radius_thick if is_valid_target else _qc_guide_radius_thin
+	# Optionally add a subtle emission change for feedback without semantic color
+	_qc_guide_material.emission_energy = 3.0 if is_valid_target else 2.2
 
 ## Internal: quadratic Bézier interpolation used for the arc
 func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
