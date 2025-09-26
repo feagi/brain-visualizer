@@ -40,6 +40,9 @@ var _qc_guide_current_radius: float = 0.10
 var _qc_guide_max_distance: float = 300.0
 var _qc_guide_min_distance: float = 0.05
 var _qc_guide_max_arc_height: float = 60.0
+var _qc_guide_max_distance_off_target: float = 80.0
+var _qc_guide_max_distance_on_target: float = 300.0
+var _qc_guide_off_target_depth: float = 60.0
 
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -693,24 +696,31 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				var end_point: Vector3
 				var is_over_cortical: bool = false
 				if hit.is_empty():
-					# Fallback: project the ray onto a horizontal plane through the source Y
+					# Fallback: keep at the mouse tip but limit depth (Z) relative to camera
 					var rq: PhysicsRayQueryParameters3D = bm_input_event.get_ray_query()
 					var ray_from: Vector3 = rq.from
 					var ray_to: Vector3 = rq.to
-					var plane_y: float = _qc_guide_start.y
-					var dir: Vector3 = (ray_to - ray_from)
-					var t_den: float = dir.y
-					if abs(t_den) < 0.0001:
-						# Use clamped forward projection to avoid extreme far points
-						end_point = ray_from + dir.normalized() * min(100.0, _qc_guide_max_distance)
-					else:
-						var t: float = (plane_y - ray_from.y) / t_den
-						var t_clamped: float = clamp(t, 0.0, 1.0)
-						end_point = ray_from.lerp(ray_to, t_clamped)
+					var cam: Camera3D = _pancake_cam
+					var forward: Vector3 = (-cam.global_transform.basis.z).normalized()
+					var from_to: Vector3 = ray_to - ray_from
+					# project vector onto camera forward to get depth along view, clamp depth
+					var depth_along_view: float = from_to.dot(forward)
+					var clamped_depth: float = clamp(depth_along_view, 0.0, _qc_guide_off_target_depth)
+					# recompute endpoint along the ray direction but with limited depth component
+					var ray_dir: Vector3 = from_to.normalized()
+					# Find scale such that ray_dir's projection on forward equals clamped_depth
+					var proj_on_fwd: float = max(0.0001, ray_dir.dot(forward))
+					var scale: float = clamped_depth / proj_on_fwd
+					end_point = ray_from + ray_dir * scale
 				else:
 					end_point = hit[&"position"]
 					var collider_parent = (hit[&"collider"] as Node).get_parent()
 					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
+					# Cap distance when over cortical as well (using a larger cap)
+					var vec2: Vector3 = end_point - _qc_guide_start
+					var d2: float = vec2.length()
+					if d2 > _qc_guide_max_distance_on_target:
+						end_point = _qc_guide_start + vec2.normalized() * _qc_guide_max_distance_on_target
 				_set_quick_connect_guide_color(is_over_cortical)
 				update_quick_connect_guide(end_point)
 			if hit.is_empty():
