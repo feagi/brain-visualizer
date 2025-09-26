@@ -336,6 +336,19 @@ func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float) -> void:
 	emissive_up.tween_property(mat, "emission_energy_multiplier", 3.5, life * 0.5)
 	emissive_up.tween_property(mat, "emission_energy_multiplier", 1.5, life * 0.5)
 
+	# Bounce animation: gently bob the arrow up and down to draw attention
+	var start_y: float = indicator.position.y
+	var bounce_amp: float = clamp(indicator.scale.y * 0.3, 0.4, 3.0)
+	var bounce_period: float = 0.6
+	var bounce_loops: int = int(ceil(life / bounce_period))
+	var bounce_tween := create_tween()
+	bounce_tween.set_trans(Tween.TRANS_SINE)
+	bounce_tween.set_ease(Tween.EASE_IN_OUT)
+	bounce_tween.set_loops(bounce_loops)
+	# Up then back to base, total time per loop = bounce_period
+	bounce_tween.tween_property(indicator, "position:y", start_y + bounce_amp, bounce_period * 0.5)
+	bounce_tween.tween_property(indicator, "position:y", start_y, bounce_period * 0.5)
+
 	_active_preview_indicators.append(indicator)
 	get_tree().create_timer(life).timeout.connect(func():
 		if indicator:
