@@ -913,14 +913,14 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	_spawn_indicator_for_node_center(preview)
 	# Keep camera framing valid while preview is added or moved/resized by user
 	preview.user_moved_preview.connect(func(_pos: Vector3i):
-		# Debounce a little by deferring to next frame; multiple moves in one frame coalesce
-		await get_tree().process_frame
-		await _auto_frame_camera_to_objects()
+		# Debounce: schedule after one frame
+		get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
 	)
 	preview.user_resized_preview.connect(func(_dim: Vector3i):
-		await get_tree().process_frame
-		await _auto_frame_camera_to_objects()
+		get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
 	)
+	# Immediately frame to include this new preview (deferred by one frame)
+	get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates
@@ -932,6 +932,12 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
+	# Reframe when brain-region preview is created or moved (defer by one frame)
+	get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+	if not preview.user_moved_preview.is_connected(func(_p): pass):
+		preview.user_moved_preview.connect(func(_pos: Vector3i):
+			get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+		)
 	return preview
 
 ## Closes all currently active previews

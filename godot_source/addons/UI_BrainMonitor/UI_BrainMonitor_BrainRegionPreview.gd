@@ -7,6 +7,8 @@ var _brain_region: BrainRegion
 var _preview_container: Node3D
 var _region_name_label: Label3D
 
+signal user_moved_preview(new_FEAGI_space_position: Vector3i)
+
 ## Sets up the preview with translucent dual plates for the brain region
 func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	_brain_region = brain_region
@@ -99,26 +101,15 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	
 	_preview_container.add_child(_region_name_label)
 	
-	
 	# Set initial position
 	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position)
-	
 
 ## Updates the preview position when coordinates change
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i) -> void:
 	# Convert FEAGI coordinates to Godot space (flip Z-axis)
 	var godot_position = Vector3(new_FEAGI_coordinate.x, new_FEAGI_coordinate.y, -new_FEAGI_coordinate.z)
-	
-	print("  🔍 Parent: %s" % (get_parent().name if get_parent() else "none"))
-	print("  🔍 Parent global_position: %s" % (get_parent().global_position if get_parent() else "none"))
-	print("  🔍 Parent position: %s" % (get_parent().position if get_parent() else "none"))
-	print("  🔍 Parent transform: %s" % (get_parent().transform if get_parent() else "none"))
-	
 	global_position = godot_position
-	
-	print("  📍 Current global_position AFTER: %s" % global_position)
-	print("  📍 Current position AFTER: %s" % position)
-	print("  📍 Difference from expected: %s" % (global_position - godot_position))
+	user_moved_preview.emit(new_FEAGI_coordinate)
 
 ## Cleans up the preview
 func cleanup() -> void:
