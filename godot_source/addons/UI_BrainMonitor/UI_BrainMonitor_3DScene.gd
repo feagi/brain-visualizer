@@ -467,7 +467,7 @@ func _auto_frame_camera_to_objects() -> void:
 	if fov_used < 5.0:
 		fov_used = 70.0
 	var vfov_rad: float = deg_to_rad(fov_used)
-	var vp_size := get_viewport().get_visible_rect().size
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp_size.x / max(1.0, vp_size.y)
 	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
 	# Half extents
@@ -480,14 +480,14 @@ func _auto_frame_camera_to_objects() -> void:
 	var distance: float = max(dist_by_h, dist_by_w)
 	# No extra depth margin needed for straight-on framing
 	# distance unchanged
-	# Padding and clamps (tighter framing)
-	var padding: float = 1.05
+	# Padding and clamps (very tight framing with a tiny margin)
+	var padding: float = 1.02
 	distance *= padding
-	var min_dist: float = 2.0
-	var max_dist: float = 3000.0
+	var min_dist: float = 30.0
+	var max_dist: float = 100.0
 	# Also cap distance relative to scene size to avoid overly far framing
 	var diag: float = aabb.size.length()
-	var rel_cap: float = diag * 2.0
+	var rel_cap: float = diag * 1.5
 	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
 	# Set camera position and orientation (level, centered in Y)
 	var cam_pos := center + (dir_hint * (distance))
