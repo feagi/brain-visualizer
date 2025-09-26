@@ -159,6 +159,8 @@ func _setting_destination() -> void:
 		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
 		if bm != null and bm.has_method("start_quick_connect_guide"):
 			bm.start_quick_connect_guide(_source)
+			# Remember which BM started the guide; used to draw split-screen bridges later
+			BV.UI.qc_guide_source_bm = bm
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
@@ -321,6 +323,7 @@ func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 	var bm_on_dest = BV.UI.get_brain_monitor_for_cortical_area(_source)
 	if bm_on_dest != null and bm_on_dest.has_method("stop_quick_connect_guide"):
 		bm_on_dest.stop_quick_connect_guide()
+	BV.UI.qc_guide_source_bm = null
 	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:
 		_step3_panel.visible = true
@@ -372,3 +375,4 @@ func close_window():
 		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
 		if bm != null and bm.has_method("stop_quick_connect_guide"):
 			bm.stop_quick_connect_guide()
+	BV.UI.qc_guide_source_bm = null

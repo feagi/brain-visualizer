@@ -23,6 +23,7 @@ var selection_system: SelectionSystem:
 	get: return _selection_system
 # Main brain monitor instance - public access
 var temp_root_bm: UI_BrainMonitor_3DScene = null
+var qc_guide_source_bm: UI_BrainMonitor_3DScene = null
 
 var _top_bar: TopBar
 var _window_manager
