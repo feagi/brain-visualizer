@@ -47,6 +47,7 @@ var _intro_start_fov: float
 var _intro_final_fov: float
 var _intro_start_rot: Quaternion
 var _intro_target_rot: Quaternion
+var _active_preview_indicators: Array[Node3D] = []
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -268,6 +269,74 @@ func _update_startup_camera_bezier(t: float) -> void:
 	_pancake_cam.quaternion = _intro_start_rot.slerp(_intro_target_rot, t)
 	# Smooth FOV easing in sync
 	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
+
+## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds
+func _spawn_preview_indicator(world_position: Vector3) -> void:
+	var indicator: Node3D = Node3D.new()
+	indicator.name = "PreviewIndicator"
+	_node_3D_root.add_child(indicator)
+	indicator.global_position = world_position + Vector3(0, 4.0, 0)
+
+	# Build a simple arrow using MeshInstance3D primitives (cone for the head, cylinder for the shaft)
+	var shaft := MeshInstance3D.new()
+	var shaft_mesh := CylinderMesh.new()
+	shaft_mesh.top_radius = 0.1
+	shaft_mesh.bottom_radius = 0.1
+	shaft_mesh.height = 1.8
+	shaft.mesh = shaft_mesh
+	shaft.position = Vector3(0, 0.9, 0)
+	indicator.add_child(shaft)
+
+	var head := MeshInstance3D.new()
+	var head_mesh := CylinderMesh.new() # Use cylinder with top_radius 0 to simulate cone
+	head_mesh.top_radius = 0.0
+	head_mesh.bottom_radius = 0.35
+	head_mesh.height = 0.9
+	head.mesh = head_mesh
+	# Place the cone at the far end of the shaft (keep orientation unchanged)
+	head.position = Vector3(0, shaft_mesh.height + (head_mesh.height / 2.0), 0)
+	indicator.add_child(head)
+
+	# Orient arrow downward
+	indicator.rotation_degrees = Vector3(180, 0, 0)
+
+	# Material: emissive red
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1, 0, 0, 1)
+	mat.emission_enabled = true
+	mat.emission = Color(1, 0.2, 0.2, 1)
+	mat.emission_energy_multiplier = 1.5
+	shaft.material_override = mat
+	head.material_override = mat
+
+	# Scale by camera distance to ensure visibility
+	var cam: Camera3D = _pancake_cam
+	if cam:
+		var dist: float = cam.global_position.distance_to(indicator.global_position)
+		var scale_factor: float = clamp(dist * 0.02, 0.75, 6.0)
+		indicator.scale = Vector3.ONE * scale_factor
+
+	# Pulse tween (scale and emission) for 3 seconds, then free
+	var pulse_tween := create_tween()
+	pulse_tween.set_trans(Tween.TRANS_SINE)
+	pulse_tween.set_ease(Tween.EASE_IN_OUT)
+	var life: float = 3.0
+	# Pulse scale subtly
+	pulse_tween.tween_property(indicator, "scale", indicator.scale * 1.2, life * 0.5)
+	pulse_tween.tween_property(indicator, "scale", indicator.scale, life * 0.5)
+	# Pulse emission energy (simulate glow)
+	var emissive_up := create_tween()
+	emissive_up.set_trans(Tween.TRANS_SINE)
+	emissive_up.set_ease(Tween.EASE_IN_OUT)
+	emissive_up.tween_property(mat, "emission_energy_multiplier", 3.5, life * 0.5)
+	emissive_up.tween_property(mat, "emission_energy_multiplier", 1.5, life * 0.5)
+
+	_active_preview_indicators.append(indicator)
+	get_tree().create_timer(life).timeout.connect(func():
+		if indicator:
+			indicator.queue_free()
+		_active_preview_indicators.erase(indicator)
+	)
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
@@ -555,6 +624,14 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 	_active_previews.append(preview)
 	preview.tree_exiting.connect(_preview_closing)
+	# Spawn a temporary visibility indicator (pulsing red arrow) at the preview's initial position
+	# Convert FEAGI space (front-left-bottom corner) to Godot space center position
+	var offset: Vector3 = Vector3(initial_dimensions) / 2.0
+	offset.z = -offset.z
+	var feagi = initial_FEAGI_position
+	feagi.z = -feagi.z
+	var world_pos: Vector3 = Vector3(feagi) + offset
+	_spawn_preview_indicator(world_pos)
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates
@@ -564,6 +641,9 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	preview.setup(brain_region, initial_FEAGI_position)
 	preview.tree_exiting.connect(_brain_region_preview_closing)
 	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
+	# Spawn a temporary visibility indicator at the preview's initial position (FEAGI -> Godot)
+	var world_pos: Vector3 = Vector3(initial_FEAGI_position.x, initial_FEAGI_position.y, -initial_FEAGI_position.z)
+	_spawn_preview_indicator(world_pos)
 	return preview
 
 ## Closes all currently active previews
