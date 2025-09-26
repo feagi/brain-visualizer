@@ -271,12 +271,10 @@ func _update_startup_camera_bezier(t: float) -> void:
 	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
 
 ## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds
-func _spawn_preview_indicator(world_center_xz: Vector3, world_top_y: float) -> void:
+func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float) -> void:
 	var indicator: Node3D = Node3D.new()
 	indicator.name = "PreviewIndicator"
 	_node_3D_root.add_child(indicator)
-	# Place such that the cone tip is 30 units above the top of the target
-	var tip_y := world_top_y + 30.0
 	# Our arrow is oriented downward (180 deg on X). The cone tip should be at indicator origin, so position indicator at tip
 	indicator.global_position = Vector3(world_center_xz.x, tip_y, world_center_xz.z)
 
@@ -324,7 +322,7 @@ func _spawn_preview_indicator(world_center_xz: Vector3, world_top_y: float) -> v
 	var pulse_tween := create_tween()
 	pulse_tween.set_trans(Tween.TRANS_SINE)
 	pulse_tween.set_ease(Tween.EASE_IN_OUT)
-	var life: float = 3.0
+	var life: float = 5.0
 	# Pulse scale subtly
 	pulse_tween.tween_property(indicator, "scale", indicator.scale * 1.2, life * 0.5)
 	pulse_tween.tween_property(indicator, "scale", indicator.scale, life * 0.5)
@@ -342,8 +340,20 @@ func _spawn_preview_indicator(world_center_xz: Vector3, world_top_y: float) -> v
 		_active_preview_indicators.erase(indicator)
 	)
 
+## Defers indicator spawning until transforms are updated, then places it at true world center
+func _spawn_indicator_for_node_center(node: Node) -> void:
+	# Wait 2 frames to ensure the preview's MeshInstance3D children are instantiated and transformed
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if node == null:
+		return
+	var aabb := _compute_world_aabb(node)
+	var center := aabb.position + (aabb.size / 2.0)
+	var world_center := Vector3(center.x, center.y, center.z)
+	_spawn_preview_indicator(world_center, world_center.y)
+
 ## Computes a world-space AABB for a Node3D by aggregating all MeshInstance3D children
-func _compute_world_aabb(node: Node3D) -> AABB:
+func _compute_world_aabb(node: Node) -> AABB:
 	var have: bool = false
 	var aabb: AABB = AABB()
 	# If this node is a mesh, include its transformed bounds
@@ -372,8 +382,8 @@ func _compute_world_aabb(node: Node3D) -> AABB:
 					aabb = aabb.expand(wp)
 	# Recurse into children
 	for child in node.get_children():
-		if child is Node3D:
-			var caabb := _compute_world_aabb(child as Node3D)
+		if child is Node:
+			var caabb := _compute_world_aabb(child as Node)
 			if caabb.size != Vector3.ZERO or !caabb.position.is_equal_approx(Vector3.ZERO):
 				if !have:
 					aabb = caabb
@@ -382,7 +392,10 @@ func _compute_world_aabb(node: Node3D) -> AABB:
 					aabb = aabb.merge(caabb)
 	# Fallback to node position if nothing else was found
 	if !have:
-		return AABB(node.global_position, Vector3.ZERO)
+		if node is Node3D:
+			return AABB((node as Node3D).global_position, Vector3.ZERO)
+		else:
+			return AABB(Vector3.ZERO, Vector3.ZERO)
 	return aabb
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
@@ -671,15 +684,8 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 	_active_previews.append(preview)
 	preview.tree_exiting.connect(_preview_closing)
-	# Spawn a temporary visibility indicator (pulsing red arrow) at the preview's initial position
-	# Convert FEAGI space (front-left-bottom corner) to Godot space center position
-	var offset: Vector3 = Vector3(initial_dimensions) / 2.0
-	offset.z = -offset.z
-	var feagi = initial_FEAGI_position
-	feagi.z = -feagi.z
-	var world_center: Vector3 = Vector3(feagi) + offset
-	var world_top_y: float = world_center.y + float(initial_dimensions.y) / 2.0
-	_spawn_preview_indicator(world_center, world_top_y)
+	# Defer indicator spawn to ensure preview children are initialized and transforms updated
+	_spawn_indicator_for_node_center(preview)
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates
@@ -689,12 +695,8 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	preview.setup(brain_region, initial_FEAGI_position)
 	preview.tree_exiting.connect(_brain_region_preview_closing)
 	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
-	# Spawn a temporary visibility indicator using world AABB of the preview to determine center XZ and top Y
-	var aabb := _compute_world_aabb(preview)
-	var center := aabb.position + (aabb.size / 2.0)
-	var world_center := Vector3(center.x, center.y, center.z)
-	var world_top_y := aabb.position.y + aabb.size.y
-	_spawn_preview_indicator(world_center, world_top_y)
+	# Defer indicator spawn to ensure preview children are initialized and transforms updated
+	_spawn_indicator_for_node_center(preview)
 	return preview
 
 ## Closes all currently active previews
