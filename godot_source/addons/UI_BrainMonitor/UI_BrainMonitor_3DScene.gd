@@ -456,6 +456,9 @@ func _on_container_mouse_entered() -> void:
 func _on_container_mouse_exited() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(false)
+		# Reset bridge and entry tracking when leaving this viewport
+		_clear_bridge_segment()
+		_qc_last_mouse_entry_pos = Vector2.ZERO
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()
@@ -595,7 +598,7 @@ func _compute_front_depth_along_forward(cam: Camera3D) -> float:
 		Vector3(p.x + s.x, p.y, p.z + s.z),
 		Vector3(p.x, p.y + s.y, p.z + s.z)
 	]
-	var min_depth: float = INF
+	var min_depth: float = 1e20
 	for c in corners:
 		var v: Vector3 = c - cam_pos
 		var d: float = v.dot(forward)
@@ -736,6 +739,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if need_visual:
 				var end_point: Vector3
 				var is_over_cortical: bool = false
+				# Default to thin guide when not over a cortical area
+				_qc_guide_current_radius = _qc_guide_radius_thin
 				if hit.is_empty():
 					# Fallback: keep at the mouse tip but limit depth (Z) relative to camera
 					var rq: PhysicsRayQueryParameters3D = bm_input_event.get_ray_query()
@@ -757,6 +762,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					end_point = hit[&"position"]
 					var collider_parent = (hit[&"collider"] as Node).get_parent()
 					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
+					if is_over_cortical:
+						_qc_guide_current_radius = _qc_guide_radius_thick
 					# Cap distance when over cortical as well (using a larger cap)
 					if _qc_guide_active:
 						var vec2: Vector3 = end_point - _qc_guide_start
@@ -778,8 +785,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var sv: SubViewport = $SubViewport
 					var cam2: Camera3D = _pancake_cam
 					var mouse2: Vector2 = sv.get_mouse_position()
-					# Force start on the left edge (x=1px), y at current mouse
-					var edge_px: Vector2 = Vector2(1.0, mouse2.y)
+					# On first entry, cache a static start on the left edge; reuse afterwards
+					if _qc_last_mouse_entry_pos == Vector2.ZERO:
+						_qc_last_mouse_entry_pos = Vector2(1.0, mouse2.y)
+					var edge_px: Vector2 = _qc_last_mouse_entry_pos
 					var edge_origin: Vector3 = cam2.project_ray_origin(edge_px)
 					var edge_dir: Vector3 = cam2.project_ray_normal(edge_px)
 					var forward2: Vector3 = (-cam2.global_transform.basis.z).normalized()
