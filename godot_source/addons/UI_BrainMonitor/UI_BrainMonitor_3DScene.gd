@@ -29,6 +29,12 @@ var _brain_region_visualizations_by_ID: Dictionary  # Dictionary[StringName, UI_
 var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _restrict_neuron_selection_to: AbstractCorticalArea = null
 
+# Quick Connect: live guide curve state
+var _qc_guide_active: bool = false
+var _qc_guide_node: Node3D = null
+var _qc_guide_start: Vector3 = Vector3.ZERO
+var _qc_guide_material: StandardMaterial3D = null
+
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
 
@@ -676,6 +682,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 		
 		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+			# Quick Connect: while active, update guide end position to current mouse tip world point
+			if _qc_guide_active and not hit.is_empty():
+				update_quick_connect_guide(hit[&"position"])
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
@@ -957,6 +966,122 @@ func _brain_region_preview_closing():
 	pass  # Preview cleanup is handled automatically when the node is freed
 
 
+#endregion
+
+
+#region Quick Connect Guide Curve
+## Starts a live curved guide from a source cortical area's center to the mouse pointer
+func start_quick_connect_guide(source_area: AbstractCorticalArea) -> void:
+	"""
+	Start rendering a 3D curved guide line from the given source cortical area's center.
+	The guide's end will follow the mouse tip using world ray hits while active.
+	"""
+	if source_area == null:
+		return
+	# Resolve the cortical area's visualization in this brain monitor
+	var viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(source_area.cortical_ID)
+	if viz == null:
+		return
+	# Compute world-space start at the cortical area's center
+	var start_pos: Vector3 = viz._get_cortical_area_center_position()
+	if start_pos == Vector3.ZERO:
+		return
+	# Reset any previous guide
+	stop_quick_connect_guide()
+	_qc_guide_start = start_pos
+	_qc_guide_node = Node3D.new()
+	_qc_guide_node.name = "QC_Guide"
+	_node_3D_root.add_child(_qc_guide_node)
+	# Create (once) a neutral, bright material similar to our connection visuals
+	if _qc_guide_material == null:
+		_qc_guide_material = _create_qc_guide_material()
+	_qc_guide_active = true
+	# Initialize with a tiny segment to avoid a frame of emptiness
+	update_quick_connect_guide(_qc_guide_start)
+
+## Updates the live guide's end position; call on hover world hit updates
+func update_quick_connect_guide(end_pos: Vector3) -> void:
+	"""
+	Update the guide curve end point. No-ops if guide is not active.
+	"""
+	if not _qc_guide_active or _qc_guide_node == null:
+		return
+	_rebuild_qc_guide_curve(_qc_guide_start, end_pos)
+
+## Stops and clears the live guide curve if present
+func stop_quick_connect_guide() -> void:
+	"""
+	Stop rendering the guide and free any guide nodes.
+	"""
+	if _qc_guide_node != null:
+		_qc_guide_node.queue_free()
+		_qc_guide_node = null
+	_qc_guide_active = false
+
+## Internal: rebuilds the guide from start to end as a Bézier arc using thin cylinder segments
+func _rebuild_qc_guide_curve(start_pos: Vector3, end_pos: Vector3) -> void:
+	# Clear old segments
+	for child in _qc_guide_node.get_children():
+		child.queue_free()
+	# Compute a pleasing upward arc
+	var direction := (end_pos - start_pos)
+	var distance := direction.length()
+	var mid := (start_pos + end_pos) / 2.0
+	var arc_height := distance * 0.35
+	var control := mid + Vector3(0.0, arc_height, 0.0)
+	# Create segments along a quadratic Bézier
+	var num_segments := 12
+	for i in range(num_segments):
+		var t1 := float(i) / float(num_segments)
+		var t2 := float(i + 1) / float(num_segments)
+		var p1 := _quadratic_bezier(start_pos, control, end_pos, t1)
+		var p2 := _quadratic_bezier(start_pos, control, end_pos, t2)
+		var seg := _create_qc_guide_segment(p1, p2, i)
+		_qc_guide_node.add_child(seg)
+
+## Internal: create a thin cylinder segment aligned between two points
+func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) -> MeshInstance3D:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = "QC_GuideSegment_" + str(idx)
+	var direction := (end_pos - start_pos)
+	var seg_len := max(0.001, direction.length())
+	var center := (start_pos + end_pos) / 2.0
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.10
+	cyl.bottom_radius = 0.10
+	cyl.height = seg_len
+	cyl.radial_segments = 6
+	cyl.rings = 1
+	mesh_instance.mesh = cyl
+	mesh_instance.position = center
+	# Align cylinder Y axis with direction
+	if direction.length() > 0.001:
+		var n := direction.normalized()
+		var up := Vector3.UP
+		if abs(n.dot(Vector3.UP)) > 0.9:
+			up = Vector3.FORWARD
+		var right := up.cross(n).normalized()
+		var corrected_up := n.cross(right).normalized()
+		mesh_instance.basis = Basis(right, n, corrected_up)
+	mesh_instance.material_override = _qc_guide_material
+	return mesh_instance
+
+## Internal: material for the guide (neutral bright, semi-transparent)
+func _create_qc_guide_material() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(1.0, 1.0, 1.0, 0.85)
+	m.emission_color = Color(0.85, 0.95, 1.0)
+	m.emission_enabled = true
+	m.emission_energy = 2.2
+	m.flags_unshaded = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
+
+## Internal: quadratic Bézier interpolation used for the arc
+func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
+	var u := 1.0 - t
+	return u * u * p0 + 2.0 * u * t * p1 + t * t * p2
 #endregion
 
 

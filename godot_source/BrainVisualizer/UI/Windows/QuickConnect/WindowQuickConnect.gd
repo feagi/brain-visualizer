@@ -154,6 +154,11 @@ func _setting_destination() -> void:
 	_destination = null
 	_step2_label.text = " Please Select A Destination Area..."
 	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
+	# Begin live 3D guide from source center to mouse tip while picking destination
+	if _source != null:
+		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
+		if bm != null and bm.has_method("start_quick_connect_guide"):
+			bm.start_quick_connect_guide(_source)
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
@@ -312,6 +317,10 @@ func _set_destination(cortical_area: AbstractCorticalArea) -> void:
 	_destination = cortical_area
 	_step2_label.text = " Selected Destination Area: [" + cortical_area.friendly_name + "]"
 	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	# Stop the live guide once a destination is chosen
+	var bm_on_dest = BV.UI.get_brain_monitor_for_cortical_area(_source)
+	if bm_on_dest != null and bm_on_dest.has_method("stop_quick_connect_guide"):
+		bm_on_dest.stop_quick_connect_guide()
 	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 	if !_finished_selecting:
 		_step3_panel.visible = true
@@ -358,3 +367,8 @@ func _set_completion_state():
 func close_window():
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
+	# Ensure guide is cleared if window closed early or cancelled
+	if _source != null:
+		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
+		if bm != null and bm.has_method("stop_quick_connect_guide"):
+			bm.stop_quick_connect_guide()
