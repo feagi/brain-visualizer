@@ -436,9 +436,17 @@ func get_minimum_size_from_loaded_theme(element: StringName) -> Vector2i:
 ## Attempts to switch toa  theme file with the given scale and color. If it doesnt exist, will do nothing
 func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> void:
 	var file_list: PackedStringArray = DirAccess.get_files_at(THEME_FOLDER)
-	var guessing_file: StringName = str(requested_scale) + "-" + THEME_COLORS.keys()[color] + ".tres"
-	if !(guessing_file in file_list):
-		push_error("THEME: Unable to find theme file %s!" % guessing_file)
+	var color_suffix: StringName = "-" + THEME_COLORS.keys()[color] + ".tres"
+	var guessing_file: StringName = ""
+	for file: StringName in file_list:
+		if !file.ends_with(color_suffix):
+			continue
+		var base: StringName = file.get_slice("-", 0)
+		if base.is_valid_float() and abs(base.to_float() - requested_scale) < 0.0001:
+			guessing_file = file
+			break
+	if guessing_file == "":
+		push_error("THEME: Unable to find theme file matching scale %s and color %s!" % [requested_scale, THEME_COLORS.keys()[color]])
 		return
 	var theme_file: Theme = load(THEME_FOLDER + guessing_file)
 	if theme_file == null:
@@ -544,19 +552,19 @@ const ICON_CUSTOM_INPUT: StringName = "res://BrainVisualizer/UI/GenericResources
 const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/custom-output.png"
 
 const KNOWN_ICON_PATHS : Dictionary = {
-	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishock.png",
-	"iv00_C" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00_C.png",
+	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishk00.png",
+	"iv00_C" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00CC.png",
 	"i_hear" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i_hear.png",
-	"i_spos" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i_spos.png",
+	"i_spos" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/isvp00.png",
 	"i__acc" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__acc.png",
-	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__bat.png",
+	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ibat00.png",
 	"i__bci" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__bci.png",
 	"i__gyr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__gyr.png",
-	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__inf.png",
-	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__pro.png",
+	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf00.png",
+	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ipro00.png",
 	"i___id" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i___id.png",
-	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/o__mot.png",
-	"___pwr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/___pwr.png",
+	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/omot00.png",
+	"___pwr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/_power.png",
 }
 
 ## Gets the icon texture given the cortical ID
