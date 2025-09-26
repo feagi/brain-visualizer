@@ -459,9 +459,9 @@ func _auto_frame_camera_to_objects() -> void:
 		return
 	var center := aabb.position + (aabb.size / 2.0)
 	_last_scene_center = center
-	# Choose an oblique view: from +Y and +Z
+	# Choose a straight-on view along +Z, level (no pitch), so we face the circuit
 	var up := Vector3.UP
-	var dir_hint := Vector3(0.8, 0.6, 1).normalized()
+	var dir_hint := Vector3(0, 0, 1) # camera behind +Z looking toward -Z at center
 	# Compute FOVs (guard bad/zero FOV)
 	var fov_used: float = _pancake_cam.fov
 	if fov_used < 5.0:
@@ -478,21 +478,22 @@ func _auto_frame_camera_to_objects() -> void:
 	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
 	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
 	var distance: float = max(dist_by_h, dist_by_w)
-	# Add depth margin so camera is outside the bounds along view direction
-	distance += half_d * 1.0
-	# Padding and clamps
-	var padding: float = 1.35
+	# No extra depth margin needed for straight-on framing
+	# distance unchanged
+	# Padding and clamps (tighter framing)
+	var padding: float = 1.05
 	distance *= padding
 	var min_dist: float = 2.0
 	var max_dist: float = 3000.0
-	# Also cap distance relative to scene size to avoid absurdly far framing
+	# Also cap distance relative to scene size to avoid overly far framing
 	var diag: float = aabb.size.length()
-	var rel_cap: float = diag * 3.0 + half_d
+	var rel_cap: float = diag * 2.0
 	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
-	# Set camera position and orientation
-	var cam_pos := center + (dir_hint * distance)
+	# Set camera position and orientation (level, centered in Y)
+	var cam_pos := center + (dir_hint * (distance))
+	cam_pos.y = center.y
 	_pancake_cam.global_position = cam_pos
-	_pancake_cam.look_at(center, up)
+	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
 	print("[CAMERA_FRAME] vfov=", fov_used, " distance=", distance, " center=", center, " aabb.size=", aabb.size)
