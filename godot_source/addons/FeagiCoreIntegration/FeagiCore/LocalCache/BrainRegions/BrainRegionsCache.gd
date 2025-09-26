@@ -36,7 +36,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		cortical_IDs.assign(region_summary_data[parent_region_ID]["areas"])
 		for cortical_ID in cortical_IDs:
 			if cortical_ID in cortical_area_mapping.keys():
-				push_error("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s! Something is wrong with the genome! Keeping the original region!" % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
+				push_warning("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s. Keeping the original region." % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
 				continue
 			cortical_area_mapping[cortical_ID] = parent_region_ID
 	

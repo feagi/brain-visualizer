@@ -7,8 +7,12 @@ var _stored_rotations: Array[Quaternion] = []
 var _stored_times: Array[float] = []
 
 func _ready() -> void:
-	#_camera = #BV.BM.get_node("BVCam")
-	pass
+	# Attempt to acquire the active Brain Monitor camera
+	var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+	if bm != null and bm.has_node("SubViewport/Center/PancakeCam"):
+		_camera = bm.get_node("SubViewport/Center/PancakeCam") as Camera3D
+	else:
+		_camera = null
 
 func clear_stored_data() -> void:
 	var counter: IntInput = $HBoxContainer/num_animation_points
@@ -18,6 +22,9 @@ func clear_stored_data() -> void:
 	counter.current_int = 0
 
 func add_frame() -> void:
+	if _camera == null:
+		BV.NOTIF.add_notification("Developer Camera Animations: No active camera found")
+		return
 	_append_camera_transform(_camera.position, _camera.quaternion)
 
 func export_into_json() -> void:
@@ -36,6 +43,9 @@ func execute_json() -> void:
 	# Verify
 	if JSON.parse_string(json) ==  null:
 		BV.NOTIF.add_notification("Unable to parse JSON!")
+		return
+	if _camera == null:
+		BV.NOTIF.add_notification("Developer Camera Animations: No active camera to play animation")
 		return
 	var input_frames: Array = JSON.parse_string(json)
 	var num_frames: int = len(input_frames)
@@ -56,8 +66,9 @@ func execute_json() -> void:
 	var generated_animation: Animation = Animation.new()
 	generated_animation.add_track(Animation.TrackType.TYPE_POSITION_3D, 0)
 	generated_animation.add_track(Animation.TrackType.TYPE_ROTATION_3D, 1)
-	generated_animation.track_set_path(0, _camera.get_path())
-	generated_animation.track_set_path(1, _camera.get_path())
+	# Target the camera node itself (AnimationPlayer will be a child of the camera)
+	generated_animation.track_set_path(0, NodePath("."))
+	generated_animation.track_set_path(1, NodePath("."))
 	
 	var frame_pos: Vector3
 	var frame_rot: Quaternion
@@ -79,7 +90,29 @@ func execute_json() -> void:
 	generated_animation.track_set_interpolation_type(0, lin_interp)
 	generated_animation.track_set_interpolation_type(1, rot_interp)
 	
-	_camera.play_animation(generated_animation)
+	# Ensure an AnimationPlayer exists on the camera
+	var player: AnimationPlayer
+	if _camera.has_node("AnimationPlayer"):
+		player = _camera.get_node("AnimationPlayer") as AnimationPlayer
+	else:
+		player = AnimationPlayer.new()
+		player.name = "AnimationPlayer"
+		_camera.add_child(player)
+	# Set root to the camera so track paths of "." target it
+	player.root_node = NodePath("..")
+	var anim_name: StringName = "DEV_CAM_PATH"
+	# Use default animation library "" to store the animation
+	var default_lib_name: StringName = ""
+	var lib: AnimationLibrary
+	if player.has_animation_library(default_lib_name):
+		lib = player.get_animation_library(default_lib_name)
+	else:
+		lib = AnimationLibrary.new()
+		player.add_animation_library(default_lib_name, lib)
+	if lib.has_animation(anim_name):
+		lib.remove_animation(anim_name)
+	lib.add_animation(anim_name, generated_animation)
+	player.play(anim_name)
 
 func _append_camera_transform(cam_position: Vector3, cam_rotation: Quaternion) -> void:
 	var tran_time_node: FloatInput = $transition_time
