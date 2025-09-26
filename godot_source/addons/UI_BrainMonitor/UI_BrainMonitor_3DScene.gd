@@ -43,6 +43,13 @@ var _qc_guide_max_arc_height: float = 60.0
 var _qc_guide_max_distance_off_target: float = 80.0
 var _qc_guide_max_distance_on_target: float = 300.0
 var _qc_guide_off_target_depth: float = 60.0
+var _qc_bridge_off_target_depth: float = 150.0
+var _qc_last_mouse_entry_pos: Vector2 = Vector2.ZERO
+
+# Bridge segment for cross-view (split-screen) continuation
+var _qc_bridge_active: bool = false
+var _qc_bridge_node: Node3D = null
+var _qc_bridge_start: Vector3 = Vector3.ZERO
 
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -442,6 +449,9 @@ func _process(delta: float) -> void:
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(true)
+		# Track the last entry position in this SubViewport in pixels
+		var sv: SubViewport = $SubViewport
+		_qc_last_mouse_entry_pos = sv.get_mouse_position()
 
 func _on_container_mouse_exited() -> void:
 	if _pancake_cam:
@@ -564,6 +574,35 @@ func _compute_scene_aabb() -> AABB:
 	if !have:
 		return _compute_world_aabb(_node_3D_root)
 	return merged
+
+## Computes depth along camera forward to the front face of this scene's AABB (closest point)
+func _compute_front_depth_along_forward(cam: Camera3D) -> float:
+	var aabb := _compute_scene_aabb()
+	if aabb.size == Vector3.ZERO:
+		return max(0.02, cam.near)
+	var cam_pos := cam.global_position
+	var forward := (-cam.global_transform.basis.z).normalized()
+	# Evaluate depths of all 8 AABB corners relative to camera forward
+	var p := aabb.position
+	var s := aabb.size
+	var corners := [
+		Vector3(p.x, p.y, p.z),
+		Vector3(p.x + s.x, p.y, p.z),
+		Vector3(p.x, p.y + s.y, p.z),
+		Vector3(p.x, p.y, p.z + s.z),
+		Vector3(p.x + s.x, p.y + s.y, p.z + s.z),
+		Vector3(p.x + s.x, p.y + s.y, p.z),
+		Vector3(p.x + s.x, p.y, p.z + s.z),
+		Vector3(p.x, p.y + s.y, p.z + s.z)
+	]
+	var min_depth: float = INF
+	for c in corners:
+		var v: Vector3 = c - cam_pos
+		var d: float = v.dot(forward)
+		if d < min_depth:
+			min_depth = d
+	# Ensure in front of near plane
+	return max(min_depth, max(0.02, cam.near))
 
 ## Computes tight AABB from cortical area data only (FEAGI coords + dimensions -> Godot space)
 func _compute_cortical_data_aabb() -> AABB:
@@ -691,8 +730,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 		
 		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
-			# Quick Connect: while active, update guide end position to current mouse tip world point
-			if _qc_guide_active:
+			var source_bm = BV.UI.qc_guide_source_bm
+			# Compute end point and hover state if either we own the guide or we need to draw a bridge
+			var need_visual := _qc_guide_active or (source_bm != null)
+			if need_visual:
 				var end_point: Vector3
 				var is_over_cortical: bool = false
 				if hit.is_empty():
@@ -717,12 +758,59 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var collider_parent = (hit[&"collider"] as Node).get_parent()
 					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
 					# Cap distance when over cortical as well (using a larger cap)
-					var vec2: Vector3 = end_point - _qc_guide_start
-					var d2: float = vec2.length()
-					if d2 > _qc_guide_max_distance_on_target:
-						end_point = _qc_guide_start + vec2.normalized() * _qc_guide_max_distance_on_target
-				_set_quick_connect_guide_color(is_over_cortical)
-				update_quick_connect_guide(end_point)
+					if _qc_guide_active:
+						var vec2: Vector3 = end_point - _qc_guide_start
+						var d2: float = vec2.length()
+						if d2 > _qc_guide_max_distance_on_target:
+							end_point = _qc_guide_start + vec2.normalized() * _qc_guide_max_distance_on_target
+				# Update visuals depending on which BM we are
+				if _qc_guide_active:
+					# We are the source BM: update the main guide; clear any local bridge
+					_clear_bridge_segment()
+					_set_quick_connect_guide_color(is_over_cortical)
+					# Save source segment for combined logging
+					BV.UI.qc_last_source_scene_name = name
+					BV.UI.qc_last_source_start = _qc_guide_start
+					BV.UI.qc_last_source_end = end_point
+					update_quick_connect_guide(end_point)
+				elif source_bm != null and source_bm != self:
+					# We are a non-source BM: draw/update the bridge segment using the SAME curve logic
+					var sv: SubViewport = $SubViewport
+					var cam2: Camera3D = _pancake_cam
+					var mouse2: Vector2 = sv.get_mouse_position()
+					# Force start on the left edge (x=1px), y at current mouse
+					var edge_px: Vector2 = Vector2(1.0, mouse2.y)
+					var edge_origin: Vector3 = cam2.project_ray_origin(edge_px)
+					var edge_dir: Vector3 = cam2.project_ray_normal(edge_px)
+					var forward2: Vector3 = (-cam2.global_transform.basis.z).normalized()
+					# Compute front-face depth of this scene's AABB along camera forward
+					var front_depth: float = _compute_front_depth_along_forward(cam2)
+					# Solve for t so that dot((edge_origin + edge_dir * t) - cam_pos, forward) = front_depth
+					var cam_pos2: Vector3 = cam2.global_position
+					var num: float = front_depth - (edge_origin - cam_pos2).dot(forward2)
+					var denom2: float = max(0.0001, edge_dir.dot(forward2))
+					var t2: float = num / denom2
+					# Small epsilon forward to avoid clipping with near plane
+					var epsilon2: float = 0.05
+					var bridge_start: Vector3 = edge_origin + edge_dir * (t2 + epsilon2)
+					# End: mouse tip in this scene (hit or forward depth), same as native logic above
+					var curr_origin: Vector3 = cam2.project_ray_origin(mouse2)
+					var curr_dir: Vector3 = cam2.project_ray_normal(mouse2)
+					var bridge_end: Vector3 = end_point
+					if hit.is_empty():
+						var depth2: float = _qc_bridge_off_target_depth
+						var proj2: float = max(0.0001, curr_dir.dot(forward2))
+						var scale2: float = depth2 / proj2
+						bridge_end = curr_origin + curr_dir * scale2
+					_set_quick_connect_guide_color(is_over_cortical)
+					# Save bridge segment for combined logging
+					BV.UI.qc_last_bridge_scene_name = name
+					BV.UI.qc_last_bridge_start = bridge_start
+					BV.UI.qc_last_bridge_end = bridge_end
+					_update_or_create_bridge_segment(bridge_start, bridge_end)
+					# Emit combined log once both segments are available
+					if BV.UI.qc_last_source_scene_name != "" and BV.UI.qc_last_bridge_scene_name != "":
+						BV.UI.qc_log_both()
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
@@ -1121,6 +1209,55 @@ func _create_qc_guide_material() -> StandardMaterial3D:
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return m
+
+## Bridge: create or update a segment from a local start to the current endpoint
+func _update_or_create_bridge_segment(start_pos: Vector3, end_pos: Vector3) -> void:
+	if _qc_bridge_node == null:
+		_qc_bridge_node = Node3D.new()
+		_qc_bridge_node.name = "QC_Bridge"
+		_node_3D_root.add_child(_qc_bridge_node)
+	_qc_bridge_active = true
+	# Rebuild curved bridge using SAME logic as main guide
+	_rebuild_qc_bridge_curve(start_pos, end_pos)
+
+## Bridge: clear if exists
+func _clear_bridge_segment() -> void:
+	if _qc_bridge_node != null:
+		_qc_bridge_node.queue_free()
+		_qc_bridge_node = null
+	_qc_bridge_active = false
+
+## Bridge: build Bezier curve identical to the main guide, but into the bridge node
+func _rebuild_qc_bridge_curve(start_pos: Vector3, end_pos: Vector3) -> void:
+	# Clear old segments
+	for child in _qc_bridge_node.get_children():
+		child.queue_free()
+	# Compute arc with same clamping rules
+	var raw_direction := (end_pos - start_pos)
+	var distance := clamp(raw_direction.length(), _qc_guide_min_distance, _qc_guide_max_distance)
+	var direction := raw_direction
+	if raw_direction.length() > distance:
+		direction = raw_direction.normalized() * distance
+		end_pos = start_pos + direction
+	var mid := (start_pos + end_pos) / 2.0
+	var arc_height := clamp(distance * 0.35, 0.5, _qc_guide_max_arc_height)
+	var control := mid + Vector3(0.0, arc_height, 0.0)
+	# Create segments along a quadratic Bezier
+	var num_segments := 12
+	for i in range(num_segments):
+		var t1 := float(i) / float(num_segments)
+		var t2 := float(i + 1) / float(num_segments)
+		var p1 := _quadratic_bezier(start_pos, control, end_pos, t1)
+		var p2 := _quadratic_bezier(start_pos, control, end_pos, t2)
+		var seg := _create_qc_guide_segment(p1, p2, i)
+		_qc_bridge_node.add_child(seg)
+
+## Debug: log QC points
+func _log_qc_guide_points(kind: String, start_pos: Vector3, end_pos: Vector3, over_cortical: bool) -> void:
+	var cam := _pancake_cam
+	var vp_mouse: Vector2 = $SubViewport.get_mouse_position()
+	print("[QC_", kind, "] scene=", name, " cam_pos=", (cam.global_position if cam else Vector3.ZERO),
+		" start=", start_pos, " end=", end_pos, " mouse_px=", vp_mouse, " over_cortical=", over_cortical)
 
 ## Internal: set color of guide based on hover validity (green on cortical, red otherwise)
 func _set_quick_connect_guide_color(is_valid_target: bool) -> void:

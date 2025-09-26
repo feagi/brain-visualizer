@@ -24,6 +24,20 @@ var selection_system: SelectionSystem:
 # Main brain monitor instance - public access
 var temp_root_bm: UI_BrainMonitor_3DScene = null
 var qc_guide_source_bm: UI_BrainMonitor_3DScene = null
+var qc_last_source_scene_name: String = ""
+var qc_last_source_start: Vector3 = Vector3.ZERO
+var qc_last_source_end: Vector3 = Vector3.ZERO
+var qc_last_bridge_scene_name: String = ""
+var qc_last_bridge_start: Vector3 = Vector3.ZERO
+var qc_last_bridge_end: Vector3 = Vector3.ZERO
+
+func qc_log_both() -> void:
+	print("[QC_BOTH] src_scene=", qc_last_source_scene_name,
+		" src_start=", qc_last_source_start,
+		" src_end=", qc_last_source_end,
+		" br_scene=", qc_last_bridge_scene_name,
+		" br_start=", qc_last_bridge_start,
+		" br_end=", qc_last_bridge_end)
 
 var _top_bar: TopBar
 var _window_manager
