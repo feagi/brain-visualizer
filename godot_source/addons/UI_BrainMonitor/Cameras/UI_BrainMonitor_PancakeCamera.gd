@@ -39,6 +39,7 @@ enum MODE {
 }
 
 signal BM_input_events(input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) # Array can only be a length of 1 since there is only a single mouse cursor!
+signal camera_user_moved()
 
 var movement_mode: MODE = MODE.TANK
 var allow_user_control: bool = true # set to false externally if user interacting with other UI element
@@ -55,6 +56,10 @@ var _is_mouse_hovering_viewport: bool = false
 var _mouse_position_when_any_click_started: Vector2 = Vector2(-1, -1)
 var _click_down_count: int = 0
 
+var _last_transform: Transform3D
+var _awaiting_emit: bool = false
+const USER_MOVE_DEBOUNCE: float = 0.3
+
 
 
 
@@ -63,6 +68,7 @@ func _ready() -> void:
 	_parent_viewport = get_viewport()
 	_initial_position = position
 	_initial_euler_rotation = rotation_degrees
+	_last_transform = global_transform
 
 
 ## Sets the hover state for this camera's SubViewport so we can scope keyboard actions like reset
@@ -239,6 +245,23 @@ func _process(delta):
 	if not current:
 		return
 		get_world_3d()
+
+	# Debounced callback when user moves camera (any mode except ANIMATION)
+	if allow_user_control and movement_mode != MODE.ANIMATION:
+		var moved: bool = false
+		if (global_transform.origin - _last_transform.origin).length() > 0.01:
+			moved = true
+		elif global_transform.basis != _last_transform.basis:
+			moved = true
+		if moved:
+			_last_transform = global_transform
+			if !_awaiting_emit:
+				_awaiting_emit = true
+				var t := get_tree().create_timer(USER_MOVE_DEBOUNCE)
+				t.timeout.connect(func():
+					_awaiting_emit = false
+					camera_user_moved.emit()
+				)
 	
 	match(movement_mode):
 		MODE.ANIMATION:

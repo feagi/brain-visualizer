@@ -36,6 +36,9 @@ var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_Co
 
 ## Startup camera intro configuration and state
 @export var enable_startup_camera_intro: bool = true ## If true, plays a brief drop-and-zoom on first scene init
+@export var auto_frame_k_height: float = 1.4
+@export var auto_frame_k_width: float = 1.5
+@export var auto_frame_min_dist: float = 45.0
 var _startup_intro_animating: bool = false
 var _startup_intro_center: Vector3 = Vector3.ZERO
 var _startup_tween: Tween = null
@@ -62,6 +65,9 @@ func _ready() -> void:
 	_pancake_cam = $SubViewport/Center/PancakeCam
 	if _pancake_cam:
 		_pancake_cam.BM_input_events.connect(_process_user_input)
+		# Log camera and scene bounds when user moves camera (debounced)
+		if not _pancake_cam.camera_user_moved.is_connected(_on_user_camera_moved):
+			_pancake_cam.camera_user_moved.connect(_on_user_camera_moved)
 		# Track mouse enter/exit on this container so keyboard actions (R) are scoped to hovered tab/viewport
 		if not mouse_entered.is_connected(_on_container_mouse_entered):
 			mouse_entered.connect(_on_container_mouse_entered)
@@ -203,13 +209,7 @@ func _play_startup_camera_intro() -> void:
 	var start_fov: float = clamp(final_fov * 1.25, 20.0, 90.0)
 	_pancake_cam.fov = start_fov
 	
-	# Adjust final stop to be slightly farther from the center (stop sooner horizontally), and lower final height a bit
-	var final_y_target: float = final_pos.y - 10.0
-	var horizontal_to_center: Vector3 = Vector3(_startup_intro_center.x - final_pos.x, 0.0, _startup_intro_center.z - final_pos.z)
-	var dir_to_center_xz: Vector3 = (horizontal_to_center.normalized() if horizontal_to_center.length() > 0.001 else Vector3.FORWARD)
-	var stop_back_distance: float = 100.0
-	final_pos = final_pos - (dir_to_center_xz * stop_back_distance)
-	final_pos.y = final_y_target
+	# Do not modify final_pos; intro should finish exactly at the framed position
 	_intro_start_rot = _pancake_cam.quaternion
 	# Compute a level (horizontal) final orientation that faces the center in XZ only
 	var horizontal_dir: Vector3 = Vector3(_startup_intro_center.x, final_pos.y, _startup_intro_center.z) - final_pos
@@ -435,7 +435,11 @@ func _auto_frame_camera_to_objects() -> void:
 	# Ensure transforms are current
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var aabb := _compute_scene_aabb()
+	# Prefer tight bounds from cortical area data (ignores huge placeholder frames)
+	var aabb := _compute_cortical_data_aabb()
+	if aabb.size == Vector3.ZERO:
+		# Fallback to visual bounds
+		aabb = _compute_scene_aabb()
 	# Retry a few frames until bounds become valid
 	var tries := 0
 	while (aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01) and tries < 8:
@@ -477,20 +481,20 @@ func _auto_frame_camera_to_objects() -> void:
 	# Required distances to fit width and height
 	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
 	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	var distance: float = max(dist_by_h, dist_by_w)
+	# Apply learned multipliers from your samples
+	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
 	# No extra depth margin needed for straight-on framing
 	# distance unchanged
 	# Padding and clamps (very tight framing with a tiny margin)
-	var padding: float = 1.02
-	distance *= padding
-	var min_dist: float = 30.0
-	var max_dist: float = 100.0
+	# Enforce minimum and relative caps
+	var min_dist: float = auto_frame_min_dist
+	var max_dist: float = 3000.0
 	# Also cap distance relative to scene size to avoid overly far framing
 	var diag: float = aabb.size.length()
 	var rel_cap: float = diag * 1.5
 	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
 	# Set camera position and orientation (level, centered in Y)
-	var cam_pos := center + (dir_hint * (distance))
+	var cam_pos := center + (dir_hint * distance)
 	cam_pos.y = center.y
 	_pancake_cam.global_position = cam_pos
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
@@ -521,6 +525,30 @@ func _compute_scene_aabb() -> AABB:
 	if !have:
 		return _compute_world_aabb(_node_3D_root)
 	return merged
+
+## Computes tight AABB from cortical area data only (FEAGI coords + dimensions -> Godot space)
+func _compute_cortical_data_aabb() -> AABB:
+	var have := false
+	var merged := AABB()
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null:
+			continue
+		var ca = viz.get("cortical_area")
+		if ca == null:
+			continue
+		var dims = ca.get("dimensions_3D")
+		var coords = ca.get("coordinates_3D")
+		if dims == null or coords == null:
+			continue
+		var dimv: Vector3 = Vector3(dims)
+		var coordv: Vector3 = Vector3(coords)
+		# FEAGI LLF -> Godot min/max
+		var min_g: Vector3 = Vector3(coordv.x, coordv.y, -(coordv.z + dimv.z))
+		var max_g: Vector3 = Vector3(coordv.x + dimv.x, coordv.y + dimv.y, -coordv.z)
+		var a := AABB(min_g, max_g - min_g)
+		merged = a if !have else merged.merge(a)
+		have = true
+	return merged if have else AABB()
 
 ## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
 func _log_objects_relative_to_camera(context: String = "") -> void:
@@ -566,6 +594,20 @@ func _log_objects_relative_to_camera(context: String = "") -> void:
 		print("[CAMERA_VIS] front samples: ", ", ".join(in_front.slice(0, min(5, in_front.size()))))
 	if behind.size() > 0:
 		print("[CAMERA_VIS] behind samples: ", ", ".join(behind.slice(0, min(5, behind.size()))))
+
+## User moved camera - print detailed framing diagnostics for learning desired heuristics
+func _on_user_camera_moved() -> void:
+	if _pancake_cam == null:
+		return
+	var aabb := _compute_scene_aabb()
+	var center := aabb.position + (aabb.size / 2.0)
+	var cam_pos := _pancake_cam.global_position
+	var cam_fwd := -_pancake_cam.global_transform.basis.z
+	var vfov := _pancake_cam.fov
+	var vp := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp.x / max(1.0, vp.y)
+	var dist := cam_pos.distance_to(center)
+	print("[CAMERA_SAMPLES] pos=", cam_pos, " look_at=", center, " dist=", snapped(dist, 0.01), " vfov=", vfov, " aspect=", snapped(aspect, 0.001), " aabb_pos=", aabb.position, " aabb_size=", aabb.size)
 
 
 func _update_tab_title_after_setup() -> void:
