@@ -683,8 +683,28 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			# Quick Connect: while active, update guide end position to current mouse tip world point
-			if _qc_guide_active and not hit.is_empty():
-				update_quick_connect_guide(hit[&"position"])
+			if _qc_guide_active:
+				var end_point: Vector3
+				var is_over_cortical: bool = false
+				if hit.is_empty():
+					# Fallback: project the ray onto a horizontal plane through the source Y
+					var rq: PhysicsRayQueryParameters3D = bm_input_event.get_ray_query()
+					var ray_from: Vector3 = rq.from
+					var ray_to: Vector3 = rq.to
+					var plane_y: float = _qc_guide_start.y
+					var dir: Vector3 = (ray_to - ray_from)
+					var t_den: float = dir.y
+					if abs(t_den) < 0.0001:
+						end_point = ray_from + dir.normalized() * 100.0
+					else:
+						var t: float = (plane_y - ray_from.y) / t_den
+						end_point = ray_from.lerp(ray_to, clamp(t, 0.0, 1.0))
+				else:
+					end_point = hit[&"position"]
+					var collider_parent = (hit[&"collider"] as Node).get_parent()
+					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
+				update_quick_connect_guide(end_point)
+				_set_quick_connect_guide_color(is_over_cortical)
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
@@ -1047,8 +1067,8 @@ func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) ->
 	var seg_len := max(0.001, direction.length())
 	var center := (start_pos + end_pos) / 2.0
 	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.10
-	cyl.bottom_radius = 0.10
+	cyl.top_radius = 0.20
+	cyl.bottom_radius = 0.20
 	cyl.height = seg_len
 	cyl.radial_segments = 6
 	cyl.rings = 1
@@ -1069,14 +1089,27 @@ func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) ->
 ## Internal: material for the guide (neutral bright, semi-transparent)
 func _create_qc_guide_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(1.0, 1.0, 1.0, 0.85)
-	m.emission_color = Color(0.85, 0.95, 1.0)
+	m.albedo_color = Color(1.0, 0.2, 0.2, 0.9)
+	m.emission_color = Color(1.0, 0.1, 0.1)
 	m.emission_enabled = true
-	m.emission_energy = 2.2
+	m.emission_energy = 2.8
 	m.flags_unshaded = true
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return m
+
+## Internal: set color of guide based on hover validity (green on cortical, red otherwise)
+func _set_quick_connect_guide_color(is_valid_target: bool) -> void:
+	if _qc_guide_material == null:
+		return
+	if is_valid_target:
+		_qc_guide_material.albedo_color = Color(0.2, 1.0, 0.3, 0.95)
+		_qc_guide_material.emission_color = Color(0.1, 0.8, 0.2)
+		_qc_guide_material.emission_energy = 3.0
+	else:
+		_qc_guide_material.albedo_color = Color(1.0, 0.2, 0.2, 0.95)
+		_qc_guide_material.emission_color = Color(0.9, 0.1, 0.1)
+		_qc_guide_material.emission_energy = 2.6
 
 ## Internal: quadratic Bézier interpolation used for the arc
 func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
