@@ -271,11 +271,14 @@ func _update_startup_camera_bezier(t: float) -> void:
 	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
 
 ## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds
-func _spawn_preview_indicator(world_position: Vector3) -> void:
+func _spawn_preview_indicator(world_center_xz: Vector3, world_top_y: float) -> void:
 	var indicator: Node3D = Node3D.new()
 	indicator.name = "PreviewIndicator"
 	_node_3D_root.add_child(indicator)
-	indicator.global_position = world_position + Vector3(0, 4.0, 0)
+	# Place such that the cone tip is 30 units above the top of the target
+	var tip_y := world_top_y + 30.0
+	# Our arrow is oriented downward (180 deg on X). The cone tip should be at indicator origin, so position indicator at tip
+	indicator.global_position = Vector3(world_center_xz.x, tip_y, world_center_xz.z)
 
 	# Build a simple arrow using MeshInstance3D primitives (cone for the head, cylinder for the shaft)
 	var shaft := MeshInstance3D.new()
@@ -284,7 +287,8 @@ func _spawn_preview_indicator(world_position: Vector3) -> void:
 	shaft_mesh.bottom_radius = 0.1
 	shaft_mesh.height = 1.8
 	shaft.mesh = shaft_mesh
-	shaft.position = Vector3(0, 0.9, 0)
+	# With the tip at the indicator origin (y=0) and arrow pointing down (rot 180°), place shaft below tip
+	shaft.position = Vector3(0, -shaft_mesh.height / 2.0, 0)
 	indicator.add_child(shaft)
 
 	var head := MeshInstance3D.new()
@@ -293,8 +297,8 @@ func _spawn_preview_indicator(world_position: Vector3) -> void:
 	head_mesh.bottom_radius = 0.35
 	head_mesh.height = 0.9
 	head.mesh = head_mesh
-	# Place the cone at the far end of the shaft (keep orientation unchanged)
-	head.position = Vector3(0, shaft_mesh.height + (head_mesh.height / 2.0), 0)
+	# Place the cone so its tip sits at the indicator origin (y=0)
+	head.position = Vector3(0, -head_mesh.height / 2.0, 0)
 	indicator.add_child(head)
 
 	# Orient arrow downward
@@ -337,6 +341,49 @@ func _spawn_preview_indicator(world_position: Vector3) -> void:
 			indicator.queue_free()
 		_active_preview_indicators.erase(indicator)
 	)
+
+## Computes a world-space AABB for a Node3D by aggregating all MeshInstance3D children
+func _compute_world_aabb(node: Node3D) -> AABB:
+	var have: bool = false
+	var aabb: AABB = AABB()
+	# If this node is a mesh, include its transformed bounds
+	if node is MeshInstance3D:
+		var mi: MeshInstance3D = node as MeshInstance3D
+		if mi.mesh != null:
+			var local := mi.mesh.get_aabb()
+			var p := local.position
+			var s := local.size
+			var corners := [
+				Vector3(p.x, p.y, p.z),
+				Vector3(p.x + s.x, p.y, p.z),
+				Vector3(p.x, p.y + s.y, p.z),
+				Vector3(p.x, p.y, p.z + s.z),
+				Vector3(p.x + s.x, p.y + s.y, p.z + s.z),
+				Vector3(p.x + s.x, p.y + s.y, p.z),
+				Vector3(p.x + s.x, p.y, p.z + s.z),
+				Vector3(p.x, p.y + s.y, p.z + s.z)
+			]
+			for c in corners:
+				var wp: Vector3 = mi.global_transform * c
+				if !have:
+					aabb = AABB(wp, Vector3.ZERO)
+					have = true
+				else:
+					aabb = aabb.expand(wp)
+	# Recurse into children
+	for child in node.get_children():
+		if child is Node3D:
+			var caabb := _compute_world_aabb(child as Node3D)
+			if caabb.size != Vector3.ZERO or !caabb.position.is_equal_approx(Vector3.ZERO):
+				if !have:
+					aabb = caabb
+					have = true
+				else:
+					aabb = aabb.merge(caabb)
+	# Fallback to node position if nothing else was found
+	if !have:
+		return AABB(node.global_position, Vector3.ZERO)
+	return aabb
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
@@ -630,8 +677,9 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	offset.z = -offset.z
 	var feagi = initial_FEAGI_position
 	feagi.z = -feagi.z
-	var world_pos: Vector3 = Vector3(feagi) + offset
-	_spawn_preview_indicator(world_pos)
+	var world_center: Vector3 = Vector3(feagi) + offset
+	var world_top_y: float = world_center.y + float(initial_dimensions.y) / 2.0
+	_spawn_preview_indicator(world_center, world_top_y)
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates
@@ -641,9 +689,12 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	preview.setup(brain_region, initial_FEAGI_position)
 	preview.tree_exiting.connect(_brain_region_preview_closing)
 	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
-	# Spawn a temporary visibility indicator at the preview's initial position (FEAGI -> Godot)
-	var world_pos: Vector3 = Vector3(initial_FEAGI_position.x, initial_FEAGI_position.y, -initial_FEAGI_position.z)
-	_spawn_preview_indicator(world_pos)
+	# Spawn a temporary visibility indicator using world AABB of the preview to determine center XZ and top Y
+	var aabb := _compute_world_aabb(preview)
+	var center := aabb.position + (aabb.size / 2.0)
+	var world_center := Vector3(center.x, center.y, center.z)
+	var world_top_y := aabb.position.y + aabb.size.y
+	_spawn_preview_indicator(world_center, world_top_y)
 	return preview
 
 ## Closes all currently active previews
