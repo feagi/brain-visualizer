@@ -68,6 +68,9 @@ func _ready() -> void:
 		# Log camera and scene bounds when user moves camera (debounced)
 		if not _pancake_cam.camera_user_moved.is_connected(_on_user_camera_moved):
 			_pancake_cam.camera_user_moved.connect(_on_user_camera_moved)
+		# Use new auto-frame formula when user presses R
+		if not _pancake_cam.camera_reset_requested.is_connected(_on_user_camera_reset_requested):
+			_pancake_cam.camera_reset_requested.connect(_on_user_camera_reset_requested)
 		# Track mouse enter/exit on this container so keyboard actions (R) are scoped to hovered tab/viewport
 		if not mouse_entered.is_connected(_on_container_mouse_entered):
 			mouse_entered.connect(_on_container_mouse_entered)
@@ -92,6 +95,10 @@ func _ready() -> void:
 		_world_3D = _pancake_cam.get_world_3d()
 
 
+
+## Public accessor to the Pancake camera to avoid external access to private members
+func get_pancake_camera() -> UI_BrainMonitor_PancakeCamera:
+	return _pancake_cam
 
 func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_should_show_combo_buttons = show_combo_buttons
@@ -608,6 +615,10 @@ func _on_user_camera_moved() -> void:
 	var aspect: float = vp.x / max(1.0, vp.y)
 	var dist := cam_pos.distance_to(center)
 	print("[CAMERA_SAMPLES] pos=", cam_pos, " look_at=", center, " dist=", snapped(dist, 0.01), " vfov=", vfov, " aspect=", snapped(aspect, 0.001), " aabb_pos=", aabb.position, " aabb_size=", aabb.size)
+
+## Handle user pressing R to reset camera using auto-frame logic
+func _on_user_camera_reset_requested() -> void:
+	await _auto_frame_camera_to_objects()
 
 
 func _update_tab_title_after_setup() -> void:

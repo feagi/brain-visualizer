@@ -40,6 +40,7 @@ enum MODE {
 
 signal BM_input_events(input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) # Array can only be a length of 1 since there is only a single mouse cursor!
 signal camera_user_moved()
+signal camera_reset_requested()
 
 var movement_mode: MODE = MODE.TANK
 var allow_user_control: bool = true # set to false externally if user interacting with other UI element
@@ -190,7 +191,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if Input.is_key_pressed(KEY_R):
 					# Only reset if the mouse is currently over this SubViewport
 					if _is_mouse_hovering_viewport:
-						reset_camera()
+						camera_reset_requested.emit()
 					return
 				if Input.is_action_pressed("forward"):
 					dir += Vector3(0,0,-1)

@@ -49,7 +49,7 @@ func _press_region(region: BrainRegion) -> void:
 	if _on_focus_callable.is_valid():
 		_on_focus_callable.call(region)
 		return
-	if BV.UI.temp_root_bm and BV.UI.temp_root_bm._pancake_cam:
-		BV.UI.temp_root_bm._pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+	if BV.UI.temp_root_bm and BV.UI.temp_root_bm.get_pancake_camera():
+		BV.UI.temp_root_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 		return
 

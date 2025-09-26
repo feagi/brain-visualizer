@@ -284,16 +284,16 @@ func _draw() -> void:
 	draw_rect(back_rect, Color(0, 0, 0, 0.25), true)
 
 func _focus_region(region: BrainRegion) -> void:
-	if _is_3d_context and _bm_scene and _bm_scene._pancake_cam:
-		_bm_scene._pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
+		_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 		return
 	if (not _is_3d_context) and _cb_scene:
 		_cb_scene.focus_on_region(region)
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
-	if _is_3d_context and _bm_scene and _bm_scene._pancake_cam:
+	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
 		var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
-		_bm_scene._pancake_cam.teleport_to_look_at_without_changing_angle(center_pos)
+		_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
 		return
 	if (not _is_3d_context) and _cb_scene:
 		_cb_scene.focus_on_cortical_area(area)
