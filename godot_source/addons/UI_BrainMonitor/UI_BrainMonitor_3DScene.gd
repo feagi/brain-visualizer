@@ -37,6 +37,9 @@ var _qc_guide_material: StandardMaterial3D = null
 var _qc_guide_radius_thin: float = 0.10
 var _qc_guide_radius_thick: float = 0.25
 var _qc_guide_current_radius: float = 0.10
+var _qc_guide_max_distance: float = 300.0
+var _qc_guide_min_distance: float = 0.05
+var _qc_guide_max_arc_height: float = 60.0
 
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -698,10 +701,12 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var dir: Vector3 = (ray_to - ray_from)
 					var t_den: float = dir.y
 					if abs(t_den) < 0.0001:
-						end_point = ray_from + dir.normalized() * 100.0
+						# Use clamped forward projection to avoid extreme far points
+						end_point = ray_from + dir.normalized() * min(100.0, _qc_guide_max_distance)
 					else:
 						var t: float = (plane_y - ray_from.y) / t_den
-						end_point = ray_from.lerp(ray_to, clamp(t, 0.0, 1.0))
+						var t_clamped: float = clamp(t, 0.0, 1.0)
+						end_point = ray_from.lerp(ray_to, t_clamped)
 				else:
 					end_point = hit[&"position"]
 					var collider_parent = (hit[&"collider"] as Node).get_parent()
@@ -1047,10 +1052,16 @@ func _rebuild_qc_guide_curve(start_pos: Vector3, end_pos: Vector3) -> void:
 	for child in _qc_guide_node.get_children():
 		child.queue_free()
 	# Compute a pleasing upward arc
-	var direction := (end_pos - start_pos)
-	var distance := direction.length()
+	var raw_direction := (end_pos - start_pos)
+	var distance := clamp(raw_direction.length(), _qc_guide_min_distance, _qc_guide_max_distance)
+	# Clamp end point to max distance to avoid runaway curves
+	var direction := raw_direction
+	if raw_direction.length() > distance:
+		direction = raw_direction.normalized() * distance
+		end_pos = start_pos + direction
 	var mid := (start_pos + end_pos) / 2.0
-	var arc_height := distance * 0.35
+	# Limit arc height and keep proportional for near distances
+	var arc_height := clamp(distance * 0.35, 0.5, _qc_guide_max_arc_height)
 	var control := mid + Vector3(0.0, arc_height, 0.0)
 	# Create segments along a quadratic Bézier
 	var num_segments := 12
@@ -1112,8 +1123,10 @@ func _set_quick_connect_guide_color(is_valid_target: bool) -> void:
 
 ## Internal: quadratic Bézier interpolation used for the arc
 func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
-	var u := 1.0 - t
-	return u * u * p0 + 2.0 * u * t * p1 + t * t * p2
+	# Guard against out-of-range t values due to float inaccuracy
+	var tt: float = float(clamp(t, 0.0, 1.0))
+	var u: float = 1.0 - tt
+	return u * u * p0 + 2.0 * u * tt * p1 + tt * tt * p2
 #endregion
 
 
