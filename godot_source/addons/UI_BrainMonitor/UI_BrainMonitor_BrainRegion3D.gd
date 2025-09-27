@@ -1911,19 +1911,86 @@ func _start_connection_monitoring() -> void:
 	# Connect to mapping update signals for all areas in this region
 	for area in _representing_region.contained_cortical_areas:
 		_connect_area_signals(area)
+	
+	# Also listen to global mapping cache updates and refresh if related to this region
+	if FeagiCore and FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.mapping_data:
+		var mappings_cache := FeagiCore.feagi_local_cache.mapping_data
+		if not mappings_cache.mapping_created.is_connected(_on_global_mapping_changed):
+			mappings_cache.mapping_created.connect(_on_global_mapping_changed)
+		if not mappings_cache.mapping_updated.is_connected(_on_global_mapping_changed):
+			mappings_cache.mapping_updated.connect(_on_global_mapping_changed)
+
+	# Listen to region-level partial mapping updates (if emitted) to trigger refresh
+	if _representing_region:
+		if not _representing_region.partial_mappings_inputted.is_connected(_on_region_partial_mappings_changed):
+			_representing_region.partial_mappings_inputted.connect(_on_region_partial_mappings_changed)
+		if not _representing_region.partial_mappings_about_to_be_removed.is_connected(_on_region_partial_mappings_changed):
+			_representing_region.partial_mappings_about_to_be_removed.connect(_on_region_partial_mappings_changed)
 
 ## Connects to signals for a cortical area to monitor connection changes
 func _connect_area_signals(area: AbstractCorticalArea) -> void:
-	# Connect to mapping update signals if they exist
-	if area.has_signal("mappings_updated"):
-		if not area.mappings_updated.is_connected(_on_area_connections_changed):
-			area.mappings_updated.connect(_on_area_connections_changed.bind(area))
-			print("  🔗 Connected to mappings_updated for area: %s" % area.cortical_ID)
-	
+	# Connect to concrete mapping structure change signals on the cortical area
+	if area.has_signal("afferent_input_cortical_area_added"):
+		if not area.afferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
+			area.afferent_input_cortical_area_added.connect(_on_area_connections_changed.bind(area))
+	if area.has_signal("efferent_input_cortical_area_added"):
+		if not area.efferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
+			area.efferent_input_cortical_area_added.connect(_on_area_connections_changed.bind(area))
+	if area.has_signal("afferent_input_cortical_area_removed"):
+		if not area.afferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
+			area.afferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
+	if area.has_signal("efferent_input_cortical_area_removed"):
+		if not area.efferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
+			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
+
 	# Also connect to dimension changes which might affect positioning
 	if not area.dimensions_3D_updated.is_connected(_on_area_dimensions_changed):
 		area.dimensions_3D_updated.connect(_on_area_dimensions_changed.bind(area))
 		print("  📐 Connected to dimensions_updated for area: %s" % area.cortical_ID)
+
+## Disconnects signals previously connected for a cortical area
+func _disconnect_area_signals(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	# Recreate the same bound callables used during connect
+	var cb_conn := _on_area_connections_changed.bind(area)
+	var cb_dim := _on_area_dimensions_changed.bind(area)
+	# Mapping structure change signals
+	if area.has_signal("afferent_input_cortical_area_added"):
+		if area.afferent_input_cortical_area_added.is_connected(cb_conn):
+			area.afferent_input_cortical_area_added.disconnect(cb_conn)
+	if area.has_signal("efferent_input_cortical_area_added"):
+		if area.efferent_input_cortical_area_added.is_connected(cb_conn):
+			area.efferent_input_cortical_area_added.disconnect(cb_conn)
+	if area.has_signal("afferent_input_cortical_area_removed"):
+		if area.afferent_input_cortical_area_removed.is_connected(cb_conn):
+			area.afferent_input_cortical_area_removed.disconnect(cb_conn)
+	if area.has_signal("efferent_input_cortical_area_removed"):
+		if area.efferent_input_cortical_area_removed.is_connected(cb_conn):
+			area.efferent_input_cortical_area_removed.disconnect(cb_conn)
+	# Dimension change signal
+	if area.dimensions_3D_updated.is_connected(cb_dim):
+		area.dimensions_3D_updated.disconnect(cb_dim)
+
+
+## Global mapping cache event handler (created/updated)
+func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
+	if not _connection_monitoring_enabled:
+		return
+	# Only refresh if this mapping involves an area within this region
+	var src := mapping.source_cortical_area
+	var dst := mapping.destination_cortical_area
+	if _representing_region and (src in _representing_region.contained_cortical_areas or dst in _representing_region.contained_cortical_areas):
+		print("🌐 GLOBAL MAPPING CHANGE: Refreshing region '%s' due to mapping %s -> %s" % [_representing_region.friendly_name, src.cortical_ID, dst.cortical_ID])
+		_check_io_status_and_refresh()
+
+
+## Region-level partial mappings change handler
+func _on_region_partial_mappings_changed(_param) -> void:
+	if not _connection_monitoring_enabled:
+		return
+	print("🧭 REGION PARTIAL MAPPINGS CHANGED: Triggering refresh for region '%s'" % _representing_region.friendly_name)
+	_check_io_status_and_refresh()
 
 
 ## Checks if I/O status has changed and refreshes if needed
@@ -2114,10 +2181,29 @@ var _dimension_recalc_in_progress: bool = false
 func _disable_connection_monitoring() -> void:
 	_connection_monitoring_enabled = false
 	print("🔇 MONITORING: Disabled connection monitoring for region '%s'" % _representing_region.friendly_name)
+	# Disconnect area-level signals to avoid duplicate connections later
+	if _representing_region:
+		for area in _representing_region.contained_cortical_areas:
+			_disconnect_area_signals(area)
+	# Disconnect global mapping cache listeners
+	if FeagiCore and FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.mapping_data:
+		var mappings_cache := FeagiCore.feagi_local_cache.mapping_data
+		if mappings_cache.mapping_created.is_connected(_on_global_mapping_changed):
+			mappings_cache.mapping_created.disconnect(_on_global_mapping_changed)
+		if mappings_cache.mapping_updated.is_connected(_on_global_mapping_changed):
+			mappings_cache.mapping_updated.disconnect(_on_global_mapping_changed)
+	# Disconnect region-level partial mapping listeners
+	if _representing_region:
+		if _representing_region.partial_mappings_inputted.is_connected(_on_region_partial_mappings_changed):
+			_representing_region.partial_mappings_inputted.disconnect(_on_region_partial_mappings_changed)
+		if _representing_region.partial_mappings_about_to_be_removed.is_connected(_on_region_partial_mappings_changed):
+			_representing_region.partial_mappings_about_to_be_removed.disconnect(_on_region_partial_mappings_changed)
 
 func _enable_connection_monitoring() -> void:
 	_connection_monitoring_enabled = true
 	print("🔊 MONITORING: Enabled connection monitoring for region '%s'" % _representing_region.friendly_name)
+	# Reconnect listeners now that monitoring is enabled
+	_start_connection_monitoring()
 
 ## DEBUG: Prints detailed system state for troubleshooting flaky behavior
 func debug_current_system_state() -> void:
