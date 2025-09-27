@@ -383,6 +383,19 @@ func reload_genome_await():
 				# Update health cache and transition directly to READY
 				feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 				_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+				# Proactively attempt websocket reconnect if it's down
+				if network and network.websocket_API and _in_use_endpoint_details:
+					var ws := network.websocket_API
+					if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
+						ws.setup(_in_use_endpoint_details.full_websocket_address)
+						ws.process_mode = Node.PROCESS_MODE_INHERIT
+						if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+							ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+						ws.connect_websocket()
+					# Also re-register the agent to refresh SHM visualization paths after FEAGI restart
+					network._call_register_agent_for_shm()
+				# Schedule a short watchdog to ensure WS stays connected after reload
+				_ensure_ws_connected_after_reload(30)
 				return
 			elif cached_session == current_session and cached_genome_num == current_genome_num:
 				print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but FEAGI not ready (available: %s, ready: %s) - waiting..." % [current_session, current_genome_num, genome_available, brain_ready])
@@ -418,6 +431,21 @@ func reload_genome_await():
 		return  # Don't transition to GENOME_READY
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ requests.reload_genome() completed successfully")
+	# As part of the genome reload workflow, proactively attempt a websocket reconnect
+	# if the socket is currently down. This avoids requiring a full app restart after
+	# FEAGI restarts.
+	if network and network.websocket_API and _in_use_endpoint_details:
+		var ws := network.websocket_API
+		if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
+			ws.setup(_in_use_endpoint_details.full_websocket_address)
+			ws.process_mode = Node.PROCESS_MODE_INHERIT
+			if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+				ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+			ws.connect_websocket()
+		# Also re-register the agent to refresh SHM visualization paths after FEAGI restart
+		network._call_register_agent_for_shm()
+	# Schedule a short watchdog to ensure WS stays connected after reload
+	_ensure_ws_connected_after_reload(30)
 	
 	# DEBUG: Check what we actually loaded
 	print("FEAGICORE: [3D_SCENE_DEBUG] 🔍 Genome reload debug info:")
@@ -487,3 +515,30 @@ func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: Stri
 			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
 
 #endregion
+
+
+## Ensure websocket reconnects shortly after a genome reload
+## Attempts up to 'attempts' times with a short delay, without spamming if WS is already retrying
+func _ensure_ws_connected_after_reload(attempts: int) -> void:
+	if attempts <= 0:
+		return
+	if not network or not network.websocket_API:
+		return
+	var ws := network.websocket_API
+	# If already connected, nothing to do
+	if ws.socket_health == ws.WEBSOCKET_HEALTH.CONNECTED:
+		return
+	# Prepare WS with known address if available
+	if _in_use_endpoint_details:
+		ws.setup(_in_use_endpoint_details.full_websocket_address)
+	ws.process_mode = Node.PROCESS_MODE_INHERIT
+	# Ensure WS health signal is wired so FEAGINetworking can update its state
+	if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+		ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+	# Only kick a connect if not already in RETRYING
+	if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
+		ws.connect_websocket()
+	# Re-check shortly in case FEAGI was still coming up
+	get_tree().create_timer(2.0).timeout.connect(func():
+		_ensure_ws_connected_after_reload(attempts - 1)
+	)
