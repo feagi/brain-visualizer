@@ -31,6 +31,10 @@ var qc_last_bridge_scene_name: String = ""
 var qc_last_bridge_start: Vector3 = Vector3.ZERO
 var qc_last_bridge_end: Vector3 = Vector3.ZERO
 
+# Session-scoped last created cortical position (for prefill nudging)
+var last_created_cortical_location: Vector3i = Vector3i.ZERO
+var last_created_cortical_size: Vector3i = Vector3i.ZERO
+
 func qc_log_both() -> void:
 	print("[QC_BOTH] src_scene=", qc_last_source_scene_name,
 		" src_start=", qc_last_source_start,

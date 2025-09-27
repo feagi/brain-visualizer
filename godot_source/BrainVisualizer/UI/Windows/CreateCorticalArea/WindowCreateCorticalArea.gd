@@ -75,6 +75,18 @@ func _step_2_set_details(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE)
 	_memory_definition.visible = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	_buttons.visible = true
 	
+	# Prefill location BEFORE creating preview so arrow/preview spawn at the right spot
+	var last_pos: Vector3i = BV.UI.last_created_cortical_location
+	var last_size: Vector3i = BV.UI.last_created_cortical_size
+	if last_pos != Vector3i.ZERO:
+		match(cortical_type):
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+				_custom_definition.location.current_vector = Vector3i(last_pos.x + last_size.x + 8, last_pos.y, last_pos.z)
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+				_memory_definition.location.current_vector = Vector3i(last_pos.x + last_size.x + 8, last_pos.y, last_pos.z)
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+				_IOPU_definition.location.current_vector = Vector3i(last_pos.x + last_size.x + 8, last_pos.y, last_pos.z)
+
 	match(cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			_IOPU_definition.cortical_type_selected(cortical_type, close_preview_signals, host_bm)
@@ -248,6 +260,9 @@ func _user_requesing_creation() -> void:
 				true,
 				pos_2d
 				)
+			# Update session last-created position and size
+			BV.UI.last_created_cortical_location = _custom_definition.location.current_vector
+			BV.UI.last_created_cortical_size = _custom_definition.dimensions.current_vector
 				
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			# Checks...
@@ -275,5 +290,8 @@ func _user_requesing_creation() -> void:
 				true,
 				pos_2d
 			)
+			# Update session last-created position and size
+			BV.UI.last_created_cortical_location = _memory_definition.location.current_vector
+			BV.UI.last_created_cortical_size = Vector3i(1,1,1)
 	
 	close_window()
