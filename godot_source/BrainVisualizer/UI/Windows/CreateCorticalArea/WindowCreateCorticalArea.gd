@@ -85,6 +85,12 @@ func _step_2_set_details(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			_memory_definition.cortical_type_selected(cortical_type, close_preview_signals, host_bm)
 	
+	# Focus the mandatory name field and hook Enter to submit for CUSTOM and MEMORY
+	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+		_focus_and_hook_name_field(_custom_definition.cortical_name)
+	elif cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		_focus_and_hook_name_field(_memory_definition.cortical_name)
+	
 
 func _set_header(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	var label: Label = _window_internals.get_node("header/Label")
@@ -111,6 +117,19 @@ func _set_header(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void
 			icon.texture = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png")
 			_header.visible = true
 		
+## Focus a LineEdit and hook Enter to submit
+func _focus_and_hook_name_field(le: LineEdit) -> void:
+	if le == null:
+		return
+	# Focus so user can type immediately
+	le.grab_focus()
+	# Guard against multiple connections
+	if not le.text_submitted.is_connected(_on_name_enter_submit):
+		le.text_submitted.connect(_on_name_enter_submit)
+
+func _on_name_enter_submit(_text: String) -> void:
+	_user_requesing_creation()
+
 func _back_pressed() -> void:
 	# If user was selecting an IPU/OPU template via the icon selector, return to that selector
 	if _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
