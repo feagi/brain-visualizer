@@ -591,6 +591,31 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		var conflict_center_z = region_world.z - conflict_plate_size.z / 2.0
 		conflict_plate.global_position.z = conflict_center_z
 	
+	# Create or update MOTHER PLATE (binder) under all plates
+	var actual_input_width = input_plate_size.x if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x
+	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x
+	var mother_total_width = actual_input_width + PLATE_GAP + actual_output_width
+	if conflict_areas.size() > 0:
+		var actual_conflict_width = conflict_plate_size.x
+		mother_total_width += PLATE_GAP + actual_conflict_width
+	var mother_size = Vector3(mother_total_width, PLATE_HEIGHT, 1.0)
+	var mustard = Color(0.827, 0.706, 0.196, 1.0)
+	var mother_plate: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate")
+	if mother_plate == null:
+		mother_plate = _create_mother_plate(mother_size, "MotherPlate", mustard)
+		_frame_container.add_child(mother_plate)
+	else:
+		var existing_mesh := mother_plate.mesh
+		if existing_mesh is BoxMesh:
+			(existing_mesh as BoxMesh).size = mother_size
+		if mother_plate.material_override is StandardMaterial3D:
+			(mother_plate.material_override as StandardMaterial3D).albedo_color = mustard
+	# Position mother plate centered across all plates; align front edges at region Z
+	mother_plate.position.x = mother_total_width / 2.0
+	mother_plate.position.y = PLATE_HEIGHT / 2.0
+	var mother_center_z = region_world.z - 0.5
+	mother_plate.global_position.z = mother_center_z
+	
 	# Update clickable collision areas to match new plate sizes/positions
 	_add_collision_bodies_for_clicking(input_plate_size, output_plate_size, conflict_plate_size, conflict_areas.size() > 0, PLATE_GAP)
 
@@ -783,6 +808,33 @@ func _create_3d_plate() -> void:
 		else:
 			conflict_plate.position.z = conflict_center_z
 
+	# Create or update MOTHER PLATE (binder) under all plates
+	var actual_input_width_ = input_plate_size.x if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x
+	var actual_output_width_ = output_plate_size.x if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x
+	var mother_total_width_ = actual_input_width_ + PLATE_GAP + actual_output_width_
+	if conflict_areas.size() > 0:
+		var actual_conflict_width_ = conflict_plate_size.x
+		mother_total_width_ += PLATE_GAP + actual_conflict_width_
+	var mother_size_ = Vector3(mother_total_width_, PLATE_HEIGHT, 1.0)
+	var mustard_ = Color(0.827, 0.706, 0.196, 1.0)
+	var mother_plate_ : MeshInstance3D = _frame_container.get_node_or_null("MotherPlate")
+	if mother_plate_ == null:
+		mother_plate_ = _create_mother_plate(mother_size_, "MotherPlate", mustard_)
+		_frame_container.add_child(mother_plate_)
+	else:
+		var existing_mesh_ := mother_plate_.mesh
+		if existing_mesh_ is BoxMesh:
+			(existing_mesh_ as BoxMesh).size = mother_size_
+		if mother_plate_.material_override is StandardMaterial3D:
+			(mother_plate_.material_override as StandardMaterial3D).albedo_color = mustard_
+	mother_plate_.position.x = mother_total_width_ / 2.0
+	mother_plate_.position.y = PLATE_HEIGHT / 2.0
+	var mother_center_z_ = region_world.z - 0.5
+	if mother_plate_.is_inside_tree():
+		mother_plate_.global_position.z = mother_center_z_
+	else:
+		mother_plate_.position.z = mother_center_z_
+
 	# Create region name label below the plates
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
@@ -923,6 +975,29 @@ func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String
 			rod_z.material_override = edge_material
 			rod_z.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			plate_mesh_instance.add_child(rod_z)
+	
+	return plate_mesh_instance
+
+## Creates a solid "mother" plate used as a binder under all region plates
+func _create_mother_plate(size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
+	var plate_mesh_instance = MeshInstance3D.new()
+	plate_mesh_instance.name = plate_name
+	
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = size
+	plate_mesh_instance.mesh = box_mesh
+	
+	var material = StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = plate_color
+	material.flags_unshaded = true
+	material.flags_transparent = false
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.no_depth_test = false
+	material.flags_do_not_receive_shadows = true
+	material.flags_disable_ambient_light = true
+	plate_mesh_instance.material_override = material
+	plate_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	
 	return plate_mesh_instance
 
