@@ -860,66 +860,69 @@ func _attach_hover_warning(plate_node: MeshInstance3D, warning_text: String) -> 
 	warn.position = Vector3(0, 2.0, 0)
 	plate_node.add_child(warn)
 
-## Creates a wireframe-only placeholder plate for empty input/output areas
+## Creates a visible placeholder using 12 thick edge rods for empty input/output plates
 func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
-	# Create plate mesh instance
+	# Container node; children will form the edges
 	var plate_mesh_instance = MeshInstance3D.new()
 	plate_mesh_instance.name = plate_name + "_Wireframe"
+	plate_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	
-	# Create array mesh for wireframe
-	var array_mesh = ArrayMesh.new()
-	var arrays = []
-	arrays.resize(Mesh.ARRAY_MAX)
-	
-	# Define vertices for a box (5x1x5 as specified)
-	var vertices = PackedVector3Array()
-	var indices = PackedInt32Array()
-	
-	# Box corners (front-left corner at origin)
+	# Half dimensions for positioning
 	var half_x = plate_size.x / 2.0
-	var half_y = plate_size.y / 2.0  
+	var half_y = plate_size.y / 2.0
 	var half_z = plate_size.z / 2.0
 	
-	# 8 vertices of box (centered for Godot)
-	vertices.append(Vector3(-half_x, -half_y, -half_z))  # 0: front-bottom-left
-	vertices.append(Vector3(half_x, -half_y, -half_z))   # 1: front-bottom-right
-	vertices.append(Vector3(half_x, half_y, -half_z))    # 2: front-top-right
-	vertices.append(Vector3(-half_x, half_y, -half_z))   # 3: front-top-left
-	vertices.append(Vector3(-half_x, -half_y, half_z))   # 4: back-bottom-left
-	vertices.append(Vector3(half_x, -half_y, half_z))    # 5: back-bottom-right
-	vertices.append(Vector3(half_x, half_y, half_z))     # 6: back-top-right
-	vertices.append(Vector3(-half_x, half_y, half_z))    # 7: back-top-left
+	# Unshaded emissive edge material for high visibility
+	var edge_material = StandardMaterial3D.new()
+	edge_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	edge_material.albedo_color = Color(plate_color.r, plate_color.g, plate_color.b, 1.0)
+	edge_material.flags_unshaded = true
+	edge_material.flags_transparent = false
+	edge_material.flags_do_not_receive_shadows = true
+	edge_material.flags_disable_ambient_light = true
+	edge_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	edge_material.emission_enabled = true
+	edge_material.emission = Color(plate_color.r * 0.6, plate_color.g * 0.6, plate_color.b * 0.6)
 	
-	# Define wireframe edges (lines connecting box vertices)
-	var wireframe_indices = [
-		# Front face
-		0, 1, 1, 2, 2, 3, 3, 0,
-		# Back face  
-		4, 5, 5, 6, 6, 7, 7, 4,
-		# Connecting edges
-		0, 4, 1, 5, 2, 6, 3, 7
-	]
+	# Edge thickness
+	var edge_thickness: float = 0.25
 	
-	for i in wireframe_indices:
-		indices.append(i)
-	
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_INDEX] = indices
-	
-	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
-	plate_mesh_instance.mesh = array_mesh
-	
-	# Create wireframe material
-	var wireframe_material = StandardMaterial3D.new()
-	wireframe_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	wireframe_material.albedo_color = plate_color  # Use actual alpha value from plate_color parameter
-	wireframe_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # Enable alpha transparency
-	wireframe_material.flags_unshaded = true
-	wireframe_material.flags_transparent = true
-	wireframe_material.flags_do_not_receive_shadows = true
-	wireframe_material.flags_disable_ambient_light = true
-	wireframe_material.vertex_color_use_as_albedo = false
-	plate_mesh_instance.material_override = wireframe_material
+	# 4 edges along X (front/back, top/bottom)
+	for y in [-half_y, half_y]:
+		for z in [-half_z, half_z]:
+			var rod_x = MeshInstance3D.new()
+			rod_x.name = "Edge_X_%s_%s" % [str(y), str(z)]
+			var bm_x = BoxMesh.new()
+			bm_x.size = Vector3(plate_size.x, edge_thickness, edge_thickness)
+			rod_x.mesh = bm_x
+			rod_x.position = Vector3(0.0, y, z)
+			rod_x.material_override = edge_material
+			rod_x.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			plate_mesh_instance.add_child(rod_x)
+	# 4 edges along Y (front/back, left/right)
+	for z in [-half_z, half_z]:
+		for x in [-half_x, half_x]:
+			var rod_y = MeshInstance3D.new()
+			rod_y.name = "Edge_Y_%s_%s" % [str(x), str(z)]
+			var bm_y = BoxMesh.new()
+			bm_y.size = Vector3(edge_thickness, plate_size.y, edge_thickness)
+			rod_y.mesh = bm_y
+			rod_y.position = Vector3(x, 0.0, z)
+			rod_y.material_override = edge_material
+			rod_y.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			plate_mesh_instance.add_child(rod_y)
+	# 4 edges along Z (left/right, top/bottom)
+	for y in [-half_y, half_y]:
+		for x in [-half_x, half_x]:
+			var rod_z = MeshInstance3D.new()
+			rod_z.name = "Edge_Z_%s_%s" % [str(x), str(y)]
+			var bm_z = BoxMesh.new()
+			bm_z.size = Vector3(edge_thickness, edge_thickness, plate_size.z)
+			rod_z.mesh = bm_z
+			rod_z.position = Vector3(x, y, 0.0)
+			rod_z.material_override = edge_material
+			rod_z.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			plate_mesh_instance.add_child(rod_z)
 	
 	return plate_mesh_instance
 
