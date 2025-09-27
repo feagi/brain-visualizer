@@ -87,6 +87,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		var key := event as InputEventKey
 		if key.keycode == KEY_ESCAPE:
 			close_window()
+		elif (key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER):
+			# Enter acts as clicking Establish when enabled
+			if _step4_button != null and !_step4_button.disabled:
+				establish_connection_button()
 
 func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
