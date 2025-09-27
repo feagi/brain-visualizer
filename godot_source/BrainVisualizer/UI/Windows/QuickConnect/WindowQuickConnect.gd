@@ -79,6 +79,14 @@ func _ready() -> void:
 	_step2_panel.theme_type_variation = "PanelContainer_QC_incomplete"
 	_step3_panel.theme_type_variation = "PanelContainer_QC_incomplete"
 	current_state = POSSIBLE_STATES.SOURCE
+	# Handle ESC to cancel
+	set_process_unhandled_key_input(true)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ESCAPE:
+			close_window()
 
 func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
