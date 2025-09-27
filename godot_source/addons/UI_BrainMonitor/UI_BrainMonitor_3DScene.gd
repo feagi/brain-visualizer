@@ -561,6 +561,8 @@ func _compute_scene_aabb() -> AABB:
 	var merged := AABB()
 	# Merge cortical area visualizations
 	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
 		if viz is Node:
 			var a := _compute_world_aabb(viz)
 			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
@@ -568,6 +570,8 @@ func _compute_scene_aabb() -> AABB:
 				have = true
 	# Merge brain region frames
 	for viz in _brain_region_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
 		if viz is Node:
 			var a := _compute_world_aabb(viz)
 			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
@@ -663,6 +667,8 @@ func _log_objects_relative_to_camera(context: String = "") -> void:
 
 	# Collect cortical area viz
 	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
 		if viz is Node:
 			var a := _compute_world_aabb(viz)
 			var center := a.position + (a.size / 2.0)
@@ -678,6 +684,8 @@ func _log_objects_relative_to_camera(context: String = "") -> void:
 
 	# Collect brain region frames
 	for viz in _brain_region_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
 		if viz is Node:
 			var a := _compute_world_aabb(viz)
 			var center := a.position + (a.size / 2.0)
@@ -1339,7 +1347,12 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
-	return _cortical_visualizations_by_ID.get(cortical_id, null)
+	var viz = _cortical_visualizations_by_ID.get(cortical_id, null)
+	if viz == null or not is_instance_valid(viz):
+		if _cortical_visualizations_by_ID.has(cortical_id):
+			_cortical_visualizations_by_ID.erase(cortical_id)
+		return null
+	return viz
 
 ## Check if this brain monitor is currently visualizing a specific cortical area
 func has_cortical_area_visualization(cortical_id: String) -> bool:

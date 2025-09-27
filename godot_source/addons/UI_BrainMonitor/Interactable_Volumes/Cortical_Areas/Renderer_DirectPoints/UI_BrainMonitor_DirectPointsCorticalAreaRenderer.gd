@@ -88,10 +88,12 @@ func setup(area: AbstractCorticalArea) -> void:
 		print("   ⚡ Created 3x larger cylinder collision for power cortical area")
 	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
 		var box_shape = BoxShape3D.new()
-		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Larger depth for better click detection
+		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Match PNG quad size; depth generous for ray hits
 		collision_shape.shape = box_shape
+		# Align collider center with billboard icon center (icon_mesh_instance.position.y = 2.0)
+		collision_shape.position = Vector3(0.0, 2.0, 0.0)
 		print("   🖼️ Created billboard collision for PNG icon cortical area: ", area.cortical_ID)
-		print("   📏 Collision size: ", box_shape.size)
+		print("   📏 Collision size: ", box_shape.size, " at offset ", collision_shape.position)
 	else:
 		var box_shape = BoxShape3D.new()
 		collision_shape.shape = box_shape
@@ -226,7 +228,13 @@ func setup(area: AbstractCorticalArea) -> void:
 		print("   📍 PNG icon label positioned at: ", _friendly_name_label.position)
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
-	add_child(_friendly_name_label)
+	# Attach label to follow movement correctly:
+	# - For PNG icon areas (e.g., _death), parent to _static_body so it inherits movement
+	# - For others, keep as child of this renderer and use absolute positioning updates
+	if area.cortical_ID == "_death" or _should_use_png_icon(area):
+		_static_body.add_child(_friendly_name_label)
+	else:
+		add_child(_friendly_name_label)
 
 	# Set initial properties
 	_position_FEAGI_space = area.coordinates_3D
@@ -287,7 +295,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		# PNG icon areas keep their custom collision size
 		if _should_use_png_icon_by_id(_cortical_area_id):
 			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # Maintain PNG icon collision
-			print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size)
+			# Keep collider centered with the icon (icon at y=2.0)
+			collision_shape.position = Vector3(0.0, 2.0, 0.0)
+			print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size, " at offset ", collision_shape.position)
 		else:
 			(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
 	
