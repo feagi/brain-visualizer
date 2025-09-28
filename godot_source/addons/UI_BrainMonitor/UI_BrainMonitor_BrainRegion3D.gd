@@ -663,7 +663,27 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 					break
 		
 	
-	# 5. Update region label position attached to MotherPlate
+	# 5. Ensure region label exists and update position
+	if not _region_name_label:
+		# Recreate label if it was destroyed during cleanup
+		_region_name_label = Label3D.new()
+		_region_name_label.name = "RegionNameLabel"
+		_region_name_label.text = _representing_region.friendly_name
+		_region_name_label.font_size = 48
+		_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_region_name_label.fixed_size = true
+		_region_name_label.no_depth_test = true
+		_region_name_label.outline_render_priority = 1
+		_region_name_label.outline_size = 4
+		_region_name_label.modulate = Color.WHITE
+		_region_name_label.outline_modulate = Color.BLACK
+		_region_name_label.render_priority = 10
+		_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_region_name_label.visible = true
+		_frame_container.add_child(_region_name_label)
+		print("🏷️ RECREATED region label during update")
+	
 	if _region_name_label:
 		var mother: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
 		if mother != null:
@@ -850,14 +870,14 @@ func _create_3d_plate() -> void:
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
-	_region_name_label.font_size = 320  # Larger than cortical area labels for visibility
+	_region_name_label.font_size = 48  # Moderate size for visibility
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.fixed_size = true  # Keep readable regardless of distance
 	_region_name_label.no_depth_test = true  # Always draw on top
 	_region_name_label.outline_render_priority = 1
 	_region_name_label.outline_size = 4
 	_region_name_label.modulate = Color.WHITE
-	_region_name_label.outline_modulate = Color(0, 0, 0, 1)
+	_region_name_label.outline_modulate = Color.BLACK
 	_region_name_label.render_priority = 10
 	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -869,20 +889,22 @@ func _create_3d_plate() -> void:
 	if conflict_areas.size() > 0:
 		total_width += PLATE_GAP + conflict_plate_size.x
 	var center_x = total_width / 2.0
-	# Y just below bezel if present; otherwise a small offset below plates
+	# Position with same X,Z as mother plate and Y = mother plate Y - 2.0
 	var bezel: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
-	var label_y_world = global_position.y - 0.5
-	# Z in front of bezel front face (or front edge if bezel missing)
-	var label_z_world: float
-	if bezel != null and bezel.mesh is BoxMesh:
-		label_y_world = bezel.global_position.y - (PLATE_HEIGHT / 2.0) - 0.25
-		var bezel_front_z = bezel.global_position.z - ((bezel.mesh as BoxMesh).size.z / 2.0)
-		label_z_world = bezel_front_z - 0.05
+	if bezel != null:
+		var label_x_world = bezel.global_position.x  # Same X as bezel center
+		var label_y_world = bezel.global_position.y - 2.0  # 2 units below bezel center
+		var label_z_world = bezel.global_position.z  # Same Z as bezel center
+		_region_name_label.global_position = Vector3(label_x_world, label_y_world, label_z_world)
 	else:
-		var front_edge_world_z = -_representing_region.coordinates_3D.z
-		label_z_world = front_edge_world_z - 0.05
-	_region_name_label.global_position = Vector3(global_position.x + center_x, label_y_world, label_z_world)
+		# Fallback if no bezel - use centered position
+		var label_y_world = global_position.y - 2.0
+		var label_z_world = -_representing_region.coordinates_3D.z - 0.5
+		_region_name_label.global_position = Vector3(global_position.x + center_x, label_y_world, label_z_world)
 	_region_name_label.visible = true
+	
+	print("🏷️ REGION TITLE CREATED: '%s' at position %s" % [_region_name_label.text, _region_name_label.global_position])
+	print("    Font size: %d, Modulate: %s, Visible: %s" % [_region_name_label.font_size, _region_name_label.modulate, _region_name_label.visible])
 	
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
@@ -2210,7 +2232,30 @@ func _refresh_frame_contents() -> void:
 
 ## Updates the region label position to center it between the new plates after refresh
 func _update_label_position_after_refresh() -> void:
-	if not _region_name_label or not _representing_region:
+	if not _representing_region:
+		return
+	
+	# Ensure label exists - recreate if destroyed during cleanup
+	if not _region_name_label:
+		_region_name_label = Label3D.new()
+		_region_name_label.name = "RegionNameLabel"
+		_region_name_label.text = _representing_region.friendly_name
+		_region_name_label.font_size = 48
+		_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_region_name_label.fixed_size = true
+		_region_name_label.no_depth_test = true
+		_region_name_label.outline_render_priority = 1
+		_region_name_label.outline_size = 4
+		_region_name_label.modulate = Color.WHITE
+		_region_name_label.outline_modulate = Color.BLACK
+		_region_name_label.render_priority = 10
+		_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_region_name_label.visible = true
+		_frame_container.add_child(_region_name_label)
+		print("🏷️ RECREATED region label during refresh update")
+	
+	if not _region_name_label:
 		return
 	
 	# Recalculate plate sizes for current I/O areas
