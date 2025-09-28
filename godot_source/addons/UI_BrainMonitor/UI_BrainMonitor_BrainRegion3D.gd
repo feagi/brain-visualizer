@@ -669,7 +669,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		_region_name_label = Label3D.new()
 		_region_name_label.name = "RegionNameLabel"
 		_region_name_label.text = _representing_region.friendly_name
-		_region_name_label.font_size = 48
+		_region_name_label.font_size = 32
+		_region_name_label.pixel_size = 0.001
 		_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		_region_name_label.fixed_size = true
 		_region_name_label.no_depth_test = true
@@ -870,7 +871,8 @@ func _create_3d_plate() -> void:
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
-	_region_name_label.font_size = 48  # Moderate size for visibility
+	_region_name_label.font_size = 32  # Higher resolution for better quality
+	_region_name_label.pixel_size = 0.001  # Small pixel size for proper visual scale
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.fixed_size = true  # Keep readable regardless of distance
 	_region_name_label.no_depth_test = true  # Always draw on top
@@ -2240,7 +2242,8 @@ func _update_label_position_after_refresh() -> void:
 		_region_name_label = Label3D.new()
 		_region_name_label.name = "RegionNameLabel"
 		_region_name_label.text = _representing_region.friendly_name
-		_region_name_label.font_size = 48
+		_region_name_label.font_size = 32
+		_region_name_label.pixel_size = 0.001
 		_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		_region_name_label.fixed_size = true
 		_region_name_label.no_depth_test = true
