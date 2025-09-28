@@ -599,7 +599,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		var actual_conflict_width = conflict_plate_size.x
 		mother_total_width += PLATE_GAP + actual_conflict_width
 	var mother_size = Vector3(mother_total_width, PLATE_HEIGHT, 1.0)
-	var mustard = Color(0.827, 0.706, 0.196, 1.0)
+	var mustard = Color(0.415, 0.343, 0.076, 0.725)
 	var mother_plate: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate")
 	if mother_plate == null:
 		mother_plate = _create_mother_plate(mother_size, "MotherPlate", mustard)
@@ -852,6 +852,8 @@ func _create_3d_plate() -> void:
 	_region_name_label.text = _representing_region.friendly_name
 	_region_name_label.font_size = 320  # Larger than cortical area labels for visibility
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
+	_region_name_label.fixed_size = true  # Keep readable regardless of distance
+	_region_name_label.no_depth_test = true  # Always draw on top
 	_region_name_label.outline_render_priority = 1
 	_region_name_label.outline_size = 4
 	_region_name_label.modulate = Color.WHITE
