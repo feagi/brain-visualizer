@@ -613,7 +613,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	# Position mother plate centered across all plates; align front edges at region Z
 	mother_plate.position.x = mother_total_width / 2.0
 	mother_plate.position.y = PLATE_HEIGHT / 2.0
-	var mother_center_z = region_world.z - 0.5
+	var mother_center_z = region_world.z + 1.0
 	mother_plate.global_position.z = mother_center_z
 	
 	# Update clickable collision areas to match new plate sizes/positions
@@ -829,7 +829,7 @@ func _create_3d_plate() -> void:
 			(mother_plate_.material_override as StandardMaterial3D).albedo_color = mustard_
 	mother_plate_.position.x = mother_total_width_ / 2.0
 	mother_plate_.position.y = PLATE_HEIGHT / 2.0
-	var mother_center_z_ = region_world.z - 0.5
+	var mother_center_z_ = region_world.z + 1.0
 	if mother_plate_.is_inside_tree():
 		mother_plate_.global_position.z = mother_center_z_
 	else:
