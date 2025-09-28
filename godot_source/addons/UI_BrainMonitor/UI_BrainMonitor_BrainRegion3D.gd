@@ -612,8 +612,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 			(mother_plate.material_override as StandardMaterial3D).albedo_color = mustard
 	# Position mother plate centered across all plates; align front edges at region Z
 	mother_plate.position.x = mother_total_width / 2.0
-	mother_plate.position.y = PLATE_HEIGHT / 2.0
-	var mother_center_z = region_world.z + 1.0
+	mother_plate.position.y = PLATE_HEIGHT / 2.0 - 2.0
+	var mother_center_z = region_world.z - 0.5
 	mother_plate.global_position.z = mother_center_z
 	
 	# Update clickable collision areas to match new plate sizes/positions
@@ -663,13 +663,24 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 					break
 		
 	
-	# 5. Update region label position to stay centered between new plates
+	# 5. Update region label position attached to MotherPlate
 	if _region_name_label:
-		var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
-		var center_x = total_width / 2.0
-		var front_edge_world_z = -_representing_region.coordinates_3D.z
-		var label_world_z = front_edge_world_z - 0.5
-		_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
+		var mother: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
+		if mother != null:
+			if _region_name_label.get_parent() != mother:
+				var prev_parent = _region_name_label.get_parent()
+				if prev_parent != null:
+					prev_parent.remove_child(_region_name_label)
+			mother.add_child(_region_name_label)
+			# Place just below bezel and slightly in front of its front face
+			if mother.mesh is BoxMesh:
+				var bezel_front = (mother.mesh as BoxMesh).size.z / 2.0
+				_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -(bezel_front + 0.05))
+			else:
+				_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -0.05)
+		else:
+			var front_edge_world_z = -_representing_region.coordinates_3D.z
+			_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5, front_edge_world_z - 1.0)
 		print("    📍 Label repositioned near front edge: world pos (%.1f, %.1f, %.1f)" % [_region_name_label.global_position.x, _region_name_label.global_position.y, _region_name_label.global_position.z])
 	
 
@@ -828,40 +839,48 @@ func _create_3d_plate() -> void:
 		if mother_plate_.material_override is StandardMaterial3D:
 			(mother_plate_.material_override as StandardMaterial3D).albedo_color = mustard_
 	mother_plate_.position.x = mother_total_width_ / 2.0
-	mother_plate_.position.y = PLATE_HEIGHT / 2.0
-	var mother_center_z_ = region_world.z + 1.0
+	mother_plate_.position.y = PLATE_HEIGHT / 2.0 - 2.0
+	var mother_center_z_ = region_world.z - 0.5
 	if mother_plate_.is_inside_tree():
 		mother_plate_.global_position.z = mother_center_z_
 	else:
 		mother_plate_.position.z = mother_center_z_
 
-	# Create region name label below the plates
+	# Create region name label (white, large) and place it below the bezel
 	_region_name_label = Label3D.new()
 	_region_name_label.name = "RegionNameLabel"
 	_region_name_label.text = _representing_region.friendly_name
-	_region_name_label.font_size = 192  # Same as cortical area labels
-	# Position label at center of ALL plates (including conflict plate if it exists)
-	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
-	if conflict_areas.size() > 0:
-		total_width += PLATE_GAP + conflict_plate_size.x  # Add conflict plate to total width
-	var center_x = total_width / 2.0  # Center across all plates
-	# Place label just in front of the plates (very close to front edge)
-	# FEAGI: front edge Z = brain_region.coords.z → Godot world Z = -frontZ
-	# Use a tiny epsilon toward the viewer so it renders in front
-	var front_edge_world_z = -_representing_region.coordinates_3D.z
-	var label_world_z = front_edge_world_z - 0.5  # 0.5 units closer to viewer
-	# Use local position relative to this brain region node (avoids global_position issues)
-	_region_name_label.position = Vector3(center_x, -3.0, label_world_z)
-	
+	_region_name_label.font_size = 320  # Larger than cortical area labels for visibility
 	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_region_name_label.outline_render_priority = 1
-	_region_name_label.outline_size = 2
+	_region_name_label.outline_size = 4
 	_region_name_label.modulate = Color.WHITE
-	# Center the label horizontally
+	_region_name_label.outline_modulate = Color(0, 0, 0, 1)
+	_region_name_label.render_priority = 10
 	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	
+	# Attach to frame container and position using world coordinates
 	_frame_container.add_child(_region_name_label)
+	# Center X across all plates
+	var total_width = input_plate_size.x + PLATE_GAP + output_plate_size.x
+	if conflict_areas.size() > 0:
+		total_width += PLATE_GAP + conflict_plate_size.x
+	var center_x = total_width / 2.0
+	# Y just below bezel if present; otherwise a small offset below plates
+	var bezel: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
+	var label_y_world = global_position.y - 0.5
+	# Z in front of bezel front face (or front edge if bezel missing)
+	var label_z_world: float
+	if bezel != null and bezel.mesh is BoxMesh:
+		label_y_world = bezel.global_position.y - (PLATE_HEIGHT / 2.0) - 0.25
+		var bezel_front_z = bezel.global_position.z - ((bezel.mesh as BoxMesh).size.z / 2.0)
+		label_z_world = bezel_front_z - 0.05
+	else:
+		var front_edge_world_z = -_representing_region.coordinates_3D.z
+		label_z_world = front_edge_world_z - 0.05
+	_region_name_label.global_position = Vector3(global_position.x + center_x, label_y_world, label_z_world)
+	_region_name_label.visible = true
 	
 	
 	# Add collision bodies for click detection (as direct children for proper detection)
@@ -2206,10 +2225,23 @@ func _update_label_position_after_refresh() -> void:
 		total_width += PLATE_GAP + conflict_plate_size.x  # Add conflict plate to total width
 	var center_x = total_width / 2.0
 	
-	# Update label position to be centered between the new plates
-	var front_edge_world_z = -_representing_region.coordinates_3D.z
-	var label_world_z = front_edge_world_z - 0.5  # 0.5 units closer to viewer
-	_region_name_label.global_position = Vector3(global_position.x + center_x, global_position.y - 3.0, label_world_z)
+	# Update label position: attach to MotherPlate if present
+	var mother: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
+	if mother != null:
+		if _region_name_label.get_parent() != mother:
+			var prev_parent = _region_name_label.get_parent()
+			if prev_parent != null:
+				prev_parent.remove_child(_region_name_label)
+			mother.add_child(_region_name_label)
+		# Place just below bezel and slightly in front of its front face
+		if mother.mesh is BoxMesh:
+			var bezel_front2 = (mother.mesh as BoxMesh).size.z / 2.0
+			_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -(bezel_front2 + 0.05))
+		else:
+			_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -0.05)
+	else:
+		var front_edge_world_z = -_representing_region.coordinates_3D.z
+		_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5, front_edge_world_z - 1.0)
 	
 	print("🏷️ LABEL UPDATE: Repositioned region label '%s' to center between updated plates" % _representing_region.friendly_name)
 	print("    📐 New plate sizes - Input: %s, Output: %s, Conflict: %s, Total width: %.1f" % [input_plate_size, output_plate_size, conflict_plate_size, total_width])

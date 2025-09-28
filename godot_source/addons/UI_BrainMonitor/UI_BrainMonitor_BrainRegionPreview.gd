@@ -81,25 +81,8 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	output_plate.position.z = -output_depth / 2.0
 	_preview_container.add_child(output_plate)
 	
-	# Create preview region name label (positioned consistently with main brain region)
-	_region_name_label = Label3D.new()
-	_region_name_label.name = "PreviewRegionLabel"
-	_region_name_label.text = brain_region.friendly_name + " (PREVIEW)"
-	_region_name_label.font_size = 192
-	
-	# Position label centered between plates and very close to viewer (front edge - small epsilon)
-	var center_x = (actual_input_width + plate_gap + actual_output_width) / 2.0
-	_region_name_label.position = Vector3(center_x, -3.0, -0.5)
-	
-	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_region_name_label.outline_render_priority = 1
-	_region_name_label.outline_size = 4  # Thicker outline for better visibility
-	_region_name_label.modulate = Color(1.0, 1.0, 0.0, 1.0)  # Bright yellow for high visibility
-	_region_name_label.outline_modulate = Color(0.0, 0.0, 0.0, 1.0)  # Black outline for contrast
-	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	
-	_preview_container.add_child(_region_name_label)
+	# Suppress preview label to avoid confusion with live region labels during editing
+	# (If needed later, we can enable via a debug flag.)
 	
 	# Set initial position
 	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position)
