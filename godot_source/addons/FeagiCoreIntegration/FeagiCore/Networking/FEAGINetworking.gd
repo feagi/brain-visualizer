@@ -185,6 +185,8 @@ func _call_register_agent_for_shm() -> bool:
 					
 					# Enable SHM visualization and SKIP WebSocket connection
 					if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
+						# CRITICAL: Enable processing so SHM polling happens in _process()
+						websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 						websocket_API.enable_shared_memory_visualization(viz_path)
 						print("𒓉 [TRANSPORT] ✅ SHM visualization enabled, WebSocket will be skipped")
 					return true  # Success - using SHM, no need for WebSocket
