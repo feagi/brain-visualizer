@@ -1365,7 +1365,8 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	var rendering_area: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[area.cortical_ID]
 	_previously_moused_over_volumes.erase(rendering_area)
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
-	rendering_area.queue_free()
+	if is_instance_valid(rendering_area):
+		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
