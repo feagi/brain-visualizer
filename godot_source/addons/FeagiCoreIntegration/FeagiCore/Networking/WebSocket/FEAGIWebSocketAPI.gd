@@ -153,6 +153,10 @@ func _process(_delta: float):
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready():
 		_pending_type11.clear()
 
+	# 𒓉 Guard: If socket is null (e.g. never connected when using SHM), skip entirely
+	if not _socket:
+		return
+
 	_socket.poll()
 	match(_socket.get_ready_state()):
 		WebSocketPeer.State.STATE_CONNECTING:

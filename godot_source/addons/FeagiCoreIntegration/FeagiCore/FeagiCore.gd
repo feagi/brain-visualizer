@@ -254,10 +254,14 @@ func _fetch_simulation_timestep() -> void:
 				if _in_use_endpoint_details:
 					network.websocket_API.setup(_in_use_endpoint_details.full_websocket_address)
 					network.websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
-					# Ensure signal is connected
-					if not network.websocket_API.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-						network.websocket_API.FEAGI_socket_health_changed.connect(network._WS_health_changed)
-					network.websocket_API.connect_websocket()
+					# Only reconnect WebSocket if we're using WebSocket transport (not SHM)
+					if network._transport_mode != network.TRANSPORT_MODE.SHARED_MEMORY:
+						# Ensure signal is connected
+						if not network.websocket_API.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+							network.websocket_API.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+						network.websocket_API.connect_websocket()
+					else:
+						print("ℹ️ Skipping WebSocket reconnection - using Shared Memory transport")
 		elif network.http_API.http_health == network.http_API.HTTP_HEALTH.NO_CONNECTION:
 			# Just restore HTTP health if it was down but connection wasn't fully disconnected
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
@@ -389,11 +393,15 @@ func reload_genome_await():
 					if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
 						ws.setup(_in_use_endpoint_details.full_websocket_address)
 						ws.process_mode = Node.PROCESS_MODE_INHERIT
-						if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-							ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
-						ws.connect_websocket()
-					# Also re-register the agent to refresh SHM visualization paths after FEAGI restart
-					network._call_register_agent_for_shm()
+						# Only reconnect WebSocket if we're using WebSocket transport (not SHM)
+						if network._transport_mode != network.TRANSPORT_MODE.SHARED_MEMORY:
+							if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+								ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+							ws.connect_websocket()
+						else:
+							print("ℹ️ Skipping WebSocket reconnection - using Shared Memory transport")
+					# Re-register the agent to refresh transport info after FEAGI restart
+					await network._call_register_agent_for_shm()
 				# Schedule a short watchdog to ensure WS stays connected after reload
 				_ensure_ws_connected_after_reload(30)
 				return
@@ -439,11 +447,15 @@ func reload_genome_await():
 		if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
 			ws.setup(_in_use_endpoint_details.full_websocket_address)
 			ws.process_mode = Node.PROCESS_MODE_INHERIT
-			if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-				ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
-			ws.connect_websocket()
-		# Also re-register the agent to refresh SHM visualization paths after FEAGI restart
-		network._call_register_agent_for_shm()
+			# Only reconnect WebSocket if we're using WebSocket transport (not SHM)
+			if network._transport_mode != network.TRANSPORT_MODE.SHARED_MEMORY:
+				if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
+					ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+				ws.connect_websocket()
+			else:
+				print("ℹ️ Skipping WebSocket reconnection - using Shared Memory transport")
+		# Re-register the agent to refresh transport info after FEAGI restart
+		await network._call_register_agent_for_shm()
 	# Schedule a short watchdog to ensure WS stays connected after reload
 	_ensure_ws_connected_after_reload(30)
 	
@@ -535,9 +547,11 @@ func _ensure_ws_connected_after_reload(attempts: int) -> void:
 	# Ensure WS health signal is wired so FEAGINetworking can update its state
 	if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
 		ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
-	# Only kick a connect if not already in RETRYING
-	if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
+	# Only kick a connect if not already in RETRYING and using WebSocket transport
+	if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION and network._transport_mode != network.TRANSPORT_MODE.SHARED_MEMORY:
 		ws.connect_websocket()
+	elif network._transport_mode == network.TRANSPORT_MODE.SHARED_MEMORY:
+		print("ℹ️ Skipping WebSocket reconnection - using Shared Memory transport")
 	# Re-check shortly in case FEAGI was still coming up
 	get_tree().create_timer(2.0).timeout.connect(func():
 		_ensure_ws_connected_after_reload(attempts - 1)

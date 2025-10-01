@@ -14,6 +14,13 @@ enum CONNECTION_STATE {
 	RETRYING_HTTP_WS
 }
 
+enum TRANSPORT_MODE {
+	UNKNOWN,
+	SHARED_MEMORY,
+	WEBSOCKET,
+	ZMQ
+}
+
 signal connection_state_changed(prev_state: CONNECTION_STATE, current_state: CONNECTION_STATE)
 signal genome_reset_request_recieved()
 
@@ -24,6 +31,7 @@ var connection_state: CONNECTION_STATE:
 	get: return _connection_state
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
+var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -33,7 +41,7 @@ func _init():
 	websocket_API = FEAGIWebSocketAPI.new()
 	websocket_API.name = "FEAGIWebSocketAPI"
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
-	websocket_API.feagi_requesting_reset.connect(func() : 
+	websocket_API.feagi_requesting_reset.connect(func(): 
 		print("🔗 NETWORKING: Received feagi_requesting_reset, forwarding to FeagiCore...")
 		genome_reset_request_recieved.emit()
 		print("✅ NETWORKING: genome_reset_request_recieved signal emitted")
@@ -71,16 +79,35 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no HTTP response at endpoint %s" % feagi_endpoint_details.full_http_address)
 		return false
 	
-	# Check Websocket connectivity
+	# 𒓉 CHANGED: Register FIRST to get transport negotiation, THEN connect
+	print("FEAGI NETWORK: Registering with FEAGI to negotiate transport...")
+	var shm_enabled: bool = await _call_register_agent_for_shm()
+	
+	# Check if SHM was already enabled during registration (early return)
+	# If so, skip WebSocket connection entirely
+	if shm_enabled:
+		print("𒓉 [TRANSPORT] SHM enabled during registration - skipping WebSocket connection")
+		_transport_mode = TRANSPORT_MODE.SHARED_MEMORY  # Remember we're using SHM
+		_connection_state = CONNECTION_STATE.HEALTHY
+		connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.HEALTHY)
+		# Skip to the end - signals will be connected at the bottom of the function
+		# (same as normal WebSocket flow after line ~110)
+		print("FEAGI NETWORK: Connecting to HTTP health signals for ongoing monitoring")
+		http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
+		# Note: We still connect to WS health signals in case code tries to use WS
+		# but we won't actively initiate WS connections when using SHM
+		print("FEAGI NETWORK: Connecting to websocket health signals for monitoring (SHM mode)")
+		websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
+		return true
+	
+	# No SHM available or not recommended - proceed with WebSocket connection
+	_transport_mode = TRANSPORT_MODE.WEBSOCKET  # Remember we're using WebSocket
 	_connection_state = CONNECTION_STATE.INITIAL_WS_PROBING
-	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING,  CONNECTION_STATE.INITIAL_WS_PROBING)
+	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.INITIAL_WS_PROBING)
 	print("FEAGI NETWORK: Testing WS endpoint at %s" % feagi_endpoint_details.full_websocket_address)
 	websocket_API.setup(feagi_endpoint_details.full_websocket_address)
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 	websocket_API.connect_websocket()
-
-	# 𒓉 Attempt agent registration to obtain SHM paths
-	_call_register_agent_for_shm()
 	
 	# NOTE: Since websocket startup can have its health set to retrying, we stay in a loop until we get a sucess or failure
 	while true:
@@ -104,7 +131,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	return true
 
-func _call_register_agent_for_shm() -> void:
+func _call_register_agent_for_shm() -> bool:
 	# Build registration payload
 	var payload := {
 		"agent_type": "visualizer",
@@ -112,14 +139,15 @@ func _call_register_agent_for_shm() -> void:
 		"agent_data_port": 0,
 		"agent_version": ProjectSettings.get_setting("application/config/version", "dev"),
 		"controller_version": ProjectSettings.get_setting("application/config/version", "dev"),
-		"capabilities": {"visualization": true},
+		# Provide capability with explicit refresh rate to align with FEAGI rate processing
+		"capabilities": {"visualization": {"rate_hz": 30.0, "enabled": true}},
 		"metadata": {"request_shared_memory": true}
 	}
 	# Avoid chained member resolution at parse time; guard address_list
 	var addr_list = http_API.get("address_list")
 	if addr_list == null:
 		push_warning("FEAGI NETWORK: HTTP address list not initialized; skipping agent register")
-		return
+		return false
 	var post_url: StringName = addr_list.POST_agent_register
 	var def := APIRequestWorkerDefinition.define_single_POST_call(post_url, payload)
 	var worker := http_API.make_HTTP_call(def)
@@ -132,30 +160,49 @@ func _call_register_agent_for_shm() -> void:
 		if out.has_errored:
 			var body := out.decode_response_as_dict()
 			print("𒓉 [REG] Error body: ", body)
-		return
+		return false
 	var resp := out.decode_response_as_dict()
-	var msg := resp.get("message", "")
 	print("𒓉 [REG] Response: ", resp)
-	if typeof(msg) == TYPE_STRING and msg != "":
-		# Server encodes details JSON in message
-		var parsed_any = JSON.parse_string(msg)
-		var parsed: Dictionary = {}
-		if typeof(parsed_any) == TYPE_DICTIONARY:
-			parsed = parsed_any
-		if parsed.has("shared_memory") and typeof(parsed["shared_memory"]) == TYPE_DICTIONARY:
-			var shm: Dictionary = parsed["shared_memory"]
-			# Expected keys might include 'visualization' (canonical)
-			var viz: String = ""
-			# Canonical key: 'visualization'
-			if shm.has("visualization"):
-				viz = str(shm["visualization"]) 
-			if viz != "":
-				print("𒓉 [REG] Using SHM from register: ", viz)
-				# Set env for current process to let WebSocketAPI pick it up
-				OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz)
-				# Ask WS API to switch to SHM using a public helper
-				if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
-					websocket_API.enable_shared_memory_visualization(viz)
+	
+	# Check registration success and transport negotiation
+	if resp.get("status", "") == "success":
+		# NEW: Check transport negotiation from registration response
+		if resp.has("transport") and typeof(resp["transport"]) == TYPE_DICTIONARY:
+			var transport: Dictionary = resp["transport"]
+			var recommended: String = transport.get("recommended", "")
+			var available: Array = transport.get("available", [])
+			
+			print("𒓉 [TRANSPORT] Available transports: ", available)
+			print("𒓉 [TRANSPORT] Recommended: ", recommended)
+			
+			# If SHM is recommended, use it directly
+			if recommended == "shm" and transport.has("shm_paths"):
+				var shm_paths: Dictionary = transport["shm_paths"]
+				if shm_paths.has("visualization"):
+					var viz_path: String = str(shm_paths["visualization"])
+					print("𒓉 [TRANSPORT] ✅ Using SHM transport: ", viz_path)
+					OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz_path)
+					
+					# Enable SHM visualization and SKIP WebSocket connection
+					if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
+						websocket_API.enable_shared_memory_visualization(viz_path)
+						print("𒓉 [TRANSPORT] ✅ SHM visualization enabled, WebSocket will be skipped")
+					return true  # Success - using SHM, no need for WebSocket
+			
+			# If WebSocket is recommended (via bridge)
+			elif recommended == "websocket":
+				print("𒓉 [TRANSPORT] Using WebSocket transport via bridge")
+				# WebSocket connection will proceed normally below
+				return false
+			
+			# If ZMQ is recommended (direct)
+			elif recommended == "zmq":
+				print("𒓉 [TRANSPORT] Direct ZMQ transport recommended (not currently supported in BV)")
+				# BV doesn't support direct ZMQ, will fall back to WebSocket
+				return false
+	
+	# Default: SHM not available, fall back to WebSocket
+	return false
 	
 ## Completely disconnect all networking systems from FEAGI
 func disconnect_networking() -> void:
@@ -188,6 +235,13 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, current_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
 	print("FEAGI NETWORK: 📡 _WS_health_changed received: %s → %s" % [FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[_previous_health], FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[current_health]])
 	print("FEAGI NETWORK: Current connection state before WS change: %s" % CONNECTION_STATE.keys()[_connection_state])
+	print("FEAGI NETWORK: Current transport mode: %s" % TRANSPORT_MODE.keys()[_transport_mode])
+	
+	# If we're using Shared Memory, ignore WebSocket health changes
+	if _transport_mode == TRANSPORT_MODE.SHARED_MEMORY:
+		print("FEAGI NETWORK: ℹ️ Ignoring WebSocket health change - using Shared Memory transport")
+		return
+	
 	match current_health:
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.NO_CONNECTION:
 			print("FEAGI NETWORK: WS NO_CONNECTION → Changing to DISCONNECTED")
