@@ -32,6 +32,7 @@ var connection_state: CONNECTION_STATE:
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used
+var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -55,6 +56,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		push_error("FEAGI NETWORK: Unable to commence a new connection when one is active in some form already!")
 		return false
 	
+	# Store endpoint details for use throughout the connection lifecycle
+	_feagi_endpoint_details = feagi_endpoint_details
+	
 	# We dont want prior connections from HTTP or WS to set off other code paths, remove signal connections
 	if http_API.FEAGI_http_health_changed.is_connected(_HTTP_health_changed):
 		http_API.FEAGI_http_health_changed.disconnect(_HTTP_health_changed)
@@ -67,8 +71,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	# Check HTTP connectivity
 	_connection_state = CONNECTION_STATE.INITIAL_HTTP_PROBING
 	connection_state_changed.emit(CONNECTION_STATE.DISCONNECTED,  CONNECTION_STATE.INITIAL_HTTP_PROBING)
-	print("FEAGI NETWORK: Testing HTTP endpoint at %s" % feagi_endpoint_details.full_http_address)
-	http_API.setup(feagi_endpoint_details.full_http_address, feagi_endpoint_details.header)
+	print("FEAGI NETWORK: Testing HTTP endpoint at %s" % _feagi_endpoint_details.full_http_address)
+	http_API.setup(_feagi_endpoint_details.full_http_address, _feagi_endpoint_details.header)
 	http_API.confirm_connectivity() # NOTE: confirm_connectivity will never allow its health to be set as retrying, so we dont neet to worry about that
 	
 	await http_API.FEAGI_http_health_changed
@@ -76,7 +80,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	if http_API.http_health in [http_API.HTTP_HEALTH.NO_CONNECTION, http_API.HTTP_HEALTH.ERROR]:
 		_connection_state = CONNECTION_STATE.DISCONNECTED
 		connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.DISCONNECTED)
-		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no HTTP response at endpoint %s" % feagi_endpoint_details.full_http_address)
+		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no HTTP response at endpoint %s" % _feagi_endpoint_details.full_http_address)
 		return false
 	
 	# 𒓉 CHANGED: Register FIRST to get transport negotiation, THEN connect
@@ -104,8 +108,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	_transport_mode = TRANSPORT_MODE.WEBSOCKET  # Remember we're using WebSocket
 	_connection_state = CONNECTION_STATE.INITIAL_WS_PROBING
 	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.INITIAL_WS_PROBING)
-	print("FEAGI NETWORK: Testing WS endpoint at %s" % feagi_endpoint_details.full_websocket_address)
-	websocket_API.setup(feagi_endpoint_details.full_websocket_address)
+	print("FEAGI NETWORK: Testing WS endpoint at %s" % _feagi_endpoint_details.full_websocket_address)
+	websocket_API.setup(_feagi_endpoint_details.full_websocket_address)
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 	websocket_API.connect_websocket()
 	
@@ -119,7 +123,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		_connection_state = CONNECTION_STATE.DISCONNECTED
 		http_API.disconnect_http() # HTTP is active, so lets ensure its disabled
 		connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.DISCONNECTED)
-		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no WS response at endpoint %s" % feagi_endpoint_details.full_websocket_address)
+		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no WS response at endpoint %s" % _feagi_endpoint_details.full_websocket_address)
 		return false
 	
 	# both HTTP and WS are functioning! We are good to go!
@@ -193,8 +197,18 @@ func _call_register_agent_for_shm() -> bool:
 			
 			# If WebSocket is recommended (via bridge)
 			elif recommended == "websocket":
-				print("𒓉 [TRANSPORT] Using WebSocket transport via bridge")
-				# WebSocket connection will proceed normally below
+				if transport.has("websocket") and typeof(transport["websocket"]) == TYPE_DICTIONARY:
+					var ws_info: Dictionary = transport["websocket"]
+					var ws_host: String = ws_info.get("host", "127.0.0.1")
+					var ws_port: int = int(ws_info.get("port", 9050))
+					var bridge_address: String = "ws://%s:%d" % [ws_host, ws_port]
+					print("𒓉 [TRANSPORT] Using WebSocket transport via bridge: ", bridge_address)
+					# Update the WebSocket address to point to the bridge
+					if _feagi_endpoint_details:
+						_feagi_endpoint_details.full_websocket_address = bridge_address
+				else:
+					print("𒓉 [TRANSPORT] Using WebSocket transport via bridge (default)")
+				# WebSocket connection will proceed normally below with updated address
 				return false
 			
 			# If ZMQ is recommended (direct)
