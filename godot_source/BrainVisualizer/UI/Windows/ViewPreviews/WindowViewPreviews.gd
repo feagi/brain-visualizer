@@ -462,13 +462,21 @@ func _process(_dt: float) -> void:
 	_position_resize_handle()
 	if not _use_shared_mem:
 		return
+	
+	# Poll BOTH readers every frame to prevent stale buffers
+	# even if we're only displaying one of them
+	var tex_raw: Texture2D = null
+	var tex_feagi: Texture2D = null
+	
+	if _shm_reader_raw != null:
+		tex_raw = _shm_reader_raw.get_texture()
+	if _shm_reader_feagi != null:
+		tex_feagi = _shm_reader_feagi.get_texture()
+	
+	# Determine which texture to display based on toggle
 	var is_raw: bool = _view_toggle.selected == 0
-	var reader: Variant = _shm_reader_raw
-	if not is_raw:
-		reader = _shm_reader_feagi
-	if reader == null:
-		return
-	var tex: Texture2D = reader.get_texture()
+	var tex: Texture2D = tex_raw if is_raw else tex_feagi
+	
 	if tex:
 		# Update resolution and UI on first frame or when dimensions change
 		var size: Vector2i = tex.get_size()
@@ -479,10 +487,12 @@ func _process(_dt: float) -> void:
 		if is_instance_valid(_seg_overlay):
 			_seg_overlay.queue_redraw()
 	else:
-		# Poll header info for debugging
-		var info: Dictionary = reader.get_header_info()
-		print("SharedMemVideo tick: ", info)
-		_shm_status.text = "SHM: tick " + str(info.get("frame_seq", 0))
+		# Poll header info for debugging from active reader
+		var reader: Variant = _shm_reader_raw if is_raw else _shm_reader_feagi
+		if reader != null:
+			var info: Dictionary = reader.get_header_info()
+			print("SharedMemVideo tick: ", info)
+			_shm_status.text = "SHM: tick " + str(info.get("frame_seq", 0))
 
 func _try_open_core_visualization_shm() -> void:
 	if not ClassDB.class_exists("SharedMemVideo"):
