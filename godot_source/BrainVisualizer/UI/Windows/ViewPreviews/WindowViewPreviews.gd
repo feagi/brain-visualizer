@@ -552,8 +552,10 @@ func _try_fetch_video_shm_from_api() -> void:
 			continue
 		# Canonical key: 'video' (agent-owned preview stream)
 		var raw_path: String = str(mapping.get("video", ""))
-		# Optional FEAGI-provided preview (not canonical; keep as empty unless core exposes one)
-		var feagi_path: String = str(mapping.get("video_feagi", ""))
+		# FEAGI processed video (segmented mosaic) - try both 'feagi' (new) and 'video_feagi' (legacy)
+		var feagi_path: String = str(mapping.get("feagi", ""))
+		if feagi_path == "":
+			feagi_path = str(mapping.get("video_feagi", ""))
 		# Backward compatibility with legacy keys
 		if raw_path == "":
 			var legacy_raw := str(mapping.get("video_stream_raw", ""))

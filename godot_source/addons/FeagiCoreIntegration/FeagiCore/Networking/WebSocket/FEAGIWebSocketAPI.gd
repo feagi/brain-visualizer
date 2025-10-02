@@ -153,8 +153,10 @@ func _process(_delta: float):
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready():
 		_pending_type11.clear()
 
-	# 𒓉 Guard: If socket is null (e.g. never connected when using SHM), skip entirely
+	# 𒓉 Guard: If socket is null (e.g. never connected when using SHM), skip WebSocket polling but continue to SHM polling below
 	if not _socket:
+		# SHM polling for neuron visualization happens at end of _process()
+		# But if we also use SHM for video, that's handled by WindowViewPreviews directly
 		return
 
 	_socket.poll()
