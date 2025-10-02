@@ -5,6 +5,7 @@ const WINDOW_NAME: StringName = "view_previews"
 const SCALAR_RES: Vector2i = Vector2i(2,2)
 
 var _resolution_UI: Label
+var _fps_label: Label
 var _preview_container: PanelContainer
 var _visual_preview: TextureRect
 var _buttons: HBoxContainer
@@ -12,6 +13,17 @@ var _shm_status: Label
 var _view_toggle: OptionButton
 var _agent_dropdown: OptionButton
 var _refresh_btn: Button
+
+# FPS tracking
+var _fps_raw: float = 0.0
+var _fps_feagi: float = 0.0
+var _frame_times_raw: Array = []
+var _frame_times_feagi: Array = []
+var _last_frame_time_raw: int = 0
+var _last_frame_time_feagi: int = 0
+var _last_frame_seq_raw: int = -1
+var _last_frame_seq_feagi: int = -1
+const FPS_WINDOW_SIZE: int = 30  # Average over last 30 frames
 
 # agent → video_stream mapping
 var _agent_video_map: Dictionary = {}
@@ -174,6 +186,14 @@ func _ready():
 	super()
 	print("[Preview] _ready(): initializing View Previews window")
 	_resolution_UI = _window_internals.get_node("HBoxContainer/resolution")
+	
+	# Create FPS label next to resolution
+	var hbox = _window_internals.get_node("HBoxContainer")
+	_fps_label = Label.new()
+	_fps_label.name = "FPS"
+	_fps_label.text = "FPS: --"
+	hbox.add_child(_fps_label)
+	
 	# After wrapping preview in a ScrollContainer, path changes
 	_preview_container = _window_internals.get_node("Scroll/PanelContainer")
 	_visual_preview = _window_internals.get_node("Scroll/PanelContainer/MarginContainer/TextureRect")
@@ -463,6 +483,8 @@ func _process(_dt: float) -> void:
 	if not _use_shared_mem:
 		return
 	
+	var current_time: int = Time.get_ticks_msec()
+	
 	# Poll BOTH readers every frame to prevent stale buffers
 	# even if we're only displaying one of them
 	var tex_raw: Texture2D = null
@@ -470,12 +492,44 @@ func _process(_dt: float) -> void:
 	
 	if _shm_reader_raw != null:
 		tex_raw = _shm_reader_raw.get_texture()
+		# Track FPS independently of texture display
+		var info_raw: Dictionary = _shm_reader_raw.get_header_info()
+		var frame_seq: int = int(info_raw.get("frame_seq", -1))
+		print("[Preview-RAW] frame_seq=%d last=%d tex_valid=%s" % [frame_seq, _last_frame_seq_raw, str(tex_raw != null)])
+		# Detect restart: frame_seq jumped backward (writer restarted)
+		if frame_seq >= 0 and frame_seq < _last_frame_seq_raw:
+			print("[Preview-RAW] Detected restart (seq jumped backward)")
+			_last_frame_seq_raw = -1  # Reset to detect new frames
+			_frame_times_raw.clear()
+		if frame_seq != _last_frame_seq_raw and frame_seq >= 0:
+			_update_fps_tracker(true, current_time, frame_seq)
+	else:
+		print("[Preview-RAW] _shm_reader_raw is NULL")
+	
 	if _shm_reader_feagi != null:
 		tex_feagi = _shm_reader_feagi.get_texture()
+		# Track FPS independently of texture display
+		var info_feagi: Dictionary = _shm_reader_feagi.get_header_info()
+		var frame_seq: int = int(info_feagi.get("frame_seq", -1))
+		print("[Preview-FEAGI] frame_seq=%d last=%d tex_valid=%s" % [frame_seq, _last_frame_seq_feagi, str(tex_feagi != null)])
+		# Detect restart: frame_seq jumped backward (writer restarted)
+		if frame_seq >= 0 and frame_seq < _last_frame_seq_feagi:
+			print("[Preview-FEAGI] Detected restart (seq jumped backward)")
+			_last_frame_seq_feagi = -1  # Reset to detect new frames
+			_frame_times_feagi.clear()
+		if frame_seq != _last_frame_seq_feagi and frame_seq >= 0:
+			_update_fps_tracker(false, current_time, frame_seq)
+	else:
+		print("[Preview-FEAGI] _shm_reader_feagi is NULL")
 	
 	# Determine which texture to display based on toggle
 	var is_raw: bool = _view_toggle.selected == 0
 	var tex: Texture2D = tex_raw if is_raw else tex_feagi
+	
+	# Update FPS display
+	var current_fps: float = _fps_raw if is_raw else _fps_feagi
+	if _fps_label:
+		_fps_label.text = "FPS: %.1f" % current_fps
 	
 	if tex:
 		# Update resolution and UI on first frame or when dimensions change
@@ -951,3 +1005,50 @@ func _setup_scale_buttons() -> void:
 
 func _on_scale_button(scalar: float) -> void:
 	_scale_button_pressed(scalar)
+
+func _update_fps_tracker(is_raw: bool, current_time: int, frame_seq: int) -> void:
+	"""Track frame times and calculate rolling average FPS based on actual new frames."""
+	var last_time: int = _last_frame_time_raw if is_raw else _last_frame_time_feagi
+	var frame_times: Array = _frame_times_raw if is_raw else _frame_times_feagi
+	
+	# Update frame sequence tracker
+	if is_raw:
+		_last_frame_seq_raw = frame_seq
+	else:
+		_last_frame_seq_feagi = frame_seq
+	
+	# Skip first frame (no previous time)
+	if last_time == 0:
+		if is_raw:
+			_last_frame_time_raw = current_time
+		else:
+			_last_frame_time_feagi = current_time
+		return
+	
+	# Calculate frame delta time in milliseconds
+	var delta_ms: int = current_time - last_time
+	if delta_ms <= 0:
+		return  # Skip if no time passed (same frame)
+	
+	# Add to rolling window
+	frame_times.append(delta_ms)
+	if frame_times.size() > FPS_WINDOW_SIZE:
+		frame_times.pop_front()
+	
+	# Calculate average FPS
+	if frame_times.size() > 0:
+		var avg_delta_ms: float = 0.0
+		for dt in frame_times:
+			avg_delta_ms += float(dt)
+		avg_delta_ms /= float(frame_times.size())
+		
+		var fps: float = 1000.0 / avg_delta_ms if avg_delta_ms > 0 else 0.0
+		
+		if is_raw:
+			_fps_raw = fps
+			_last_frame_time_raw = current_time
+			_frame_times_raw = frame_times
+		else:
+			_fps_feagi = fps
+			_last_frame_time_feagi = current_time
+			_frame_times_feagi = frame_times
