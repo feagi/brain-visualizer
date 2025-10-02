@@ -495,32 +495,24 @@ func _process(_dt: float) -> void:
 		# Track FPS independently of texture display
 		var info_raw: Dictionary = _shm_reader_raw.get_header_info()
 		var frame_seq: int = int(info_raw.get("frame_seq", -1))
-		print("[Preview-RAW] frame_seq=%d last=%d tex_valid=%s" % [frame_seq, _last_frame_seq_raw, str(tex_raw != null)])
 		# Detect restart: frame_seq jumped backward (writer restarted)
 		if frame_seq >= 0 and frame_seq < _last_frame_seq_raw:
-			print("[Preview-RAW] Detected restart (seq jumped backward)")
 			_last_frame_seq_raw = -1  # Reset to detect new frames
 			_frame_times_raw.clear()
 		if frame_seq != _last_frame_seq_raw and frame_seq >= 0:
 			_update_fps_tracker(true, current_time, frame_seq)
-	else:
-		print("[Preview-RAW] _shm_reader_raw is NULL")
 	
 	if _shm_reader_feagi != null:
 		tex_feagi = _shm_reader_feagi.get_texture()
 		# Track FPS independently of texture display
 		var info_feagi: Dictionary = _shm_reader_feagi.get_header_info()
 		var frame_seq: int = int(info_feagi.get("frame_seq", -1))
-		print("[Preview-FEAGI] frame_seq=%d last=%d tex_valid=%s" % [frame_seq, _last_frame_seq_feagi, str(tex_feagi != null)])
 		# Detect restart: frame_seq jumped backward (writer restarted)
 		if frame_seq >= 0 and frame_seq < _last_frame_seq_feagi:
-			print("[Preview-FEAGI] Detected restart (seq jumped backward)")
 			_last_frame_seq_feagi = -1  # Reset to detect new frames
 			_frame_times_feagi.clear()
 		if frame_seq != _last_frame_seq_feagi and frame_seq >= 0:
 			_update_fps_tracker(false, current_time, frame_seq)
-	else:
-		print("[Preview-FEAGI] _shm_reader_feagi is NULL")
 	
 	# Determine which texture to display based on toggle
 	var is_raw: bool = _view_toggle.selected == 0
@@ -668,6 +660,7 @@ func _on_agent_dropdown_selected(index: int) -> void:
 	if typeof(md) == TYPE_DICTIONARY:
 		raw_path = str(md.get("raw", ""))
 		feagi_path = str(md.get("feagi", ""))
+	print("𒓉 [Preview] Selected agent paths: raw='%s' feagi='%s'" % [raw_path, feagi_path])
 	if raw_path == "" and feagi_path == "":
 		return
 	_init_agent_video_shm_dual(raw_path, feagi_path)
@@ -725,17 +718,31 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 		var feagi_obj: Variant = null
 		if raw_path != "":
 			raw_obj = _try_open_video_once(raw_path)
+			if raw_obj != null:
+				print("𒓉 [Preview] Raw video SHM opened successfully")
+			else:
+				print("𒓉 [Preview] Raw video SHM failed: ", _video_last_error)
 		if feagi_path != "":
 			feagi_obj = _try_open_video_once(feagi_path)
-		if raw_obj != null or feagi_obj != null:
+			if feagi_obj != null:
+				print("𒓉 [Preview] FEAGI video SHM opened successfully")
+			else:
+				print("𒓉 [Preview] FEAGI video SHM failed: ", _video_last_error)
+		
+		# Check if we have all required streams
+		var raw_ready: bool = (raw_path == "" or raw_obj != null)
+		var feagi_ready: bool = (feagi_path == "" or feagi_obj != null)
+		
+		if raw_ready and feagi_ready:
 			_shm_reader_raw = raw_obj
 			_shm_reader_feagi = feagi_obj
 			_use_shared_mem = true
 			_shm_status.text = "SHM: video preview (agent)"
 			set_process(true)
 			_update_container_to_content()
+			print("𒓉 [Preview] Both SHM streams ready (raw=%s, feagi=%s)" % [str(raw_obj != null), str(feagi_obj != null)])
 			return
-		print("𒓉 [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": ", _video_last_error)
+		print("𒓉 [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": waiting for both streams...")
 		await get_tree().create_timer(0.25).timeout
 	print("𒓉 [Preview] SHM activation failed after ", _video_init_max_attempts, " attempts; last_error=", _video_last_error)
 
