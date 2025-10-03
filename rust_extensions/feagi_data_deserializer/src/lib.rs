@@ -1,5 +1,5 @@
 use godot::prelude::*;
-use feagi_data_serialization::FeagiByteStructureType;
+use feagi_data_serialization::{FeagiByteStructure, FeagiByteStructureCompatible};
 use feagi_data_structures::neurons::xyzp::CorticalMappedXYZPNeuronData;
 
 struct FeagiDataDeserializerLib;
@@ -31,8 +31,17 @@ impl FeagiDataDeserializer {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // Use official feagi_data_serialization library via the CorticalMappedXYZPNeuronData implementation
-        match CorticalMappedXYZPNeuronData::new_from_bytes(&rust_buffer) {
+        // First, create a FeagiByteStructure from the raw bytes
+        let byte_structure = match FeagiByteStructure::create_from_bytes(rust_buffer) {
+            Ok(bs) => bs,
+            Err(e) => {
+                godot_error!("🦀 Failed to create FeagiByteStructure: {:?}", e);
+                return self.create_error_dict(format!("Byte structure error: {:?}", e));
+            }
+        };
+        
+        // Then, deserialize into CorticalMappedXYZPNeuronData
+        match CorticalMappedXYZPNeuronData::new_from_feagi_byte_structure(&byte_structure) {
             Ok(neuron_data) => {
                 self.convert_neuron_data_to_godot(&neuron_data)
             }

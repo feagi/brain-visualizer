@@ -2,17 +2,26 @@ extends BaseDraggableWindow
 class_name WindowViewPreviews
 
 const WINDOW_NAME: StringName = "view_previews"
-const SCALAR_RES: Vector2i = Vector2i(2,2)
+const MIN_PANEL_WIDTH: int = 200
 
-var _resolution_UI: Label
-var _fps_label: Label
-var _preview_container: PanelContainer
-var _visual_preview: TextureRect
-var _buttons: HBoxContainer
+# UI References - Shared
 var _shm_status: Label
-var _view_toggle: OptionButton
 var _agent_dropdown: OptionButton
 var _refresh_btn: Button
+
+# UI References - Raw Video Panel
+var _raw_resolution_label: Label
+var _raw_aspect_label: Label
+var _raw_fps_label: Label
+var _raw_texture_rect: TextureRect
+var _raw_placeholder: Label
+
+# UI References - FEAGI Preview Panel
+var _feagi_resolution_label: Label
+var _feagi_aspect_label: Label
+var _feagi_fps_label: Label
+var _feagi_texture_rect: TextureRect
+var _feagi_placeholder: Label
 
 # FPS tracking
 var _fps_raw: float = 0.0
@@ -25,7 +34,7 @@ var _last_frame_seq_raw: int = -1
 var _last_frame_seq_feagi: int = -1
 const FPS_WINDOW_SIZE: int = 30  # Average over last 30 frames
 
-# agent → video_stream mapping
+# Agent → video_stream mapping
 var _agent_video_map: Dictionary = {}
 var _agent_video_map_feagi: Dictionary = {}
 
@@ -35,25 +44,10 @@ var _video_init_max_attempts: int = 40
 var _video_last_error: String = ""
 var _is_refreshing: bool = false
 
-# cache
-var _current_resolution: Vector2i = Vector2i(0,0)
-var _preview_image: Image = Image.new()
-var _preview_image_texture: ImageTexture = ImageTexture.new()
-var _resolution_scalar_dyn: Vector2 = Vector2(1.0, 1.0)
-
 # Shared memory video support (desktop preview via SharedMemVideo GDExtension)
 var _use_shared_mem: bool = false
 var _shm_reader_raw: Variant = null # Use Variant to avoid hard dependency if extension missing
 var _shm_reader_feagi: Variant = null
-
-# User-resizable viewport (bottom-right drag)
-var _user_view_size: Vector2 = Vector2.ZERO
-var _resizing: bool = false
-var _resize_margin: int = 16
-var _resize_start_mouse: Vector2 = Vector2.ZERO
-var _resize_start_size: Vector2 = Vector2.ZERO
-var _resize_handle: Panel
-var _window_border_pad: int = 12
 
 # Segmentation UI controls (FEAGI view only)
 var _seg_controls: VBoxContainer
@@ -70,9 +64,6 @@ var _default_mod: Vector2 = Vector2(0.85, 0.85)
 
 # Overlay to visualize segmentation preview on top of the FEAGI video
 var _seg_overlay: Control
-var _scale_row: HBoxContainer
-var _scale_raw: float = 1.0
-var _scale_feagi: float = 1.0
 
 # Image Pre-Processing UI controls
 var _preproc_controls: VBoxContainer
@@ -102,7 +93,6 @@ class SegOverlay:
 	extends Control
 	var get_eccentricity: Callable
 	var get_modulation: Callable
-	var is_feagi_view: Callable
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -148,8 +138,6 @@ class SegOverlay:
 		return Rect2(rect_pos, rect_size)
 
 	func _draw() -> void:
-		if is_feagi_view and not is_feagi_view.call():
-			return
 		var parent_tr: TextureRect = get_parent() as TextureRect
 		if parent_tr == null or parent_tr.texture == null:
 			return
@@ -184,38 +172,12 @@ class SegOverlay:
 
 func _ready():
 	super()
-	print("[Preview] _ready(): initializing View Previews window")
-	_resolution_UI = _window_internals.get_node("HBoxContainer/resolution")
+	print("[Preview] _ready(): initializing split-view View Previews window")
 	
-	# Create FPS label next to resolution
-	var hbox = _window_internals.get_node("HBoxContainer")
-	_fps_label = Label.new()
-	_fps_label.name = "FPS"
-	_fps_label.text = "FPS: --"
-	hbox.add_child(_fps_label)
-	
-	# After wrapping preview in a ScrollContainer, path changes
-	_preview_container = _window_internals.get_node("Scroll/PanelContainer")
-	_visual_preview = _window_internals.get_node("Scroll/PanelContainer/MarginContainer/TextureRect")
-	# Inject segmentation overlay over the preview texture
-	_seg_overlay = SegOverlay.new()
-	_seg_overlay.get_eccentricity = Callable(self, "_get_eccentricity")
-	_seg_overlay.get_modulation = Callable(self, "_get_modulation")
-	_seg_overlay.is_feagi_view = Callable(self, "_is_feagi_view")
-	_visual_preview.add_child(_seg_overlay)
-	_seg_overlay.visible = false
-	# React to texture changes (resolution/frame) to keep overlay aligned
-	_visual_preview.item_rect_changed.connect(_on_preview_rect_changed)
-	_buttons = _window_internals.get_node("sizes")
-	_setup_scale_buttons()
+	# Get UI references
 	_shm_status = _window_internals.get_node("SHMStatus")
-	_view_toggle = _window_internals.get_node("SHMControls/ViewToggle")
 	_agent_dropdown = _window_internals.get_node("SHMControls/AgentDropdown")
-	if _agent_dropdown:
-		_agent_dropdown.clear()
-		_agent_dropdown.add_item("Select agent…")
-		_agent_dropdown.disabled = true
-		_agent_dropdown.item_selected.connect(_on_agent_dropdown_selected)
+	
 	# Create Refresh button next to AgentDropdown
 	var _shm_controls: Node = _window_internals.get_node_or_null("SHMControls")
 	if _shm_controls:
@@ -225,19 +187,43 @@ func _ready():
 		_refresh_btn.tooltip_text = "Refresh agents with video streams"
 		_shm_controls.add_child(_refresh_btn)
 		_refresh_btn.pressed.connect(_on_refresh_clicked)
-	# Setup toggle options: 0=Raw, 1=FEAGI
-	_view_toggle.clear()
-	_view_toggle.add_item("Raw", 0)
-	_view_toggle.add_item("FEAGI", 1)
-	_view_toggle.selected = 0
-	_view_toggle.item_selected.connect(_on_view_toggle_selected)
-	# Initialize scale for default view after initial layout
-	call_deferred("_apply_current_scale")
+	
+	if _agent_dropdown:
+		_agent_dropdown.clear()
+		_agent_dropdown.add_item("Select agent…")
+		_agent_dropdown.disabled = true
+		_agent_dropdown.item_selected.connect(_on_agent_dropdown_selected)
+	
+	# Get Raw Video Panel references
+	var raw_panel = _window_internals.get_node("SplitViewContainer/RawVideoPanel")
+	_raw_resolution_label = raw_panel.get_node("RawHeader/RawHeaderMargin/RawHeaderInfo/RawResolution")
+	_raw_aspect_label = raw_panel.get_node("RawHeader/RawHeaderMargin/RawHeaderInfo/RawAspect")
+	_raw_fps_label = raw_panel.get_node("RawHeader/RawHeaderMargin/RawHeaderInfo/RawFPS")
+	_raw_texture_rect = raw_panel.get_node("RawScroll/RawViewport/RawMargin/RawTextureRect")
+	_raw_placeholder = raw_panel.get_node("RawScroll/RawViewport/RawMargin/RawPlaceholder")
+	
+	# Get FEAGI Preview Panel references
+	var feagi_panel = _window_internals.get_node("SplitViewContainer/FeagiVideoPanel")
+	_feagi_resolution_label = feagi_panel.get_node("FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo/FeagiResolution")
+	_feagi_aspect_label = feagi_panel.get_node("FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo/FeagiAspect")
+	_feagi_fps_label = feagi_panel.get_node("FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo/FeagiFPS")
+	_feagi_texture_rect = feagi_panel.get_node("FeagiScroll/FeagiViewport/FeagiMargin/FeagiTextureRect")
+	_feagi_placeholder = feagi_panel.get_node("FeagiScroll/FeagiViewport/FeagiMargin/FeagiPlaceholder")
+	
+	# Inject segmentation overlay over the FEAGI preview texture
+	_seg_overlay = SegOverlay.new()
+	_seg_overlay.get_eccentricity = Callable(self, "_get_eccentricity")
+	_seg_overlay.get_modulation = Callable(self, "_get_modulation")
+	_feagi_texture_rect.add_child(_seg_overlay)
+	_seg_overlay.visible = true
+	
+	# React to texture changes (resolution/frame) to keep overlay aligned
+	_feagi_texture_rect.item_rect_changed.connect(_on_feagi_preview_rect_changed)
 
 	# Build segmentation UI as its own row (full width)
 	_seg_controls = VBoxContainer.new()
 	_seg_controls.name = "SegControls"
-	_seg_controls.visible = false
+	_seg_controls.visible = true
 	_seg_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_seg_controls.custom_minimum_size = Vector2(0, 56)
 	_window_internals.add_child(_seg_controls)
@@ -277,7 +263,7 @@ func _ready():
 	var spacer_pre := Control.new(); spacer_pre.custom_minimum_size = Vector2(0, 8); _window_internals.add_child(spacer_pre)
 	_preproc_controls = VBoxContainer.new()
 	_preproc_controls.name = "PreProcControls"
-	_preproc_controls.visible = false
+	_preproc_controls.visible = true
 	_preproc_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_preproc_controls.custom_minimum_size = Vector2(0, 56)
 	_window_internals.add_child(_preproc_controls)
@@ -304,7 +290,7 @@ func _ready():
 
 	# Motion Detection group
 	var spacer_mo := Control.new(); spacer_mo.custom_minimum_size = Vector2(0, 8); _window_internals.add_child(spacer_mo)
-	_motion_controls = VBoxContainer.new(); _motion_controls.name = "MotionControls"; _motion_controls.visible = false; _motion_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _motion_controls.custom_minimum_size = Vector2(0, 56)
+	_motion_controls = VBoxContainer.new(); _motion_controls.name = "MotionControls"; _motion_controls.visible = true; _motion_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _motion_controls.custom_minimum_size = Vector2(0, 56)
 	_window_internals.add_child(_motion_controls)
 	var mtitle := Label.new(); mtitle.text = "Motion Detection:"; _motion_controls.add_child(mtitle)
 	# Pixel intensity difference
@@ -353,40 +339,13 @@ func _ready():
 	_min_blob_slider.value_changed.connect(_on_motion_value_changed)
 	_motion_apply_btn.pressed.connect(_on_apply_motion)
 	_motion_reset_btn.pressed.connect(_on_reset_motion)
+	
 	# Populate agents with video streams
 	_try_fetch_video_shm_from_api()
 	# Try core SHM path via environment (provided by FEAGI launcher)
 	print("𒓉 [Preview] _ready(): attempting FEAGI_VIZ_SHM shared-memory setup")
 	_try_open_core_visualization_shm()
 
-	# Add a visible bottom-right resize handle
-	_resize_handle = Panel.new()
-	_resize_handle.name = "ResizeHandle"
-	_resize_handle.mouse_filter = Control.MOUSE_FILTER_STOP
-	_resize_handle.mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
-	_resize_handle.size = Vector2(18, 18)
-	_resize_handle.z_index = 1000
-	# Make handle top-level so it's not constrained by Container layout and always on top
-	add_child(_resize_handle)
-	_resize_handle.top_level = true
-	_resize_handle.z_index = 10000
-	_resize_handle.visible = true
-	# Position initially and on window resize
-	_position_resize_handle()
-	if is_instance_valid(_window_panel):
-		_window_panel.resized.connect(_position_resize_handle)
-		_window_panel.item_rect_changed.connect(_position_resize_handle)
-	# Reposition when this window moves or changes
-	item_rect_changed.connect(_position_resize_handle)
-	# Simple visual style
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.85, 0.85, 0.85, 0.95)
-	sb.border_color = Color(0.6, 0.6, 0.6, 1.0)
-	sb.border_width_bottom = 1
-	sb.border_width_right = 1
-	_resize_handle.add_theme_stylebox_override("panel", sb)
-	_resize_handle.gui_input.connect(_on_resize_handle_gui_input)
-	
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	# If SHM already active from _ready() discovery, skip WS fallback
@@ -419,74 +378,15 @@ func setup() -> void:
 			print("𒓉 [Preview] setup(): SHM selection failed for FEAGI_VIDEO_SHM (", shm_path, "): ", reason)
 	# Fallback to existing FEAGI visual data stream
 	print("𒓉 [Preview] setup(): falling back to WebSocket visualization stream")
-	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
-	
-func _update_preview_texture_from_raw_data(bytes: PackedByteArray) -> void:
-	var resolution: Vector2i = Vector2i(bytes.decode_u16(2), bytes.decode_u16(4))
-	if resolution == Vector2i(0,0):
-		return
-	if resolution != _current_resolution:
-		_update_resolution(resolution)
-	_preview_image.set_data(resolution.x, resolution.y, false, Image.FORMAT_RGB8, bytes.slice(6))
-	_preview_image_texture.update(_preview_image)
-	_visual_preview.texture = _preview_image_texture
-	_update_container_to_content()
+	_fallback_to_websocket()
 
-func _update_resolution(res: Vector2i) -> void:
-	_current_resolution = res
-	if !_preview_container.visible:
-		_preview_container.visible = true
-		# Ensure ScrollContainer is also revealed
-		var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
-		if sc:
-			sc.visible = true
-		_buttons.visible = true
-		_update_scale_size()
-	_resolution_UI.text = "%d x %d" % [res.x, res.y]
-	_preview_image = Image.create_empty(res.x, res.y, false, Image.FORMAT_RGB8)
-	_preview_image_texture.set_image(_preview_image)
-	_visual_preview.texture = _preview_image_texture
-	_update_container_to_content()
-	if is_instance_valid(_seg_overlay):
-		_seg_overlay.queue_redraw()
-	
-func _update_scale_size() -> void:
-	var base: Vector2 = Vector2(float(_current_resolution.x * SCALAR_RES.x), float(_current_resolution.y * SCALAR_RES.y))
-	_visual_preview.custom_minimum_size = Vector2(base.x * _resolution_scalar_dyn.x, base.y * _resolution_scalar_dyn.y)
-	_update_container_to_content()
-	if is_instance_valid(_seg_overlay):
-		_seg_overlay.queue_redraw()
-
-func _scale_button_pressed(scalar: float) -> void: # set with custom arguments from TSCN signal
-	# Maintain independent scale for Raw vs FEAGI view
-	if _view_toggle and _view_toggle.selected == 0:
-		_scale_raw = scalar
-	else:
-		_scale_feagi = scalar
-	_apply_current_scale()
-	if is_instance_valid(_seg_overlay):
-		_seg_overlay.queue_redraw()
-
-func _apply_current_scale() -> void:
-	var active_scale: float = 1.0
-	if _view_toggle and _view_toggle.selected == 0:
-		active_scale = _scale_raw
-	else:
-		active_scale = _scale_feagi
-	_resolution_scalar_dyn = Vector2(active_scale, active_scale)
-	_update_scale_size()
-	_update_container_to_content()
-	
 func _process(_dt: float) -> void:
-	# Keep resize handle glued to the window position
-	_position_resize_handle()
 	if not _use_shared_mem:
 		return
 	
 	var current_time: int = Time.get_ticks_msec()
 	
 	# Poll BOTH readers every frame to prevent stale buffers
-	# even if we're only displaying one of them
 	var tex_raw: Texture2D = null
 	var tex_feagi: Texture2D = null
 	
@@ -497,8 +397,22 @@ func _process(_dt: float) -> void:
 		var frame_seq: int = int(info_raw.get("frame_seq", -1))
 		# Detect restart: frame_seq jumped backward (writer restarted)
 		if frame_seq >= 0 and frame_seq < _last_frame_seq_raw:
+			print("𒓉 [Preview] Raw video restart detected (seq %d -> %d), reopening SHM..." % [_last_frame_seq_raw, frame_seq])
 			_last_frame_seq_raw = -1  # Reset to detect new frames
 			_frame_times_raw.clear()
+			_fps_raw = 0.0
+			_last_frame_time_raw = 0
+			# Close and reopen the SHM file to get new memory mapping
+			var old_path: String = _shm_reader_raw.get_path()
+			_shm_reader_raw = null  # Close old mapping
+			if old_path != "":
+				await get_tree().create_timer(0.1).timeout  # Brief delay for file recreation
+				var new_reader = _try_open_video_once(old_path)
+				if new_reader != null:
+					_shm_reader_raw = new_reader
+					print("𒓉 [Preview] Raw video SHM reopened successfully")
+				else:
+					print("⚠️ [Preview] Failed to reopen raw video SHM: ", _video_last_error)
 		if frame_seq != _last_frame_seq_raw and frame_seq >= 0:
 			_update_fps_tracker(true, current_time, frame_seq)
 	
@@ -509,36 +423,71 @@ func _process(_dt: float) -> void:
 		var frame_seq: int = int(info_feagi.get("frame_seq", -1))
 		# Detect restart: frame_seq jumped backward (writer restarted)
 		if frame_seq >= 0 and frame_seq < _last_frame_seq_feagi:
+			print("𒓉 [Preview] FEAGI video restart detected (seq %d -> %d), reopening SHM..." % [_last_frame_seq_feagi, frame_seq])
 			_last_frame_seq_feagi = -1  # Reset to detect new frames
 			_frame_times_feagi.clear()
+			_fps_feagi = 0.0
+			_last_frame_time_feagi = 0
+			# Close and reopen the SHM file to get new memory mapping
+			var old_path: String = _shm_reader_feagi.get_path()
+			_shm_reader_feagi = null  # Close old mapping
+			if old_path != "":
+				await get_tree().create_timer(0.1).timeout  # Brief delay for file recreation
+				var new_reader = _try_open_video_once(old_path)
+				if new_reader != null:
+					_shm_reader_feagi = new_reader
+					print("𒓉 [Preview] FEAGI video SHM reopened successfully")
+				else:
+					print("⚠️ [Preview] Failed to reopen FEAGI video SHM: ", _video_last_error)
 		if frame_seq != _last_frame_seq_feagi and frame_seq >= 0:
 			_update_fps_tracker(false, current_time, frame_seq)
 	
-	# Determine which texture to display based on toggle
-	var is_raw: bool = _view_toggle.selected == 0
-	var tex: Texture2D = tex_raw if is_raw else tex_feagi
+	# Update Raw Video Panel
+	if tex_raw:
+		_raw_texture_rect.texture = tex_raw
+		_raw_placeholder.visible = false
+		_update_stream_info(true, tex_raw.get_size(), _fps_raw)
+	else:
+		_raw_placeholder.visible = true
+		_update_stream_info(true, Vector2i.ZERO, 0.0)
 	
-	# Update FPS display
-	var current_fps: float = _fps_raw if is_raw else _fps_feagi
-	if _fps_label:
-		_fps_label.text = "FPS: %.1f" % current_fps
-	
-	if tex:
-		# Update resolution and UI on first frame or when dimensions change
-		var size: Vector2i = tex.get_size()
-		if size != _current_resolution:
-			_update_resolution(size)
-		_visual_preview.texture = tex
-		_update_container_to_content()
+	# Update FEAGI Preview Panel
+	if tex_feagi:
+		_feagi_texture_rect.texture = tex_feagi
+		_feagi_placeholder.visible = false
+		_update_stream_info(false, tex_feagi.get_size(), _fps_feagi)
 		if is_instance_valid(_seg_overlay):
 			_seg_overlay.queue_redraw()
 	else:
-		# Poll header info for debugging from active reader
-		var reader: Variant = _shm_reader_raw if is_raw else _shm_reader_feagi
-		if reader != null:
-			var info: Dictionary = reader.get_header_info()
-			print("SharedMemVideo tick: ", info)
-			_shm_status.text = "SHM: tick " + str(info.get("frame_seq", 0))
+		_feagi_placeholder.visible = true
+		_update_stream_info(false, Vector2i.ZERO, 0.0)
+
+func _update_stream_info(is_raw: bool, resolution: Vector2i, fps: float) -> void:
+	"""Update resolution, aspect ratio, and FPS labels for a stream."""
+	var res_label: Label = _raw_resolution_label if is_raw else _feagi_resolution_label
+	var aspect_label: Label = _raw_aspect_label if is_raw else _feagi_aspect_label
+	var fps_label: Label = _raw_fps_label if is_raw else _feagi_fps_label
+	
+	if resolution == Vector2i.ZERO:
+		res_label.text = "--x--"
+		aspect_label.text = "(--:--)"
+		fps_label.text = "-- FPS"
+	else:
+		res_label.text = "%dx%d" % [resolution.x, resolution.y]
+		# Calculate aspect ratio (simplified)
+		var gcd_val: int = _gcd(resolution.x, resolution.y)
+		var aspect_w: int = resolution.x / gcd_val
+		var aspect_h: int = resolution.y / gcd_val
+		aspect_label.text = "(%d:%d)" % [aspect_w, aspect_h]
+		fps_label.text = "%.1f FPS" % fps
+
+func _gcd(a: int, b: int) -> int:
+	"""Calculate greatest common divisor for aspect ratio."""
+	while b != 0:
+		var t: int = b
+		b = a % b
+		a = t
+	return a
 
 func _try_open_core_visualization_shm() -> void:
 	if not ClassDB.class_exists("SharedMemVideo"):
@@ -556,7 +505,6 @@ func _try_open_core_visualization_shm() -> void:
 			_shm_status.text = "SHM: video preview"
 			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", video_path)
 			set_process(true)
-			_update_container_to_content()
 			return
 	# Fallback to core visualization path
 	var core_viz_path: String = OS.get_environment("FEAGI_VIZ_SHM")
@@ -568,7 +516,6 @@ func _try_open_core_visualization_shm() -> void:
 			_shm_status.text = "SHM: core visualization"
 			print("𒓉 [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
 			set_process(true)
-			_update_container_to_content()
 			return
 	# Attempt API discovery: GET /v1/agent/shared_mem
 	_try_fetch_video_shm_from_api()
@@ -578,7 +525,6 @@ func _try_open_core_visualization_shm() -> void:
 	print("𒓉 [Preview] No SHM path available; using WebSocket")
 	_shm_status.text = "SHM: not provided - using websocket"
 	_fallback_to_websocket()
-
 
 func _try_fetch_video_shm_from_api() -> void:
 	if not FeagiCore or not FeagiCore.network or not FeagiCore.network.http_API or FeagiCore.network.http_API.address_list == null:
@@ -665,19 +611,6 @@ func _on_agent_dropdown_selected(index: int) -> void:
 		return
 	_init_agent_video_shm_dual(raw_path, feagi_path)
 
-
-
-func _open_video_shm_path(path: String) -> Variant:
-	if not ClassDB.class_exists("SharedMemVideo"):
-		print("𒓉 [Preview] SharedMemVideo not available; cannot open ", path)
-		return null
-	var obj = ClassDB.instantiate("SharedMemVideo")
-	if obj and obj.open(path):
-		return obj
-	else:
-		print("𒓉 [Preview] Failed to open SHM (agent selection): ", path)
-		return null
-
 func _try_open_video_once(path: String) -> Variant:
 	if not FileAccess.file_exists(path):
 		_video_last_error = "file does not exist"
@@ -739,105 +672,27 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 			_use_shared_mem = true
 			_shm_status.text = "SHM: video preview (agent)"
 			set_process(true)
-			_update_container_to_content()
 			print("𒓉 [Preview] Both SHM streams ready (raw=%s, feagi=%s)" % [str(raw_obj != null), str(feagi_obj != null)])
 			return
 		print("𒓉 [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": waiting for both streams...")
 		await get_tree().create_timer(0.25).timeout
 	print("𒓉 [Preview] SHM activation failed after ", _video_init_max_attempts, " attempts; last_error=", _video_last_error)
 
-func _crop_half(tex: Texture2D, left_half: bool) -> Texture2D:
-	if tex == null:
-		return tex
-	var sz: Vector2i = tex.get_size()
-	if sz.x <= 1:
-		return tex
-	var half_w: int = int(sz.x / 2)
-	var rect: Rect2i = Rect2i(0, 0, half_w, sz.y) if left_half else Rect2i(sz.x - half_w, 0, half_w, sz.y)
-	var img: Image = tex.get_image()
-	if img == null:
-		return tex
-	var cropped: Image = img.get_region(rect)
-	var out_tex: ImageTexture = ImageTexture.create_from_image(cropped)
-	return out_tex
+func _fallback_to_websocket() -> void:
+	print("[Preview] Using WebSocket visualization stream")
+	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 
-func _update_container_to_content() -> void:
-	# Set preview viewport to 1/5 of active screen and allow scroll
-	var screen_size: Vector2 = DisplayServer.window_get_size()
-	var default_view: Vector2 = screen_size / 5.0
-	if _visual_preview.texture:
-		var tex_sz: Vector2 = _visual_preview.texture.get_size()
-		# Apply current scale factor
-		var scaled: Vector2 = Vector2(tex_sz.x * float(SCALAR_RES.x * _resolution_scalar_dyn.x), tex_sz.y * float(SCALAR_RES.y * _resolution_scalar_dyn.y))
-		# Content should reflect full scaled size; viewport is clamped via Scroll
-		_visual_preview.custom_minimum_size = scaled
-		_preview_container.custom_minimum_size = scaled
-		var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
-		if sc:
-			var view_size: Vector2 = _user_view_size if _user_view_size != Vector2.ZERO else default_view
-			sc.custom_minimum_size = view_size
-			# Defer applying width constraints until after layout settles to avoid flicker/disjoin
-			call_deferred("_apply_view_width_constraints", view_size.x)
-		
-
-func _gui_input(event):
-	# Handle bottom-right corner resize
-	if event is InputEventMouseMotion:
-		var local_pos: Vector2 = get_local_mouse_position()
-		var near_corner: bool = local_pos.x >= size.x - _resize_margin and local_pos.y >= size.y - _resize_margin
-		mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE if near_corner else Control.CURSOR_ARROW
-		if _resizing:
-			var delta: Vector2 = get_global_mouse_position() - _resize_start_mouse
-			var new_size: Vector2 = _resize_start_size + delta
-			new_size.x = max(160.0, new_size.x)
-			new_size.y = max(120.0, new_size.y)
-			_user_view_size = new_size
-			_update_container_to_content()
-			accept_event()
-	elif event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				var local_pos2: Vector2 = get_local_mouse_position()
-				var on_corner: bool = local_pos2.x >= size.x - _resize_margin and local_pos2.y >= size.y - _resize_margin
-				if on_corner:
-					_resizing = true
-					_resize_start_mouse = get_global_mouse_position()
-					var sc2: ScrollContainer = _window_internals.get_node_or_null("Scroll")
-					_resize_start_size = sc2.custom_minimum_size if sc2 else Vector2.ZERO
-					accept_event()
-			else:
-				_resizing = false
-				accept_event()
-
-func _position_resize_handle() -> void:
-	if _resize_handle == null:
+func _update_preview_texture_from_raw_data(bytes: PackedByteArray) -> void:
+	# WebSocket fallback: decode and display on FEAGI panel only
+	var resolution: Vector2i = Vector2i(bytes.decode_u16(2), bytes.decode_u16(4))
+	if resolution == Vector2i(0,0):
 		return
-	var r: Rect2 = _window_panel.get_global_rect() if is_instance_valid(_window_panel) else get_global_rect()
-	var margin: Vector2 = Vector2(4, 4)
-	var pos: Vector2 = r.position + r.size - _resize_handle.size - margin
-	_resize_handle.global_position = pos
-
-func _apply_view_width_constraints(content_width: float) -> void:
-	var w: float = content_width + float(_window_border_pad)
-	if is_instance_valid(_window_panel):
-		_window_panel.custom_minimum_size = Vector2(w, _window_panel.custom_minimum_size.y)
-	custom_minimum_size = Vector2(w, custom_minimum_size.y)
-	if is_instance_valid(_titlebar):
-		_titlebar.custom_minimum_size = Vector2(w, _titlebar.custom_minimum_size.y)
-
-func _on_view_toggle_selected(index: int) -> void:
-	# Show segmentation controls only for FEAGI view
-	if _seg_controls:
-		_seg_controls.visible = (index == 1)
-	if _preproc_controls:
-		_preproc_controls.visible = (index == 1)
-	if _motion_controls:
-		_motion_controls.visible = (index == 1)
-	if is_instance_valid(_seg_overlay):
-		_seg_overlay.visible = (index == 1)
-		_seg_overlay.queue_redraw()
-	# Apply per-view scale when switching
-	_apply_current_scale()
+	var preview_image: Image = Image.create_empty(resolution.x, resolution.y, false, Image.FORMAT_RGB8)
+	preview_image.set_data(resolution.x, resolution.y, false, Image.FORMAT_RGB8, bytes.slice(6))
+	var preview_texture: ImageTexture = ImageTexture.create_from_image(preview_image)
+	_feagi_texture_rect.texture = preview_texture
+	_feagi_placeholder.visible = false
+	_update_stream_info(false, resolution, 0.0)
 
 func _on_seg_value_changed(_val: float) -> void:
 	if _ecc_val_label:
@@ -846,10 +701,8 @@ func _on_seg_value_changed(_val: float) -> void:
 		_mod_val_label.text = "(%.2f, %.2f)" % [_modx_slider.value, _mody_slider.value]
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
-	# Update dependent labels (optional in future)
 
 func _on_apply_segmentation() -> void:
-	# UI-only for now: log the intended values. Backend will send via motor stream later.
 	print("𒓉 [SegCtl] Apply eccentricity=(", str(_eccx_slider.value), ", ", str(_eccy_slider.value), ") modularity=(", str(_modx_slider.value), ", ", str(_mody_slider.value), ")")
 	_send_segmentation_to_feagi()
 
@@ -858,7 +711,6 @@ func _on_preproc_value_changed(_val: float) -> void:
 		_brightness_val_label.text = "%.2f" % [_brightness_slider.value]
 	if _contrast_val_label:
 		_contrast_val_label.text = "%.2f" % [_contrast_slider.value]
-	# Note: grayscale is a checkbutton; no numeric label needed
 
 func _on_motion_value_changed(_val: float) -> void:
 	if _pixdiff_val_label:
@@ -920,30 +772,7 @@ func _send_segmentation_to_feagi() -> void:
 	else:
 		print("𒓉 [SegCtl] Stimulation sent OK")
 
-func _on_resize_handle_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_resizing = true
-			_resize_start_mouse = get_global_mouse_position()
-			var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
-			_resize_start_size = sc.custom_minimum_size if sc else Vector2.ZERO
-			accept_event()
-		else:
-			_resizing = false
-			accept_event()
-	elif event is InputEventMouseMotion and _resizing:
-		var delta: Vector2 = get_global_mouse_position() - _resize_start_mouse
-		var new_size: Vector2 = _resize_start_size + delta
-		new_size.x = max(160.0, new_size.x)
-		new_size.y = max(120.0, new_size.y)
-		_user_view_size = new_size
-		_update_container_to_content()
-		accept_event()
-		if is_instance_valid(_seg_overlay):
-			_seg_overlay.queue_redraw()
-func _fallback_to_websocket() -> void:
-	print("[Preview] Using WebSocket visualization stream")
-	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
+func _on_feagi_preview_rect_changed() -> void:
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
 
@@ -953,65 +782,6 @@ func _get_eccentricity() -> Vector2:
 
 func _get_modulation() -> Vector2:
 	return Vector2(_modx_slider.value, _mody_slider.value)
-
-func _is_feagi_view() -> bool:
-	return _view_toggle and _view_toggle.selected == 1
-
-func _on_preview_rect_changed() -> void:
-	if is_instance_valid(_seg_overlay):
-		_seg_overlay.queue_redraw()
-	# Keep titlebar/outer widths in sync if preview width changed
-	var sc: ScrollContainer = _window_internals.get_node_or_null("Scroll")
-	if sc:
-		call_deferred("_apply_view_width_constraints", sc.custom_minimum_size.x)
-
-func _setup_scale_buttons() -> void:
-	# Create or populate a row of scale buttons (1x..4x) above segmentation
-	var container_parent: Control = _window_internals
-	var insertion_index: int = -1
-	if _seg_controls and _seg_controls.get_parent() == _window_internals:
-		insertion_index = _window_internals.get_children().find(_seg_controls)
-	# Use existing sizes container if present; repurpose it directly to avoid duplicates
-	if _buttons and _buttons is HBoxContainer:
-		_scale_row = _buttons
-		# Remove any pre-existing scale UI (legacy buttons/labels)
-		for child in _scale_row.get_children():
-			if child is Button or child is Label or (child is Control and (child as Control).name == "ScaleButtons"):
-				(child as Node).queue_free()
-		_buttons.visible = true
-	else:
-		# If there is no dedicated sizes container, create a single ScaleButtons row (only once)
-		_scale_row = _window_internals.get_node_or_null("ScaleButtons") as HBoxContainer
-		if _scale_row == null:
-			_scale_row = HBoxContainer.new()
-			_scale_row.name = "ScaleButtons"
-			_scale_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			if insertion_index >= 0:
-				_window_internals.add_child(_scale_row)
-				_window_internals.move_child(_scale_row, insertion_index)
-			else:
-				_window_internals.add_child(_scale_row)
-		else:
-			for child in _scale_row.get_children():
-				(child as Node).queue_free()
-	# Add scale buttons: 1/2x, 1x, 2x, 4x, 8x
-	var lbl := Label.new()
-	lbl.text = "Scale:"
-	_scale_row.add_child(lbl)
-	var entries := [0.5, 1.0, 2.0, 4.0, 8.0]
-	for s in entries:
-		var b := Button.new()
-		if s < 1.0:
-			var denom := int(round(1.0 / s))
-			b.text = "1/" + str(denom) + "x"
-		else:
-			b.text = str(int(s)) + "x"
-		b.toggle_mode = false
-		b.pressed.connect(_on_scale_button.bind(s))
-		_scale_row.add_child(b)
-
-func _on_scale_button(scalar: float) -> void:
-	_scale_button_pressed(scalar)
 
 func _update_fps_tracker(is_raw: bool, current_time: int, frame_seq: int) -> void:
 	"""Track frame times and calculate rolling average FPS based on actual new frames."""

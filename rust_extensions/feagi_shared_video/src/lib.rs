@@ -184,6 +184,14 @@ impl SharedMemVideo {
         d.set("error", String::from("no_header"));
         d
     }
+
+    /// Get the file path that was opened (for reopening on restart detection).
+    #[func]
+    pub fn get_path(&self) -> GString {
+        self.path.as_ref()
+            .map(|p| GString::from(p.as_str()))
+            .unwrap_or_else(|| GString::from(""))
+    }
 }
 
 struct Lib;
