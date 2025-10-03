@@ -57,6 +57,8 @@ var _is_refreshing: bool = false
 var _use_shared_mem: bool = false
 var _shm_reader_raw: Variant = null # Use Variant to avoid hard dependency if extension missing
 var _shm_reader_feagi: Variant = null
+var _shm_path_raw: String = ""  # Store paths for reopening on restart
+var _shm_path_feagi: String = ""
 
 # Segmentation UI controls (FEAGI view only)
 var _seg_controls: VBoxContainer
@@ -441,11 +443,10 @@ func _process(_dt: float) -> void:
 			_fps_raw = 0.0
 			_last_frame_time_raw = 0
 			# Close and reopen the SHM file to get new memory mapping
-			var old_path: String = _shm_reader_raw.get_path()
 			_shm_reader_raw = null  # Close old mapping
-			if old_path != "":
+			if _shm_path_raw != "":
 				await get_tree().create_timer(0.1).timeout  # Brief delay for file recreation
-				var new_reader = _try_open_video_once(old_path)
+				var new_reader = _try_open_video_once(_shm_path_raw)
 				if new_reader != null:
 					_shm_reader_raw = new_reader
 					print("𒓉 [Preview] Raw video SHM reopened successfully")
@@ -467,11 +468,10 @@ func _process(_dt: float) -> void:
 			_fps_feagi = 0.0
 			_last_frame_time_feagi = 0
 			# Close and reopen the SHM file to get new memory mapping
-			var old_path: String = _shm_reader_feagi.get_path()
 			_shm_reader_feagi = null  # Close old mapping
-			if old_path != "":
+			if _shm_path_feagi != "":
 				await get_tree().create_timer(0.1).timeout  # Brief delay for file recreation
-				var new_reader = _try_open_video_once(old_path)
+				var new_reader = _try_open_video_once(_shm_path_feagi)
 				if new_reader != null:
 					_shm_reader_feagi = new_reader
 					print("𒓉 [Preview] FEAGI video SHM reopened successfully")
@@ -707,6 +707,8 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 		if raw_ready and feagi_ready:
 			_shm_reader_raw = raw_obj
 			_shm_reader_feagi = feagi_obj
+			_shm_path_raw = raw_path
+			_shm_path_feagi = feagi_path
 			_use_shared_mem = true
 			_shm_status.text = "SHM: video preview (agent)"
 			set_process(true)

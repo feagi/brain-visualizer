@@ -103,8 +103,8 @@ theme_override_font_sizes/font_size = 11
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 0
 
 [node name="RawViewport" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawScroll"]
 layout_mode = 2
@@ -183,8 +183,8 @@ theme_override_font_sizes/font_size = 11
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 0
 
 [node name="FeagiViewport" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiScroll"]
 layout_mode = 2
