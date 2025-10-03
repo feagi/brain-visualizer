@@ -891,17 +891,15 @@ func _on_resize_handle_gui_input(event: InputEvent) -> void:
 		size = new_size
 		custom_minimum_size = new_size
 
-# Draw resize grip indicator (three diagonal lines)
+# Draw resize grip indicator (simple square on the right edge)
 func _draw_resize_grip(control: Control) -> void:
-	var grip_color := Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-	var line_width := 1.5
-	var spacing := 4
-	var line_length := 10
-	var margin := 2  # Small margin from edge
+	var grip_color := Color(0.6, 0.6, 0.6, 0.9)  # Medium gray
+	var square_size := 8
 	
-	# Draw three diagonal lines going from top-left to bottom-right
-	for i in range(3):
-		var offset := float(i * spacing)
-		var start := Vector2(margin + offset, _resize_margin - margin - line_length + offset)
-		var end := Vector2(margin + offset + line_length, _resize_margin - margin + offset)
-		control.draw_line(start, end, grip_color, line_width, true)
+	# Draw square at the RIGHT side of the 16x16 control
+	# x should be close to 16 (right edge), y centered at 8
+	var x_pos := _resize_margin - square_size  # Right-aligned within the 16px width
+	var y_pos := (_resize_margin - square_size) / 2.0  # Vertically centered
+	
+	var rect := Rect2(Vector2(x_pos, y_pos), Vector2(square_size, square_size))
+	control.draw_rect(rect, grip_color, true)
