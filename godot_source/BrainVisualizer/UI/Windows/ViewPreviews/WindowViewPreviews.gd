@@ -219,15 +219,15 @@ func _ready():
 	_feagi_texture_rect = feagi_panel.get_node("FeagiScroll/FeagiViewport/FeagiMargin/FeagiTextureRect")
 	_feagi_placeholder = feagi_panel.get_node("FeagiScroll/FeagiViewport/FeagiMargin/FeagiPlaceholder")
 	
-	# Inject segmentation overlay over the FEAGI preview texture
+	# Inject segmentation overlay over the RAW video texture (not FEAGI)
 	_seg_overlay = SegOverlay.new()
 	_seg_overlay.get_eccentricity = Callable(self, "_get_eccentricity")
 	_seg_overlay.get_modulation = Callable(self, "_get_modulation")
-	_feagi_texture_rect.add_child(_seg_overlay)
+	_raw_texture_rect.add_child(_seg_overlay)
 	_seg_overlay.visible = true
 	
 	# React to texture changes (resolution/frame) to keep overlay aligned
-	_feagi_texture_rect.item_rect_changed.connect(_on_feagi_preview_rect_changed)
+	_raw_texture_rect.item_rect_changed.connect(_on_raw_preview_rect_changed)
 
 	# Build segmentation UI as its own row (full width)
 	_seg_controls = VBoxContainer.new()
@@ -810,7 +810,7 @@ func _send_segmentation_to_feagi() -> void:
 	else:
 		print("𒓉 [SegCtl] Stimulation sent OK")
 
-func _on_feagi_preview_rect_changed() -> void:
+func _on_raw_preview_rect_changed() -> void:
 	if is_instance_valid(_seg_overlay):
 		_seg_overlay.queue_redraw()
 
