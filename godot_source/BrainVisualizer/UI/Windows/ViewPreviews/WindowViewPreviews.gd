@@ -52,6 +52,7 @@ var _video_init_attempts: int = 0
 var _video_init_max_attempts: int = 40
 var _video_last_error: String = ""
 var _is_refreshing: bool = false
+var _did_auto_select_on_open: bool = false
 
 # Shared memory video support (desktop preview via SharedMemVideo GDExtension)
 var _use_shared_mem: bool = false
@@ -617,6 +618,13 @@ func _try_fetch_video_shm_from_api() -> void:
 	if _agent_dropdown:
 		_agent_dropdown.disabled = count == 0
 		print("𒓉 [Preview] Agents with video streams found: ", str(count))
+	# Auto-select the first agent (once) on initial window open to avoid blank view
+	if count > 0 and not _did_auto_select_on_open:
+		_did_auto_select_on_open = true
+		if _agent_dropdown:
+			# Index 0 is the placeholder; select the first real agent at index 1
+			_agent_dropdown.select(1)
+			_on_agent_dropdown_selected(1)
 
 func _on_refresh_clicked() -> void:
 	if _is_refreshing:
