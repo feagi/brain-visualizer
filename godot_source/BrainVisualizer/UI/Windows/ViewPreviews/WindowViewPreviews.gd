@@ -3,11 +3,20 @@ class_name WindowViewPreviews
 
 const WINDOW_NAME: StringName = "view_previews"
 const MIN_PANEL_WIDTH: int = 200
+const DEFAULT_WINDOW_SIZE: Vector2 = Vector2(1200, 600)
 
 # UI References - Shared
 var _shm_status: Label
 var _agent_dropdown: OptionButton
 var _refresh_btn: Button
+var _split_container: HSplitContainer
+
+# Window resizing
+var _resize_handle: Panel
+var _resizing: bool = false
+var _resize_start_mouse: Vector2 = Vector2.ZERO
+var _resize_start_size: Vector2 = Vector2.ZERO
+var _resize_margin: int = 16
 
 # UI References - Raw Video Panel
 var _raw_resolution_label: Label
@@ -339,6 +348,35 @@ func _ready():
 	_min_blob_slider.value_changed.connect(_on_motion_value_changed)
 	_motion_apply_btn.pressed.connect(_on_apply_motion)
 	_motion_reset_btn.pressed.connect(_on_reset_motion)
+	
+	# Get split container reference
+	_split_container = _window_internals.get_node("SplitViewContainer")
+	
+	# Set initial window size
+	custom_minimum_size = DEFAULT_WINDOW_SIZE
+	size = DEFAULT_WINDOW_SIZE
+	
+	# Create resize handle with visual indicator
+	_resize_handle = Panel.new()
+	_resize_handle.name = "ResizeHandle"
+	_resize_handle.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
+	_resize_handle.mouse_filter = Control.MOUSE_FILTER_PASS
+	_resize_handle.mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
+	_resize_handle.gui_input.connect(_on_resize_handle_gui_input)
+	
+	# Add visual grip lines indicator
+	var grip_icon := Control.new()
+	grip_icon.name = "GripIcon"
+	grip_icon.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
+	grip_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grip_icon.draw.connect(_draw_resize_grip.bind(grip_icon))
+	_resize_handle.add_child(grip_icon)
+	
+	add_child(_resize_handle)
+	_resize_handle.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_resize_handle.offset_left = -_resize_margin
+	_resize_handle.offset_top = -_resize_margin
+	_resize_handle.z_index = 1000
 	
 	# Populate agents with video streams
 	_try_fetch_video_shm_from_api()
@@ -829,3 +867,41 @@ func _update_fps_tracker(is_raw: bool, current_time: int, frame_seq: int) -> voi
 			_fps_feagi = fps
 			_last_frame_time_feagi = current_time
 			_frame_times_feagi = frame_times
+
+# Window resizing handlers
+func _on_resize_handle_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				_resizing = true
+				_resize_start_mouse = get_global_mouse_position()
+				_resize_start_size = size
+			else:
+				_resizing = false
+	
+	elif event is InputEventMouseMotion and _resizing:
+		var delta := get_global_mouse_position() - _resize_start_mouse
+		var new_size := _resize_start_size + delta
+		
+		# Enforce minimum size
+		new_size.x = max(new_size.x, MIN_PANEL_WIDTH * 2 + 50)
+		new_size.y = max(new_size.y, 400)
+		
+		size = new_size
+		custom_minimum_size = new_size
+
+# Draw resize grip indicator (three diagonal lines)
+func _draw_resize_grip(control: Control) -> void:
+	var grip_color := Color(0.7, 0.7, 0.7, 0.8)  # Light gray
+	var line_width := 1.5
+	var spacing := 4
+	var line_length := 10
+	var margin := 2  # Small margin from edge
+	
+	# Draw three diagonal lines going from top-left to bottom-right
+	for i in range(3):
+		var offset := float(i * spacing)
+		var start := Vector2(margin + offset, _resize_margin - margin - line_length + offset)
+		var end := Vector2(margin + offset + line_length, _resize_margin - margin + offset)
+		control.draw_line(start, end, grip_color, line_width, true)
