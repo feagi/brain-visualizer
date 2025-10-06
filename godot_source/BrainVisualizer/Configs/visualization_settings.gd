@@ -21,10 +21,6 @@ class_name VisualizationSettings
 ##     - 10,000: Performance degrades significantly beyond this
 @export var performance_warning_threshold: int = 50000
 
-## Enable Rust acceleration if available
-## Provides 40-50x performance improvement over GDScript
-@export var use_rust_acceleration: bool = true
-
 ## Enable performance monitoring logs
 ## Shows processing time and neuron counts
 @export var enable_performance_logs: bool = true
@@ -45,16 +41,3 @@ func _init():
 ## This just returns when to warn the user about potential performance impacts
 func get_warning_threshold() -> int:
 	return performance_warning_threshold
-
-## Get suggested warning threshold based on system capabilities
-func get_suggested_threshold() -> int:
-	if use_rust_acceleration and ClassDB.class_exists("FeagiDataDeserializer"):
-		# Rust available - higher thresholds are fine
-		return performance_warning_threshold
-	else:
-		# GDScript only - suggest lower threshold
-		return min(performance_warning_threshold, 10000)
-
-## Check if we're using Rust acceleration
-func is_rust_available() -> bool:
-	return use_rust_acceleration and ClassDB.class_exists("FeagiDataDeserializer")

@@ -29,11 +29,10 @@ No Rust Available:
 
 ## Performance Comparison
 
-| Platform | Processing Method | 10k Neurons | 100k Neurons | vs GDScript |
-|----------|------------------|-------------|--------------|-------------|
-| **Desktop** | Rust + Rayon | 0.3 ms | 2 ms | **40x faster** |
-| **Web (WASM)** | Rust Sequential | ~2.5 ms | ~20 ms | **3-4x faster** |
-| **Fallback** | GDScript | 8 ms | 80 ms | 1x (baseline) |
+| Platform | Processing Method | 10k Neurons | 100k Neurons | vs Legacy |
+|----------|------------------|-------------|--------------|-----------|
+| **Desktop** | Rust + Rayon (multi-threaded) | 0.3 ms | 2 ms | **40x faster** |
+| **Web (WASM)** | Rust Sequential (single-threaded) | ~2.5 ms | ~20 ms | **3-4x faster** |
 
 ## Implementation Details
 
@@ -130,10 +129,6 @@ The brain visualizer automatically detects which version is running:
 ✅ No special setup required  
 ✅ Works in all modern browsers  
 
-### Fallback (GDScript)
-✅ Always available  
-✅ No build dependencies  
-✅ Proven stable implementation  
 
 ## Testing
 
@@ -151,11 +146,11 @@ The brain visualizer automatically detects which version is running:
 4. Look for `[RUST-WASM]` in browser console
 5. Verify 3-4x better than expected GDScript performance
 
-### Fallback Test
+### Error Handling Test
 1. Temporarily rename Rust library file
 2. Run brain visualizer
-3. Verify warning message appears
-4. Verify 10k limit is enforced
+3. Verify critical error appears immediately
+4. Verify renderer does not attempt to process neurons
 
 ## Troubleshooting
 
@@ -183,11 +178,11 @@ This keeps the WASM binary smaller and avoids compilation errors.
 
 ## Summary
 
-✅ **Desktop**: Maximum performance with Rayon  
-✅ **Web**: Good performance with sequential Rust  
-✅ **Fallback**: Always works with GDScript  
+✅ **Desktop**: Maximum performance with Rayon multi-threading  
+✅ **Web**: Excellent performance with sequential Rust  
+✅ **No Fallback**: Clean code, Rust is mandatory  
 ✅ **Single Codebase**: Same calculation logic everywhere  
-✅ **Automatic Detection**: No manual configuration needed  
+✅ **Conditional Compilation**: Platform-specific optimizations  
 ✅ **Production Ready**: Fully tested and deployed  
 
-**Both platforms benefit significantly from Rust acceleration!**
+**Both platforms benefit significantly from Rust - no legacy code!**

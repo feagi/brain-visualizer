@@ -42,10 +42,10 @@ FEAGI Core → Rust Parallel Processing → Godot MultiMesh
 ## Features
 
 ✅ **Parallel Processing**: Uses all CPU cores via Rayon (desktop)  
-✅ **WASM Compatible**: Sequential processing for web builds (still 3-4x faster than GDScript)  
+✅ **WASM Compatible**: Sequential processing for web builds (still 3-4x faster than legacy)  
 ✅ **Zero GDScript Overhead**: All calculations in compiled Rust  
-✅ **Configurable Limits**: Easy settings management  
-✅ **Automatic Fallback**: Works without Rust (10k limit)  
+✅ **No Hard Limits**: Process unlimited neurons with warnings  
+✅ **Mandatory Rust**: Clean codebase, no legacy fallback code  
 ✅ **Performance Monitoring**: Built-in timing and logging  
 ✅ **Cross-Platform**: macOS, Linux, Windows, Web support
 
@@ -138,13 +138,15 @@ When enabled, you'll see real-time performance metrics:
 🦀 [RUST-ARRAYS] Processed 87,432 neurons in 1,847 µs (1.85 ms)
 ```
 
-### Fallback Behavior
+### Rust Required
 
-If Rust is not available, the system automatically falls back to GDScript:
+Rust is **mandatory** - if it's not available, the renderer will fail with a clear error:
 
 ```
-⚠️  [test_area] Rust deserializer not available - falling back to GDScript (limited to 10k neurons)
+🦀 CRITICAL: Rust deserializer not found! Build with: cd rust_extensions/feagi_data_deserializer && ./build.sh
 ```
+
+This ensures you always get optimal performance and know immediately if something is misconfigured.
 
 ## Technical Details
 

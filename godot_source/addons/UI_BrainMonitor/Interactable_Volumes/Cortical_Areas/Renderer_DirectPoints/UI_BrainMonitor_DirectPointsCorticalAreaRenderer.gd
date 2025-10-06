@@ -39,12 +39,10 @@ var _cortical_area_id: String
 var _is_hovered_over: bool = false
 var _is_selected: bool = false
 var _current_neuron_count: int = 0
-var _max_neurons: int = 0  # No hard limit - unlimited neurons!
 var _warning_threshold: int = 50000  # Warn if exceeding this many neurons
 
-# Rust accelerated processing
-var _rust_deserializer: Object = null  # FeagiDataDeserializer instance
-var _use_rust_acceleration: bool = false
+# Rust processing (required - no fallback!)
+var _rust_processor: Object = null  # FeagiDataDeserializer instance
 
 # Performance settings
 var _visualization_settings: VisualizationSettings = null
@@ -83,19 +81,15 @@ func setup(area: AbstractCorticalArea) -> void:
 	else:
 		_visualization_settings = VisualizationSettings.new()
 	
-	# Initialize Rust deserializer for high-performance processing
-	if _visualization_settings.use_rust_acceleration and ClassDB.class_exists("FeagiDataDeserializer"):
-		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
-		_use_rust_acceleration = true
-		_warning_threshold = _visualization_settings.performance_warning_threshold
-		print("   🦀 [%s] Rust acceleration ENABLED - no limits, will warn if exceeding %d neurons" % [_cortical_area_id, _warning_threshold])
-	else:
-		_use_rust_acceleration = false
-		_warning_threshold = 10000  # Lower warning threshold for GDScript
-		if _visualization_settings.use_rust_acceleration:
-			print("   ⚠️  [%s] Rust deserializer not available - falling back to GDScript (performance may degrade with >10k neurons)" % _cortical_area_id)
-		else:
-			print("   ℹ️  [%s] Rust acceleration disabled in settings - using GDScript (performance may degrade with >10k neurons)" % _cortical_area_id)
+	# Initialize Rust processor - REQUIRED, no fallback!
+	if not ClassDB.class_exists("FeagiDataDeserializer"):
+		push_error("🦀 CRITICAL: Rust deserializer not found! Build with: cd rust_extensions/feagi_data_deserializer && ./build.sh")
+		return
+	
+	_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
+	_warning_threshold = _visualization_settings.performance_warning_threshold
+	
+	print("   🦀 [%s] Rust processor initialized - unlimited neurons, warning threshold: %d" % [_cortical_area_id, _warning_threshold])
 	
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
@@ -359,7 +353,7 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	_clear_all_neurons()
 
 func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
-	"""Handle Type 11 direct neural points data with Z-DEPTH COLORING"""
+	"""Handle Type 11 direct neural points data - Rust-accelerated processing"""
 	
 	var point_count = x_array.size()
 	
@@ -377,12 +371,8 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_clear_all_neurons()
 		return
 	
-	# Use Rust acceleration if available (MASSIVE performance boost for 10k+ neurons)
-	if _use_rust_acceleration and _rust_deserializer != null:
-		_process_neurons_with_rust(x_array, y_array, z_array)
-	else:
-		# Fallback to GDScript processing (slower, limited to 10k neurons)
-		_process_neurons_with_gdscript(x_array, y_array, z_array, p_array)
+	# Process with Rust (multi-threaded on desktop, single-threaded on WASM)
+	_process_neurons_with_rust(x_array, y_array, z_array)
 	
 	# Start visibility timer to clear neurons after simulation_timestep
 	_start_visibility_timer()
@@ -398,7 +388,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_outline_mesh_instance.material_override = _memory_jello_material
 
 func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
-	"""Process neurons using Rust acceleration - 40-50x faster than GDScript!"""
+	"""Process neurons using Rust - multi-threaded (desktop) or single-threaded (WASM)"""
 	
 	var point_count = x_array.size()
 	
@@ -407,7 +397,7 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 		print("   ⚠️  [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
 	
 	# Call Rust processor with NO LIMIT (0 = unlimited)
-	var result = _rust_deserializer.process_arrays_for_visualization(
+	var result = _rust_processor.process_arrays_for_visualization(
 		x_array,
 		y_array,
 		z_array,
@@ -444,43 +434,6 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 		
 		_multi_mesh.set_instance_transform(i, transform)
 		_multi_mesh.set_instance_color(i, Color(colors[c_offset], colors[c_offset+1], colors[c_offset+2], colors[c_offset+3]))
-
-func _process_neurons_with_gdscript(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
-	"""Fallback GDScript processing - slower but always available"""
-	
-	var point_count = x_array.size()
-	
-	# Warn if exceeding threshold (GDScript is much slower)
-	if point_count > _warning_threshold:
-		print("   ⚠️  [%s] GDScript processing %d neurons (exceeds %d threshold) - expect performance impact!" % [_cortical_area_id, point_count, _warning_threshold])
-	
-	# Process ALL neurons - no hard limit
-	_multi_mesh.instance_count = point_count
-	_current_neuron_count = point_count
-	
-	# Pre-calculate constants
-	var half_dimensions = Vector3(_dimensions) / 2.0
-	var offset_vector = Vector3(0.5, 0.5, 0.5)
-	var normalized_scale = Vector3(1.0/_dimensions.x, 1.0/_dimensions.y, 1.0/(_dimensions.z * -1))
-	var z_dimension_float = float(_dimensions.z)
-	
-	# GDScript loop (slow but processes ALL neurons)
-	for i in range(point_count):
-		var x = float(x_array[i])
-		var y = float(y_array[i])
-		var z = float(z_array[i])
-		
-		var feagi_pos = Vector3(x, y, z)
-		var centered_pos = feagi_pos - half_dimensions + offset_vector
-		
-		var transform = Transform3D()
-		transform.origin = centered_pos
-		transform = transform.scaled(normalized_scale)
-		
-		var z_depth_color = _z_depth_to_color(z, z_dimension_float)
-		
-		_multi_mesh.set_instance_transform(i, transform)
-		_multi_mesh.set_instance_color(i, z_depth_color)
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
