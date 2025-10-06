@@ -406,6 +406,7 @@ impl FeagiDataDeserializer {
     }
     
     /// Calculate transform matrix for a single neuron (shared by both versions)
+    /// Matches GDScript logic: transform.origin = centered_pos; transform = transform.scaled(scale)
     #[inline(always)]
     fn calculate_transform(
         x: u32,
@@ -416,17 +417,19 @@ impl FeagiDataDeserializer {
         scale: Vector3,
     ) -> [f32; 12] {
         let feagi_pos = Vector3::new(x as f32, y as f32, z as f32);
+        // Calculate centered position WITHOUT scaling (matches GDScript: centered_pos = feagi_pos - half_dimensions + offset)
         let centered_pos = Vector3::new(
-            (feagi_pos.x - half_dimensions.x + offset.x) * scale.x,
-            (feagi_pos.y - half_dimensions.y + offset.y) * scale.y,
-            (feagi_pos.z - half_dimensions.z + offset.z) * scale.z,
+            feagi_pos.x - half_dimensions.x + offset.x,
+            feagi_pos.y - half_dimensions.y + offset.y,
+            feagi_pos.z - half_dimensions.z + offset.z,
         );
         
-        // Transform3D as 3x4 matrix (row-major)
+        // Transform3D as 3x4 matrix with SCALED basis vectors (matches GDScript: transform.scaled(scale))
+        // This applies scale to both the basis and the origin
         [
-            1.0, 0.0, 0.0, centered_pos.x,  // Row 0: X basis + origin.x
-            0.0, 1.0, 0.0, centered_pos.y,  // Row 1: Y basis + origin.y
-            0.0, 0.0, 1.0, centered_pos.z,  // Row 2: Z basis + origin.z
+            scale.x, 0.0, 0.0, centered_pos.x * scale.x,  // Row 0: scaled X basis + scaled origin.x
+            0.0, scale.y, 0.0, centered_pos.y * scale.y,  // Row 1: scaled Y basis + scaled origin.y
+            0.0, 0.0, scale.z, centered_pos.z * scale.z,  // Row 2: scaled Z basis + scaled origin.z
         ]
     }
     
