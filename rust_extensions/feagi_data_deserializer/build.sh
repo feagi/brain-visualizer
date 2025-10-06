@@ -14,16 +14,13 @@ echo "Platform detected: $PLATFORM"
 echo "Building in release mode (optimized for performance)..."
 cargo build --release
 
-# Copy the built library to the Godot addons directory
+# Copy the built library to the Godot addons directory root
 GODOT_ADDON_DIR="../../godot_source/addons/feagi_rust_deserializer"
 mkdir -p "$GODOT_ADDON_DIR"
 
 case "$PLATFORM" in
     Darwin)
-        # macOS - need to build universal binary for M1/Intel compatibility
-        echo "macOS detected - building universal binary..."
-        
-        # Check if we need to build for both architectures
+        echo "macOS detected..."
         if [ -f "target/release/libfeagi_data_deserializer.dylib" ]; then
             cp target/release/libfeagi_data_deserializer.dylib "$GODOT_ADDON_DIR/"
             echo "✅ Copied libfeagi_data_deserializer.dylib to $GODOT_ADDON_DIR"
