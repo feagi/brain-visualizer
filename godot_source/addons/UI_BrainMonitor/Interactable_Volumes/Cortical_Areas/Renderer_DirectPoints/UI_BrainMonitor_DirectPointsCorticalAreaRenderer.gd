@@ -367,14 +367,15 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_clear_all_neurons()
 		return
 	
-	if point_count == 0:
-		_clear_all_neurons()
-		return
+	# Process neurons - replace old data with new data
+	if point_count > 0:
+		_process_neurons_with_rust(x_array, y_array, z_array)
+	else:
+		# Empty update - keep displaying previous neurons (persistent visualization)
+		# Only clear if truly no activity for extended period (handled by timer)
+		pass
 	
-	# Process with Rust (multi-threaded on desktop, single-threaded on WASM)
-	_process_neurons_with_rust(x_array, y_array, z_array)
-	
-	# Start visibility timer to clear neurons after simulation_timestep
+	# Restart timer with long timeout - only clears if connection lost or truly idle
 	_start_visibility_timer()
 	
 	# Make power cone use firing colors when neural activity occurs
@@ -388,7 +389,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_outline_mesh_instance.material_override = _memory_jello_material
 
 func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
-	"""Process neurons using Rust - multi-threaded (desktop) or single-threaded (WASM)"""
+	"""Process neurons using Rust - applies directly to MultiMesh (FASTEST!)"""
 	
 	var point_count = x_array.size()
 	
@@ -396,52 +397,29 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 	if point_count > _warning_threshold:
 		print("   ⚠️  [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
 	
-	# Call Rust processor with NO LIMIT (0 = unlimited)
-	var result = _rust_processor.process_arrays_for_visualization(
+	# Call Rust to apply directly to MultiMesh - NO GDScript LOOP!
+	var result = _rust_processor.apply_arrays_to_multimesh(
+		_multi_mesh,
 		x_array,
 		y_array,
 		z_array,
-		_dimensions,
-		0  # 0 = no limit, process ALL neurons
+		_dimensions
 	)
 	
 	if not result.success:
-		print("🦀 ERROR: Rust processing failed: ", result.error)
+		print("🦀 ERROR: Rust processing failed")
 		_clear_all_neurons()
 		return
 	
-	var actual_count = result.neuron_count
-	_multi_mesh.instance_count = actual_count
-	_current_neuron_count = actual_count
-	
-	# Apply pre-calculated transforms and colors from Rust
-	# Rust returns flat arrays: transforms=[12 floats per neuron], colors=[4 floats per neuron]
-	var transforms = result.transforms
-	var colors = result.colors
-	
-	# Set transforms and colors (Godot API expects them one at a time, sadly)
-	for i in range(actual_count):
-		var t_offset = i * 12
-		var c_offset = i * 4
-		
-		# Build Transform3D from flat array (3x4 matrix)
-		var transform = Transform3D(
-			Vector3(transforms[t_offset], transforms[t_offset+1], transforms[t_offset+2]),     # X basis
-			Vector3(transforms[t_offset+4], transforms[t_offset+5], transforms[t_offset+6]),   # Y basis
-			Vector3(transforms[t_offset+8], transforms[t_offset+9], transforms[t_offset+10]),  # Z basis
-			Vector3(transforms[t_offset+3], transforms[t_offset+7], transforms[t_offset+11])   # Origin
-		)
-		
-		_multi_mesh.set_instance_transform(i, transform)
-		_multi_mesh.set_instance_color(i, Color(colors[c_offset], colors[c_offset+1], colors[c_offset+2], colors[c_offset+3]))
+	_current_neuron_count = result.neuron_count
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
 	print("DirectPoints: Received legacy format data (", points_data.size(), " bytes) - consider upgrading to bulk format")
 	
-	# Check if we have any data
+	# Check if we have any data (let timer handle clearing, don't flash!)
 	if points_data.size() == 0:
-		_clear_all_neurons()
+		_start_visibility_timer()
 		return
 	
 	# Trigger power cone firing animation if this is the power cortical area
@@ -455,7 +433,7 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		return
 	
 	if point_count == 0:
-		_clear_all_neurons()
+		_start_visibility_timer()
 		return
 	
 	# Convert to bulk arrays efficiently
@@ -532,27 +510,26 @@ func _clear_all_neurons() -> void:
 		_outline_mesh_instance.material_override = _memory_transparent_material
 
 func _start_visibility_timer() -> void:
-	"""Start the visibility timer using simulation_timestep from cache"""
+	"""Start the visibility timer with buffer for smooth updates"""
 	if not FeagiCore or not FeagiCore.feagi_local_cache:
 		print("🔥 DirectPoints: Cannot start timer - FeagiCore or cache not available")
 		return
 	
 	var simulation_timestep = FeagiCore.feagi_local_cache.simulation_timestep
-	# Starting visibility timer with cached simulation_timestep
 	
 	# Stop existing timer if running
 	if _visibility_timer.time_left > 0:
-		# Stopped existing timer
 		_visibility_timer.stop()
 	
-	# Record when neurons started displaying (using engine ticks for precision)
+	# Record when neurons started displaying
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
-	# Neurons started displaying
 	
-	# Start timer with simulation_timestep duration
-	_visibility_timer.wait_time = simulation_timestep
+	# Use MUCH longer timeout for persistent visualization
+	# Only clear if truly no activity for extended period (connection lost / FEAGI stopped)
+	# This prevents flashing and creates smooth, persistent neural visualization
+	var timeout = max(simulation_timestep * 10.0, 2.0)  # At least 2 seconds, or 10x the timestep
+	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()
-	# Timer started with simulation_timestep duration
 
 func _on_visibility_timeout() -> void:
 	"""Called when the visibility timer expires - clear all neurons"""

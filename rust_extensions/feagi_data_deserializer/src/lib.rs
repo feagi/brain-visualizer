@@ -1,13 +1,11 @@
 use godot::prelude::*;
+use godot::classes::MultiMesh;
 use feagi_data_serialization::FeagiSerializable;
 use feagi_data_structures::neurons::xyzp::CorticalMappedXYZPNeuronData;
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
 use rayon::prelude::*;
-
-#[cfg(not(target_family = "wasm"))]
-use std::sync::Mutex;
 
 struct FeagiDataDeserializerLib;
 
@@ -187,6 +185,99 @@ impl FeagiDataDeserializer {
         result
     }
 
+    /// Apply neuron visualization directly to MultiMesh - FASTEST PATH!
+    /// Bypasses GDScript loop entirely by setting transforms/colors directly in Rust
+    /// 
+    /// Args:
+    ///   - multi_mesh: The MultiMesh to update
+    ///   - x_array, y_array, z_array: Neuron coordinates
+    ///   - dimensions: Cortical area dimensions
+    /// 
+    /// Returns: Dictionary with success, neuron_count, processing_time_us
+    #[func]
+    pub fn apply_arrays_to_multimesh(
+        &self,
+        mut multi_mesh: Gd<MultiMesh>,
+        x_array: PackedInt32Array,
+        y_array: PackedInt32Array,
+        z_array: PackedInt32Array,
+        dimensions: Vector3,
+    ) -> Dictionary {
+        let start_time = std::time::Instant::now();
+        
+        // Validate array sizes
+        let array_len = x_array.len();
+        if array_len != y_array.len() || array_len != z_array.len() {
+            godot_error!("🦀 Array size mismatch");
+            multi_mesh.set_instance_count(0);
+            let mut result = Dictionary::new();
+            result.set("success", false);
+            result.set("error", "Array size mismatch");
+            return result;
+        }
+        
+        if array_len == 0 {
+            multi_mesh.set_instance_count(0);
+            let mut result = Dictionary::new();
+            result.set("success", true);
+            result.set("neuron_count", 0);
+            return result;
+        }
+        
+        // Set instance count
+        multi_mesh.set_instance_count(array_len as i32);
+        
+        // Pre-calculate constants
+        let half_dimensions = Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
+        let offset = Vector3::new(0.5, 0.5, 0.5);
+        let scale = Vector3::new(1.0 / dimensions.x, 1.0 / dimensions.y, 1.0 / -dimensions.z);
+        let z_max = dimensions.z;
+        
+        // Apply transforms and colors directly (NO GDScript LOOP!)
+        for i in 0..array_len {
+            let x = x_array[i] as u32;
+            let y = y_array[i] as u32;
+            let z = z_array[i] as u32;
+            
+            let transform_data = Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
+            let color_data = Self::calculate_color(z, z_max);
+            
+            let basis = Basis::from_rows(
+                Vector3::new(transform_data[0], transform_data[1], transform_data[2]),
+                Vector3::new(transform_data[4], transform_data[5], transform_data[6]),
+                Vector3::new(transform_data[8], transform_data[9], transform_data[10]),
+            );
+            let origin = Vector3::new(transform_data[3], transform_data[7], transform_data[11]);
+            let transform = Transform3D::new(basis, origin);
+            
+            let color = Color::from_rgba(color_data[0], color_data[1], color_data[2], color_data[3]);
+            
+            multi_mesh.set_instance_transform(i as i32, transform);
+            multi_mesh.set_instance_color(i as i32, color);
+        }
+        
+        let elapsed = start_time.elapsed().as_micros() as i64;
+        
+        // Only log if processing took significant time (reduce spam)
+        #[cfg(not(target_family = "wasm"))]
+        if array_len > 1000 {
+            godot_print!("🦀 [RUST-DIRECT] Applied {} neurons in {} µs ({:.2} ms) - {:.1} neurons/ms", 
+                array_len, elapsed, elapsed as f64 / 1000.0, array_len as f64 / (elapsed as f64 / 1000.0));
+        }
+        
+        #[cfg(target_family = "wasm")]
+        if array_len > 1000 {
+            godot_print!("🦀 [RUST-WASM-DIRECT] Applied {} neurons in {} µs ({:.2} ms)", 
+                array_len, elapsed, elapsed as f64 / 1000.0);
+        }
+        
+        let mut result = Dictionary::new();
+        result.set("success", true);
+        result.set("neuron_count", array_len as i32);
+        result.set("processing_time_us", elapsed);
+        result
+    }
+
     /// Process pre-deserialized neuron arrays for visualization (optimized path)
     /// This is used when arrays are already deserialized and we just need transforms/colors
     /// 
@@ -306,20 +397,27 @@ impl FeagiDataDeserializer {
         scale: Vector3,
         z_max: f32,
     ) -> (Vec<f32>, Vec<f32>) {
-        let transforms_mutex = Mutex::new(Vec::with_capacity(neurons.len() * 12));
-        let colors_mutex = Mutex::new(Vec::with_capacity(neurons.len() * 4));
-        
-        // Parallel processing using Rayon (desktop only)
-        neurons.par_iter().for_each(|(x, y, z, _potential)| {
-            let transform_data = Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
-            let color_data = Self::calculate_color(*z, z_max);
-            
-            transforms_mutex.lock().unwrap().extend_from_slice(&transform_data);
-            colors_mutex.lock().unwrap().extend_from_slice(&color_data);
-        });
-        
-        let transforms = transforms_mutex.into_inner().unwrap();
-        let colors = colors_mutex.into_inner().unwrap();
+        // Parallel fold + reduce - each thread builds its own chunk, then we concatenate
+        let (transforms, colors) = neurons
+            .par_iter()
+            .fold(
+                || (Vec::with_capacity(1024 * 12), Vec::with_capacity(1024 * 4)),
+                |(mut transforms, mut colors), (x, y, z, _potential)| {
+                    let transform_data = Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
+                    let color_data = Self::calculate_color(*z, z_max);
+                    transforms.extend_from_slice(&transform_data);
+                    colors.extend_from_slice(&color_data);
+                    (transforms, colors)
+                },
+            )
+            .reduce(
+                || (Vec::new(), Vec::new()),
+                |(mut t1, mut c1), (t2, c2)| {
+                    t1.extend(t2);
+                    c1.extend(c2);
+                    (t1, c1)
+                },
+            );
         
         (transforms, colors)
     }

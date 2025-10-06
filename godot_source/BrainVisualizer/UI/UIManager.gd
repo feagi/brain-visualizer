@@ -52,6 +52,7 @@ var _selection_system: SelectionSystem
 var _temp_bm_holder: UI_Capsules_Capsule
 var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
 var _temp_bm_camera_rot: Vector3
+var _fps_label: Label
 
 
 func _enter_tree():
@@ -59,6 +60,11 @@ func _enter_tree():
 	get_viewport().size_changed.connect(_update_screen_size)
 	_find_possible_scales()
 	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1-DARK.tres")) #TODO temporary!
+
+func _process(_delta: float):
+	if _fps_label:
+		var fps = Engine.get_frames_per_second()
+		_fps_label.text = "%d FPS" % fps
 
 func _ready():
 	_notification_system = $NotificationSystem
@@ -71,6 +77,23 @@ func _ready():
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
 	_top_bar_resized()
+	
+	# Create FPS label in bottom right corner
+	_fps_label = Label.new()
+	_fps_label.name = "FPS_Label"
+	_fps_label.anchors_preset = Control.PRESET_BOTTOM_RIGHT
+	_fps_label.anchor_left = 1.0
+	_fps_label.anchor_top = 1.0
+	_fps_label.anchor_right = 1.0
+	_fps_label.anchor_bottom = 1.0
+	_fps_label.offset_left = -120.0
+	_fps_label.offset_top = -30.0
+	_fps_label.offset_right = -10.0
+	_fps_label.offset_bottom = -10.0
+	_fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_fps_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_fps_label.add_theme_font_size_override("font_size", 16)
+	add_child(_fps_label)
 	
 	#TODO updated is commented out due to these signals being called when we merely retrieve the data but dont update anything, causing it to be spammed. We may wish to address this
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_proxy_notification_cortical_area_added)
