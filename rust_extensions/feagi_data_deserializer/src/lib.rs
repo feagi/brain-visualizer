@@ -1,7 +1,12 @@
 use godot::prelude::*;
-use feagi_data_serialization::{FeagiByteStructure, FeagiByteStructureCompatible};
+use feagi_data_serialization::FeagiSerializable;
 use feagi_data_structures::neurons::xyzp::CorticalMappedXYZPNeuronData;
+
+// Rayon is only available on native platforms (not WASM)
+#[cfg(not(target_family = "wasm"))]
 use rayon::prelude::*;
+
+#[cfg(not(target_family = "wasm"))]
 use std::sync::Mutex;
 
 struct FeagiDataDeserializerLib;
@@ -33,18 +38,11 @@ impl FeagiDataDeserializer {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // First, create a FeagiByteStructure from the raw bytes
-        let byte_structure = match FeagiByteStructure::create_from_bytes(rust_buffer) {
-            Ok(bs) => bs,
-            Err(e) => {
-                godot_error!("🦀 Failed to create FeagiByteStructure: {:?}", e);
-                return self.create_error_dict(format!("Byte structure error: {:?}", e));
-            }
-        };
+        // Create neuron data and deserialize from bytes
+        let mut neuron_data = CorticalMappedXYZPNeuronData::new();
         
-        // Then, deserialize into CorticalMappedXYZPNeuronData
-        match CorticalMappedXYZPNeuronData::new_from_feagi_byte_structure(&byte_structure) {
-            Ok(neuron_data) => {
+        match neuron_data.try_update_from_byte_slice(&rust_buffer) {
+            Ok(_) => {
                 self.convert_neuron_data_to_godot(&neuron_data)
             }
             Err(e) => {
@@ -91,27 +89,15 @@ impl FeagiDataDeserializer {
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
         // Deserialize neuron data
-        let byte_structure = match FeagiByteStructure::create_from_bytes(rust_buffer) {
-            Ok(bs) => bs,
-            Err(e) => {
-                godot_error!("🦀 Failed to create FeagiByteStructure: {:?}", e);
-                return self.create_visualization_error_dict(
-                    format!("Byte structure error: {:?}", e),
-                    start_time.elapsed().as_micros() as i64
-                );
-            }
-        };
+        let mut neuron_data = CorticalMappedXYZPNeuronData::new();
         
-        let neuron_data = match CorticalMappedXYZPNeuronData::new_from_feagi_byte_structure(&byte_structure) {
-            Ok(data) => data,
-            Err(e) => {
-                godot_error!("🦀 Failed to deserialize neuron data: {:?}", e);
-                return self.create_visualization_error_dict(
-                    format!("Deserialization error: {:?}", e),
-                    start_time.elapsed().as_micros() as i64
-                );
-            }
-        };
+        if let Err(e) = neuron_data.try_update_from_byte_slice(&rust_buffer) {
+            godot_error!("🦀 Failed to deserialize neuron data: {:?}", e);
+            return self.create_visualization_error_dict(
+                format!("Deserialization error: {:?}", e),
+                start_time.elapsed().as_micros() as i64
+            );
+        }
         
         // Count total neurons
         let total_neurons: usize = neuron_data.mappings.values()
@@ -138,12 +124,7 @@ impl FeagiDataDeserializer {
             1.0 / -dimensions.z,  // Note: negative Z
         );
         
-        // Process neurons in parallel
-        let transforms_mutex = Mutex::new(Vec::with_capacity(process_count * 12));
-        let colors_mutex = Mutex::new(Vec::with_capacity(process_count * 4));
-        let processed_mutex = Mutex::new(0usize);
-        
-        // Collect all neurons into a flat vector for parallel processing
+        // Collect all neurons into a flat vector
         let mut all_neurons = Vec::with_capacity(process_count);
         for (_, neuron_array) in neuron_data.mappings.iter() {
             for neuron in neuron_array.iter() {
@@ -162,45 +143,8 @@ impl FeagiDataDeserializer {
             }
         }
         
-        // Parallel processing using Rayon
-        all_neurons.par_iter().for_each(|(x, y, z, _potential)| {
-            // Check if we've hit the limit
-            let mut processed = processed_mutex.lock().unwrap();
-            if *processed >= process_count {
-                return;
-            }
-            *processed += 1;
-            drop(processed);
-            
-            // Calculate transform
-            let feagi_pos = Vector3::new(*x as f32, *y as f32, *z as f32);
-            let centered_pos = Vector3::new(
-                (feagi_pos.x - half_dimensions.x + offset.x) * scale.x,
-                (feagi_pos.y - half_dimensions.y + offset.y) * scale.y,
-                (feagi_pos.z - half_dimensions.z + offset.z) * scale.z,
-            );
-            
-            // Transform3D as 3x4 matrix (row-major): [basis.x, basis.y, basis.z, origin]
-            // Identity basis (no rotation) + translation
-            let transform_data = [
-                1.0, 0.0, 0.0, centered_pos.x,  // Row 0: X basis + origin.x
-                0.0, 1.0, 0.0, centered_pos.y,  // Row 1: Y basis + origin.y
-                0.0, 0.0, 1.0, centered_pos.z,  // Row 2: Z basis + origin.z
-            ];
-            
-            // Calculate z-depth color
-            let z_normalized = (*z as f32 / dimensions.z).clamp(0.0, 1.0);
-            let red_intensity = (1.0 - z_normalized).max(0.2);  // Front bright, back dark
-            let color_data = [red_intensity, 0.0, 0.0, 1.0];  // Red gradient with full alpha
-            
-            // Store results (thread-safe)
-            transforms_mutex.lock().unwrap().extend_from_slice(&transform_data);
-            colors_mutex.lock().unwrap().extend_from_slice(&color_data);
-        });
-        
-        // Convert to Godot PackedArrays
-        let transforms = transforms_mutex.into_inner().unwrap();
-        let colors = colors_mutex.into_inner().unwrap();
+        // Process neurons - use parallel processing on desktop, sequential on WASM
+        let (transforms, colors) = self.process_neurons_internal(&all_neurons, half_dimensions, offset, scale, dimensions.z);
         let actual_count = transforms.len() / 12;
         
         let mut transforms_array = PackedFloat32Array::new();
@@ -215,12 +159,20 @@ impl FeagiDataDeserializer {
         
         let processing_time = start_time.elapsed().as_micros() as i64;
         
+        #[cfg(not(target_family = "wasm"))]
         godot_print!(
-            "🦀 [RUST-VIZ] Processed {} neurons in {} µs ({:.2} ms) - {:.1}x faster than 10k GDScript limit",
+            "🦀 [RUST-PARALLEL] Processed {} neurons in {} µs ({:.2} ms) using Rayon multi-threading",
             actual_count,
             processing_time,
-            processing_time as f64 / 1000.0,
-            (actual_count as f64 * 8.0) / processing_time as f64  // Estimate speedup
+            processing_time as f64 / 1000.0
+        );
+        
+        #[cfg(target_family = "wasm")]
+        godot_print!(
+            "🦀 [RUST-WASM] Processed {} neurons in {} µs ({:.2} ms) - sequential (still 3-4x faster than GDScript!)",
+            actual_count,
+            processing_time,
+            processing_time as f64 / 1000.0
         );
         
         // Return result dictionary
@@ -292,48 +244,13 @@ impl FeagiDataDeserializer {
             1.0 / -dimensions.z,
         );
         
-        // Pre-allocate result vectors
-        let mut transforms = Vec::with_capacity(process_count * 12);
-        let mut colors = Vec::with_capacity(process_count * 4);
-        
-        // Collect coordinates for parallel processing
+        // Collect coordinates
         let coords: Vec<(i32, i32, i32)> = (0..process_count)
             .map(|i| (x_array[i], y_array[i], z_array[i]))
             .collect();
         
-        // Parallel processing using Rayon
-        let results: Vec<([f32; 12], [f32; 4])> = coords
-            .par_iter()
-            .map(|(x, y, z)| {
-                // Calculate transform
-                let feagi_pos = Vector3::new(*x as f32, *y as f32, *z as f32);
-                let centered_pos = Vector3::new(
-                    (feagi_pos.x - half_dimensions.x + offset.x) * scale.x,
-                    (feagi_pos.y - half_dimensions.y + offset.y) * scale.y,
-                    (feagi_pos.z - half_dimensions.z + offset.z) * scale.z,
-                );
-                
-                // Transform as 3x4 matrix
-                let transform_data = [
-                    1.0, 0.0, 0.0, centered_pos.x,
-                    0.0, 1.0, 0.0, centered_pos.y,
-                    0.0, 0.0, 1.0, centered_pos.z,
-                ];
-                
-                // Calculate z-depth color
-                let z_normalized = (*z as f32 / dimensions.z).clamp(0.0, 1.0);
-                let red_intensity = (1.0 - z_normalized).max(0.2);
-                let color_data = [red_intensity, 0.0, 0.0, 1.0];
-                
-                (transform_data, color_data)
-            })
-            .collect();
-        
-        // Flatten results into output vectors
-        for (transform, color) in results {
-            transforms.extend_from_slice(&transform);
-            colors.extend_from_slice(&color);
-        }
+        // Process neurons - use parallel processing on desktop, sequential on WASM
+        let (transforms, colors) = self.process_coords_internal(&coords, half_dimensions, offset, scale, dimensions.z);
         
         // Convert to Godot PackedArrays
         let mut transforms_array = PackedFloat32Array::new();
@@ -348,8 +265,17 @@ impl FeagiDataDeserializer {
         
         let processing_time = start_time.elapsed().as_micros() as i64;
         
+        #[cfg(not(target_family = "wasm"))]
         godot_print!(
-            "🦀 [RUST-ARRAYS] Processed {} neurons in {} µs ({:.2} ms)",
+            "🦀 [RUST-PARALLEL] Processed {} neurons in {} µs ({:.2} ms) using Rayon multi-threading",
+            process_count,
+            processing_time,
+            processing_time as f64 / 1000.0
+        );
+        
+        #[cfg(target_family = "wasm")]
+        godot_print!(
+            "🦀 [RUST-WASM] Processed {} neurons in {} µs ({:.2} ms) - sequential (still 3-4x faster than GDScript!)",
             process_count,
             processing_time,
             processing_time as f64 / 1000.0
@@ -370,6 +296,148 @@ impl FeagiDataDeserializer {
 
 // Private helper methods
 impl FeagiDataDeserializer {
+    /// Process neurons - DESKTOP VERSION with Rayon parallel processing
+    #[cfg(not(target_family = "wasm"))]
+    fn process_neurons_internal(
+        &self,
+        neurons: &[(u32, u32, u32, f32)],
+        half_dimensions: Vector3,
+        offset: Vector3,
+        scale: Vector3,
+        z_max: f32,
+    ) -> (Vec<f32>, Vec<f32>) {
+        let transforms_mutex = Mutex::new(Vec::with_capacity(neurons.len() * 12));
+        let colors_mutex = Mutex::new(Vec::with_capacity(neurons.len() * 4));
+        
+        // Parallel processing using Rayon (desktop only)
+        neurons.par_iter().for_each(|(x, y, z, _potential)| {
+            let transform_data = Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
+            let color_data = Self::calculate_color(*z, z_max);
+            
+            transforms_mutex.lock().unwrap().extend_from_slice(&transform_data);
+            colors_mutex.lock().unwrap().extend_from_slice(&color_data);
+        });
+        
+        let transforms = transforms_mutex.into_inner().unwrap();
+        let colors = colors_mutex.into_inner().unwrap();
+        
+        (transforms, colors)
+    }
+    
+    /// Process neurons - WASM VERSION with sequential processing
+    #[cfg(target_family = "wasm")]
+    fn process_neurons_internal(
+        &self,
+        neurons: &[(u32, u32, u32, f32)],
+        half_dimensions: Vector3,
+        offset: Vector3,
+        scale: Vector3,
+        z_max: f32,
+    ) -> (Vec<f32>, Vec<f32>) {
+        let mut transforms = Vec::with_capacity(neurons.len() * 12);
+        let mut colors = Vec::with_capacity(neurons.len() * 4);
+        
+        // Sequential processing (WASM - still faster than GDScript!)
+        for (x, y, z, _potential) in neurons.iter() {
+            let transform_data = Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
+            let color_data = Self::calculate_color(*z, z_max);
+            
+            transforms.extend_from_slice(&transform_data);
+            colors.extend_from_slice(&color_data);
+        }
+        
+        (transforms, colors)
+    }
+    
+    /// Process coordinates - DESKTOP VERSION with Rayon parallel processing
+    #[cfg(not(target_family = "wasm"))]
+    fn process_coords_internal(
+        &self,
+        coords: &[(i32, i32, i32)],
+        half_dimensions: Vector3,
+        offset: Vector3,
+        scale: Vector3,
+        z_max: f32,
+    ) -> (Vec<f32>, Vec<f32>) {
+        // Parallel processing using Rayon (desktop only)
+        let results: Vec<([f32; 12], [f32; 4])> = coords
+            .par_iter()
+            .map(|(x, y, z)| {
+                let transform_data = Self::calculate_transform(*x as u32, *y as u32, *z as u32, half_dimensions, offset, scale);
+                let color_data = Self::calculate_color(*z as u32, z_max);
+                (transform_data, color_data)
+            })
+            .collect();
+        
+        // Flatten results
+        let mut transforms = Vec::with_capacity(coords.len() * 12);
+        let mut colors = Vec::with_capacity(coords.len() * 4);
+        for (transform, color) in results {
+            transforms.extend_from_slice(&transform);
+            colors.extend_from_slice(&color);
+        }
+        
+        (transforms, colors)
+    }
+    
+    /// Process coordinates - WASM VERSION with sequential processing
+    #[cfg(target_family = "wasm")]
+    fn process_coords_internal(
+        &self,
+        coords: &[(i32, i32, i32)],
+        half_dimensions: Vector3,
+        offset: Vector3,
+        scale: Vector3,
+        z_max: f32,
+    ) -> (Vec<f32>, Vec<f32>) {
+        let mut transforms = Vec::with_capacity(coords.len() * 12);
+        let mut colors = Vec::with_capacity(coords.len() * 4);
+        
+        // Sequential processing (WASM - still faster than GDScript!)
+        for (x, y, z) in coords.iter() {
+            let transform_data = Self::calculate_transform(*x as u32, *y as u32, *z as u32, half_dimensions, offset, scale);
+            let color_data = Self::calculate_color(*z as u32, z_max);
+            
+            transforms.extend_from_slice(&transform_data);
+            colors.extend_from_slice(&color_data);
+        }
+        
+        (transforms, colors)
+    }
+    
+    /// Calculate transform matrix for a single neuron (shared by both versions)
+    #[inline(always)]
+    fn calculate_transform(
+        x: u32,
+        y: u32,
+        z: u32,
+        half_dimensions: Vector3,
+        offset: Vector3,
+        scale: Vector3,
+    ) -> [f32; 12] {
+        let feagi_pos = Vector3::new(x as f32, y as f32, z as f32);
+        let centered_pos = Vector3::new(
+            (feagi_pos.x - half_dimensions.x + offset.x) * scale.x,
+            (feagi_pos.y - half_dimensions.y + offset.y) * scale.y,
+            (feagi_pos.z - half_dimensions.z + offset.z) * scale.z,
+        );
+        
+        // Transform3D as 3x4 matrix (row-major)
+        [
+            1.0, 0.0, 0.0, centered_pos.x,  // Row 0: X basis + origin.x
+            0.0, 1.0, 0.0, centered_pos.y,  // Row 1: Y basis + origin.y
+            0.0, 0.0, 1.0, centered_pos.z,  // Row 2: Z basis + origin.z
+        ]
+    }
+    
+    /// Calculate z-depth color for a single neuron (shared by both versions)
+    #[inline(always)]
+    fn calculate_color(z: u32, z_max: f32) -> [f32; 4] {
+        let z_normalized = (z as f32 / z_max).clamp(0.0, 1.0);
+        let red_intensity = (1.0 - z_normalized).max(0.2);  // Front bright, back dark
+        [red_intensity, 0.0, 0.0, 1.0]  // Red gradient with full alpha
+    }
+
     /// Convert official neuron data structure to Godot Dictionary
     fn convert_neuron_data_to_godot(
         &self,

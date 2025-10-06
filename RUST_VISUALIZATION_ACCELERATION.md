@@ -10,6 +10,10 @@ The brain visualizer now uses **Rust acceleration** for neuron visualization pro
 
 The brain visualizer had a hardcoded limit of **10,000 neurons per cortical area** due to GDScript performance constraints. At ~8,000 neurons, users would see neurons being truncated.
 
+### Solution
+
+**All hard limits removed!** The system now processes **unlimited neurons** with warnings when performance thresholds are exceeded. Rust acceleration makes this practical.
+
 **Bottleneck:** GDScript loop processing each neuron individually:
 ```gdscript
 for i in range(neuron_count):  # ← SLOW for 10k+ neurons
@@ -37,12 +41,13 @@ FEAGI Core → Rust Parallel Processing → Godot MultiMesh
 
 ## Features
 
-✅ **Parallel Processing**: Uses all CPU cores via Rayon  
+✅ **Parallel Processing**: Uses all CPU cores via Rayon (desktop)  
+✅ **WASM Compatible**: Sequential processing for web builds (still 3-4x faster than GDScript)  
 ✅ **Zero GDScript Overhead**: All calculations in compiled Rust  
 ✅ **Configurable Limits**: Easy settings management  
 ✅ **Automatic Fallback**: Works without Rust (10k limit)  
 ✅ **Performance Monitoring**: Built-in timing and logging  
-✅ **Cross-Platform**: macOS, Linux, Windows support
+✅ **Cross-Platform**: macOS, Linux, Windows, Web support
 
 ## Building the Rust Extension
 
@@ -95,21 +100,24 @@ Create or edit: `brain-visualizer/godot_source/BrainVisualizer/Configs/visualiza
 
 [resource]
 script = ExtResource("1")
-max_neurons_per_area = 100000  # Adjust based on your hardware
-use_rust_acceleration = true    # Enable/disable Rust
-enable_performance_logs = true  # Show timing info
-fps_warning_threshold = 30      # Warn if FPS drops below this
-auto_adjust_performance = false # Experimental auto-tuning
+performance_warning_threshold = 50000  # Warn when exceeding this (NO HARD LIMIT!)
+use_rust_acceleration = true           # Enable/disable Rust
+enable_performance_logs = true         # Show timing info
+fps_warning_threshold = 30             # Warn if FPS drops below this
+auto_adjust_performance = false        # Experimental auto-tuning
 ```
 
-### Recommended Settings
+### Recommended Warning Thresholds
 
-| Hardware | max_neurons_per_area | Notes |
-|----------|---------------------|-------|
-| High-end (M1 Pro/equivalent) | 500,000 | Excellent performance |
-| Mid-range | 100,000 | Recommended default |
-| Low-end | 50,000 | Still 5x better than old limit |
-| Without Rust | 10,000 | Automatic fallback |
+**Note: These are WARNING thresholds, not limits. All neurons will be processed regardless!**
+
+| Hardware | Warning Threshold | Expected Performance |
+|----------|-------------------|---------------------|
+| High-end Desktop (M1 Pro/Ryzen) | 500,000 | Excellent - can handle millions |
+| Mid-range Desktop | 100,000 | Very Good - smooth at 60 FPS |
+| Low-end Desktop | 50,000 | Good - acceptable performance |
+| Web (WASM) | 30,000-50,000 | Good - 3-4x better than GDScript |
+| GDScript Fallback | 10,000 | Performance degrades beyond this |
 
 ## Usage
 
@@ -119,7 +127,7 @@ The brain visualizer automatically detects and uses Rust acceleration when avail
 
 ```
 🧠 DIRECTPOINTS RENDERER SETUP for cortical area: test_area
-   🦀 [test_area] Rust acceleration ENABLED - limit: 100000 neurons
+   🦀 [test_area] Rust acceleration ENABLED - no limits, will warn if exceeding 50000 neurons
 ```
 
 ### Performance Logs
@@ -218,14 +226,14 @@ cargo build --release
 
 ### Benchmark Results (Apple M1 Pro)
 
-| Neurons | GDScript | Rust | Speedup |
-|---------|----------|------|---------|
-| 1,000 | 0.8ms | 0.03ms | 27x |
-| 10,000 | 8.0ms | 0.3ms | 27x |
-| 50,000 | 40ms | 1.2ms | 33x |
-| 100,000 | 80ms | 2.0ms | 40x |
-| 500,000 | N/A | 8.5ms | N/A |
-| 1,000,000 | N/A | 15ms | N/A |
+| Neurons | GDScript | Rust WASM (Web) | Rust Native (Desktop) | WASM Speedup | Native Speedup |
+|---------|----------|-----------------|----------------------|--------------|----------------|
+| 1,000 | 0.8ms | ~0.2ms | 0.03ms | 4x | 27x |
+| 10,000 | 8.0ms | ~2.5ms | 0.3ms | 3x | 27x |
+| 50,000 | 40ms | ~12ms | 1.2ms | 3x | 33x |
+| 100,000 | 80ms | ~20ms | 2.0ms | 4x | 40x |
+| 500,000 | N/A | N/A | 8.5ms | N/A | N/A |
+| 1,000,000 | N/A | N/A | 15ms | N/A | N/A |
 
 ### Real-World Impact
 

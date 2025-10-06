@@ -15,7 +15,9 @@ feagi_data_structures = "0.0.50-beta.28"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# Parallel processing for high-performance neuron visualization
+# Parallel processing for high-performance neuron visualization (desktop only)
+# Note: Rayon doesn't work in WASM, so we use conditional compilation
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
 rayon = "1.8"
 
 [lib]

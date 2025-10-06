@@ -39,7 +39,8 @@ var _cortical_area_id: String
 var _is_hovered_over: bool = false
 var _is_selected: bool = false
 var _current_neuron_count: int = 0
-var _max_neurons: int = 100000  # Performance limit (increased with Rust acceleration)
+var _max_neurons: int = 0  # No hard limit - unlimited neurons!
+var _warning_threshold: int = 50000  # Warn if exceeding this many neurons
 
 # Rust accelerated processing
 var _rust_deserializer: Object = null  # FeagiDataDeserializer instance
@@ -86,15 +87,15 @@ func setup(area: AbstractCorticalArea) -> void:
 	if _visualization_settings.use_rust_acceleration and ClassDB.class_exists("FeagiDataDeserializer"):
 		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
 		_use_rust_acceleration = true
-		_max_neurons = _visualization_settings.max_neurons_per_area
-		print("   🦀 [%s] Rust acceleration ENABLED - limit: %d neurons" % [_cortical_area_id, _max_neurons])
+		_warning_threshold = _visualization_settings.performance_warning_threshold
+		print("   🦀 [%s] Rust acceleration ENABLED - no limits, will warn if exceeding %d neurons" % [_cortical_area_id, _warning_threshold])
 	else:
 		_use_rust_acceleration = false
-		_max_neurons = 10000  # Fallback to old limit
+		_warning_threshold = 10000  # Lower warning threshold for GDScript
 		if _visualization_settings.use_rust_acceleration:
-			print("   ⚠️  [%s] Rust deserializer not available - falling back to GDScript (limited to 10k neurons)" % _cortical_area_id)
+			print("   ⚠️  [%s] Rust deserializer not available - falling back to GDScript (performance may degrade with >10k neurons)" % _cortical_area_id)
 		else:
-			print("   ℹ️  [%s] Rust acceleration disabled in settings - using GDScript (limited to 10k neurons)" % _cortical_area_id)
+			print("   ℹ️  [%s] Rust acceleration disabled in settings - using GDScript (performance may degrade with >10k neurons)" % _cortical_area_id)
 	
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
@@ -401,13 +402,17 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 	
 	var point_count = x_array.size()
 	
-	# Call Rust processor with arrays and dimensions
+	# Warn if exceeding threshold
+	if point_count > _warning_threshold:
+		print("   ⚠️  [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
+	
+	# Call Rust processor with NO LIMIT (0 = unlimited)
 	var result = _rust_deserializer.process_arrays_for_visualization(
 		x_array,
 		y_array,
 		z_array,
 		_dimensions,
-		_max_neurons
+		0  # 0 = no limit, process ALL neurons
 	)
 	
 	if not result.success:
@@ -439,23 +444,19 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 		
 		_multi_mesh.set_instance_transform(i, transform)
 		_multi_mesh.set_instance_color(i, Color(colors[c_offset], colors[c_offset+1], colors[c_offset+2], colors[c_offset+3]))
-	
-	if point_count != actual_count:
-		print("   ⚡ [%s] Limited to %d/%d neurons (Rust processed in %d µs)" % [_cortical_area_id, actual_count, point_count, result.processing_time_us])
 
 func _process_neurons_with_gdscript(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
 	"""Fallback GDScript processing - slower but always available"""
 	
 	var point_count = x_array.size()
 	
-	# Limit points for performance
-	var actual_point_count = min(point_count, _max_neurons)
-	if actual_point_count != point_count:
-		print("   ⚠️  [%s] GDScript fallback limiting to %d/%d neurons (Rust not available)" % [_cortical_area_id, actual_point_count, point_count])
+	# Warn if exceeding threshold (GDScript is much slower)
+	if point_count > _warning_threshold:
+		print("   ⚠️  [%s] GDScript processing %d neurons (exceeds %d threshold) - expect performance impact!" % [_cortical_area_id, point_count, _warning_threshold])
 	
-	# Update MultiMesh instance count
-	_multi_mesh.instance_count = actual_point_count
-	_current_neuron_count = actual_point_count
+	# Process ALL neurons - no hard limit
+	_multi_mesh.instance_count = point_count
+	_current_neuron_count = point_count
 	
 	# Pre-calculate constants
 	var half_dimensions = Vector3(_dimensions) / 2.0
@@ -463,8 +464,8 @@ func _process_neurons_with_gdscript(x_array: PackedInt32Array, y_array: PackedIn
 	var normalized_scale = Vector3(1.0/_dimensions.x, 1.0/_dimensions.y, 1.0/(_dimensions.z * -1))
 	var z_dimension_float = float(_dimensions.z)
 	
-	# GDScript loop (slow)
-	for i in range(actual_point_count):
+	# GDScript loop (slow but processes ALL neurons)
+	for i in range(point_count):
 		var x = float(x_array[i])
 		var y = float(y_array[i])
 		var z = float(z_array[i])
