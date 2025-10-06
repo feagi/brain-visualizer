@@ -75,6 +75,11 @@ var _shm_last_error: String = ""
 var _shm_attempting: bool = false
 var _shm_debug_logs: bool = false
 
+# SHM update rate tracking
+var _shm_updates_received: int = 0
+var _shm_last_rate_log_time: float = 0.0
+var _shm_rate_log_interval: float = 5.0  # Log rate every 5 seconds
+
 
 func _ready():
 	# Initialize platform-specific decoding path
@@ -119,7 +124,8 @@ func _process(_delta: float):
 	if _use_shared_mem:
 		_poll_shm_once()
 		if not _shm_notice_printed:
-			print("𒓉 [WS] SHM polling active; path=", _shm_path)
+			var fps = Engine.get_frames_per_second()
+			print("𒓉 [WS] SHM polling active at ~%d Hz (every frame); path=%s" % [fps, _shm_path])
 			_shm_notice_printed = true
 	else:
 		# Print once to make it obvious we're on WS path, but only after a brief delay
@@ -638,6 +644,11 @@ func _try_open_shm_path() -> void:
 	_use_shared_mem = true
 	_pending_shm_path = ""
 	_shm_attempting = false
+	
+	# Initialize rate tracking
+	_shm_updates_received = 0
+	_shm_last_rate_log_time = Time.get_ticks_msec() / 1000.0
+	
 	print("𒓉 [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
 	# Reset path notices to show SHM active on next _process tick
 	_shm_notice_printed = false
@@ -690,6 +701,17 @@ func _poll_shm_once() -> void:
 	_shm_last_seq = frame_seq
 	_shm_no_new_reported = false
 	_shm_missed_cycles = 0
+	
+	# Track update rate
+	_shm_updates_received += 1
+	var current_time = Time.get_ticks_msec() / 1000.0
+	if current_time - _shm_last_rate_log_time >= _shm_rate_log_interval:
+		var elapsed = current_time - _shm_last_rate_log_time
+		var update_rate = _shm_updates_received / elapsed
+		print("𒓉 [WS] SHM receiving updates at %.1f Hz (%d updates in %.1f sec)" % [update_rate, _shm_updates_received, elapsed])
+		_shm_updates_received = 0
+		_shm_last_rate_log_time = current_time
+	
 	if _shm_debug_logs:
 		print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
 	_process_wrapped_byte_structure(payload)
