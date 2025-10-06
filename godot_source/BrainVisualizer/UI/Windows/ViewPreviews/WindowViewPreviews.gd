@@ -43,6 +43,12 @@ var _last_frame_seq_raw: int = -1
 var _last_frame_seq_feagi: int = -1
 const FPS_WINDOW_SIZE: int = 30  # Average over last 30 frames
 
+# Reopen throttling for stalled SHM readers
+var _last_reopen_attempt_raw: int = 0
+var _last_reopen_attempt_feagi: int = 0
+var _stall_strikes_raw: int = 0
+var _stall_strikes_feagi: int = 0
+
 # Agent → video_stream mapping
 var _agent_video_map: Dictionary = {}
 var _agent_video_map_feagi: Dictionary = {}
@@ -455,6 +461,24 @@ func _process(_dt: float) -> void:
 					print("⚠️ [Preview] Failed to reopen raw video SHM: ", _video_last_error)
 		if frame_seq != _last_frame_seq_raw and frame_seq >= 0:
 			_update_fps_tracker(true, current_time, frame_seq)
+		# Stall detection for RAW: if no new frames for >2s, attempt reopen throttled; escalate after 3 strikes
+		if _shm_path_raw != "" and _last_frame_time_raw > 0 and current_time - _last_frame_time_raw > 2000:
+			if current_time - _last_reopen_attempt_raw > 1500:
+				_last_reopen_attempt_raw = current_time
+				_stall_strikes_raw += 1
+				var reopened_raw = _try_open_video_once(_shm_path_raw)
+				if reopened_raw != null:
+					_shm_reader_raw = reopened_raw
+					_last_frame_seq_raw = -1
+					_frame_times_raw.clear()
+					_fps_raw = 0.0
+					_last_frame_time_raw = 0
+				else:
+					# escalate: force re-open by clearing path once to toggle mapping on next pass
+					if _stall_strikes_raw >= 3:
+						_stall_strikes_raw = 0
+						await get_tree().create_timer(0.05).timeout
+						_shm_reader_raw = null
 	
 	if _shm_reader_feagi != null:
 		tex_feagi = _shm_reader_feagi.get_texture()
@@ -480,6 +504,23 @@ func _process(_dt: float) -> void:
 					print("⚠️ [Preview] Failed to reopen FEAGI video SHM: ", _video_last_error)
 		if frame_seq != _last_frame_seq_feagi and frame_seq >= 0:
 			_update_fps_tracker(false, current_time, frame_seq)
+		# Stall detection for FEAGI: if no new frames for >2s, attempt reopen throttled; escalate after 3 strikes
+		if _shm_path_feagi != "" and _last_frame_time_feagi > 0 and current_time - _last_frame_time_feagi > 2000:
+			if current_time - _last_reopen_attempt_feagi > 1500:
+				_last_reopen_attempt_feagi = current_time
+				_stall_strikes_feagi += 1
+				var reopened_feagi = _try_open_video_once(_shm_path_feagi)
+				if reopened_feagi != null:
+					_shm_reader_feagi = reopened_feagi
+					_last_frame_seq_feagi = -1
+					_frame_times_feagi.clear()
+					_fps_feagi = 0.0
+					_last_frame_time_feagi = 0
+				else:
+					if _stall_strikes_feagi >= 3:
+						_stall_strikes_feagi = 0
+						await get_tree().create_timer(0.05).timeout
+						_shm_reader_feagi = null
 	
 	# Update Raw Video Panel
 	if tex_raw:

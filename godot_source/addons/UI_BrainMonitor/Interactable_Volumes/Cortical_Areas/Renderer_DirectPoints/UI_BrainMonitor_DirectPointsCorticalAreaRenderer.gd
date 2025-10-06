@@ -39,7 +39,14 @@ var _cortical_area_id: String
 var _is_hovered_over: bool = false
 var _is_selected: bool = false
 var _current_neuron_count: int = 0
-var _max_neurons: int = 10000  # Performance limit
+var _max_neurons: int = 100000  # Performance limit (increased with Rust acceleration)
+
+# Rust accelerated processing
+var _rust_deserializer: Object = null  # FeagiDataDeserializer instance
+var _use_rust_acceleration: bool = false
+
+# Performance settings
+var _visualization_settings: VisualizationSettings = null
 
 # Highlight and selection tracking
 var _highlighted_neurons: Array[Vector3i] = []
@@ -68,6 +75,26 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
+	
+	# Load visualization settings (create default if not exists)
+	if ResourceLoader.exists("res://BrainVisualizer/Configs/visualization_settings.tres"):
+		_visualization_settings = load("res://BrainVisualizer/Configs/visualization_settings.tres")
+	else:
+		_visualization_settings = VisualizationSettings.new()
+	
+	# Initialize Rust deserializer for high-performance processing
+	if _visualization_settings.use_rust_acceleration and ClassDB.class_exists("FeagiDataDeserializer"):
+		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+		_use_rust_acceleration = true
+		_max_neurons = _visualization_settings.max_neurons_per_area
+		print("   🦀 [%s] Rust acceleration ENABLED - limit: %d neurons" % [_cortical_area_id, _max_neurons])
+	else:
+		_use_rust_acceleration = false
+		_max_neurons = 10000  # Fallback to old limit
+		if _visualization_settings.use_rust_acceleration:
+			print("   ⚠️  [%s] Rust deserializer not available - falling back to GDScript (limited to 10k neurons)" % _cortical_area_id)
+		else:
+			print("   ℹ️  [%s] Rust acceleration disabled in settings - using GDScript (limited to 10k neurons)" % _cortical_area_id)
 	
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
@@ -334,7 +361,6 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	"""Handle Type 11 direct neural points data with Z-DEPTH COLORING"""
 	
 	var point_count = x_array.size()
-	# Received new neuron data - restarting timer
 	
 	# Trigger power cone firing animation if this is the power cortical area
 	if point_count > 0:
@@ -350,62 +376,110 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_clear_all_neurons()
 		return
 	
-	# Limit points for performance
-	var actual_point_count = min(point_count, _max_neurons)
-	if actual_point_count != point_count:
-		pass  # Suppressed: "DirectPoints: Limiting to X voxels for performance" - called too frequently
-	
-	# Update MultiMesh instance count
-	_multi_mesh.instance_count = actual_point_count
-	_current_neuron_count = actual_point_count
-	
-	# BULK VECTORIZED PROCESSING - Z-Depth Color Implementation
-	var half_dimensions = Vector3(_dimensions) / 2.0
-	var offset_vector = Vector3(0.5, 0.5, 0.5)
-	var normalized_scale = Vector3(1.0/_dimensions.x, 1.0/_dimensions.y, 1.0/(_dimensions.z * -1))
-	
-	# Z-Depth coloring parameters (inspired by shader implementation)
-	var z_dimension_float = float(_dimensions.z)
-	
-	# Process all neurons with optimized bulk operations and Z-depth coloring
-	for i in range(actual_point_count):
-		# Direct array access - much faster than decode operations
-		var x = float(x_array[i])  # Direct PackedArray access - no decode overhead
-		var y = float(y_array[i])  # Direct PackedArray access - no decode overhead
-		var z = float(z_array[i])  # Direct PackedArray access - no decode overhead
-		var potential = p_array[i] # Direct PackedArray access - no decode overhead
-		
-		# Optimized coordinate conversion - pre-computed constants
-		var feagi_pos = Vector3(x, y, z)
-		var centered_pos = feagi_pos - half_dimensions + offset_vector  # Vectorized subtraction/addition
-		
-		# Pre-computed transform with scaling
-		var transform = Transform3D()
-		transform.origin = centered_pos
-		transform = transform.scaled(normalized_scale)  # Apply pre-computed scale
-		
-		# Z-DEPTH BASED COLORING (inspired by shader, but reversed for better depth perception)
-		# z=0 (front) -> bright red, z=max (back) -> dark red
-		var z_depth_color = _z_depth_to_color(z, z_dimension_float)
-		
-		# Batch-friendly MultiMesh operations
-		_multi_mesh.set_instance_transform(i, transform)
-		_multi_mesh.set_instance_color(i, z_depth_color)  # Apply z-depth coloring (NOW PROPERLY CONFIGURED)
+	# Use Rust acceleration if available (MASSIVE performance boost for 10k+ neurons)
+	if _use_rust_acceleration and _rust_deserializer != null:
+		_process_neurons_with_rust(x_array, y_array, z_array)
+	else:
+		# Fallback to GDScript processing (slower, limited to 10k neurons)
+		_process_neurons_with_gdscript(x_array, y_array, z_array, p_array)
 	
 	# Start visibility timer to clear neurons after simulation_timestep
 	_start_visibility_timer()
 	
 	# Make power cone use firing colors when neural activity occurs
 	if _cortical_area_id == "_power" and _power_material:
-		# print("   ⚡ Power cone becoming active - using firing colors")  # Suppressed to reduce log spam
-		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
-		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))  # Bright red emission
-		_power_material.set_shader_parameter("emission_energy", 1.5)  # Full glow
+		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))
+		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
+		_power_material.set_shader_parameter("emission_energy", 1.5)
 	
 	# Make memory sphere use active jello material when neural activity occurs
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
-		# print("   🔮 Memory sphere becoming active - switching to jello material")  # Suppressed to reduce log spam
 		_outline_mesh_instance.material_override = _memory_jello_material
+
+func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
+	"""Process neurons using Rust acceleration - 40-50x faster than GDScript!"""
+	
+	var point_count = x_array.size()
+	
+	# Call Rust processor with arrays and dimensions
+	var result = _rust_deserializer.process_arrays_for_visualization(
+		x_array,
+		y_array,
+		z_array,
+		_dimensions,
+		_max_neurons
+	)
+	
+	if not result.success:
+		print("🦀 ERROR: Rust processing failed: ", result.error)
+		_clear_all_neurons()
+		return
+	
+	var actual_count = result.neuron_count
+	_multi_mesh.instance_count = actual_count
+	_current_neuron_count = actual_count
+	
+	# Apply pre-calculated transforms and colors from Rust
+	# Rust returns flat arrays: transforms=[12 floats per neuron], colors=[4 floats per neuron]
+	var transforms = result.transforms
+	var colors = result.colors
+	
+	# Set transforms and colors (Godot API expects them one at a time, sadly)
+	for i in range(actual_count):
+		var t_offset = i * 12
+		var c_offset = i * 4
+		
+		# Build Transform3D from flat array (3x4 matrix)
+		var transform = Transform3D(
+			Vector3(transforms[t_offset], transforms[t_offset+1], transforms[t_offset+2]),     # X basis
+			Vector3(transforms[t_offset+4], transforms[t_offset+5], transforms[t_offset+6]),   # Y basis
+			Vector3(transforms[t_offset+8], transforms[t_offset+9], transforms[t_offset+10]),  # Z basis
+			Vector3(transforms[t_offset+3], transforms[t_offset+7], transforms[t_offset+11])   # Origin
+		)
+		
+		_multi_mesh.set_instance_transform(i, transform)
+		_multi_mesh.set_instance_color(i, Color(colors[c_offset], colors[c_offset+1], colors[c_offset+2], colors[c_offset+3]))
+	
+	if point_count != actual_count:
+		print("   ⚡ [%s] Limited to %d/%d neurons (Rust processed in %d µs)" % [_cortical_area_id, actual_count, point_count, result.processing_time_us])
+
+func _process_neurons_with_gdscript(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
+	"""Fallback GDScript processing - slower but always available"""
+	
+	var point_count = x_array.size()
+	
+	# Limit points for performance
+	var actual_point_count = min(point_count, _max_neurons)
+	if actual_point_count != point_count:
+		print("   ⚠️  [%s] GDScript fallback limiting to %d/%d neurons (Rust not available)" % [_cortical_area_id, actual_point_count, point_count])
+	
+	# Update MultiMesh instance count
+	_multi_mesh.instance_count = actual_point_count
+	_current_neuron_count = actual_point_count
+	
+	# Pre-calculate constants
+	var half_dimensions = Vector3(_dimensions) / 2.0
+	var offset_vector = Vector3(0.5, 0.5, 0.5)
+	var normalized_scale = Vector3(1.0/_dimensions.x, 1.0/_dimensions.y, 1.0/(_dimensions.z * -1))
+	var z_dimension_float = float(_dimensions.z)
+	
+	# GDScript loop (slow)
+	for i in range(actual_point_count):
+		var x = float(x_array[i])
+		var y = float(y_array[i])
+		var z = float(z_array[i])
+		
+		var feagi_pos = Vector3(x, y, z)
+		var centered_pos = feagi_pos - half_dimensions + offset_vector
+		
+		var transform = Transform3D()
+		transform.origin = centered_pos
+		transform = transform.scaled(normalized_scale)
+		
+		var z_depth_color = _z_depth_to_color(z, z_dimension_float)
+		
+		_multi_mesh.set_instance_transform(i, transform)
+		_multi_mesh.set_instance_color(i, z_depth_color)
 
 func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""

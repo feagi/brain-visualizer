@@ -15,6 +15,9 @@ feagi_data_structures = "0.0.50-beta.28"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
+# Parallel processing for high-performance neuron visualization
+rayon = "1.8"
+
 [lib]
 crate-type = ["cdylib"]
 
