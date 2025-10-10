@@ -183,6 +183,12 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 	elif key_name == "neuron_excitability":
 		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
 		value = float(value) / 100.0
+	elif key_name == "neuron_leak_coefficient":
+		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
+		value = float(value) / 100.0
+	elif key_name == "neuron_leak_variability":
+		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
+		value = float(value) / 100.0
 	_growing_cortical_update[send_button.name][key_name] = value
 	send_button.disabled = false
 
