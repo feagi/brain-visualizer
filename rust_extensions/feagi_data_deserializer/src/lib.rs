@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
 use feagi_data_serialization::FeagiSerializable;
-use feagi_data_structures::neurons::xyzp::CorticalMappedXYZPNeuronData;
+use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -23,7 +23,7 @@ pub struct FeagiDataDeserializer {
 #[godot_api]
 impl IRefCounted for FeagiDataDeserializer {
     fn init(base: Base<RefCounted>) -> Self {
-        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.28 initialized!");
+        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.38 initialized!");
         Self { base }
     }
 }
@@ -37,9 +37,9 @@ impl FeagiDataDeserializer {
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
         // Create neuron data and deserialize from bytes
-        let mut neuron_data = CorticalMappedXYZPNeuronData::new();
+        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
         
-        match neuron_data.try_update_from_byte_slice(&rust_buffer) {
+        match neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
             Ok(_) => {
                 self.convert_neuron_data_to_godot(&neuron_data)
             }
@@ -87,9 +87,9 @@ impl FeagiDataDeserializer {
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
         // Deserialize neuron data
-        let mut neuron_data = CorticalMappedXYZPNeuronData::new();
+        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
         
-        if let Err(e) = neuron_data.try_update_from_byte_slice(&rust_buffer) {
+        if let Err(e) = neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
             godot_error!("🦀 Failed to deserialize neuron data: {:?}", e);
             return self.create_visualization_error_dict(
                 format!("Deserialization error: {:?}", e),
@@ -542,7 +542,7 @@ impl FeagiDataDeserializer {
     /// Convert official neuron data structure to Godot Dictionary
     fn convert_neuron_data_to_godot(
         &self,
-        neuron_data: &CorticalMappedXYZPNeuronData,
+        neuron_data: &CorticalMappedXYZPNeuronVoxels,
     ) -> Dictionary {
         let mut result_dict = Dictionary::new();
         result_dict.set("success", true);
