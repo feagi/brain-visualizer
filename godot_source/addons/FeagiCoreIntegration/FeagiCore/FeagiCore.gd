@@ -251,14 +251,17 @@ func _fetch_simulation_timestep() -> void:
 			
 			# Only attempt websocket reconnection if using WebSocket transport (not SHM)
 			if network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
-				if network.websocket_API.socket_health == network.websocket_API.WEBSOCKET_HEALTH.NO_CONNECTION:
+				# Access websocket_API - suppressing false positive parser warning
+				var ws_api = network.get("websocket_API")  # Property exists on FEAGINetworking
+				if ws_api and ws_api.socket_health == ws_api.WEBSOCKET_HEALTH.NO_CONNECTION:
 					if _in_use_endpoint_details:
-						network.websocket_API.setup(_in_use_endpoint_details.full_websocket_address)
-						network.websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
-						# Ensure signal is connected
-						if not network.websocket_API.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-							network.websocket_API.FEAGI_socket_health_changed.connect(network._WS_health_changed)
-						network.websocket_API.connect_websocket()
+						ws_api.setup(_in_use_endpoint_details.full_websocket_address)
+						ws_api.process_mode = Node.PROCESS_MODE_INHERIT
+						# Ensure signal is connected (using Callable to bypass parser)
+						var ws_callback := Callable(network, "_WS_health_changed")
+						if not ws_api.FEAGI_socket_health_changed.is_connected(ws_callback):
+							ws_api.FEAGI_socket_health_changed.connect(ws_callback)
+						ws_api.connect_websocket()
 		elif network.http_API.http_health == network.http_API.HTTP_HEALTH.NO_CONNECTION:
 			# Just restore HTTP health if it was down but connection wasn't fully disconnected
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
@@ -382,16 +385,17 @@ func reload_genome_await():
 				timer.stop()
 				
 				# Update health cache and transition directly to READY
-				feagi_local_cache.update_health_from_FEAGI_dict(health_data)
-				_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
-				# Proactively attempt websocket reconnect if it's down (only for WebSocket transport)
-				if network and network.websocket_API and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
-					var ws := network.websocket_API
-					if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
+			feagi_local_cache.update_health_from_FEAGI_dict(health_data)
+			_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
+			# Proactively attempt websocket reconnect if it's down (only for WebSocket transport)
+			if network and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
+				var ws = network.get("websocket_API")
+				if ws and ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
 						ws.setup(_in_use_endpoint_details.full_websocket_address)
 						ws.process_mode = Node.PROCESS_MODE_INHERIT
-						if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-							ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+						var ws_callback := Callable(network, "_WS_health_changed")
+						if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
+							ws.FEAGI_socket_health_changed.connect(ws_callback)
 						ws.connect_websocket()
 				# Re-register the agent to refresh transport info after FEAGI restart
 				if network:
@@ -436,13 +440,14 @@ func reload_genome_await():
 	# As part of the genome reload workflow, proactively attempt a websocket reconnect
 	# if the socket is currently down (only for WebSocket transport). 
 	# This avoids requiring a full app restart after FEAGI restarts.
-	if network and network.websocket_API and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
-		var ws := network.websocket_API
-		if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
+	if network and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
+		var ws = network.get("websocket_API")
+		if ws and ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
 			ws.setup(_in_use_endpoint_details.full_websocket_address)
 			ws.process_mode = Node.PROCESS_MODE_INHERIT
-			if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-				ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+			var ws_callback := Callable(network, "_WS_health_changed")
+			if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
+				ws.FEAGI_socket_health_changed.connect(ws_callback)
 			ws.connect_websocket()
 	# Re-register the agent to refresh transport info after FEAGI restart
 	if network:
@@ -525,13 +530,15 @@ func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: Stri
 func _ensure_ws_connected_after_reload(attempts: int) -> void:
 	if attempts <= 0:
 		return
-	if not network or not network.websocket_API:
+	if not network:
 		return
 	# Skip entirely if using Shared Memory transport
 	if network._transport_mode == network.TRANSPORT_MODE.SHARED_MEMORY:
 		return
 	
-	var ws := network.websocket_API
+	var ws = network.get("websocket_API")
+	if not ws:
+		return
 	# If already connected, nothing to do
 	if ws.socket_health == ws.WEBSOCKET_HEALTH.CONNECTED:
 		return
@@ -540,8 +547,9 @@ func _ensure_ws_connected_after_reload(attempts: int) -> void:
 		ws.setup(_in_use_endpoint_details.full_websocket_address)
 	ws.process_mode = Node.PROCESS_MODE_INHERIT
 	# Ensure WS health signal is wired so FEAGINetworking can update its state
-	if not ws.FEAGI_socket_health_changed.is_connected(network._WS_health_changed):
-		ws.FEAGI_socket_health_changed.connect(network._WS_health_changed)
+	var ws_callback := Callable(network, "_WS_health_changed")
+	if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
+		ws.FEAGI_socket_health_changed.connect(ws_callback)
 	# Only kick a connect if not already in RETRYING
 	if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
 		ws.connect_websocket()

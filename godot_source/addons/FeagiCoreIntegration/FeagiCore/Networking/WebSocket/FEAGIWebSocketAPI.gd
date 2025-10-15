@@ -95,6 +95,10 @@ func _ready():
 	_init_shm_visualization()
 	# Defer WS fallback notice to allow registration to provide SHM path
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 3000
+	
+	# Reset missing area tracking when genome reloads
+	if FeagiCore.feagi_local_cache:
+		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
 
 func _init_rust_deserializer() -> void:
 	if _rust_deserializer != null:
@@ -114,10 +118,6 @@ func _init_rust_deserializer() -> void:
 		t.timeout.connect(_init_rust_deserializer)
 		return
 	push_error("🦀 CRITICAL: FeagiDataDeserializer class not found after retries. Ensure addon is installed and library built (debug/release).")
-	
-	# Reset missing area tracking when genome reloads
-	if FeagiCore.feagi_local_cache:
-		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
 
 func _process(_delta: float):
 	# 𒓉 Poll SHM for neuron visualization bytes if enabled
@@ -144,6 +144,9 @@ func _process(_delta: float):
 			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
 			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
 				for cortical_id in decoded_result.areas.keys():
+					# Filter out core areas (_death, _power) that can't be visualized
+					if cortical_id == "_death" or cortical_id == "_power":
+						continue
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
 					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
@@ -367,6 +370,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				var areas: Dictionary = dict["areas"]
 				var total_points := 0
 				for cortical_id in areas.keys():
+					# Filter out core areas (_death, _power) that can't be visualized
+					if cortical_id == "_death" or cortical_id == "_power":
+						continue
 					var a = areas[cortical_id]
 					if typeof(a) != TYPE_DICTIONARY:
 						continue
@@ -448,6 +454,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					return
 				# Process each decoded cortical area with DIRECT bulk arrays
 				for cortical_id in decoded_result.areas.keys():
+					# Filter out core areas (_death, _power) that can't be visualized
+					if cortical_id == "_death" or cortical_id == "_power":
+						continue
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
 					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
@@ -470,6 +479,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					return
 				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
 				for cortical_id in decoded_result.areas.keys():
+					# Filter out core areas (_death, _power) that can't be visualized
+					if cortical_id == "_death" or cortical_id == "_power":
+						continue
 					var area_data = decoded_result.areas[cortical_id]
 					FEAGI_sent_direct_neural_points_bulk.emit(
 						cortical_id,
@@ -738,6 +750,17 @@ func _decode_u64_le(bytes: PackedByteArray, offset: int) -> int:
 	return (hi << 32) | (lo & 0xFFFFFFFF)
 
 func _handle_missing_cortical_area(cortical_id: StringName) -> void:
+	# FILTER CORE AREAS FIRST - before any logging or processing
+	# Convert to String for robust comparison (StringName may have different comparison semantics)
+	var cortical_id_str := String(cortical_id)
+	
+	# Handle both quoted and unquoted versions (cortical ID may come with quotes)
+	var clean_id := cortical_id_str.strip_edges().replace("'", "").replace('"', "")
+	
+	if clean_id == "_death" or clean_id == "_power":
+		# Core system areas cannot be visualized - silently ignore
+		return
+	
 	# Skip handling missing areas during genome reload/processing to avoid spam
 	var genome_state = FeagiCore.genome_load_state
 	if genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING or genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_PROCESSING:
@@ -750,56 +773,64 @@ func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 		# Suppress debug output when cache is empty - genome is still loading
 		return
 	
-	print("🔍 DEBUG: _handle_missing_cortical_area() called for '%s'" % cortical_id)
+	# If the cleaned ID is in cache, it's not actually missing - just had quotes
+	if clean_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		return
+	
+	# DEBUG: Uncomment to trace missing area lookups (disabled to reduce log spam)
+	# print("🔍 DEBUG: _handle_missing_cortical_area() called for '%s'" % cortical_id)
 	var current_time = Time.get_time_dict_from_system()
 	var current_timestamp = current_time.hour * 3600 + current_time.minute * 60 + current_time.second
 	
-	# Initialize tracking for this cortical area if not seen before
-	if cortical_id not in _missing_cortical_areas:
-		_missing_cortical_areas[cortical_id] = {
+	# Initialize tracking for this cortical area if not seen before (use clean_id for tracking)
+	if clean_id not in _missing_cortical_areas:
+		_missing_cortical_areas[clean_id] = {
 			"last_warning_time": 0.0,
 			"fetch_attempted": false
 		}
 	
-	var area_info = _missing_cortical_areas[cortical_id]
+	var area_info = _missing_cortical_areas[clean_id]
 	var time_since_last_warning = current_timestamp - area_info.last_warning_time
 	
 	# Only show warning if enough time has passed
 	if time_since_last_warning >= MISSING_AREA_WARNING_INTERVAL:
-		print("   ⚠️  WARNING: Cortical area '", cortical_id, "' not found in cache (will retry fetching) - cache size: ", cache_size)
+		print("   ⚠️  WARNING: Cortical area '", clean_id, "' not found in cache (will retry fetching) - cache size: ", cache_size)
 		area_info.last_warning_time = current_timestamp
 		
 		# Attempt to fetch the missing cortical area from FEAGI (only once per area)
 		if not area_info.fetch_attempted and FeagiCore.can_interact_with_feagi():
 			area_info.fetch_attempted = true
-			print("   🔄 Attempting to fetch missing cortical area '", cortical_id, "' from FEAGI...")
-			_fetch_missing_cortical_area_async(cortical_id)
+			print("   🔄 Attempting to fetch missing cortical area '", clean_id, "' from FEAGI...")
+			_fetch_missing_cortical_area_async(clean_id)
 
 func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
-	print("🔍 DEBUG: _fetch_missing_cortical_area_async() called for '%s'" % cortical_id)
+	# Clean cortical ID (remove quotes that may come from Rust deserializer)
+	var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
+	
+	print("🔍 DEBUG: _fetch_missing_cortical_area_async() called for '%s' (cleaned: '%s')" % [cortical_id, clean_id])
 	# Double-check if the area is actually missing before fetching
-	if cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-		print("   ℹ️ Cortical area '", cortical_id, "' is already in cache, skipping fetch")
-		_missing_cortical_areas.erase(cortical_id)
+	if clean_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		print("   ℹ️ Cortical area '", clean_id, "' is already in cache, skipping fetch")
+		_missing_cortical_areas.erase(clean_id)
 		return
 	
-	# Fetch the cortical area details from FEAGI
-	var result = await FeagiCore.requests.get_cortical_area(cortical_id)
+	# Fetch the cortical area details from FEAGI using cleaned ID
+	var result = await FeagiCore.requests.get_cortical_area(clean_id)
 	if not result.has_errored:
-		print("   ✅ Successfully fetched missing cortical area '", cortical_id, "' from FEAGI")
+		print("   ✅ Successfully fetched missing cortical area '", clean_id, "' from FEAGI")
 		
 		# Verify it's actually in the cache now
 		await get_tree().process_frame  # Wait one frame for any pending operations
-		if cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-			print("   ✅ Confirmed: '", cortical_id, "' is now in cache")
-			_missing_cortical_areas.erase(cortical_id)
+		if clean_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+			print("   ✅ Confirmed: '", clean_id, "' is now in cache")
+			_missing_cortical_areas.erase(clean_id)
 		else:
-			push_error("   ❌ CRITICAL: '", cortical_id, "' was fetched but is NOT in cache! Cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
+			push_error("   ❌ CRITICAL: '", clean_id, "' was fetched but is NOT in cache! Cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
 			# Don't erase from tracking so it can be retried
 	else:
-		print("   ❌ Failed to fetch cortical area '", cortical_id, "' from FEAGI - this may be expected if the area doesn't exist")
+		print("   ❌ Failed to fetch cortical area '", clean_id, "' from FEAGI - this may be expected if the area doesn't exist")
 		# Don't retry immediately for areas that return 400 errors
-		_missing_cortical_areas.erase(cortical_id)
+		_missing_cortical_areas.erase(clean_id)
 
 func _get_cortical_area_case_insensitive(cortical_id: StringName) -> AbstractCorticalArea:
 	# First try exact match (most common case)
