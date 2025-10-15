@@ -197,24 +197,37 @@ func _call_register_agent_for_shm() -> bool:
 			
 			# If WebSocket is recommended (via bridge)
 			elif recommended == "websocket":
+				var ws_host: String = "127.0.0.1"
+				var ws_port: int = 9050
+				
 				if transport.has("websocket") and typeof(transport["websocket"]) == TYPE_DICTIONARY:
 					var ws_info: Dictionary = transport["websocket"]
-					var ws_host: String = ws_info.get("host", "127.0.0.1")
-					var ws_port: int = int(ws_info.get("port", 9050))
-					var bridge_address: String = "ws://%s:%d" % [ws_host, ws_port]
-					print("𒓉 [TRANSPORT] Using WebSocket transport via bridge: ", bridge_address)
-					# Update the WebSocket address to point to the bridge
-					if _feagi_endpoint_details:
-						_feagi_endpoint_details.full_websocket_address = bridge_address
+					if not ws_info.is_empty():
+						ws_host = ws_info.get("host", "127.0.0.1")
+						ws_port = int(ws_info.get("port", 9050))
+						print("𒓉 [TRANSPORT] Using WebSocket transport via bridge (from FEAGI)")
+					else:
+						print("𒓉 [TRANSPORT] Empty websocket config, using default bridge address")
 				else:
 					print("𒓉 [TRANSPORT] Using WebSocket transport via bridge (default)")
+				
+				var bridge_address: String = "ws://%s:%d" % [ws_host, ws_port]
+				print("𒓉 [TRANSPORT] Bridge address: ", bridge_address)
+				# Update the WebSocket address to point to the bridge
+				if _feagi_endpoint_details:
+					_feagi_endpoint_details.full_websocket_address = bridge_address
 				# WebSocket connection will proceed normally below with updated address
 				return false
 			
 			# If ZMQ is recommended (direct)
 			elif recommended == "zmq":
 				print("𒓉 [TRANSPORT] Direct ZMQ transport recommended (not currently supported in BV)")
-				# BV doesn't support direct ZMQ, will fall back to WebSocket
+				print("𒓉 [TRANSPORT] Attempting to connect via bridge at default address instead")
+				# BV doesn't support direct ZMQ, try default bridge address instead
+				var bridge_address: String = "ws://127.0.0.1:9050"
+				if _feagi_endpoint_details:
+					_feagi_endpoint_details.full_websocket_address = bridge_address
+				print("𒓉 [TRANSPORT] Bridge address: ", bridge_address)
 				return false
 	
 	# Default: SHM not available, fall back to WebSocket
