@@ -336,12 +336,12 @@ func websocket_send(data: Variant) -> void:
 		return
 	_socket.send((data.to_ascii_buffer()).compress(1)) # for some reason, using the enum instead of the number causes this break
 
-func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
+func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = false) -> void:
 	# DEBUG: Log the structure ID detection
 	var structure_id = bytes[0] if bytes.size() > 0 else -1
 
-	# 𒓉 If SHM is active, ignore WS-delivered neuron visualization (Type 11) to avoid duplicates
-	if _use_shared_mem and structure_id == 11:
+	# 𒓉 If SHM is active, ignore WS-delivered (but NOT SHM-delivered) Type 11 to avoid duplicates
+	if _use_shared_mem and structure_id == 11 and not from_shm:
 		return
 	
 	# SAFETY CHECK: Ensure we have data before processing
@@ -370,9 +370,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 				var areas: Dictionary = dict["areas"]
 				var total_points := 0
 				for cortical_id in areas.keys():
-					# Filter out core areas (_death, _power) that can't be visualized
-					if cortical_id == "_death" or cortical_id == "_power":
-						continue
 					var a = areas[cortical_id]
 					if typeof(a) != TYPE_DICTIONARY:
 						continue
@@ -454,9 +451,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					return
 				# Process each decoded cortical area with DIRECT bulk arrays
 				for cortical_id in decoded_result.areas.keys():
-					# Filter out core areas (_death, _power) that can't be visualized
-					if cortical_id == "_death" or cortical_id == "_power":
-						continue
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
 					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
@@ -725,7 +719,7 @@ func _poll_shm_once() -> void:
 	
 	if _shm_debug_logs:
 		print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
-	_process_wrapped_byte_structure(payload)
+	_process_wrapped_byte_structure(payload, true)  # from_shm=true
 
 func enable_shared_memory_visualization(p: String) -> void:
 	# Public API to switch to SHM immediately using a provided path
