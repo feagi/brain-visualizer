@@ -31,11 +31,46 @@ The Rust extensions replace computationally intensive GDScript operations with n
 
 ### Prerequisites
 
-- Rust toolchain (1.70+)
-- Godot 4.1+
-- Git access to FEAGI repositories
+- **Rust toolchain** (1.70+)
+- **Python 3.6+** (for cross-platform build script)
+- **Godot 4.1+**
+- **Git** access to FEAGI repositories
+- **macOS only**: Xcode command-line tools (for universal binaries)
 
-### Build Process
+### Quick Build
+
+**Windows:**
+```batch
+build.bat
+```
+
+**macOS/Linux:**
+```bash
+./build.sh
+```
+
+**All platforms (direct):**
+```bash
+python build.py
+```
+
+> 📖 **For detailed build system documentation, see [BUILD_SYSTEM.md](./BUILD_SYSTEM.md)**
+
+### What Gets Built
+
+The automated build script compiles and installs:
+1. **feagi_data_deserializer**: High-performance data deserialization
+2. **feagi_shared_video**: Shared memory video reader
+
+For each extension, it:
+- Builds both debug and release versions
+- Copies libraries to Godot addon directories (`godot_source/addons/`)
+- Creates universal binaries on macOS (arm64 + x86_64)
+- Cleans up old files in incorrect locations
+
+### Manual Build (Advanced)
+
+If you need to build a specific extension manually:
 
 ```bash
 cd rust_extensions/feagi_data_deserializer
@@ -49,7 +84,7 @@ The build process will:
 
 ### Integration
 
-The built library is automatically copied to `godot_source/addons/feagi_rust_deserializer/` and loaded by Godot through the `.gdextension` configuration file.
+Built libraries are automatically copied to their respective addon directories and loaded by Godot through `.gdextension` configuration files.
 
 ## Usage
 
@@ -102,9 +137,12 @@ Run the test script to verify the integration:
    - Verify Godot can load GDExtensions (check project settings)
 
 2. **Build failures**
+   - Ensure Python 3.6+ is installed: `python --version` or `python3 --version`
    - Update Rust toolchain: `rustup update`
    - Clear cargo cache: `cargo clean`
    - Check network connectivity for git dependencies
+   - On macOS: Ensure Xcode command-line tools are installed: `xcode-select --install`
+   - Try manual build: `cd feagi_data_deserializer && cargo build --release`
 
 3. **WebSocket processing disabled**
    - Check that the Rust deserializer is properly initialized (look for 🦀 log messages)
