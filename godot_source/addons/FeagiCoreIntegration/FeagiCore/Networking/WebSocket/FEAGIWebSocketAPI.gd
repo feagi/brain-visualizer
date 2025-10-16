@@ -479,22 +479,21 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
 					return
 				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
 				for cortical_id in decoded_result.areas.keys():
-					# Filter out core areas (_death, _power) that can't be visualized
-					if cortical_id == "_death" or cortical_id == "_power":
-						continue
 					var area_data = decoded_result.areas[cortical_id]
+					# Strip quotes that Rust may add
+					var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
 					FEAGI_sent_direct_neural_points_bulk.emit(
-						cortical_id,
+						clean_id,
 						area_data.x_array,
 						area_data.y_array,
 						area_data.z_array,
 						area_data.p_array
 					)
-					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
 					if area:
 						area.FEAGI_set_direct_points_bulk_data(area_data.x_array, area_data.y_array, area_data.z_array, area_data.p_array)
 					else:
-						_handle_missing_cortical_area(cortical_id)
+						_handle_missing_cortical_area(clean_id)
 
 		_: # Unknown
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
