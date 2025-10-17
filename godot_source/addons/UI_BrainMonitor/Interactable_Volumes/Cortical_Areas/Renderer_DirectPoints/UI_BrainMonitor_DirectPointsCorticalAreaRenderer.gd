@@ -383,26 +383,16 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	# Process neurons - replace old data with new data
 	if point_count > 0:
 		var last_fire_time = get_meta("_last_fire_time")
-		var time_since_last_fire = current_time - last_fire_time if last_fire_time > 0 else 0.0
+		var _time_since_last_fire = current_time - last_fire_time if last_fire_time > 0 else 0.0
 		set_meta("_last_fire_time", current_time)
-		
-		# TIMING DEBUG: Log firing events for ALL areas to see what's happening
-		print("[TIMING-%s] FIRE: neurons=%d, time_since_last_fire=%.3fs, time_since_last_update=%.3fs" % [
-			_cortical_area_id, point_count, time_since_last_fire, time_since_last_update
-		])
 		
 		_process_neurons_with_rust(x_array, y_array, z_array)
 		# Restart timer with long timeout - only clears if connection lost or truly idle
 		_start_visibility_timer()
 	else:
 		var last_clear_time = get_meta("_last_clear_time")
-		var time_since_last_clear = current_time - last_clear_time if last_clear_time > 0 else 0.0
+		var _time_since_last_clear = current_time - last_clear_time if last_clear_time > 0 else 0.0
 		set_meta("_last_clear_time", current_time)
-		
-		# TIMING DEBUG: Log clear events for ALL areas
-		print("[TIMING-%s] CLEAR: time_since_last_clear=%.3fs, time_since_last_update=%.3fs" % [
-			_cortical_area_id, time_since_last_clear, time_since_last_update
-		])
 		
 		# FIXED: Empty update means NO neurons firing - clear immediately
 		# Don't persist old firing data (causes visualization bug where neurons appear to fire continuously)
@@ -576,25 +566,11 @@ func _start_visibility_timer() -> void:
 	else:  # FEAGI <= 20Hz (slow)
 		timeout = max(simulation_timestep * 1.5, timeout)  # Use burst period or viz timeout, whichever is longer
 	
-	# TIMING DEBUG: Log timeout calculation for ALL areas
-	print("[TIMING-%s] Timer started: timeout=%.3fs, sim_timestep=%.3fs, viz_freq=%.1fHz" % [
-		_cortical_area_id, timeout, simulation_timestep, viz_frequency_hz
-	])
-	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()
 
 func _on_visibility_timeout() -> void:
 	"""Called when the visibility timer expires - clear all neurons"""
-	var current_time = Time.get_ticks_msec() / 1000.0
-	var actual_duration = current_time - _neuron_display_start_time
-	
-	# TIMING DEBUG: Log timeout clearing
-	if _cortical_area_id == "iic000" or _cortical_area_id == "_power":
-		print("[TIMING-%s] TIMEOUT: clearing neurons after %.3fs display" % [
-			_cortical_area_id, actual_duration
-		])
-	
 	# Visibility timer expired - clearing neurons via timeout
 	_clear_all_neurons()
 	

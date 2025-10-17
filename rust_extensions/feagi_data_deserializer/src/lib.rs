@@ -258,19 +258,6 @@ impl FeagiDataDeserializer {
         
         let elapsed = start_time.elapsed().as_micros() as i64;
         
-        // Only log if processing took significant time (reduce spam)
-        #[cfg(not(target_family = "wasm"))]
-        if array_len > 1000 {
-            godot_print!("🦀 [RUST-DIRECT] Applied {} neurons in {} µs ({:.2} ms) - {:.1} neurons/ms", 
-                array_len, elapsed, elapsed as f64 / 1000.0, array_len as f64 / (elapsed as f64 / 1000.0));
-        }
-        
-        #[cfg(target_family = "wasm")]
-        if array_len > 1000 {
-            godot_print!("🦀 [RUST-WASM-DIRECT] Applied {} neurons in {} µs ({:.2} ms)", 
-                array_len, elapsed, elapsed as f64 / 1000.0);
-        }
-        
         let mut result = Dictionary::new();
         result.set("success", true);
         result.set("neuron_count", array_len as i32);
