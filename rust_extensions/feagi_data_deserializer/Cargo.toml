@@ -8,8 +8,8 @@ edition = "2021"
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["experimental-wasm", "lazy-function-tables"] }
 
 # FEAGI data serialization library (using official crates.io version)
-feagi_data_serialization = "0.0.50-beta.41"
-feagi_data_structures = "0.0.50-beta.41"
+feagi_data_serialization = "0.0.50-beta.43"
+feagi_data_structures = "0.0.50-beta.43"
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }

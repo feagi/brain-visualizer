@@ -115,11 +115,11 @@ class SegOverlay:
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top_level = false
-		z_index = 10000
+		z_index = 4096  # Max allowed by Godot CANVAS_ITEM_Z_MAX
 		set_anchors_preset(Control.PRESET_FULL_RECT)
 		var p = get_parent()
 		if p and p is Control:
-			(p as Control).item_rect_changed.connect(_on_parent_rect_changed)
+			(p as Control).item_rect_changed.connect(Callable(self, "_on_parent_rect_changed"))
 
 	func _on_parent_rect_changed() -> void:
 		queue_redraw()
@@ -769,7 +769,8 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 
 func _fallback_to_websocket() -> void:
 	print("[Preview] Using WebSocket visualization stream")
-	FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
+	if not FeagiCore.network.websocket_API.feagi_return_visual_data.is_connected(_update_preview_texture_from_raw_data):
+		FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 
 func _update_preview_texture_from_raw_data(bytes: PackedByteArray) -> void:
 	# WebSocket fallback: decode and display on FEAGI panel only
