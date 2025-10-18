@@ -79,6 +79,9 @@ var _shm_debug_logs: bool = false
 var _shm_updates_received: int = 0
 var _shm_last_rate_log_time: float = 0.0
 var _shm_rate_log_interval: float = 5.0  # Log rate every 5 seconds
+var _shm_last_frame_time: float = 0.0  # Track time between frames for instantaneous FPS
+var _shm_frame_times: Array = []  # Rolling window of last 10 frame times
+const _SHM_FRAME_WINDOW_SIZE: int = 10
 
 
 func _ready():
@@ -707,13 +710,39 @@ func _poll_shm_once() -> void:
 	_shm_no_new_reported = false
 	_shm_missed_cycles = 0
 	
-	# Track update rate
+	# Track update rate with timestamps and instantaneous FPS
 	_shm_updates_received += 1
 	var current_time = Time.get_ticks_msec() / 1000.0
+	
+	# Calculate instantaneous FPS from time between frames
+	var frame_delta = 0.0
+	var instant_fps = 0.0
+	if _shm_last_frame_time > 0.0:
+		frame_delta = current_time - _shm_last_frame_time
+		if frame_delta > 0.0:
+			instant_fps = 1.0 / frame_delta
+			_shm_frame_times.append(instant_fps)
+			if _shm_frame_times.size() > _SHM_FRAME_WINDOW_SIZE:
+				_shm_frame_times.pop_front()
+	_shm_last_frame_time = current_time
+	
+	# Log average rate every 5 seconds + instantaneous FPS
 	if current_time - _shm_last_rate_log_time >= _shm_rate_log_interval:
 		var elapsed = current_time - _shm_last_rate_log_time
-		var update_rate = _shm_updates_received / elapsed
-		print("𒓉 [WS] SHM receiving updates at %.1f Hz (%d updates in %.1f sec)" % [update_rate, _shm_updates_received, elapsed])
+		var avg_rate = _shm_updates_received / elapsed
+		
+		# Calculate rolling average FPS
+		var avg_fps = 0.0
+		if _shm_frame_times.size() > 0:
+			var sum_fps = 0.0
+			for fps in _shm_frame_times:
+				sum_fps += fps
+			avg_fps = sum_fps / _shm_frame_times.size()
+		
+		var timestamp = Time.get_datetime_string_from_system()
+		print("[%s] 𒓉 [BV-SHM] Receiving at %.1f Hz avg (%.1f Hz rolling, %d updates in %.1f sec) | Last frame: %.1f Hz (%.0f ms ago)" % [
+			timestamp, avg_rate, avg_fps, _shm_updates_received, elapsed, instant_fps, frame_delta * 1000.0
+		])
 		_shm_updates_received = 0
 		_shm_last_rate_log_time = current_time
 	

@@ -33,6 +33,8 @@ var connection_state: CONNECTION_STATE:
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
+var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
+var _heartbeat_interval: float = 15.0  # Send heartbeat every 15 seconds (matches FEAGI's expectation)
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -102,6 +104,10 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		# but we won't actively initiate WS connections when using SHM
 		print("FEAGI NETWORK: Connecting to websocket health signals for monitoring (SHM mode)")
 		websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
+		
+		# Start heartbeat after successful registration
+		start_heartbeat()
+		
 		return true
 	
 	# No SHM available or not recommended - proceed with WebSocket connection
@@ -132,6 +138,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
 	print("FEAGI NETWORK: Connecting to websocket health signals for ongoing monitoring")
 	websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
+	
+	# Start heartbeat after successful registration
+	start_heartbeat()
 	
 	return true
 
@@ -235,6 +244,9 @@ func _call_register_agent_for_shm() -> bool:
 	
 ## Completely disconnect all networking systems from FEAGI
 func disconnect_networking() -> void:
+	# Stop heartbeat before disconnecting
+	stop_heartbeat()
+	
 	# NOTE: Signals will NOT be firing for these for their changing states
 	_change_connection_state(CONNECTION_STATE.DISCONNECTED)
 
@@ -296,6 +308,8 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 	match(scanning_state):
 		CONNECTION_STATE.DISCONNECTED:
 			# Either user requested this or something failed
+			# Stop heartbeat on disconnect
+			stop_heartbeat()
 			# Ensure everything is disconnected
 			# NOTE: These APIs will not emit disconnection signals from this
 			http_API.disconnect_http()
@@ -319,3 +333,60 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 	
 	_connection_state = new_state
 	connection_state_changed.emit(prev_state, new_state)
+
+
+## Start sending periodic heartbeats to FEAGI
+func start_heartbeat() -> void:
+	# Stop any existing heartbeat timer
+	stop_heartbeat()
+	
+	# Create and configure heartbeat timer
+	_heartbeat_timer = Timer.new()
+	_heartbeat_timer.name = "HeartbeatTimer"
+	_heartbeat_timer.wait_time = _heartbeat_interval
+	_heartbeat_timer.autostart = true
+	_heartbeat_timer.timeout.connect(_send_heartbeat)
+	add_child(_heartbeat_timer)
+	
+	print("💗 [HEARTBEAT] Started heartbeat timer (interval: %.1fs)" % _heartbeat_interval)
+	
+	# Send initial heartbeat immediately
+	_send_heartbeat()
+
+
+## Stop sending heartbeats to FEAGI
+func stop_heartbeat() -> void:
+	if _heartbeat_timer != null:
+		_heartbeat_timer.stop()
+		if _heartbeat_timer.timeout.is_connected(_send_heartbeat):
+			_heartbeat_timer.timeout.disconnect(_send_heartbeat)
+		_heartbeat_timer.queue_free()
+		_heartbeat_timer = null
+		print("💗 [HEARTBEAT] Stopped heartbeat timer")
+
+
+## Send a single heartbeat to FEAGI
+func _send_heartbeat() -> void:
+	# Guard: Ensure HTTP API is available
+	if not http_API or http_API.http_health != FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE:
+		push_warning("💗 [HEARTBEAT] Skipping heartbeat - HTTP not connected")
+		return
+	
+	# Guard: Ensure address list is available
+	var addr_list = http_API.get("address_list")
+	if addr_list == null:
+		push_warning("💗 [HEARTBEAT] Skipping heartbeat - address list not initialized")
+		return
+	
+	# Build heartbeat payload
+	var payload := {
+		"agent_id": "brain-visualizer"
+	}
+	
+	# Send heartbeat (fire and forget - don't await)
+	var heartbeat_url: StringName = addr_list.POST_agent_heartbeat
+	var def := APIRequestWorkerDefinition.define_single_POST_call(heartbeat_url, payload)
+	var worker := http_API.make_HTTP_call(def)
+	
+	# Optional: Log heartbeat send (can be removed once stable)
+	# print("💗 [HEARTBEAT] Sent heartbeat to FEAGI")
