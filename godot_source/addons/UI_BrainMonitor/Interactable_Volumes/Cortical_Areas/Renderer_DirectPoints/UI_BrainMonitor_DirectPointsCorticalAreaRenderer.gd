@@ -553,6 +553,16 @@ func _z_depth_to_color(z_coordinate: float, z_max: float) -> Color:
 
 func _clear_all_neurons() -> void:
 	"""Clear all neuron voxel instances"""
+	# TEMP DEBUG: Log when clearing happens
+	if _current_neuron_count > 0:
+		var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
+		var timestamp = _get_timestamp_with_ms()
+		var time_visible = 0.0
+		if has_meta("_last_fire_time"):
+			var current_time = Time.get_ticks_msec() / 1000.0
+			time_visible = (current_time - get_meta("_last_fire_time")) * 1000.0  # Convert to ms
+		print("[%s] 🧹 [%s] CLEARING %d neurons (visible for %.0fms)" % [timestamp, area_id, _current_neuron_count, time_visible])
+	
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
 	
@@ -575,25 +585,42 @@ func _start_visibility_timer() -> void:
 	# Record when neurons started displaying
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
 	
-	# CRITICAL: Neurons should be visible for EXACTLY one frame period
+	# CRITICAL: Neurons should stay visible for full burst duration
 	# Use negotiated visualization rate from FEAGI (or fallback to 60 Hz)
 	# BV requests up to 60 Hz, FEAGI negotiates based on burst frequency
 	var viz_frequency_hz = 60.0  # Default (matches registration request)
-	if FeagiCore.has_meta("_negotiated_viz_hz"):
-		viz_frequency_hz = FeagiCore.get_meta("_negotiated_viz_hz")
+	# Read from FEAGINetworking (where it's stored during registration)
+	if FeagiCore and FeagiCore.network and FeagiCore.network.has_meta("_negotiated_viz_hz"):
+		viz_frequency_hz = FeagiCore.network.get_meta("_negotiated_viz_hz")
 	
 	var viz_frame_duration = 1.0 / viz_frequency_hz
 	
-	# Use exactly 1x frame period for accurate timing
-	# If neuron fires at t=0, visible until t=66.7ms (at 15Hz)
-	# If it fires again at t=66.7ms, it extends seamlessly
-	var timeout = viz_frame_duration
+	# Use 1.5x frame period to ensure overlap and prevent flashing
+	# At 1 Hz: fires at t=0, visible until t=1500ms
+	# Next burst at t=1000ms arrives before timer expires → seamless
+	# If no burst arrives, clears at t=1500ms (acceptable delay)
+	var timeout = viz_frame_duration * 1.5
+	
+	# TEMP DEBUG: Log timer restart with timeout value
+	if has_meta("_last_timer_log") and (Time.get_ticks_msec() / 1000.0 - get_meta("_last_timer_log")) < 2.0:
+		pass  # Don't spam logs
+	else:
+		var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
+		var timestamp = _get_timestamp_with_ms()
+		print("[%s] ⏰ [%s] Timer started: %.0fms timeout (%.1f Hz rate)" % [timestamp, area_id, timeout * 1000.0, viz_frequency_hz])
+		set_meta("_last_timer_log", Time.get_ticks_msec() / 1000.0)
 	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()
 
 func _on_visibility_timeout() -> void:
 	"""Called when the visibility timer expires - clear all neurons"""
+	# TEMP DEBUG: Log timer expiration
+	if _current_neuron_count > 0:
+		var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
+		var timestamp = _get_timestamp_with_ms()
+		print("[%s] ⏱️  [%s] Timer expired - clearing neurons" % [timestamp, area_id])
+	
 	# Visibility timer expired - clearing neurons via timeout
 	_clear_all_neurons()
 	
@@ -611,12 +638,10 @@ func _on_visibility_timeout() -> void:
 
 func _get_timestamp_with_ms() -> String:
 	"""Get timestamp with millisecond precision for debug logging"""
-	# Use monotonic time to avoid backward jumps
-	var unix_time_ms = Time.get_ticks_msec()
-	var unix_time_sec = int(unix_time_ms / 1000)
-	var ms = unix_time_ms % 1000
+	# Get current system time
+	var datetime = Time.get_datetime_dict_from_system()
+	var ms = Time.get_ticks_msec() % 1000
 	
-	var datetime = Time.get_datetime_dict_from_unix_time(unix_time_sec)
 	return "%04d-%02d-%02dT%02d:%02d:%02d.%03d" % [
 		datetime.year, datetime.month, datetime.day,
 		datetime.hour, datetime.minute, datetime.second,

@@ -134,14 +134,16 @@ func _process(_delta: float):
 		
 		# Update poll interval from negotiated rate if available
 		if _shm_poll_interval == 0.0:
-			var feagi_core = get_node_or_null("/root/FEAGI_CORE")
-			if feagi_core and feagi_core.has_meta("_negotiated_viz_hz"):
-				var negotiated_hz = feagi_core.get_meta("_negotiated_viz_hz")
+			# Try to get negotiated rate from parent FEAGINetworking
+			var feagi_networking = get_parent()
+			if feagi_networking and feagi_networking.has_meta("_negotiated_viz_hz"):
+				var negotiated_hz = feagi_networking.get_meta("_negotiated_viz_hz")
 				_shm_poll_interval = 1.0 / negotiated_hz
 				print("𒓉 [WS] SHM polling throttled to %.1f Hz (%.1f ms interval); path=%s" % [negotiated_hz, _shm_poll_interval * 1000.0, _shm_path])
 			else:
 				# Fallback: use 60 Hz (backwards compat)
 				_shm_poll_interval = 1.0 / 60.0
+				print("𒓉 [WS] ⚠️ No negotiated rate found, defaulting to 60 Hz polling")
 		
 		# Only poll if enough time has elapsed
 		if current_time - _shm_last_poll_time >= _shm_poll_interval:
