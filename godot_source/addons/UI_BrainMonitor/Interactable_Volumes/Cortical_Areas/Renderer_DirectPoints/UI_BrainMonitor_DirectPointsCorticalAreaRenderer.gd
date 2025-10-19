@@ -386,15 +386,46 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		var _time_since_last_fire = current_time - last_fire_time if last_fire_time > 0 else 0.0
 		set_meta("_last_fire_time", current_time)
 		
+		# TEMP DEBUG: Check if (0,0,0) is firing
+		var has_origin = false
+		for i in range(point_count):
+			if x_array[i] == 0 and y_array[i] == 0 and z_array[i] == 0:
+				has_origin = true
+				break
+		if has_origin:
+			var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
+			var timestamp = _get_timestamp_with_ms()
+			
+			# Calculate interval since last fire
+			var interval_ms = ""
+			if has_meta("_last_origin_fire_ms"):
+				var last_fire_ms = get_meta("_last_origin_fire_ms")
+				var delta_ms = Time.get_ticks_msec() - last_fire_ms
+				interval_ms = " [Δ%dms]" % delta_ms
+			set_meta("_last_origin_fire_ms", Time.get_ticks_msec())
+			
+			print("[%s] 🔥 [%s] (0,0,0) FIRING - %d total neurons%s" % [timestamp, area_id, point_count, interval_ms])
+			set_meta("_last_had_origin", true)
+		else:
+			# Not firing this frame but had neurons
+			if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
+				var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
+				var timestamp = _get_timestamp_with_ms()
+				print("[%s] ⚫ [%s] (0,0,0) NOT in %d firing neurons" % [timestamp, area_id, point_count])
+				set_meta("_last_had_origin", false)
+		
 		_process_neurons_with_rust(x_array, y_array, z_array)
-		# Restart timer - keeps neurons visible as long as updates keep coming
+		# Start timer - neurons visible for exactly 1 frame period
 		_start_visibility_timer()
 	else:
-		# PERSISTENCE FIX: Empty update should NOT clear immediately
-		# Instead, keep previous neurons visible and restart the timer
-		# This creates smooth visualization when neurons fire back-to-back
-		# Timer will only expire and clear neurons if we stop receiving updates
-		_start_visibility_timer()
+		# No neurons firing - clear immediately
+		# TEMP DEBUG: Log empty frames for (0,0,0) tracking
+		if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
+			var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
+			var timestamp = _get_timestamp_with_ms()
+			print("[%s] ⚫ [%s] (0,0,0) NO FIRE - clearing all" % [timestamp, area_id])
+		set_meta("_last_had_origin", false)
+		_clear_all_neurons()
 	
 	# Make power cone use firing colors when neural activity occurs
 	if _cortical_area_id == "_power" and _power_material:
@@ -437,9 +468,8 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	
 	# Check if we have any data
 	if points_data.size() == 0:
-		# PERSISTENCE FIX: Empty update should NOT clear immediately
-		# Keep previous neurons visible and restart timer for smooth visualization
-		_start_visibility_timer()
+		# No neurons firing - clear immediately
+		_clear_all_neurons()
 		return
 	
 	# Trigger power cone firing animation if this is the power cortical area
@@ -453,9 +483,8 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		return
 	
 	if point_count == 0:
-		# PERSISTENCE FIX: Empty update should NOT clear immediately
-		# Keep previous neurons visible and restart timer for smooth visualization
-		_start_visibility_timer()
+		# No neurons firing - clear immediately
+		_clear_all_neurons()
 		return
 	
 	# Convert to bulk arrays efficiently
@@ -546,20 +575,19 @@ func _start_visibility_timer() -> void:
 	# Record when neurons started displaying
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
 	
-	# CRITICAL: Timeout should allow neurons to persist for smooth visualization
-	# Use negotiated visualization rate from FEAGI (or fallback to 30 Hz)
-	var viz_frequency_hz = 30.0  # Default
+	# CRITICAL: Neurons should be visible for EXACTLY one frame period
+	# Use negotiated visualization rate from FEAGI (or fallback to 60 Hz)
+	# BV requests up to 60 Hz, FEAGI negotiates based on burst frequency
+	var viz_frequency_hz = 60.0  # Default (matches registration request)
 	if FeagiCore.has_meta("_negotiated_viz_hz"):
 		viz_frequency_hz = FeagiCore.get_meta("_negotiated_viz_hz")
 	
 	var viz_frame_duration = 1.0 / viz_frequency_hz
 	
-	# Use 2x frame period to handle jitter
-	var timeout = viz_frame_duration * 2.0
-	
-	# For slow FEAGI (< 20Hz), use longer timeout
-	if simulation_timestep > 0.05:  # FEAGI < 20Hz
-		timeout = max(simulation_timestep * 2.0, timeout)
+	# Use exactly 1x frame period for accurate timing
+	# If neuron fires at t=0, visible until t=66.7ms (at 15Hz)
+	# If it fires again at t=66.7ms, it extends seamlessly
+	var timeout = viz_frame_duration
 	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()
@@ -580,6 +608,20 @@ func _on_visibility_timeout() -> void:
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
 		# print("   🔮 Memory sphere becoming inactive - switching to transparent material")  # Suppressed to reduce log spam
 		_outline_mesh_instance.material_override = _memory_transparent_material
+
+func _get_timestamp_with_ms() -> String:
+	"""Get timestamp with millisecond precision for debug logging"""
+	# Use monotonic time to avoid backward jumps
+	var unix_time_ms = Time.get_ticks_msec()
+	var unix_time_sec = int(unix_time_ms / 1000)
+	var ms = unix_time_ms % 1000
+	
+	var datetime = Time.get_datetime_dict_from_unix_time(unix_time_sec)
+	return "%04d-%02d-%02dT%02d:%02d:%02d.%03d" % [
+		datetime.year, datetime.month, datetime.day,
+		datetime.hour, datetime.minute, datetime.second,
+		ms
+	]
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
 	"""Convert world position to neuron coordinate"""

@@ -83,6 +83,10 @@ var _shm_last_frame_time: float = 0.0  # Track time between frames for instantan
 var _shm_frame_times: Array = []  # Rolling window of last 10 frame times
 const _SHM_FRAME_WINDOW_SIZE: int = 10
 
+# SHM polling throttle (to match negotiated rate)
+var _shm_last_poll_time: float = 0.0
+var _shm_poll_interval: float = 0.0  # Calculated from negotiated rate
+
 
 func _ready():
 	# Initialize platform-specific decoding path
@@ -125,11 +129,29 @@ func _init_rust_deserializer() -> void:
 func _process(_delta: float):
 	# 𒓉 Poll SHM for neuron visualization bytes if enabled
 	if _use_shared_mem:
-		_poll_shm_once()
-		if not _shm_notice_printed:
-			var fps = Engine.get_frames_per_second()
-			print("𒓉 [WS] SHM polling active at ~%d Hz (every frame); path=%s" % [fps, _shm_path])
-			_shm_notice_printed = true
+		# Throttle polling to negotiated rate (not every frame!)
+		var current_time = Time.get_ticks_msec() / 1000.0
+		
+		# Update poll interval from negotiated rate if available
+		if _shm_poll_interval == 0.0:
+			var feagi_core = get_node_or_null("/root/FEAGI_CORE")
+			if feagi_core and feagi_core.has_meta("_negotiated_viz_hz"):
+				var negotiated_hz = feagi_core.get_meta("_negotiated_viz_hz")
+				_shm_poll_interval = 1.0 / negotiated_hz
+				print("𒓉 [WS] SHM polling throttled to %.1f Hz (%.1f ms interval); path=%s" % [negotiated_hz, _shm_poll_interval * 1000.0, _shm_path])
+			else:
+				# Fallback: use 60 Hz (backwards compat)
+				_shm_poll_interval = 1.0 / 60.0
+		
+		# Only poll if enough time has elapsed
+		if current_time - _shm_last_poll_time >= _shm_poll_interval:
+			_poll_shm_once()
+			_shm_last_poll_time = current_time
+			
+			if not _shm_notice_printed:
+				var rate_hz = 1.0 / _shm_poll_interval if _shm_poll_interval > 0.0 else 60.0
+				print("𒓉 [WS] SHM polling active at %.1f Hz (throttled); path=%s" % [rate_hz, _shm_path])
+				_shm_notice_printed = true
 	else:
 		# Print once to make it obvious we're on WS path, but only after a brief delay
 		# and not while we are actively trying to initialize SHM
@@ -759,6 +781,9 @@ func enable_shared_memory_visualization(p: String) -> void:
 	_shm_init_attempts = 0
 	_shm_last_error = ""
 	_shm_attempting = true
+	# Reset polling throttle to recalculate from negotiated rate
+	_shm_poll_interval = 0.0
+	_shm_last_poll_time = 0.0
 	# Give time for FEAGI to create and initialize the file header
 	_ws_notice_printed = false
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500

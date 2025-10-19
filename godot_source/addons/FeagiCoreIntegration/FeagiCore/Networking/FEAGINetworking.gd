@@ -144,7 +144,49 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	return true
 
+func _get_feagi_burst_frequency() -> float:
+	# Query FEAGI's current burst frequency before registration
+	var addr_list = http_API.get("address_list")
+	if addr_list == null:
+		push_warning("𒓉 [REG] HTTP address list not initialized")
+		return 0.0
+	
+	var get_url: StringName = addr_list.GET_burstEngine_simulationTimestep
+	var def := APIRequestWorkerDefinition.define_single_GET_call(get_url)
+	var worker := http_API.make_HTTP_call(def)
+	print("𒓉 [REG] Querying FEAGI burst frequency...")
+	await worker.worker_done
+	var out := worker.retrieve_output_and_close()
+	
+	if out.has_errored or out.has_timed_out:
+		push_warning("𒓉 [REG] Failed to get burst frequency")
+		return 0.0
+	
+	var timestep_str = out.decode_response_as_string()
+	var timestep = timestep_str.to_float()
+	
+	if timestep <= 0.0:
+		push_warning("𒓉 [REG] Invalid timestep: " + timestep_str)
+		return 0.0
+	
+	# Convert timestep to frequency
+	var frequency = 1.0 / timestep
+	print("𒓉 [REG] ✅ FEAGI burst: %.3fs timestep = %.1f Hz" % [timestep, frequency])
+	return frequency
+
 func _call_register_agent_for_shm() -> bool:
+	# STEP 1: Query FEAGI's burst frequency BEFORE registration
+	var feagi_hz = await _get_feagi_burst_frequency()
+	if feagi_hz <= 0.0:
+		print("𒓉 [REG] ⚠️ Failed to get FEAGI burst frequency, defaulting to 60 Hz request")
+		feagi_hz = 60.0
+	
+	# STEP 2: Calculate requested rate = min(feagi_frequency, 60)
+	# - If FEAGI < 60 Hz → request FEAGI's exact rate
+	# - If FEAGI >= 60 Hz → cap at 60 Hz (BV's max)
+	var requested_hz = min(feagi_hz, 60.0)
+	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 60 Hz)" % [feagi_hz, requested_hz])
+	
 	# Build registration payload
 	var payload := {
 		"agent_type": "visualizer",
@@ -152,8 +194,7 @@ func _call_register_agent_for_shm() -> bool:
 		"agent_data_port": 0,
 		"agent_version": ProjectSettings.get_setting("application/config/version", "dev"),
 		"controller_version": ProjectSettings.get_setting("application/config/version", "dev"),
-		# Provide capability with explicit refresh rate to align with FEAGI rate processing
-		"capabilities": {"visualization": {"rate_hz": 30.0, "enabled": true}},
+		"capabilities": {"visualization": {"rate_hz": requested_hz, "enabled": true}},
 		"metadata": {"request_shared_memory": true}
 	}
 	# Avoid chained member resolution at parse time; guard address_list
@@ -182,15 +223,15 @@ func _call_register_agent_for_shm() -> bool:
 		var rates: Dictionary = resp["rates"]
 		if rates.has("visualization"):
 			var viz_rates: Dictionary = rates["visualization"]
-			var requested_hz = viz_rates.get("requested_hz", 30.0)
-			var feagi_hz = viz_rates.get("feagi_hz", 0.0)
-			var negotiated_hz = viz_rates.get("negotiated_hz", 30.0)
+			var requested_hz_response = viz_rates.get("requested_hz", 60.0)
+			var feagi_hz_from_response = viz_rates.get("feagi_hz", 0.0)
+			var negotiated_hz_response = viz_rates.get("negotiated_hz", 60.0)
 			print("𒓉 [RATE-NEGO] Visualization rate negotiation:")
-			print("  Requested: ", requested_hz, " Hz")
-			print("  FEAGI burst: ", feagi_hz, " Hz")
-			print("  Negotiated: ", negotiated_hz, " Hz")
+			print("  FEAGI burst: %.1f Hz" % feagi_hz_from_response)
+			print("  BV requested: %.1f Hz (min(FEAGI, 60))" % requested_hz_response)
+			print("  Negotiated: %.1f Hz" % negotiated_hz_response)
 			# Store negotiated rate for future use (e.g., timing expectations)
-			set_meta("_negotiated_viz_hz", negotiated_hz)
+			set_meta("_negotiated_viz_hz", negotiated_hz_response)
 	
 	# Check registration success and transport negotiation
 	if resp.get("status", "") == "success":
