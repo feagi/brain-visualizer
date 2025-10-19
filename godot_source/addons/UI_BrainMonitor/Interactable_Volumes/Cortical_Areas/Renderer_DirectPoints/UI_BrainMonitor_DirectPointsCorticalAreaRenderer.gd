@@ -387,17 +387,14 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		set_meta("_last_fire_time", current_time)
 		
 		_process_neurons_with_rust(x_array, y_array, z_array)
-		# Restart timer with long timeout - only clears if connection lost or truly idle
+		# Restart timer - keeps neurons visible as long as updates keep coming
 		_start_visibility_timer()
 	else:
-		var last_clear_time = get_meta("_last_clear_time")
-		var _time_since_last_clear = current_time - last_clear_time if last_clear_time > 0 else 0.0
-		set_meta("_last_clear_time", current_time)
-		
-		# FIXED: Empty update means NO neurons firing - clear immediately
-		# Don't persist old firing data (causes visualization bug where neurons appear to fire continuously)
-		_clear_all_neurons()
-		# CRITICAL FIX: Don't restart timer when clearing - this prevents stale display
+		# PERSISTENCE FIX: Empty update should NOT clear immediately
+		# Instead, keep previous neurons visible and restart the timer
+		# This creates smooth visualization when neurons fire back-to-back
+		# Timer will only expire and clear neurons if we stop receiving updates
+		_start_visibility_timer()
 	
 	# Make power cone use firing colors when neural activity occurs
 	if _cortical_area_id == "_power" and _power_material:
@@ -438,10 +435,10 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	"""Handle legacy Type 11 format - DEPRECATED, use bulk processing instead"""
 	print("DirectPoints: Received legacy format data (", points_data.size(), " bytes) - consider upgrading to bulk format")
 	
-	# Check if we have any data - clear immediately if empty
+	# Check if we have any data
 	if points_data.size() == 0:
-		# FIXED: Empty update means NO neurons firing - clear immediately
-		_clear_all_neurons()
+		# PERSISTENCE FIX: Empty update should NOT clear immediately
+		# Keep previous neurons visible and restart timer for smooth visualization
 		_start_visibility_timer()
 		return
 	
@@ -456,8 +453,8 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		return
 	
 	if point_count == 0:
-		# FIXED: Empty update means NO neurons firing - clear immediately
-		_clear_all_neurons()
+		# PERSISTENCE FIX: Empty update should NOT clear immediately
+		# Keep previous neurons visible and restart timer for smooth visualization
 		_start_visibility_timer()
 		return
 	
@@ -549,22 +546,20 @@ func _start_visibility_timer() -> void:
 	# Record when neurons started displaying
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
 	
-	# CRITICAL: Timeout based on VISUALIZATION frequency, not FEAGI burst frequency
-	# FEAGI can run at 10KHz, but visualization is capped at 30Hz (web) or 120Hz (native)
-	# BV registers with FEAGI requesting 30Hz visualization rate (see FEAGINetworking.gd)
-	# FQ Sampler on FEAGI side should match this requested rate
-	# Use 2-3 visualization frames as buffer for network latency
-	var viz_frequency_hz = 30.0  # Matches registration rate in FEAGINetworking.gd:147
-	var viz_frame_duration = 1.0 / viz_frequency_hz  # ~0.033s for 30Hz
-	var timeout = viz_frame_duration * 2.5  # ~0.083s buffer (2.5 frames)
+	# CRITICAL: Timeout should allow neurons to persist for smooth visualization
+	# Use negotiated visualization rate from FEAGI (or fallback to 30 Hz)
+	var viz_frequency_hz = 30.0  # Default
+	if FeagiCore.has_meta("_negotiated_viz_hz"):
+		viz_frequency_hz = FeagiCore.get_meta("_negotiated_viz_hz")
 	
-	# Clamp timeout to reasonable bounds for different FEAGI speeds
-	# - Fast FEAGI (100Hz+): Use short timeout for responsive clearing
-	# - Slow FEAGI (1Hz): Use longer timeout to avoid flickering
-	if simulation_timestep < 0.05:  # FEAGI > 20Hz
-		timeout = max(timeout, 0.05)  # At least 50ms
-	else:  # FEAGI <= 20Hz (slow)
-		timeout = max(simulation_timestep * 1.5, timeout)  # Use burst period or viz timeout, whichever is longer
+	var viz_frame_duration = 1.0 / viz_frequency_hz
+	
+	# Use 2x frame period to handle jitter
+	var timeout = viz_frame_duration * 2.0
+	
+	# For slow FEAGI (< 20Hz), use longer timeout
+	if simulation_timestep > 0.05:  # FEAGI < 20Hz
+		timeout = max(simulation_timestep * 2.0, timeout)
 	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()

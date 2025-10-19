@@ -177,6 +177,21 @@ func _call_register_agent_for_shm() -> bool:
 	var resp := out.decode_response_as_dict()
 	print("𒓉 [REG] Response: ", resp)
 	
+	# Extract negotiated visualization rate
+	if resp.has("rates") and typeof(resp["rates"]) == TYPE_DICTIONARY:
+		var rates: Dictionary = resp["rates"]
+		if rates.has("visualization"):
+			var viz_rates: Dictionary = rates["visualization"]
+			var requested_hz = viz_rates.get("requested_hz", 30.0)
+			var feagi_hz = viz_rates.get("feagi_hz", 0.0)
+			var negotiated_hz = viz_rates.get("negotiated_hz", 30.0)
+			print("𒓉 [RATE-NEGO] Visualization rate negotiation:")
+			print("  Requested: ", requested_hz, " Hz")
+			print("  FEAGI burst: ", feagi_hz, " Hz")
+			print("  Negotiated: ", negotiated_hz, " Hz")
+			# Store negotiated rate for future use (e.g., timing expectations)
+			set_meta("_negotiated_viz_hz", negotiated_hz)
+	
 	# Check registration success and transport negotiation
 	if resp.get("status", "") == "success":
 		# NEW: Check transport negotiation from registration response
