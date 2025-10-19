@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
 use feagi_data_serialization::FeagiSerializable;
-use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
+use feagi_data_structures::neurons::xyzp::CorticalMappedXYZPNeuronData;
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -30,32 +30,29 @@ impl IRefCounted for FeagiDataDeserializer {
 
 #[godot_api]
 impl FeagiDataDeserializer {
-    /// Decode Type 11 neuron data using FEAGI's official Rust library
+    /// Decode Type 11 neuron data using FEAGI's official Rust library (raw format, no container)
     #[func]
     pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // Create neuron data and deserialize from bytes
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
-        
-        match neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-            Ok(_) => {
-                self.convert_neuron_data_to_godot(&neuron_data)
-            }
-            Err(e) => {
-                godot_error!("🦀 Failed to deserialize Type 11 data: {:?}", e);
-                self.create_error_dict(format!("Deserialization error: {:?}", e))
-            }
+        // Use raw FeagiSerializable API (like rust-py-libs pattern)
+        let mut neuron_data = CorticalMappedXYZPNeuronData::new();
+        if let Err(e) = neuron_data.try_update_from_byte_slice(&rust_buffer) {
+            // Don't log error - just return error dict to avoid spam
+            return self.create_error_dict(format!("Decode error: {:?}", e));
         }
+        
+        self.convert_neuron_data_to_godot(&neuron_data)
     }
 
-    /// Get structure type from buffer
+    /// Get structure type from raw buffer (no container wrapper)
     #[func]
     pub fn get_structure_type(&self, buffer: PackedByteArray) -> i32 {
         if buffer.is_empty() {
             return -1;
         }
+        // Raw structure - first byte is the type (Type 11 = 11u8)
         buffer[0] as i32
     }
 
@@ -87,9 +84,9 @@ impl FeagiDataDeserializer {
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
         // Deserialize neuron data
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
+        let mut neuron_data = CorticalMappedXYZPNeuronData::new();
         
-        if let Err(e) = neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
+        if let Err(e) = neuron_data.try_update_from_byte_slice(&rust_buffer) {
             godot_error!("🦀 Failed to deserialize neuron data: {:?}", e);
             return self.create_visualization_error_dict(
                 format!("Deserialization error: {:?}", e),
@@ -529,7 +526,7 @@ impl FeagiDataDeserializer {
     /// Convert official neuron data structure to Godot Dictionary
     fn convert_neuron_data_to_godot(
         &self,
-        neuron_data: &CorticalMappedXYZPNeuronVoxels,
+        neuron_data: &CorticalMappedXYZPNeuronData,
     ) -> Dictionary {
         let mut result_dict = Dictionary::new();
         result_dict.set("success", true);
