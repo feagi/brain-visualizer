@@ -197,7 +197,7 @@ func _call_register_agent_for_shm() -> bool:
 		"capabilities": {
 			"visualization": {
 				"visualization_type": "3d_brain",
-				"refresh_rate": requested_hz,
+				"rate_hz": requested_hz,
 				"bridge_proxy": false
 			}
 		},

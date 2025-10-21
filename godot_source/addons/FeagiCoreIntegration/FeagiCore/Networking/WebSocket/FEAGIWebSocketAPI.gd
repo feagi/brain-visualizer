@@ -364,6 +364,14 @@ func websocket_send(data: Variant) -> void:
 func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = false) -> void:
 	# DEBUG: Log the structure ID detection
 	var structure_id = bytes[0] if bytes.size() > 0 else -1
+	
+	# 🔍 TEMP DEBUG: Log what type we're receiving (first 20 packets)
+	if not has_meta("_type_log_count"):
+		set_meta("_type_log_count", 0)
+	var type_count = get_meta("_type_log_count")
+	if type_count < 20:
+		print("🦀 [WS] RECEIVED TYPE %d: %d bytes, first 20 bytes: %s" % [structure_id, bytes.size(), bytes.slice(0, min(20, bytes.size())).hex_encode()])
+		set_meta("_type_log_count", type_count + 1)
 
 	# 𒓉 If SHM is active, ignore WS-delivered (but NOT SHM-delivered) Type 11 to avoid duplicates
 	if _use_shared_mem and structure_id == 11 and not from_shm:
@@ -379,6 +387,13 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 		1: # JSON wrapper (may be legacy status OR SHM JSON Type 11)
 			bytes = bytes.slice(2)
 			var text := bytes.get_string_from_ascii()
+			# 🔍 TEMP DEBUG: Log JSON parsing (first 3)
+			if not has_meta("_json_parse_count"):
+				set_meta("_json_parse_count", 0)
+			var json_count = get_meta("_json_parse_count")
+			if json_count < 3:
+				print("🦀 [WS] TYPE 1 JSON PARSE #%d: %d chars, first 80: %s" % [json_count + 1, text.length(), text.substr(0, 80)])
+				set_meta("_json_parse_count", json_count + 1)
 			var dict_any: Variant = str_to_var(text)
 			var dict: Dictionary = {}
 			if typeof(dict_any) == TYPE_DICTIONARY:
@@ -390,6 +405,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 				else:
 					push_error("FEAGI: Unable to parse WS Data (neither var nor json)!")
 					return
+			# 🔍 TEMP DEBUG: Log what keys we have
+			if json_count < 3:
+				print("🦀 [WS] TYPE 1 PARSED: has_status=%s, keys=%s" % [dict.has("status"), dict.keys()])
 			# SHM JSON Type 11 passthrough
 			if dict.has("type") and int(dict.get("type", -1)) == 11 and dict.has("areas") and typeof(dict["areas"]) == TYPE_DICTIONARY:
 				var areas: Dictionary = dict["areas"]
@@ -416,6 +434,17 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 				return
 			if dict.has("status"):
 				var dict_status = dict["status"]
+				# 🔍 TEMP DEBUG: Log health data updates (first 5)
+				if not has_meta("_health_update_count"):
+					set_meta("_health_update_count", 0)
+				var health_count = get_meta("_health_update_count")
+				if health_count < 5:
+					print("🦀 [WS] TYPE 1 HEALTH UPDATE #%d:" % [health_count + 1])
+					print("  - connected: %s" % [dict_status.get("connected", "missing")])
+					print("  - brain_readiness: %s" % [dict_status.get("brain_readiness", "missing")])
+					print("  - genome_availability: %s" % [dict_status.get("genome_availability", "missing")])
+					print("  - genome_timestamp: %s" % [dict_status.get("genome_timestamp", "missing")])
+					set_meta("_health_update_count", health_count + 1)
 				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
 					
 		7: # ActivatedNeuronLocation
@@ -430,10 +459,20 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 			var structure_start_index: int = 0 # cached
 			var structure_length: int = 0 # cached
 			var header_offset: int = 3 # cached, lets us know where to read from the subheader
+			# 🔍 TEMP DEBUG: Log Type 9 processing (first 10)
+			if not has_meta("_type9_log_count"):
+				set_meta("_type9_log_count", 0)
+			var type9_count = get_meta("_type9_log_count")
+			if type9_count < 10:
+				print("🦀 [WS] TYPE 9 RECEIVED: %d structures, total %d bytes" % [number_contained_structures, bytes.size()])
+				set_meta("_type9_log_count", type9_count + 1)
 			for structure_index in range(number_contained_structures):
 				structure_start_index = bytes.decode_u32(header_offset)        # Little Endian by default
 				structure_length = bytes.decode_u32(header_offset + 4)        # Little Endian by default
-				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
+				var structure_data = bytes.slice(structure_start_index, structure_start_index + structure_length)
+				if type9_count < 10 and structure_data.size() > 0:
+					print("   - Structure %d: type=%d, offset=%d, length=%d" % [structure_index, structure_data[0], structure_start_index, structure_length])
+				_process_wrapped_byte_structure(structure_data)
 				header_offset += 8
 		10: # SVO neuron activations (legacy support)
 			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()

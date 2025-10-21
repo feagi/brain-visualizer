@@ -600,4 +600,14 @@ impl FeagiDataDeserializer {
         error_dict.set("processing_time_us", processing_time_us);
         error_dict
     }
+
+    /// Create error dictionary for Type 9 decoding
+    fn create_type9_error_dict(&self, error_msg: &str) -> Dictionary {
+        let mut error_dict = Dictionary::new();
+        error_dict.set("success", false);
+        error_dict.set("error", error_msg.to_string());
+        error_dict.set("structure_count", 0);
+        error_dict.set("structures", godot::builtin::Array::<Variant>::new().to_variant());
+        error_dict
+    }
 }
