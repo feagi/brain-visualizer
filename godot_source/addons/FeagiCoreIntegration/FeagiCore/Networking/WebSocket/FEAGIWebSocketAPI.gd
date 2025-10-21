@@ -34,8 +34,6 @@ var _is_purposfully_disconnecting: bool = false
 var _last_connect_time: int = 0  # Track when we last attempted to connect
 var _retry_timer_active: bool = false  # Track if a retry timer is already running
 var _last_disconnect_time: int = 0  # Track last disconnect to prevent rapid processing
-var _temp_genome_ID: float = 0.0
-var _temp_genome_num: int = 0
 
 # Missing cortical area handling
 var _missing_cortical_areas: Dictionary = {}  # cortical_id -> {last_warning_time, fetch_attempted}
@@ -419,17 +417,6 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 			if dict.has("status"):
 				var dict_status = dict["status"]
 				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
-				
-				# DEPRECATED: Old websocket-based genome change detection (replaced by health check detection)
-				# This is disabled in favor of more reliable HTTP health check-based detection
-				# using feagi_session + genome_num in FEAGILocalCache.update_health_from_FEAGI_dict()
-				
-				# Keep the genome tracking variables for potential future use, but don't trigger reloads
-				if dict_status.has("genome_timestamp"):
-					_temp_genome_ID = dict_status["genome_timestamp"]
-				if dict_status.has("genome_num"):
-					_temp_genome_num = dict_status["genome_num"]
-						
 					
 		7: # ActivatedNeuronLocation
 			# ignore version for now

@@ -187,14 +187,20 @@ func _call_register_agent_for_shm() -> bool:
 	var requested_hz = min(feagi_hz, 60.0)
 	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 60 Hz)" % [feagi_hz, requested_hz])
 	
-	# Build registration payload
+	# Build registration payload (matches FEAGI 2.0 infrastructure agent schema)
 	var payload := {
-		"agent_type": "visualizer",
+		"agent_type": "visualization",
 		"agent_id": "brain-visualizer",
 		"agent_data_port": 0,
 		"agent_version": ProjectSettings.get_setting("application/config/version", "dev"),
 		"controller_version": ProjectSettings.get_setting("application/config/version", "dev"),
-		"capabilities": {"visualization": {"rate_hz": requested_hz, "enabled": true}},
+		"capabilities": {
+			"visualization": {
+				"visualization_type": "3d_brain",
+				"refresh_rate": requested_hz,
+				"bridge_proxy": false
+			}
+		},
 		"metadata": {"request_shared_memory": true}
 	}
 	# Avoid chained member resolution at parse time; guard address_list
