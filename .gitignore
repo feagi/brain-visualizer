@@ -86,44 +86,33 @@ godot_source/libfeagi_data_deserializer.dll
 godot_source/libfeagi_data_deserializer.so
 godot_source/feagi_data_deserializer.gdextension.uid
 
-# OLD: We now commit addon binaries for all platforms (Linux, macOS, Windows)
+# We commit RELEASE binaries only for all platforms (Linux, macOS, Windows)
 # These binaries are built by GitHub Actions and committed to the repo
 # Users can clone and run without building Rust extensions
+# Debug builds (100+ MB) are excluded due to GitHub file size limits
 
-# Ignore intermediate build artifacts in addon directories
-godot_source/addons/feagi_rust_deserializer/target/debug/build/
-godot_source/addons/feagi_rust_deserializer/target/debug/deps/
-godot_source/addons/feagi_rust_deserializer/target/debug/examples/
-godot_source/addons/feagi_rust_deserializer/target/debug/incremental/
-godot_source/addons/feagi_rust_deserializer/target/debug/*.d
+# Ignore ALL debug builds
+godot_source/addons/feagi_rust_deserializer/target/debug/
+godot_source/addons/feagi_shared_video/target/debug/
+
+# Ignore intermediate build artifacts in release directories
 godot_source/addons/feagi_rust_deserializer/target/release/build/
 godot_source/addons/feagi_rust_deserializer/target/release/deps/
 godot_source/addons/feagi_rust_deserializer/target/release/examples/
 godot_source/addons/feagi_rust_deserializer/target/release/incremental/
 godot_source/addons/feagi_rust_deserializer/target/release/*.d
 
-godot_source/addons/feagi_shared_video/target/debug/build/
-godot_source/addons/feagi_shared_video/target/debug/deps/
-godot_source/addons/feagi_shared_video/target/debug/examples/
-godot_source/addons/feagi_shared_video/target/debug/incremental/
-godot_source/addons/feagi_shared_video/target/debug/*.d
 godot_source/addons/feagi_shared_video/target/release/build/
 godot_source/addons/feagi_shared_video/target/release/deps/
 godot_source/addons/feagi_shared_video/target/release/examples/
 godot_source/addons/feagi_shared_video/target/release/incremental/
 godot_source/addons/feagi_shared_video/target/release/*.d
 
-# BUT allow the final binaries (these will be committed)
-!godot_source/addons/feagi_rust_deserializer/target/debug/*.dylib
-!godot_source/addons/feagi_rust_deserializer/target/debug/*.dll
-!godot_source/addons/feagi_rust_deserializer/target/debug/*.so
+# Allow the final RELEASE binaries (these will be committed)
 !godot_source/addons/feagi_rust_deserializer/target/release/*.dylib
 !godot_source/addons/feagi_rust_deserializer/target/release/*.dll
 !godot_source/addons/feagi_rust_deserializer/target/release/*.so
 
-!godot_source/addons/feagi_shared_video/target/debug/*.dylib
-!godot_source/addons/feagi_shared_video/target/debug/*.dll
-!godot_source/addons/feagi_shared_video/target/debug/*.so
 !godot_source/addons/feagi_shared_video/target/release/*.dylib
 !godot_source/addons/feagi_shared_video/target/release/*.dll
 !godot_source/addons/feagi_shared_video/target/release/*.so

@@ -4,6 +4,10 @@ Cross-platform build script for FEAGI Rust extensions.
 
 Builds Rust libraries and copies them to the Godot project.
 Supports: macOS (arm64/x86_64/universal), Linux, Windows
+
+Usage:
+    python build.py              # Build both debug and release (for developers)
+    python build.py --release    # Build release only (for CI/CD)
 """
 
 import subprocess
@@ -47,8 +51,15 @@ def print_section(message):
     print(f"{'='*60}\n")
 
 
-def build_rust_library(project_name, project_dir, godot_addon_dir):
-    """Build a Rust library in both debug and release modes."""
+def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=False):
+    """Build a Rust library in release mode (and optionally debug mode).
+    
+    Args:
+        project_name: Name of the Rust project
+        project_dir: Path to the Rust project directory
+        godot_addon_dir: Path to the Godot addon directory
+        release_only: If True, only build release (for CI/CD). If False, build both debug and release.
+    """
     print_section(f"Building {project_name}")
     
     lib_ext = get_library_extension()
@@ -64,24 +75,24 @@ def build_rust_library(project_name, project_dir, godot_addon_dir):
     print("[CLEAN] Cleaning previous builds...")
     run_command(["cargo", "clean"], cwd=project_path)
     
-    # Build release
-    print("[BUILD] Building Rust library (release mode)...")
+    # Build release (always)
+    print("[BUILD] Building Rust library (release mode - optimized)...")
     run_command(["cargo", "build", "--release"], cwd=project_path)
     
-    # Build debug
-    print("[BUILD] Building Rust library (debug mode)...")
-    run_command(["cargo", "build"], cwd=project_path)
+    # Build debug (only if not release_only)
+    debug_lib = None
+    if not release_only:
+        print("[BUILD] Building Rust library (debug mode - for development)...")
+        run_command(["cargo", "build"], cwd=project_path)
+        debug_lib = project_path / "target" / "debug" / lib_name
+        if not debug_lib.exists():
+            print(f"[ERROR] Build failed - debug library not found: {debug_lib}")
+            sys.exit(1)
     
-    # Check if builds were successful
+    # Check if release build was successful
     release_lib = project_path / "target" / "release" / lib_name
-    debug_lib = project_path / "target" / "debug" / lib_name
-    
     if not release_lib.exists():
         print(f"[ERROR] Build failed - release library not found: {release_lib}")
-        sys.exit(1)
-    
-    if not debug_lib.exists():
-        print(f"[ERROR] Build failed - debug library not found: {debug_lib}")
         sys.exit(1)
     
     print("[SUCCESS] Build successful!")
@@ -93,11 +104,13 @@ def build_rust_library(project_name, project_dir, godot_addon_dir):
     
     # Create target directory structure
     (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-    (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
+    if not release_only:
+        (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
     
     # Copy libraries
     shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
-    shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
+    if not release_only and debug_lib:
+        shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
     
     # Remove any old library files in the wrong location
     old_lib = addon_path / lib_name
@@ -113,8 +126,15 @@ def build_rust_library(project_name, project_dir, godot_addon_dir):
     return project_path, addon_path, lib_name
 
 
-def build_universal_macos(project_path, addon_path, lib_name):
-    """Build universal (arm64+x86_64) binaries for macOS."""
+def build_universal_macos(project_path, addon_path, lib_name, release_only=False):
+    """Build universal (arm64+x86_64) binaries for macOS.
+    
+    Args:
+        project_path: Path to the Rust project
+        addon_path: Path to the Godot addon directory
+        lib_name: Name of the library file
+        release_only: If True, only build release mode
+    """
     print_section("Building macOS Universal Binaries")
     
     project_name = project_path.name
@@ -151,35 +171,44 @@ def build_universal_macos(project_path, addon_path, lib_name):
     ])
     shutil.copy2(universal_release, addon_path / "target" / "release" / lib_name)
     
-    # Build debug for both architectures
-    print("[BUILD] Building arm64 (debug)...")
-    run_command(
-        ["cargo", "build", "--target", "aarch64-apple-darwin"],
-        cwd=project_path
-    )
-    
-    print("[BUILD] Building x86_64 (debug)...")
-    run_command(
-        ["cargo", "build", "--target", "x86_64-apple-darwin"],
-        cwd=project_path
-    )
-    
-    # Create universal binary (debug)
-    universal_debug = project_path / "target" / "universal_debug.dylib"
-    run_command([
-        "lipo", "-create", "-output", str(universal_debug),
-        str(project_path / "target" / "aarch64-apple-darwin" / "debug" / lib_name),
-        str(project_path / "target" / "x86_64-apple-darwin" / "debug" / lib_name)
-    ])
-    shutil.copy2(universal_debug, addon_path / "target" / "debug" / lib_name)
-    
-    print("[SUCCESS] Universal binaries installed.")
+    # Build debug for both architectures (only if not release_only)
+    if not release_only:
+        print("[BUILD] Building arm64 (debug)...")
+        run_command(
+            ["cargo", "build", "--target", "aarch64-apple-darwin"],
+            cwd=project_path
+        )
+        
+        print("[BUILD] Building x86_64 (debug)...")
+        run_command(
+            ["cargo", "build", "--target", "x86_64-apple-darwin"],
+            cwd=project_path
+        )
+        
+        # Create universal binary (debug)
+        universal_debug = project_path / "target" / "universal_debug.dylib"
+        run_command([
+            "lipo", "-create", "-output", str(universal_debug),
+            str(project_path / "target" / "aarch64-apple-darwin" / "debug" / lib_name),
+            str(project_path / "target" / "x86_64-apple-darwin" / "debug" / lib_name)
+        ])
+        shutil.copy2(universal_debug, addon_path / "target" / "debug" / lib_name)
+        print("[SUCCESS] Universal binaries installed (release + debug).")
+    else:
+        print("[SUCCESS] Universal binary installed (release only).")
 
 
 def main():
     """Main build process."""
+    # Parse command line arguments
+    release_only = "--release" in sys.argv or "--release-only" in sys.argv
+    
     print_section("FEAGI Rust Extensions Build")
     print(f"Platform: {platform.system()} ({platform.machine()})")
+    if release_only:
+        print("[MODE] Release only (CI/CD mode)")
+    else:
+        print("[MODE] Debug + Release (Developer mode)")
     
     # Get root directory
     root_dir = Path(__file__).parent
@@ -189,23 +218,25 @@ def main():
     project1_path, addon1_path, lib1_name = build_rust_library(
         "feagi_data_deserializer",
         root_dir / "feagi_data_deserializer",
-        godot_source / "addons" / "feagi_rust_deserializer"
+        godot_source / "addons" / "feagi_rust_deserializer",
+        release_only=release_only
     )
     
     # Build universal binaries on macOS
     if platform.system() == "Darwin":
-        build_universal_macos(project1_path, addon1_path, lib1_name)
+        build_universal_macos(project1_path, addon1_path, lib1_name, release_only=release_only)
     
     # Build feagi_shared_video
     project2_path, addon2_path, lib2_name = build_rust_library(
         "feagi_shared_video",
         root_dir / "feagi_shared_video",
-        godot_source / "addons" / "feagi_shared_video"
+        godot_source / "addons" / "feagi_shared_video",
+        release_only=release_only
     )
     
     # Build universal binaries on macOS
     if platform.system() == "Darwin":
-        build_universal_macos(project2_path, addon2_path, lib2_name)
+        build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only)
     
     # Final success message
     print_section("Build Complete!")
