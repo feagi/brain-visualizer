@@ -226,5 +226,3 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	return total_chain_path
 
 #endregion
-
-

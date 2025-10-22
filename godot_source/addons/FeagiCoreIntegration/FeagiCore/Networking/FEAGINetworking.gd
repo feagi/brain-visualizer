@@ -89,7 +89,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# both HTTP and WS are functioning! We ae good to go!
 	# connect signals for future changes
-	http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
+	#http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
 	websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
 	
 	return true
@@ -167,5 +167,3 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 	
 	_connection_state = new_state
 	connection_state_changed.emit(prev_state, new_state)
-
-

@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=3 uid="uid://ctyho04m7lek6"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.gd" id="1_0kirv"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
+[ext_resource type="Script" uid="uid://bif8q2q1ox70w" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.gd" id="1_0kirv"]
+[ext_resource type="Script" uid="uid://bqk1iuq2kpmvd" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
 [ext_resource type="PackedScene" uid="uid://lbyao7dlu4ga" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.tscn" id="4_5clbj"]
 [ext_resource type="Texture2D" uid="uid://dk2ve4ie772s8" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="4_5utqj"]
 [ext_resource type="Texture2D" uid="uid://cq5p4poocyhgk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="5_ffsab"]

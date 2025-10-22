@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b1lf2ayhmnh34"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.gd" id="1_4wwv0"]
+[ext_resource type="Script" uid="uid://7p5hp4opgfhr" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.gd" id="1_4wwv0"]
 
 [node name="ScrollGenomeObjectSelector" type="ScrollContainer"]
 custom_minimum_size = Vector2(650, 300)

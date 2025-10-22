@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cujhi16cmpffu"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/BaseScroll.gd" id="1_mgl7a"]
+[ext_resource type="Script" uid="uid://b478frjgoweiv" path="res://BrainVisualizer/UI/GenericElements/Scroll/BaseScroll.gd" id="1_mgl7a"]
 
 [node name="Scroll_Vertical" type="ScrollContainer"]
 offset_right = 298.0

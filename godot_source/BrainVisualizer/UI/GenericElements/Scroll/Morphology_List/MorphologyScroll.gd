@@ -23,7 +23,9 @@ func _ready():
 ## Clears list, then loads morphology list from FeagiCache
 func repopulate_from_cache() -> void:
 	delete_all()
-	for morphology in FeagiCore.feagi_local_cache.morphologies.available_morphologies.values():
+	var reverse_list: Array = FeagiCore.feagi_local_cache.morphologies.available_morphologies.values()
+	reverse_list.reverse()
+	for morphology in reverse_list:
 		append_single_item(morphology, morphology.name)
 
 ## Sets the morphologies froma  manual list

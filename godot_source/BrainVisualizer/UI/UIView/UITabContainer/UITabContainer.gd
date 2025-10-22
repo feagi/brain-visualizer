@@ -1,7 +1,7 @@
 extends TabContainer
 class_name UITabContainer
 
-const PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
+var PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
@@ -17,6 +17,7 @@ func _ready():
 	_tab_bar = get_tab_bar()
 	_tab_bar.select_with_rmb = true
 	_tab_bar.tab_close_pressed.connect(_on_user_close_tab)
+	PREFAB_CIRCUITBUILDER = load("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 	tab_changed.connect(_on_top_tab_change)
 
 func setup(inital_tabs: Array[Control]) -> void:
@@ -37,6 +38,7 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 		return
 	var new_cb: CircuitBuilder = PREFAB_CIRCUITBUILDER.instantiate()
 	new_cb.setup(region)
+	#CURSED
 	_add_control_view_as_tab(new_cb)
 
 ## Brings an existing CB of given region in this tab container to the top
@@ -118,6 +120,9 @@ func _on_top_tab_change(_tab_index: int) -> void:
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
 	else:
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
+	# HACK CB
+	var cb: CircuitBuilder = get_tab_IDX_as_control(_tab_index) as CircuitBuilder
+	#BV.UI.selection_system.clear_all_highlighted()
 
 func _add_control_view_as_tab(region_view: Control) -> void:
 	if region_view is CircuitBuilder:

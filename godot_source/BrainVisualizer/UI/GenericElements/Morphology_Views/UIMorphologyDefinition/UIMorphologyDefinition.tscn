@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://c8gpa1figwpvw"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.gd" id="1_y81lm"]
+[ext_resource type="Script" uid="uid://dscmtgsgoceyd" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.gd" id="1_y81lm"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="2_k4tyy"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_38a6c"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_38a6c"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="3_vddmv"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="4_elcaa"]
 

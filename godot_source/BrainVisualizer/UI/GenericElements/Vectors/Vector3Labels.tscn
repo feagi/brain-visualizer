@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dtoic0bf8v2f2"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3Labels.gd" id="1_joewg"]
+[ext_resource type="Script" uid="uid://bn5tlrl5kye80" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3Labels.gd" id="1_joewg"]
 
 [node name="Vector3Labels" type="BoxContainer"]
 offset_right = 42.0

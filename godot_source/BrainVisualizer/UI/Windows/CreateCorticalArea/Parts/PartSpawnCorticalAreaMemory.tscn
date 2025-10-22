@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://csvjqt8dbo5ec"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaMemory.gd" id="1_se87m"]
+[ext_resource type="Script" uid="uid://bjgbpc5y6tnmd" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaMemory.gd" id="1_se87m"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_dcueh"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_af2cq"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_af2cq"]
 
 [node name="Definition_Memory" type="VBoxContainer"]
 offset_right = 473.0

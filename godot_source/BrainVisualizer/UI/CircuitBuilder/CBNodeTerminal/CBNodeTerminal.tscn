@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=3 uid="uid://d1xtfv21pyuji"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.gd" id="1_rgycm"]
+[ext_resource type="Script" uid="uid://dybgiapc0j1kg" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.gd" id="1_rgycm"]
 [ext_resource type="Texture2D" uid="uid://cm1heljteruj3" path="res://BrainVisualizer/UI/CircuitBuilder/Resources/Ports/cb-port.png" id="2_cjkde"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodePort.gd" id="3_t8yws"]
+[ext_resource type="Script" uid="uid://itbr1w477ic0" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodePort.gd" id="3_t8yws"]
 [ext_resource type="Texture2D" uid="uid://c57wx5kauwsjj" path="res://BrainVisualizer/UI/CircuitBuilder/Resources/Ports/cb-port-recursive.png" id="4_ln71k"]
 
 [node name="CbNodeTerminal" type="HBoxContainer"]

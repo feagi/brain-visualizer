@@ -19,14 +19,21 @@ var top_bar: TopBar:
 	get: return _top_bar
 var root_UI_view: UIView:
 	get: return _root_UI_view
-
+var selection_system: SelectionSystem:
+	get: return _selection_system
+	
+var temp_root_bm: UI_BrainMonitor_3DScene
 
 var _top_bar: TopBar
-var _brain_monitor # lol
 var _window_manager: WindowManager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
+var _selection_system: SelectionSystem
+var _temp_bm_holder: UI_Capsules_Capsule
+var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
+var _temp_bm_camera_rot: Vector3
+
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -37,10 +44,10 @@ func _enter_tree():
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
-	_brain_monitor = $BrainMonitor
 	_window_manager = $WindowManager
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
+	_selection_system = SelectionSystem.new()
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -55,7 +62,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): toggle_loading_screen(!ready))
-
+	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	
 
@@ -68,8 +75,14 @@ func _ready():
 func FEAGI_about_to_reset_genome() -> void:
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
-	_root_UI_view.close_all_non_root_brain_region_views()
-	toggle_loading_screen(true)
+	#_root_UI_view.close_all_non_root_brain_region_views()
+	#toggle_loading_screen(true)
+	if _temp_bm_holder:
+		(_temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene).clear_all_open_previews()
+		_temp_bm_camera_pos = temp_root_bm.get_node("SubViewport/Center/PancakeCam").position
+		_temp_bm_camera_rot = temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation
+		_temp_bm_holder.queue_free()
+	
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it
@@ -91,15 +104,23 @@ func FEAGI_confirmed_genome() -> void:
 	#TODO need a better function to add CB in general
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
 	cb.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
-	cb.user_adds_object_to_selected_object_pool.connect(_append_selected_object)
-	cb.user_removes_object_from_selected_object_pool.connect(_remove_selected_object)
-	cb.user_request_action_on_selected_objects.connect(action_on_selected_objects)
 	
 	initial_tabs = [cb]
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
 	toggle_loading_screen(false)
+	
+	# temp BM
+	_temp_bm_holder = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
+	$test.add_child(_temp_bm_holder)
+	var brain_monitor: UI_BrainMonitor_3DScene = _temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene
+	brain_monitor.setup(FeagiCore.feagi_local_cache.brain_regions.get_root_region())
+	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
+	temp_root_bm = brain_monitor
+	if _temp_bm_camera_pos.length() > 0.01:
+		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos
+		temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation = _temp_bm_camera_rot
 	
 	# This is utter cancer
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
@@ -112,6 +133,18 @@ func FEAGI_confirmed_genome() -> void:
 		color_setting = UIManager.THEME_COLORS.DARK
 	var zoom_value: float = split_strings[1].to_float()
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
+	
+# TEMP - > for sending activation firings to FEAGI
+func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
+	var dict_to_send: Dictionary = {'data': {'direct_stimulation' : {}}}
+	for area_ID in area_IDs_and_neuron_coordinates:
+		var arr: Array[Array] = []
+		for vector in area_IDs_and_neuron_coordinates[area_ID]:
+			arr.append([vector.x, vector.y, vector.z])
+		dict_to_send["data"]["direct_stimulation"][area_ID] = arr
+	
+	FeagiCore.network.websocket_API.websocket_send(JSON.stringify(dict_to_send))
+
 
 
 #endregion
@@ -119,9 +152,7 @@ func FEAGI_confirmed_genome() -> void:
 
 #region User Interactions
 signal advanced_mode_setting_changed(is_in_advanced_mode: bool)
-signal user_selected_single_cortical_area(area: AbstractCorticalArea) ## User selected a single cortical area specifically (IE doesn't fire when a user drag selects multiple)
 
-var currently_selected_objects: Array[GenomeObject] = []
 
 var is_in_advanced_mode: bool:
 	get: return _is_in_advanced_mode
@@ -139,10 +170,6 @@ func _input(event):
 				return
 			show_developer_menu()
 
-var selected_cortical_areas: Array[AbstractCorticalArea]:
-	get: return _selected_cortical_areas
-
-var _selected_cortical_areas: Array[AbstractCorticalArea] = []
 var _is_in_advanced_mode: bool = false
 
 func set_advanced_mode(is_advanced_mode: bool) -> void:
@@ -151,64 +178,23 @@ func set_advanced_mode(is_advanced_mode: bool) -> void:
 	_is_in_advanced_mode = is_advanced_mode
 	advanced_mode_setting_changed.emit(_is_in_advanced_mode)
 
-# TEMP TODO remove this as it is a standin for broken BM functions!
-func user_selected_single_cortical_area_independently(object: GenomeObject) -> void:
-	if object is AbstractCorticalArea:
-		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
-		var objects: Array[GenomeObject] = [object]
-		if !WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
-			_window_manager.spawn_quick_cortical_menu(objects)
-		if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
-			var areas: Array[AbstractCorticalArea] = [object as AbstractCorticalArea]
-			window_manager.spawn_adv_cortical_properties(areas)
-
-func snap_camera_to_cortical_area(cortical_area: AbstractCorticalArea) -> void:
-	#TODO change behavior depending on BV / CB
-	_brain_monitor.snap_camera_to_cortical_area(cortical_area)
-
-
-## Starts a preview cort a cortical area
-func start_cortical_area_preview(initial_position: Vector3, initial_dimensions: Vector3, 
-	position_signals: Array[Signal], dimensions_signals: Array[Signal], close_signals: Array[Signal],
- 	color: Color = BrainMonitorSinglePreview.DEFAULT_COLOR, is_rendering: bool = true) -> GenericSinglePreviewHandler:
-	
-	var preview_handler: GenericSinglePreviewHandler = GenericSinglePreviewHandler.new()
-	add_child(preview_handler)
-	preview_handler.start_BM_preview(initial_dimensions, initial_position, color, is_rendering)
-	preview_handler.connect_BM_preview(position_signals, dimensions_signals, close_signals)
-	return preview_handler
-	# when moving this to BM, add a signal here to closing all handlers and append that signal to the above close array!
-	
-
 
 ## Open the developer menu
 func show_developer_menu():
 	_window_manager.spawn_developer_options()
 
-func action_on_selected_objects() -> void:
-	if WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows:
-		return
-	if AdvancedCorticalProperties.WINDOW_NAME in window_manager.loaded_windows and !(WindowQuickConnect.WINDOW_NAME in window_manager.loaded_windows):
-		if GenomeObject.get_makeup_of_array(currently_selected_objects) in [GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS, GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA]:
-			window_manager.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(currently_selected_objects))
-	_window_manager.spawn_quick_cortical_menu(currently_selected_objects)
+
 
 func toggle_loading_screen(is_on: bool) -> void:
 	$TempLoadingScreen.visible = is_on
 
-func _append_selected_object(object: GenomeObject) -> void:
-	if object in currently_selected_objects:
-		return
-	currently_selected_objects.append(object)
-	if object is AbstractCorticalArea: #TODO TEMP
-		user_selected_single_cortical_area.emit(object as AbstractCorticalArea)
-	
-func _remove_selected_object(object: GenomeObject) -> void:
-	var index: int = currently_selected_objects.rfind(object) # reverse since draggin boxes adds items in forward order, so removing reverse is faster
-	if index == -1:
-		return
-	currently_selected_objects.remove_at(index)
-
+func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
+	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+		_window_manager.spawn_quick_cortical_menu(objects)
+	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES in override_usecases:
+		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
+		if len(cortical_areas) != 0:
+			_window_manager.spawn_adv_cortical_properties(cortical_areas)
 
 #endregion
 
@@ -407,4 +393,3 @@ static func get_icon_texture_by_ID(cortical_ID: StringName, fallback_is_input: b
 
 
 #endregion
-

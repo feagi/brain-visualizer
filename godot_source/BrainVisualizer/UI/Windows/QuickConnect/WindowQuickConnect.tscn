@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
+[ext_resource type="Script" uid="uid://h7g0chyq5drw" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_ad4rt"]
 [ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
@@ -17,6 +17,7 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_pefds")
+window_spawn_location = Vector2i(800, 400)
 
 [node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
 layout_mode = 2

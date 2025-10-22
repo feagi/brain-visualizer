@@ -73,3 +73,4 @@ yarn-debug.log*
 yarn-error.log*
 *.import
 godot_source/.vscode/settings.json
+godot_source/.vscode/

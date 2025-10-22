@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cg1e0kfbqg2px"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.gd" id="1_7xng6"]
+[ext_resource type="Script" uid="uid://wqdr37405sdi" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.gd" id="1_7xng6"]
 
 [node name="CbNodeCorticalArea" type="GraphNode"]
 custom_minimum_size = Vector2(250, 0)

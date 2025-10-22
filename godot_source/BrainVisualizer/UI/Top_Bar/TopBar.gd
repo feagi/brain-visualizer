@@ -117,6 +117,9 @@ func _smaller_scale() -> void:
 func _bigger_scale() -> void:
 	_set_scale(1)
 
+func _preview_button_pressed() -> void:
+	BV.WM.spawn_view_previews()
+
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 
@@ -128,8 +131,9 @@ func _update_synapse_count_current(val: int) -> void:
 	_synapse_count.text = _format_int(val)
 
 func _on_genome_about_to_reload() -> void:
-	_neuron_count.text = ""
-	_synapse_count.text = ""
+	#_neuron_count.text = ""
+	#_synapse_count.text = ""
+	pass
 
 #TODO remove this?
 func _shorten_number(num: float) -> String:
@@ -153,5 +157,3 @@ func _format_int(number: int) -> String:
 		if digit_count % 3 == 0 and i != 0:
 			formatted_str = "," + formatted_str
 	return formatted_str
-
-

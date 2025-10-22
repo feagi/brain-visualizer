@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://cevmyu0h3jk73"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.gd" id="1_63jkm"]
+[ext_resource type="Script" uid="uid://delyuh8secp1" path="res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.gd" id="1_63jkm"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1e0a2"]
 [ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_e2y22"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_ypcw4"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_ypcw4"]
 
 [node name="SelectGenomeObject" type="VBoxContainer"]
 offset_right = 126.0

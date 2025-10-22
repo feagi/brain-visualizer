@@ -19,6 +19,7 @@ func clear() -> void:
 	_scroll.remove_all_items()
 
 func load_mappings(mappings: Array[SingleMappingDefinition], restrictions: MappingRestrictionCorticalMorphology, defaults: MappingRestrictionDefault) -> void:
+	clear()
 	_restrictions = restrictions
 	_defaults = defaults
 	for mapping in mappings:

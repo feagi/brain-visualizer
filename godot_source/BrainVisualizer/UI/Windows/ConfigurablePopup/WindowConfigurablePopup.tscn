@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://pg6obfpceakc"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.gd" id="1_7ua63"]
+[ext_resource type="Script" uid="uid://c1r6wtx4sftia" path="res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.gd" id="1_7ua63"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1dl3f"]
 
 [node name="ConfigurablePopup" type="VBoxContainer"]

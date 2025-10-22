@@ -36,6 +36,10 @@ var GET_region_regionsMembers: StringName = '/v1/region/regions_members'
 var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortical_visibility'
 var GET_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/system/cortical_area_visualization_suppression_threshold"
+var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
+var GET_agent_list: StringName = "/v1/agent/list"
+var GET_agent_properties: StringName = "/v1/agent/properties"
+var GET_input_vision: StringName = "/v1/input/vision"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
@@ -48,6 +52,7 @@ var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neur
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
 var POST_region_region: StringName = "/v1/region/region"
 var POST_corticalArea_multi_corticalAreaProperties: StringName = "/v1/cortical_area/multi/cortical_area_properties"
+var POST_input_vision: StringName = "/v1/input/vision"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
@@ -61,6 +66,8 @@ var PUT_corticalArea_suppressCorticalVisibility: StringName = "/v1/cortical_area
 var PUT_corticalArea_multi_corticalArea: StringName = "/v1/cortical_area/multi/cortical_area"
 var PUT_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var PUT_system_corticalAreaVisualizationSupressionThreshold: StringName = "v1/system/cortical_area_visualization_suppression_threshold"
+var PUT_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
+var PUT_corticalArea_reset: StringName = "/v1/cortical_area/reset"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

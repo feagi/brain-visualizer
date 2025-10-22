@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://craawda1yun5y"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
+[ext_resource type="Script" uid="uid://b4pdwtu5ymmil" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
+[ext_resource type="Script" uid="uid://dqsvtxw1or7ux" path="res://BrainVisualizer/UI/GenericElements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
 [ext_resource type="Texture2D" uid="uid://io0bj7fr2e5b" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__inf.png" id="4_1tced"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 

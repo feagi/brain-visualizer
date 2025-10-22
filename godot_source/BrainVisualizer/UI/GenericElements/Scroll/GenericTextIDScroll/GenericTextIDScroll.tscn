@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cpgia4kcxknfm"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/GenericTextIDScroll/GenericTextIDScroll.gd" id="1_niuke"]
+[ext_resource type="Script" uid="uid://gk8lm07bix0v" path="res://BrainVisualizer/UI/GenericElements/Scroll/GenericTextIDScroll/GenericTextIDScroll.gd" id="1_niuke"]
 
 [node name="GenericTextIDScroll" type="VBoxContainer"]
 offset_right = 59.0

@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://4qbe5uwsf36c"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_4lr7s"]
+[ext_resource type="Script" uid="uid://i6krre7sl3n1" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_4lr7s"]
 [ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="1_bbv56"]
 [ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="2_202j6"]
 [ext_resource type="Texture2D" uid="uid://bkmehptmh3rhh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="3_ergia"]

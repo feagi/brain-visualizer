@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=3 uid="uid://box6tl4h5wf3d"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.gd" id="1_mvyuv"]
+[ext_resource type="Script" uid="uid://ccq3yp5o1u521" path="res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.gd" id="1_mvyuv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_qajk0"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_wcnhn"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_wcnhn"]
 [ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_xpgkm"]
 
 [node name="WindowAddToRegion" type="VBoxContainer"]

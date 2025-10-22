@@ -36,6 +36,8 @@ func _gui_input(event: InputEvent) -> void:
 			return
 		if !_hovered:
 			return
+		if !event.pressed:
+			return
 		_set_appropriate_texture(_disabled, _hovered, mouse_event.pressed)
 		pressed.emit()
 
@@ -78,4 +80,3 @@ func _set_appropriate_texture(is_disabled: bool, is_hovering: bool, is_clicking:
 		push_error("Missing texture_normal for ButtonTextureRectScaling")
 	else:
 		texture = texture_normal
-

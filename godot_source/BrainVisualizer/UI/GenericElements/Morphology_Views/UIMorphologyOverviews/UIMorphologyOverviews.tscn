@@ -1,6 +1,6 @@
 [gd_scene load_steps=9 format=3 uid="uid://dojgkcnlpiq4v"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyOverviews/UIMorpologyOverviews.gd" id="1_7f4of"]
+[ext_resource type="Script" uid="uid://ctfl2yq7y5ehp" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyOverviews/UIMorpologyOverviews.gd" id="1_7f4of"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://BrainVisualizer/UI/GenericElements/Scroll/Morphology_List/MorphologyScroll.tscn" id="1_saprm"]
 [ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="2_i6hmf"]
 [ext_resource type="PackedScene" uid="uid://dyagjs5244b30" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyImage/UIMorphologyImage.tscn" id="3_chxvu"]

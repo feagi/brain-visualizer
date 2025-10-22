@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ch82fu6g530dm"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BooleanIndicator/BooleanIndicator.gd" id="1_vvts3"]
+[ext_resource type="Script" uid="uid://dwno3bntukm6v" path="res://BrainVisualizer/UI/GenericElements/BooleanIndicator/BooleanIndicator.gd" id="1_vvts3"]
 
 [node name="BooleanIndicator" type="MarginContainer"]
 offset_right = 26.0

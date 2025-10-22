@@ -83,4 +83,3 @@ func _theme_updated(new_theme: Theme) -> void:
 
 func _delay_shrink_window():
 	size = Vector2i(0,0)
-

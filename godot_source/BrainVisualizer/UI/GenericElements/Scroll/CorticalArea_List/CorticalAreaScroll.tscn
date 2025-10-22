@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://dukfme5u3e3fl"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Scroll/CorticalArea_List/CoritcalAreaScroll.gd" id="1_5qjq7"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_b8ril"]
+[ext_resource type="Script" uid="uid://vdfpfdbws4oh" path="res://BrainVisualizer/UI/GenericElements/Scroll/CorticalArea_List/CoritcalAreaScroll.gd" id="1_5qjq7"]
+[ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_b8ril"]
 
 [node name="CorticalAreaScroll" type="VBoxContainer"]
 size_flags_horizontal = 3

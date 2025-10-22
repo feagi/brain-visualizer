@@ -3,7 +3,7 @@ class_name GenericMappingDetailSettingsPartial
 
 const PREFAB_ROW: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorRowGenericPartial.tscn")
 
-signal import_mapping_hint(mapping: SingleMappingDefinition)
+signal import_mapping_hint(mapping: SingleMappingDefinition) ## Passing a mapping definition to import
 
 var _original_mappings: Array[SingleMappingDefinition]
 var _scroll: ScrollSectionGeneric

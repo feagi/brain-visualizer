@@ -1,0 +1,6 @@
+Region View abstraction
+test Godot Window functionality, have it render RegionViewAbstractions
+rebuild cross views
+Rebuild Bm
+- generic functions for controlling view (cortical areas, regions, preview boxes)
+- generic abstractions for cortical areas (just this for now), incvlude being able to pass in data, signal out events

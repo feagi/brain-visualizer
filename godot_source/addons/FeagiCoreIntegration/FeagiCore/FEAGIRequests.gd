@@ -25,6 +25,7 @@ func reload_genome() -> FeagiRequestOutput:
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
 	var region_request:APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_region_regionsMembers)
 	var templates_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalTypes)
+	var agent_list_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_list)
 	
 	# Get Cortical Area Data
 	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
@@ -79,6 +80,31 @@ func reload_genome() -> FeagiRequestOutput:
 	get_burst_delay()
 	get_supression_threshold()
 	get_skip_rate()
+	get_plasticity_queue_depth()
+	
+	# Get agent list
+	FeagiCore.feagi_local_cache.clear_configuration_jsons()
+	var agent_list_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_list_request)
+	await agent_list_worker.worker_done
+	var agent_list_data: FeagiRequestOutput = agent_list_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(agent_list_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI agent summary data!")
+		return agent_list_data
+	var agents: Array = agent_list_data.decode_response_as_array()
+	for agent in agents:
+		if str(agent).begins_with("bv_"):
+			continue
+		var agent_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_properties + "?agent_id=" + str(agent))
+		var agent_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_request)
+		await agent_worker.worker_done
+		var agent_data: FeagiRequestOutput = agent_worker.retrieve_output_and_close()
+		if _return_if_HTTP_failed_and_automatically_handle(agent_data):
+			push_error("unable to return agent data for %s!" % str(agent))
+			return agent_data
+		var agent_dict: Dictionary = agent_data.decode_response_as_dict()
+		agent_dict["capabilities"]["agent_ID"] = str(agent)
+		FeagiCore.feagi_local_cache.append_configuration_json(agent_dict["capabilities"])
+	
 	
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	
@@ -127,6 +153,52 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully updated delay between bursts to %d" % new_delay_between_bursts)
 	FeagiCore.feagi_retrieved_burst_rate(new_delay_between_bursts)
+	return FEAGI_response_data
+
+## Retrieves plasticity queue depth
+func get_plasticity_queue_depth() -> FeagiRequestOutput:
+	print("FEAGI REQUEST: Request getting plasticity queue depth")
+	
+	# Define Request
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_neuroplasticity_plasticityQueueDepth)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI plasticity queue depth!")
+		return FEAGI_response_data
+	var response: String = FEAGI_response_data.decode_response_as_string()
+	print("FEAGI REQUEST: Successfully retrieved plasticity queue depth as %d" % response.to_int())
+	
+	FeagiCore.feagi_local_cache.update_plasticity_queue_depth(response.to_int())
+	return FEAGI_response_data
+
+## Set the plasticity queue depth
+func update_plasticity_queue_depth(new_depth: int) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if new_depth <= 0:
+		push_error("FEAGI Requests: Cannot set plasticity queue depth to 0 or less!")
+		return FeagiRequestOutput.requirement_fail("IMPOSSIBLE_PLASTICITY_QUEUE_DEPTH")
+	print("FEAGI REQUEST: Request setting plasticity queue depth to to %s" % str(new_depth))
+	
+	# Define Request
+	var dict_to_send: Dictionary = {} # We are doing this the dumb way again
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_neuroplasticity_plasticityQueueDepth + "?queue_depth=" + str(new_depth), dict_to_send)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update FEAGI plasticity queue depth!")
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully updated plasticity queue depth to %d" % new_depth)
+	FeagiCore.feagi_local_cache.update_plasticity_queue_depth(new_depth)
 	return FEAGI_response_data
 
 ## Retrieves FEAGIs Skip Rate
@@ -211,6 +283,29 @@ func change_supression_threshold(new_skip_rate: int) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully updated supression threshold to %d" % new_skip_rate)
 	FeagiCore.feagi_recieved_supression_threshold(new_skip_rate)
+	return FEAGI_response_data
+
+func retrieve_vision_tuning_parameters() -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_input_vision)
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	return FEAGI_response_data
+
+func send_vision_tuning_parameters(parameters: Dictionary) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_input_vision, parameters)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	return FEAGI_response_data
 
 #endregion
@@ -643,6 +738,7 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to update cortical area of ID %s!" % editing_ID)
+		
 		return FEAGI_response_data
 	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
 	get_cortical_area(editing_ID)
@@ -727,6 +823,32 @@ func mass_delete_cortical_areas(deleting_areas: Array[AbstractCorticalArea]) -> 
 		FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting)
 	return FEAGI_response_data
 
+# Send Request to reset cortical areas
+func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var ID_list: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas)
+	var dict_to_send: Dictionary = {
+		"area_list": ID_list
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_reset, dict_to_send)
+
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to reset %d cortical areass!" % len(cortical_areas))
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully reset %s cortical areas" % len(cortical_areas))
+	return FEAGI_response_data
+	
+	
 
 ## Refresh templates for IPU/OPU generation. Note that this is technically already done on genome load
 func get_cortical_templates() -> FeagiRequestOutput:
@@ -1298,7 +1420,7 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 	print("FEAGI REQUEST: Successfully confirmed amalgamation %s, awaiting completion on FEAGIs side..." % amalgamation_ID)
 	await FeagiCore.feagi_local_cache.amalgamation_no_longer_pending
 	print("FEAGI REQUEST: Amalgamation %s addition confirmed by FEAGI! Reloading genome..." % amalgamation_ID)
-	FeagiCore.request_reload_genome()
+	FeagiCore.reload_genome_await()
 	return FEAGI_response_data
 	
 

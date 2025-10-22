@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://ci8uvawjvxfax"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="5_4kv8p"]
+[ext_resource type="Script" uid="uid://c4slalg53c3wd" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
+[ext_resource type="Script" uid="uid://df4suo645fuq3" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="5_4kv8p"]
 
 [node name="Vector3fField" type="BoxContainer"]
 offset_right = 279.0

@@ -93,6 +93,9 @@ func attempt_remove_item(lookup_key: Variant) -> void:
 		push_error("UI: Unable to remove nonexistant item!")
 	if lookup_key == null:
 		return
+	if !_lookup.has(lookup_key):
+		push_error("UI: UI tried removing invalid item from scroll when it didn't exist!")
+		return
 	if _lookup[lookup_key] != null:
 		_lookup[lookup_key].queue_free()
 	_lookup.erase(lookup_key)

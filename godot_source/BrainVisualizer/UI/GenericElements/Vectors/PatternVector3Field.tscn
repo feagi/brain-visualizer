@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cmxa7e3wifiy2"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/PatternVector3Field.gd" id="1_00dhb"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/PatternValInput.gd" id="3_3o6p7"]
+[ext_resource type="Script" uid="uid://vkhq6qfd71en" path="res://BrainVisualizer/UI/GenericElements/Vectors/PatternVector3Field.gd" id="1_00dhb"]
+[ext_resource type="Script" uid="uid://d3s7d4duvtyvw" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/PatternValInput.gd" id="3_3o6p7"]
 
 [node name="PatternVector3Field" type="BoxContainer"]
 offset_right = 193.0

@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://cjyix5p3tp3nr"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.gd" id="1_mfvot"]
+[ext_resource type="Script" uid="uid://d0yjh15eqo5tf" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.gd" id="1_mfvot"]
 [ext_resource type="Texture2D" uid="uid://c4aoq8epoq5dr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="2_vsao3"]
 [ext_resource type="Texture2D" uid="uid://c8m6gwbnoiq47" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png" id="3_t8xuf"]
 [ext_resource type="Texture2D" uid="uid://r1b6hy52k06p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png" id="4_fn6xo"]

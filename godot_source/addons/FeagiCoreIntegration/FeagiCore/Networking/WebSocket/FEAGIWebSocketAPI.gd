@@ -15,18 +15,24 @@ const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 
 signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_health: WEBSOCKET_HEALTH)
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
+signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
 signal feagi_requesting_reset()
-signal feagi_return_other(data: Variant)
+signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
+
 
 var socket_health: WEBSOCKET_HEALTH:
 	get: return _socket_health
 
-var _cache_websocket_data: PackedByteArray # outside to try to avoid reallocation penalties # NOTE: Godot doesnt seem to care and reallocates anyways lol
+#var _cache_websocket_data: PackedByteArray # outside to try to avoid reallocation penalties # NOTE: Godot doesnt seem to care and reallocates anyways lol
 var _socket_web_address: StringName = ""
 var _socket: WebSocketPeer
 var _socket_health: WEBSOCKET_HEALTH = WEBSOCKET_HEALTH.NO_CONNECTION
 var _retry_count: int = 0
 var _is_purposfully_disconnecting: bool = false
+var _temp_genome_ID: float = 0.0
+
+# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
+var _cortical_areas_to_visualize_clear: Array
 
 func _process(_delta: float):
 	_socket.poll()
@@ -43,17 +49,18 @@ func _process(_delta: float):
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
 			while _socket.get_available_packet_count():
-				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
-				if _cache_websocket_data.get_string_from_utf8() == SOCKET_GENOME_UPDATE_FLAG: # This isn't particuarly efficient. Too bad!
-					print("FEAGI Websocket: Recieved Request from FEAGI to reset genome!")
-					feagi_requesting_reset.emit()
-				elif _cache_websocket_data.get_string_from_utf8() == SOCKET_GENEOME_UPDATE_LATENCY: # TODO DELETE
-					return
-				else:
-					# assume its visualization data
-					var temp = str_to_var(_cache_websocket_data.get_string_from_ascii())
-					feagi_return_other.emit(temp)
+				var retrieved_ws_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1) # for some reason, using the enum instead of the number causes this break
+				
+				# BUTT UGLY HACK UNTIL WE HAVE A PROPER BURST SYSTEM RUNNGER
+				_cortical_areas_to_visualize_clear = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+				
+				_process_wrapped_byte_structure(retrieved_ws_data)
+				
+				for area in _cortical_areas_to_visualize_clear:
+					area.FEAGI_set_no_visualizeation_data()
+				
 
+				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
 			pass
@@ -61,7 +68,7 @@ func _process(_delta: float):
 			# Closed Connection to FEAGI
 			if  _socket.get_available_packet_count() > 0:
 				# There was some remenant data
-				_cache_websocket_data = _socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+				_socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 			#TODO FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii())) # Add to erase neurons
 			if _is_purposfully_disconnecting:
 				_is_purposfully_disconnecting = false
@@ -111,6 +118,62 @@ func websocket_send(data: Variant) -> void:
 		push_warning("FEAGI Websocket: Unable to send data to closed socket!")
 		return
 	_socket.send((data.to_ascii_buffer()).compress(1)) # for some reason, using the enum instead of the number causes this break
+
+func _process_wrapped_byte_structure(bytes: PackedByteArray) -> void:
+	## respond as per type
+	match(bytes[0]):
+		1: # JSON wrapper
+			bytes = bytes.slice(2)
+			var dict: Dictionary = str_to_var(bytes.get_string_from_ascii()) 
+			if !dict:
+				push_error("FEAGI: Unable to parse WS Data!")
+				return
+			if dict.has("status"):
+				var dict_status = dict["status"]
+				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+				if dict_status.has("genome_timestamp"):
+					if (!is_zero_approx(_temp_genome_ID - dict_status["genome_timestamp"])):
+						if !is_zero_approx(_temp_genome_ID):
+							print("reset")
+							feagi_requesting_reset.emit()
+						_temp_genome_ID = dict_status["genome_timestamp"]
+						
+					
+		7: # ActivatedNeuronLocation
+			# ignore version for now
+			push_warning("ActivatedNeuronLocation data type is deprecated!")
+		8: # SingleRawImage
+			# ignore version for now
+			feagi_return_visual_data.emit(bytes)
+		9: # multi structure
+			# ignore version for now
+			var number_contained_structures: int = bytes[2]
+			var structure_start_index: int = 0 # cached
+			var structure_length: int = 0 # cached
+			var header_offset: int = 3 # cached, lets us know where to read from the subheader
+			for structure_index in number_contained_structures:
+				structure_start_index = bytes.decode_u32(header_offset)
+				structure_length = bytes.decode_u32(header_offset + 4)
+				_process_wrapped_byte_structure(bytes.slice(structure_start_index, structure_start_index + structure_length))
+				header_offset += 8
+		10: # SVO neuron activations
+			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
+			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
+			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
+			
+			# TODO I dont like this
+			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+			if area:
+				area.FEAGI_set_SVO_visualization_data(SVO_data)
+				
+				# BUTT UGLY HACK
+				var index: int = _cortical_areas_to_visualize_clear.find(area)
+				if index != -1:
+					_cortical_areas_to_visualize_clear.remove_at(index)
+
+			
+		_: # Unknown
+			push_error("Unknown data type %d recieved!" % bytes[0])
 
 func _reconnect_websocket() -> void:
 	_socket = null # enforce dereference

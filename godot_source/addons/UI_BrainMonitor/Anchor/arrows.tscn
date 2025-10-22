@@ -1,0 +1,40 @@
+[gd_scene load_steps=3 format=3 uid="uid://dyl5fjm8h2sgx"]
+
+[ext_resource type="PackedScene" uid="uid://bvbm2rghh3usc" path="res://addons/UI_BrainMonitor/Anchor/Arrows.glb" id="1_frgji"]
+[ext_resource type="Material" uid="uid://byn5davl4pxcp" path="res://addons/UI_BrainMonitor/Anchor/ArrowMat.tres" id="2_tacqd"]
+
+[node name="Arrows" instance=ExtResource("1_frgji")]
+
+[node name="Cube_001" parent="." index="0"]
+surface_material_override/0 = ExtResource("2_tacqd")
+
+[node name="X" type="Label3D" parent="." index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 0)
+pixel_size = 0.003
+billboard = 1
+double_sided = false
+no_depth_test = true
+text = "X"
+font_size = 1024
+outline_size = 64
+
+[node name="Y" type="Label3D" parent="." index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 17, 0)
+pixel_size = 0.003
+billboard = 1
+double_sided = false
+no_depth_test = true
+text = "Y"
+font_size = 1024
+outline_size = 64
+
+[node name="Z" type="Label3D" parent="." index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -17)
+pixel_size = 0.003
+billboard = 1
+double_sided = false
+no_depth_test = true
+text = "Z
+"
+font_size = 1024
+outline_size = 64

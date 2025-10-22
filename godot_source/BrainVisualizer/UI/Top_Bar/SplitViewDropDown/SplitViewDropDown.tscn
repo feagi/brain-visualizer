@@ -1,7 +1,7 @@
 [gd_scene load_steps=19 format=3 uid="uid://0pa5al454wse"]
 
 [ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.tscn" id="1_4pks6"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.gd" id="1_henmy"]
+[ext_resource type="Script" uid="uid://c0iobaknwi0gs" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.gd" id="1_henmy"]
 [ext_resource type="Texture2D" uid="uid://cx15nyjmopvr2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png" id="3_667mu"]
 [ext_resource type="Texture2D" uid="uid://ded0f1rgx1uql" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_C.png" id="4_jrywm"]
 [ext_resource type="Texture2D" uid="uid://dvn5r1hlggxai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_H.png" id="5_uivfl"]

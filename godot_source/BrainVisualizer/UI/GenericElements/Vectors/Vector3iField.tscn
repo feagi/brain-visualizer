@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://boj8wsv76jqlm"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.gd" id="1_hv1wd"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_vm86m"]
+[ext_resource type="Script" uid="uid://du8p5suf7ac5f" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.gd" id="1_hv1wd"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_vm86m"]
 
 [node name="Vector3fField" type="BoxContainer"]
 offset_right = 227.0

@@ -92,7 +92,7 @@ func deselect_all() -> void:
 func remove_morphology(removing: BaseMorphology) -> void:
 	var index: int = _listed_morphologies.find(removing)
 	if index == -1:
-		push_warning("Attempted to remove cortical area that the drop down does not contain! Skipping!")
+		push_warning("Attempted to remove morphology that the drop down does not contain! Skipping!")
 		return
 	_listed_morphologies.remove_at(index)
 	remove_item(index)

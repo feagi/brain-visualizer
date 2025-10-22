@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://d0c25iltidw0f"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.gd" id="1_ettob"]
-[ext_resource type="Shader" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CB_Line_Shader.gdshader" id="2_y4prh"]
+[ext_resource type="Script" uid="uid://cjg8l6ixpek86" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.gd" id="1_ettob"]
+[ext_resource type="Shader" uid="uid://bxhvs8wxmddar" path="res://BrainVisualizer/UI/CircuitBuilder/CBLine/CB_Line_Shader.gdshader" id="2_y4prh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_o341r"]
 shader = ExtResource("2_y4prh")

@@ -8,8 +8,8 @@ const LINE_COLOR_TRANSPARENT: Color = Color(0,0,0,0)
 const LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY: float = 0.3
 
 var _button: Button
-var _source_port
-var _destination_port
+var _source_port # either [CBNodePort] or [CBLineEndpoint]
+var _destination_port # either [CBNodePort] or [CBLineEndpoint]
 var _link: ConnectionChainLink
 
 #TODO temporarily remove types here for dual system management
@@ -38,6 +38,9 @@ func setup(source_port, destination_port, link: ConnectionChainLink) -> void:
 
 
 func _update_line_endpoint_positions() -> void:
+	if !_source_port or !_destination_port:
+		push_error("FEAGI CB: Port Null Reference Detected")
+		return
 	var CB_source_pos: Vector2 = _source_port.get_center_port_CB_position()
 	var CB_destination_pos: Vector2 = _destination_port.get_center_port_CB_position()
 	position_offset = (CB_source_pos + CB_destination_pos) / 2.0

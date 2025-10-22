@@ -1,13 +1,14 @@
 extends VBoxContainer
 class_name WindowDeveloperOptionsPartCameraAnimations # Microsoft would be proud
 
-var _camera: BVCam
+var _camera: Camera3D
 var _stored_positions: Array[Vector3] = []
 var _stored_rotations: Array[Quaternion] = []
 var _stored_times: Array[float] = []
 
 func _ready() -> void:
-	_camera = BV.BM.get_node("BVCam")
+	#_camera = #BV.BM.get_node("BVCam")
+	pass
 
 func clear_stored_data() -> void:
 	var counter: IntInput = $HBoxContainer/num_animation_points

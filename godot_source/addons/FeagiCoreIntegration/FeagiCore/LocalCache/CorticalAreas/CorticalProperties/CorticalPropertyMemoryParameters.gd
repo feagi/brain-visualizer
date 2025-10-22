@@ -4,6 +4,7 @@ class_name CorticalPropertyMemoryParameters
 signal initial_neuron_lifespan_updated(val: int, this_cortical_area: MemoryCorticalArea)
 signal lifespan_growth_rate_updated(val: int, this_cortical_area: MemoryCorticalArea)
 signal longterm_memory_threshold_updated(val: int, this_cortical_area: MemoryCorticalArea)
+signal temporal_depth_updated(val: int, this_costical_area: MemoryCorticalArea)
 
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
@@ -14,6 +15,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		lifespan_growth_rate = data["neuron_lifespan_growth_rate"]
 	if "neuron_longterm_mem_threshold" in data.keys(): 
 		longterm_memory_threshold = data["neuron_longterm_mem_threshold"]
+	if "temporal_depth" in data.keys():
+		temporal_depth = data["temporal_depth"]
 	return
 
 var initial_neuron_lifespan: int:
@@ -34,9 +37,16 @@ var longterm_memory_threshold: int:
 	set(v):
 		_set_longterm_memory_threshold(v)
 
+var temporal_depth: int:
+	get:
+		return _temporal_depth
+	set(v):
+		_set_temporal_depth(v)
+
 var _initial_neuron_lifespan: int = 0
 var _lifespan_growth_rate: int = 0
 var _longterm_memory_threshold: int = 0
+var _temporal_depth: int = 0
 var _cortical_area: AbstractCorticalArea
 
 func _init(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -59,3 +69,9 @@ func _set_longterm_memory_threshold(new_val: int) -> void:
 		return
 	_longterm_memory_threshold = new_val
 	longterm_memory_threshold_updated.emit(new_val, _cortical_area)
+
+func _set_temporal_depth(new_val: int) -> void:
+	if new_val == _temporal_depth:
+		return
+	_temporal_depth = new_val
+	temporal_depth_updated.emit(new_val, _cortical_area)
