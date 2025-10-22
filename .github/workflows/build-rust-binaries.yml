@@ -63,13 +63,13 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd rust_extensions
-          python3 build.py
+          python3 build.py --release
 
       - name: Build Rust extensions (Windows)
         if: runner.os == 'Windows'
         run: |
           cd rust_extensions
-          python build.py
+          python build.py --release
 
       - name: Verify binaries were created
         shell: bash
@@ -120,10 +120,8 @@ jobs:
 
       - name: Copy binaries to addon directories
         run: |
-          # Create addon target directories
-          mkdir -p godot_source/addons/feagi_rust_deserializer/target/debug
+          # Create addon target directories (release only)
           mkdir -p godot_source/addons/feagi_rust_deserializer/target/release
-          mkdir -p godot_source/addons/feagi_shared_video/target/debug
           mkdir -p godot_source/addons/feagi_shared_video/target/release
           
           # Copy Linux binaries
@@ -149,27 +147,25 @@ jobs:
 
       - name: Verify all platform binaries are present
         run: |
-          echo "Verifying binaries for all platforms..."
+          echo "Verifying release binaries for all platforms..."
           
           # Check for feagi_rust_deserializer
           echo "Checking feagi_rust_deserializer..."
-          ls -lh godot_source/addons/feagi_rust_deserializer/target/debug/ || echo "Debug dir not found"
           ls -lh godot_source/addons/feagi_rust_deserializer/target/release/ || echo "Release dir not found"
           
           # Check for feagi_shared_video
           echo "Checking feagi_shared_video..."
-          ls -lh godot_source/addons/feagi_shared_video/target/debug/ || echo "Debug dir not found"
           ls -lh godot_source/addons/feagi_shared_video/target/release/ || echo "Release dir not found"
           
           # Count binaries
           BINARY_COUNT=$(find godot_source/addons -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.dll" \) | wc -l)
           echo "Total binaries found: $BINARY_COUNT"
           
-          if [ "$BINARY_COUNT" -lt 8 ]; then
-            echo "⚠️  Warning: Expected at least 8 binaries (2 extensions × 2 modes × 3 platforms minimum)"
+          if [ "$BINARY_COUNT" -lt 6 ]; then
+            echo "Warning: Expected at least 6 binaries (2 extensions × 3 platforms)"
             echo "Found: $BINARY_COUNT"
           else
-            echo "✅ Binaries verified successfully"
+            echo "Binaries verified successfully"
           fi
 
       - name: Check for changes
