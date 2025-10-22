@@ -34,7 +34,7 @@ def run_command(cmd, cwd=None):
     print(f"Running: {' '.join(cmd)}")
     result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ Command failed: {' '.join(cmd)}")
+        print(f"[ERROR] Command failed: {' '.join(cmd)}")
         print(f"stderr: {result.stderr}")
         sys.exit(1)
     return result
@@ -57,19 +57,19 @@ def build_rust_library(project_name, project_dir, godot_addon_dir):
     
     project_path = Path(project_dir)
     if not project_path.exists():
-        print(f"❌ Project directory not found: {project_path}")
+        print(f"[ERROR] Project directory not found: {project_path}")
         sys.exit(1)
     
     # Clean previous builds
-    print("🧹 Cleaning previous builds...")
+    print("[CLEAN] Cleaning previous builds...")
     run_command(["cargo", "clean"], cwd=project_path)
     
     # Build release
-    print("🔨 Building Rust library (release mode)...")
+    print("[BUILD] Building Rust library (release mode)...")
     run_command(["cargo", "build", "--release"], cwd=project_path)
     
     # Build debug
-    print("🔨 Building Rust library (debug mode)...")
+    print("[BUILD] Building Rust library (debug mode)...")
     run_command(["cargo", "build"], cwd=project_path)
     
     # Check if builds were successful
@@ -77,17 +77,17 @@ def build_rust_library(project_name, project_dir, godot_addon_dir):
     debug_lib = project_path / "target" / "debug" / lib_name
     
     if not release_lib.exists():
-        print(f"❌ Build failed - release library not found: {release_lib}")
+        print(f"[ERROR] Build failed - release library not found: {release_lib}")
         sys.exit(1)
     
     if not debug_lib.exists():
-        print(f"❌ Build failed - debug library not found: {debug_lib}")
+        print(f"[ERROR] Build failed - debug library not found: {debug_lib}")
         sys.exit(1)
     
-    print("✅ Build successful!")
+    print("[SUCCESS] Build successful!")
     
     # Copy files to Godot project
-    print("📁 Copying files to Godot project...")
+    print("[COPY] Copying files to Godot project...")
     addon_path = Path(godot_addon_dir)
     addon_path.mkdir(parents=True, exist_ok=True)
     
@@ -104,11 +104,11 @@ def build_rust_library(project_name, project_dir, godot_addon_dir):
     if old_lib.exists():
         old_lib.unlink()
     
-    print("✅ Files copied successfully!")
+    print("[SUCCESS] Files copied successfully!")
     
     # Display file sizes
     release_size = (addon_path / "target" / "release" / lib_name).stat().st_size
-    print(f"📊 Release library size: {release_size / (1024*1024):.2f} MB")
+    print(f"[INFO] Release library size: {release_size / (1024*1024):.2f} MB")
     
     return project_path, addon_path, lib_name
 
@@ -130,13 +130,13 @@ def build_universal_macos(project_path, addon_path, lib_name):
     )
     
     # Build release for both architectures
-    print("🔨 Building arm64 (release)...")
+    print("[BUILD] Building arm64 (release)...")
     run_command(
         ["cargo", "build", "--release", "--target", "aarch64-apple-darwin"],
         cwd=project_path
     )
     
-    print("🔨 Building x86_64 (release)...")
+    print("[BUILD] Building x86_64 (release)...")
     run_command(
         ["cargo", "build", "--release", "--target", "x86_64-apple-darwin"],
         cwd=project_path
@@ -152,13 +152,13 @@ def build_universal_macos(project_path, addon_path, lib_name):
     shutil.copy2(universal_release, addon_path / "target" / "release" / lib_name)
     
     # Build debug for both architectures
-    print("🔨 Building arm64 (debug)...")
+    print("[BUILD] Building arm64 (debug)...")
     run_command(
         ["cargo", "build", "--target", "aarch64-apple-darwin"],
         cwd=project_path
     )
     
-    print("🔨 Building x86_64 (debug)...")
+    print("[BUILD] Building x86_64 (debug)...")
     run_command(
         ["cargo", "build", "--target", "x86_64-apple-darwin"],
         cwd=project_path
@@ -173,7 +173,7 @@ def build_universal_macos(project_path, addon_path, lib_name):
     ])
     shutil.copy2(universal_debug, addon_path / "target" / "debug" / lib_name)
     
-    print("✅ Universal binaries installed.")
+    print("[SUCCESS] Universal binaries installed.")
 
 
 def main():
@@ -209,18 +209,18 @@ def main():
     
     # Final success message
     print_section("Build Complete!")
-    print("✅ All Rust extensions built successfully!")
-    print("💡 Restart Godot to load the new extensions.")
-    print("🧪 To test the integration, run the test_rust_deserializer.tscn scene in Godot.")
+    print("[SUCCESS] All Rust extensions built successfully!")
+    print("[TIP] Restart Godot to load the new extensions.")
+    print("[TEST] To test the integration, run the test_rust_deserializer.tscn scene in Godot.")
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n❌ Build interrupted by user")
+        print("\n\n[ERROR] Build interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n\n❌ Build failed with error: {e}")
+        print(f"\n\n[ERROR] Build failed with error: {e}")
         sys.exit(1)
 
