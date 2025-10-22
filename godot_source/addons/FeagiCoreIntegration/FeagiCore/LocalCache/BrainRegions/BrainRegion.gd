@@ -47,20 +47,20 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		ID,
 		dict["title"],
 		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
-		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
-		Vector3i(10,10,10), #TODO
+		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),  # ✅ Fixed: Load actual FEAGI coordinates
+		# Vector3i(10,10,10), #TODO  ← Removed hardcoded fallback
 	)
 	
 
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 	if A is AbstractCorticalArea:
-		return (A as AbstractCorticalArea).current_region
+		return (A as AbstractCorticalArea).current_parent_region
 	if A is BrainRegion:
 		if (A as BrainRegion).is_root_region():
 			push_error("CORE CACHE: Unable to get parent region of the root region!")
 			return null
-		return (A as BrainRegion).parent_region
+		return (A as BrainRegion).current_parent_region
 	push_error("CORE CACHE: Unable to get parent region of an object of unknown type!")
 	return null
 
@@ -154,7 +154,7 @@ func FEAGI_delete_this_region() -> void:
 	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	# This function should be called by [BrainRegionsCache], which will then free this object
 
-func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
+func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array, is_input: bool) -> void:
 	if len(JSON_arr) == 0:
 		return # No point if the arr is empty
 	var new_mappings: Array[PartialMappingSet] = PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self)
@@ -272,12 +272,13 @@ func is_subregion_recursive(region: BrainRegion) -> bool:
 
 ## Returns the path of this region, starting with the root region and ending with this region
 func get_path() -> Array[BrainRegion]:
-	var searching_region: BrainRegion = self
 	var path: Array[BrainRegion] = []
-	while !searching_region.is_root_region():
-		path.append(searching_region)
-		searching_region = searching_region.current_parent_region
-	path.append(searching_region)
+	var current: BrainRegion = self
+	while current != null:
+		path.append(current)
+		if current.is_root_region():
+			break
+		current = current.current_parent_region
 	path.reverse()
 	return path
 

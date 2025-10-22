@@ -1,0 +1,36 @@
+[package]
+name = "feagi_data_deserializer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Godot Rust bindings
+godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["experimental-wasm", "lazy-function-tables"] }
+
+# FEAGI data serialization library (published crates)
+feagi_data_serialization = "0.0.50-beta.49"
+feagi_data_structures = "0.0.50-beta.49"
+
+# Additional dependencies for data handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Parallel processing for high-performance neuron visualization (desktop only)
+# Note: Rayon doesn't work in WASM, so we use conditional compilation
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+rayon = "1.8"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+# Optimize for performance
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+# Faster compilation for development
+opt-level = 0
+debug = true

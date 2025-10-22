@@ -30,6 +30,7 @@ func setup_and_run_from_definition(call_header: PackedStringArray, request_defin
 	_request_definition = request_definition
 	timeout = request_definition.http_timeout
 	
+	
 	# Setup and run call
 	match(request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
@@ -101,7 +102,6 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	
 	# Unresponsive FEAGI 
 	if response_code == 0:
-		push_warning("FEAGI NETWORK HTTP: FEAGI did not respond %d times on endpoint: %s" % [_number_retries_done, _request_definition.full_address])
 		_number_retries_done += 1
 		if _number_retries_done >= _request_definition.number_of_retries_allowed:
 			push_error("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")

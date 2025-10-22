@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[node name="WindowViewBrainRegionItem" type="HBoxContainer"]
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "REGION"
+
+

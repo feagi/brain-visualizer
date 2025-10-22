@@ -8,8 +8,7 @@ class_name CircuitBuilder
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
-const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeRegionIO/CBNodeRegionIO.tscn") #WARNING DELETE ME
-const PREFAB_REGIONIO_NODE: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.tscn")
+const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.tscn")
 const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")#WARNING DELETE ME
 const PREFAB_ENDPOINT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn")
 const PREFAB_NODE_PORT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.tscn")
@@ -29,6 +28,7 @@ var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value i
 
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
+var _combo: BrainObjectsCombo = null
 
 func _ready():
 	_move_timer = $Timer
@@ -40,11 +40,17 @@ func _ready():
 	connection_request.connect(_on_connection_request)
 	node_selected.connect(_node_select)
 	node_deselected.connect(_node_deselect)
+	if has_node("BrainObjectsCombo"):
+		_combo = $BrainObjectsCombo
+		if _representing_region != null:
+			_combo.set_2d_context(self, _representing_region)
 
 
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
+	if _combo:
+		_combo.set_2d_context(self, _representing_region)
 	
 	for area: AbstractCorticalArea in _representing_region.contained_cortical_areas:
 		_CACHE_add_cortical_area(area)
@@ -185,7 +191,7 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	#var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_title, PREFAB_NODE_TERMINAL)
 	var source_endpoint: CBLineEndpoint = source_node.add_output_endpoint(PREFAB_ENDPOINT, CBLineEndpoint.PORT_STYLE.FULL)
 	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_title, PREFAB_NODE_TERMINAL)
-
+	
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
@@ -349,7 +355,7 @@ func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNo
 		return _subregion_nodes[(genome_object as BrainRegion).region_ID]
 
 func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase, y_offset_index: int) -> CBRegionIONode:
-	var IO_node: CBRegionIONode = PREFAB_REGIONIO_NODE.instantiate()
+	var IO_node: CBRegionIONode = PREFAB_NODE_REGIONIO.instantiate()
 	add_child(IO_node)
 	if is_region_input:
 		IO_node.position_offset = target_node.position_offset - CBRegionIONode.CONNECTED_NODE_OFFSET + Vector2(0, (y_offset_index * CBRegionIONode.CONNECTED_NODE_OFFSET.y))
@@ -363,4 +369,43 @@ func _toggle_draggability_based_on_focus() -> void:
 		if child is CBNodeConnectableBase:
 			(child as CBNodeConnectableBase).draggable = are_nodes_draggable
 			continue
+
+## Focus helpers used by BrainObjectsCombo
+func focus_on_region(region: BrainRegion) -> void:
+	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(region)
+	if node == null:
+		return
+	_center_on_graph_element(node)
+
+func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
+	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(area)
+	if node == null:
+		return
+	_center_on_graph_element(node)
+
+func _center_on_graph_element(element: GraphElement) -> void:
+	# Determine a target zoom to fit the node comfortably in the current viewport, then zoom out a bit
+	var viewport_px: Vector2 = size
+	var node_px: Vector2 = element.size + Vector2(64, 64) # padding margin
+	var fit_zoom_x: float = viewport_px.x / max(node_px.x, 1.0)
+	var fit_zoom_y: float = viewport_px.y / max(node_px.y, 1.0)
+	# Zoom out aggressively so the chosen node is clearly visible within split views
+	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.3 # zoom out 70%
+	# Clamp to GraphEdit zoom limits if available
+	var min_z: float = 0.2
+	var max_z: float = 2.0
+	if "min_zoom" in self:
+		min_z = self.min_zoom
+	if "max_zoom" in self:
+		max_z = self.max_zoom
+	target_zoom = clamp(target_zoom, min_z, max_z)
+	self.zoom = target_zoom
+
+	# Compute node center in content units (position_offset is content units; convert size from pixels to content)
+	var node_center_local: Vector2 = element.position_offset + (element.size / (2.0 * max(self.zoom, 0.0001)))
+
+	# Convert viewport pixels to content units based on zoom
+	var viewport_content_units: Vector2 = viewport_px / max(self.zoom, 0.0001)
+	# Center scroll so node center is in the middle of the visible area
+	scroll_offset = node_center_local - (viewport_content_units / 2.0)
 #endregion

@@ -26,7 +26,7 @@ var GET_corticalArea_corticalTypes: StringName = "/v1/cortical_area/cortical_typ
 var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"
 var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/mappings"
 var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"
-var GET_burstEngine_stimulationPeriod: StringName = "/v1/burst_engine/stimulation_period"
+var GET_burstEngine_simulationTimestep: StringName = "/v1/burst_engine/simulation_timestep"
 var GET_system_healthCheck: StringName = "/v1/system/health_check"
 var POST_insight_neurons_membranePotentialStatus: StringName = '/v1/insight/neurons/membrane_potential_status'
 var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuron/synaptic_potential_status'
@@ -39,20 +39,26 @@ var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/s
 var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
 var GET_agent_list: StringName = "/v1/agent/list"
 var GET_agent_properties: StringName = "/v1/agent/properties"
+var GET_agent_shared_mem: StringName = "/v1/agent/shared_mem"
 var GET_input_vision: StringName = "/v1/input/vision"
 
 # Post Requests
-var POST_feagi_burstEngine: StringName = "/v1/burst_engine/stimulation_period"
+var POST_feagi_burstEngine: StringName = "/v1/burst_engine/simulation_timestep"
 var POST_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_cortical_area"
+var POST_corticalArea_clone: StringName = "/v1/cortical_area/clone"
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"
 var POST_genome_append: StringName = "/v1/feagi/genome/append"
 var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
+var POST_region_clone: StringName = "/v1/region/clone"
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"
 var POST_monitoring_neuron_synapticPotential_set: StringName = "/v1/insight/neuron/synaptic_potential_set"
 var POST_region_region: StringName = "/v1/region/region"
 var POST_corticalArea_multi_corticalAreaProperties: StringName = "/v1/cortical_area/multi/cortical_area_properties"
 var POST_input_vision: StringName = "/v1/input/vision"
+var POST_agent_register: StringName = "/v1/agent/register"
+var POST_agent_heartbeat: StringName = "/v1/agent/heartbeat"
+var POST_agent_manualStimulation: StringName = "/v1/agent/manual_stimulation"
 
 # Put Requests
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"

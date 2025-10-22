@@ -13,9 +13,9 @@ func clear() -> void:
 
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
 	if cortical_area.cortical_type not in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
-		_mouse_context_label.text = cortical_area.friendly_name + "  " + str(neuron_coordinate)
+		_mouse_context_label.text = "Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate)
 		return
-	var text: String = cortical_area.friendly_name + " " + str(neuron_coordinate) + " "
+	var text: String = "Area - " + cortical_area.friendly_name + " " + str(neuron_coordinate) + " "
 	if cortical_area is IPUCorticalArea:
 		var device_index: int = floori((neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
@@ -46,3 +46,13 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			Vector3i(3,2,0): direction = " - Roll Right"
 		text += direction
 	_mouse_context_label.text = text
+
+## Show plate hover context (region name + plate kind)
+func show_plate_hover(region_name: String, plate_kind: String) -> void:
+	_mouse_context_label.text = "Circuit - " + region_name + " (" + plate_kind + ")"
+
+## Clear plate hover context (only if no cortical hover text is present)
+func clear_plate_hover() -> void:
+	# Optional: do not clear if cortical context is showing
+	# For now, we clear unconditionally when plate hover ends
+	_mouse_context_label.text = ""

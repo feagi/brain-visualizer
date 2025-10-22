@@ -24,7 +24,7 @@ func load_mappings(mappings: Array[SingleMappingDefinition], restrictions: Mappi
 	_defaults = defaults
 	for mapping in mappings:
 		import_single_mapping(mapping)
-	if restrictions.has_max_number_mappings():
+	if restrictions != null and restrictions.has_max_number_mappings():
 		_add_button.disabled = restrictions.max_number_mappings < len(mappings)
 
 func export_mappings() -> Array[SingleMappingDefinition]:
@@ -47,9 +47,9 @@ func _add_mapping_row() -> void:
 	var item: ScrollSectionGenericItem = _scroll.add_generic_item(row, null, "")
 	item.about_to_be_deleted.connect(_on_row_deletion)
 	row.load_settings(_restrictions, _defaults)
-	if _restrictions.has_max_number_mappings():
+	if _restrictions != null and _restrictions.has_max_number_mappings():
 		_add_button.disabled = _restrictions.max_number_mappings >= _scroll.get_item_count()
 
 func _on_row_deletion(item: ScrollSectionGenericItem) -> void:
-	if _restrictions.has_max_number_mappings():
+	if _restrictions != null and _restrictions.has_max_number_mappings():
 		_add_button.disabled = _restrictions.max_number_mappings < _scroll.get_item_count() - 1 # Subtract 1 since it is about to be 1 less

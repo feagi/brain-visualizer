@@ -8,10 +8,13 @@ var _selection: Array[GenomeObject]
 
 
 func setup(selection: Array[GenomeObject]) -> void:
+	print("🔍 QuickMenu: setup() called with %d objects" % selection.size())
 	_mode = GenomeObject.get_makeup_of_array(selection)
 	_selection = selection
+	print("🔍 QuickMenu: _selection assigned, size: %d, mode: %s" % [_selection.size(), _mode])
 	
 	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
+	var open_3d_tab_button: TextureButton = _window_internals.get_node('HBoxContainer/Open3DTab')
 	var quick_connect_button: TextureButton = _window_internals.get_node('HBoxContainer/QuickConnect')
 	var quick_connect_CA_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_CA_N")
 	var quick_connect_N_CA_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_CA")
@@ -25,7 +28,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	quick_connect_N_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.NEURON_TO_NEURONS))
 	
 	_setup_base_window(WINDOW_NAME)
-	if len(selection) == 0:
+	if selection.size() == 0:
 		push_error("BV UI: The quick menu was opened with 0 selected objects. This should never happen! Please note the steps to cause this error and open an issue! Closing the window...")
 		close_window()
 		return
@@ -37,12 +40,17 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
 			details_button.tooltip_text = "View Cortical Area Details"
 			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
 			move_to_region_button.tooltip_text = "Add to a region..."
 			clone_button.tooltip_text = "Clone Cortical Area..."
 			delete_button.tooltip_text = "Delete this Cortical Area..."
 			
+			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
+			if _selection.size() == 0:
+				push_error("BV UI: CRITICAL - _selection became empty during setup after passing initial check!")
+				return
 			var area: AbstractCorticalArea = (_selection[0] as AbstractCorticalArea)
 			_titlebar.title = area.friendly_name
 			if !area.user_can_delete_this_area:
@@ -53,7 +61,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
 			if !area.can_exist_in_subregion:
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Brain Region"
+				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Circuit"
 			if area is MemoryCorticalArea:
 				quick_connect_CA_N_button.visible = false
 				quick_connect_N_CA_button.visible = false
@@ -62,18 +70,24 @@ func setup(selection: Array[GenomeObject]) -> void:
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			quick_connect_button.visible = false
-			clone_button.visible = false
+			clone_button.visible = true
 			quick_connect_CA_N_button.visible = false
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
-			details_button.tooltip_text = "View Brain Region Details"
-			move_to_region_button.tooltip_text = "Add to a Brain Region..."
-			delete_button.tooltip_text = "Delete this Brain Region..."
+			details_button.tooltip_text = "View Circuit Details"
+			open_3d_tab_button.tooltip_text = "Open Circuit in 3D Tab"
+			move_to_region_button.tooltip_text = "Add to a Circuit..."
+			delete_button.tooltip_text = "Delete this Circuit..."
 			
+			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
+			if _selection.size() == 0:
+				push_error("BV UI: CRITICAL - _selection became empty during setup after passing initial check!")
+				return
 			var region: BrainRegion = (_selection[0] as BrainRegion)
 			_titlebar.title = region.friendly_name
 
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for multiple cortical areas
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			quick_connect_CA_N_button.visible = false
@@ -86,13 +100,14 @@ func setup(selection: Array[GenomeObject]) -> void:
 			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "One or more of the selected areas cannot be moved to a region"
+				move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a brain region."
 			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
 				delete_button.disabled = true
 				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
 				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for multiple brain regions
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
@@ -104,6 +119,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = "Selected multiple regions"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			open_3d_tab_button.visible = false  # Hide 3D tab button for mixed objects
 			quick_connect_button.visible = false
 			clone_button.visible = false
 			details_button.visible = false
@@ -131,6 +147,14 @@ func setup(selection: Array[GenomeObject]) -> void:
 
 
 func _button_details() -> void:
+	_debug_selection_state("_button_details start")
+	# 🚨 SAFETY CHECK: Ensure selection array is not empty
+	if _selection.size() == 0:
+		push_error("BV UI: QuickMenu _button_details called with empty _selection array! This indicates a selection state bug.")
+		BV.NOTIF.add_notification("No objects selected for details view!")
+		close_window()
+		return
+	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
@@ -138,34 +162,39 @@ func _button_details() -> void:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
+	_debug_selection_state("_button_details before close")
 	close_window()
 
 func _button_quick_connect() -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
 		BV.WM.spawn_quick_connect((_selection[0] as AbstractCorticalArea))
 	close_window()
 
 func _button_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE) -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.WM.spawn_quick_connect_neuron(mode)
 	else:
 		BV.WM.spawn_quick_connect_neuron(mode, _selection[0] as AbstractCorticalArea)
 	close_window()
 
 func _button_clone() -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
-		BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
+		match(_mode):
+			GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+				BV.WM.spawn_clone_cortical((_selection[0] as AbstractCorticalArea))
+			GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+				BV.WM.spawn_clone_region((_selection[0] as BrainRegion))
 	close_window()
 
 func _button_add_to_region() -> void:
-	if len(_selection) == 0:
+	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
 	else:
-		var parent_region: BrainRegion = _selection[0].current_parent_region # Whaever we selected, the parent reigon is the parent region of any element that selection
+		var parent_region: BrainRegion = _selection[0].current_parent_region # Whatever we selected, the parent region is the parent region of any element that selection
 		BV.WM.spawn_move_to_region(_selection, parent_region)
 	close_window()
 
@@ -173,5 +202,55 @@ func _button_delete() -> void:
 	BV.WM.spawn_confirm_deletion(_selection)
 	close_window()
 
+func _button_open_3d_tab() -> void:
+	_debug_selection_state("_button_open_3d_tab start")
+	# 🚨 SAFETY CHECK: Ensure selection array is not empty and contains a brain region
+	if _selection.size() == 0:
+		push_error("BV UI: QuickMenu _button_open_3d_tab called with empty _selection array!")
+		BV.NOTIF.add_notification("No brain region selected for 3D tab!")
+		close_window()
+		return
+		
+	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+		push_error("BV UI: QuickMenu _button_open_3d_tab called but selection is not a single brain region!")
+		BV.NOTIF.add_notification("3D tabs can only be created for single brain regions!")
+		close_window()
+		return
+	
+	var region: BrainRegion = _selection[0] as BrainRegion
+	if region == null:
+		push_error("BV UI: QuickMenu _button_open_3d_tab: Selected object is not a brain region!")
+		close_window()
+		return
+	
+	print("🧠 QuickMenu: Opening 3D tab for brain region: %s" % region.friendly_name)
+	print("  🔍 SELECTION ANALYSIS:")
+	print("    - Region ID: %s" % region.region_ID)
+	print("    - Is root region: %s" % region.is_root_region())
+	print("    - Parent: %s" % (region.current_parent_region.friendly_name if region.current_parent_region else "None"))
+	print("    - Contains %d cortical areas" % region.contained_cortical_areas.size())
+	print("    - Contains %d child regions" % region.contained_regions.size())
+	
+	# List cortical areas in selected region
+	print("  📋 CORTICAL AREAS IN SELECTED REGION:")
+	for i in region.contained_cortical_areas.size():
+		var area = region.contained_cortical_areas[i]
+		print("    %d. %s (parent: %s)" % [i+1, area.cortical_ID, area.current_parent_region.friendly_name if area.current_parent_region else "None"])
+	
+	BV.WM.spawn_3d_brain_monitor_tab(region)
+	_debug_selection_state("_button_open_3d_tab before close")
+	close_window()
+
 func _on_focus_lost() -> void:
 	close_window()
+
+# Debug function to check selection state
+func _debug_selection_state(context: String) -> void:
+	pass
+
+# Override close_window to add safety debugging
+func close_window() -> void:
+	_debug_selection_state("close_window")
+	if _selection.size() == 0:
+		pass
+	super.close_window()

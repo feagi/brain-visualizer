@@ -39,6 +39,23 @@ var _LTD_multiplier: float
 static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
 	return SingleMappingDefinition.new(morphology, DEFAULT_POSITIVE_SCALAR, DEFAULT_PSP_MULTIPLIER, DEFAULT_PLASTICITY)
 
+## Helper function to safely convert dimensions data that might be Array or Dictionary
+static func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector3i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 3D coordinates
+		if dict_data.has("x") and dict_data.has("y") and dict_data.has("z"):
+			return Vector3i(int(dict_data["x"]), int(dict_data["y"]), int(dict_data["z"]))
+		elif dict_data.has("width") and dict_data.has("height") and dict_data.has("depth"):
+			return Vector3i(int(dict_data["width"]), int(dict_data["height"]), int(dict_data["depth"]))
+		else:
+			push_error("SINGLE MAPPING DEFINITION: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector3i(1, 1, 1)  # Default fallback
+	else:
+		push_error("SINGLE MAPPING DEFINITION: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector3i(1, 1, 1)  # Default fallback
 
 ## Given the dictionary from FEAGI directly creates a [SingleMappingDefinition] object
 static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefinition:
@@ -46,7 +63,7 @@ static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefini
 		push_error("Unable to find morphology %s in cache when creating MappingProperty! Creating SingleMappingDefinition with null morphology!" % mapping_property["morphology_id"])
 		return SingleMappingDefinition.create_default_mapping(null)
 	var morphology_cached: BaseMorphology =  FeagiCore.feagi_local_cache.morphologies.available_morphologies[mapping_property["morphology_id"]]
-	var scalar_used: Vector3i = FEAGIUtils.array_to_vector3i(mapping_property["morphology_scalar"])
+	var scalar_used: Vector3i = _safe_convert_to_vector3i(mapping_property["morphology_scalar"], "morphology_scalar")
 	var psp_multiplier: float = mapping_property["postSynapticCurrent_multiplier"]
 	var plasticity: bool = mapping_property["plasticity_flag"]
 	if !plasticity:

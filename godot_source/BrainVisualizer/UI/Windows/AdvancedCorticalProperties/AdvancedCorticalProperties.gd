@@ -13,6 +13,9 @@ var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
 var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
 var _preview: UI_BrainMonitor_InteractivePreview
+var _aux_previews: Array[UI_BrainMonitor_InteractivePreview] = []
+var _aux_preview_to_bm: Dictionary = {}
+var _host_preview_bm: UI_BrainMonitor_3DScene = null
 
 
 func _ready():
@@ -62,7 +65,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_refresh_all_relevant()
 	
 	# Request the newest state from feagi, and dont continue until then
-	await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	# Only if FeagiCore is ready and network components are initialized
+	if FeagiCore and FeagiCore.requests and FeagiCore.can_interact_with_feagi() and FeagiCore.network and FeagiCore.network.http_API and FeagiCore.network.http_API.address_list:
+		await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+	else:
+		print("UI: Advanced Cortical Properties - Skipping FEAGI update request as network is not ready")
 	
 	# refresh all relevant sections again
 	_refresh_all_relevant()
@@ -73,6 +80,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 func close_window() -> void:
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
+	# Cleanup auxiliary previews
+	for aux in _aux_previews:
+		if aux != null:
+			aux.queue_free()
+	_aux_previews.clear()
 
 func _refresh_all_relevant() -> void:
 	_refresh_from_cache_summary() # all cortical areas have these
@@ -168,19 +180,81 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 		value = FEAGIUtils.vector3i_to_array(value)
 	elif value is Vector3:
 		value = FEAGIUtils.vector3_to_array(value)
+	elif key_name == "neuron_excitability":
+		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
+		value = float(value) / 100.0
+	elif key_name == "neuron_leak_coefficient":
+		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
+		value = float(value) / 100.0
+	elif key_name == "neuron_leak_variability":
+		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
+		value = float(value) / 100.0
 	_growing_cortical_update[send_button.name][key_name] = value
 	send_button.disabled = false
 
 func _send_update(send_button: Button) -> void:
+	# Check if FeagiCore and requests are available
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot send update - FeagiCore or requests not available")
+		return
+	
 	if send_button.name in _growing_cortical_update:
 		send_button.disabled = true
 		if len(_cortical_area_refs) > 1:
-			FeagiCore.requests.update_cortical_areas(_cortical_area_refs, _growing_cortical_update[send_button.name])
-		else:
-			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_cortical_area_refs[0].cortical_ID, _growing_cortical_update[send_button.name])
+			var area_names = []
+			for area in _cortical_area_refs:
+				area_names.append(area.cortical_ID)
+			var area_names_str = ", ".join(area_names)  # Join array elements with commas
+			var update_data = _growing_cortical_update[send_button.name]
+			print("UI: Attempting to update %d cortical areas %s with data: %s" % [len(_cortical_area_refs), area_names_str, update_data])
+			
+			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_areas(_cortical_area_refs, update_data)
 			if result.has_errored:
-				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", "FEAGI was unable to update this cortical area!"))
+				# Get detailed error information
+				var error_details = result.decode_response_as_generic_error_code()
+				var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+				
+				# Log detailed error information
+				push_error("UI: Failed to update cortical areas %s. %s" % [area_names_str, error_message])
+				print("UI: Update failed for cortical areas %s" % area_names_str)
+				print("UI: - Update data sent: %s" % update_data)
+				print("UI: - Error details: %s" % error_message)
+				print("UI: - Has timed out: %s" % result.has_timed_out)
+				print("UI: - Failed requirement: %s" % result.failed_requirement)
+				print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+				
+				# Show popup with more detailed error message
+				var detailed_popup_message = "FEAGI was unable to update cortical areas %s.\n\n%s\n\nCheck console for full details." % [area_names_str, error_message]
+				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 				close_window()
+			else:
+				print("UI: Successfully updated cortical areas %s" % area_names_str)
+		else:
+			var cortical_id = _cortical_area_refs[0].cortical_ID
+			var update_data = _growing_cortical_update[send_button.name]
+			print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, update_data])
+			
+			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, update_data)
+			if result.has_errored:
+				# Get detailed error information
+				var error_details = result.decode_response_as_generic_error_code()
+				var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+				
+				# Log detailed error information
+				push_error("UI: Failed to update cortical area '%s'. %s" % [cortical_id, error_message])
+				print("UI: Update failed for cortical area '%s'" % cortical_id)
+				print("UI: - Update data sent: %s" % update_data)
+				print("UI: - Error details: %s" % error_message)
+				print("UI: - Has timed out: %s" % result.has_timed_out)
+				print("UI: - Failed requirement: %s" % result.failed_requirement)
+				print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+				
+				# Show popup with more detailed error message
+				var detailed_popup_message = "FEAGI was unable to update cortical area '%s'.\n\n%s\n\nCheck console for full details." % [cortical_id, error_message]
+				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+				close_window()
+			else:
+				print("UI: Successfully updated cortical area '%s'" % cortical_id)
 		_growing_cortical_update[send_button.name] = {}
 		
 
@@ -225,13 +299,179 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 		collapsibles[i].is_open = expanded[i]
 
 func _setup_bm_prevew() -> void:
-	if _preview:
+	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
+	var preview_position = _get_preview_position_for_cortical_area()
+	
+	# Determine the cortical area context (if any)
+	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+	
+	# Host BM: the one that contains this area (child-of); receives both MOVE and RESIZE
+	var host_bm: UI_BrainMonitor_3DScene = null
+	if existing_area and existing_area.current_parent_region:
+		host_bm = BV.UI.get_brain_monitor_for_region(existing_area.current_parent_region)
+	if host_bm == null:
+		host_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
+	if host_bm == null:
+		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
 		return
-	_preview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false)
-	var moves: Array[Signal] = [_vector_position.user_updated_vector]
-	var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
-	var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-	_preview.connect_UI_signals(moves, resizes, closes)
+	
+	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
+	if _preview == null:
+		var moves: Array[Signal] = [_vector_position.user_updated_vector]
+		var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+		var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+		# Host uses area’s actual FEAGI LFF
+		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+		_preview.connect_UI_signals(moves, resizes, closes)
+		# Ensure main preview is cleared when window closes
+		_preview.tree_exiting.connect(func(): _preview = null)
+		_host_preview_bm = host_bm
+	else:
+		# If host changed (tab switch), relocate main preview
+		if _preview.get_parent() != host_bm._node_3D_root:
+			_preview.queue_free()
+			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			_preview.connect_UI_signals([_vector_position.user_updated_vector], [_vector_dimensions_spin.user_updated_vector], [close_window_requesed_no_arg, _button_summary_send.pressed])
+			_preview.tree_exiting.connect(func(): _preview = null)
+			_host_preview_bm = host_bm
+	
+	# Clear any stale aux mirrors before recreating
+	for aux in _aux_previews:
+		if aux != null:
+			aux.queue_free()
+	_aux_previews.clear()
+	_aux_preview_to_bm.clear()
+	
+	# Resize-only auxiliary previews: show on all visible 3D scenes as per rule
+	var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+	var resizes_only: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+	# Mirror to all visible brain monitors that would display this area (directly or as I/O), excluding host
+	var all_visible := BV.UI.get_all_visible_brain_monitors()
+	for bm in all_visible:
+		if bm == null or bm == host_bm:
+			continue
+		if existing_area == null or BV.UI._would_brain_monitor_accept_cortical_area(bm, existing_area):
+			var per_bm_position: Vector3i
+			if bm == BV.UI.temp_root_bm:
+				# Root/main: plate-aligned position
+				per_bm_position = _get_preview_position_for_cortical_area()
+			else:
+				# Region tab: actual FEAGI LFF
+				per_bm_position = _vector_position.current_vector
+			var mirror = bm.create_preview(per_bm_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			mirror.connect_UI_signals([], resizes_only, closes_only)
+			mirror.tree_exiting.connect(func(): _aux_previews.erase(mirror); _aux_preview_to_bm.erase(mirror))
+			_aux_previews.append(mirror)
+			_aux_preview_to_bm[mirror] = bm
+	
+	# CRITICAL: Also connect to resize signal to update preview position for I/O areas (keeps center aligned on plates)
+	if not _vector_dimensions_spin.user_updated_vector.is_connected(_update_preview_for_io_area_resize):
+		_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
+
+## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
+func _get_preview_position_for_cortical_area() -> Vector3i:
+	# Only works with single cortical area
+	if _cortical_area_refs.size() != 1:
+		return _vector_position.current_vector
+	
+	var cortical_area = _cortical_area_refs[0]
+	
+	# Check if this cortical area is I/O of any brain region with plates
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region == null:
+		return _vector_position.current_vector
+	
+	# Check all child regions to see if this area is their I/O
+	for child_region in root_region.contained_regions:
+		# Check if cortical area is in this region's partial mappings (I/O)
+		for partial_mapping in child_region.partial_mappings:
+			if partial_mapping.internal_target_cortical_area == cortical_area:
+				print("🔮 Cortical area %s is I/O of region %s - using plate position" % [cortical_area.cortical_ID, child_region.friendly_name])
+				
+				# Find the brain region 3D visualization to get plate coordinates
+				var brain_monitor = BV.UI.temp_root_bm
+				if brain_monitor == null:
+					push_warning("AdvancedCorticalProperties: No brain monitor available for I/O area plate position calculation")
+					return _vector_position.current_vector
+				
+				# Get the brain region 3D object (with robust ID matching)
+				var brain_region_3d = brain_monitor._brain_region_visualizations_by_ID.get(child_region.region_ID)
+				if brain_region_3d == null:
+					for existing_id in brain_monitor._brain_region_visualizations_by_ID.keys():
+						if str(existing_id) == str(child_region.region_ID):
+							brain_region_3d = brain_monitor._brain_region_visualizations_by_ID[existing_id]
+							break
+				if brain_region_3d == null:
+					print("🔮 Brain region 3D not found for %s - using API coordinates" % child_region.friendly_name)
+					return _vector_position.current_vector
+				
+				# Generate I/O coordinates to get the plate position
+				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
+				# Search inputs, then outputs, then conflicts to handle conflict-plate areas
+				var search_sets = [io_coords.inputs, io_coords.outputs, io_coords.conflicts]
+				for set_arr in search_sets:
+					for area_data in set_arr:
+						if area_data.area_id == cortical_area.cortical_ID:
+							print("🔮 Found plate coordinates (CENTER FEAGI) for %s: %s" % [cortical_area.cortical_ID, area_data.new_coordinates])
+							# Convert center FEAGI coords to lower-left-front FEAGI (renderer expects LFF)
+							var dims: Vector3i = _vector_dimensions_spin.current_vector
+							var center: Vector3i = Vector3i(area_data.new_coordinates)
+							var lff: Vector3i = Vector3i(center.x - dims.x / 2, center.y - dims.y / 2, center.z - dims.z / 2)
+							return lff
+	
+	# Not an I/O area, use regular API coordinates
+	print("🔮 Using API coordinates for non-I/O area %s" % cortical_area.cortical_ID)
+	return _vector_position.current_vector
+
+# Helper: compute plate LFF coords for a given BM and area (unused path)
+func _compute_plate_lff_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCorticalArea) -> Vector3i:
+	if bm == null or area == null:
+		return _vector_position.current_vector
+	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region == null:
+		return _vector_position.current_vector
+	for child_region in root_region.contained_regions:
+		for partial_mapping in child_region.partial_mappings:
+			if partial_mapping.internal_target_cortical_area == area:
+				var brain_region_3d = bm._brain_region_visualizations_by_ID.get(child_region.region_ID)
+				if brain_region_3d == null:
+					for existing_id in bm._brain_region_visualizations_by_ID.keys():
+						if str(existing_id) == str(child_region.region_ID):
+							brain_region_3d = bm._brain_region_visualizations_by_ID[existing_id]
+							break
+				if brain_region_3d == null:
+					return _vector_position.current_vector
+				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
+				var search_sets = [io_coords.inputs, io_coords.outputs, io_coords.conflicts]
+				for set_arr in search_sets:
+					for area_data in set_arr:
+						if area_data.area_id == area.cortical_ID:
+							var dims: Vector3i = _vector_dimensions_spin.current_vector
+							var center: Vector3i = Vector3i(area_data.new_coordinates)
+							return Vector3i(center.x - dims.x / 2, center.y - dims.y / 2, center.z - dims.z / 2)
+	return _vector_position.current_vector
+
+## Handles dimension changes for I/O area previews - recalculates plate position since dimensions affect positioning
+func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
+	if _preview == null:
+		return
+	
+	# For I/O areas, when dimensions change, the plate position might change too
+	# Recalculate the preview position to ensure it stays on the plate
+	var updated_plate_pos = _get_preview_position_for_cortical_area()
+	# Host/tab preview must stay at the area's actual FEAGI LFF position
+	_preview.set_new_position(_vector_position.current_vector)
+	print("🔮 Updated I/O area preview position after dimension change: %s" % updated_plate_pos)
+	# Apply per-BM updated positions to auxiliary previews
+	for aux in _aux_previews:
+		if aux != null:
+			var bm_for_aux: UI_BrainMonitor_3DScene = _aux_preview_to_bm.get(aux)
+			if bm_for_aux == BV.UI.temp_root_bm:
+				# Root/main: plate position
+				aux.set_new_position(updated_plate_pos)
+			else:
+				# Region tab: area’s actual FEAGI LFF coordinate (no plate alignment)
+				aux.set_new_position(_vector_position.current_vector)
 
 
 
@@ -333,7 +573,14 @@ func _enable_3D_preview(): #NOTE only currently works with single
 		var move_signals: Array[Signal] = [_vector_position.user_updated_vector]
 		var resize_signals: Array[Signal] = [_vector_dimensions_spin.user_updated_vector,  _vector_dimensions_nonspin.user_updated_vector]
 		var preview_close_signals: Array[Signal] = [_button_summary_send.pressed, tree_exiting]
-		var preview: UI_BrainMonitor_InteractivePreview = BV.UI.temp_root_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false) # show voxels?
+		# Use the brain monitor that is currently visualizing this cortical area (important for tabs!)
+		var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+		var active_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
+		if active_bm == null:
+			push_error("AdvancedCorticalProperties: No brain monitor available for 3D preview!")
+			return
+		var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
+		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area)
 		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 		
 
@@ -463,6 +710,11 @@ func _refresh_from_cache_monitoring() -> void:
 
 
 func _montoring_update_button_pressed() -> void:
+	# Check if FeagiCore and requests are available
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot send monitoring update - FeagiCore or requests not available")
+		return
+	
 	#TODO this only works for single areas, improve
 	FeagiCore.requests.toggle_membrane_monitoring(_cortical_area_refs, membrane_toggle.button_pressed)
 	FeagiCore.requests.toggle_synaptic_monitoring(_cortical_area_refs, post_synaptic_toggle.button_pressed)
@@ -512,7 +764,7 @@ func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
 		false
 	)
-	var delete_request: Callable = FeagiCore.requests.delete_mappings_between_corticals.bind(area, _cortical_area_refs[0])
+	var delete_request: Callable = _safe_delete_afferent_mapping.bind(area, _cortical_area_refs[0])
 	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
 		"Delete these mappings?",
 		"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
@@ -531,7 +783,7 @@ func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
 		false
 	)
-	var delete_request: Callable = FeagiCore.requests.delete_mappings_between_corticals.bind(_cortical_area_refs[0], area)
+	var delete_request: Callable = _safe_delete_efferent_mapping.bind(_cortical_area_refs[0], area)
 	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
 		"Delete these mappings?",
 		"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
@@ -574,8 +826,29 @@ func _user_pressed_delete_button() -> void:
 	close_window()
 
 func _user_pressed_reset_button() -> void:
+	# Check if FeagiCore and requests are available
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot reset cortical areas - FeagiCore or requests not available")
+		return
+	
 	FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
 	BV.NOTIF.add_notification("Reseting cortical areas...")
 	close_window()
+
+#endregion
+
+#region Safe FEAGI Request Wrappers
+
+func _safe_delete_afferent_mapping(source_area: AbstractCorticalArea, dest_area: AbstractCorticalArea) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot delete afferent mapping - FeagiCore or requests not available")
+		return
+	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+
+func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area: AbstractCorticalArea) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot delete efferent mapping - FeagiCore or requests not available")
+		return
+	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
 
 #endregion

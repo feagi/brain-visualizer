@@ -30,7 +30,7 @@ var _target_ID: StringName
 var _target_type: TARGET_TYPE
 
 func _init(name_: StringName, suggested_mappings: Array[MappingProperty], 
-	target_ID_str: StringName, target_object_type: TARGET_TYPE,  mapping_direction: DIRECTION):
+	target_ID_str: StringName, target_object_type: TARGET_TYPE, mapping_direction: DIRECTION):
 	
 	_name = name_
 	_mapping_propertys = suggested_mappings

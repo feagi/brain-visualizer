@@ -1,0 +1,16 @@
+[package]
+name = "feagi_shared_video"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Godot GDExtension for reading RGB frames from a shared memory ring buffer"
+repository = "https://github.com/feagi/FEAGI-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["experimental-wasm", "lazy-function-tables"] }
+memmap2 = "0.9"
+
+

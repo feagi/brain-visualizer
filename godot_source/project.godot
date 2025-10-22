@@ -13,8 +13,10 @@ config_version=5
 config/name="Brain-Visualizer"
 config/description="User UI for FEAGI"
 run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+wasm_dir="wasm/"
+feagi/root_region_id="root"
 
 [autoload]
 
@@ -36,7 +38,7 @@ export/convert_text_resources_to_binary=false
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg")
+enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg", "res://addons/feagi_export_filter/plugin.cfg")
 
 [file_customization]
 
@@ -114,6 +116,7 @@ pointing/emulate_mouse_from_touch=false
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 limits/global_shader_variables/buffer_size=16384
 limits/spatial_indexer/threaded_cull_minimum_instances=65536
 

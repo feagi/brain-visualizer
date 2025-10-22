@@ -102,17 +102,3 @@ func get_mappings_from_source_cortical_area(source: AbstractCorticalArea):
 
 func get_mappings_toward_destination_cortical_area(destination: AbstractCorticalArea):
 	pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-

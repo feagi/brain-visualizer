@@ -17,75 +17,200 @@ title = "View Previews"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="SHMStatus" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "SHM: idle"
+
+[node name="SHMControls" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
-text = "Streaming Resolution: "
+text = "Agent:"
 
-[node name="resolution" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/SHMControls"]
 layout_mode = 2
-text = "0 X 0 (Nothing Playing)"
+disabled = false
+tooltip_text = "Select an agent with a video stream"
 
-[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-visible = false
+[node name="SplitViewContainer" type="HSplitContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 0
+
+[node name="RawVideoPanel" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RawHeader" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel"]
+layout_mode = 2
 theme_type_variation = &"NotificationSystemNotification"
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer"]
+[node name="RawHeaderMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader"]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="RawHeaderInfo" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader/RawHeaderMargin"]
+layout_mode = 2
+
+[node name="RawLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader/RawHeaderMargin/RawHeaderInfo"]
+layout_mode = 2
+text = "Raw Video"
+theme_override_font_sizes/font_size = 12
+
+[node name="RawSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader/RawHeaderMargin/RawHeaderInfo"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+
+[node name="RawResolution" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader/RawHeaderMargin/RawHeaderInfo"]
+layout_mode = 2
+text = "--x--"
+theme_override_font_sizes/font_size = 11
+
+[node name="RawAspect" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader/RawHeaderMargin/RawHeaderInfo"]
+layout_mode = 2
+text = "(--:--)"
+theme_override_font_sizes/font_size = 11
+
+[node name="RawFPS" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawHeader/RawHeaderMargin/RawHeaderInfo"]
+layout_mode = 2
+text = "-- FPS"
+theme_override_font_sizes/font_size = 11
+
+[node name="RawScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 0
+
+[node name="RawViewport" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"NotificationSystemNotification"
+
+[node name="RawMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawScroll/RawViewport"]
+layout_mode = 2
 theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/PanelContainer/MarginContainer"]
+[node name="RawTextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawScroll/RawViewport/RawMargin"]
 custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RawPlaceholder" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/RawVideoPanel/RawScroll/RawViewport/RawMargin"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+text = "Waiting for raw video stream..."
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="sizes" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-visible = false
+[node name="FeagiVideoPanel" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="FeagiHeader" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel"]
+layout_mode = 2
+theme_type_variation = &"NotificationSystemNotification"
+
+[node name="FeagiHeaderMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="FeagiHeaderInfo" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader/FeagiHeaderMargin"]
 layout_mode = 2
 
-[node name="1x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
-custom_minimum_size = Vector2(64, 0)
+[node name="FeagiLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo"]
 layout_mode = 2
-text = "1X"
+text = "FEAGI Preview"
+theme_override_font_sizes/font_size = 12
 
-[node name="2x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
-custom_minimum_size = Vector2(64, 0)
+[node name="FeagiSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo"]
+custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
-text = "2X"
 
-[node name="4x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
-custom_minimum_size = Vector2(64, 0)
+[node name="FeagiResolution" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo"]
 layout_mode = 2
-text = "4X"
+text = "--x--"
+theme_override_font_sizes/font_size = 11
 
-[node name="8x" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/sizes"]
-custom_minimum_size = Vector2(64, 0)
+[node name="FeagiAspect" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo"]
 layout_mode = 2
-text = "8X"
+text = "(--:--)"
+theme_override_font_sizes/font_size = 11
 
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/1x" to="." method="_scale_button_pressed" binds= [1]]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/2x" to="." method="_scale_button_pressed" binds= [2]]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/4x" to="." method="_scale_button_pressed" binds= [4]]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/sizes/8x" to="." method="_scale_button_pressed" binds= [8]]
+[node name="FeagiFPS" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiHeader/FeagiHeaderMargin/FeagiHeaderInfo"]
+layout_mode = 2
+text = "-- FPS"
+theme_override_font_sizes/font_size = 11
+
+[node name="FeagiScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 0
+
+[node name="FeagiViewport" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"NotificationSystemNotification"
+
+[node name="FeagiMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiScroll/FeagiViewport"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="FeagiTextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiScroll/FeagiViewport/FeagiMargin"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FeagiPlaceholder" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SplitViewContainer/FeagiVideoPanel/FeagiScroll/FeagiViewport/FeagiMargin"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "Waiting for FEAGI preview stream..."
+horizontal_alignment = 1
+vertical_alignment = 1

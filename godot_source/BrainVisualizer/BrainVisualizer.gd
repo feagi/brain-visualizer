@@ -31,15 +31,19 @@ func _on_genome_reloading() -> void:
 	_UI_manager.FEAGI_about_to_reset_genome()
 
 func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
+	print("BRAINVISUALIZER: [3D_SCENE_DEBUG] Received genome state change: ", FeagiCore.GENOME_LOAD_STATE.keys()[prev_state], " -> ", FeagiCore.GENOME_LOAD_STATE.keys()[current_state])
+	
 	match(current_state):
 		FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 			# Connected and ready to go
+			print("BRAINVISUALIZER: [3D_SCENE_DEBUG] ✅ GENOME_READY received - calling UI manager to initialize 3D scene")
 			_UI_manager.FEAGI_confirmed_genome()
 			if !FeagiCore.about_to_reload_genome.is_connected(_on_genome_reloading):
 				FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 		_:
 			if prev_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 				# had genome but now dont
+				print("BRAINVISUALIZER: [3D_SCENE_DEBUG] ⚠️ Lost genome readiness - calling UI manager to disable 3D scene")
 				_UI_manager.FEAGI_no_genome()
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:

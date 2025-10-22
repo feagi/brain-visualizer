@@ -36,7 +36,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		cortical_IDs.assign(region_summary_data[parent_region_ID]["areas"])
 		for cortical_ID in cortical_IDs:
 			if cortical_ID in cortical_area_mapping.keys():
-				push_error("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s! Something is wrong with the genome! Keeping the original region!" % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
+				push_warning("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s. Keeping the original region." % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
 				continue
 			cortical_area_mapping[cortical_ID] = parent_region_ID
 	
@@ -46,7 +46,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 
 func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:
 	var region_dict: Dictionary
-	var arr_IO: Array[Dictionary]
+	var arr_IO: Array  # Can be Array[String] or Array[Dictionary]
 	var region: BrainRegion
 	for region_ID in region_summary_data:
 		region_dict = region_summary_data[region_ID]
@@ -68,10 +68,9 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, false)
 			
 
-### Clears all regions from the cache
-#func FEAGI_clear_all_regions() -> void:
-#	for region_ID: StringName in _available_brain_regions.keys():
-#		FEAGI_remove_region_and_internals(region_ID)
+## Clears all regions from the cache - used during full genome reload
+func FEAGI_clear_all_regions() -> void:
+	_available_brain_regions.clear()
 
 func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []) -> void:
 	if region_ID in _available_brain_regions.keys():
@@ -82,6 +81,10 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 	_available_brain_regions[region_ID] = region
 	for object in contained_objects:
 		object.FEAGI_change_parent_brain_region(region)
+	# NOTE: region_added signal will be emitted after all cache data is loaded (called from FEAGIRequests)
+
+## Emits the region_added signal for a specific region (called after all cache data is loaded)
+func emit_region_added_signal(region: BrainRegion) -> void:
 	region_added.emit(region)
 
 func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
@@ -127,17 +130,25 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 ## Get information about the cache state
 #region Queries
 
+func _get_configured_root_id() -> StringName:
+	var rid = ProjectSettings.get_setting("feagi/root_region_id")
+	if rid == null or String(rid) == "":
+		return BrainRegion.ROOT_REGION_ID
+	return StringName(String(rid))
+
 ## Returns True if the root region is in the cache
 func is_root_available() -> bool:
-	return BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()
+	var root_id: StringName = _get_configured_root_id()
+	return root_id in _available_brain_regions.keys()
 
 
 ## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
 func get_root_region() -> BrainRegion:
-	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
+	var root_id: StringName = _get_configured_root_id()
+	if !(root_id in _available_brain_regions.keys()):
 		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
 		return null
-	return _available_brain_regions[BrainRegion.ROOT_REGION_ID]
+	return _available_brain_regions[root_id]
 
 ## Gets the path of regions that holds the common demoninator path between 2 regions
 ## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
