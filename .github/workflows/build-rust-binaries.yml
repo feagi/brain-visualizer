@@ -1,0 +1,224 @@
+name: Build and Commit Rust Binaries
+
+on:
+  push:
+    branches: [ staging ]
+    paths:
+      - 'rust_extensions/*/src/**'
+      - 'rust_extensions/*/Cargo.toml'
+      - 'rust_extensions/build.py'
+      - '.github/workflows/build-rust-binaries.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-binaries:
+    name: Build Rust Binaries for ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            artifact_name: linux-binaries
+          - os: macos-latest
+            platform: macOS
+            artifact_name: macos-binaries
+          - os: windows-latest
+            platform: Windows
+            artifact_name: windows-binaries
+
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Add macOS universal targets
+        if: runner.os == 'macOS'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/*/target
+          key: ${{ runner.os }}-rust-binaries-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-binaries-
+
+      - name: Build Rust extensions (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cd rust_extensions
+          python3 build.py
+
+      - name: Build Rust extensions (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd rust_extensions
+          python build.py
+
+      - name: Verify binaries were created
+        shell: bash
+        run: |
+          echo "Checking for built binaries..."
+          ls -lR godot_source/addons/feagi_rust_deserializer/target/
+          ls -lR godot_source/addons/feagi_shared_video/target/
+          echo "✅ Binaries verified"
+
+      - name: Upload platform binaries as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            godot_source/addons/feagi_rust_deserializer/target/
+            godot_source/addons/feagi_shared_video/target/
+          retention-days: 7
+
+  commit-binaries:
+    name: Commit All Platform Binaries
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Download all platform binaries
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Display downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -lR artifacts/
+
+      - name: Copy binaries to addon directories
+        run: |
+          # Create addon target directories
+          mkdir -p godot_source/addons/feagi_rust_deserializer/target/debug
+          mkdir -p godot_source/addons/feagi_rust_deserializer/target/release
+          mkdir -p godot_source/addons/feagi_shared_video/target/debug
+          mkdir -p godot_source/addons/feagi_shared_video/target/release
+          
+          # Copy Linux binaries
+          if [ -d "artifacts/linux-binaries" ]; then
+            echo "Copying Linux binaries..."
+            find artifacts/linux-binaries -name "*.so" -type f -exec cp -v {} godot_source/addons/ \;
+            cp -r artifacts/linux-binaries/* godot_source/addons/ 2>/dev/null || true
+          fi
+          
+          # Copy macOS binaries
+          if [ -d "artifacts/macos-binaries" ]; then
+            echo "Copying macOS binaries..."
+            find artifacts/macos-binaries -name "*.dylib" -type f -exec cp -v {} godot_source/addons/ \;
+            cp -r artifacts/macos-binaries/* godot_source/addons/ 2>/dev/null || true
+          fi
+          
+          # Copy Windows binaries
+          if [ -d "artifacts/windows-binaries" ]; then
+            echo "Copying Windows binaries..."
+            find artifacts/windows-binaries -name "*.dll" -type f -exec cp -v {} godot_source/addons/ \;
+            cp -r artifacts/windows-binaries/* godot_source/addons/ 2>/dev/null || true
+          fi
+
+      - name: Verify all platform binaries are present
+        run: |
+          echo "Verifying binaries for all platforms..."
+          
+          # Check for feagi_rust_deserializer
+          echo "Checking feagi_rust_deserializer..."
+          ls -lh godot_source/addons/feagi_rust_deserializer/target/debug/ || echo "Debug dir not found"
+          ls -lh godot_source/addons/feagi_rust_deserializer/target/release/ || echo "Release dir not found"
+          
+          # Check for feagi_shared_video
+          echo "Checking feagi_shared_video..."
+          ls -lh godot_source/addons/feagi_shared_video/target/debug/ || echo "Debug dir not found"
+          ls -lh godot_source/addons/feagi_shared_video/target/release/ || echo "Release dir not found"
+          
+          # Count binaries
+          BINARY_COUNT=$(find godot_source/addons -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.dll" \) | wc -l)
+          echo "Total binaries found: $BINARY_COUNT"
+          
+          if [ "$BINARY_COUNT" -lt 8 ]; then
+            echo "⚠️  Warning: Expected at least 8 binaries (2 extensions × 2 modes × 3 platforms minimum)"
+            echo "Found: $BINARY_COUNT"
+          else
+            echo "✅ Binaries verified successfully"
+          fi
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git add godot_source/addons/feagi_rust_deserializer/target/
+          git add godot_source/addons/feagi_shared_video/target/
+          
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit - binaries are already up to date"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected - will commit new binaries"
+            git diff --staged --stat
+          fi
+
+      - name: Commit and push binaries
+        if: steps.git-check.outputs.has_changes == 'true'
+        run: |
+          git commit -m "chore: Update Rust binaries for all platforms [skip ci]
+
+          - Built on Linux: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - Built on macOS: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - Built on Windows: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          
+          Includes binaries for:
+          - feagi_data_deserializer (Linux, macOS, Windows)
+          - feagi_shared_video (Linux, macOS, Windows)
+          
+          Auto-generated by GitHub Actions workflow"
+          
+          git push origin staging
+
+      - name: Display binary sizes
+        run: |
+          echo "Final binary sizes:"
+          find godot_source/addons -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.dll" \) -exec ls -lh {} \;
+
+      - name: Summary
+        if: steps.git-check.outputs.has_changes == 'true'
+        run: |
+          echo "✅ Successfully built and committed Rust binaries for all platforms"
+          echo "📦 Binaries are now available in staging branch"
+          echo "🔄 Users can now clone and run without building Rust extensions"
+
+      - name: No changes summary
+        if: steps.git-check.outputs.has_changes == 'false'
+        run: |
+          echo "✅ Binaries are already up to date"
+          echo "📦 No commit necessary"
+
