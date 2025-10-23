@@ -5,31 +5,10 @@ reloadable = false
 
 [libraries]
 macos.debug = "target/debug/libfeagi_shared_video.dylib"
-macos.release = "target/debug/libfeagi_shared_video.dylib"
-
-[configuration]
-entry_symbol = "gdext_rust_init"
-compatibility_minimum = 4.1
-reloadable = false
-
-[libraries]
-macos.debug = "target/debug/libfeagi_shared_video.dylib"
 macos.release = "target/release/libfeagi_shared_video.dylib"
-windows.debug.x86_32 = "target/i686-pc-windows-msvc/debug/feagi_shared_video.dll"
-windows.debug.x86_64 = "target/x86_64-pc-windows-msvc/debug/feagi_shared_video.dll"
-windows.release.x86_32 = "target/i686-pc-windows-msvc/release/feagi_shared_video.dll"
-windows.release.x86_64 = "target/x86_64-pc-windows-msvc/release/feagi_shared_video.dll"
-linux.debug.x86_64 = "target/x86_64-unknown-linux-gnu/debug/libfeagi_shared_video.so"
-linux.release.x86_64 = "target/x86_64-unknown-linux-gnu/release/libfeagi_shared_video.so"
-linux.debug.arm64 = "target/aarch64-unknown-linux-gnu/debug/libfeagi_shared_video.so"
-linux.release.arm64 = "target/aarch64-unknown-linux-gnu/release/libfeagi_shared_video.so"
-linux.debug.rv64 = "target/riscv64gc-unknown-linux-gnu/debug/libfeagi_shared_video.so"
-linux.release.rv64 = "target/riscv64gc-unknown-linux-gnu/release/libfeagi_shared_video.so"
-android.debug.x86_64 = "target/x86_64-linux-android/debug/libfeagi_shared_video.so"
-android.release.x86_64 = "target/x86_64-linux-android/release/libfeagi_shared_video.so"
-android.debug.arm64 = "target/aarch64-linux-android/debug/libfeagi_shared_video.so"
-android.release.arm64 = "target/aarch64-linux-android/release/libfeagi_shared_video.so"
-web.debug.wasm32 = "target/wasm32-unknown-emscripten/debug/feagi_shared_video.wasm"
-web.release.wasm32 = "target/wasm32-unknown-emscripten/release/feagi_shared_video.wasm"
+windows.debug.x86_64 = "target/debug/feagi_shared_video.dll"
+windows.release.x86_64 = "target/release/feagi_shared_video.dll"
+linux.debug.x86_64 = "target/debug/libfeagi_shared_video.so"
+linux.release.x86_64 = "target/release/libfeagi_shared_video.so"
 
 
