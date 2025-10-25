@@ -241,8 +241,9 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
 	_friendly_name_label.modulate = Color.WHITE
 	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_friendly_name_label.double_sided = false  # Only visible from front
+	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
+	_friendly_name_label.no_depth_test = false  # Respect depth for proper occlusion
 	_friendly_name_label.render_priority = 1  # Render after most objects
 	# Memory, power, and PNG icon areas should show their label since they're primary renderers
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
@@ -307,7 +308,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -337,7 +338,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0)
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -409,7 +410,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 				interval_ms = " [Δ%dms]" % delta_ms
 			set_meta("_last_origin_fire_ms", Time.get_ticks_msec())
 			
-			print("[%s] 🔥 [%s] (0,0,0) FIRING - %d total neurons%s" % [timestamp, area_id, point_count, interval_ms])
+			# print("[%s] 🔥 [%s] (0,0,0) FIRING - %d total neurons%s" % [timestamp, area_id, point_count, interval_ms])  # Spam log - disabled
 			set_meta("_last_had_origin", true)
 		else:
 			# Not firing this frame but had neurons
@@ -566,7 +567,7 @@ func _clear_all_neurons() -> void:
 		if has_meta("_last_fire_time"):
 			var current_time = Time.get_ticks_msec() / 1000.0
 			time_visible = (current_time - get_meta("_last_fire_time")) * 1000.0  # Convert to ms
-		print("[%s] 🧹 [%s] CLEARING %d neurons (visible for %.0fms)" % [timestamp, area_id, _current_neuron_count, time_visible])
+		# print("[%s] 🧹 [%s] CLEARING %d neurons (visible for %.0fms)" % [timestamp, area_id, _current_neuron_count, time_visible])  # Spam log - disabled
 	
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
@@ -624,7 +625,7 @@ func _on_visibility_timeout() -> void:
 	if _current_neuron_count > 0:
 		var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
 		var timestamp = _get_timestamp_with_ms()
-		print("[%s] ⏱️  [%s] Timer expired - clearing neurons" % [timestamp, area_id])
+		# print("[%s] ⏱️  [%s] Timer expired - clearing neurons" % [timestamp, area_id])  # Spam log - disabled
 	
 	# Visibility timer expired - clearing neurons via timeout
 	_clear_all_neurons()

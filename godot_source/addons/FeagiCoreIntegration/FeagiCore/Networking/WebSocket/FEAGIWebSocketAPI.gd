@@ -208,12 +208,12 @@ func _process(_delta: float):
 				print("[%s] ✅ [WS] Transitioning to CONNECTED state - notifying network layer" % _get_timestamp())
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
-			while _socket.get_available_packet_count():
-				var raw_packet = _socket.get_packet()
-				var retrieved_ws_data: PackedByteArray
-				var raw_len := raw_packet.size()
-				# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
-				if _is_probably_text(raw_packet):
+		while _socket.get_available_packet_count():
+			var raw_packet = _socket.get_packet()
+			var retrieved_ws_data: PackedByteArray
+			var raw_len := raw_packet.size()
+			# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
+			if _is_probably_text(raw_packet):
 					var text_payload := raw_packet.get_string_from_ascii().strip_edges()
 					print("[WS] Text frame: \"", text_payload, "\" len=", raw_len)
 					if text_payload == SOCKET_GENOME_UPDATE_FLAG:
@@ -225,23 +225,28 @@ func _process(_delta: float):
 						continue
 					# Unknown small text message - ignore after logging
 					continue
-				# Try DEFLATE first (legacy)
-				var decompressed := raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
-				if decompressed.size() > 0:
-					retrieved_ws_data = decompressed
-					print("[WS] Decompressed packet: raw_len=", raw_len, " -> dec_len=", retrieved_ws_data.size())
+				
+				# TEMPORARY: LZ4 disabled due to Rust crash - using legacy path
+				# TODO: Debug and re-enable LZ4 once Rust extension is stable
+				# ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS (Rust)
+				
+			# Try DEFLATE first (legacy FEAGI 1.x)
+			var decompressed_deflate: PackedByteArray = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+			if decompressed_deflate.size() > 0:
+				retrieved_ws_data = decompressed_deflate
+			else:
+				# Fallback: some FEAGI builds may send uncompressed data over WS
+				# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
+				if _looks_like_feagi_ws_payload(raw_packet):
+					var first_b: int = -1
+					if raw_len > 0:
+						first_b = int(raw_packet[0])
+					retrieved_ws_data = raw_packet
 				else:
-					# Fallback: some FEAGI builds may send uncompressed data over WS
-					# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
-					if _looks_like_feagi_ws_payload(raw_packet):
-						var first_b := -1
-						if raw_len > 0:
-							first_b = int(raw_packet[0])
-						print("[WS] Fallback: treating packet as UNCOMPRESSED. raw_len=", raw_len, ", first_byte=", first_b)
-						retrieved_ws_data = raw_packet
-					else:
-						push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
-						continue
+					push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
+					continue
+				
+				# Process the data
 				_process_wrapped_byte_structure(retrieved_ws_data)
 				
 		WebSocketPeer.State.STATE_CLOSING:
@@ -942,6 +947,16 @@ func _on_genome_reloaded() -> void:
 	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
 	_missing_cortical_areas.clear()
 	_case_mapping_cache.clear()  # Clear case mapping cache too
+
+func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
+	"""Convert byte array to hex string for debugging"""
+	var hex_str: String = ""
+	var count: int = min(data.size(), max_bytes)
+	for i in range(count):
+		hex_str += "%02x " % data[i]
+	if data.size() > max_bytes:
+		hex_str += "... (%d more bytes)" % (data.size() - max_bytes)
+	return hex_str
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health

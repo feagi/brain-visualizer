@@ -30,6 +30,59 @@ impl IRefCounted for FeagiDataDeserializer {
 
 #[godot_api]
 impl FeagiDataDeserializer {
+    /// Decompress LZ4-compressed data from FEAGI PNS layer
+    /// 
+    /// ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS
+    /// 
+    /// Args:
+    ///   - compressed_buffer: LZ4-compressed PackedByteArray from WebSocket
+    /// 
+    /// Returns: PackedByteArray (decompressed raw FEAGI data) or empty array on error
+    #[func]
+    pub fn decompress_lz4(&self, compressed_buffer: PackedByteArray) -> PackedByteArray {
+        if compressed_buffer.is_empty() {
+            godot_error!("🦀 [LZ4] Empty buffer - nothing to decompress");
+            return PackedByteArray::new();
+        }
+
+        // Convert PackedByteArray to Vec<u8> for Rust processing
+        let compressed_data: Vec<u8> = compressed_buffer.to_vec();
+        
+        // Log first 20 bytes for debugging
+        let preview: String = compressed_data.iter()
+            .take(20)
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+        
+        godot_print!(
+            "🦀 [LZ4] Attempting decompression: {} bytes, first 20 bytes: {}",
+            compressed_data.len(),
+            preview
+        );
+        
+        // Decompress with LZ4
+        match lz4::block::decompress(&compressed_data, None) {
+            Ok(decompressed) => {
+                let compression_ratio = (compressed_data.len() as f64 / decompressed.len() as f64) * 100.0;
+                godot_print!(
+                    "🦀 [LZ4] ✅ Decompressed {} bytes → {} bytes ({:.1}% of original)",
+                    compressed_data.len(),
+                    decompressed.len(),
+                    compression_ratio
+                );
+                
+                // Convert Vec<u8> back to PackedByteArray for Godot
+                PackedByteArray::from(decompressed.as_slice())
+            }
+            Err(e) => {
+                godot_error!("🦀 [LZ4] ❌ Decompression failed: {:?} (input size: {} bytes)", e, compressed_data.len());
+                godot_error!("🦀 [LZ4] First 20 bytes: {}", preview);
+                PackedByteArray::new()
+            }
+        }
+    }
+
     /// Decode Type 11 neuron data using FEAGI's official Rust library (raw format, no container)
     #[func]
     pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {

@@ -12,7 +12,7 @@ const INPUT_OUTPUT_SPACING: float = 2.0
 const CORTICAL_AREA_SPACING: float = 1.5
 
 # IO Plate Configuration Variables - easily tunable
-const AREA_BUFFER_DISTANCE: float = 5.0      # Distance between cortical areas on same plate
+const AREA_BUFFER_DISTANCE: float = 8.0      # Distance between cortical areas on same plate
 const PLATE_SIDE_MARGIN: float = 2.0         # Margin on left/right sides of plate  
 const PLATE_FRONT_BACK_MARGIN: float = 2.0   # Margin on front/back of plate
 const PLATE_HEIGHT: float = 1.0              # Constant height of all plates
@@ -1988,12 +1988,16 @@ func _update_io_area_positions_DISABLED() -> void:
 			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 				cortical_viz._dda_renderer._static_body.position = new_position
 				if cortical_viz._dda_renderer._friendly_name_label != null:
-					cortical_viz._dda_renderer._friendly_name_label.position = new_position + Vector3(0, 1.0, 0)
+					# Label positioned 2.0 units above the top of the cortical area
+					var label_y = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+					cortical_viz._dda_renderer._friendly_name_label.position = new_position + Vector3(0.0, label_y, 0.0)
 			
 			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 				cortical_viz._directpoints_renderer._static_body.position = new_position
 				if cortical_viz._directpoints_renderer._friendly_name_label != null:
-					cortical_viz._directpoints_renderer._friendly_name_label.position = new_position + Vector3(0, 1.0, 0)
+					# Label positioned 2.0 units above the top of the cortical area
+					var label_y = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+					cortical_viz._directpoints_renderer._friendly_name_label.position = new_position + Vector3(0.0, label_y, 0.0)
 		else:
 			print("      ⚠️  Could not find relative coordinates for %s - skipping reposition" % cortical_id)
 	

@@ -44,8 +44,9 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
 	_friendly_name_label.modulate = Color.WHITE
 	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_friendly_name_label.double_sided = false  # Only visible from front
+	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
+	_friendly_name_label.no_depth_test = false  # Respect depth for proper occlusion
 	_friendly_name_label.render_priority = 1  # Render after most objects
 	add_child(_friendly_name_label)
 
@@ -66,7 +67,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	
 	_static_body.position = _position_godot_space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0 )
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
@@ -74,7 +75,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 1.5, 0.0 )
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0 )
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
