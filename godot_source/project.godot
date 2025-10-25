@@ -36,7 +36,7 @@ window/size/resizable=true
 window/dpi/allow_hidpi=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/stretch/scale=1.0
+window/stretch/scale=0.5
 
 [editor]
 
