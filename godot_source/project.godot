@@ -29,8 +29,14 @@ gdscript/warnings/unsafe_cast=1
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=2
+window/size/resizable=true
+window/dpi/allow_hidpi=true
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/stretch/scale=1.0
 
 [editor]
 
@@ -119,6 +125,8 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 limits/global_shader_variables/buffer_size=16384
 limits/spatial_indexer/threaded_cull_minimum_instances=65536
+2d/sdf_to_png/oversize=4.0
+quality/filters/sharpen_intensity=1.0
 
 [xr]
 

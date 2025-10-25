@@ -72,6 +72,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.import
+!godot_source/BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf.import
 godot_source/.vscode/settings.json
 godot_source/.vscode/
 
