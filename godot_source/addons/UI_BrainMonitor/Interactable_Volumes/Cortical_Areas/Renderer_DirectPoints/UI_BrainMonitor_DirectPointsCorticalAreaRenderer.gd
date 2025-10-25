@@ -234,11 +234,16 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Create individual plate if needed
 	_create_individual_plate_if_needed(area)
 	
-	# Create friendly name label
+	# Create friendly name label with high-quality MSDF rendering
 	_friendly_name_label = Label3D.new()
 	_friendly_name_label.name = "AreaNameLabel"
-	_friendly_name_label.font_size = 192
+	_friendly_name_label.font_size = 512  # High resolution for crisp text at distance
+	_friendly_name_label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
 	_friendly_name_label.modulate = Color.WHITE
+	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_friendly_name_label.double_sided = false  # Only visible from front
+	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
+	_friendly_name_label.render_priority = 1  # Render after most objects
 	# Memory, power, and PNG icon areas should show their label since they're primary renderers
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_friendly_name_label.visible = true  # Show label for memory areas
