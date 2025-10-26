@@ -109,6 +109,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
 	FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
+	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	
@@ -158,6 +159,10 @@ func _on_genome_availability_changed(available: bool) -> void:
 func _on_cache_reloaded() -> void:
 	update_loading_status("Updating brain visualizer cache...")
 
+## Handle websocket health changes to show/hide loading screen
+func _on_websocket_health_changed(_prev_health, _current_health) -> void:
+	_update_loading_screen_visibility()
+
 ## Handle connection state changes to show/hide loading screen
 func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE, new_state: FEAGINetworking.CONNECTION_STATE) -> void:
 	print("UIMANAGER: Connection state changed to: ", FEAGINetworking.CONNECTION_STATE.keys()[new_state])
@@ -186,17 +191,24 @@ func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE,
 ## 1. Connection is HEALTHY
 ## 2. Brain is ready 
 ## 3. Genome is available
+## 4. Websocket is actually connected (if using websocket transport)
 func _update_loading_screen_visibility() -> void:
 	var connection_healthy = FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY
 	var brain_ready = FeagiCore.feagi_local_cache.brain_readiness
 	var genome_available = FeagiCore.feagi_local_cache.genome_availability
 	
+	# Additional check: If using websocket transport, verify websocket is actually connected
+	var websocket_ok = true
+	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	
 	print("UIMANAGER: Loading screen visibility check:")
 	print("  - Connection healthy: %s (state: %s)" % [connection_healthy, FEAGINetworking.CONNECTION_STATE.keys()[FeagiCore.network.connection_state]])
 	print("  - Brain ready: %s" % brain_ready)
 	print("  - Genome available: %s" % genome_available)
+	print("  - Websocket OK: %s (transport: %s)" % [websocket_ok, FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]])
 	
-	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available
+	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available and websocket_ok
 	
 	if should_hide_loading_screen:
 		print("UIMANAGER: ✅ All conditions met - hiding loading screen")
@@ -212,6 +224,9 @@ func _update_loading_screen_visibility() -> void:
 				update_loading_status("Awaiting FEAGI brain readiness...")
 		if not genome_available:
 			reasons.append("no genome available")
+		if not websocket_ok:
+			reasons.append("websocket not connected")
+			update_loading_status("Websocket disconnected - reconnecting...")
 		print("UIMANAGER: ❌ Showing loading screen - reasons: %s" % ", ".join(reasons))
 		toggle_loading_screen(true)
 

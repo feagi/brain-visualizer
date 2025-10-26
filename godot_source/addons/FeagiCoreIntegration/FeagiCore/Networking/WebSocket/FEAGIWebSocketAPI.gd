@@ -230,45 +230,78 @@ func _process(_delta: float):
 					# Unknown small text message - ignore after logging
 					continue
 				
-				# ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS (Rust)
-				# Bridge now passes through LZ4-compressed data - we decompress here using Rust extension
+				# ARCHITECTURE: FEAGI PNS → ZMQ → Bridge PASSTHROUGH → WebSocket → BV process
+				# Data format: Raw FeagiByteContainer containing Type 11 neuron data (may be LZ4 compressed)
 				
-				# Check if data is LZ4 compressed (magic header 0x04)
-				if raw_len > 0 and raw_packet[0] == 0x04:
-					print("🗜️ [WS-DEBUG] Detected LZ4 compressed data: %d bytes" % raw_len)
-					# LZ4 compressed data from FEAGI - decompress using Rust extension
-					if _rust_deserializer:
-						var decompressed_lz4: PackedByteArray = _rust_deserializer.decompress_lz4(raw_packet)
-						if decompressed_lz4.size() > 0:
-							var compression_ratio := (1.0 - float(raw_len) / float(decompressed_lz4.size())) * 100.0
-							print("✅ [WS-DEBUG] LZ4 decompression SUCCESS: %d bytes → %d bytes (%.1f%% reduction)" % [raw_len, decompressed_lz4.size(), compression_ratio])
-							retrieved_ws_data = decompressed_lz4
-						else:
-							push_error("❌ [WS-DEBUG] LZ4 decompression FAILED! raw_len=" + str(raw_len))
-							continue
+				if not _rust_deserializer:
+					push_error("❌ [WS-DEBUG] Rust deserializer not available!")
+					continue
+				
+				if raw_len == 0:
+					push_error("❌ [WS-DEBUG] Received empty packet!")
+					continue
+				
+				# Log raw packet for debugging
+				var hex_preview: String = ""
+				for i in range(min(20, raw_len)):
+					hex_preview += "%02x " % raw_packet[i]
+				print("📦 [WS-DEBUG] Processing %d bytes: %s" % [raw_len, hex_preview])
+				
+				# Attempt LZ4 decompression if data looks compressed (heuristic: not a known structure type)
+				var data_to_decode: PackedByteArray = raw_packet
+				var first_byte: int = raw_packet[0]
+				
+				# Known structure types: 0x0B (Type 11), 0xF9 (FeagiByteContainer)
+				# If it's neither, try LZ4 decompression
+				if first_byte != 0x0B and first_byte != 0xF9:
+					print("🗜️ [WS-DEBUG] Unknown first byte 0x%02x, attempting LZ4 decompression" % first_byte)
+					var decompressed: PackedByteArray = _rust_deserializer.decompress_lz4(raw_packet)
+					if decompressed.size() > 0:
+						print("✅ [WS-DEBUG] LZ4 decompression: %d → %d bytes" % [raw_len, decompressed.size()])
+						data_to_decode = decompressed
 					else:
-						push_error("❌ [WS-DEBUG] LZ4 compressed data received but Rust deserializer not available!")
+						push_error("❌ [WS-DEBUG] LZ4 decompression failed!")
 						continue
-				else:
-					print("📦 [WS-DEBUG] Non-LZ4 data (first byte: 0x%02x), trying DEFLATE or uncompressed" % raw_packet[0])
-					# Try DEFLATE for legacy FEAGI 1.x compatibility
-					var decompressed_deflate: PackedByteArray = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
-					if decompressed_deflate.size() > 0:
-						print("✅ [WS-DEBUG] DEFLATE decompression SUCCESS: %d bytes → %d bytes" % [raw_len, decompressed_deflate.size()])
-						retrieved_ws_data = decompressed_deflate
-					else:
-						# Fallback: some FEAGI builds may send uncompressed data over WS
-						# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
-						if _looks_like_feagi_ws_payload(raw_packet):
-							print("📦 [WS-DEBUG] Using uncompressed data: %d bytes" % raw_len)
-							retrieved_ws_data = raw_packet
-						else:
-							push_error("❌ [WS-DEBUG] Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
-							continue
 				
-				# Process the data
-				print("🔄 [WS-DEBUG] Processing %d bytes of data (structure type: 0x%02x)" % [retrieved_ws_data.size(), retrieved_ws_data[0] if retrieved_ws_data.size() > 0 else 0])
-				_process_wrapped_byte_structure(retrieved_ws_data)
+				# Decode using Rust deserializer
+				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(data_to_decode)
+				
+				if not decoded_result or not decoded_result.has("success"):
+					push_error("❌ [WS-DEBUG] Decode failed - no result returned")
+					continue
+				
+				if not decoded_result.success:
+					var error_msg := decoded_result.get("error", "unknown error")
+					push_error("❌ [WS-DEBUG] Decode failed: %s" % error_msg)
+					continue
+				
+				# Successfully decoded
+				print("✅ [WS-DEBUG] Decode SUCCESS: %d cortical areas" % decoded_result.areas.size())
+				
+				# Process the decoded neuron data
+				for cortical_id in decoded_result.areas.keys():
+					# Filter out core areas (_death, _power) that can't be visualized
+					if cortical_id == "_death" or cortical_id == "_power":
+						print("⏭️ [WS-DEBUG] Skipping core area: %s" % cortical_id)
+						continue
+					
+					var area_data = decoded_result.areas[cortical_id]
+					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
+					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
+					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
+					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
+					
+					print("🧠 [WS-DEBUG] Processing area '%s': %d neurons" % [cortical_id, x_array.size()])
+					
+					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					if area:
+						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+					else:
+						_handle_missing_cortical_area(cortical_id)
+				
+				# Successfully processed - skip legacy processing
+				continue
 				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request

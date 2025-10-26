@@ -1,6 +1,6 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
-use feagi_data_serialization::FeagiSerializable;
+use feagi_data_serialization::{FeagiSerializable, FeagiByteStructureType};
 use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
 // Rayon is only available on native platforms (not WASM)
@@ -83,20 +83,77 @@ impl FeagiDataDeserializer {
         }
     }
 
-    /// Decode Type 11 neuron data using FEAGI's official Rust library (raw format, no container)
+    /// Decode Type 11 neuron data (handles both raw Type 11 and FeagiByteContainer wrappers)
     #[func]
     pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // Use raw FeagiSerializable API (like rust-py-libs pattern)
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
-        if let Err(e) = neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-            // Don't log error - just return error dict to avoid spam
-            return self.create_error_dict(format!("Decode error: {:?}", e));
+        if rust_buffer.is_empty() {
+            return self.create_error_dict("Empty buffer".to_string());
         }
         
-        self.convert_neuron_data_to_godot(&neuron_data)
+        // Detect format based on first byte
+        let first_byte = rust_buffer[0];
+        
+        // Log for debugging
+        let preview: String = rust_buffer.iter()
+            .take(20)
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+        godot_print!("🦀 [DECODE] Buffer: {} bytes, first byte: 0x{:02x}, preview: {}", 
+                    rust_buffer.len(), first_byte, preview);
+        
+        // ARCHITECTURE: FEAGI → Serialize → LZ4 compress (MANDATORY) → ZMQ → Bridge PASSTHROUGH → BV → LZ4 decompress (MANDATORY)
+        // NO FALLBACKS: Data MUST be LZ4 compressed
+        
+        // Step 1: LZ4 decompression (mandatory, no fallback)
+        let data_to_deserialize = match std::panic::catch_unwind(|| {
+            lz4::block::decompress(&rust_buffer, None)
+        }) {
+            Ok(Ok(d)) if !d.is_empty() => {
+                godot_print!("🦀 [DECODE] LZ4: {} → {} bytes", rust_buffer.len(), d.len());
+                d
+            }
+            Ok(Ok(_)) => {
+                godot_error!("🦀 [DECODE] LZ4 returned empty");
+                return self.create_error_dict("LZ4 decompression returned empty data".to_string());
+            }
+            Ok(Err(e)) => {
+                godot_error!("🦀 [DECODE] LZ4 FAILED: {:?}", e);
+                return self.create_error_dict(format!("LZ4 decompression failed: {:?}", e));
+            }
+            Err(_) => {
+                godot_error!("🦀 [DECODE] LZ4 PANICKED");
+                return self.create_error_dict("LZ4 decompression panicked".to_string());
+            }
+        };
+        
+        // Step 2: Verify structure type
+        let _structure_type = match FeagiByteStructureType::try_get_type_from_bytes(&data_to_deserialize) {
+            Ok(t) => {
+                godot_print!("🦀 [DECODE] Type: {:?}", t);
+                t
+            }
+            Err(e) => {
+                godot_error!("🦀 [DECODE] Unknown type 0x{:02x}", data_to_deserialize[0]);
+                return self.create_error_dict(format!("Bad type: {:?}", e));
+            }
+        };
+        
+        // Step 3: Deserialize with official FEAGI library
+        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
+        match neuron_data.try_deserialize_and_update_self_from_byte_slice(&data_to_deserialize) {
+            Ok(_) => {
+                godot_print!("🦀 [DECODE] ✅ Success");
+                self.convert_neuron_data_to_godot(&neuron_data)
+            }
+            Err(e) => {
+                godot_error!("🦀 [DECODE] Deserialize failed: {:?}", e);
+                self.create_error_dict(format!("Deserialize error: {:?}", e))
+            }
+        }
     }
 
     /// Get structure type from raw buffer (no container wrapper)
