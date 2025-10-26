@@ -208,12 +208,12 @@ func _process(_delta: float):
 				print("[%s] ✅ [WS] Transitioning to CONNECTED state - notifying network layer" % _get_timestamp())
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
-		while _socket.get_available_packet_count():
-			var raw_packet = _socket.get_packet()
-			var retrieved_ws_data: PackedByteArray
-			var raw_len := raw_packet.size()
-			# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
-			if _is_probably_text(raw_packet):
+			while _socket.get_available_packet_count():
+				var raw_packet = _socket.get_packet()
+				var retrieved_ws_data: PackedByteArray
+				var raw_len := raw_packet.size()
+				# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
+				if _is_probably_text(raw_packet):
 					var text_payload := raw_packet.get_string_from_ascii().strip_edges()
 					print("[WS] Text frame: \"", text_payload, "\" len=", raw_len)
 					if text_payload == SOCKET_GENOME_UPDATE_FLAG:
@@ -230,21 +230,21 @@ func _process(_delta: float):
 				# TODO: Debug and re-enable LZ4 once Rust extension is stable
 				# ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS (Rust)
 				
-			# Try DEFLATE first (legacy FEAGI 1.x)
-			var decompressed_deflate: PackedByteArray = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
-			if decompressed_deflate.size() > 0:
-				retrieved_ws_data = decompressed_deflate
-			else:
-				# Fallback: some FEAGI builds may send uncompressed data over WS
-				# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
-				if _looks_like_feagi_ws_payload(raw_packet):
-					var first_b: int = -1
-					if raw_len > 0:
-						first_b = int(raw_packet[0])
-					retrieved_ws_data = raw_packet
+				# Try DEFLATE first (legacy FEAGI 1.x)
+				var decompressed_deflate: PackedByteArray = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+				if decompressed_deflate.size() > 0:
+					retrieved_ws_data = decompressed_deflate
 				else:
-					push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
-					continue
+					# Fallback: some FEAGI builds may send uncompressed data over WS
+					# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
+					if _looks_like_feagi_ws_payload(raw_packet):
+						var first_b: int = -1
+						if raw_len > 0:
+							first_b = int(raw_packet[0])
+						retrieved_ws_data = raw_packet
+					else:
+						push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
+						continue
 				
 				# Process the data
 				_process_wrapped_byte_structure(retrieved_ws_data)
