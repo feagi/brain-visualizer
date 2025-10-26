@@ -53,6 +53,7 @@ var _temp_bm_holder: UI_Capsules_Capsule
 var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
 var _temp_bm_camera_rot: Vector3
 var _fps_label: Label
+var _loading_status_label: Label
 
 
 func _enter_tree():
@@ -73,6 +74,7 @@ func _ready():
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()
+	_loading_status_label = $TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -103,8 +105,9 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
-	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): _update_loading_screen_visibility())
-	FeagiCore.feagi_local_cache.genome_availability_changed.connect(func(available: bool): _update_loading_screen_visibility())
+	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_on_brain_readiness_changed)
+	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
+	FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
@@ -141,9 +144,41 @@ func FEAGI_no_genome() -> void:
 	top_bar.toggle_buttons_interactability(false)
 
 
+## Handle brain readiness changes
+func _on_brain_readiness_changed(ready: bool) -> void:
+	if ready:
+		update_loading_status("FEAGI brain is ready")
+	_update_loading_screen_visibility()
+
+## Handle genome availability changes
+func _on_genome_availability_changed(available: bool) -> void:
+	_update_loading_screen_visibility()
+
+## Handle cache reload events
+func _on_cache_reloaded() -> void:
+	update_loading_status("Updating brain visualizer cache...")
+
 ## Handle connection state changes to show/hide loading screen
 func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE, new_state: FEAGINetworking.CONNECTION_STATE) -> void:
 	print("UIMANAGER: Connection state changed to: ", FEAGINetworking.CONNECTION_STATE.keys()[new_state])
+	
+	# Update loading status based on connection state
+	match new_state:
+		FEAGINetworking.CONNECTION_STATE.INITIAL_HTTP_PROBING:
+			update_loading_status("Checking FEAGI health...")
+		FEAGINetworking.CONNECTION_STATE.INITIAL_WS_PROBING:
+			update_loading_status("Making Websocket connection...")
+		FEAGINetworking.CONNECTION_STATE.HEALTHY:
+			update_loading_status("Websocket connected successfully!")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP:
+			update_loading_status("Retrying HTTP connection...")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_WS:
+			update_loading_status("Retrying Websocket connection...")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_WS:
+			update_loading_status("Retrying connections...")
+		FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
+			update_loading_status("Disconnected")
+	
 	_update_loading_screen_visibility()
 
 ## Centralized function to determine if loading screen should be visible
@@ -165,6 +200,7 @@ func _update_loading_screen_visibility() -> void:
 	
 	if should_hide_loading_screen:
 		print("UIMANAGER: ✅ All conditions met - hiding loading screen")
+		update_loading_status("Ready!")
 		toggle_loading_screen(false)
 	else:
 		var reasons = []
@@ -172,6 +208,8 @@ func _update_loading_screen_visibility() -> void:
 			reasons.append("connection not healthy")
 		if not brain_ready:
 			reasons.append("brain not ready")
+			if connection_healthy:
+				update_loading_status("Awaiting FEAGI brain readiness...")
 		if not genome_available:
 			reasons.append("no genome available")
 		print("UIMANAGER: ❌ Showing loading screen - reasons: %s" % ", ".join(reasons))
@@ -411,6 +449,12 @@ func show_developer_menu():
 
 func toggle_loading_screen(is_on: bool) -> void:
 	$TempLoadingScreen.visible = is_on
+
+## Update the loading status message displayed on the loading screen
+func update_loading_status(message: String) -> void:
+	if _loading_status_label:
+		_loading_status_label.text = message
+		print("UIMANAGER: Loading status: %s" % message)
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):

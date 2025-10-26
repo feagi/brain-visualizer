@@ -87,14 +87,32 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/TempLoadingScreen"]
+[node name="LoadingOverlay" type="BoxContainer" parent="UIManager/TempLoadingScreen"]
 layout_mode = 2
+alignment = 2
+vertical = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay"]
+layout_mode = 2
+size_flags_vertical = 3
 alignment = 1
 
-[node name="Label" type="Label" parent="UIManager/TempLoadingScreen/VBoxContainer"]
+[node name="Label" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
 text = "Loading..."
+
+[node name="Bottom_Row" type="BoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay"]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Initializing..."
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]
