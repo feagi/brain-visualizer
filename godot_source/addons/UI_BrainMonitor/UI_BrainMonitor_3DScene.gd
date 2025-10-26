@@ -717,7 +717,6 @@ func _on_user_camera_moved() -> void:
 	var vp := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp.x / max(1.0, vp.y)
 	var dist := cam_pos.distance_to(center)
-	print("[CAMERA_SAMPLES] pos=", cam_pos, " look_at=", center, " dist=", snapped(dist, 0.01), " vfov=", vfov, " aspect=", snapped(aspect, 0.001), " aabb_pos=", aabb.position, " aabb_size=", aabb.size)
 
 ## Handle user pressing R to reset camera using auto-frame logic
 func _on_user_camera_reset_requested() -> void:

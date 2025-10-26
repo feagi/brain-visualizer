@@ -212,6 +212,10 @@ func _process(_delta: float):
 				var raw_packet = _socket.get_packet()
 				var retrieved_ws_data: PackedByteArray
 				var raw_len := raw_packet.size()
+				
+				# 🐛 DEBUG: Log all received packets
+				print("🔍 [WS-DEBUG] Received packet: %d bytes, first byte: 0x%02x" % [raw_len, raw_packet[0] if raw_len > 0 else 0])
+				
 				# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
 				if _is_probably_text(raw_packet):
 					var text_payload := raw_packet.get_string_from_ascii().strip_edges()
@@ -226,27 +230,44 @@ func _process(_delta: float):
 					# Unknown small text message - ignore after logging
 					continue
 				
-				# TEMPORARY: LZ4 disabled due to Rust crash - using legacy path
-				# TODO: Debug and re-enable LZ4 once Rust extension is stable
 				# ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS (Rust)
+				# Bridge now passes through LZ4-compressed data - we decompress here using Rust extension
 				
-				# Try DEFLATE first (legacy FEAGI 1.x)
-				var decompressed_deflate: PackedByteArray = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
-				if decompressed_deflate.size() > 0:
-					retrieved_ws_data = decompressed_deflate
-				else:
-					# Fallback: some FEAGI builds may send uncompressed data over WS
-					# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
-					if _looks_like_feagi_ws_payload(raw_packet):
-						var first_b: int = -1
-						if raw_len > 0:
-							first_b = int(raw_packet[0])
-						retrieved_ws_data = raw_packet
+				# Check if data is LZ4 compressed (magic header 0x04)
+				if raw_len > 0 and raw_packet[0] == 0x04:
+					print("🗜️ [WS-DEBUG] Detected LZ4 compressed data: %d bytes" % raw_len)
+					# LZ4 compressed data from FEAGI - decompress using Rust extension
+					if _rust_deserializer:
+						var decompressed_lz4: PackedByteArray = _rust_deserializer.decompress_lz4(raw_packet)
+						if decompressed_lz4.size() > 0:
+							var compression_ratio := (1.0 - float(raw_len) / float(decompressed_lz4.size())) * 100.0
+							print("✅ [WS-DEBUG] LZ4 decompression SUCCESS: %d bytes → %d bytes (%.1f%% reduction)" % [raw_len, decompressed_lz4.size(), compression_ratio])
+							retrieved_ws_data = decompressed_lz4
+						else:
+							push_error("❌ [WS-DEBUG] LZ4 decompression FAILED! raw_len=" + str(raw_len))
+							continue
 					else:
-						push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
+						push_error("❌ [WS-DEBUG] LZ4 compressed data received but Rust deserializer not available!")
 						continue
+				else:
+					print("📦 [WS-DEBUG] Non-LZ4 data (first byte: 0x%02x), trying DEFLATE or uncompressed" % raw_packet[0])
+					# Try DEFLATE for legacy FEAGI 1.x compatibility
+					var decompressed_deflate: PackedByteArray = raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
+					if decompressed_deflate.size() > 0:
+						print("✅ [WS-DEBUG] DEFLATE decompression SUCCESS: %d bytes → %d bytes" % [raw_len, decompressed_deflate.size()])
+						retrieved_ws_data = decompressed_deflate
+					else:
+						# Fallback: some FEAGI builds may send uncompressed data over WS
+						# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
+						if _looks_like_feagi_ws_payload(raw_packet):
+							print("📦 [WS-DEBUG] Using uncompressed data: %d bytes" % raw_len)
+							retrieved_ws_data = raw_packet
+						else:
+							push_error("❌ [WS-DEBUG] Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
+							continue
 				
 				# Process the data
+				print("🔄 [WS-DEBUG] Processing %d bytes of data (structure type: 0x%02x)" % [retrieved_ws_data.size(), retrieved_ws_data[0] if retrieved_ws_data.size() > 0 else 0])
 				_process_wrapped_byte_structure(retrieved_ws_data)
 				
 		WebSocketPeer.State.STATE_CLOSING:

@@ -683,7 +683,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_region_name_label.visible = true
 		_frame_container.add_child(_region_name_label)
-		print("🏷️ RECREATED region label during update")
 	
 	if _region_name_label:
 		var mother: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
@@ -702,7 +701,6 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		else:
 			var front_edge_world_z = -_representing_region.coordinates_3D.z
 			_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5, front_edge_world_z - 1.0)
-		print("    📍 Label repositioned near front edge: world pos (%.1f, %.1f, %.1f)" % [_region_name_label.global_position.x, _region_name_label.global_position.y, _region_name_label.global_position.z])
 	
 
 ## Repositions a single cortical area on its plate using new relative coordinates
@@ -2296,10 +2294,6 @@ func _update_label_position_after_refresh() -> void:
 	else:
 		var front_edge_world_z = -_representing_region.coordinates_3D.z
 		_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5, front_edge_world_z - 1.0)
-	
-	print("🏷️ LABEL UPDATE: Repositioned region label '%s' to center between updated plates" % _representing_region.friendly_name)
-	print("    📐 New plate sizes - Input: %s, Output: %s, Conflict: %s, Total width: %.1f" % [input_plate_size, output_plate_size, conflict_plate_size, total_width])
-	print("    📍 New label position: %s (centered at X=%.1f)" % [_region_name_label.global_position, center_x])
 
 ## Handles hover/selection interaction
 func set_hover_state(is_hovered: bool) -> void:
