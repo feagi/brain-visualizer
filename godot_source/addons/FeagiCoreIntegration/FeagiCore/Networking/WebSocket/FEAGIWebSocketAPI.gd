@@ -247,24 +247,9 @@ func _process(_delta: float):
 					hex_preview += "%02x " % raw_packet[i]
 				print("📦 [WS-DEBUG] Processing %d bytes: %s" % [raw_len, hex_preview])
 				
-				# Attempt LZ4 decompression if data looks compressed (heuristic: not a known structure type)
-				var data_to_decode: PackedByteArray = raw_packet
-				var first_byte: int = raw_packet[0]
-				
-				# Known structure types: 0x0B (Type 11), 0xF9 (FeagiByteContainer)
-				# If it's neither, try LZ4 decompression
-				if first_byte != 0x0B and first_byte != 0xF9:
-					print("🗜️ [WS-DEBUG] Unknown first byte 0x%02x, attempting LZ4 decompression" % first_byte)
-					var decompressed: PackedByteArray = _rust_deserializer.decompress_lz4(raw_packet)
-					if decompressed.size() > 0:
-						print("✅ [WS-DEBUG] LZ4 decompression: %d → %d bytes" % [raw_len, decompressed.size()])
-						data_to_decode = decompressed
-					else:
-						push_error("❌ [WS-DEBUG] LZ4 decompression failed!")
-						continue
-				
-				# Decode using Rust deserializer
-				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(data_to_decode)
+				# Pass raw bytes directly to Rust deserializer - it handles LZ4 decompression internally
+				# Architecture: FEAGI → LZ4 compress → ZMQ → Bridge → BV → Rust (LZ4 decompress + deserialize)
+				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(raw_packet)
 				
 				if not decoded_result or not decoded_result.has("success"):
 					push_error("❌ [WS-DEBUG] Decode failed - no result returned")

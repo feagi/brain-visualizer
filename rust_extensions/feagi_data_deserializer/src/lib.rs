@@ -109,8 +109,19 @@ impl FeagiDataDeserializer {
         // NO FALLBACKS: Data MUST be LZ4 compressed
         
         // Step 1: LZ4 decompression (mandatory, no fallback)
+        // Format: [4-byte size header (little-endian)] + [LZ4 compressed data]
+        // Extract uncompressed size and compressed data
+        let (uncompressed_size, compressed_data) = if rust_buffer.len() >= 4 {
+            let size = u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]]) as i32;
+            godot_print!("🦀 [DECODE] LZ4 header: uncompressed_size={}, compressed_size={}", size, rust_buffer.len() - 4);
+            (Some(size), &rust_buffer[4..])
+        } else {
+            godot_error!("🦀 [DECODE] Buffer too short for size header");
+            return self.create_error_dict("Buffer too short for LZ4 size header".to_string());
+        };
+        
         let data_to_deserialize = match std::panic::catch_unwind(|| {
-            lz4::block::decompress(&rust_buffer, None)
+            lz4::block::decompress(compressed_data, uncompressed_size)
         }) {
             Ok(Ok(d)) if !d.is_empty() => {
                 godot_print!("🦀 [DECODE] LZ4: {} → {} bytes", rust_buffer.len(), d.len());
