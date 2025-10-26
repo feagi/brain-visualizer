@@ -666,8 +666,11 @@ impl FeagiDataDeserializer {
 
             total_neurons += num_neurons as i32;
 
-            // Convert cortical_id to String - just use to_string() for now
-            let cortical_id_str = cortical_id.to_string();
+            // Convert cortical_id to String - use the bytes directly to avoid Display formatting
+            let cortical_id_bytes = cortical_id.as_bytes();
+            let cortical_id_str = String::from_utf8_lossy(cortical_id_bytes)
+                .trim_end_matches('\0')
+                .to_string();
 
             // Create area data dictionary
             let mut area_dict = Dictionary::new();
