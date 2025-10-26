@@ -281,8 +281,11 @@ func _process(_delta: float):
 					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
 					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
 					if area:
+						print("✅ [RENDER-DEBUG] Found area '%s', calling FEAGI_set_direct_points_bulk_data() with %d neurons" % [cortical_id, x_array.size()])
 						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+						print("✅ [RENDER-DEBUG] Called area.FEAGI_set_direct_points_bulk_data() - rendering should happen now")
 					else:
+						print("❌ [RENDER-DEBUG] Area '%s' NOT FOUND in cache! Available areas: %s" % [cortical_id, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()])
 						_handle_missing_cortical_area(cortical_id)
 				
 				# Successfully processed - skip legacy processing

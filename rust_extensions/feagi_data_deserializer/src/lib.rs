@@ -157,7 +157,7 @@ impl FeagiDataDeserializer {
         let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
         match neuron_data.try_deserialize_and_update_self_from_byte_slice(&data_to_deserialize) {
             Ok(_) => {
-                godot_print!("🦀 [DECODE] ✅ Success");
+                godot_print!("🦀 [DECODE] ✅ Success [LIB-v1647]");
                 self.convert_neuron_data_to_godot(&neuron_data)
             }
             Err(e) => {
@@ -666,7 +666,7 @@ impl FeagiDataDeserializer {
 
             total_neurons += num_neurons as i32;
 
-            // Convert cortical_id to String
+            // Convert cortical_id to String - just use to_string() for now
             let cortical_id_str = cortical_id.to_string();
 
             // Create area data dictionary
