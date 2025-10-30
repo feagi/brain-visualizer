@@ -342,8 +342,8 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		
 		# Session changes: detect both initial connection (0 → new) and FEAGI restarts (old → new)  
 		var session_changed = ((_previous_feagi_session == 0 and current_feagi_session > 0) or 
-		                      (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session))
-		                      
+							  (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session))
+							  
 		# Genome changes: only detect actual changes (not initial from 0)
 		var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
 		

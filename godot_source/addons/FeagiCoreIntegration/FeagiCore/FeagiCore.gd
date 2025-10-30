@@ -378,16 +378,16 @@ func reload_genome_await():
 			var genome_available = health_data.get("genome_availability", false)
 			var brain_ready = health_data.get("brain_readiness", false)
 			
-			# Only restore scene if: same session+genome AND genome is actually available AND brain is ready
-			if cached_session == current_session and cached_genome_num == current_genome_num and genome_available and brain_ready and current_genome_num > 0:
-				print("FEAGICORE: [3D_SCENE_DEBUG] 🎯 Same session (%d), genome (%d), and FEAGI is fully ready - no reload needed!" % [current_session, current_genome_num])
-				print("FEAGICORE: [3D_SCENE_DEBUG] 🚀 Skipping reload and directly restoring scene...")
+			# Check if cache is actually populated (not empty)
+			var cache_has_data = feagi_local_cache.brain_regions.available_brain_regions.size() > 0
+			
+			# Only restore scene if: same session+genome AND genome is actually available AND brain is ready AND cache has data
+			# CRITICAL: Only skip reload if cache is ALREADY populated (not during an active reload)
+			if cached_session == current_session and cached_genome_num == current_genome_num and genome_available and brain_ready and current_genome_num > 0 and cache_has_data:
+				print("FEAGICORE: [3D_SCENE_DEBUG] 🎯 Same session (%d), genome (%d), cache populated - no reload needed!" % [current_session, current_genome_num])
+				print("FEAGICORE: [3D_SCENE_DEBUG] 🚀 Aborting reload - cache is already valid...")
 				reload_aborted[0] = true  # Stop the unnecessary reload
 				timer.stop()
-				
-				# Update health cache and transition directly to READY
-				feagi_local_cache.update_health_from_FEAGI_dict(health_data)
-				_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
 				# Proactively attempt websocket reconnect if it's down (only for WebSocket transport)
 				if network and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
 					var ws = network.get("websocket_API")
@@ -403,9 +403,13 @@ func reload_genome_await():
 						await network._call_register_agent_for_shm()
 					# Schedule a short watchdog to ensure WS stays connected after reload
 					_ensure_ws_connected_after_reload(30)
-					return
+				# Let main flow handle GENOME_READY transition after reload check completes
+				return
 			elif cached_session == current_session and cached_genome_num == current_genome_num:
-				print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but FEAGI not ready (available: %s, ready: %s) - waiting..." % [current_session, current_genome_num, genome_available, brain_ready])
+				if not cache_has_data:
+					print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but cache is EMPTY - need full reload" % [current_session, current_genome_num])
+				else:
+					print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but FEAGI not ready (available: %s, ready: %s) - waiting..." % [current_session, current_genome_num, genome_available, brain_ready])
 			else:
 				print("FEAGICORE: [3D_SCENE_DEBUG] 🔄 Session or genome changed (session: %d→%d, genome: %d→%d) - reload needed" % [cached_session, current_session, cached_genome_num, current_genome_num])
 			

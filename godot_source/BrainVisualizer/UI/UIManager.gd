@@ -237,6 +237,11 @@ func FEAGI_confirmed_genome() -> void:
 	top_bar.toggle_buttons_interactability(true)
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] Checking if Main circuit is available...")
+	print("UIMANAGER: [DEBUG] Brain regions cache state:")
+	print("  - available_brain_regions count: ", FeagiCore.feagi_local_cache.brain_regions._available_brain_regions.size())
+	print("  - available_brain_regions keys: ", FeagiCore.feagi_local_cache.brain_regions._available_brain_regions.keys())
+	print("  - is_root_available(): ", FeagiCore.feagi_local_cache.brain_regions.is_root_available())
+	print("  - ROOT_REGION_ID constant: ", FeagiCore.feagi_local_cache.brain_regions._get_configured_root_id())
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No Main circuit detected - 3D scene cannot initialize!")
 		push_error("UI: Unable to init Main circuit for CB and BM since none was detected!")
