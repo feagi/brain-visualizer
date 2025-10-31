@@ -48,6 +48,10 @@ var _window_manager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
+
+# CRITICAL: Track whether 3D scene has been successfully instantiated
+# This prevents hiding the loading screen before the 3D scene is actually ready
+var _3d_scene_instantiated: bool = false
 var _selection_system: SelectionSystem
 var _temp_bm_holder: UI_Capsules_Capsule
 var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
@@ -110,6 +114,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
 	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
+	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	
@@ -143,6 +148,14 @@ func FEAGI_no_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling FEAGI UI elements due to no genome")
 	window_manager.force_close_all_windows()
 	top_bar.toggle_buttons_interactability(false)
+	
+	# CRITICAL: Mark 3D scene as not instantiated when genome is lost
+	print("UIMANAGER: [3D_SCENE_DEBUG] Marking _3d_scene_instantiated = false (genome lost)")
+	_3d_scene_instantiated = false
+	
+	# Force loading screen check to show loading screen again
+	print("UIMANAGER: [3D_SCENE_DEBUG] Forcing loading screen to show since genome lost")
+	_update_loading_screen_visibility()
 
 
 ## Handle brain readiness changes
@@ -158,6 +171,10 @@ func _on_genome_availability_changed(available: bool) -> void:
 ## Handle cache reload events
 func _on_cache_reloaded() -> void:
 	update_loading_status("Updating brain visualizer cache...")
+
+## Handle genome load state changes to show/hide loading screen
+func _on_genome_load_state_changed(_current_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
+	_update_loading_screen_visibility()
 
 ## Handle websocket health changes to show/hide loading screen
 func _on_websocket_health_changed(_prev_health, _current_health) -> void:
@@ -192,10 +209,12 @@ func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE,
 ## 2. Brain is ready 
 ## 3. Genome is available
 ## 4. Websocket is actually connected (if using websocket transport)
+## 5. Genome load state is GENOME_READY (3D scene has been initialized)
 func _update_loading_screen_visibility() -> void:
 	var connection_healthy = FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY
 	var brain_ready = FeagiCore.feagi_local_cache.brain_readiness
 	var genome_available = FeagiCore.feagi_local_cache.genome_availability
+	var genome_scene_ready = FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
 	
 	# Additional check: If using websocket transport, verify websocket is actually connected
 	var websocket_ok = true
@@ -206,9 +225,14 @@ func _update_loading_screen_visibility() -> void:
 	print("  - Connection healthy: %s (state: %s)" % [connection_healthy, FEAGINetworking.CONNECTION_STATE.keys()[FeagiCore.network.connection_state]])
 	print("  - Brain ready: %s" % brain_ready)
 	print("  - Genome available: %s" % genome_available)
+	print("  - Genome scene ready: %s (state: %s)" % [genome_scene_ready, FeagiCore.GENOME_LOAD_STATE.keys()[FeagiCore.genome_load_state]])
+	print("  - 3D scene instantiated: %s" % _3d_scene_instantiated)
 	print("  - Websocket OK: %s (transport: %s)" % [websocket_ok, FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]])
 	
-	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available and websocket_ok
+	# CRITICAL: Only hide loading screen when 3D scene is ACTUALLY instantiated
+	# This prevents hiding the loading screen during the gap between genome_load_state becoming GENOME_READY
+	# and the actual 3D scene being created via FEAGI_confirmed_genome()
+	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available and genome_scene_ready and _3d_scene_instantiated and websocket_ok
 	
 	if should_hide_loading_screen:
 		print("UIMANAGER: ✅ All conditions met - hiding loading screen")
@@ -224,6 +248,13 @@ func _update_loading_screen_visibility() -> void:
 				update_loading_status("Awaiting FEAGI brain readiness...")
 		if not genome_available:
 			reasons.append("no genome available")
+		if not genome_scene_ready:
+			reasons.append("3D scene loading")
+			if connection_healthy and brain_ready and genome_available:
+				update_loading_status("Loading 3D scene...")
+		if genome_scene_ready and not _3d_scene_instantiated:
+			reasons.append("3D scene instantiating")
+			update_loading_status("Initializing 3D scene...")
 		if not websocket_ok:
 			reasons.append("websocket not connected")
 			update_loading_status("Websocket disconnected - reconnecting...")
@@ -264,9 +295,6 @@ func FEAGI_confirmed_genome() -> void:
 	_root_UI_view.setup_as_single_tab(initial_tabs)
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Circuit Builder setup complete")
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling loading screen...")
-	toggle_loading_screen(false)
-	
 	# temp BM
 	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Brain Monitor 3D scene...")
 	_temp_bm_holder = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
@@ -293,6 +321,16 @@ func FEAGI_confirmed_genome() -> void:
 	# If we restored a previous camera position (e.g., genome reload), disable the startup intro this time
 	if _temp_bm_camera_pos.length() > 0.01:
 		brain_monitor.enable_startup_camera_intro = false
+	
+	# CRITICAL: Mark 3D scene as fully instantiated BEFORE checking loading screen
+	# This ensures loading screen is only hidden when 3D scene is actually visible
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Marking _3d_scene_instantiated = true")
+	_3d_scene_instantiated = true
+	
+	# CRITICAL: Force loading screen visibility check NOW that 3D scene is actually ready
+	# This is the ONLY safe time to hide the loading screen - after all 3D elements exist
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene fully initialized - triggering final loading screen check")
+	_update_loading_screen_visibility()
 	
 	# CRITICAL: Create visualizations for any missing child regions (e.g., after cloning)
 	# This ensures cloned regions appear immediately after genome reload

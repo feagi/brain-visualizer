@@ -72,12 +72,12 @@ func decode_response_as_generic_error_code() -> PackedStringArray:
 	if feagi_error_response is Dictionary:
 		# Try FEAGI's current format first
 		if "error_code" in feagi_error_response.keys():
-			error_code = feagi_error_response["error_code"]
+			error_code = str(feagi_error_response["error_code"])
 		elif "code" in feagi_error_response.keys():
-			error_code = feagi_error_response["code"]
+			error_code = str(feagi_error_response["code"])
 		
 		if "message" in feagi_error_response.keys():
-			friendly_description = feagi_error_response["message"]
+			friendly_description = str(feagi_error_response["message"])
 		elif "description" in feagi_error_response.keys():
-			friendly_description = feagi_error_response["description"]
+			friendly_description = str(feagi_error_response["description"])
 	return PackedStringArray([error_code, friendly_description])
