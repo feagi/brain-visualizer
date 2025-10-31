@@ -133,6 +133,11 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		return false
 	
 	# both HTTP and WS are functioning! We are good to go!
+	# CRITICAL: Transition to HEALTHY state now that both HTTP and WebSocket are connected
+	print("FEAGI NETWORK: ✅ Both HTTP and WebSocket connected successfully - transitioning to HEALTHY state")
+	_connection_state = CONNECTION_STATE.HEALTHY
+	connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.HEALTHY)
+	
 	# connect signals for future changes
 	print("FEAGI NETWORK: Connecting to HTTP health signals for ongoing monitoring") 
 	http_API.FEAGI_http_health_changed.connect(_HTTP_health_changed)
