@@ -237,6 +237,7 @@ signal brain_readiness_changed(new_val: bool)
 signal genome_availability_or_brain_readiness_changed(available: bool, ready: bool)
 signal simulation_timestep_changed(new_timestep: float)
 signal genome_refresh_needed(feagi_session: int, genome_num: int, reason: String)
+signal agent_reregistration_needed(reason: String)  # Emitted when FEAGI restarts and agent needs to re-register
 
 var burst_engine: bool:
 	get: return _burst_engine
@@ -322,6 +323,7 @@ signal memory_area_stats_updated(stats: Dictionary)
 # Genome change detection tracking
 var _previous_feagi_session: int = 0
 var _previous_genome_num: int = 0
+var _had_valid_session: bool = false  # Track if we ever had a valid session (to detect FEAGI restart)
 var _last_genome_change_time: int = 0  # Time of last change detection
 var _genome_change_cooldown_ms: int = 10000  # 10 second cooldown
 
@@ -334,6 +336,31 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 	if "feagi_session" in health and "genome_num" in health:
 		var feagi_session_value = health["feagi_session"]
 		var genome_num_value = health["genome_num"]
+		
+		# CRITICAL: Detect FEAGI readiness (null → valid session) to trigger agent re-registration
+		# This handles the case where BV connects before FEAGI is ready (feagi_session is null)
+		# and then FEAGI becomes ready (feagi_session becomes valid)
+		if feagi_session_value != null and (typeof(feagi_session_value) == TYPE_INT or typeof(feagi_session_value) == TYPE_FLOAT):
+			var current_session = int(feagi_session_value)
+			# Detect transition from null/invalid to valid session (FEAGI became ready)
+			# Only trigger if:
+			# 1. Current session is valid (> 0)
+			# 2. We haven't seen a valid session yet (or previous was 0)
+			# 3. BV is already connected (not during initial connection attempt)
+			if current_session > 0:
+				var was_previously_null_or_zero = (_previous_feagi_session == 0 and not _had_valid_session)
+				if was_previously_null_or_zero:
+					_had_valid_session = true
+					# Only trigger re-registration if BV is already connected (not during initial connection)
+					# Check if FeagiCore exists and is in a connected state
+					if FeagiCore and FeagiCore.network:
+						var conn_state = FeagiCore.network.connection_state
+						var is_already_connected = (conn_state == FeagiCore.network.CONNECTION_STATE.HEALTHY or 
+													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_HTTP or
+													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_WS)
+						if is_already_connected:
+							print("🔍 [AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
+							agent_reregistration_needed.emit("FEAGI became ready (session: %d)" % current_session)
 		
 		# Skip genome change detection if values are null (None)
 		if feagi_session_value != null and genome_num_value != null:
@@ -348,6 +375,11 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 			# Session changes: detect both initial connection (0 → new) and FEAGI restarts (old → new)
 			var session_changed = ((_previous_feagi_session == 0 and current_feagi_session > 0) or
 								  (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session))
+			
+			# If session changed and we previously had a valid session, trigger agent re-registration
+			if session_changed and _previous_feagi_session != 0:
+				print("🔍 [AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_feagi_session])
+				agent_reregistration_needed.emit("FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session])
 
 			# Genome changes: only detect actual changes (not initial from 0)
 			var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)

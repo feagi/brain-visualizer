@@ -66,6 +66,7 @@ func _enter_tree():
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
 	feagi_local_cache.genome_refresh_needed.connect(_on_genome_refresh_needed)
+	feagi_local_cache.agent_reregistration_needed.connect(_on_agent_reregistration_needed)
 	requests = FEAGIRequests.new()
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
@@ -527,6 +528,20 @@ func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: Stri
 	match genome_load_state:
 		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE, GENOME_LOAD_STATE.GENOME_READY, GENOME_LOAD_STATE.GENOME_PROCESSING, GENOME_LOAD_STATE.GENOME_RELOADING:
 			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+
+func _on_agent_reregistration_needed(reason: String):
+	print("🔍 [AGENT-REG] Triggering agent re-registration: %s" % reason)
+	if not network:
+		push_warning("🔍 [AGENT-REG] Cannot re-register - network not available")
+		return
+	
+	# Only re-register if we're already connected (not during initial connection attempt)
+	if network.connection_state == network.CONNECTION_STATE.HEALTHY or network.connection_state == network.CONNECTION_STATE.RETRYING_HTTP or network.connection_state == network.CONNECTION_STATE.RETRYING_WS:
+		print("🔍 [AGENT-REG] Re-registering agent with FEAGI...")
+		await network._call_register_agent_for_shm()
+		print("🔍 [AGENT-REG] Agent re-registration completed")
+	else:
+		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[network.connection_state])
 
 #endregion
 
