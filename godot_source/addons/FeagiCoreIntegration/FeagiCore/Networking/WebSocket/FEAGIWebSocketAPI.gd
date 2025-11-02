@@ -265,11 +265,6 @@ func _process(_delta: float):
 				
 				# Process the decoded neuron data
 				for cortical_id in decoded_result.areas.keys():
-					# Filter out core areas (_death, _power) that can't be visualized
-					if cortical_id == "_death" or cortical_id == "_power":
-						print("⏭️ [WS-DEBUG] Skipping core area: %s" % cortical_id)
-						continue
-					
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
 					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
