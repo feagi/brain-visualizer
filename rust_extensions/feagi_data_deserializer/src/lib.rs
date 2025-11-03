@@ -1,6 +1,6 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
-use feagi_data_serialization::{FeagiSerializable, FeagiByteStructureType};
+// FeagiByteContainer is imported within functions where needed
 use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
 // Rayon is only available on native platforms (not WASM)
@@ -141,28 +141,80 @@ impl FeagiDataDeserializer {
             }
         };
         
-        // Step 2: Verify structure type
-        let _structure_type = match FeagiByteStructureType::try_get_type_from_bytes(&data_to_deserialize) {
-            Ok(t) => {
-                godot_print!("🦀 [DECODE] Type: {:?}", t);
-                t
-            }
-            Err(e) => {
-                godot_error!("🦀 [DECODE] Unknown type 0x{:02x}", data_to_deserialize[0]);
-                return self.create_error_dict(format!("Bad type: {:?}", e));
-            }
-        };
+        // Step 2: Extract from FeagiByteContainer (version 2 container format)
+        // ARCHITECTURE: FEAGI now wraps all data in FeagiByteContainer
+        godot_print!("🦀 [DECODE] Starting FeagiByteContainer extraction, data size: {}", data_to_deserialize.len());
+        let preview: String = data_to_deserialize.iter()
+            .take(20)
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+        godot_print!("🦀 [DECODE] Decompressed data preview: {}", preview);
+        godot_print!("🦀 [DECODE] First 4 bytes as u8: [{}, {}, {}, {}]", 
+            data_to_deserialize.get(0).unwrap_or(&0),
+            data_to_deserialize.get(1).unwrap_or(&0),
+            data_to_deserialize.get(2).unwrap_or(&0),
+            data_to_deserialize.get(3).unwrap_or(&0)
+        );
         
-        // Step 3: Deserialize with official FEAGI library
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
-        match neuron_data.try_deserialize_and_update_self_from_byte_slice(&data_to_deserialize) {
-            Ok(_) => {
-                godot_print!("🦀 [DECODE] ✅ Success [LIB-v1647]");
+        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully
+        match std::panic::catch_unwind(|| {
+            use feagi_data_serialization::FeagiByteContainer;
+            
+            let mut byte_container = FeagiByteContainer::new_empty();
+            let mut data_vec = data_to_deserialize.clone();
+            
+            godot_print!("🦀 [DECODE] About to load into FeagiByteContainer...");
+            
+            // Load bytes into container
+            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                std::mem::swap(bytes, &mut data_vec);
+                Ok(())
+            }) {
+                return Err(format!("{:?}", e));
+            }
+            
+            godot_print!("🦀 [DECODE] Loaded successfully, getting structure count...");
+            
+            // Get structure count
+            let num_structures = match byte_container.try_get_number_contained_structures() {
+                Ok(n) => n,
+                Err(e) => return Err(format!("{:?}", e))
+            };
+            
+            if num_structures == 0 {
+                return Err("Empty container".to_string());
+            }
+            
+            godot_print!("🦀 [DECODE] Found {} structures, extracting first...", num_structures);
+            
+            // Extract first structure
+            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+                Ok(s) => s,
+                Err(e) => return Err(format!("{:?}", e))
+            };
+            
+            godot_print!("🦀 [DECODE] Structure extracted, downcasting...");
+            
+            // Downcast to CorticalMappedXYZPNeuronVoxels
+            let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+                Some(nd) => nd,
+                None => return Err("Wrong structure type".to_string())
+            };
+            
+            godot_print!("🦀 [DECODE] ✅ Success - extracted from FeagiByteContainer");
+            Ok(neuron_data.clone())
+        }) {
+            Ok(Ok(neuron_data)) => {
                 self.convert_neuron_data_to_godot(&neuron_data)
             }
-            Err(e) => {
-                godot_error!("🦀 [DECODE] Deserialize failed: {:?}", e);
-                self.create_error_dict(format!("Deserialize error: {:?}", e))
+            Ok(Err(e)) => {
+                godot_error!("🦀 [DECODE] FeagiByteContainer extraction failed: {}", e);
+                self.create_error_dict(format!("FeagiByteContainer error: {}", e))
+            }
+            Err(_) => {
+                godot_error!("🦀 [DECODE] FeagiByteContainer extraction PANICKED!");
+                self.create_error_dict("FeagiByteContainer panic".to_string())
             }
         }
     }
@@ -204,16 +256,44 @@ impl FeagiDataDeserializer {
         // Convert PackedByteArray to Vec<u8>
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // Deserialize neuron data
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
+        // Extract from FeagiByteContainer (version 2 container format)
+        use feagi_data_serialization::FeagiByteContainer;
         
-        if let Err(e) = neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-            godot_error!("🦀 Failed to deserialize neuron data: {:?}", e);
+        let mut byte_container = FeagiByteContainer::new_empty();
+        let mut data_vec = rust_buffer;
+        
+        if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+            std::mem::swap(bytes, &mut data_vec);
+            Ok(())
+        }) {
+            godot_error!("🦀 Failed to load FeagiByteContainer: {:?}", e);
             return self.create_visualization_error_dict(
-                format!("Deserialization error: {:?}", e),
+                format!("FeagiByteContainer error: {:?}", e),
                 start_time.elapsed().as_micros() as i64
             );
         }
+        
+        let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+            Ok(s) => s,
+            Err(e) => {
+                godot_error!("🦀 Failed to extract structure: {:?}", e);
+                return self.create_visualization_error_dict(
+                    format!("Structure extract error: {:?}", e),
+                    start_time.elapsed().as_micros() as i64
+                );
+            }
+        };
+        
+        let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+            Some(nd) => nd,
+            None => {
+                godot_error!("🦀 Structure is not CorticalMappedXYZPNeuronVoxels");
+                return self.create_visualization_error_dict(
+                    "Wrong structure type".to_string(),
+                    start_time.elapsed().as_micros() as i64
+                );
+            }
+        };
         
         // Count total neurons
         let total_neurons: usize = neuron_data.mappings.values()
