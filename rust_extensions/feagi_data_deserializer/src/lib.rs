@@ -102,8 +102,8 @@ impl FeagiDataDeserializer {
             .map(|b| format!("{:02x}", b))
             .collect::<Vec<_>>()
             .join(" ");
-        godot_print!("🦀 [DECODE] Buffer: {} bytes, first byte: 0x{:02x}, preview: {}", 
-                    rust_buffer.len(), first_byte, preview);
+        // godot_print!("🦀 [PROC] Buf: {} bytes, first byte: 0x{:02x}, preview: {}", 
+        //             rust_buffer.len(), first_byte, preview);
         
         // ARCHITECTURE: FEAGI → Serialize → LZ4 compress (MANDATORY) → ZMQ → Bridge PASSTHROUGH → BV → LZ4 decompress (MANDATORY)
         // NO FALLBACKS: Data MUST be LZ4 compressed
@@ -113,7 +113,7 @@ impl FeagiDataDeserializer {
         // Extract uncompressed size and compressed data
         let (uncompressed_size, compressed_data) = if rust_buffer.len() >= 4 {
             let size = u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]]) as i32;
-            godot_print!("🦀 [DECODE] LZ4 header: uncompressed_size={}, compressed_size={}", size, rust_buffer.len() - 4);
+            // godot_print!("🦀 [DECODE] LZ4 header: uncompressed_size={}, compressed_size={}", size, rust_buffer.len() - 4);
             (Some(size), &rust_buffer[4..])
         } else {
             godot_error!("🦀 [DECODE] Buffer too short for size header");
@@ -124,7 +124,7 @@ impl FeagiDataDeserializer {
             lz4::block::decompress(compressed_data, uncompressed_size)
         }) {
             Ok(Ok(d)) if !d.is_empty() => {
-                godot_print!("🦀 [DECODE] LZ4: {} → {} bytes", rust_buffer.len(), d.len());
+                // godot_print!("🦀 [DECODE] LZ4: {} → {} bytes", rust_buffer.len(), d.len());
                 d
             }
             Ok(Ok(_)) => {
@@ -143,19 +143,19 @@ impl FeagiDataDeserializer {
         
         // Step 2: Extract from FeagiByteContainer (version 2 container format)
         // ARCHITECTURE: FEAGI now wraps all data in FeagiByteContainer
-        godot_print!("🦀 [DECODE] Starting FeagiByteContainer extraction, data size: {}", data_to_deserialize.len());
-        let preview: String = data_to_deserialize.iter()
-            .take(20)
-            .map(|b| format!("{:02x}", b))
-            .collect::<Vec<_>>()
-            .join(" ");
-        godot_print!("🦀 [DECODE] Decompressed data preview: {}", preview);
-        godot_print!("🦀 [DECODE] First 4 bytes as u8: [{}, {}, {}, {}]", 
-            data_to_deserialize.get(0).unwrap_or(&0),
-            data_to_deserialize.get(1).unwrap_or(&0),
-            data_to_deserialize.get(2).unwrap_or(&0),
-            data_to_deserialize.get(3).unwrap_or(&0)
-        );
+        // godot_print!("🦀 [DECODE] Starting FeagiByteContainer extraction, data size: {}", data_to_deserialize.len());
+        // let preview: String = data_to_deserialize.iter()
+        //     .take(20)
+        //     .map(|b| format!("{:02x}", b))
+        //     .collect::<Vec<_>>()
+        //     .join(" ");
+        // godot_print!("🦀 [DECODE] Decompressed data preview: {}", preview);
+        // godot_print!("🦀 [DECODE] First 4 bytes as u8: [{}, {}, {}, {}]", 
+        //     data_to_deserialize.get(0).unwrap_or(&0),
+        //     data_to_deserialize.get(1).unwrap_or(&0),
+        //     data_to_deserialize.get(2).unwrap_or(&0),
+        //     data_to_deserialize.get(3).unwrap_or(&0)
+        // );
         
         // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully
         match std::panic::catch_unwind(|| {
@@ -164,7 +164,7 @@ impl FeagiDataDeserializer {
             let mut byte_container = FeagiByteContainer::new_empty();
             let mut data_vec = data_to_deserialize.clone();
             
-            godot_print!("🦀 [DECODE] About to load into FeagiByteContainer...");
+            // godot_print!("🦀 [DECODE] About to load into FeagiByteContainer...");
             
             // Load bytes into container
             if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
@@ -174,7 +174,7 @@ impl FeagiDataDeserializer {
                 return Err(format!("{:?}", e));
             }
             
-            godot_print!("🦀 [DECODE] Loaded successfully, getting structure count...");
+            // godot_print!("🦀 [DECODE] Loaded successfully, getting structure count...");
             
             // Get structure count
             let num_structures = match byte_container.try_get_number_contained_structures() {
@@ -186,7 +186,7 @@ impl FeagiDataDeserializer {
                 return Err("Empty container".to_string());
             }
             
-            godot_print!("🦀 [DECODE] Found {} structures, extracting first...", num_structures);
+            // godot_print!("🦀 [DECODE] Found {} structures, extracting first...", num_structures);
             
             // Extract first structure
             let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
@@ -194,7 +194,7 @@ impl FeagiDataDeserializer {
                 Err(e) => return Err(format!("{:?}", e))
             };
             
-            godot_print!("🦀 [DECODE] Structure extracted, downcasting...");
+            // godot_print!("🦀 [DECODE] Structure extracted, downcasting...");
             
             // Downcast to CorticalMappedXYZPNeuronVoxels
             let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
@@ -202,7 +202,7 @@ impl FeagiDataDeserializer {
                 None => return Err("Wrong structure type".to_string())
             };
             
-            godot_print!("🦀 [DECODE] ✅ Success - extracted from FeagiByteContainer");
+            // godot_print!("🦀 [DECODE] ✅ Success - extracted from FeagiByteContainer");
             Ok(neuron_data.clone())
         }) {
             Ok(Ok(neuron_data)) => {
