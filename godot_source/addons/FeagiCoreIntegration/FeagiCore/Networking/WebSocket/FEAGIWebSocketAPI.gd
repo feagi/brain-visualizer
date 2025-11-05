@@ -214,7 +214,7 @@ func _process(_delta: float):
 				var raw_len := raw_packet.size()
 				
 				# 🐛 DEBUG: Log all received packets
-				print("🔍 [WS-DEBUG] Received packet: %d bytes, first byte: 0x%02x" % [raw_len, raw_packet[0] if raw_len > 0 else 0])
+				# print("🔍 [WS-DEBUG] Received packet: %d bytes, first byte: 0x%02x" % [raw_len, raw_packet[0] if raw_len > 0 else 0])
 				
 				# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
 				if _is_probably_text(raw_packet):
@@ -242,10 +242,10 @@ func _process(_delta: float):
 					continue
 				
 				# Log raw packet for debugging
-				var hex_preview: String = ""
-				for i in range(min(20, raw_len)):
-					hex_preview += "%02x " % raw_packet[i]
-				print("📦 [WS-DEBUG] Processing %d bytes: %s" % [raw_len, hex_preview])
+				# var hex_preview: String = ""
+				# for i in range(min(20, raw_len)):
+				# 	hex_preview += "%02x " % raw_packet[i]
+				# print("📦 [WS-DEBUG] Processing %d bytes: %s" % [raw_len, hex_preview])
 				
 				# Pass raw bytes directly to Rust deserializer - it handles LZ4 decompression internally
 				# Architecture: FEAGI → LZ4 compress → ZMQ → Bridge → BV → Rust (LZ4 decompress + deserialize)
@@ -261,7 +261,7 @@ func _process(_delta: float):
 					continue
 				
 				# Successfully decoded
-				print("✅ [WS-DEBUG] Decode SUCCESS: %d cortical areas" % decoded_result.areas.size())
+				# print("✅ [WS-DEBUG] Decode SUCCESS: %d cortical areas" % decoded_result.areas.size())
 				
 				# Process the decoded neuron data
 				for cortical_id in decoded_result.areas.keys():
@@ -271,16 +271,16 @@ func _process(_delta: float):
 					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
 					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
 					
-					print("🧠 [WS-DEBUG] Processing area '%s': %d neurons" % [cortical_id, x_array.size()])
+					# print("🧠 [WS-DEBUG] Processing area '%s': %d neurons" % [cortical_id, x_array.size()])
 					
 					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
 					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
 					if area:
-						print("✅ [RENDER-DEBUG] Found area '%s', calling FEAGI_set_direct_points_bulk_data() with %d neurons" % [cortical_id, x_array.size()])
+						# print("✅ [RENDER-DEBUG] Found area '%s', calling FEAGI_set_direct_points_bulk_data() with %d neurons" % [cortical_id, x_array.size()])
 						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-						print("✅ [RENDER-DEBUG] Called area.FEAGI_set_direct_points_bulk_data() - rendering should happen now")
+						# print("✅ [RENDER-DEBUG] Called area.FEAGI_set_direct_points_bulk_data() - rendering should happen now")
 					else:
-						print("❌ [RENDER-DEBUG] Area '%s' NOT FOUND in cache! Available areas: %s" % [cortical_id, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()])
+						# print("❌ [RENDER-DEBUG] Area '%s' NOT FOUND in cache! Available areas: %s" % [cortical_id, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()])
 						_handle_missing_cortical_area(cortical_id)
 				
 				# Successfully processed - skip legacy processing

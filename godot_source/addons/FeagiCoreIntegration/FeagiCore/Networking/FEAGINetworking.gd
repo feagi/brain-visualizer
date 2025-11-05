@@ -206,7 +206,8 @@ func _call_register_agent_for_shm() -> bool:
 				"bridge_proxy": false
 			}
 		},
-		"metadata": {"request_shared_memory": true}
+		"metadata": {"request_shared_memory": true},
+		"chosen_transport": "websocket"  # BV prefers WebSocket over ZMQ
 	}
 	# Avoid chained member resolution at parse time; guard address_list
 	var addr_list = http_API.get("address_list")
@@ -220,11 +221,18 @@ func _call_register_agent_for_shm() -> bool:
 	await worker.worker_done
 	var out := worker.retrieve_output_and_close()
 	if out.has_errored or out.has_timed_out:
-		print("𒓉 [REG] Agent register failed or timed out; will continue without SHM auto-config")
+		print("𒓉 [REG] Agent register failed or timed out")
 		print("𒓉 [REG] Error? ", out.has_errored, ", Timeout? ", out.has_timed_out)
 		if out.has_errored:
 			var body := out.decode_response_as_dict()
 			print("𒓉 [REG] Error body: ", body)
+			# Check if FEAGI rejected the requested transport
+			if out.response_code >= 400 and out.response_code < 500:
+				push_error("𒓉 [REG] ❌ FEAGI rejected registration (HTTP %d): %s" % [out.response_code, body.get("message", "Unknown error")])
+				if body.has("message") and "transport" in str(body["message"]).to_lower():
+					push_error("𒓉 [REG] ❌ Requested transport 'websocket' not supported by FEAGI")
+					# TODO: Could retry with different transport or inform user
+			return false
 		return false
 	var resp := out.decode_response_as_dict()
 	print("𒓉 [REG] Response: ", resp)
@@ -246,65 +254,66 @@ func _call_register_agent_for_shm() -> bool:
 	
 	# Check registration success and transport negotiation
 	if resp.get("status", "") == "success":
-		# NEW: Check transport negotiation from registration response
-		if resp.has("transport") and typeof(resp["transport"]) == TYPE_DICTIONARY:
-			var transport: Dictionary = resp["transport"]
-			var recommended: String = transport.get("recommended", "")
-			var available: Array = transport.get("available", [])
+		# FEAGI 2.0: Check SHM paths first (legacy compatibility)
+		if resp.has("shm_paths") and typeof(resp["shm_paths"]) == TYPE_DICTIONARY:
+			var shm_paths: Dictionary = resp["shm_paths"]
+			if shm_paths.has("visualization"):
+				var viz_path: String = str(shm_paths["visualization"])
+				print("𒓉 [TRANSPORT] ✅ Using SHM transport: ", viz_path)
+				OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz_path)
+				
+				# Enable SHM visualization and SKIP WebSocket connection
+				if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
+					websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+					websocket_API.enable_shared_memory_visualization(viz_path)
+					print("𒓉 [TRANSPORT] ✅ SHM visualization enabled, WebSocket will be skipped")
+				return true  # Success - using SHM, no need for WebSocket
+		
+		# FEAGI 2.0: Parse new transports array format
+		if resp.has("transports") and typeof(resp["transports"]) == TYPE_ARRAY:
+			var transports: Array = resp["transports"]
+			var recommended: String = resp.get("recommended_transport", "zmq")
 			
-			print("𒓉 [TRANSPORT] Available transports: ", available)
+			print("𒓉 [TRANSPORT] FEAGI 2.0 multi-transport registration:")
+			print("𒓉 [TRANSPORT] Available transports: ", transports.size())
 			print("𒓉 [TRANSPORT] Recommended: ", recommended)
 			
-			# If SHM is recommended, use it directly
-			if recommended == "shm" and transport.has("shm_paths"):
-				var shm_paths: Dictionary = transport["shm_paths"]
-				if shm_paths.has("visualization"):
-					var viz_path: String = str(shm_paths["visualization"])
-					print("𒓉 [TRANSPORT] ✅ Using SHM transport: ", viz_path)
-					OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz_path)
+			# Try to find WebSocket transport
+			for transport_option in transports:
+				if typeof(transport_option) != TYPE_DICTIONARY:
+					continue
+				
+				var transport_dict: Dictionary = transport_option
+				var transport_type: String = transport_dict.get("transport_type", "")
+				var enabled: bool = transport_dict.get("enabled", false)
+				
+				if transport_type == "websocket" and enabled:
+					var ws_host: String = transport_dict.get("host", "127.0.0.1")
+					var ports: Dictionary = transport_dict.get("ports", {})
+					var ws_viz_port: int = int(ports.get("visualization", 9050))
 					
-					# Enable SHM visualization and SKIP WebSocket connection
-					if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
-						# CRITICAL: Enable processing so SHM polling happens in _process()
-						websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
-						websocket_API.enable_shared_memory_visualization(viz_path)
-						print("𒓉 [TRANSPORT] ✅ SHM visualization enabled, WebSocket will be skipped")
-					return true  # Success - using SHM, no need for WebSocket
+					print("𒓉 [TRANSPORT] ✅ Found WebSocket transport:")
+					print("    Host: ", ws_host)
+					print("    Visualization port: ", ws_viz_port)
+					
+					var ws_address: String = "ws://%s:%d" % [ws_host, ws_viz_port]
+					print("𒓉 [TRANSPORT] Connecting to: ", ws_address)
+					
+					# Update endpoint with FEAGI-provided address
+					if _feagi_endpoint_details:
+						_feagi_endpoint_details.full_websocket_address = ws_address
+					
+					# WebSocket connection will proceed with FEAGI-provided address
+					return false
 			
-			# If WebSocket is recommended (via bridge)
-			elif recommended == "websocket":
-				var ws_host: String = "127.0.0.1"
-				var ws_port: int = 9050
-				
-				if transport.has("websocket") and typeof(transport["websocket"]) == TYPE_DICTIONARY:
-					var ws_info: Dictionary = transport["websocket"]
-					if not ws_info.is_empty():
-						ws_host = ws_info.get("host", "127.0.0.1")
-						ws_port = int(ws_info.get("port", 9050))
-						print("𒓉 [TRANSPORT] Using WebSocket transport via bridge (from FEAGI)")
-					else:
-						print("𒓉 [TRANSPORT] Empty websocket config, using default bridge address")
-				else:
-					print("𒓉 [TRANSPORT] Using WebSocket transport via bridge (default)")
-				
-				var bridge_address: String = "ws://%s:%d" % [ws_host, ws_port]
-				print("𒓉 [TRANSPORT] Bridge address: ", bridge_address)
-				# Update the WebSocket address to point to the bridge
-				if _feagi_endpoint_details:
-					_feagi_endpoint_details.full_websocket_address = bridge_address
-				# WebSocket connection will proceed normally below with updated address
-				return false
-			
-			# If ZMQ is recommended (direct)
-			elif recommended == "zmq":
-				print("𒓉 [TRANSPORT] Direct ZMQ transport recommended (not currently supported in BV)")
-				print("𒓉 [TRANSPORT] Attempting to connect via bridge at default address instead")
-				# BV doesn't support direct ZMQ, try default bridge address instead
-				var bridge_address: String = "ws://127.0.0.1:9050"
-				if _feagi_endpoint_details:
-					_feagi_endpoint_details.full_websocket_address = bridge_address
-				print("𒓉 [TRANSPORT] Bridge address: ", bridge_address)
-				return false
+			# No WebSocket found, check if ZMQ is available
+			print("𒓉 [TRANSPORT] No WebSocket transport available from FEAGI")
+			print("𒓉 [TRANSPORT] Falling back to default configuration")
+			return false
+		
+		# Legacy format compatibility (old registration response)
+		print("𒓉 [TRANSPORT] Legacy registration format detected")
+		return false
 	
 	# Default: SHM not available, fall back to WebSocket
 	return false
