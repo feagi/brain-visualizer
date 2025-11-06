@@ -5,14 +5,21 @@ reloadable = false
 
 [libraries]
 # Desktop platforms (embedded FEAGI only works on desktop)
-macos.debug = "target/debug/libfeagi_embedded.dylib"
-macos.release = "target/release/libfeagi_embedded.dylib"
+# Godot 4.5+ requires architecture-specific entries
 
-windows.debug.x86_64 = "target/x86_64-pc-windows-msvc/debug/feagi_embedded.dll"
-windows.release.x86_64 = "target/x86_64-pc-windows-msvc/release/feagi_embedded.dll"
+# macOS (both Intel and Apple Silicon use same universal binary)
+macos.debug.arm64 = "res://addons/feagi_embedded/target/release/libfeagi_embedded.dylib"
+macos.release.arm64 = "res://addons/feagi_embedded/target/release/libfeagi_embedded.dylib"
+macos.debug.x86_64 = "res://addons/feagi_embedded/target/release/libfeagi_embedded.dylib"
+macos.release.x86_64 = "res://addons/feagi_embedded/target/release/libfeagi_embedded.dylib"
 
-linux.debug.x86_64 = "target/x86_64-unknown-linux-gnu/debug/libfeagi_embedded.so"
-linux.release.x86_64 = "target/x86_64-unknown-linux-gnu/release/libfeagi_embedded.so"
+# Windows (x86_64 only)
+windows.debug.x86_64 = "res://addons/feagi_embedded/target/debug/feagi_embedded.dll"
+windows.release.x86_64 = "res://addons/feagi_embedded/target/release/feagi_embedded.dll"
+
+# Linux (x86_64 only)
+linux.debug.x86_64 = "res://addons/feagi_embedded/target/debug/libfeagi_embedded.so"
+linux.release.x86_64 = "res://addons/feagi_embedded/target/release/libfeagi_embedded.so"
 
 # Web builds not supported for embedded FEAGI (too heavy for WASM)
 # Use external FEAGI with WebSocket for web deployments
