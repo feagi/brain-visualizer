@@ -20,6 +20,7 @@ anyhow = "1.0"
 
 # Logging (bridge Rust logs to Godot console)
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt"] }
 
 # Concurrency
 parking_lot = "0.12"

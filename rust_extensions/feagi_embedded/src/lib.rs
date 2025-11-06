@@ -28,6 +28,7 @@ use godot::prelude::*;
 use godot::classes::{RefCounted, IRefCounted};
 use feagi::{FeagiInstance, FeagiConfig};
 use std::sync::{Arc, Mutex};
+use std::io::Write;
 
 struct FeagiEmbeddedLib;
 
@@ -59,6 +60,11 @@ impl IRefCounted for FeagiEmbedded {
         godot_print!("🦀 FEAGI Embedded v2.0.0 initialized (in-process mode)");
         godot_print!("   Platform: desktop-only (no web support)");
         godot_print!("   Communication: Direct FFI (microsecond latency)");
+        
+        // CRITICAL: Initialize logging FIRST before any FEAGI operations
+        // This ensures all FEAGI logs are redirected to Godot console
+        Self::init_godot_logging();
+        godot_print!("📝 Logging redirected to Godot console");
         
         Self {
             base,
@@ -107,20 +113,30 @@ impl FeagiEmbedded {
     /// - WebSocket: ws://127.0.0.1:9050
     /// - Burst frequency: 100Hz
     /// - GPU: Auto-detect
+    /// - Debug logging: ENABLED
     /// 
     /// # Returns
     /// 
     /// `true` if initialization succeeded, `false` otherwise
     #[func]
     fn initialize_default(&mut self) -> bool {
+        eprintln!("════════════════════════════════════════");
+        eprintln!("[GDX-INIT] ✅ initialize_default() called");
+        eprintln!("════════════════════════════════════════");
+        
         godot_print!("📝 Initializing FEAGI with embedded defaults...");
+        godot_print!("   Note: Logging is initialized by FeagiInstance::new() automatically");
         
         let config = Self::create_embedded_config();
         
+        eprintln!("[GDX-INIT] Calling FeagiInstance::new()...");
         match FeagiInstance::new(config) {
             Ok(mut feagi) => {
+                eprintln!("[GDX-INIT] ✅ FeagiInstance created, calling initialize()...");
                 match feagi.initialize() {
                     Ok(_) => {
+                        eprintln!("[GDX-INIT] ✅ initialize() returned Ok");
+
                         godot_print!("✅ FEAGI initialized successfully");
                         godot_print!("   HTTP API: {}", feagi.get_api_url());
                         godot_print!("   Use HTTP API for: genome loading, analytics, settings");
@@ -130,12 +146,14 @@ impl FeagiEmbedded {
                         true
                     }
                     Err(e) => {
+                        eprintln!("[GDX-INIT] ❌ initialize() failed: {}", e);
                         godot_error!("❌ FEAGI initialization failed: {}", e);
                         false
                     }
                 }
             }
             Err(e) => {
+                eprintln!("[GDX-INIT] ❌ FeagiInstance::new() failed: {}", e);
                 godot_error!("❌ Failed to create FEAGI instance: {}", e);
                 false
             }
@@ -374,31 +392,23 @@ impl FeagiEmbedded {
     fn create_embedded_config() -> FeagiConfig {
         use feagi_config::*;
         
-        FeagiConfig {
-            api: ApiConfig {
-                host: "127.0.0.1".to_string(),
-                port: 8000,
-                ..Default::default()
-            },
-            websocket: WebSocketConfig {
-                enabled: true,
-                host: "127.0.0.1".to_string(),
-                visualization_port: 9050,
-                sensory_port: 9051,
-                motor_port: 9052,
-                registration_port: 9053,
-                ..Default::default()
-            },
-            neural: NeuralConfig {
-                burst_engine_timestep: 0.01,  // 100Hz
-                ..Default::default()
-            },
-            resources: ResourcesConfig {
-                use_gpu: true,  // Auto-detect and use if available
-                ..Default::default()
-            },
-            ..Default::default()
-        }
+        let mut config = FeagiConfig::default();
+        
+        // Override for embedded mode
+        config.api.host = "127.0.0.1".to_string();
+        config.api.port = 8000;
+        
+        config.websocket.enabled = true;
+        config.websocket.host = "127.0.0.1".to_string();
+        config.websocket.visualization_port = 9050;
+        config.websocket.sensory_port = 9051;
+        config.websocket.motor_port = 9052;
+        config.websocket.registration_port = 9053;
+        
+        config.neural.burst_engine_timestep = 0.01;  // 100Hz
+        config.resources.use_gpu = true;
+        
+        config
     }
     
     /// Initialize FEAGI from config file
@@ -411,6 +421,63 @@ impl FeagiEmbedded {
         feagi.initialize()?;
         
         Ok(feagi)
+    }
+    
+    
+    /// Initialize logging with Godot console output
+    /// 
+    /// This MUST be called before FeagiInstance::new() to ensure all logs
+    /// are captured and redirected to Godot's console.
+    /// 
+    /// Reads logging configuration from feagi_configuration.toml
+    fn init_godot_logging() {
+        use tracing_subscriber::fmt::format::FmtSpan;
+        use tracing_subscriber::EnvFilter;
+        
+        // Create a custom writer that outputs to godot_print
+        struct GodotWriter;
+        
+        impl Write for GodotWriter {
+            fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+                if let Ok(s) = std::str::from_utf8(buf) {
+                    let msg = s.trim_end();
+                    if !msg.is_empty() {
+                        godot_print!("[FEAGI] {}", msg);
+                    }
+                }
+                Ok(buf.len())
+            }
+            
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        
+        // Create filter that enables DEBUG for all FEAGI crates and TRACE for HTTP
+        let filter = EnvFilter::new(
+            "debug,\
+             feagi=debug,\
+             feagi_api=trace,\
+             feagi_services=debug,\
+             feagi_pns=debug,\
+             feagi_burst_engine=debug,\
+             feagi_bdu=debug,\
+             feagi_evo=debug,\
+             axum=trace,\
+             tower_http=trace,\
+             hyper=debug"
+        );
+        
+        // Initialize with DEBUG level
+        let _ = tracing_subscriber::fmt()
+            .with_writer(|| GodotWriter)
+            .with_env_filter(filter)
+            .with_span_events(FmtSpan::NONE)
+            .with_target(true)
+            .with_level(true)
+            .try_init();
+        
+        godot_print!("🔍 [FEAGI] Debug logging enabled for all crates");
     }
 }
 

@@ -10,7 +10,3 @@ windows.debug.x86_64 = "target/debug/feagi_embedded.dll"
 windows.release.x86_64 = "target/release/feagi_embedded.dll"
 linux.debug.x86_64 = "target/debug/libfeagi_embedded.so"
 linux.release.x86_64 = "target/release/libfeagi_embedded.so"
-
-# Web builds not supported for embedded FEAGI (too heavy for WASM)
-# Use external FEAGI with WebSocket for web deployments
-
