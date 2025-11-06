@@ -69,14 +69,26 @@ func detect_and_configure_mode():
 
 func _detect_platform() -> String:
 	"""Detect platform: web, desktop, mobile, unknown"""
-	if OS.has_feature("web"):
+	# Check OS name directly (more reliable than has_feature)
+	var os_name = OS.get_name().to_lower()
+	
+	if os_name in ["web", "html5", "javascript"]:
 		return "web"
-	elif OS.has_feature("desktop"):
+	elif os_name in ["windows", "macos", "linux", "linuxbsd", "freebsd", "netbsd", "openbsd", "bsd"]:
 		return "desktop"
-	elif OS.has_feature("mobile"):
+	elif os_name in ["android", "ios"]:
 		return "mobile"
 	else:
-		return "unknown"
+		# Fallback to has_feature check
+		if OS.has_feature("web"):
+			return "web"
+		elif OS.has_feature("pc") or OS.has_feature("desktop"):
+			return "desktop"
+		elif OS.has_feature("mobile"):
+			return "mobile"
+		else:
+			push_warning("Unknown platform: %s - defaulting to desktop" % os_name)
+			return "desktop"  # Default to desktop instead of unknown
 
 func _load_user_preference() -> String:
 	"""Load user's saved mode preference from user:// directory"""
