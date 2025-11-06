@@ -21,6 +21,7 @@ feagi/root_region_id="root"
 [autoload]
 
 FeagiModeDetector="*res://Autoload/FeagiModeDetector.gd"
+FeagiProcessManager="*res://Autoload/FeagiProcessManager.gd"
 FeagiCore="*res://addons/FeagiCoreIntegration/FeagiCore/FeagiCore.gd"
 BV="*res://BrainVisualizer/BV.gd"
 
