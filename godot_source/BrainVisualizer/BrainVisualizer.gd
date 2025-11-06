@@ -21,8 +21,16 @@ func _ready() -> void:
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
 	
-	# Try to grab the network settings from javascript, but manually define the network settings to use as fallback if the javascript fails
-	FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+	# NEW: Check runtime mode and initialize accordingly
+	if FeagiModeDetector.is_embedded():
+		# Desktop with embedded FEAGI extension
+		print("🦀 [BV] Desktop mode detected - launching embedded FEAGI...")
+		_initialize_embedded_feagi()
+	else:
+		# HTML5 or desktop remote mode (existing behavior)
+		print("🌐 [BV] Remote mode - connecting to external FEAGI...")
+		# Try to grab the network settings from javascript, but manually define the network settings to use as fallback if the javascript fails
+		FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
@@ -48,3 +56,59 @@ func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_st
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:
 	_UI_manager.window_manager.spawn_amalgamation_window(amalgamation_id, genome_title, dimensions)
+
+## Initialize embedded FEAGI (desktop mode only)
+func _initialize_embedded_feagi():
+	print("🦀 [BV] Initializing embedded FEAGI...")
+	
+	# Verify extension is available
+	if not ClassDB.class_exists("FeagiEmbedded"):
+		push_error("Embedded mode selected but FeagiEmbedded extension not found!")
+		print("⚠️ [BV] Falling back to remote mode...")
+		FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		return
+	
+	# Create embedded FEAGI instance
+	var feagi_embedded = ClassDB.instantiate("FeagiEmbedded")
+	if not feagi_embedded:
+		push_error("Failed to instantiate FeagiEmbedded")
+		print("⚠️ [BV] Falling back to remote mode...")
+		FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		return
+	
+	add_child(feagi_embedded)
+	feagi_embedded.name = "FeagiEmbedded"
+	
+	# Initialize FEAGI
+	print("🦀 [BV] Initializing FEAGI components (this may take a few seconds)...")
+	if not feagi_embedded.initialize_default():
+		push_error("Failed to initialize embedded FEAGI")
+		print("⚠️ [BV] Falling back to remote mode...")
+		feagi_embedded.queue_free()
+		FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		return
+	
+	print("✅ [BV] Embedded FEAGI initialized successfully!")
+	print("   HTTP API: ", feagi_embedded.get_api_url())
+	
+	# Start burst engine
+	print("🦀 [BV] Starting burst engine...")
+	if feagi_embedded.start():
+		print("✅ [BV] Burst engine started!")
+	else:
+		push_warning("Burst engine did not start (this is OK if no genome loaded yet)")
+	
+	# Wire embedded FEAGI to FeagiCore
+	# FeagiCore will use HTTP API for complex operations (genome load, etc.)
+	var api_url = feagi_embedded.get_api_url()
+	var endpoint_details = FeagiEndpointDetails.new()
+	endpoint_details.API_address = api_url
+	endpoint_details.websocket_host = "127.0.0.1"
+	endpoint_details.websocket_visualization_port = 9050
+	
+	# Store reference for Settings menu
+	FeagiCore.embedded_feagi_instance = feagi_embedded
+	
+	# Continue with existing connection flow (for HTTP API and WebSocket)
+	# This reuses all existing BV code!
+	FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
