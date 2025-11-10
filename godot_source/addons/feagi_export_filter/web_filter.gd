@@ -3,6 +3,9 @@ extends EditorExportPlugin
 
 var _renamed: Array[String] = []
 
+func _get_name() -> String:
+	return "FEAGI Export Filter"
+
 func _supports_platform(_platform: EditorExportPlatform) -> bool:
 	# Avoid calling methods that may not exist; we handle gating by features in callbacks
 	return true

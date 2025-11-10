@@ -4,8 +4,8 @@ compatibility_minimum = 4.1
 reloadable = false
 
 [libraries]
-macos.debug = "target/debug/libfeagi_data_deserializer.dylib"
-macos.release = "target/release/libfeagi_data_deserializer.dylib"
+macos.debug = "libfeagi_data_deserializer.dylib"
+macos.release = "libfeagi_data_deserializer.dylib"
 windows.debug.x86_32 = "target/i686-pc-windows-msvc/debug/feagi_data_deserializer.dll"
 windows.debug.x86_64 = "target/x86_64-pc-windows-msvc/debug/feagi_data_deserializer.dll"
 windows.release.x86_32 = "target/i686-pc-windows-msvc/release/feagi_data_deserializer.dll"

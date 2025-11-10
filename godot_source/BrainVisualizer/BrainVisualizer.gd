@@ -24,9 +24,15 @@ func _ready() -> void:
 	
 	# NEW: Check runtime mode and initialize accordingly
 	if FeagiModeDetector.is_embedded():
-		# Desktop mode - launch FEAGI as subprocess
-		print("🦀 [BV] Desktop mode detected - launching FEAGI subprocess...")
-		_initialize_feagi_subprocess()
+		# Desktop mode - try embedded extension first, fall back to subprocess
+		if OS.has_feature("editor"):
+			# Editor mode - use subprocess (FEAGI binary exists in project)
+			print("🦀 [BV] Editor mode - launching FEAGI subprocess...")
+			_initialize_feagi_subprocess()
+		else:
+			# Exported app - use embedded extension (no FEAGI binary bundled)
+			print("🦀 [BV] Exported app - initializing FEAGI embedded extension...")
+			_initialize_feagi_embedded()
 	else:
 		# HTML5 or remote desktop mode
 		print("🌐 [BV] Remote mode - connecting to external FEAGI...")
@@ -71,8 +77,13 @@ func _initialize_feagi_subprocess():
 	if not started:
 		push_error("Failed to start FEAGI subprocess")
 		print("⚠️ [BV] FEAGI subprocess failed to start - falling back to remote mode...")
-		_UI_manager.update_loading_status("FEAGI failed to start - connect to external FEAGI...")
-		FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		_UI_manager.update_loading_status("Connecting to external FEAGI...")
+		# In native apps, JavaScript integration doesn't work, so connect directly
+		if OS.has_feature("web"):
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		else:
+			# Native app - connect directly to default endpoint
+			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
 		return
 	
 	print("✅ [BV] FEAGI subprocess started successfully!")
@@ -89,3 +100,117 @@ func _initialize_feagi_subprocess():
 	
 	print("🔗 [BV] Connecting to FEAGI subprocess...")
 	FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+
+## Initialize FEAGI embedded extension (in-process mode)
+## Used in exported apps where FEAGI binary is not bundled
+func _initialize_feagi_embedded():
+	print("🦀 [BV] Initializing FEAGI embedded extension...")
+	
+	# Show loading screen
+	_UI_manager.update_loading_status("Initializing FEAGI...")
+	
+	# Check if extension is available
+	if not ClassDB.class_exists("FeagiEmbedded"):
+		push_error("FeagiEmbedded extension not available!")
+		_UI_manager.update_loading_status("FEAGI extension not available - connect to external FEAGI...")
+		# Fall back to remote mode
+		if OS.has_feature("web"):
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		else:
+			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
+		return
+	
+	# Instantiate embedded FEAGI
+	_feagi_embedded = ClassDB.instantiate("FeagiEmbedded")
+	if not _feagi_embedded:
+		push_error("Failed to instantiate FeagiEmbedded")
+		_UI_manager.update_loading_status("Failed to initialize FEAGI - connect to external FEAGI...")
+		if OS.has_feature("web"):
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		else:
+			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
+		return
+	
+	_UI_manager.update_loading_status("Starting FEAGI...")
+	
+	# Initialize with default settings
+	print("   [DEBUG] Calling initialize_default()...")
+	var init_success = _feagi_embedded.initialize_default()
+	print("   [DEBUG] initialize_default() returned: ", init_success)
+	if not init_success:
+		push_error("Failed to initialize embedded FEAGI")
+		_UI_manager.update_loading_status("FEAGI initialization failed - connect to external FEAGI...")
+		if OS.has_feature("web"):
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		else:
+			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
+		return
+	
+	# Start FEAGI
+	print("   [DEBUG] Calling start()...")
+	var start_success = _feagi_embedded.start()
+	print("   [DEBUG] start() returned: ", start_success)
+	if not start_success:
+		push_error("Failed to start embedded FEAGI")
+		_UI_manager.update_loading_status("FEAGI failed to start - connect to external FEAGI...")
+		if OS.has_feature("web"):
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		else:
+			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
+		return
+	
+	print("✅ [BV] FEAGI embedded extension initialized and started!")
+	var api_url = _feagi_embedded.get_api_url()
+	print("   HTTP API: ", api_url)
+	print("   WebSocket: ws://127.0.0.1:9050")
+	
+	# Wait for HTTP server to be ready before connecting
+	_UI_manager.update_loading_status("Waiting for FEAGI HTTP server...")
+	var http_ready = await _wait_for_embedded_http_ready(api_url)
+	if not http_ready:
+		push_error("FEAGI HTTP server not ready - falling back to remote connection")
+		_UI_manager.update_loading_status("FEAGI HTTP server timeout - connect to external FEAGI...")
+		if OS.has_feature("web"):
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		else:
+			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
+		return
+	
+	# Now connect to FEAGI via HTTP/WebSocket (same as remote mode)
+	_UI_manager.update_loading_status("Connecting to FEAGI...")
+	
+	var endpoint_details = FeagiEndpointDetails.create_from(api_url, "ws://127.0.0.1:9050")
+	print("🔗 [BV] Connecting to embedded FEAGI...")
+	FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+
+## Wait for embedded FEAGI HTTP server to be ready
+func _wait_for_embedded_http_ready(api_url: String) -> bool:
+	var http = HTTPRequest.new()
+	add_child(http)
+	
+	var health_url = api_url + "/v1/system/health_check"
+	var attempts = 0
+	var max_attempts = 20  # 10 seconds (poll every 500ms)
+	
+	while attempts < max_attempts:
+		# Try health check directly
+		var error = http.request(health_url)
+		if error == OK:
+			var result = await http.request_completed
+			var response_code = result[1]
+			
+			if response_code == 200:
+				print("   ✅ FEAGI HTTP server is ready (attempt ", attempts + 1, ")")
+				http.queue_free()
+				return true
+		
+		# Wait before retry
+		await get_tree().create_timer(0.5).timeout
+		attempts += 1
+		
+		if attempts % 4 == 0:  # Every 2 seconds
+			print("   ⏳ Still waiting for HTTP server... (", attempts / 2, "s elapsed)")
+	
+	http.queue_free()
+	print("   ❌ FEAGI HTTP server not ready after timeout")
+	return false
