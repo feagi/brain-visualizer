@@ -262,6 +262,10 @@ func _on_health_check():
 		var exit_code = -1  # Can't get exit code easily in Godot
 		feagi_crashed.emit(exit_code)
 
+## Get the FEAGI executable path (public wrapper)
+func get_feagi_executable_path() -> String:
+	return _get_feagi_executable_path()
+
 ## Find the FEAGI executable path
 func _get_feagi_executable_path() -> String:
 	var os_name = OS.get_name()

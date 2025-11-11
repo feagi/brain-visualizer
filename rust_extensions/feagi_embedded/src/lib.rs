@@ -27,13 +27,18 @@
 use godot::prelude::*;
 use godot::classes::{RefCounted, IRefCounted};
 use feagi::{FeagiInstance, FeagiConfig};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::io::Write;
+use crossbeam_channel::{unbounded, Sender, Receiver};
 
 struct FeagiEmbeddedLib;
 
 #[gdextension]
 unsafe impl ExtensionLibrary for FeagiEmbeddedLib {}
+
+/// Global log channel for thread-safe logging
+/// Worker threads send logs here, main thread polls via poll_logs()
+static LOG_CHANNEL: OnceLock<(Sender<String>, Receiver<String>)> = OnceLock::new();
 
 /// FEAGI Embedded - In-process neural engine for Godot
 /// 
@@ -201,6 +206,39 @@ impl FeagiEmbedded {
                 godot_error!("❌ FEAGI shutdown error: {}", e);
             } else {
                 godot_print!("✅ FEAGI shutdown complete");
+            }
+        }
+    }
+    
+    /// Poll and drain log messages from worker threads
+    /// 
+    /// **CRITICAL**: Call this from `_process(delta)` in GDScript to see FEAGI logs.
+    /// Worker threads cannot call godot_print! directly (would panic), so they send
+    /// logs to a channel. This method drains that channel from the main thread.
+    /// 
+    /// Processes up to 100 messages per call to avoid frame hitches.
+    /// 
+    /// # Example
+    /// 
+    /// ```gdscript
+    /// var feagi_embedded: FeagiEmbedded
+    /// 
+    /// func _process(delta):
+    ///     if feagi_embedded:
+    ///         feagi_embedded.poll_logs()  # Drain logs each frame
+    /// ```
+    #[func]
+    fn poll_logs(&self) {
+        if let Some((_, receiver)) = LOG_CHANNEL.get() {
+            // Drain up to 100 messages per frame (avoid frame hitches)
+            for _ in 0..100 {
+                match receiver.try_recv() {
+                    Ok(msg) => {
+                        // Safe: called from main thread (GDScript's _process)
+                        godot_print!("[FEAGI] {}", msg);
+                    }
+                    Err(_) => break, // Channel empty
+                }
             }
         }
     }
@@ -424,25 +462,35 @@ impl FeagiEmbedded {
     }
     
     
-    /// Initialize logging with Godot console output
+    /// Initialize thread-safe logging with channel-based output
     /// 
-    /// This MUST be called before FeagiInstance::new() to ensure all logs
-    /// are captured and redirected to Godot's console.
+    /// Worker threads send logs to a channel, which are polled by the main thread
+    /// via poll_logs(). This avoids cross-thread Godot FFI access that causes panics.
     /// 
     /// Reads logging configuration from feagi_configuration.toml
     fn init_godot_logging() {
         use tracing_subscriber::fmt::format::FmtSpan;
         use tracing_subscriber::EnvFilter;
         
-        // Create a custom writer that outputs to godot_print
-        struct GodotWriter;
+        // Initialize channel for thread-safe logging
+        let (sender, receiver) = unbounded();
+        if LOG_CHANNEL.set((sender.clone(), receiver)).is_err() {
+            eprintln!("[FEAGI] Warning: Log channel already initialized");
+            return;
+        }
         
-        impl Write for GodotWriter {
+        // Create a custom writer that sends to channel (thread-safe!)
+        struct ChannelWriter {
+            sender: Sender<String>,
+        }
+        
+        impl Write for ChannelWriter {
             fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
                 if let Ok(s) = std::str::from_utf8(buf) {
                     let msg = s.trim_end();
                     if !msg.is_empty() {
-                        godot_print!("[FEAGI] {}", msg);
+                        // Send to channel instead of godot_print! (no FFI access!)
+                        let _ = self.sender.send(msg.to_string());
                     }
                 }
                 Ok(buf.len())
@@ -470,14 +518,15 @@ impl FeagiEmbedded {
         
         // Initialize with DEBUG level
         let _ = tracing_subscriber::fmt()
-            .with_writer(|| GodotWriter)
+            .with_writer(move || ChannelWriter { sender: sender.clone() })
             .with_env_filter(filter)
             .with_span_events(FmtSpan::NONE)
             .with_target(true)
             .with_level(true)
             .try_init();
         
-        godot_print!("🔍 [FEAGI] Debug logging enabled for all crates");
+        godot_print!("🔍 [FEAGI] Thread-safe channel-based logging initialized");
+        godot_print!("   Call poll_logs() from _process() to see FEAGI logs");
     }
 }
 

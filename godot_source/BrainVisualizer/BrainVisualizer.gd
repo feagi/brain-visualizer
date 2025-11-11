@@ -23,15 +23,35 @@ func _ready() -> void:
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
 	
 	# NEW: Check runtime mode and initialize accordingly
+	# Force recompilation: v2 - check binary existence before choosing mode
 	if FeagiModeDetector.is_embedded():
-		# Desktop mode - try embedded extension first, fall back to subprocess
+		# Desktop mode - check if FEAGI binary exists in exported app location
+		# In exported apps, the binary won't exist, so use embedded extension
+		var feagi_binary_path = ""
 		if OS.has_feature("editor"):
-			# Editor mode - use subprocess (FEAGI binary exists in project)
-			print("🦀 [BV] Editor mode - launching FEAGI subprocess...")
+			# Editor mode - check project path
+			feagi_binary_path = ProjectSettings.globalize_path("res://../../feagi/target/release/feagi")
+		else:
+			# Exported app - check app bundle location
+			var os_name = OS.get_name()
+			if os_name == "macOS":
+				feagi_binary_path = OS.get_executable_path().get_base_dir() + "/../Resources/bin/feagi"
+			elif os_name == "Windows":
+				feagi_binary_path = OS.get_executable_path().get_base_dir() + "/bin/feagi.exe"
+			else:
+				feagi_binary_path = OS.get_executable_path().get_base_dir() + "/bin/feagi"
+		
+		var feagi_binary_exists = FileAccess.file_exists(feagi_binary_path)
+		print("   [DEBUG] FEAGI binary path: ", feagi_binary_path)
+		print("   [DEBUG] FEAGI binary exists: ", feagi_binary_exists)
+		
+		if feagi_binary_exists:
+			# FEAGI binary exists - use subprocess (editor mode or bundled binary)
+			print("🦀 [BV] FEAGI binary found - launching FEAGI subprocess...")
 			_initialize_feagi_subprocess()
 		else:
-			# Exported app - use embedded extension (no FEAGI binary bundled)
-			print("🦀 [BV] Exported app - initializing FEAGI embedded extension...")
+			# No FEAGI binary - use embedded extension (exported app)
+			print("🦀 [BV] No FEAGI binary found - initializing FEAGI embedded extension...")
 			_initialize_feagi_embedded()
 	else:
 		# HTML5 or remote desktop mode
@@ -41,6 +61,12 @@ func _ready() -> void:
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
+
+## Poll embedded FEAGI logs every frame
+## CRITICAL: This drains the log channel from worker threads
+func _process(_delta: float) -> void:
+	if _feagi_embedded:
+		_feagi_embedded.poll_logs()
 
 func _on_genome_reloading() -> void:
 	_UI_manager.FEAGI_about_to_reset_genome()
