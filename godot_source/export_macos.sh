@@ -144,14 +144,23 @@ run_export() {
         print_info "Bundling FEAGI binary and configuration..."
         local feagi_bin_src="$PROJECT_DIR/../../feagi/target/release/feagi"
         local feagi_cfg_src="$PROJECT_DIR/../../feagi/feagi_configuration.toml"
+        local feagi_wrapper_src="$PROJECT_DIR/launch_feagi_wrapper.sh"
         local feagi_bin_dest="$app_file/Contents/Resources/bin"
         local feagi_cfg_dest="$app_file/Contents/Resources"
+        local feagi_wrapper_dest="$app_file/Contents/MacOS"
         
         if [[ -f "$feagi_bin_src" ]]; then
             mkdir -p "$feagi_bin_dest"
             cp "$feagi_bin_src" "$feagi_bin_dest/"
             chmod +x "$feagi_bin_dest/feagi"
             print_success "FEAGI binary bundled successfully"
+            
+            # Bundle wrapper script for debugging
+            if [[ -f "$feagi_wrapper_src" ]]; then
+                cp "$feagi_wrapper_src" "$feagi_wrapper_dest/"
+                chmod +x "$feagi_wrapper_dest/launch_feagi_wrapper.sh"
+                print_success "FEAGI wrapper script bundled"
+            fi
         else
             print_warning "FEAGI binary not found at: $feagi_bin_src"
             print_warning "Exported app will use embedded FEAGI extension (has threading issues)"

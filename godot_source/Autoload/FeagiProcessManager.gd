@@ -49,18 +49,26 @@ func start_feagi() -> bool:
 		return true
 	
 	print("🚀 [ProcessManager] Starting FEAGI subprocess...")
+	print("   🔍 Current working directory: ", OS.get_environment("PWD"))
+	print("   🔍 Executable base: ", OS.get_executable_path())
 	
 	# Find FEAGI executable
 	_feagi_path = _get_feagi_executable_path()
+	print("   🔍 Looking for FEAGI at: ", _feagi_path)
 	if not FileAccess.file_exists(_feagi_path):
 		push_error("FEAGI executable not found at: ", _feagi_path)
+		print("   ❌ File check failed for: ", _feagi_path)
 		return false
+	print("   ✅ FEAGI executable found")
 	
 	# Find config file
 	_config_path = _get_config_path()
+	print("   🔍 Looking for config at: ", _config_path)
 	if not FileAccess.file_exists(_config_path):
 		push_error("FEAGI config not found at: ", _config_path)
+		print("   ❌ File check failed for: ", _config_path)
 		return false
+	print("   ✅ Config file found")
 	
 	print("   📁 Executable: ", _feagi_path)
 	print("   📁 Config: ", _config_path)
@@ -279,8 +287,8 @@ func _get_feagi_executable_path() -> String:
 			# Development mode - use project-relative path
 			base_path = ProjectSettings.globalize_path("res://../../feagi/target/release/feagi")
 		else:
-			# Packaged mode
-			base_path = OS.get_executable_path().get_base_dir() + "/../Resources/bin/feagi"
+			# Packaged mode - use wrapper script for debugging
+			base_path = OS.get_executable_path().get_base_dir() + "/launch_feagi_wrapper.sh"
 	
 	elif os_name == "Windows":
 		if OS.has_feature("editor"):
