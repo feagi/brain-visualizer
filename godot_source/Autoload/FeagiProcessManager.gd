@@ -121,24 +121,62 @@ func stop_feagi():
 	if not _is_running or _process_id <= 0:
 		return
 	
-	print("🛑 [ProcessManager] Stopping FEAGI subprocess...")
+	print("🛑 [ProcessManager] Stopping FEAGI subprocess (PID: %d)..." % _process_id)
 	
 	_health_check_timer.stop()
 	
-	# Try graceful shutdown first (SIGTERM)
+	# Send SIGTERM for graceful shutdown
 	OS.kill(_process_id)
+	print("   📨 Sent SIGTERM to FEAGI process")
 	
-	# Wait briefly for graceful shutdown
-	await get_tree().create_timer(1.0).timeout
+	# Wait synchronously for graceful shutdown (no await during app exit)
+	var wait_start = Time.get_ticks_msec()
+	var max_wait_ms = 2000  # 2 seconds max wait
+	
+	while OS.is_process_running(_process_id) and (Time.get_ticks_msec() - wait_start) < max_wait_ms:
+		OS.delay_msec(100)  # Check every 100ms
 	
 	# Force kill if still running
 	if OS.is_process_running(_process_id):
-		print("   ⚠️ Force killing FEAGI process")
-		# Note: No direct SIGKILL in Godot, OS.kill() should handle it
+		print("   ⚠️ FEAGI did not exit gracefully, force killing with SIGKILL...")
+		print("   🔍 PID to kill: %d" % _process_id)
+		
+		# Use kill -9 (SIGKILL) to forcefully terminate
+		# OS.kill() only sends SIGTERM, so we need to use a shell command
+		var os_name = OS.get_name()
+		var kill_result = []
+		
+		if os_name in ["macOS", "Linux", "LinuxBSD", "FreeBSD", "NetBSD", "OpenBSD"]:
+			# Unix-like systems: use kill -9
+			# Use full path to kill command to avoid PATH issues
+			var kill_cmd = "/bin/kill"
+			kill_result = OS.execute(kill_cmd, ["-9", str(_process_id)], [], true, false)
+			print("   💀 Executed: %s -9 %d (exit code: %d)" % [kill_cmd, _process_id, kill_result])
+			
+			# Also try pkill as backup
+			if OS.is_process_running(_process_id):
+				print("   💀 Trying pkill as backup...")
+				OS.execute("/usr/bin/pkill", ["-9", "-P", str(_process_id)], [], true, false)  # Kill children
+				OS.execute("/usr/bin/pkill", ["-9", str(_process_id)], [], true, false)  # Kill parent
+		elif os_name == "Windows":
+			# Windows: use taskkill /F
+			kill_result = OS.execute("taskkill", ["/F", "/PID", str(_process_id)], [], true, false)
+			print("   💀 Executed: taskkill /F /PID %d (exit code: %d)" % [_process_id, kill_result])
+		
+		# Wait a bit longer for process to die
+		OS.delay_msec(1000)
+		
+		if OS.is_process_running(_process_id):
+			push_error("   ❌ FEAGI process STILL running after SIGKILL! (PID: %d)" % _process_id)
+			push_error("   ⚠️ Manual kill required: /bin/kill -9 %d" % _process_id)
+			push_error("   ⚠️ kill command result: %s" % str(kill_result))
+		else:
+			print("   ✅ FEAGI force killed successfully")
+	else:
+		print("   ✅ FEAGI exited gracefully")
 	
 	_process_id = 0
 	_is_running = false
-	print("   ✅ FEAGI stopped")
 	feagi_stopped.emit()
 
 ## Check if FEAGI process is still running

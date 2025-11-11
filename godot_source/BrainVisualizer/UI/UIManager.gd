@@ -514,6 +514,28 @@ func update_loading_status(message: String) -> void:
 		_loading_status_label.text = message
 		print("UIMANAGER: Loading status: %s" % message)
 
+## Show the shutdown screen with custom styling
+func show_shutdown_screen() -> void:
+	# Change the title from "Loading..." to "Shutting down..."
+	var loading_label = $TempLoadingScreen/LoadingOverlay/Top_Row/LoadingLabel
+	if loading_label:
+		loading_label.text = "Shutting down..."
+	
+	# Show the screen
+	toggle_loading_screen(true)
+	update_loading_status("Preparing to exit...")
+	
+	# Force UI to update immediately
+	await get_tree().process_frame
+	
+	print("UIMANAGER: ✅ Shutdown screen displayed")
+
+## Update shutdown status (forces UI refresh)
+func update_shutdown_status(message: String) -> void:
+	update_loading_status(message)
+	# Force UI update
+	await get_tree().process_frame
+
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
 		_window_manager.spawn_quick_cortical_menu(objects)

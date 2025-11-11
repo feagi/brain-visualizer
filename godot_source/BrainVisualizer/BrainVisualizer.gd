@@ -19,6 +19,9 @@ func _ready() -> void:
 	FeagiCore.genome_load_state_changed.connect(_on_genome_state_change)
 	FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 	
+	# Register UIManager with ShutdownManager for shutdown screen
+	ShutdownManager.register_ui_manager(_UI_manager)
+	
 	# First step is to load configuration for FeagiCore
 	FeagiCore.load_FEAGI_settings(FEAGI_configuration)
 	
@@ -67,6 +70,30 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _feagi_embedded:
 		_feagi_embedded.poll_logs()
+
+## Handle window close request
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		# Block the quit until shutdown completes
+		get_tree().set_auto_accept_quit(false)
+		
+		# Start async shutdown sequence
+		_perform_shutdown_async()
+
+## Perform async shutdown with UI updates
+func _perform_shutdown_async() -> void:
+	# Delegate to ShutdownManager for graceful shutdown with UI
+	await ShutdownManager.request_shutdown_async()
+	
+	# Now allow quit
+	print("🛑 [BV] Shutdown complete - quitting app")
+	get_tree().quit()
+
+## Cleanup when exiting (emergency fallback)
+func _exit_tree() -> void:
+	# Last chance cleanup (shouldn't need this if _notification worked)
+	# Use synchronous version since _exit_tree doesn't support await
+	ShutdownManager.request_shutdown()
 
 func _on_genome_reloading() -> void:
 	_UI_manager.FEAGI_about_to_reset_genome()
@@ -156,6 +183,9 @@ func _initialize_feagi_embedded():
 		else:
 			FeagiCore.attempt_connection_to_FEAGI(default_FEAGI_network_settings)
 		return
+	
+	# Register with ShutdownManager for cleanup
+	ShutdownManager.register_embedded_instance(_feagi_embedded)
 	
 	_UI_manager.update_loading_status("Starting FEAGI...")
 	
