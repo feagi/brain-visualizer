@@ -11,7 +11,7 @@ set -euo pipefail
 # Configuration
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXPORT_PRESET_NAME="macOS"
-OUTPUT_FILE="$PROJECT_DIR/Brain-Visualizer.dmg"
+OUTPUT_FILE="$PROJECT_DIR/Brain Visualizer.dmg"
 
 # Godot executable (can be overridden by argument or environment variable)
 GODOT_BIN="${1:-${GODOT_BIN:-}}"
@@ -91,18 +91,23 @@ verify_godot_version() {
 clean_previous_exports() {
     print_info "Cleaning previous exports..."
     
-    # Remove DMG if it exists
+    # Remove DMG files (both old and new names)
     if [[ -f "$OUTPUT_FILE" ]]; then
         rm -f "$OUTPUT_FILE"
         print_success "Removed old DMG: $OUTPUT_FILE"
     fi
+    rm -f "$PROJECT_DIR/Brain-Visualizer.dmg" 2>/dev/null || true
     
-    # Remove .app if it exists
+    # Remove .app files (both old and new names)
     local app_file="${OUTPUT_FILE%.dmg}.app"
     if [[ -d "$app_file" ]]; then
         rm -rf "$app_file"
         print_success "Removed old .app: $app_file"
     fi
+    rm -rf "$PROJECT_DIR/Brain-Visualizer.app" 2>/dev/null || true
+    
+    # Remove staging directory
+    rm -rf "$PROJECT_DIR/.dmg_staging" 2>/dev/null || true
 }
 
 verify_export_templates() {
@@ -284,11 +289,11 @@ verify_export() {
     local mount_point="/tmp/bv-verify-$$"
     
     if hdiutil attach "$OUTPUT_FILE" -mountpoint "$mount_point" -quiet 2>/dev/null; then
-        if [[ -d "$mount_point/Brain-Visualizer.app" ]]; then
-            print_success "Found Brain-Visualizer.app in DMG"
+        if [[ -d "$mount_point/Brain Visualizer.app" ]]; then
+            print_success "Found Brain Visualizer.app in DMG"
             
             # Check for essential files
-            if [[ -f "$mount_point/Brain-Visualizer.app/Contents/MacOS/Brain-Visualizer" ]]; then
+            if [[ -f "$mount_point/Brain Visualizer.app/Contents/MacOS/Brain Visualizer" ]]; then
                 print_success "Found executable"
             else
                 print_error "Executable not found"
@@ -296,21 +301,21 @@ verify_export() {
                 return 1
             fi
             
-            if [[ -f "$mount_point/Brain-Visualizer.app/Contents/Resources/Brain-Visualizer.pck" ]]; then
+            if [[ -f "$mount_point/Brain Visualizer.app/Contents/Resources/Brain Visualizer.pck" ]]; then
                 print_success "Found .pck file"
             else
                 print_warning ".pck file not found"
             fi
             
-            if [[ -d "$mount_point/Brain-Visualizer.app/Contents/Frameworks" ]]; then
+            if [[ -d "$mount_point/Brain Visualizer.app/Contents/Frameworks" ]]; then
                 local lib_count
-                lib_count=$(find "$mount_point/Brain-Visualizer.app/Contents/Frameworks" -name "*.dylib" 2>/dev/null | wc -l | tr -d ' ')
+                lib_count=$(find "$mount_point/Brain Visualizer.app/Contents/Frameworks" -name "*.dylib" 2>/dev/null | wc -l | tr -d ' ')
                 print_success "Found $lib_count Rust libraries"
             else
                 print_warning "No Frameworks directory found"
             fi
         else
-            print_error "Brain-Visualizer.app not found in DMG"
+            print_error "Brain Visualizer.app not found in DMG"
             hdiutil detach "$mount_point" -quiet 2>/dev/null || true
             return 1
         fi
@@ -403,7 +408,7 @@ main() {
     echo "" >&2
     print_info "To install:"
     echo "  1. Open: $OUTPUT_FILE" >&2
-    echo "  2. Drag 'Brain-Visualizer.app' to the 'Applications' folder" >&2
+    echo "  2. Drag 'Brain Visualizer.app' to the 'Applications' folder" >&2
     echo "  3. Launch from Applications or Spotlight" >&2
     echo "" >&2
     print_info "To test directly from DMG:"
