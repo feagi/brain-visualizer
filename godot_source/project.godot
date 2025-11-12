@@ -20,6 +20,7 @@ feagi/root_region_id="root"
 
 [autoload]
 
+StatusReporter="*res://Autoload/StatusReporter.gd"
 FeagiModeDetector="*res://Autoload/FeagiModeDetector.gd"
 FeagiProcessManager="*res://Autoload/FeagiProcessManager.gd"
 ShutdownManager="*res://Autoload/ShutdownManager.gd"

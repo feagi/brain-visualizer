@@ -1,40 +1,34 @@
 #!/bin/bash
-# FEAGI launch wrapper - ensures writable working directory
+# Wrapper script to launch FEAGI subprocess from Brain Visualizer.app
 
-# Get the directory of this script
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Get the directory where Brain Visualizer.app is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"  # Contents directory
+RESOURCES_DIR="$APP_DIR/Resources"
 
-# Create a writable working directory for FEAGI logs
-# Use ~/Library/Application Support which is standard for macOS apps
-FEAGI_WORK_DIR="$HOME/Library/Application Support/BrainVisualizer/feagi"
-mkdir -p "$FEAGI_WORK_DIR"
+# FEAGI binary location
+FEAGI_BIN="$RESOURCES_DIR/bin/feagi"
 
-# Change to writable directory before launching FEAGI
-cd "$FEAGI_WORK_DIR" || exit 1
+# Log file location
+LOG_FILE="/tmp/feagi_subprocess.log"
 
-# Log file for debugging
-LOG_FILE="$HOME/Library/Logs/BrainVisualizer/feagi_launch.log"
-mkdir -p "$(dirname "$LOG_FILE")"
+# Check if FEAGI binary exists
+if [ ! -f "$FEAGI_BIN" ]; then
+    echo "ERROR: FEAGI binary not found at: $FEAGI_BIN" | tee -a "$LOG_FILE" >&2
+    exit 1
+fi
 
-# Log the launch attempt
-{
-    echo "=== FEAGI Launch Attempt ===" 
-    echo "Time: $(date)"
-    echo "Working dir: $(pwd)"
-    echo "Args: $*"
-    echo ""
-} >> "$LOG_FILE" 2>&1
+# Change to /tmp so FEAGI can create its log directories
+cd /tmp
 
-# Execute FEAGI from writable directory
-"$SCRIPT_DIR/../Resources/bin/feagi" "$@" >> "$LOG_FILE" 2>&1
-EXIT_CODE=$?
+# Launch FEAGI with logging
+echo "========================================" >> "$LOG_FILE"
+echo "🚀 FEAGI Launch: $(date)" >> "$LOG_FILE"
+echo "   Binary: $FEAGI_BIN" >> "$LOG_FILE"
+echo "   Args: $@" >> "$LOG_FILE"
+echo "   Working Dir: $(pwd)" >> "$LOG_FILE"
+echo "========================================" >> "$LOG_FILE"
 
-# Log the result
-{
-    echo "Exit code: $EXIT_CODE"
-    echo "==========================="
-    echo ""
-} >> "$LOG_FILE" 2>&1
-
-exit $EXIT_CODE
-
+# Just pass through all arguments - BV already handles --config
+# Redirect stdout/stderr to log file
+exec "$FEAGI_BIN" "$@" >> "$LOG_FILE" 2>&1

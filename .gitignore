@@ -6,6 +6,7 @@
 !setup.cfg
 *.orig
 *.log
+*.log.*
 *.pot
 __pycache__/*
 .cache/*
@@ -54,6 +55,10 @@ MANIFEST
 
 # Containerized DB data
 data/
+
+# Log directories and files with date extensions
+logs/
+**/logs/
 
 # dependencies
 node_modules/

@@ -53,22 +53,36 @@ func start_feagi() -> bool:
 	print("   🔍 Executable base: ", OS.get_executable_path())
 	
 	# Find FEAGI executable
+	StatusReporter.report_status("Locating FEAGI binary...")
 	_feagi_path = _get_feagi_executable_path()
 	print("   🔍 Looking for FEAGI at: ", _feagi_path)
 	if not FileAccess.file_exists(_feagi_path):
+		StatusReporter.report_error("FEAGI binary not found")
 		push_error("FEAGI executable not found at: ", _feagi_path)
 		print("   ❌ File check failed for: ", _feagi_path)
 		return false
 	print("   ✅ FEAGI executable found")
 	
 	# Find config file
+	StatusReporter.report_status("Loading FEAGI configuration...")
 	_config_path = _get_config_path()
 	print("   🔍 Looking for config at: ", _config_path)
 	if not FileAccess.file_exists(_config_path):
+		StatusReporter.report_error("FEAGI config not found")
 		push_error("FEAGI config not found at: ", _config_path)
 		print("   ❌ File check failed for: ", _config_path)
 		return false
 	print("   ✅ Config file found")
+	
+	# Find genome file
+	StatusReporter.report_status("Loading essential genome...")
+	var _genome_path = _get_default_genome_path()
+	if _genome_path != "" and FileAccess.file_exists(_genome_path):
+		print("   ✅ Genome file found: ", _genome_path)
+	else:
+		_genome_path = ""
+		StatusReporter.report_status("⚠️  No genome - limited functionality")
+		print("   ⚠️  Essential genome not found - FEAGI will start without genome (WebSocket disabled)")
 	
 	print("   📁 Executable: ", _feagi_path)
 	print("   📁 Config: ", _config_path)
@@ -78,8 +92,15 @@ func start_feagi() -> bool:
 		"--config", _config_path
 	])
 	
+	# Add genome if found
+	if _genome_path != "":
+		args.append("--genome")
+		args.append(_genome_path)
+	
 	print("   🚀 Launching: ", _feagi_path, " ", args)
 	print("   📋 FEAGI stdout/stderr will be visible in console if launched from terminal")
+	
+	StatusReporter.report_status("FEAGI initializing...")
 	
 	# Spawn process (non-blocking)
 	# Note: Godot's create_process doesn't capture stdout/stderr
@@ -87,6 +108,7 @@ func start_feagi() -> bool:
 	_process_id = OS.create_process(_feagi_path, args, false)
 	
 	if _process_id <= 0:
+		StatusReporter.report_error("Failed to start FEAGI")
 		push_error("Failed to start FEAGI process")
 		return false
 	
@@ -94,25 +116,34 @@ func start_feagi() -> bool:
 	_is_running = true
 	
 	# Wait for HTTP server to become ready
+	StatusReporter.report_status("FEAGI HTTP API starting...")
 	print("   ⏳ Waiting for FEAGI HTTP server to be ready...")
 	var ready = await _wait_for_http_ready()
 	
 	if ready:
+		StatusReporter.report_status("FEAGI WebSocket starting...")
 		print("   ✅ FEAGI is ready!")
 		
 		# Load default genome
 		print("   📦 Loading default genome...")
 		var genome_loaded = await _load_default_genome()
 		if genome_loaded:
+			StatusReporter.report_success("FEAGI ready - connected!")
 			print("   ✅ Default genome loaded successfully")
 		else:
+			StatusReporter.report_status("⚠️ FEAGI ready - no genome")
 			push_warning("   ⚠️ Failed to load default genome (FEAGI will run without brain)")
 		
 		_health_check_timer.start()
 		feagi_started.emit()
 		return true
 	else:
+		StatusReporter.report_error("❌ FEAGI failed to start - HTTP timeout")
 		push_error("FEAGI failed to start within timeout")
+		push_error("   🔍 Check if FEAGI binary is correct and config is valid")
+		push_error("   📁 Executable: ", _feagi_path)
+		push_error("   📁 Config: ", _config_path)
+		push_error("   🔍 PID: ", _process_id, " (running: ", OS.is_process_running(_process_id), ")")
 		stop_feagi()
 		return false
 
