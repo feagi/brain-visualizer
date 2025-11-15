@@ -12,6 +12,9 @@ var _save_timer: Timer
 var _debounce_delay = 0.5  # Seconds to wait before saving after window change
 
 func _ready() -> void:
+	# CRITICAL: Make window invisible IMMEDIATELY to prevent flashing at wrong position
+	get_window().visible = false
+	
 	# Load saved state
 	_load_window_state()
 	
@@ -21,9 +24,11 @@ func _ready() -> void:
 	_save_timer.timeout.connect(_save_window_state)
 	add_child(_save_timer)
 	
-	# Wait for window to be fully initialized before restoring
-	await get_tree().process_frame
+	# Restore window state BEFORE showing (prevents flash on wrong monitor)
 	_restore_window_state()
+	
+	# NOW show the window at the correct position
+	get_window().visible = true
 	
 	# Connect to window events for auto-save
 	get_window().size_changed.connect(_on_window_changed)
@@ -106,7 +111,7 @@ func _save_window_state() -> void:
 
 func _restore_window_state() -> void:
 	if _state_data.is_empty():
-		print("[WindowStateManager] No window state to restore")
+		print("[WindowStateManager] No window state to restore, using defaults")
 		return
 	
 	var window = get_window()
@@ -141,13 +146,17 @@ func _restore_window_state() -> void:
 	
 	# Only restore position/size in windowed mode
 	if window.mode == Window.MODE_WINDOWED:
-		# Set position first (determines which monitor)
+		# CRITICAL: Set position FIRST (determines which monitor), THEN size
+		# This prevents the window from appearing on the wrong monitor first
 		window.position = Vector2i(saved_x, saved_y)
 		
-		# Then set size
+		# Small delay to let position settle before setting size
+		await get_tree().process_frame
+		
+		# Now set size on the correct monitor
 		window.size = Vector2i(saved_width, saved_height)
 		
-		# Set the screen
+		# Ensure the screen is set (might be redundant but ensures correctness)
 		window.current_screen = saved_screen
 		
 		print("[WindowStateManager] ✅ Restored window state: pos=(%d, %d) size=%dx%d screen=%d" % [
