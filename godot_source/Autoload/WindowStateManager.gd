@@ -10,6 +10,9 @@ const MIN_WINDOW_HEIGHT = 600
 var _state_data: Dictionary = {}
 var _save_timer: Timer
 var _debounce_delay = 0.5  # Seconds to wait before saving after window change
+var _last_saved_position: Vector2i = Vector2i.ZERO
+var _position_check_timer: float = 0.0
+var _position_check_interval: float = 1.0  # Check position every second
 
 func _ready() -> void:
 	# CRITICAL: Make window invisible IMMEDIATELY to prevent flashing at wrong position
@@ -27,6 +30,9 @@ func _ready() -> void:
 	# Restore window state BEFORE showing (prevents flash on wrong monitor)
 	_restore_window_state()
 	
+	# Initialize last saved position to current position
+	_last_saved_position = get_window().position
+	
 	# NOW show the window at the correct position
 	get_window().visible = true
 	
@@ -35,6 +41,26 @@ func _ready() -> void:
 	get_window().close_requested.connect(_on_window_close_requested)
 	
 	print("[WindowStateManager] ✅ Window state manager initialized")
+
+func _process(delta: float) -> void:
+	# Poll position changes periodically (Godot has no position_changed signal)
+	_position_check_timer += delta
+	if _position_check_timer >= _position_check_interval:
+		_position_check_timer = 0.0
+		_check_position_changed()
+
+func _check_position_changed() -> void:
+	var window = get_window()
+	var current_pos = window.position
+	
+	# Only trigger save if position actually changed
+	if current_pos != _last_saved_position:
+		print("[WindowStateManager] 📍 Position changed: (%d, %d) → (%d, %d)" % [
+			_last_saved_position.x, _last_saved_position.y,
+			current_pos.x, current_pos.y
+		])
+		_last_saved_position = current_pos
+		_on_window_changed()  # Trigger debounced save
 
 func _on_window_changed() -> void:
 	# Debounce saves to avoid excessive file writes during resize/move

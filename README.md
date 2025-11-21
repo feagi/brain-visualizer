@@ -5,6 +5,11 @@
 
 The Brain Visualizer is an open-source [Godot](https://github.com/godotengine/godot) based client of [FEAGI](https://github.com/feagi/feagi) that lets users interact with Genomes. It can both to modify various neural structures, and visualize the neuronal activity happening within.
 
+## Deployment Options
+
+- **Standalone Mode** (recommended): Connect to a running FEAGI instance via WebSocket
+- **Integrated Desktop Suite**: Available separately for unified desktop experience
+
 <video autoplay muted src="https://github.com/user-attachments/assets/5578d618-5fee-40f5-8413-c29d2e91c951" width="320" height="240"></video>
 
 

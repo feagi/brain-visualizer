@@ -1,5 +1,8 @@
 # FEAGI Embedded GDExtension
 
+> **Note:** Experimental in-process embedding for development and testing purposes.  
+> For production deployments, use the standard standalone configuration.
+
 **Desktop-only Godot extension that embeds FEAGI neural processing engine in-process.**
 
 ## Overview
