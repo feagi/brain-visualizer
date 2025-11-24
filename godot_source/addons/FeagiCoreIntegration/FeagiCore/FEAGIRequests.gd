@@ -1021,6 +1021,11 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
 	}
+	
+	# NEW: Add cortical_type_info for CUSTOM areas
+	var feagi_custom_type: FeagiCorticalType = FeagiCorticalTypeFactory.create_custom()
+	dict_to_send["cortical_type_info"] = feagi_custom_type.to_api_dict()
+	
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_customCorticalArea, dict_to_send)
@@ -1135,6 +1140,11 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		"device_count": device_count,
 		"coordinates_2d": [null, null]
 	}
+	
+	# NEW: Add cortical_type_info if available
+	if IOPU_template.feagi_cortical_type != null:
+		dict_to_send["cortical_type_info"] = IOPU_template.feagi_cortical_type.to_api_dict()
+	
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, dict_to_send)

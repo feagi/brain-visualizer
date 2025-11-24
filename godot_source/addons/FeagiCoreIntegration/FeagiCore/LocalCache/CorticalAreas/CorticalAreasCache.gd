@@ -132,12 +132,22 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 	if override_cortical_ID != &"":
 		# Some dictionary responses do not include the ID. This allows adding it if that is the case
 		feagi_dictionary["cortical_id"] = override_cortical_ID
+	# Parse cortical type (deprecated enum and new Rust type)
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.cortical_type_str_to_type(feagi_dictionary["cortical_group"])
 	var subtype: StringName = ""
 	if "cortical_sub_group" in feagi_dictionary:
 		subtype = feagi_dictionary["cortical_sub_group"]
 	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and subtype == "MEMORY":
 		type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	
+	# NEW: Parse FeagiCorticalType from API if available
+	var feagi_cortical_type: FeagiCorticalType = null
+	if "cortical_type_info" in feagi_dictionary:
+		feagi_cortical_type = FeagiCorticalTypeFactory.from_api_dict(feagi_dictionary["cortical_type_info"])
+	# Store it in the dictionary for later use by the area
+	if feagi_cortical_type != null:
+		feagi_dictionary["_feagi_cortical_type"] = feagi_cortical_type
+	
 	var cortical_ID: StringName = feagi_dictionary["cortical_id"]
 	var name: StringName = feagi_dictionary["cortical_name"]
 	var visibility: bool = true

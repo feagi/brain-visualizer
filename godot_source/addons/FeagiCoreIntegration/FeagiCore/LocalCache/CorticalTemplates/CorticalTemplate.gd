@@ -17,23 +17,30 @@ var structure: STRUCTURE:
 	get: return _structure
 var resolution: Vector3i:
 	get: return _resolution
+## DEPRECATED: Use feagi_cortical_type instead
 var cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	get: return _cortical_type
+
+## NEW: Strongly-typed cortical type from Rust
+var feagi_cortical_type: FeagiCorticalType:
+	get: return _feagi_cortical_type
 
 var _ID: StringName
 var _is_enabled: bool
 var _cortical_name: StringName
 var _structure: STRUCTURE
 var _resolution: Vector3i
-var _cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
+var _cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE  # DEPRECATED
+var _feagi_cortical_type: FeagiCorticalType  # NEW
 
-func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
+func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, feagi_type: FeagiCorticalType = null) -> void:
 	_ID = template_ID
 	_is_enabled = template_enabled
 	_cortical_name = template_name
 	structure = STRUCTURE[structure_name.to_upper()]
 	_resolution = FEAGIUtils.array_to_vector3i(resolution_array)
-	_cortical_type = cortical_reference_type
+	_cortical_type = cortical_reference_type  # DEPRECATED
+	_feagi_cortical_type = feagi_type  # NEW - will replace cortical_type
 
 ## calculates what an IPU or OPU cortical area dimension will be given its source cortical area dimension multiplier and device count
 func calculate_IOPU_dimension(device_count: int) -> Vector3i:

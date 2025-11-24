@@ -45,12 +45,20 @@ var cortical_ID: StringName:
 
 
 
-## The base type of cortical area as understood by FEAGI
+## DEPRECATED: The base type of cortical area as understood by FEAGI (use feagi_cortical_type instead)
 var cortical_type: CORTICAL_AREA_TYPE:
 	get:  return _get_group()
 
+## NEW: Strongly-typed cortical type from Rust (single source of truth)
+var feagi_cortical_type: FeagiCorticalType:
+	get: return _feagi_cortical_type
+	set(value):
+		_feagi_cortical_type = value
+
 var type_as_string: StringName:
 	get: return AbstractCorticalArea.cortical_type_to_str(_get_group())
+
+var _feagi_cortical_type: FeagiCorticalType  # NEW - single source of truth
 
 ## Is cortical area activity visible?
 var cortical_visibility: bool:
@@ -348,6 +356,13 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
+	
+	# NEW: Extract FeagiCorticalType if present
+	if "_feagi_cortical_type" in data.keys():
+		var feagi_type = data["_feagi_cortical_type"]
+		if feagi_type is FeagiCorticalType:
+			_feagi_cortical_type = feagi_type
+	
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
 		var value = data["cortical_neuron_per_vox_count"]
