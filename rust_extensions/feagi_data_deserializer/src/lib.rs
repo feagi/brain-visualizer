@@ -23,7 +23,7 @@ pub struct FeagiDataDeserializer {
 #[godot_api]
 impl IRefCounted for FeagiDataDeserializer {
     fn init(base: Base<RefCounted>) -> Self {
-        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.49 initialized!");
+        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.52 initialized!");
         Self { base }
     }
 }
@@ -328,9 +328,9 @@ impl FeagiDataDeserializer {
                     break;
                 }
                 all_neurons.push((
-                    neuron.cortical_coordinate.x,
-                    neuron.cortical_coordinate.y,
-                    neuron.cortical_coordinate.z,
+                    neuron.neuron_voxel_coordinate.x,
+                    neuron.neuron_voxel_coordinate.y,
+                    neuron.neuron_voxel_coordinate.z,
                     neuron.potential,
                 ));
             }
@@ -763,9 +763,9 @@ impl FeagiDataDeserializer {
 
             // Use the iterator to access neurons
             for neuron in neuron_array.iter() {
-                x_array.push(neuron.cortical_coordinate.x as i32);
-                y_array.push(neuron.cortical_coordinate.y as i32);
-                z_array.push(neuron.cortical_coordinate.z as i32);
+                x_array.push(neuron.neuron_voxel_coordinate.x as i32);
+                y_array.push(neuron.neuron_voxel_coordinate.y as i32);
+                z_array.push(neuron.neuron_voxel_coordinate.z as i32);
                 p_array.push(neuron.potential);
             }
 

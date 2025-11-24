@@ -48,20 +48,30 @@ func detect_and_configure_mode():
 	else:
 		print("FEAGI Embedded Extension: ❌ Not available")
 	
-	# Step 3: Check environment override
+	# Step 3: Check if launched from FEAGI Desktop (takes absolute priority)
+	var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
+	if launched_from_desktop == "true":
+		print("🖥️  Launched from FEAGI Desktop - using remote mode (FEAGI already running)")
+		mode = FEAGI_MODE.REMOTE_DESKTOP
+		_apply_configuration()
+		print("\n📋 Selected Mode: %s" % _mode_to_string(mode))
+		print("=".repeat(60) + "\n")
+		return
+	
+	# Step 4: Check environment override
 	var env_mode = OS.get_environment("FEAGI_MODE").to_lower()
 	if env_mode:
 		print("Environment Override: FEAGI_MODE=%s" % env_mode)
 	
-	# Step 4: Check user settings
+	# Step 5: Check user settings
 	var user_preference = _load_user_preference()
 	if user_preference:
 		print("User Preference: %s" % user_preference)
 	
-	# Step 5: Determine mode
+	# Step 6: Determine mode
 	mode = _determine_mode(platform, env_mode, user_preference)
 	
-	# Step 6: Apply configuration
+	# Step 7: Apply configuration
 	_apply_configuration()
 	
 	print("\n📋 Selected Mode: %s" % _mode_to_string(mode))
