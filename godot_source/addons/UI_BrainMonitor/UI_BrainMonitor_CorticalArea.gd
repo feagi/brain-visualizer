@@ -52,8 +52,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
-		_representing_cortial_area.cortical_ID == "_power" or
-		_representing_cortial_area.cortical_ID == "_death" or
+		AbstractCorticalArea.is_power_area(_representing_cortial_area.cortical_ID) or
+		AbstractCorticalArea.is_death_area(_representing_cortial_area.cortical_ID) or
 		_should_use_png_icon(_representing_cortial_area)):
 		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
@@ -210,7 +210,7 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 	# Special cases: Memory and Power cortical areas use DirectPoints rendering
 	if defined_cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
-	elif defined_cortical_area.cortical_ID == "_power":
+	elif AbstractCorticalArea.is_power_area(defined_cortical_area.cortical_ID):
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 	else:
 		# Use DDA renderer for all other cortical area types
@@ -1031,8 +1031,12 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
-	# Add more cortical area IDs here that should use PNG icons
-	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	# Check for special core areas (supports both old and new formats)
+	if AbstractCorticalArea.is_death_area(area.cortical_ID):
+		return true
+	
+	# Add more cortical area IDs here that should use PNG icons (using old format for now)
+	var png_icon_areas = ["_health", "_energy", "_status"]  # Expandable list
 	return area.cortical_ID in png_icon_areas
 
 ## Helper function to determine if a mapping set contains inhibitory connections

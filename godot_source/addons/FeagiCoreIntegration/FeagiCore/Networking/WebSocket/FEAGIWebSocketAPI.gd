@@ -170,7 +170,7 @@ func _process(_delta: float):
 			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
 				for cortical_id in decoded_result.areas.keys():
 					# Filter out core areas (_death, _power) that can't be visualized
-					if cortical_id == "_death" or cortical_id == "_power":
+					if AbstractCorticalArea.is_death_area(cortical_id) or AbstractCorticalArea.is_power_area(cortical_id):
 						continue
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
@@ -874,7 +874,7 @@ func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 	# Handle both quoted and unquoted versions (cortical ID may come with quotes)
 	var clean_id := cortical_id_str.strip_edges().replace("'", "").replace('"', "")
 	
-	if clean_id == "_death" or clean_id == "_power":
+	if AbstractCorticalArea.is_death_area(clean_id) or AbstractCorticalArea.is_power_area(clean_id):
 		# Core system areas cannot be visualized - silently ignore
 		return
 	

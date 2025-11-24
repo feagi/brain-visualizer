@@ -103,13 +103,13 @@ func setup(area: AbstractCorticalArea) -> void:
 		sphere_shape.radius = 1.5  # Match the 3x larger visual sphere
 		collision_shape.shape = sphere_shape
 		print("   🔮 Created 3x larger sphere collision for memory cortical area")
-	elif area.cortical_ID == "_power":
+	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		var cylinder_shape = CylinderShape3D.new()
 		cylinder_shape.height = 6.0  # 3x larger cone height
 		cylinder_shape.radius = 3.0  # 3x larger base radius
 		collision_shape.shape = cylinder_shape
 		print("   ⚡ Created 3x larger cylinder collision for power cortical area")
-	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
+	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Match PNG quad size; depth generous for ray hits
 		collision_shape.shape = box_shape
@@ -137,7 +137,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create voxel (cube) mesh for each neuron - maintaining familiar voxel appearance
 	# For power and memory areas, we don't want individual neuron cubes since the shape itself shows firing
-	if area.cortical_ID == "_power":
+	if AbstractCorticalArea.is_power_area(area.cortical_ID):
 		# Use a very small invisible mesh for power areas (firing animation is on the cone itself)
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
@@ -180,7 +180,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		sphere_mesh.radial_segments = 16  # Good balance of quality vs performance
 		sphere_mesh.rings = 8
 		_outline_mesh_instance.mesh = sphere_mesh
-	elif area.cortical_ID == "_power":
+	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		var cone_mesh = CylinderMesh.new()
 		cone_mesh.top_radius = 0.0  # Point at the top for cone shape
 		cone_mesh.bottom_radius = 3.0  # 3x larger: 1.0 * 3 = 3.0
@@ -202,7 +202,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		_outline_mesh_instance.material_override = _memory_transparent_material
 		_outline_mesh_instance.visible = true  # Always visible with light blue cortical color
 		_outline_mat = null  # Memory areas don't use the outline shader material
-	elif area.cortical_ID == "_power":
+	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		# Use custom neon blue material for power cone
 		_power_material = load(POWER_NEON_MAT_PATH).duplicate()
 		_outline_mesh_instance.material_override = _power_material
@@ -216,7 +216,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		_create_tesla_coil_spikes()
 		
 		print("   ⚡ Power cone uses custom red material with firing animation and tesla coil spikes, always visible")
-	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
+	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		# Create PNG icon billboard for special cortical areas
 		_create_png_icon_billboard(area)
 		# Still need outline mesh for PNG areas (invisible but needed for structure)
@@ -249,10 +249,10 @@ func setup(area: AbstractCorticalArea) -> void:
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_friendly_name_label.visible = true  # Show label for memory areas
 		print("   🔮 Memory sphere label set to visible")
-	elif area.cortical_ID == "_power":
+	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		_friendly_name_label.visible = true  # Show label for power areas
 		print("   ⚡ Power cone label set to visible")
-	elif area.cortical_ID == "_death" or _should_use_png_icon(area):
+	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		_friendly_name_label.visible = true  # Show label for PNG icon areas
 		print("   🖼️ PNG icon area label set to visible for: ", area.cortical_ID)
 		# Position label above the PNG icon (icon is at y=2.0, label should be at y=4.5 for proper separation)
@@ -434,7 +434,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_clear_all_neurons()
 	
 	# Make power cone use firing colors when neural activity occurs
-	if _cortical_area_id == "_power" and _power_material:
+	if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
 		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))
 		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
 		_power_material.set_shader_parameter("emission_energy", 1.5)
@@ -631,7 +631,7 @@ func _on_visibility_timeout() -> void:
 	_clear_all_neurons()
 	
 	# Make power cone use default cortical mesh color when no neural activity
-	if _cortical_area_id == "_power" and _power_material:
+	if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
 		# print("   ⚡ Power cone becoming inactive - using default cortical mesh color")  # Suppressed to reduce log spam
 		_power_material.set_shader_parameter("albedo_color", Color(0.172451, 0.315246, 0.861982, 0.8))  # Light blue like cortical meshes
 		_power_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
@@ -690,7 +690,7 @@ func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 	_update_cortical_area_outline()
 	
 	# Activate tesla coil effect for power areas on hover
-	if _cortical_area_id == "_power":
+	if AbstractCorticalArea.is_power_area(_cortical_area_id):
 		_set_tesla_coil_active(is_highlighted)
 
 func set_cortical_area_selection(is_selected: bool) -> void:
@@ -718,7 +718,7 @@ func _update_cortical_area_outline() -> void:
 	# Memory and power areas should always stay visible, others handled by DDA renderer
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_outline_mesh_instance.visible = true  # Always visible for memory spheres
-	elif _cortical_area_id == "_power":
+	elif AbstractCorticalArea.is_power_area(_cortical_area_id):
 		_outline_mesh_instance.visible = true  # Always visible for power cone
 	else:
 		_outline_mesh_instance.visible = false  # Outline handled by DDA renderer for others
@@ -738,7 +738,7 @@ func _update_neuron_selection() -> void:
 
 func _trigger_power_firing_animation() -> void:
 	"""Trigger the red glow animation from bottom to tip of power cone"""
-	if _cortical_area_id != "_power" or _power_material == null:
+	if not AbstractCorticalArea.is_power_area(_cortical_area_id) or _power_material == null:
 		return
 	
 	# print("   ⚡ Triggering power cone firing animation!")  # Suppressed to reduce log spam
@@ -772,7 +772,7 @@ func _trigger_power_firing_animation() -> void:
 
 func _create_tesla_coil_spikes() -> void:
 	"""Create electrical spikes that emanate from the power cone tip"""
-	if _cortical_area_id != "_power":
+	if not AbstractCorticalArea.is_power_area(_cortical_area_id):
 		return
 	
 	
@@ -852,13 +852,22 @@ func _create_tesla_coil_spikes() -> void:
 
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
-	# Add more cortical area IDs here that should use PNG icons
-	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	# Check for special core areas (supports both old and new formats)
+	if AbstractCorticalArea.is_death_area(area.cortical_ID):
+		return true
+	
+	# Add more cortical area IDs here that should use PNG icons (using old format for now)
+	var png_icon_areas = ["_health", "_energy", "_status"]  # Expandable list
 	return area.cortical_ID in png_icon_areas
 
 ## Check if a cortical area ID should use PNG icon rendering (helper for when we only have ID)
 func _should_use_png_icon_by_id(cortical_id: StringName) -> bool:
-	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	# Check for special core areas (supports both old and new formats)
+	if AbstractCorticalArea.is_death_area(cortical_id):
+		return true
+	
+	# Add more cortical area IDs here that should use PNG icons (using old format for now)
+	var png_icon_areas = ["_health", "_energy", "_status"]  # Expandable list
 	return cortical_id in png_icon_areas
 
 ## Create PNG icon billboard for special cortical areas
@@ -891,7 +900,7 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	print("   🎨 Created billboard material with transparency and billboard mode")
 	
 	# Add glow effect for special areas
-	if area.cortical_ID == "_death":
+	if AbstractCorticalArea.is_death_area(area.cortical_ID):
 		icon_material.emission_enabled = true
 		icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
 		icon_material.emission_energy = 0.5
@@ -943,7 +952,7 @@ func _load_png_icon_texture(cortical_id: StringName) -> Texture2D:
 	print("   🔄 Trying alternative loading method...")
 	
 	# Method 3: For _death specifically, try multiple path variations
-	if cortical_id == "_death":
+	if AbstractCorticalArea.is_death_area(cortical_id):
 		print("   💀 Attempting _death icon load with multiple methods...")
 		
 		# Try different path formats (including the path from import file)
@@ -985,17 +994,18 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	
 	# Choose placeholder color based on cortical area
 	var placeholder_color: Color
-	match cortical_id:
-		"_death":
-			placeholder_color = Color(1.0, 0.0, 0.0, 1.0)  # Bright red for death
-		"_health":
-			placeholder_color = Color(0.0, 1.0, 0.0, 1.0)  # Bright green for health
-		"_energy":
-			placeholder_color = Color(1.0, 1.0, 0.0, 1.0)  # Bright yellow for energy
-		"_status":
-			placeholder_color = Color(0.0, 0.0, 1.0, 1.0)  # Bright blue for status
-		_:
-			placeholder_color = Color(1.0, 0.0, 1.0, 1.0)  # Bright magenta for unknown
+	if AbstractCorticalArea.is_death_area(cortical_id):
+		placeholder_color = Color(1.0, 0.0, 0.0, 1.0)  # Bright red for death
+	else:
+		match cortical_id:
+			"_health":
+				placeholder_color = Color(0.0, 1.0, 0.0, 1.0)  # Bright green for health
+			"_energy":
+				placeholder_color = Color(1.0, 1.0, 0.0, 1.0)  # Bright yellow for energy
+			"_status":
+				placeholder_color = Color(0.0, 0.0, 1.0, 1.0)  # Bright blue for status
+			_:
+				placeholder_color = Color(1.0, 0.0, 1.0, 1.0)  # Bright magenta for unknown
 	
 	# Fill the image with the placeholder color
 	image.fill(placeholder_color)
@@ -1007,7 +1017,7 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 				image.set_pixel(x, y, Color.WHITE)
 	
 	# Add text indication (skull-like pattern for death, cross for others)
-	if cortical_id == "_death":
+	if AbstractCorticalArea.is_death_area(cortical_id):
 		# Create a simple skull pattern
 		# Eyes
 		for x in range(45, 55):
@@ -1091,7 +1101,7 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""
 	
-	if _cortical_area_id != "_power":
+	if not AbstractCorticalArea.is_power_area(_cortical_area_id):
 		return
 		
 	if _tesla_coil_spikes.is_empty():

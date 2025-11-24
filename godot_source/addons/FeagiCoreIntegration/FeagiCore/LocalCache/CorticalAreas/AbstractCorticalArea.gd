@@ -216,6 +216,32 @@ static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringNam
 static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
 	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
 
+## Check if a cortical_ID (in old 6-char or new base64 format) is a special core area
+## Returns the core area name if it matches, or empty string if not
+static func get_special_core_area_name(cortical_id: String) -> String:
+	# Dictionary mapping both old and new formats to their canonical names
+	const SPECIAL_CORE_AREAS = {
+		# Power area (old and new formats)
+		"_power": "power",
+		"_power__": "power",
+		"X3Bvd2VyX18=": "power",  # base64 of "_power__"
+		
+		# Death area (old and new formats)
+		"_death": "death",
+		"_death__": "death",
+		"X2RlYXRoX18=": "death",  # base64 of "_death__"
+	}
+	
+	return SPECIAL_CORE_AREAS.get(cortical_id, "")
+
+## Check if a cortical_ID is the power area (supports both old and new formats)
+static func is_power_area(cortical_id: String) -> bool:
+	return get_special_core_area_name(cortical_id) == "power"
+
+## Check if a cortical_ID is the death area (supports both old and new formats)
+static func is_death_area(cortical_id: String) -> bool:
+	return get_special_core_area_name(cortical_id) == "death"
+
 static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
 	var output: Array[StringName] = []
 	for e in arr:
