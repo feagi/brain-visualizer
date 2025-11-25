@@ -362,7 +362,8 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 							print("🔍 [AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
 							agent_reregistration_needed.emit("FEAGI became ready (session: %d)" % current_session)
 		
-		# Skip genome change detection if values are null (None)
+		# Genome change detection requires BOTH feagi_session and genome_num to be non-null
+		# This ensures we only detect changes when FEAGI is fully initialized
 		if feagi_session_value != null and genome_num_value != null:
 			var current_feagi_session = int(feagi_session_value)
 			var current_genome_num = int(genome_num_value)
@@ -383,6 +384,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 
 			# Genome changes: only detect actual changes (not initial from 0)
 			var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
+			
+			# DEBUG: Log genome_num tracking
+			if _previous_genome_num != current_genome_num:
+				print("🧬 [GENOME-CHANGE-DEBUG] genome_num changed: %d → %d (will reload: %s)" % [_previous_genome_num, current_genome_num, genome_changed])
 
 			# Special case: If we have genome data but both session and genome are different from what we expect,
 			# this might be a FEAGI restart that we missed - force a reload
