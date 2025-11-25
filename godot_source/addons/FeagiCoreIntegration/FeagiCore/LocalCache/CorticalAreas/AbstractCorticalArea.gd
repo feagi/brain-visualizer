@@ -220,16 +220,25 @@ static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
 ## Returns the core area name if it matches, or empty string if not
 static func get_special_core_area_name(cortical_id: String) -> String:
 	# Dictionary mapping both old and new formats to their canonical names
+	# CRITICAL: Uses feagi-data-processing format (3 prefix underscores: ___power, ___death)
 	const SPECIAL_CORE_AREAS = {
-		# Power area (old and new formats)
+		# Power area (legacy formats)
 		"_power": "power",
 		"_power__": "power",
-		"X3Bvd2VyX18=": "power",  # base64 of "_power__"
+		"X3Bvd2VyX18=": "power",  # base64 of "_power__" (OLD format)
 		
-		# Death area (old and new formats)
+		# Power area (NEW format from feagi-data-processing)
+		"___power": "power",
+		"X19fcG93ZXI=": "power",  # base64 of "___power" (NEW format)
+		
+		# Death area (legacy formats)
 		"_death": "death",
 		"_death__": "death",
-		"X2RlYXRoX18=": "death",  # base64 of "_death__"
+		"X2RlYXRoX18=": "death",  # base64 of "_death__" (OLD format)
+		
+		# Death area (NEW format from feagi-data-processing)
+		"___death": "death",
+		"X19fZGVhdGg=": "death",  # base64 of "___death" (NEW format)
 	}
 	
 	return SPECIAL_CORE_AREAS.get(cortical_id, "")

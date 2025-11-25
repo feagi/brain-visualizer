@@ -535,13 +535,28 @@ func _on_agent_reregistration_needed(reason: String):
 		push_warning("🔍 [AGENT-REG] Cannot re-register - network not available")
 		return
 	
-	# Only re-register if we're already connected (not during initial connection attempt)
-	if network.connection_state == network.CONNECTION_STATE.HEALTHY or network.connection_state == network.CONNECTION_STATE.RETRYING_HTTP or network.connection_state == network.CONNECTION_STATE.RETRYING_WS:
+	var conn_state = network.connection_state
+	print("🔍 [AGENT-REG] Current connection state: %s" % network.CONNECTION_STATE.keys()[conn_state])
+	
+	# If we're in DISCONNECTED state, FEAGI came back - trigger full reconnection
+	if conn_state == network.CONNECTION_STATE.DISCONNECTED:
+		print("🔍 [AGENT-REG] FEAGI came back online - triggering full reconnection...")
+		# Don't await here - let the connection flow handle it
+		network.confirm_connectivity()
+		return
+	
+	# If we're already connected but FEAGI restarted, just re-register
+	if conn_state == network.CONNECTION_STATE.HEALTHY or conn_state == network.CONNECTION_STATE.RETRYING_HTTP or conn_state == network.CONNECTION_STATE.RETRYING_WS:
 		print("🔍 [AGENT-REG] Re-registering agent with FEAGI...")
 		await network._call_register_agent_for_shm()
 		print("🔍 [AGENT-REG] Agent re-registration completed")
+		
+		# If WebSocket was disconnected, reconnect it now
+		if network.websocket_API.socket_health != network.websocket_API.WEBSOCKET_HEALTH.CONNECTED:
+			print("🔍 [AGENT-REG] WebSocket not connected after re-registration - reconnecting...")
+			network.websocket_API.connect_websocket()
 	else:
-		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[network.connection_state])
+		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[conn_state])
 
 #endregion
 

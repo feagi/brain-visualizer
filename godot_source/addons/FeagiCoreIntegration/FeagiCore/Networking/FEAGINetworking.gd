@@ -389,11 +389,11 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 	match(scanning_state):
 		CONNECTION_STATE.DISCONNECTED:
 			# Either user requested this or something failed
-			# Stop heartbeat on disconnect
-			stop_heartbeat()
-			# Ensure everything is disconnected
+			# Keep HTTP heartbeat alive for auto-reconnect monitoring
+			# Only stop WebSocket - HTTP will detect when FEAGI comes back
+			print("🔌 [NETWORK] Entering DISCONNECTED - keeping HTTP alive for auto-reconnect")
 			# NOTE: These APIs will not emit disconnection signals from this
-			http_API.disconnect_http()
+			# http_API.disconnect_http()  # ← KEEP HTTP ALIVE for session monitoring
 			websocket_API.disconnect_websocket()
 		CONNECTION_STATE.INITIAL_HTTP_PROBING: # not possible:
 			return

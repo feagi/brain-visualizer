@@ -169,8 +169,8 @@ func _process(_delta: float):
 			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
 			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
 				for cortical_id in decoded_result.areas.keys():
-					# Filter out core areas (_death, _power) that can't be visualized
-					if AbstractCorticalArea.is_death_area(cortical_id) or AbstractCorticalArea.is_power_area(cortical_id):
+					# Filter out _death area (non-visualizable), but allow _power (has custom cone animation)
+					if AbstractCorticalArea.is_death_area(cortical_id):
 						continue
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
@@ -874,8 +874,9 @@ func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 	# Handle both quoted and unquoted versions (cortical ID may come with quotes)
 	var clean_id := cortical_id_str.strip_edges().replace("'", "").replace('"', "")
 	
-	if AbstractCorticalArea.is_death_area(clean_id) or AbstractCorticalArea.is_power_area(clean_id):
-		# Core system areas cannot be visualized - silently ignore
+	if AbstractCorticalArea.is_death_area(clean_id):
+		# Death area cannot be visualized - silently ignore
+		# Note: Power area CAN be visualized with custom cone animation, so allow it through
 		return
 	
 	# Skip handling missing areas during genome reload/processing to avoid spam
