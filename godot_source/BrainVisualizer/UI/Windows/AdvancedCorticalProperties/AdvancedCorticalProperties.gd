@@ -17,6 +17,13 @@ var _aux_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _aux_preview_to_bm: Dictionary = {}
 var _host_preview_bm: UI_BrainMonitor_3DScene = null
 
+# isvi segmented vision variables
+var _is_isvi_segment: bool = false
+var _isvi_group_id: int = -1
+var _isvi_unit_id: int = -1
+var _isvi_all_segments: Array[AbstractCorticalArea] = []
+var _isvi_segment_previews: Dictionary = {}  # Maps unit_id to preview object
+
 
 func _ready():
 	super()
@@ -26,6 +33,10 @@ func _ready():
 
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
+	print("🔍 ISVI: ====== AdvancedCorticalProperties.setup() called with %d areas ======" % len(cortical_area_references))
+	if len(cortical_area_references) > 0:
+		print("🔍 ISVI: First area cortical_id=%s" % cortical_area_references[0].cortical_ID)
+	
 	# NOTE: We load initial values from cache while showing the relevant sections, however we do 
 	# not connect the signals for cache events updating the window until all relevant cortical area
 	# information has been updated. If we did not do this, this window would refresh with every
@@ -74,6 +85,43 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# refresh all relevant sections again
 	_refresh_all_relevant()
 	
+	# Re-detect isvi segments now that we have fresh data from FEAGI
+	if len(_cortical_area_refs) == 1:
+		print("🔍 ISVI: Re-running detection after FEAGI update")
+		_detect_and_setup_isvi_segment()
+		
+		# If it's now detected as isvi, we need to fetch details for all other vision segments
+		if _is_isvi_segment:
+			print("🔍 ISVI: Now detected as isvi! Fetching details for all vision segments...")
+			
+			# Collect all vision segment IDs (those starting with "aXN2aQ")
+			var all_vision_segments: Array[AbstractCorticalArea] = []
+			var all_cortical_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+			for cortical_area in all_cortical_areas:
+				if cortical_area.cortical_ID.begins_with("aXN2aQ"):
+					all_vision_segments.append(cortical_area)
+			
+			print("🔍 ISVI: Found %d vision segments, requesting their details from FEAGI..." % len(all_vision_segments))
+			
+			# Fetch details for all vision segments
+			if FeagiCore and FeagiCore.requests and FeagiCore.can_interact_with_feagi():
+				await FeagiCore.requests.get_cortical_areas(all_vision_segments)
+				print("🔍 ISVI: Details fetched! Re-running detection to find all isvi segments...")
+				
+				# Now re-detect with all the fresh data
+				_detect_and_setup_isvi_segment()
+				
+				print("🔍 ISVI: Final segment count: %d" % len(_isvi_all_segments))
+			
+			# Connect signals and init previews
+			if _is_isvi_segment and len(_isvi_all_segments) > 0:
+				print("🔍 ISVI: Connecting signals and setting up previews for %d segments" % len(_isvi_all_segments))
+				_vector_position.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
+				_vector_dimensions_spin.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
+				_init_isvi_previews()
+			else:
+				print("🔍 ISVI: Cannot init - _is_isvi_segment=%s, segments=%d" % [_is_isvi_segment, len(_isvi_all_segments)])
+	
 	# Establish connections from core to the UI elements
 	#TODO
 
@@ -85,6 +133,11 @@ func close_window() -> void:
 		if aux != null:
 			aux.queue_free()
 	_aux_previews.clear()
+	# Cleanup isvi segment previews
+	for preview in _isvi_segment_previews.values():
+		if preview != null:
+			preview.queue_free()
+	_isvi_segment_previews.clear()
 
 func _refresh_all_relevant() -> void:
 	_refresh_from_cache_summary() # all cortical areas have these
@@ -230,32 +283,61 @@ func _send_update(send_button: Button) -> void:
 			else:
 				print("UI: Successfully updated cortical areas %s" % area_names_str)
 		else:
-			var cortical_id = _cortical_area_refs[0].cortical_ID
-			var update_data = _growing_cortical_update[send_button.name]
-			print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, update_data])
-			
-			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, update_data)
-			if result.has_errored:
-				# Get detailed error information
-				var error_details = result.decode_response_as_generic_error_code()
-				var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+			# Special handling for isvi segments - need to update all segments in the group
+			if _is_isvi_segment and len(_isvi_all_segments) > 1:
+				print("UI: Attempting to update %d isvi segments..." % len(_isvi_all_segments))
+				var success_count = 0
+				var failed_areas = []
 				
-				# Log detailed error information
-				push_error("UI: Failed to update cortical area '%s'. %s" % [cortical_id, error_message])
-				print("UI: Update failed for cortical area '%s'" % cortical_id)
-				print("UI: - Update data sent: %s" % update_data)
-				print("UI: - Error details: %s" % error_message)
-				print("UI: - Has timed out: %s" % result.has_timed_out)
-				print("UI: - Failed requirement: %s" % result.failed_requirement)
-				print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+				# Send updates for all segments that have changes
+				for segment in _isvi_all_segments:
+					if segment.cortical_ID in _growing_cortical_update:
+						var segment_update_data = _growing_cortical_update[segment.cortical_ID]
+						print("UI:   Updating segment %s (unit_id=%d) with data: %s" % [segment.cortical_ID, segment.unit_id, segment_update_data])
+						
+						var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(segment.cortical_ID, segment_update_data)
+						if result.has_errored:
+							failed_areas.append(segment.cortical_ID)
+							print("UI:   ❌ Failed to update segment %s" % segment.cortical_ID)
+						else:
+							success_count += 1
+							print("UI:   ✓ Successfully updated segment %s" % segment.cortical_ID)
 				
-				# Show popup with more detailed error message
-				var detailed_popup_message = "FEAGI was unable to update cortical area '%s'.\n\n%s\n\nCheck console for full details." % [cortical_id, error_message]
-				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
-				close_window()
+				if len(failed_areas) > 0:
+					var error_message = "Failed to update %d/%d isvi segments: %s" % [len(failed_areas), len(_isvi_all_segments), ", ".join(failed_areas)]
+					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Partial Update Failure", error_message))
+				else:
+					print("UI: ✓ Successfully updated all %d isvi segments" % success_count)
 			else:
-				print("UI: Successfully updated cortical area '%s'" % cortical_id)
-		_growing_cortical_update[send_button.name] = {}
+				# Normal single area update
+				var cortical_id = _cortical_area_refs[0].cortical_ID
+				var update_data = _growing_cortical_update[send_button.name]
+				print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, update_data])
+				
+				var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, update_data)
+				if result.has_errored:
+					# Get detailed error information
+					var error_details = result.decode_response_as_generic_error_code()
+					var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+					
+					# Log detailed error information
+					push_error("UI: Failed to update cortical area '%s'. %s" % [cortical_id, error_message])
+					print("UI: Update failed for cortical area '%s'" % cortical_id)
+					print("UI: - Update data sent: %s" % update_data)
+					print("UI: - Error details: %s" % error_message)
+					print("UI: - Has timed out: %s" % result.has_timed_out)
+					print("UI: - Failed requirement: %s" % result.failed_requirement)
+					print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+					
+					# Show popup with more detailed error message
+					var detailed_popup_message = "FEAGI was unable to update cortical area '%s'.\n\n%s\n\nCheck console for full details." % [cortical_id, error_message]
+					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+					close_window()
+				else:
+					print("UI: Successfully updated cortical area '%s'" % cortical_id)
+		
+		# Clear the update dictionary
+		_growing_cortical_update.clear()
 		
 
 func _enable_button(send_button: Button) -> void:
@@ -504,6 +586,7 @@ var _label_unit_id: Label = null
 var _label_group_id: Label = null
 
 func _init_summary() -> void:
+	print("🔍 ISVI: _init_summary called for %d areas" % len(_cortical_area_refs))
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
 	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
 		_line_cortical_type.text = "Multiple Selected"
@@ -512,6 +595,11 @@ func _init_summary() -> void:
 	
 	# Create IPU/OPU-specific decoded ID info section (if applicable)
 	_init_ipu_opu_decoded_info()
+	
+	# Detect and setup isvi segment management
+	print("🔍 ISVI: About to call _detect_and_setup_isvi_segment")
+	_detect_and_setup_isvi_segment()
+	print("🔍 ISVI: After _detect_and_setup_isvi_segment - _is_isvi_segment=%s" % _is_isvi_segment)
 	
 	_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
 	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
@@ -536,6 +624,17 @@ func _init_summary() -> void:
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
+		
+		# Connect isvi layout handler for real-time updates
+		print("🔍 ISVI: Checking if should connect signals - _is_isvi_segment=%s" % _is_isvi_segment)
+		if _is_isvi_segment:
+			print("🔍 ISVI: Connecting position and dimension signals to _on_isvi_layout_changed")
+			_vector_position.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
+			_vector_dimensions_spin.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
+			print("🔍 ISVI: Signals connected successfully")
+		else:
+			print("🔍 ISVI: Not connecting signals - not an isvi segment")
+		
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
@@ -597,6 +696,11 @@ func _refresh_from_cache_summary() -> void:
 	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
 	
+	# Debug: Check cortical_subtype value after refresh
+	if len(_cortical_area_refs) == 1:
+		var area = _cortical_area_refs[0]
+		print("🔍 ISVI: After cache refresh - cortical_id=%s, subtype='%s', group_id=%s, unit_id=%s" % [area.cortical_ID, area.cortical_subtype, area.group_id, area.unit_id])
+	
 	# Update IPU/OPU decoded ID info if applicable
 	_refresh_ipu_opu_decoded_info()
 	
@@ -617,6 +721,19 @@ func _refresh_from_cache_summary() -> void:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
 		else:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
+		
+		# Set up preview for this cortical area
+		print("🔍 ISVI: About to setup BM preview")
+		_setup_bm_prevew()
+		print("🔍 ISVI: BM preview setup complete")
+		
+		# If this is an isvi segment, also set up previews for all other segments
+		print("🔍 ISVI: Checking if need to init previews - _is_isvi_segment=%s" % _is_isvi_segment)
+		if _is_isvi_segment:
+			print("🔍 ISVI: Calling _init_isvi_previews")
+			_init_isvi_previews()
+		else:
+			print("🔍 ISVI: Skipping preview init - not an isvi segment")
 			
 
 func _user_press_edit_region() -> void:
@@ -932,5 +1049,294 @@ func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area:
 		print("UI: Cannot delete efferent mapping - FeagiCore or requests not available")
 		return
 	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+
+#endregion
+
+#region Segmented Vision (isvi) Layout Management
+
+## Detect if this is an isvi segment and gather all segments in the group
+func _detect_and_setup_isvi_segment() -> void:
+	print("🔍 ISVI: _detect_and_setup_isvi_segment called")
+	_is_isvi_segment = false
+	_isvi_all_segments.clear()
+	
+	if len(_cortical_area_refs) != 1:
+		print("🔍 ISVI: Multiple areas selected, skipping")
+		return
+	
+	var area = _cortical_area_refs[0]
+	print("🔍 ISVI: Checking area cortical_id=%s, subtype=%s, group_id=%s, unit_id=%s" % [area.cortical_ID, area.cortical_subtype, area.group_id, area.unit_id])
+	
+	# Check if this is an isvi segment
+	if area.cortical_subtype != "isvi":
+		print("🔍 ISVI: Not an isvi segment (subtype=%s)" % area.cortical_subtype)
+		return
+	
+	_is_isvi_segment = true
+	_isvi_group_id = area.group_id
+	_isvi_unit_id = area.unit_id
+	
+	# Find all 9 segments in this group
+	var all_cortical_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+	print("🔍 ISVI: Searching through %d cortical areas for isvi segments with group_id=%d" % [len(all_cortical_areas), _isvi_group_id])
+	
+	# First, log ALL vision-related cortical IDs (those starting with "aXN2aQ")
+	print("🔍 ISVI: All vision-related cortical areas in cache:")
+	for cortical_area in all_cortical_areas:
+		if cortical_area.cortical_ID.begins_with("aXN2aQ"):
+			print("🔍 ISVI:   - cortical_id=%s, name=%s, subtype='%s', group_id=%d, unit_id=%d" % [
+				cortical_area.cortical_ID, 
+				cortical_area.friendly_name,
+				cortical_area.cortical_subtype, 
+				cortical_area.group_id, 
+				cortical_area.unit_id
+			])
+	
+	# Now search for isvi segments in our group
+	var isvi_count = 0
+	for cortical_area in all_cortical_areas:
+		if cortical_area.cortical_subtype == "isvi":
+			isvi_count += 1
+			if cortical_area.group_id == _isvi_group_id:
+				_isvi_all_segments.append(cortical_area)
+				print("🔍 ISVI:   ✓ Added isvi segment: cortical_id=%s, unit_id=%d to group %d" % [cortical_area.cortical_ID, cortical_area.unit_id, _isvi_group_id])
+	
+	print("🔍 ISVI: Found %d total isvi areas, %d in group %d" % [isvi_count, len(_isvi_all_segments), _isvi_group_id])
+	print("UI: isvi segment detected - Unit ", _isvi_unit_id, " in Group ", _isvi_group_id, " (", len(_isvi_all_segments), " total segments)")
+
+## Calculate layout positions for all segments in an isvi group
+func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, peripheral_dims: Vector3i) -> Dictionary:
+	var layout = {}
+	
+	# Gap = max of peripheral width/height
+	var gap = maxi(peripheral_dims.x, peripheral_dims.y)
+	
+	# Center (unit_id=4) stays at its position
+	layout[4] = center_pos
+	
+	# Unit ID layout:
+	# [6:TL] [7:TC] [8:TR]
+	# [3:ML] [4:CC] [5:MR]
+	# [0:BL] [1:BC] [2:BR]
+	
+	var center_x = center_pos.x
+	var center_y = center_pos.y
+	var center_z = center_pos.z
+	
+	# Bottom row (y = center_y - peripheral_dims.y - gap)
+	var bottom_y = center_y - peripheral_dims.y - gap
+	layout[0] = Vector3i(center_x - peripheral_dims.x - gap, bottom_y, center_z)  # Bottom-Left
+	layout[1] = Vector3i(center_x + (center_dims.x - peripheral_dims.x) / 2, bottom_y, center_z)  # Bottom-Center
+	layout[2] = Vector3i(center_x + center_dims.x + gap, bottom_y, center_z)  # Bottom-Right
+	
+	# Middle row (y = center_y)
+	layout[3] = Vector3i(center_x - peripheral_dims.x - gap, center_y, center_z)  # Middle-Left
+	layout[5] = Vector3i(center_x + center_dims.x + gap, center_y, center_z)  # Middle-Right
+	
+	# Top row (y = center_y + center_dims.y + gap)
+	var top_y = center_y + center_dims.y + gap
+	layout[6] = Vector3i(center_x - peripheral_dims.x - gap, top_y, center_z)  # Top-Left
+	layout[7] = Vector3i(center_x + (center_dims.x - peripheral_dims.x) / 2, top_y, center_z)  # Top-Center
+	layout[8] = Vector3i(center_x + center_dims.x + gap, top_y, center_z)  # Top-Right
+	
+	return layout
+
+## Initialize previews for all isvi segments (called on first load)
+func _init_isvi_previews() -> void:
+	print("UI: _init_isvi_previews called - _is_isvi_segment=%s, segments=%d" % [_is_isvi_segment, len(_isvi_all_segments)])
+	if not _is_isvi_segment or len(_isvi_all_segments) == 0:
+		print("UI: Skipping isvi preview init - not an isvi segment or no segments found")
+		return
+	
+	if not _preview or not _host_preview_bm:
+		print("UI: Cannot init isvi previews - missing main preview or host BM")
+		return
+	
+	print("UI: Creating initial previews at their current actual positions...")
+	
+	# Create previews for all OTHER segments (not the one being edited) at their CURRENT positions
+	for segment in _isvi_all_segments:
+		# Skip the segment being edited (it's already shown via the main preview)
+		if segment.cortical_ID == _cortical_area_refs[0].cortical_ID:
+			continue
+		
+		# Create preview at segment's CURRENT position and dimensions
+		var segment_pos = segment.coordinates_3D
+		var segment_dims = segment.dimensions_3D
+		var cortical_type = segment.cortical_type
+		var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+		
+		var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment)
+		new_preview.connect_UI_signals([], [], closes_only)
+		
+		# Store this preview
+		_isvi_segment_previews[segment.unit_id] = new_preview
+		
+		# Cleanup when it's destroyed
+		var unit_id_copy = segment.unit_id  # Capture for closure
+		new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(unit_id_copy))
+		
+		print("UI:   ✓ Created preview for unit_id=%d at position %s" % [segment.unit_id, segment_pos])
+	
+	print("UI: ✓ Initialized %d previews for isvi segments" % len(_isvi_segment_previews))
+
+## Triggered when dimensions or position change for an isvi segment
+func _on_isvi_layout_changed() -> void:
+	print("🔍 ISVI: _on_isvi_layout_changed triggered - _is_isvi_segment=%s, segments=%d" % [_is_isvi_segment, len(_isvi_all_segments)])
+	if not _is_isvi_segment or len(_isvi_all_segments) == 0:
+		print("🔍 ISVI: Skipping layout change - not an isvi segment or no segments")
+		return
+	
+	# Get the segment being edited
+	var edited_segment = _cortical_area_refs[0]
+	
+	# Calculate position delta (for synchronized movement)
+	var old_pos = edited_segment.coordinates_3D
+	var new_pos = _vector_position.current_vector
+	var position_delta = new_pos - old_pos
+	
+	print("🔍 ISVI: Position change - old=%s, new=%s, delta=%s" % [old_pos, new_pos, position_delta])
+	
+	# Get center segment and a peripheral segment for dimension calculations
+	var center_segment: AbstractCorticalArea = null
+	var peripheral_segment: AbstractCorticalArea = null
+	
+	for segment in _isvi_all_segments:
+		if segment.unit_id == 4:
+			center_segment = segment
+		elif segment.unit_id == 0:
+			peripheral_segment = segment
+	
+	if not center_segment or not peripheral_segment:
+		print("UI: Cannot calculate isvi layout - missing segments")
+		return
+	
+	# Get current dimensions from UI or cache
+	var center_dims: Vector3i
+	var peripheral_dims: Vector3i
+	
+	if edited_segment.unit_id == 4:
+		# Editing center segment
+		center_dims = _vector_dimensions_spin.current_vector
+		peripheral_dims = peripheral_segment.dimensions_3D
+	else:
+		# Editing peripheral segment
+		center_dims = center_segment.dimensions_3D
+		peripheral_dims = _vector_dimensions_spin.current_vector
+	
+	# Check if dimensions changed (for layout recalculation)
+	var dims_changed = false
+	if edited_segment.unit_id == 4:
+		dims_changed = (center_dims != center_segment.dimensions_3D)
+	else:
+		dims_changed = (peripheral_dims != peripheral_segment.dimensions_3D)
+	
+	var new_layout: Dictionary
+	
+	if dims_changed:
+		# Dimensions changed - recalculate layout based on new center position
+		print("🔍 ISVI: Dimensions changed - recalculating layout")
+		new_layout = _calculate_isvi_layout(new_pos if edited_segment.unit_id == 4 else center_segment.coordinates_3D, center_dims, peripheral_dims)
+	else:
+		# Only position changed - apply delta to all segments
+		print("🔍 ISVI: Only position changed - applying delta to all segments")
+		new_layout = {}
+		for segment in _isvi_all_segments:
+			new_layout[segment.unit_id] = segment.coordinates_3D + position_delta
+	
+	# Update positions for all segments (add to pending updates)
+	for segment in _isvi_all_segments:
+		if segment.unit_id in new_layout:
+			var segment_new_pos = new_layout[segment.unit_id]
+			var pos_dict = {"x": segment_new_pos.x, "y": segment_new_pos.y, "z": segment_new_pos.z}
+			
+			# Add to update dict for this specific cortical area
+			if not (segment.cortical_ID in _growing_cortical_update):
+				_growing_cortical_update[segment.cortical_ID] = {}
+			_growing_cortical_update[segment.cortical_ID]["coordinates_3d"] = pos_dict
+	
+	# Also update dimension for all peripherals if a peripheral was changed
+	if _cortical_area_refs[0].unit_id != 4:
+		for segment in _isvi_all_segments:
+			if segment.unit_id != 4:  # All peripherals
+				if not (segment.cortical_ID in _growing_cortical_update):
+					_growing_cortical_update[segment.cortical_ID] = {}
+				_growing_cortical_update[segment.cortical_ID]["cortical_dimensions"] = {
+					"x": peripheral_dims.x,
+					"y": peripheral_dims.y,
+					"z": peripheral_dims.z
+				}
+	
+	# Enable the update button
+	_button_summary_send.disabled = false
+	
+	# Update previews visually
+	_update_isvi_visual_previews(new_layout, center_dims, peripheral_dims)
+	
+	print("UI: isvi layout updated - ", len(new_layout), " segments repositioned")
+
+## Update visual previews for all isvi segments
+func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, peripheral_dims: Vector3i) -> void:
+	print("UI: _update_isvi_visual_previews called - preview=%s, host_bm=%s" % [_preview != null, _host_preview_bm != null])
+	if not _preview or not _host_preview_bm:
+		print("UI: Skipping isvi preview update - missing preview or host BM")
+		return
+	
+	# Update main preview for the segment being edited
+	if _cortical_area_refs[0].unit_id in layout:
+		var main_preview_pos = layout[_cortical_area_refs[0].unit_id]
+		_preview.set_new_position(main_preview_pos)
+		if _cortical_area_refs[0].unit_id == 4:
+			_preview.set_new_dimensions(center_dims)
+		else:
+			_preview.set_new_dimensions(peripheral_dims)
+	
+	print("UI: Processing %d segments for previews (creating for all segments)" % len(_isvi_all_segments))
+	# Create or update previews for ALL segments in the group
+	# Note: The main preview handles the segment being edited, so we create previews for the other 8
+	for segment in _isvi_all_segments:
+		print("UI:   Checking segment unit_id=%d, cortical_id=%s" % [segment.unit_id, segment.cortical_ID])
+		
+		# Skip the segment being edited - it's already shown via the main preview
+		if segment.cortical_ID == _cortical_area_refs[0].cortical_ID:
+			print("UI:     Skipping (this is the main preview being edited)")
+			continue
+		
+		if segment.unit_id not in layout:
+			print("UI:     Skipping (unit_id %d not in layout)" % segment.unit_id)
+			continue
+		
+		var segment_pos = layout[segment.unit_id]
+		var segment_dims = center_dims if segment.unit_id == 4 else peripheral_dims
+		
+		print("UI:     Target position: %s, dims: %s" % [segment_pos, segment_dims])
+		
+		# Check if we already have a preview for this segment
+		if segment.unit_id in _isvi_segment_previews:
+			var existing_preview = _isvi_segment_previews[segment.unit_id]
+			if existing_preview != null:
+				print("UI:     Updating existing preview")
+				existing_preview.set_new_position(segment_pos)
+				existing_preview.set_new_dimensions(segment_dims)
+			else:
+				# Preview was deleted, remove from dict
+				print("UI:     Existing preview was null, removing")
+				_isvi_segment_previews.erase(segment.unit_id)
+		else:
+			# Create new preview for this segment
+			print("UI:     Creating new preview for unit_id=%d" % segment.unit_id)
+			var cortical_type = segment.cortical_type
+			var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
+			var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment)
+			new_preview.connect_UI_signals([], [], closes_only)
+			
+			# Store this preview
+			_isvi_segment_previews[segment.unit_id] = new_preview
+			
+			# Cleanup when it's destroyed
+			var unit_id_copy = segment.unit_id  # Capture for closure
+			new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(unit_id_copy))
+			
+			print("UI:     ✓ Created preview for isvi segment unit_id=%d" % segment.unit_id)
 
 #endregion
