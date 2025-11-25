@@ -60,6 +60,25 @@ var type_as_string: StringName:
 
 var _feagi_cortical_type: FeagiCorticalType  # NEW - single source of truth
 
+## IPU/OPU-specific decoded cortical ID fields (only populated for IPU/OPU areas)
+var cortical_subtype: String:
+	get: return _cortical_subtype
+
+var encoding_type: String:
+	get: return _encoding_type
+
+var encoding_format: String:
+	get: return _encoding_format
+
+var unit_id: int:
+	get: return _unit_id
+
+var group_id: int:
+	get: return _group_id
+
+var has_decoded_id_info: bool:
+	get: return _cortical_subtype != ""
+
 ## Is cortical area activity visible?
 var cortical_visibility: bool:
 	get: return _cortical_visiblity
@@ -128,6 +147,13 @@ var _coordinates_3D_available: bool = false  # if coordinates_3D are available f
 var _cortical_visiblity: bool = true
 var _SVO_neuron_activations: PackedByteArray = []
 var _direct_neural_points: PackedByteArray = []
+
+# IPU/OPU-specific decoded cortical ID fields (empty strings if not IPU/OPU)
+var _cortical_subtype: String = ""
+var _encoding_type: String = ""
+var _encoding_format: String = ""
+var _unit_id: int = -1
+var _group_id: int = -1
 
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
 	var differences: int = -1 # first one will always fail
@@ -410,6 +436,31 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 			_cortical_synaptic_attractivity = value
 			cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
+	# IPU/OPU-specific decoded cortical ID fields
+	if "cortical_subtype" in data.keys():
+		var value = data["cortical_subtype"]
+		if value != null:
+			_cortical_subtype = value
+	
+	if "encoding_type" in data.keys():
+		var value = data["encoding_type"]
+		if value != null:
+			_encoding_type = value
+	
+	if "encoding_format" in data.keys():
+		var value = data["encoding_format"]
+		if value != null:
+			_encoding_format = value
+	
+	if "unit_id" in data.keys():
+		var value = data["unit_id"]
+		if value != null:
+			_unit_id = value
+	
+	if "group_id" in data.keys():
+		var value = data["group_id"]
+		if value != null:
+			_group_id = value
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 

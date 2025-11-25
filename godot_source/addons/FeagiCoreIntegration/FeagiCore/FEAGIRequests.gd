@@ -982,17 +982,19 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to grab cortical area details of %d cortical areas!" % len(checking_areas))
 		return FEAGI_response_data
-	var responses: Array = FEAGI_response_data.decode_response_as_array()
-	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(checking_areas))
-	for response in responses:
-		# Handle nested properties structure for multi-area responses
-		var properties_dict: Dictionary = response
-		if "properties" in response and response["properties"] is Dictionary:
-			properties_dict = response["properties"]
-			# Add cortical_id if it exists in the root response
-			if "cortical_id" in response:
-				properties_dict["cortical_id"] = response["cortical_id"]
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
+	
+	# Response is a dictionary with cortical_id as keys: {"cortical_id": {...properties...}}
+	var responses_dict: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
+	
+	for cortical_id in responses_dict.keys():
+		var area_data: Dictionary = responses_dict[cortical_id]
+		# The response already contains all properties at the root level (not nested)
+		# Just ensure cortical_id is in the dict
+		if not "cortical_id" in area_data:
+			area_data["cortical_id"] = cortical_id
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
+	
 	return FEAGI_response_data
 	
 

@@ -495,12 +495,23 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 @export var _vector_position: Vector3iSpinboxField
 @export var _button_summary_send: Button
 
+# IPU/OPU-specific decoded ID fields (created programmatically)
+var _ipu_opu_info_container: VBoxContainer = null
+var _label_cortical_subtype: Label = null
+var _label_encoding_type: Label = null
+var _label_encoding_format: Label = null
+var _label_unit_id: Label = null
+var _label_group_id: Label = null
+
 func _init_summary() -> void:
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
 	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN:
 		_line_cortical_type.text = "Multiple Selected"
 	else:
 		_line_cortical_type.text = AbstractCorticalArea.cortical_type_to_str(type)
+	
+	# Create IPU/OPU-specific decoded ID info section (if applicable)
+	_init_ipu_opu_decoded_info()
 	
 	_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
 	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
@@ -535,11 +546,59 @@ func _init_summary() -> void:
 	
 	_button_summary_send.pressed.connect(_send_update.bind(_button_summary_send))
 
+func _init_ipu_opu_decoded_info() -> void:
+	# Only show decoded ID info for single IPU/OPU areas
+	if len(_cortical_area_refs) != 1:
+		return
+	
+	var area = _cortical_area_refs[0]
+	if area.cortical_type not in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
+		return
+	
+	# Find the parent container to insert our new section (after cortical type row)
+	var cortical_type_row = _line_cortical_type.get_parent()
+	var parent_container = cortical_type_row.get_parent()
+	var insert_index = cortical_type_row.get_index() + 1
+	
+	# Create container for decoded ID info
+	_ipu_opu_info_container = VBoxContainer.new()
+	_ipu_opu_info_container.name = "IPU_OPU_Decoded_Info"
+	parent_container.add_child(_ipu_opu_info_container)
+	parent_container.move_child(_ipu_opu_info_container, insert_index)
+	
+	# Create label row helper
+	var create_label_row = func(label_text: String, right_justify: bool = false) -> Label:
+		var hbox = HBoxContainer.new()
+		_ipu_opu_info_container.add_child(hbox)
+		
+		var title = Label.new()
+		title.text = label_text
+		title.custom_minimum_size.x = 120
+		hbox.add_child(title)
+		
+		var value_label = Label.new()
+		value_label.custom_minimum_size.x = 120
+		if right_justify:
+			value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		hbox.add_child(value_label)
+		
+		return value_label
+	
+	# Create all label rows (removed "Cortical" prefix, swapped Unit/Group order)
+	_label_cortical_subtype = create_label_row.call("Subtype:")
+	var encoding_label = "Encoding:" if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU else "Decoding:"
+	_label_encoding_type = create_label_row.call(encoding_label)
+	_label_encoding_format = create_label_row.call("Format:")
+	_label_group_id = create_label_row.call("Group ID:", true)  # Swapped order, right-justified
+	_label_unit_id = create_label_row.call("Unit ID:", true)    # Swapped order, right-justified
+
 func _refresh_from_cache_summary() -> void:
 	
 	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
 	
+	# Update IPU/OPU decoded ID info if applicable
+	_refresh_ipu_opu_decoded_info()
 	
 	if len(_cortical_area_refs) != 1:
 		_line_cortical_name.text = "Multiple Selected"
@@ -567,6 +626,29 @@ func _user_press_edit_region() -> void:
 
 func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
 	_add_to_dict_to_send(selected_objects[0].genome_ID, _button_summary_send, "parent_region_id")
+
+func _refresh_ipu_opu_decoded_info() -> void:
+	# Only update if we have the UI elements and a single area
+	if _label_cortical_subtype == null or len(_cortical_area_refs) != 1:
+		return
+	
+	var area = _cortical_area_refs[0]
+	
+	# Check if decoded info is available
+	if area.has_decoded_id_info:
+		_label_cortical_subtype.text = area.cortical_subtype
+		_label_encoding_type.text = area.encoding_type
+		_label_encoding_format.text = area.encoding_format
+		_label_group_id.text = str(area.group_id)  # Swapped order
+		_label_unit_id.text = str(area.unit_id)    # Swapped order
+		
+		# Make container visible
+		if _ipu_opu_info_container:
+			_ipu_opu_info_container.visible = true
+	else:
+		# Hide if no decoded info available yet
+		if _ipu_opu_info_container:
+			_ipu_opu_info_container.visible = false
 
 
 func _enable_3D_preview(): #NOTE only currently works with single

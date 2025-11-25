@@ -171,7 +171,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "The user defined name of the cortical area"
 mouse_filter = 1
-text = "Cortical Name"
+text = "Name"
 
 [node name="Cortical_Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Name"]
 custom_minimum_size = Vector2(150, 0)
@@ -200,7 +200,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "The internal ID of this cortical area"
 mouse_filter = 1
-text = "Cortical ID"
+text = "ID"
 
 [node name="Cortical_ID" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_ID"]
 custom_minimum_size = Vector2(150, 0)
@@ -216,7 +216,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "The type this cortical area is"
 mouse_filter = 1
-text = "Cortical Type"
+text = "Type"
 
 [node name="Cortical_Type" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Type"]
 custom_minimum_size = Vector2(150, 0)
