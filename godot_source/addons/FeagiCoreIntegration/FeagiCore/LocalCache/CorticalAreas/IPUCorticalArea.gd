@@ -62,6 +62,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	
 	if "cortical_dimensions_per_device" in data.keys():
 		FEAGI_set_cortical_dimensions_per_device(_safe_convert_to_vector3i(data["cortical_dimensions_per_device"], "cortical_dimensions_per_device"))
+	elif "cortical_dimensions" in data.keys():
+		FEAGI_set_cortical_dimensions_per_device(_safe_convert_to_vector3i(data["cortical_dimensions"], "cortical_dimensions"))
 
 	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 	return

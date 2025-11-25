@@ -542,7 +542,7 @@ func _on_agent_reregistration_needed(reason: String):
 	if conn_state == network.CONNECTION_STATE.DISCONNECTED:
 		print("🔍 [AGENT-REG] FEAGI came back online - triggering full reconnection...")
 		# Don't await here - let the connection flow handle it
-		network.confirm_connectivity()
+		network.http_API.confirm_connectivity()
 		return
 	
 	# If we're already connected but FEAGI restarted, just re-register
