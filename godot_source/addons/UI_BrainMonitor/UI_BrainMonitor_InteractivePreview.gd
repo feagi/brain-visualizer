@@ -31,3 +31,7 @@ func set_new_dimensions(new_dimensions: Vector3i) -> void:
 	_renderer.update_dimensions(new_dimensions)
 	# Notify listeners (e.g., BM scene) so camera can keep previews in frame
 	user_resized_preview.emit(new_dimensions)
+
+func set_warning_state(is_warning: bool) -> void:
+	if _renderer:
+		_renderer.set_warning_color(is_warning)

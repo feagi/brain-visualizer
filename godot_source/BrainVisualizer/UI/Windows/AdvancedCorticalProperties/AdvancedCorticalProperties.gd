@@ -24,6 +24,7 @@ var _isvi_unit_id: int = -1
 var _isvi_all_segments: Array[AbstractCorticalArea] = []
 var _isvi_segment_previews: Dictionary = {}  # Maps unit_id to preview object
 var _isvi_original_z_values: Dictionary = {}  # Maps unit_id to original z coordinate (captured at detection)
+var _isvi_would_overflow: bool = false  # True if current resize would exceed NPU capacity
 
 
 func _ready():
@@ -241,6 +242,11 @@ func _send_update(send_button: Button) -> void:
 		print("UI: Cannot send update - FeagiCore or requests not available")
 		return
 	
+	# CRITICAL: Block isvi updates if capacity would overflow
+	if _is_isvi_segment and _isvi_would_overflow:
+		print("🚨 BLOCKED UPDATE - Cannot apply: would exceed NPU capacity!")
+		return
+	
 	if send_button.name in _growing_cortical_update:
 		send_button.disabled = true
 		if len(_cortical_area_refs) > 1:
@@ -386,10 +392,14 @@ func _setup_bm_prevew() -> void:
 	
 	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
 	if _preview == null:
-		var moves: Array[Signal] = [_vector_position.user_updated_vector]
-		var resizes: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
+		# For isvi segments, don't connect move/resize signals - we handle updates manually via _on_isvi_layout_changed
+		var moves: Array[Signal] = []
+		var resizes: Array[Signal] = []
+		if not _is_isvi_segment:
+			moves.append(_vector_position.user_updated_vector)
+			resizes.append(_vector_dimensions_spin.user_updated_vector)
 		var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-		# Host uses area’s actual FEAGI LFF
+		# Host uses area's actual FEAGI LFF
 		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
 		_preview.connect_UI_signals(moves, resizes, closes)
 		# Ensure main preview is cleared when window closes
@@ -399,8 +409,14 @@ func _setup_bm_prevew() -> void:
 		# If host changed (tab switch), relocate main preview
 		if _preview.get_parent() != host_bm._node_3D_root:
 			_preview.queue_free()
+			# For isvi segments, don't connect move/resize signals - we handle updates manually via _on_isvi_layout_changed
+			var moves: Array[Signal] = []
+			var resizes: Array[Signal] = []
+			if not _is_isvi_segment:
+				moves.append(_vector_position.user_updated_vector)
+				resizes.append(_vector_dimensions_spin.user_updated_vector)
 			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
-			_preview.connect_UI_signals([_vector_position.user_updated_vector], [_vector_dimensions_spin.user_updated_vector], [close_window_requesed_no_arg, _button_summary_send.pressed])
+			_preview.connect_UI_signals(moves, resizes, [close_window_requesed_no_arg, _button_summary_send.pressed])
 			_preview.tree_exiting.connect(func(): _preview = null)
 			_host_preview_bm = host_bm
 	
@@ -434,7 +450,8 @@ func _setup_bm_prevew() -> void:
 			_aux_preview_to_bm[mirror] = bm
 	
 	# CRITICAL: Also connect to resize signal to update preview position for I/O areas (keeps center aligned on plates)
-	if not _vector_dimensions_spin.user_updated_vector.is_connected(_update_preview_for_io_area_resize):
+	# Skip for isvi segments - they use manual layout calculation
+	if not _is_isvi_segment and not _vector_dimensions_spin.user_updated_vector.is_connected(_update_preview_for_io_area_resize):
 		_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
 
 ## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
@@ -489,7 +506,6 @@ func _get_preview_position_for_cortical_area() -> Vector3i:
 							return lff
 	
 	# Not an I/O area, use regular API coordinates
-	print("🔮 Using API coordinates for non-I/O area %s" % cortical_area.cortical_ID)
 	return _vector_position.current_vector
 
 # Helper: compute plate LFF coords for a given BM and area (unused path)
@@ -525,12 +541,15 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 	if _preview == null:
 		return
 	
+	# Skip for isvi segments - they use manual layout calculation via _on_isvi_layout_changed
+	if _is_isvi_segment:
+		return
+	
 	# For I/O areas, when dimensions change, the plate position might change too
 	# Recalculate the preview position to ensure it stays on the plate
 	var updated_plate_pos = _get_preview_position_for_cortical_area()
 	# Host/tab preview must stay at the area's actual FEAGI LFF position
 	_preview.set_new_position(_vector_position.current_vector)
-	print("🔮 Updated I/O area preview position after dimension change: %s" % updated_plate_pos)
 	# Apply per-BM updated positions to auxiliary previews
 	for aux in _aux_previews:
 		if aux != null:
@@ -1088,10 +1107,8 @@ func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, periphe
 	
 	# Middle row (y = vertically centered with center segment)
 	var middle_y = center_y + (center_dims.y - peripheral_dims.y) / 2
-	print("DEBUG LAYOUT: center_y=%d, center_dims.y=%d, peripheral_dims.y=%d, middle_y=%d" % [center_y, center_dims.y, peripheral_dims.y, middle_y])
 	layout[3] = Vector2i(center_x - peripheral_dims.x - gap, middle_y)  # Middle-Left
 	layout[5] = Vector2i(center_x + center_dims.x + gap, middle_y)  # Middle-Right
-	print("DEBUG LAYOUT: Middle-Left (unit 3) position: (%d, %d)" % [layout[3].x, layout[3].y])
 	
 	# Top row (y = center_y + center_dims.y + gap)
 	var top_y = center_y + center_dims.y + gap
@@ -1101,18 +1118,61 @@ func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, periphe
 	
 	return layout
 
+## Check if resizing isvi segments would exceed NPU capacity
+## Returns true if would overflow, false if safe
+func _check_isvi_resize_capacity(center_dims: Vector3i, peripheral_dims: Vector3i, editing_center: bool) -> bool:
+	# Get health check data from cache properties
+	var neuron_max: int = FeagiCore.feagi_local_cache.neuron_count_max
+	var neuron_current: int = FeagiCore.feagi_local_cache.neuron_count_current
+	
+	if neuron_max <= 0 or neuron_current < 0:
+		return false  # Allow if capacity data unavailable
+	
+	# Calculate neuron delta
+	var old_neuron_count: int = 0
+	var new_neuron_count: int = 0
+	
+	# Find center and a peripheral segment
+	var center_segment: AbstractCorticalArea = null
+	var peripheral_segment: AbstractCorticalArea = null
+	for segment in _isvi_all_segments:
+		if segment.unit_id == 4:
+			center_segment = segment
+		elif segment.unit_id == 0:
+			peripheral_segment = segment
+	
+	if not center_segment or not peripheral_segment:
+		return false  # Can't check without segments
+	
+	if editing_center:
+		# Editing center - only center neurons change
+		var old_center_dims = center_segment.dimensions_3D
+		old_neuron_count = old_center_dims.x * old_center_dims.y * old_center_dims.z
+		new_neuron_count = center_dims.x * center_dims.y * center_dims.z
+	else:
+		# Editing peripheral - all 8 peripherals change
+		var old_peripheral_dims = peripheral_segment.dimensions_3D
+		old_neuron_count = old_peripheral_dims.x * old_peripheral_dims.y * old_peripheral_dims.z * 8
+		new_neuron_count = peripheral_dims.x * peripheral_dims.y * peripheral_dims.z * 8
+	
+	var neuron_delta = new_neuron_count - old_neuron_count
+	var projected_total = neuron_current + neuron_delta
+	
+	# Check against backend-reported max (no frontend safety margin)
+	# Backend is responsible for enforcing its own capacity limits and overhead
+	if projected_total > neuron_max:
+		print("🚨 NPU CAPACITY OVERFLOW - Projected: %d/%d neurons (%.1f%% capacity)" % [projected_total, neuron_max, (float(projected_total) / neuron_max) * 100.0])
+		return true  # Would overflow
+	
+	return false  # Safe to proceed
+
 ## Initialize previews for all isvi segments (called on first load)
 func _init_isvi_previews() -> void:
-	print("UI: _init_isvi_previews called - _is_isvi_segment=%s, segments=%d" % [_is_isvi_segment, len(_isvi_all_segments)])
 	if not _is_isvi_segment or len(_isvi_all_segments) == 0:
-		print("UI: Skipping isvi preview init - not an isvi segment or no segments found")
 		return
 	
 	if not _preview or not _host_preview_bm:
-		print("UI: Cannot init isvi previews - missing main preview or host BM")
 		return
-	
-	print("UI: Creating initial previews at their current actual positions...")
 	
 	# Create previews for all OTHER segments (not the one being edited) at their CURRENT positions
 	for segment in _isvi_all_segments:
@@ -1135,10 +1195,6 @@ func _init_isvi_previews() -> void:
 		# Cleanup when it's destroyed
 		var unit_id_copy = segment.unit_id  # Capture for closure
 		new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(unit_id_copy))
-		
-		print("UI:   ✓ Created preview for unit_id=%d at position %s" % [segment.unit_id, segment_pos])
-	
-	print("UI: ✓ Initialized %d previews for isvi segments" % len(_isvi_segment_previews))
 
 ## Triggered when dimensions or position change for an isvi segment
 func _on_isvi_layout_changed() -> void:
@@ -1188,6 +1244,14 @@ func _on_isvi_layout_changed() -> void:
 	else:
 		dims_changed = (peripheral_dims != peripheral_segment.dimensions_3D)
 	
+	# Check NPU capacity if dimensions changed
+	if dims_changed:
+		# Refresh health data before capacity check to ensure accuracy
+		await FeagiCore.requests.single_health_check_call(true)
+		_isvi_would_overflow = _check_isvi_resize_capacity(center_dims, peripheral_dims, edited_segment.unit_id == 4)
+	else:
+		_isvi_would_overflow = false  # Movement doesn't change neuron count
+	
 	var new_layout: Dictionary
 	
 	if dims_changed:
@@ -1231,18 +1295,26 @@ func _on_isvi_layout_changed() -> void:
 					"z": peripheral_dims.z
 				}
 	
-	# Enable the update button
-	_button_summary_send.disabled = false
+	# Enable/disable the update button based on overflow state
+	_button_summary_send.disabled = _isvi_would_overflow
+	
+	# Update button tooltip to show warning
+	if _isvi_would_overflow:
+		_button_summary_send.tooltip_text = "⚠️ Cannot apply: Resize would exceed NPU capacity!\nReduce dimensions or free up neurons elsewhere."
+	else:
+		_button_summary_send.tooltip_text = "Apply changes to FEAGI"
 	
 	# Update previews visually
 	_update_isvi_visual_previews(new_layout, center_dims, peripheral_dims, dims_changed)
 	
-	print("UI: isvi layout updated - ", len(new_layout), " segments repositioned")
+	if _isvi_would_overflow:
+		print("UI: ⚠️ WARNING - isvi layout would exceed NPU capacity! Apply button disabled.")
+	else:
+		print("UI: isvi layout updated - ", len(new_layout), " segments repositioned")
 
 ## Update visual previews for all isvi segments
 func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, peripheral_dims: Vector3i, is_resize: bool) -> void:
 	if not _preview or not _host_preview_bm:
-		print("UI: Skipping isvi preview update - missing preview or host BM")
 		return
 	
 	# Update main preview for the segment being edited
@@ -1263,6 +1335,9 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			_preview.set_new_dimensions(center_dims)
 		else:
 			_preview.set_new_dimensions(peripheral_dims)
+		
+		# Set warning color if would overflow
+		_preview.set_warning_state(_isvi_would_overflow)
 	
 	# Create or update previews for ALL segments in the group
 	# Note: The main preview handles the segment being edited, so we create previews for the other 8
@@ -1270,11 +1345,9 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 		
 		# Skip the segment being edited - it's already shown via the main preview
 		if segment.cortical_ID == _cortical_area_refs[0].cortical_ID:
-			print("UI:     Skipping (this is the main preview being edited)")
 			continue
 		
 		if segment.unit_id not in layout:
-			print("UI:     Skipping (unit_id %d not in layout)" % segment.unit_id)
 			continue
 		
 		var segment_pos_final: Vector3i
@@ -1297,6 +1370,7 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			if existing_preview != null:
 				existing_preview.set_new_position(segment_pos_final)
 				existing_preview.set_new_dimensions(segment_dims)
+				existing_preview.set_warning_state(_isvi_would_overflow)
 			else:
 				# Preview was deleted, remove from dict
 				_isvi_segment_previews.erase(segment.unit_id)
@@ -1306,6 +1380,7 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 			var new_preview = _host_preview_bm.create_preview(segment_pos_final, segment_dims, false, cortical_type, segment)
 			new_preview.connect_UI_signals([], [], closes_only)
+			new_preview.set_warning_state(_isvi_would_overflow)
 			
 			# Store this preview
 			_isvi_segment_previews[segment.unit_id] = new_preview
@@ -1313,7 +1388,5 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			# Cleanup when it's destroyed
 			var unit_id_copy = segment.unit_id  # Capture for closure
 			new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(unit_id_copy))
-			
-			print("UI:     ✓ Created preview for isvi segment unit_id=%d" % segment.unit_id)
 
 #endregion
