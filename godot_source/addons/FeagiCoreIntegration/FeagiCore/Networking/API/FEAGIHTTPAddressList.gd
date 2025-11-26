@@ -4,7 +4,9 @@ class_name FEAGIHTTPAddressList
 
 # Get Requests
 var GET_corticalAreas_ipu: StringName = "/v1/cortical_area/ipu"
+var GET_corticalAreas_ipu_types: StringName = "/v1/cortical_area/ipu/types"
 var GET_corticalAreas_opu: StringName = "/v1/cortical_area/opu"
+var GET_corticalAreas_opu_types: StringName = "/v1/cortical_area/opu/types"
 var GET_corticalAreas_corticalAreaIDList: StringName = "/v1/cortical_area/cortical_area_id_list"
 var GET_neuronMorphologies_morphologyList: StringName = "/v1/morphology/morphology_list"
 var GET_genome_fileName: StringName = "/v1/genome/file_name"

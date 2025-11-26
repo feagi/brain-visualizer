@@ -41,26 +41,91 @@ func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> v
 	var scroll: ScrollContainer = _window_internals.get_node("Scroll")
 	if scroll:
 		scroll.custom_minimum_size.y = 720.0
-	var templates: Array[CorticalTemplate] = []
+	
+	# Call the new API endpoints to get available types dynamically
 	match cortical_type:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			for t: CorticalTemplate in FeagiCore.feagi_local_cache.IPU_templates.values():
-				if t.is_enabled:
-					templates.append(t)
+			await _populate_from_api_endpoint("ipu")
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			for t: CorticalTemplate in FeagiCore.feagi_local_cache.OPU_templates.values():
-				if t.is_enabled:
-					templates.append(t)
+			await _populate_from_api_endpoint("opu")
 		_:
 			push_error("WindowSelectCorticalTemplate: Unknown cortical type")
 			return
-	templates.sort_custom(func(a: CorticalTemplate, b: CorticalTemplate): return a.cortical_name < b.cortical_name)
-	for template: CorticalTemplate in templates:
-		_add_tile(template)
+	
 	# Ensure window is wide enough for 4 tiles (128 each) plus 10% gaps between tiles
 	var min_width = 640
 	if size.x < min_width:
 		custom_minimum_size.x = float(min_width)
+
+func _populate_from_api_endpoint(type_str: String) -> void:
+	print("WindowSelectCorticalTemplate: Fetching %s types from API..." % type_str.to_upper())
+	
+	# Determine which endpoint to call
+	var endpoint: StringName
+	if type_str == "ipu":
+		endpoint = FeagiCore.network.http_API.address_list.GET_corticalAreas_ipu_types
+	else:
+		endpoint = FeagiCore.network.http_API.address_list.GET_corticalAreas_opu_types
+	
+	# Make API request
+	var request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(endpoint)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(request)
+	await worker.worker_done
+	var response: FeagiRequestOutput = worker.retrieve_output_and_close()
+	
+	if response.has_errored:
+		push_error("WindowSelectCorticalTemplate: Failed to fetch %s types from API" % type_str.to_upper())
+		return
+	
+	# Parse response
+	var types_data: Dictionary = response.decode_response_as_dict()
+	print("WindowSelectCorticalTemplate: Received %d %s types" % [types_data.size(), type_str.to_upper()])
+	
+	# Sort by description for consistent ordering
+	var sorted_keys: Array = types_data.keys()
+	sorted_keys.sort_custom(func(a, b): return types_data[a]["description"] < types_data[b]["description"])
+	
+	# Create tiles for each type
+	for type_key in sorted_keys:
+		var type_metadata: Dictionary = types_data[type_key]
+		_add_tile_from_api_data(type_key, type_metadata)
+
+func _add_tile_from_api_data(type_key: String, metadata: Dictionary) -> void:
+	var tile := VBoxContainer.new()
+	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tile.custom_minimum_size.x = 128
+	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
+	
+	var btn := TextureButton.new()
+	btn.custom_minimum_size = Vector2(128, 128)
+	btn.ignore_texture_size = true
+	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	
+	# Load icon using the type_key (e.g., "iinf", "omot")
+	btn.texture_normal = UIManager.get_icon_texture_by_ID(type_key, _is_ipu)
+	btn.texture_hover = btn.texture_normal
+	btn.texture_pressed = btn.texture_normal
+	
+	# Store metadata in the button for later use
+	btn.set_meta("type_key", type_key)
+	btn.set_meta("metadata", metadata)
+	btn.pressed.connect(func(): _choose_from_api(type_key, metadata))
+	
+	var name_label := Label.new()
+	name_label.text = metadata.get("description", type_key)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	name_label.custom_minimum_size.x = 128
+	# Reserve space for two lines to keep icon tops aligned across the row
+	name_label.custom_minimum_size.y = 40
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	name_label.max_lines_visible = 2
+	
+	tile.add_child(btn)
+	tile.add_child(name_label)
+	_icon_grid.add_child(tile)
 
 func _add_tile(template: CorticalTemplate) -> void:
 	var tile := VBoxContainer.new()
@@ -89,6 +154,39 @@ func _add_tile(template: CorticalTemplate) -> void:
 	tile.add_child(btn)
 	tile.add_child(name_label)
 	_icon_grid.add_child(tile)
+
+func _choose_from_api(type_key: String, metadata: Dictionary) -> void:
+	print("WindowSelectCorticalTemplate: Selected type: %s (%s)" % [type_key, metadata.get("description", "")])
+	
+	# Create CorticalTemplate from API metadata
+	var template_id: StringName = type_key
+	var template_name: StringName = metadata.get("description", type_key)
+	var structure_name: StringName = metadata.get("structure", "asymmetric")
+	var resolution_array: Array[int] = []
+	resolution_array.assign(metadata.get("resolution", [1, 1, 1]))
+	
+	var cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
+	if _is_ipu:
+		cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+	else:
+		cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	
+	# Create the template object
+	var template: CorticalTemplate = CorticalTemplate.new(
+		template_id,
+		true,  # is_enabled
+		template_name,
+		structure_name,
+		resolution_array,
+		cortical_type,
+		null  # feagi_cortical_type (optional)
+	)
+	
+	print("WindowSelectCorticalTemplate: Created template - ID: %s, Name: %s, Resolution: %s" % [template_id, template_name, resolution_array])
+	
+	# Emit the template_chosen signal with our newly created template
+	template_chosen.emit(template)
+	close_window()
 
 func _choose(template: CorticalTemplate) -> void:
 	template_chosen.emit(template)

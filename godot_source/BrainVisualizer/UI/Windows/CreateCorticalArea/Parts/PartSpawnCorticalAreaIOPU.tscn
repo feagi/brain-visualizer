@@ -46,6 +46,12 @@ theme_type_variation = &"VBoxContainer_farther"
 [node name="Label" type="Label" parent="HBoxContainer/Labels"]
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Group ID:"
+vertical_alignment = 1
+
+[node name="Label3" type="Label" parent="HBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Device Count:"
 vertical_alignment = 1
 
@@ -58,6 +64,13 @@ vertical_alignment = 1
 [node name="Fields" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_farther"
+
+[node name="GroupID" type="SpinBox" parent="HBoxContainer/Fields"]
+layout_mode = 2
+min_value = 0.0
+max_value = 255.0
+value = 0.0
+alignment = 1
 
 [node name="ChannelCount" type="SpinBox" parent="HBoxContainer/Fields"]
 layout_mode = 2
@@ -73,4 +86,11 @@ initial_vector = Vector3i(40, 0, 0)
 layout_mode = 2
 texture = ExtResource("4_1tced")
 expand_mode = 2
+
+[node name="GroupIDStatus" type="Label" parent="."]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[connection signal="value_changed" from="HBoxContainer/Fields/GroupID" to="." method="_on_group_id_changed"]
 [connection signal="value_changed" from="HBoxContainer/Fields/ChannelCount" to="." method="_proxy_device_count_changes"]
