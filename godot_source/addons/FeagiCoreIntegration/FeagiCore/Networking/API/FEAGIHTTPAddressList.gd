@@ -49,6 +49,7 @@ var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_corti
 var POST_corticalArea_clone: StringName = "/v1/cortical_area/clone"
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"
 var POST_genome_append: StringName = "/v1/feagi/genome/append"
+var POST_genome_save: StringName = "/v1/genome/save"
 var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
 var POST_region_clone: StringName = "/v1/region/clone"
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"

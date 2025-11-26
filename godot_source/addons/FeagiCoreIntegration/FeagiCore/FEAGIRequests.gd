@@ -65,6 +65,36 @@ func fast_initial_health_check() -> FeagiRequestOutput:
 
 #WARNING: You probably dont want to call this directly. Use FeagiCore.request_reload_genome() instead!
 ## Reloads the genome, returns if sucessful
+func save_genome(file_path: String = "") -> FeagiRequestOutput:
+	print("FEAGI REQUEST: Saving genome to disk...")
+	
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	# Prepare request body
+	var request_body = {}
+	if file_path != "":
+		request_body["file_path"] = file_path
+	
+	# Make POST request to save genome
+	var save_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(
+		FeagiCore.network.http_API.address_list.POST_genome_save,
+		request_body
+	)
+	var save_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(save_request)
+	await save_worker.worker_done
+	var save_output: FeagiRequestOutput = save_worker.retrieve_output_and_close()
+	
+	if save_output.has_errored:
+		push_error("FEAGI REQUEST: Failed to save genome!")
+		print("FEAGI REQUEST: ❌ Genome save failed")
+		return save_output
+	
+	print("FEAGI REQUEST: ✅ Genome saved successfully")
+	return save_output
+
 func reload_genome() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] reload_genome() called - starting genome data retrieval...")
 	
@@ -2589,26 +2619,18 @@ func cancel_pending_amalgamation(amalgamation_ID: StringName) -> FeagiRequestOut
 
 ## Check if network components are properly initialized
 func _check_network_components_ready() -> FeagiRequestOutput:
-	print("🔥 NETWORK CHECK: Checking network components...")
-	print("🔥 NETWORK CHECK: FeagiCore.network = %s" % FeagiCore.network)
 	if !FeagiCore.network:
-		print("🔥 NETWORK CHECK: ERROR - Network component is null!")
 		push_error("FEAGI Requests: Network component is null!")
 		return FeagiRequestOutput.requirement_fail("NETWORK_NULL")
 	
-	print("🔥 NETWORK CHECK: FeagiCore.network.http_API = %s" % FeagiCore.network.http_API)
 	if !FeagiCore.network.http_API:
-		print("🔥 NETWORK CHECK: ERROR - HTTP API component is null!")
 		push_error("FEAGI Requests: HTTP API component is null!")
 		return FeagiRequestOutput.requirement_fail("HTTP_API_NULL")
 	
-	print("🔥 NETWORK CHECK: FeagiCore.network.http_API.address_list = %s" % FeagiCore.network.http_API.address_list)
 	if !FeagiCore.network.http_API.address_list:
-		print("🔥 NETWORK CHECK: ERROR - Address list is null!")
 		push_error("FEAGI Requests: Address list is null!")
 		return FeagiRequestOutput.requirement_fail("ADDRESS_LIST_NULL")
 	
-	print("🔥 NETWORK CHECK: All components ready!")
 	return null  # null means all checks passed
 
 ## Safe wrapper for making HTTP calls with network component validation
