@@ -552,7 +552,6 @@ func _auto_frame_camera_to_objects() -> void:
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
-	print("[CAMERA_FRAME] vfov=", fov_used, " distance=", distance, " center=", center, " aabb.size=", aabb.size)
 	_log_objects_relative_to_camera("after_auto_frame")
 
 ## Computes AABB only over cortical and brain region visualizations for reliable framing
@@ -698,12 +697,6 @@ func _log_objects_relative_to_camera(context: String = "") -> void:
 				in_front.append(label)
 			else:
 				behind.append(label)
-
-	print("[CAMERA_VIS] ", context, " in_front=", in_front.size(), " behind=", behind.size())
-	if in_front.size() > 0:
-		print("[CAMERA_VIS] front samples: ", ", ".join(in_front.slice(0, min(5, in_front.size()))))
-	if behind.size() > 0:
-		print("[CAMERA_VIS] behind samples: ", ", ".join(behind.slice(0, min(5, behind.size()))))
 
 ## User moved camera - print detailed framing diagnostics for learning desired heuristics
 func _on_user_camera_moved() -> void:

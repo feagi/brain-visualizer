@@ -23,6 +23,7 @@ var _isvi_group_id: int = -1
 var _isvi_unit_id: int = -1
 var _isvi_all_segments: Array[AbstractCorticalArea] = []
 var _isvi_segment_previews: Dictionary = {}  # Maps unit_id to preview object
+var _isvi_original_z_values: Dictionary = {}  # Maps unit_id to original z coordinate (captured at detection)
 
 
 func _ready():
@@ -1029,6 +1030,7 @@ func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area:
 func _detect_and_setup_isvi_segment() -> void:
 	_is_isvi_segment = false
 	_isvi_all_segments.clear()
+	_isvi_original_z_values.clear()
 	
 	if len(_cortical_area_refs) != 1:
 		return
@@ -1053,18 +1055,22 @@ func _detect_and_setup_isvi_segment() -> void:
 			isvi_count += 1
 			if cortical_area.group_id == _isvi_group_id:
 				_isvi_all_segments.append(cortical_area)
+				# Capture original z value for this segment
+				_isvi_original_z_values[cortical_area.unit_id] = cortical_area.coordinates_3D.z
 	
 	print("UI: isvi segment detected - Unit ", _isvi_unit_id, " in Group ", _isvi_group_id, " (", len(_isvi_all_segments), " total segments)")
 
-## Calculate layout positions for all segments in an isvi group
+## Calculate layout positions (x, y only) for all segments in an isvi group
+## Returns Dictionary of unit_id -> Vector2i (x, y position)
+## Note: Z coordinates are NOT calculated - caller must preserve original z values
 func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, peripheral_dims: Vector3i) -> Dictionary:
 	var layout = {}
 	
 	# Gap = max of peripheral width/height
 	var gap = maxi(peripheral_dims.x, peripheral_dims.y)
 	
-	# Center (unit_id=4) stays at its position
-	layout[4] = center_pos
+	# Center (unit_id=4) stays at its position (x, y only)
+	layout[4] = Vector2i(center_pos.x, center_pos.y)
 	
 	# Unit ID layout:
 	# [6:TL] [7:TC] [8:TR]
@@ -1073,23 +1079,25 @@ func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, periphe
 	
 	var center_x = center_pos.x
 	var center_y = center_pos.y
-	var center_z = center_pos.z
 	
 	# Bottom row (y = center_y - peripheral_dims.y - gap)
 	var bottom_y = center_y - peripheral_dims.y - gap
-	layout[0] = Vector3i(center_x - peripheral_dims.x - gap, bottom_y, center_z)  # Bottom-Left
-	layout[1] = Vector3i(center_x + (center_dims.x - peripheral_dims.x) / 2, bottom_y, center_z)  # Bottom-Center
-	layout[2] = Vector3i(center_x + center_dims.x + gap, bottom_y, center_z)  # Bottom-Right
+	layout[0] = Vector2i(center_x - peripheral_dims.x - gap, bottom_y)  # Bottom-Left
+	layout[1] = Vector2i(center_x + (center_dims.x - peripheral_dims.x) / 2, bottom_y)  # Bottom-Center
+	layout[2] = Vector2i(center_x + center_dims.x + gap, bottom_y)  # Bottom-Right
 	
-	# Middle row (y = center_y)
-	layout[3] = Vector3i(center_x - peripheral_dims.x - gap, center_y, center_z)  # Middle-Left
-	layout[5] = Vector3i(center_x + center_dims.x + gap, center_y, center_z)  # Middle-Right
+	# Middle row (y = vertically centered with center segment)
+	var middle_y = center_y + (center_dims.y - peripheral_dims.y) / 2
+	print("DEBUG LAYOUT: center_y=%d, center_dims.y=%d, peripheral_dims.y=%d, middle_y=%d" % [center_y, center_dims.y, peripheral_dims.y, middle_y])
+	layout[3] = Vector2i(center_x - peripheral_dims.x - gap, middle_y)  # Middle-Left
+	layout[5] = Vector2i(center_x + center_dims.x + gap, middle_y)  # Middle-Right
+	print("DEBUG LAYOUT: Middle-Left (unit 3) position: (%d, %d)" % [layout[3].x, layout[3].y])
 	
 	# Top row (y = center_y + center_dims.y + gap)
 	var top_y = center_y + center_dims.y + gap
-	layout[6] = Vector3i(center_x - peripheral_dims.x - gap, top_y, center_z)  # Top-Left
-	layout[7] = Vector3i(center_x + (center_dims.x - peripheral_dims.x) / 2, top_y, center_z)  # Top-Center
-	layout[8] = Vector3i(center_x + center_dims.x + gap, top_y, center_z)  # Top-Right
+	layout[6] = Vector2i(center_x - peripheral_dims.x - gap, top_y)  # Top-Left
+	layout[7] = Vector2i(center_x + (center_dims.x - peripheral_dims.x) / 2, top_y)  # Top-Center
+	layout[8] = Vector2i(center_x + center_dims.x + gap, top_y)  # Top-Right
 	
 	return layout
 
@@ -1194,8 +1202,17 @@ func _on_isvi_layout_changed() -> void:
 	# Update positions for all segments (add to pending updates)
 	for segment in _isvi_all_segments:
 		if segment.unit_id in new_layout:
-			var segment_new_pos = new_layout[segment.unit_id]
-			var pos_dict = {"x": segment_new_pos.x, "y": segment_new_pos.y, "z": segment_new_pos.z}
+			var pos_dict: Dictionary
+			
+			if dims_changed:
+				# Dimensions changed (resizing) - layout returns Vector2i, preserve ORIGINAL z
+				var xy_pos: Vector2i = new_layout[segment.unit_id]
+				var original_z = _isvi_original_z_values.get(segment.unit_id, segment.coordinates_3D.z)
+				pos_dict = {"x": xy_pos.x, "y": xy_pos.y, "z": original_z}
+			else:
+				# Only position changed (movement) - layout returns Vector3i with delta applied
+				var xyz_pos: Vector3i = new_layout[segment.unit_id]
+				pos_dict = {"x": xyz_pos.x, "y": xyz_pos.y, "z": xyz_pos.z}
 			
 			# Add to update dict for this specific cortical area
 			if not (segment.cortical_ID in _growing_cortical_update):
@@ -1218,31 +1235,38 @@ func _on_isvi_layout_changed() -> void:
 	_button_summary_send.disabled = false
 	
 	# Update previews visually
-	_update_isvi_visual_previews(new_layout, center_dims, peripheral_dims)
+	_update_isvi_visual_previews(new_layout, center_dims, peripheral_dims, dims_changed)
 	
 	print("UI: isvi layout updated - ", len(new_layout), " segments repositioned")
 
 ## Update visual previews for all isvi segments
-func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, peripheral_dims: Vector3i) -> void:
-	print("UI: _update_isvi_visual_previews called - preview=%s, host_bm=%s" % [_preview != null, _host_preview_bm != null])
+func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, peripheral_dims: Vector3i, is_resize: bool) -> void:
 	if not _preview or not _host_preview_bm:
 		print("UI: Skipping isvi preview update - missing preview or host BM")
 		return
 	
 	# Update main preview for the segment being edited
 	if _cortical_area_refs[0].unit_id in layout:
-		var main_preview_pos = layout[_cortical_area_refs[0].unit_id]
-		_preview.set_new_position(main_preview_pos)
+		var preview_pos: Vector3i
+		
+		if is_resize:
+			# Resizing - layout returns Vector2i (x, y), add ORIGINAL z
+			var xy_pos: Vector2i = layout[_cortical_area_refs[0].unit_id]
+			var original_z = _isvi_original_z_values.get(_cortical_area_refs[0].unit_id, _cortical_area_refs[0].coordinates_3D.z)
+			preview_pos = Vector3i(xy_pos.x, xy_pos.y, original_z)
+		else:
+			# Movement - layout returns Vector3i with delta applied
+			preview_pos = layout[_cortical_area_refs[0].unit_id]
+		
+		_preview.set_new_position(preview_pos)
 		if _cortical_area_refs[0].unit_id == 4:
 			_preview.set_new_dimensions(center_dims)
 		else:
 			_preview.set_new_dimensions(peripheral_dims)
 	
-	print("UI: Processing %d segments for previews (creating for all segments)" % len(_isvi_all_segments))
 	# Create or update previews for ALL segments in the group
 	# Note: The main preview handles the segment being edited, so we create previews for the other 8
 	for segment in _isvi_all_segments:
-		print("UI:   Checking segment unit_id=%d, cortical_id=%s" % [segment.unit_id, segment.cortical_ID])
 		
 		# Skip the segment being edited - it's already shown via the main preview
 		if segment.cortical_ID == _cortical_area_refs[0].cortical_ID:
@@ -1253,28 +1277,34 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			print("UI:     Skipping (unit_id %d not in layout)" % segment.unit_id)
 			continue
 		
-		var segment_pos = layout[segment.unit_id]
+		var segment_pos_final: Vector3i
+		
+		if is_resize:
+			# Resizing - layout returns Vector2i (x, y), add ORIGINAL z
+			var xy_pos: Vector2i = layout[segment.unit_id]
+			var original_z = _isvi_original_z_values.get(segment.unit_id, segment.coordinates_3D.z)
+			segment_pos_final = Vector3i(xy_pos.x, xy_pos.y, original_z)
+		else:
+			# Movement - layout returns Vector3i with delta applied
+			segment_pos_final = layout[segment.unit_id]
+		
 		var segment_dims = center_dims if segment.unit_id == 4 else peripheral_dims
 		
-		print("UI:     Target position: %s, dims: %s" % [segment_pos, segment_dims])
 		
 		# Check if we already have a preview for this segment
 		if segment.unit_id in _isvi_segment_previews:
 			var existing_preview = _isvi_segment_previews[segment.unit_id]
 			if existing_preview != null:
-				print("UI:     Updating existing preview")
-				existing_preview.set_new_position(segment_pos)
+				existing_preview.set_new_position(segment_pos_final)
 				existing_preview.set_new_dimensions(segment_dims)
 			else:
 				# Preview was deleted, remove from dict
-				print("UI:     Existing preview was null, removing")
 				_isvi_segment_previews.erase(segment.unit_id)
 		else:
 			# Create new preview for this segment
-			print("UI:     Creating new preview for unit_id=%d" % segment.unit_id)
 			var cortical_type = segment.cortical_type
 			var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-			var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment)
+			var new_preview = _host_preview_bm.create_preview(segment_pos_final, segment_dims, false, cortical_type, segment)
 			new_preview.connect_UI_signals([], [], closes_only)
 			
 			# Store this preview
