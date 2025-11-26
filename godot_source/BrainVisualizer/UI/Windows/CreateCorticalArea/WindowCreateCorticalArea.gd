@@ -182,12 +182,13 @@ func _user_requesing_creation() -> void:
 				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
 			var selected_group_id: int = _IOPU_definition.get_selected_group_id()
+			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
-				
+			
 			if template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 				# Area exists, update
 				var area: IPUCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[template.ID]
@@ -203,14 +204,24 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					FeagiCore.requests.add_IOPU_cortical_area(
+					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
 						pos_2d,
-						selected_group_id
+						selected_group_id,
+						neurons_per_voxel
 					)
+					if result.has_errored:
+						var error_details = result.decode_response_as_generic_error_code()
+						var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+							"NPU CAPACITY ERROR", 
+							"Failed to create cortical area:\n%s\n\n%s" % [error_details[0], error_details[1]], 
+							"OK"
+						)
+						BV.WM.spawn_popup(popup_definition)
+						return
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var template: CorticalTemplate = _IOPU_definition.get_selected_template()
 			if template == null:
@@ -219,6 +230,7 @@ func _user_requesing_creation() -> void:
 				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
 			var selected_group_id: int = _IOPU_definition.get_selected_group_id()
+			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
@@ -240,14 +252,24 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					FeagiCore.requests.add_IOPU_cortical_area(
+					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
 						pos_2d,
-						selected_group_id
+						selected_group_id,
+						neurons_per_voxel
 					)
+					if result.has_errored:
+						var error_details = result.decode_response_as_generic_error_code()
+						var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+							"NPU CAPACITY ERROR", 
+							"Failed to create cortical area:\n%s\n\n%s" % [error_details[0], error_details[1]], 
+							"OK"
+						)
+						BV.WM.spawn_popup(popup_definition)
+						return
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":

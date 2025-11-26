@@ -14,6 +14,9 @@ var _group_id_status_label: Label
 var _current_dimensions_as_per_device_count: Vector3i = Vector3i(1,1,1)
 var _is_IPU_not_OPU: bool
 var _selected_template: CorticalTemplate = null
+var _preview_boxes: Array[UI_BrainMonitor_InteractivePreview] = []  # Multiple preview boxes for multi-unit cortical types
+var _active_brain_monitor = null  # Store reference to brain monitor
+var _preview_close_signals: Array[Signal] = []  # Store close signals
 
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
@@ -22,6 +25,10 @@ func _ready() -> void:
 	_iopu_image = $HBoxContainer/TextureRect
 	_device_name_label = $HBoxContainer2/TopSection/DeviceName
 	_group_id_status_label = $GroupIDStatus
+	
+	# Connect to location changes to update all preview boxes
+	location.user_updated_vector.connect(_on_location_changed)
+	location_changed_from_dropdown.connect(_on_location_changed)
 	
 
 
@@ -32,20 +39,169 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	if _device_name_label != null:
 		_device_name_label.text = ""
 	
+	# Store brain monitor and close signals for later use
+	_active_brain_monitor = host_bm if host_bm != null else BV.UI.get_active_brain_monitor()
+	_preview_close_signals = preview_close_signals
+	
+	if _active_brain_monitor == null:
+		push_error("PartSpawnCorticalAreaIOPU: No brain monitor available for preview creation!")
+		return
+	
+	# Clear any existing previews
+	_clear_all_previews()
+	
+	# Create initial placeholder preview (1x1x1 at current location)
 	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
 	if _is_IPU_not_OPU:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["i__inf"])
 	else:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["o__mot"])
-	var active_bm = host_bm if host_bm != null else BV.UI.get_active_brain_monitor()
-	if active_bm == null:
-		push_error("PartSpawnCorticalAreaIOPU: No brain monitor available for preview creation!")
-		return
-	var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false, cortical_type)
+	
+	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false, cortical_type)
 	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
+	_preview_boxes.append(preview)
 
 
+
+func _clear_all_previews() -> void:
+	"""Clear all existing preview boxes"""
+	for preview in _preview_boxes:
+		if preview != null and is_instance_valid(preview):
+			preview.queue_free()
+	_preview_boxes.clear()
+
+func _create_preview_boxes_from_topology() -> void:
+	"""Create multiple preview boxes based on unit topology data"""
+	if _selected_template == null or _active_brain_monitor == null:
+		return
+	
+	# Clear existing previews
+	_clear_all_previews()
+	
+	# Get topology data from template
+	var topology: Dictionary = _selected_template.unit_default_topology
+	if topology.is_empty():
+		push_warning("PartSpawnCorticalAreaIOPU: No topology data, creating single preview")
+		# Fallback to single preview box
+		_create_single_preview_box(location.current_vector, _current_dimensions_as_per_device_count)
+		return
+	
+	# Check for existing cortical areas of the same type to get their dimensions
+	var existing_dimensions_map: Dictionary = _get_existing_unit_dimensions(_selected_template.ID)
+	
+	# Create preview boxes for each unit
+	var base_position: Vector3i = location.current_vector
+	# Note: We handle location changes in _on_location_changed, so don't pass move signals
+	var move_signals: Array[Signal] = []
+	var resize_signals: Array[Signal] = []
+	
+	var sorted_unit_indices: Array = topology.keys()
+	sorted_unit_indices.sort()
+	
+	for unit_idx in sorted_unit_indices:
+		var unit_data: Dictionary = topology[unit_idx]
+		var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
+		var default_dims: Array = unit_data.get("dimensions", [1, 1, 1])
+		
+		# Use existing dimensions if available, otherwise use default
+		var dims: Vector3i
+		if unit_idx in existing_dimensions_map:
+			dims = existing_dimensions_map[unit_idx]
+		else:
+			dims = Vector3i(default_dims[0], default_dims[1], default_dims[2])
+		
+		# Calculate absolute position
+		var abs_position: Vector3i = base_position + Vector3i(rel_pos[0], rel_pos[1], rel_pos[2])
+		
+		# Create preview box for this unit
+		var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+		var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(abs_position, dims, false, cortical_type)
+		preview.connect_UI_signals(move_signals, resize_signals, _preview_close_signals)
+		_preview_boxes.append(preview)
+	
+	print("PartSpawnCorticalAreaIOPU: Created %d preview boxes for %s" % [_preview_boxes.size(), _selected_template.cortical_name])
+
+func _create_single_preview_box(pos: Vector3i, dims: Vector3i) -> void:
+	"""Create a single preview box (fallback when no topology data)"""
+	# For single preview, we can use the standard signal connections
+	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
+	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
+	var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(pos, dims, false, cortical_type)
+	preview.connect_UI_signals(move_signals, resize_signals, _preview_close_signals)
+	_preview_boxes.append(preview)
+
+func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
+	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest group_id)"""
+	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	var unit_dimensions: Dictionary = {}  # {unit_index: Vector3i dimensions}
+	var largest_group_id: int = -1
+	
+	# First pass: find the largest group_id for this cortical type
+	for cortical_id: StringName in existing_areas.keys():
+		var cortical_id_str: String = String(cortical_id)
+		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
+		if decoded_bytes.size() != 8:
+			continue
+		
+		var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
+		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
+		
+		if cortical_subtype == cortical_type_key:
+			var group_id_val: int = decoded_bytes[7]
+			if group_id_val > largest_group_id:
+				largest_group_id = group_id_val
+	
+	# Second pass: collect dimensions from areas with the largest group_id
+	if largest_group_id >= 0:
+		for cortical_id: StringName in existing_areas.keys():
+			var cortical_id_str: String = String(cortical_id)
+			var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
+			if decoded_bytes.size() != 8:
+				continue
+			
+			var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
+			var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
+			var group_id_val: int = decoded_bytes[7]
+			var unit_index: int = decoded_bytes[6]
+			
+			if cortical_subtype == cortical_type_key and group_id_val == largest_group_id:
+				var area = existing_areas[cortical_id]
+				unit_dimensions[unit_index] = area.dimensions_3D
+	
+	return unit_dimensions
+
+func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
+	"""Find existing cortical areas of the same type and return neurons_per_voxel from largest group_id"""
+	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	var largest_group_id: int = -1
+	var neurons_per_voxel: int = 1  # Default
+	
+	print("PartSpawnCorticalAreaIOPU: Looking for existing neurons_per_voxel for type: %s" % cortical_type_key)
+	
+	# Find the largest group_id for this cortical type and get its neurons_per_voxel
+	for cortical_id: StringName in existing_areas.keys():
+		var cortical_id_str: String = String(cortical_id)
+		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
+		if decoded_bytes.size() != 8:
+			continue
+		
+		var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
+		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
+		
+		if cortical_subtype == cortical_type_key:
+			var group_id_val: int = decoded_bytes[7]
+			var area = existing_areas[cortical_id]
+			var area_neurons_per_voxel: int = area.cortical_neuron_per_vox_count
+			print("  Found %s group %d with neurons_per_voxel=%d" % [cortical_subtype, group_id_val, area_neurons_per_voxel])
+			
+			if group_id_val > largest_group_id:
+				largest_group_id = group_id_val
+				neurons_per_voxel = area_neurons_per_voxel
+	
+	print("  → Using neurons_per_voxel=%d (from group_id=%d)" % [neurons_per_voxel, largest_group_id])
+	return neurons_per_voxel
 
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
 	# Backward-compatibility: if invoked by legacy signal, apply selection
@@ -58,7 +214,6 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 		return
 	_selected_template = cortical_template
 	_current_dimensions_as_per_device_count = cortical_template.calculate_IOPU_dimension(int(device_count.value))
-	calculated_dimensions_updated.emit(_current_dimensions_as_per_device_count)
 	_iopu_image.texture = UIManager.get_icon_texture_by_ID(cortical_template.ID, _is_IPU_not_OPU)
 	if _device_name_label != null:
 		_device_name_label.text = str(cortical_template.cortical_name)
@@ -67,10 +222,40 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	var first_available_id = _find_first_available_group_id(cortical_template.ID)
 	group_id.value = first_available_id
 	
+	# Update location if an existing area exists
 	if cortical_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_template.ID].coordinates_3D
 		location_changed_from_dropdown.emit(location.current_vector)
 	
+	# Create multiple preview boxes based on topology
+	_create_preview_boxes_from_topology()
+	
+
+func _on_location_changed(new_location: Vector3i) -> void:
+	"""Handle location changes to update all preview boxes' positions"""
+	if _selected_template == null or _preview_boxes.is_empty():
+		return
+	
+	# Get topology to recalculate positions
+	var topology: Dictionary = _selected_template.unit_default_topology
+	if topology.is_empty():
+		# Single preview box, just update its position
+		if _preview_boxes.size() > 0 and _preview_boxes[0] != null:
+			_preview_boxes[0].set_new_position(new_location)
+		return
+	
+	# Update each preview box position based on topology
+	var sorted_unit_indices: Array = topology.keys()
+	sorted_unit_indices.sort()
+	
+	for i in range(min(sorted_unit_indices.size(), _preview_boxes.size())):
+		var unit_idx = sorted_unit_indices[i]
+		var unit_data: Dictionary = topology[unit_idx]
+		var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
+		var abs_position: Vector3i = new_location + Vector3i(rel_pos[0], rel_pos[1], rel_pos[2])
+		
+		if _preview_boxes[i] != null and is_instance_valid(_preview_boxes[i]):
+			_preview_boxes[i].set_new_position(abs_position)
 
 func _proxy_device_count_changes(_new_device_count: int) -> void:
 	var selected_template = _selected_template
@@ -80,6 +265,9 @@ func _proxy_device_count_changes(_new_device_count: int) -> void:
 		
 	_current_dimensions_as_per_device_count = selected_template.calculate_IOPU_dimension(int(device_count.value))
 	calculated_dimensions_updated.emit(_current_dimensions_as_per_device_count)
+	
+	# Regenerate preview boxes with updated dimensions
+	_create_preview_boxes_from_topology()
 
 
 func get_selected_template() -> CorticalTemplate:
@@ -171,3 +359,9 @@ func _validate_group_id() -> void:
 
 func get_selected_group_id() -> int:
 	return int(group_id.value)
+
+func get_neurons_per_voxel() -> int:
+	"""Get neurons_per_voxel inherited from existing cortical areas or default to 1"""
+	if _selected_template == null:
+		return 1
+	return _get_existing_neurons_per_voxel(_selected_template.ID)

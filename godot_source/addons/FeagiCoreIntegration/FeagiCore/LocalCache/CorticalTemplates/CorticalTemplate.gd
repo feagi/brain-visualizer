@@ -25,6 +25,10 @@ var cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE:
 var feagi_cortical_type: FeagiCorticalType:
 	get: return _feagi_cortical_type
 
+## Unit default topology data from API (maps unit index to position and dimensions)
+var unit_default_topology: Dictionary:
+	get: return _unit_default_topology
+
 var _ID: StringName
 var _is_enabled: bool
 var _cortical_name: StringName
@@ -32,8 +36,9 @@ var _structure: STRUCTURE
 var _resolution: Vector3i
 var _cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE  # DEPRECATED
 var _feagi_cortical_type: FeagiCorticalType  # NEW
+var _unit_default_topology: Dictionary = {}  # NEW: {unit_index: {"relative_position": [x,y,z], "dimensions": [x,y,z]}}
 
-func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, feagi_type: FeagiCorticalType = null) -> void:
+func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, feagi_type: FeagiCorticalType = null, topology: Dictionary = {}) -> void:
 	_ID = template_ID
 	_is_enabled = template_enabled
 	_cortical_name = template_name
@@ -41,6 +46,7 @@ func _init(template_ID: StringName, template_enabled: bool, template_name: Strin
 	_resolution = FEAGIUtils.array_to_vector3i(resolution_array)
 	_cortical_type = cortical_reference_type  # DEPRECATED
 	_feagi_cortical_type = feagi_type  # NEW - will replace cortical_type
+	_unit_default_topology = topology  # NEW - topology data
 
 ## calculates what an IPU or OPU cortical area dimension will be given its source cortical area dimension multiplier and device count
 func calculate_IOPU_dimension(device_count: int) -> Vector3i:

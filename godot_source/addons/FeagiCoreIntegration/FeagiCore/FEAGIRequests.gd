@@ -1143,7 +1143,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 
 
 ## Adds a IPU / OPU cortical area. NOTE: IPUs/OPUs can ONLY be in the root region!
-func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), group_id: int = 0) -> FeagiRequestOutput:
+func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), group_id: int = 0, neurons_per_voxel: int = 1) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -1163,7 +1163,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		push_error("FEAGI Requests: Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return FeagiRequestOutput.requirement_fail("NON_IOPU")
 	
-	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with group_id %d" % [IOPU_template.cortical_name, group_id])
+	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with group_id %d, neurons_per_voxel %d" % [IOPU_template.cortical_name, group_id, neurons_per_voxel])
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"cortical_id": IOPU_template.ID,
@@ -1171,6 +1171,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		"cortical_type": AbstractCorticalArea.cortical_type_to_str(IOPU_template.cortical_type),
 		"device_count": device_count,
 		"group_id": group_id,
+		"neurons_per_voxel": neurons_per_voxel,
 		"coordinates_2d": [null, null]
 	}
 	
@@ -1190,16 +1191,49 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		push_error("FEAGI Requests: Unable to create IPU/OPU cortical area!")
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	if IOPU_template.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_input_cortical_area(IOPU_template.ID, IOPU_template, device_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
-	else: #OPU
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_output_cortical_area(IOPU_template.ID, IOPU_template, device_count, coordinates_3D, is_coordinate_2D_defined, coordinates_2D)
 	
-	print("FEAGI REQUEST: Successfully created custom cortical area by name %s with ID %s" % [IOPU_template.cortical_name, response["cortical_id"]])
+	# For multi-unit cortical types (e.g., Segmented Vision with 9 units), 
+	# multiple cortical areas are created and returned in the response
+	var unit_count: int = int(response.get("unit_count", 1))
 	
-	# Automatically fetch detailed properties for the newly created cortical area
-	await get_cortical_area(response["cortical_id"])
-	print("FEAGI REQUEST: Fetched detailed properties for newly created IOPU cortical area %s" % response["cortical_id"])
+	print("FEAGI REQUEST: Successfully created %d cortical area(s) for %s (first ID: %s)" % [unit_count, IOPU_template.cortical_name, response.get("cortical_id", "")])
+	
+	# Add all created areas directly to cache using the full details returned in response
+	if "areas" in response and response["areas"] is Array:
+		var areas: Array = response["areas"]
+		print("FEAGI REQUEST: Adding %d cortical areas directly to cache from response" % areas.size())
+		
+		for area_dict in areas:
+			if area_dict is Dictionary:
+				var cortical_id: StringName = area_dict.get("cortical_id", "")
+				if cortical_id == "":
+					push_error("FEAGI REQUEST: Area in response missing cortical_id")
+					continue
+				
+				print("FEAGI REQUEST: Adding cortical area %s to cache" % cortical_id)
+				# Add to cache using FEAGI_add_cortical_area_from_dict which handles all types
+				FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(
+					area_dict,
+					FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(
+						area_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID),
+						FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[BrainRegion.ROOT_REGION_ID]
+					),
+					cortical_id
+				)
+	else:
+		push_warning("FEAGI REQUEST: Response missing 'areas' field - falling back to fetching properties")
+		# Fallback: fetch properties if server doesn't return them
+		if "cortical_ids" in response:
+			var cortical_ids_str: String = response["cortical_ids"]
+			var cortical_ids: PackedStringArray = cortical_ids_str.split(", ")
+			for cortical_id in cortical_ids:
+				if cortical_id != "":
+					await get_cortical_area(cortical_id)
+		else:
+			# Fallback for single unit (backward compatibility)
+			await get_cortical_area(response["cortical_id"])
+	
+	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, group %d have been added to cache." % [IOPU_template.ID, group_id])
 	
 	return FEAGI_response_data
 

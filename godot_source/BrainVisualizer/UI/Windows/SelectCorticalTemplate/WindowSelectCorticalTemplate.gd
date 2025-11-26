@@ -171,6 +171,9 @@ func _choose_from_api(type_key: String, metadata: Dictionary) -> void:
 	else:
 		cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 	
+	# Extract unit_default_topology from metadata
+	var unit_topology: Dictionary = metadata.get("unit_default_topology", {})
+	
 	# Create the template object
 	var template: CorticalTemplate = CorticalTemplate.new(
 		template_id,
@@ -179,10 +182,11 @@ func _choose_from_api(type_key: String, metadata: Dictionary) -> void:
 		structure_name,
 		resolution_array,
 		cortical_type,
-		null  # feagi_cortical_type (optional)
+		null,  # feagi_cortical_type (optional)
+		unit_topology  # unit_default_topology
 	)
 	
-	print("WindowSelectCorticalTemplate: Created template - ID: %s, Name: %s, Resolution: %s" % [template_id, template_name, resolution_array])
+	print("WindowSelectCorticalTemplate: Created template - ID: %s, Name: %s, Resolution: %s, Units: %d" % [template_id, template_name, resolution_array, unit_topology.size()])
 	
 	# Emit the template_chosen signal with our newly created template
 	template_chosen.emit(template)
