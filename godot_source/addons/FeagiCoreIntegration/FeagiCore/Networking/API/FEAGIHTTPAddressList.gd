@@ -25,6 +25,7 @@ var GET_corticalArea_corticalIDNameMapping: StringName = '/v1/cortical_area/cort
 var GET_corticalArea_corticalLocations2D: StringName = '/v1/cortical_area/cortical_locations_2d'
 var GET_corticalArea_corticalArea_geometry: StringName = '/v1/cortical_area/cortical_area/geometry'
 var GET_corticalArea_corticalTypes: StringName = "/v1/cortical_area/cortical_types"
+var GET_genome_corticalTemplate: StringName = "/v1/genome/cortical_template"
 var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"
 var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/mappings"
 var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"

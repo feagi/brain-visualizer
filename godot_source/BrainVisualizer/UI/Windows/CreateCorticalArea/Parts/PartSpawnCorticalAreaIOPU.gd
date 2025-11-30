@@ -8,6 +8,9 @@ signal group_id_validation_changed(is_valid: bool, message: String)
 var location: Vector3iSpinboxField
 var device_count: SpinBox
 var group_id: SpinBox
+var data_type_variant: OptionButton
+var frame_handling: OptionButton
+var positioning: OptionButton
 var _iopu_image: TextureRect
 var _device_name_label: Label
 var _group_id_status_label: Label
@@ -17,11 +20,16 @@ var _selected_template: CorticalTemplate = null
 var _preview_boxes: Array[UI_BrainMonitor_InteractivePreview] = []  # Multiple preview boxes for multi-unit cortical types
 var _active_brain_monitor = null  # Store reference to brain monitor
 var _preview_close_signals: Array[Signal] = []  # Store close signals
+var _template_metadata: Dictionary = {}  # Fetched from /v1/genome/cortical_template
+var _selected_data_type_config: int = 4  # Default: SignedPercentage(Absolute, Linear) for OPU
 
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
 	device_count = $HBoxContainer/Fields/ChannelCount
 	group_id = $HBoxContainer/Fields/GroupID
+	data_type_variant = $HBoxContainer/Fields/DataTypeVariant
+	frame_handling = $HBoxContainer/Fields/FrameHandling
+	positioning = $HBoxContainer/Fields/Positioning
 	_iopu_image = $HBoxContainer/TextureRect
 	_device_name_label = $HBoxContainer2/TopSection/DeviceName
 	_group_id_status_label = $GroupIDStatus
@@ -29,6 +37,9 @@ func _ready() -> void:
 	# Connect to location changes to update all preview boxes
 	location.user_updated_vector.connect(_on_location_changed)
 	location_changed_from_dropdown.connect(_on_location_changed)
+	
+	# Fetch cortical template metadata from FEAGI API
+	_fetch_template_metadata()
 	
 
 
@@ -222,6 +233,9 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	var first_available_id = _find_first_available_group_id(cortical_template.ID)
 	group_id.value = first_available_id
 	
+	# Populate data type dropdowns for this template
+	_populate_data_type_dropdowns(cortical_template.ID)
+	
 	# Update location if an existing area exists
 	if cortical_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_template.ID].coordinates_3D
@@ -365,3 +379,143 @@ func get_neurons_per_voxel() -> int:
 	if _selected_template == null:
 		return 1
 	return _get_existing_neurons_per_voxel(_selected_template.ID)
+
+func _fetch_template_metadata() -> void:
+	"""Fetch cortical template metadata from FEAGI API"""
+	var response: FeagiRequestOutput = await FeagiCore.requests.get_cortical_template_metadata()
+	if response.success:
+		_template_metadata = response.decode_response_as_dict()
+		print("PartSpawnCorticalAreaIOPU: Fetched template metadata for %d types" % _template_metadata.size())
+	else:
+		push_error("PartSpawnCorticalAreaIOPU: Failed to fetch template metadata")
+		_template_metadata = {}
+
+func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
+	"""Populate dropdowns based on selected template's supported data types"""
+	# Clear existing options
+	data_type_variant.clear()
+	frame_handling.clear()
+	positioning.clear()
+	
+	# Check if we have metadata for this template
+	if cortical_type_key not in _template_metadata:
+		push_warning("PartSpawnCorticalAreaIOPU: No metadata for " + cortical_type_key)
+		# Add defaults
+		_add_default_dropdown_options()
+		return
+	
+	var template_data: Dictionary = _template_metadata[cortical_type_key]
+	var supported_types: Array = template_data.get("supported_data_types", [])
+	
+	if supported_types.is_empty():
+		_add_default_dropdown_options()
+		return
+	
+	# Collect unique values for each dropdown
+	var variants: Array[String] = []
+	var frames: Array[String] = []
+	var positionings: Array[String] = []
+	var config_map: Dictionary = {}  # Map (variant, frame, positioning) -> config_value
+	
+	for data_type in supported_types:
+		var variant: String = data_type.get("variant", "")
+		var frame: String = data_type.get("frame_change_handling", "")
+		var pos = data_type.get("percentage_positioning", null)
+		var config_val: int = data_type.get("config_value", 0)
+		
+		if variant not in variants:
+			variants.append(variant)
+		if frame not in frames:
+			frames.append(frame)
+		if pos != null and pos not in positionings:
+			positionings.append(pos)
+		
+		# Store config value for this combination
+		var key: String = "%s|%s|%s" % [variant, frame, str(pos)]
+		config_map[key] = config_val
+	
+	# Populate dropdowns
+	for v in variants:
+		data_type_variant.add_item(v)
+	for f in frames:
+		frame_handling.add_item(f)
+	for p in positionings:
+		positioning.add_item(p)
+	
+	# Store config map for later lookup
+	data_type_variant.set_meta("config_map", config_map)
+	
+	# Select defaults (first option or SignedPercentage if available)
+	if "SignedPercentage" in variants:
+		data_type_variant.select(variants.find("SignedPercentage"))
+	
+	_update_selected_config_value()
+
+func _add_default_dropdown_options() -> void:
+	"""Add default options when API data not available"""
+	# Data Type Variants
+	data_type_variant.add_item("SignedPercentage")
+	data_type_variant.add_item("Percentage")
+	
+	# Frame Handling
+	frame_handling.add_item("Absolute")
+	frame_handling.add_item("Incremental")
+	
+	# Positioning
+	positioning.add_item("Linear")
+	positioning.add_item("Fractional")
+	
+	# Select defaults for OPU
+	if not _is_IPU_not_OPU:
+		data_type_variant.select(0)  # SignedPercentage
+	frame_handling.select(0)  # Absolute
+	positioning.select(0)  # Linear
+
+func _on_data_type_variant_changed(_index: int) -> void:
+	_update_selected_config_value()
+
+func _on_frame_handling_changed(_index: int) -> void:
+	_update_selected_config_value()
+
+func _on_positioning_changed(_index: int) -> void:
+	_update_selected_config_value()
+
+func _update_selected_config_value() -> void:
+	"""Calculate the data_type_config value from selected dropdowns"""
+	var variant_text: String = data_type_variant.get_item_text(data_type_variant.selected) if data_type_variant.selected >= 0 else ""
+	var frame_text: String = frame_handling.get_item_text(frame_handling.selected) if frame_handling.selected >= 0 else ""
+	var pos_text: String = positioning.get_item_text(positioning.selected) if positioning.selected >= 0 else ""
+	
+	# Try to lookup from API config map
+	if data_type_variant.has_meta("config_map"):
+		var config_map: Dictionary = data_type_variant.get_meta("config_map")
+		var key: String = "%s|%s|%s" % [variant_text, frame_text, pos_text]
+		if key in config_map:
+			_selected_data_type_config = config_map[key]
+			return
+	
+	# Fallback: Calculate manually using the same bit-packing as Rust
+	var variant_bits: int = _variant_name_to_bits(variant_text)
+	var frame_bits: int = 1 if frame_text == "Incremental" else 0
+	var positioning_bits: int = 1 if pos_text == "Fractional" else 0
+	
+	_selected_data_type_config = variant_bits | (frame_bits << 4) | (positioning_bits << 5)
+
+func _variant_name_to_bits(name: String) -> int:
+	"""Convert variant name to bits (0-3 for variant type)"""
+	match name:
+		"Percentage": return 0
+		"Percentage2D": return 1
+		"Percentage3D": return 2
+		"Percentage4D": return 3
+		"SignedPercentage": return 4
+		"SignedPercentage2D": return 5
+		"SignedPercentage3D": return 6
+		"SignedPercentage4D": return 7
+		"CartesianPlane": return 8
+		"Misc": return 9
+		_: return 0
+
+func get_selected_data_type_config() -> int:
+	"""Get the currently selected data type configuration value"""
+	return _selected_data_type_config

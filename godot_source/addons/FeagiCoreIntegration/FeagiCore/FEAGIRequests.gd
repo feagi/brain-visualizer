@@ -1143,7 +1143,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 
 
 ## Adds a IPU / OPU cortical area. NOTE: IPUs/OPUs can ONLY be in the root region!
-func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), group_id: int = 0, neurons_per_voxel: int = 1) -> FeagiRequestOutput:
+func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), group_id: int = 0, neurons_per_voxel: int = 1, data_type_config: int = 0) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -1163,7 +1163,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		push_error("FEAGI Requests: Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return FeagiRequestOutput.requirement_fail("NON_IOPU")
 	
-	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with group_id %d, neurons_per_voxel %d" % [IOPU_template.cortical_name, group_id, neurons_per_voxel])
+	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with group_id %d, neurons_per_voxel %d, data_type_config %d" % [IOPU_template.cortical_name, group_id, neurons_per_voxel, data_type_config])
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"cortical_id": IOPU_template.ID,
@@ -1172,6 +1172,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		"device_count": device_count,
 		"group_id": group_id,
 		"neurons_per_voxel": neurons_per_voxel,
+		"data_type_config": data_type_config,
 		"coordinates_2d": [null, null]
 	}
 	
@@ -1532,6 +1533,25 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(response)
 	return FEAGI_response_data
 
+## Get cortical template metadata including supported data types and configurations
+func get_cortical_template_metadata() -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	
+	# Define Request
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_genome_corticalTemplate)
+	
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to get cortical template metadata!")
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully retrieved cortical template metadata!")
+	return FEAGI_response_data
 
 ## Toggle the synaptic activity monitoring of cortical areas
 func toggle_synaptic_monitoring(cortical_areas: Array[AbstractCorticalArea], should_monitor: bool) -> FeagiRequestOutput:

@@ -31,7 +31,8 @@ func _init(cortical_types_dict_from_FEAGI: Dictionary, type_cortical_area_str: S
 			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 				feagi_type = FeagiCorticalTypeFactory.create_ipu_cartesian_plane(FeagiCorticalTypeFactory.FRAME_ABSOLUTE)
 			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-				feagi_type = FeagiCorticalTypeFactory.create_opu_percentage(FeagiCorticalTypeFactory.FRAME_ABSOLUTE, FeagiCorticalTypeFactory.POSITIONING_LINEAR)
+				# FIXED: Use SignedPercentage for motors (supports -1.0 to 1.0 range)
+				feagi_type = FeagiCorticalTypeFactory.create_opu_signed_percentage(FeagiCorticalTypeFactory.FRAME_ABSOLUTE, FeagiCorticalTypeFactory.POSITIONING_LINEAR)
 			AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 				feagi_type = FeagiCorticalTypeFactory.create_core()
 			AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
