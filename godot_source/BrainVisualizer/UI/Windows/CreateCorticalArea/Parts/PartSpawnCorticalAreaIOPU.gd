@@ -431,7 +431,9 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 			positionings.append(pos)
 		
 		# Store config value for this combination
-		var key: String = "%s|%s|%s" % [variant, frame, str(pos)]
+		# Handle null positioning properly - use empty string instead of "null"
+		var pos_str: String = "" if pos == null else str(pos)
+		var key: String = "%s|%s|%s" % [variant, frame, pos_str]
 		config_map[key] = config_val
 	
 	# Populate dropdowns
@@ -448,6 +450,13 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	# Select defaults (first option or SignedPercentage if available)
 	if "SignedPercentage" in variants:
 		data_type_variant.select(variants.find("SignedPercentage"))
+	
+	# CRITICAL: Select defaults for frame_handling and positioning BEFORE calling _update_selected_config_value()
+	# Otherwise the lookup will fail because frame_text and pos_text will be empty strings
+	if frames.size() > 0:
+		frame_handling.select(0)  # Default to first option (usually "Absolute")
+	if positionings.size() > 0:
+		positioning.select(0)  # Default to first option (usually "Linear")
 	
 	_update_selected_config_value()
 
@@ -492,7 +501,13 @@ func _update_selected_config_value() -> void:
 		var key: String = "%s|%s|%s" % [variant_text, frame_text, pos_text]
 		if key in config_map:
 			_selected_data_type_config = config_map[key]
+			print("PartSpawnCorticalAreaIOPU: Found config_value=%d for key='%s'" % [_selected_data_type_config, key])
 			return
+		else:
+			# Debug: Print all keys in config_map to see what's available
+			print("PartSpawnCorticalAreaIOPU: Key '%s' not found in config_map. Available keys:" % key)
+			for k in config_map.keys():
+				print("  - '%s' -> %d" % [k, config_map[k]])
 	
 	# Fallback: Calculate manually using the same bit-packing as Rust
 	var variant_bits: int = _variant_name_to_bits(variant_text)
@@ -500,6 +515,7 @@ func _update_selected_config_value() -> void:
 	var positioning_bits: int = 1 if pos_text == "Fractional" else 0
 	
 	_selected_data_type_config = variant_bits | (frame_bits << 4) | (positioning_bits << 5)
+	print("PartSpawnCorticalAreaIOPU: Calculated config_value=%d (variant=%d, frame=%d, pos=%d) for '%s|%s|%s'" % [_selected_data_type_config, variant_bits, frame_bits, positioning_bits, variant_text, frame_text, pos_text])
 
 func _variant_name_to_bits(name: String) -> int:
 	"""Convert variant name to bits (0-3 for variant type)"""
