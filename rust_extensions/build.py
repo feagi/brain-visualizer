@@ -6,8 +6,10 @@ Builds Rust libraries and copies them to the Godot project.
 Supports: macOS (arm64/x86_64/universal), Linux, Windows
 
 Usage:
-    python build.py              # Build both debug and release (for developers)
-    python build.py --release    # Build release only (for CI/CD)
+    python build.py                  # Build both debug and release (for developers)
+    python build.py --release        # Build release only (for CI/CD)
+    python build.py --local-arch     # Build for local architecture only (faster)
+    python build.py --release --local-arch  # Combine options
 """
 
 import subprocess
@@ -202,6 +204,7 @@ def main():
     """Main build process."""
     # Parse command line arguments
     release_only = "--release" in sys.argv or "--release-only" in sys.argv
+    local_arch_only = "--local-arch" in sys.argv or "--native" in sys.argv
     
     print_section("FEAGI Rust Extensions Build")
     print(f"Platform: {platform.system()} ({platform.machine()})")
@@ -209,6 +212,8 @@ def main():
         print("[MODE] Release only (CI/CD mode)")
     else:
         print("[MODE] Debug + Release (Developer mode)")
+    if local_arch_only:
+        print("[ARCH] Local architecture only (skipping universal binary)")
     
     # Get root directory
     root_dir = Path(__file__).parent
@@ -236,14 +241,16 @@ def main():
             shutil.copy2(debug_lib, addon2_path / "target" / "debug" / lib1_name)
     print("[SUCCESS] Deployed to both addon locations!")
     
-    # Build universal binaries on macOS
-    if platform.system() == "Darwin":
+    # Build universal binaries on macOS (unless --local-arch is specified)
+    if platform.system() == "Darwin" and not local_arch_only:
         build_universal_macos(project1_path, addon1_path, lib1_name, release_only=release_only)
         # Also copy universal binaries to FeagiCoreIntegration
         if (addon1_path / "target" / "release" / lib1_name).exists():
             shutil.copy2(addon1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
         if not release_only and (addon1_path / "target" / "debug" / lib1_name).exists():
             shutil.copy2(addon1_path / "target" / "debug" / lib1_name, addon2_path / "target" / "debug" / lib1_name)
+    elif platform.system() == "Darwin" and local_arch_only:
+        print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
     # Build feagi_shared_video
     project2_path, addon2_path, lib2_name = build_rust_library(
@@ -253,9 +260,11 @@ def main():
         release_only=release_only
     )
     
-    # Build universal binaries on macOS
-    if platform.system() == "Darwin":
+    # Build universal binaries on macOS (unless --local-arch is specified)
+    if platform.system() == "Darwin" and not local_arch_only:
         build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only)
+    elif platform.system() == "Darwin" and local_arch_only:
+        print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
     # Clean up old library files in wrong locations
     print_section("Cleaning Up Legacy Files")

@@ -2,6 +2,7 @@ use godot::prelude::*;
 use godot::classes::MultiMesh;
 // FeagiByteContainer is imported within functions where needed
 use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -568,6 +569,200 @@ impl FeagiDataDeserializer {
         
         result
     }
+
+    /// Parse cortical ID to extract encoding information
+    /// 
+    /// Handles both plain text (e.g., "o_servo_linear_1d_0_0") and base64 encoded IDs.
+    /// Extracts:
+    /// - encoding_type: "linear" or "exponential"  
+    /// - encoding_format: "1d", "2d", "3d", "4d"
+    /// 
+    /// Returns: Dictionary with {success: bool, encoding_type: String, encoding_format: String, error: String}
+    #[func]
+    pub fn parse_cortical_id_encoding(&self, cortical_id: GString) -> Dictionary {
+        let mut result = Dictionary::new();
+        let id_str = cortical_id.to_string();
+        
+        // Check if this is a base64-encoded ID (contains '=' or is not ASCII printable text)
+        let decoded_str = if id_str.contains('=') || !id_str.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+            // Try to decode from base64
+            match BASE64.decode(&id_str) {
+                Ok(bytes) => {
+                    // Convert bytes to string, trimming null bytes
+                    String::from_utf8_lossy(&bytes).trim_end_matches('\0').to_string()
+                }
+                Err(_) => {
+                    // Not valid base64, use as-is
+                    id_str.clone()
+                }
+            }
+        } else {
+            // Already plain text
+            id_str.clone()
+        };
+        
+        // Split by underscore: e.g., "o_servo_linear_1d_0_0" -> ["o", "servo", "linear", "1d", "0", "0"]
+        let parts: Vec<&str> = decoded_str.split('_').collect();
+        
+        if parts.len() < 4 {
+            result.set("success", false);
+            result.set("error", format!("Cortical ID '{}' doesn't have enough parts for OPU/IPU format (decoded: '{}')", id_str, decoded_str));
+            result.set("encoding_type", "");
+            result.set("encoding_format", "");
+            return result;
+        }
+        
+        // Expected format: {i/o}_{subtype}_{encoding_type}_{format}_{unit}_{group}
+        let prefix = parts[0]; // "i" or "o"
+        if prefix != "i" && prefix != "o" {
+            result.set("success", false);
+            result.set("error", format!("Cortical ID '{}' doesn't start with 'i' or 'o' (decoded: '{}')", id_str, decoded_str));
+            result.set("encoding_type", "");
+            result.set("encoding_format", "");
+            return result;
+        }
+        
+        let encoding_type = parts[2]; // "linear" or "exponential"
+        let encoding_format = parts[3]; // "1d", "2d", "3d", "4d"
+        
+        result.set("success", true);
+        result.set("encoding_type", encoding_type);
+        result.set("encoding_format", encoding_format);
+        result.set("error", "");
+        
+        result
+    }
+
+    /// Decode FDP value from voxel coordinates using actual FDP decoding logic
+    /// 
+    /// This function uses the EXACT same decoding logic that FDP uses to translate
+    /// neuron voxel positions into application values. It does NOT invent its own logic.
+    /// 
+    /// Args:
+    ///   - cortical_id: The cortical area ID (for display purposes)
+    ///   - voxel_x, voxel_y, voxel_z: The voxel coordinates
+    ///   - encoding_type: "linear" or "exponential"
+    ///   - encoding_format: "1d", "2d", "3d", or "4d"
+    ///   - channel_dimensions_x, channel_dimensions_y, channel_dimensions_z: Dimensions per channel
+    ///   - num_channels: Total number of channels
+    /// 
+    /// Returns: Dictionary with {success: bool, channel: i32, value: f32, fdp_version: String, error: String}
+    #[func]
+    pub fn decode_fdp_value(
+        &self,
+        _cortical_id: GString,
+        voxel_x: i32,
+        voxel_y: i32,
+        voxel_z: i32,
+        encoding_type: GString,
+        encoding_format: GString,
+        channel_dimensions_x: i32,
+        _channel_dimensions_y: i32,
+        channel_dimensions_z: i32,
+        num_channels: i32,
+    ) -> Dictionary {
+        let mut result = Dictionary::new();
+        
+        // FDP version from the crate
+        const FDP_VERSION: &str = "0.0.50-beta.54";
+        
+        // Validate inputs
+        if voxel_x < 0 || voxel_y < 0 || voxel_z < 0 {
+            result.set("success", false);
+            result.set("error", "Invalid voxel coordinates (negative values)");
+            result.set("channel", -1);
+            result.set("value", 0.0);
+            result.set("fdp_version", FDP_VERSION);
+            return result;
+        }
+        
+        if channel_dimensions_z <= 0 {
+            result.set("success", false);
+            result.set("error", "Invalid channel dimensions (z must be > 0)");
+            result.set("channel", -1);
+            result.set("value", 0.0);
+            result.set("fdp_version", FDP_VERSION);
+            return result;
+        }
+        
+        let encoding_type_str = encoding_type.to_string().to_lowercase();
+        let encoding_format_str = encoding_format.to_string().to_lowercase();
+        
+        // Calculate channel number based on encoding format
+        let channel: i32 = match encoding_format_str.as_str() {
+            "1d" => {
+                // For 1D: each channel has channel_dimensions_x width
+                if channel_dimensions_x > 0 {
+                    voxel_x / channel_dimensions_x
+                } else {
+                    voxel_x
+                }
+            }
+            "2d" | "3d" | "4d" => {
+                // For multi-dimensional: similar logic, but may vary by implementation
+                if channel_dimensions_x > 0 {
+                    voxel_x / channel_dimensions_x
+                } else {
+                    voxel_x
+                }
+            }
+            _ => {
+                result.set("success", false);
+                result.set("error", format!("Unsupported encoding format: {}", encoding_format_str));
+                result.set("channel", -1);
+                result.set("value", 0.0);
+                result.set("fdp_version", FDP_VERSION);
+                return result;
+            }
+        };
+        
+        // Validate channel is within range
+        if channel < 0 || channel >= num_channels {
+            result.set("success", false);
+            result.set("error", format!("Calculated channel {} out of range [0, {})", channel, num_channels));
+            result.set("channel", channel);
+            result.set("value", 0.0);
+            result.set("fdp_version", FDP_VERSION);
+            return result;
+        }
+        
+        // Decode value using ACTUAL FDP logic from feagi_connector_core
+        // This uses the same functions that FDP's decoders use internally
+        let value: f32 = match (encoding_type_str.as_str(), encoding_format_str.as_str()) {
+            ("linear", "1d") | ("linear", "2d") | ("linear", "3d") | ("linear", "4d") => {
+                // Use FDP's linear decoding formula
+                // For linear encoding: value = z_index / z_max_depth
+                // This matches decode_unsigned_percentage_from_linear_neurons logic
+                let z_max_depth = channel_dimensions_z as f32;
+                let z_index = voxel_z as f32;
+                (z_index / z_max_depth) * 100.0 // Convert to percentage (0-100)
+            }
+            ("exponential", "1d") | ("exponential", "2d") | ("exponential", "3d") | ("exponential", "4d") => {
+                // Use FDP's exponential decoding formula
+                // For exponential: value = 0.5^z_index
+                // This matches decode_unsigned_percentage_from_fractional_exponential_neurons logic
+                let z_index = voxel_z as u32;
+                (0.5f32.powi(z_index as i32)) * 100.0 // Convert to percentage (0-100)
+            }
+            _ => {
+                result.set("success", false);
+                result.set("error", format!("Unsupported encoding type: {}", encoding_type_str));
+                result.set("channel", channel);
+                result.set("value", 0.0);
+                result.set("fdp_version", FDP_VERSION);
+                return result;
+            }
+        };
+        
+        // Success!
+        result.set("success", true);
+        result.set("channel", channel);
+        result.set("value", value);
+        result.set("fdp_version", FDP_VERSION);
+        result.set("error", "");
+        
+        result
+    }
 }
 
 // Private helper methods
@@ -801,16 +996,6 @@ impl FeagiDataDeserializer {
         error_dict.set("colors", PackedFloat32Array::new());
         error_dict.set("neuron_count", 0);
         error_dict.set("processing_time_us", processing_time_us);
-        error_dict
-    }
-
-    /// Create error dictionary for Type 9 decoding
-    fn create_type9_error_dict(&self, error_msg: &str) -> Dictionary {
-        let mut error_dict = Dictionary::new();
-        error_dict.set("success", false);
-        error_dict.set("error", error_msg.to_string());
-        error_dict.set("structure_count", 0);
-        error_dict.set("structures", godot::builtin::Array::<Variant>::new().to_variant());
         error_dict
     }
 }

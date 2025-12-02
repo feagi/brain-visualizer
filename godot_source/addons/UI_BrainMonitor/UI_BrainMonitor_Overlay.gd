@@ -3,15 +3,28 @@ class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
 var _mouse_context_label: Label
+var _fdp_deserializer: FeagiDataDeserializer = null
 
 func _ready() -> void:
 	_mouse_context_label = $Bottom_Row/MouseContext
+	
+	# Initialize FDP deserializer for decoding voxel values
+	print("=== FDP INIT: Checking for FeagiDataDeserializer class...")
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		print("=== FDP INIT: FeagiDataDeserializer class found! Creating instance...")
+		_fdp_deserializer = FeagiDataDeserializer.new()
+		print("=== FDP INIT: Instance created successfully!")
+	else:
+		print("=== FDP INIT: WARNING - FeagiDataDeserializer not available!")
+		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 
 ## Clear all text
 func clear() -> void:
 	_mouse_context_label.text = ""
 
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
+	print("=== FDP HOVER: Function called! Area: ", cortical_area.cortical_ID, " Type: ", cortical_area.cortical_type)
+	
 	if cortical_area.cortical_type not in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 		_mouse_context_label.text = "Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate)
 		return
@@ -45,6 +58,50 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			Vector3i(2,2,0): direction = " - Pitch Backward"
 			Vector3i(3,2,0): direction = " - Roll Right"
 		text += direction
+	
+	# NEW FEATURE: Add FDP-decoded value information for OPU areas only
+	# This shows what value FDP would produce for this voxel using the actual FDP decoding logic
+	# NOTE: This is currently implemented for OPU areas only. IPU areas will have a different variation.
+	
+	print("=== FDP HOVER: Checking conditions - Deserializer null? ", _fdp_deserializer == null, " Is OPU? ", cortical_area is OPUCorticalArea)
+	
+	if _fdp_deserializer != null and cortical_area is OPUCorticalArea:
+		print("=== FDP HOVER: Conditions met! Parsing cortical ID: ", cortical_area.cortical_ID)
+		# Parse encoding info directly from cortical ID (e.g., "o_servo_linear_1d_0_0")
+		var encoding_info = _fdp_deserializer.parse_cortical_id_encoding(cortical_area.cortical_ID)
+		print("=== FDP HOVER: Parse result: ", encoding_info)
+		
+		if encoding_info.get("success", false):
+			var encoding_type_val = encoding_info.get("encoding_type", "")
+			var encoding_format_val = encoding_info.get("encoding_format", "")
+			print("=== FDP HOVER: Encoding type: ", encoding_type_val, " format: ", encoding_format_val)
+			
+			# Now decode the FDP value using the parsed encoding info
+			var fdp_result = _fdp_deserializer.decode_fdp_value(
+				cortical_area.cortical_ID,
+				neuron_coordinate.x,
+				neuron_coordinate.y,
+				neuron_coordinate.z,
+				encoding_type_val,
+				encoding_format_val,
+				cortical_area.cortical_dimensions_per_device.x,
+				cortical_area.cortical_dimensions_per_device.y,
+				cortical_area.cortical_dimensions_per_device.z,
+				cortical_area.device_count
+			)
+			print("=== FDP HOVER: Decode result: ", fdp_result)
+			
+			if fdp_result.get("success", false):
+				var fdp_version = fdp_result.get("fdp_version", "unknown")
+				var channel = fdp_result.get("channel", -1)
+				var value = fdp_result.get("value", 0.0)
+				text += " | FDP:%s CH:%d Value:%.2f%%" % [fdp_version, channel, value]
+				print("=== FDP HOVER: SUCCESS! Added FDP text to overlay")
+			else:
+				print("=== FDP HOVER: Decode failed: ", fdp_result.get("error", "unknown"))
+		else:
+			print("=== FDP HOVER: Parse failed: ", encoding_info.get("error", "unknown"))
+	
 	_mouse_context_label.text = text
 
 ## Show plate hover context (region name + plate kind)
