@@ -7,7 +7,7 @@ This is the primary way GDScript creates type instances.
 
 use godot::prelude::*;
 use feagi_data_structures::genomic::cortical_area::{
-    CorticalAreaType, IOCorticalAreaDataType, CoreCorticalType, 
+    CorticalAreaType, IOCorticalAreaDataFlag, CoreCorticalType, 
     CustomCorticalType, MemoryCorticalType,
 };
 use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
@@ -50,7 +50,7 @@ impl FeagiCorticalTypeFactory {
     pub fn create_ipu_cartesian_plane(frame_handling: i32) -> Gd<FeagiCorticalType> {
         let handling = Self::i32_to_frame_handling(frame_handling);
         Self::create_with_type(CorticalAreaType::BrainInput(
-            IOCorticalAreaDataType::CartesianPlane(handling)
+            IOCorticalAreaDataFlag::CartesianPlane(handling)
         ))
     }
     
@@ -64,7 +64,7 @@ impl FeagiCorticalTypeFactory {
         let handling = Self::i32_to_frame_handling(frame_handling);
         let pos = Self::i32_to_positioning(positioning);
         Self::create_with_type(CorticalAreaType::BrainInput(
-            IOCorticalAreaDataType::Percentage(handling, pos)
+            IOCorticalAreaDataFlag::Percentage(handling, pos)
         ))
     }
     
@@ -74,7 +74,7 @@ impl FeagiCorticalTypeFactory {
         let handling = Self::i32_to_frame_handling(frame_handling);
         let pos = Self::i32_to_positioning(positioning);
         Self::create_with_type(CorticalAreaType::BrainInput(
-            IOCorticalAreaDataType::SignedPercentage(handling, pos)
+            IOCorticalAreaDataFlag::SignedPercentage(handling, pos)
         ))
     }
     
@@ -83,7 +83,7 @@ impl FeagiCorticalTypeFactory {
     pub fn create_ipu_misc(frame_handling: i32) -> Gd<FeagiCorticalType> {
         let handling = Self::i32_to_frame_handling(frame_handling);
         Self::create_with_type(CorticalAreaType::BrainInput(
-            IOCorticalAreaDataType::Misc(handling)
+            IOCorticalAreaDataFlag::Misc(handling)
         ))
     }
     
@@ -104,7 +104,7 @@ impl FeagiCorticalTypeFactory {
         let handling = Self::i32_to_frame_handling(frame_handling);
         let pos = Self::i32_to_positioning(positioning);
         Self::create_with_type(CorticalAreaType::BrainOutput(
-            IOCorticalAreaDataType::Percentage(handling, pos)
+            IOCorticalAreaDataFlag::Percentage(handling, pos)
         ))
     }
     
@@ -114,7 +114,7 @@ impl FeagiCorticalTypeFactory {
         let handling = Self::i32_to_frame_handling(frame_handling);
         let pos = Self::i32_to_positioning(positioning);
         Self::create_with_type(CorticalAreaType::BrainOutput(
-            IOCorticalAreaDataType::SignedPercentage(handling, pos)
+            IOCorticalAreaDataFlag::SignedPercentage(handling, pos)
         ))
     }
     
@@ -123,7 +123,7 @@ impl FeagiCorticalTypeFactory {
     pub fn create_opu_cartesian_plane(frame_handling: i32) -> Gd<FeagiCorticalType> {
         let handling = Self::i32_to_frame_handling(frame_handling);
         Self::create_with_type(CorticalAreaType::BrainOutput(
-            IOCorticalAreaDataType::CartesianPlane(handling)
+            IOCorticalAreaDataFlag::CartesianPlane(handling)
         ))
     }
     
@@ -132,7 +132,7 @@ impl FeagiCorticalTypeFactory {
     pub fn create_opu_misc(frame_handling: i32) -> Gd<FeagiCorticalType> {
         let handling = Self::i32_to_frame_handling(frame_handling);
         Self::create_with_type(CorticalAreaType::BrainOutput(
-            IOCorticalAreaDataType::Misc(handling)
+            IOCorticalAreaDataFlag::Misc(handling)
         ))
     }
     
@@ -200,30 +200,30 @@ impl FeagiCorticalTypeFactory {
         let cortical_type = match (category.as_str(), data_type.as_str()) {
             // IPU types
             ("IPU", "CartesianPlane") => CorticalAreaType::BrainInput(
-                IOCorticalAreaDataType::CartesianPlane(frame_handling)
+                IOCorticalAreaDataFlag::CartesianPlane(frame_handling)
             ),
             ("IPU", "Percentage") => CorticalAreaType::BrainInput(
-                IOCorticalAreaDataType::Percentage(frame_handling, positioning)
+                IOCorticalAreaDataFlag::Percentage(frame_handling, positioning)
             ),
             ("IPU", "SignedPercentage") => CorticalAreaType::BrainInput(
-                IOCorticalAreaDataType::SignedPercentage(frame_handling, positioning)
+                IOCorticalAreaDataFlag::SignedPercentage(frame_handling, positioning)
             ),
             ("IPU", "Misc") | ("IPU", _) => CorticalAreaType::BrainInput(
-                IOCorticalAreaDataType::Misc(frame_handling)
+                IOCorticalAreaDataFlag::Misc(frame_handling)
             ),
             
             // OPU types
             ("OPU", "CartesianPlane") => CorticalAreaType::BrainOutput(
-                IOCorticalAreaDataType::CartesianPlane(frame_handling)
+                IOCorticalAreaDataFlag::CartesianPlane(frame_handling)
             ),
             ("OPU", "Percentage") => CorticalAreaType::BrainOutput(
-                IOCorticalAreaDataType::Percentage(frame_handling, positioning)
+                IOCorticalAreaDataFlag::Percentage(frame_handling, positioning)
             ),
             ("OPU", "SignedPercentage") => CorticalAreaType::BrainOutput(
-                IOCorticalAreaDataType::SignedPercentage(frame_handling, positioning)
+                IOCorticalAreaDataFlag::SignedPercentage(frame_handling, positioning)
             ),
             ("OPU", "Misc") | ("OPU", _) => CorticalAreaType::BrainOutput(
-                IOCorticalAreaDataType::Misc(frame_handling)
+                IOCorticalAreaDataFlag::Misc(frame_handling)
             ),
             
             // Other types

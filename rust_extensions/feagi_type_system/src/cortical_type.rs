@@ -7,7 +7,7 @@ and exposes it to GDScript with a clean, type-safe API.
 
 use godot::prelude::*;
 use feagi_data_structures::genomic::cortical_area::CorticalAreaType;
-use feagi_data_structures::genomic::cortical_area::IOCorticalAreaDataType;
+use feagi_data_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
 use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
     FrameChangeHandling, PercentageNeuronPositioning,
 };
@@ -190,8 +190,8 @@ impl FeagiCorticalType {
         if let Some(ref cortical_type) = self.internal_type {
             matches!(
                 cortical_type,
-                CorticalAreaType::BrainInput(IOCorticalAreaDataType::CartesianPlane(_)) |
-                CorticalAreaType::BrainOutput(IOCorticalAreaDataType::CartesianPlane(_))
+                CorticalAreaType::BrainInput(IOCorticalAreaDataFlag::CartesianPlane(_)) |
+                CorticalAreaType::BrainOutput(IOCorticalAreaDataFlag::CartesianPlane(_))
             )
         } else {
             false
@@ -205,24 +205,24 @@ impl FeagiCorticalType {
             matches!(
                 cortical_type,
                 CorticalAreaType::BrainInput(
-                    IOCorticalAreaDataType::Percentage(_, _) |
-                    IOCorticalAreaDataType::Percentage2D(_, _) |
-                    IOCorticalAreaDataType::Percentage3D(_, _) |
-                    IOCorticalAreaDataType::Percentage4D(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage2D(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage3D(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage4D(_, _)
+                    IOCorticalAreaDataFlag::Percentage(_, _) |
+                    IOCorticalAreaDataFlag::Percentage2D(_, _) |
+                    IOCorticalAreaDataFlag::Percentage3D(_, _) |
+                    IOCorticalAreaDataFlag::Percentage4D(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage2D(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage3D(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage4D(_, _)
                 ) |
                 CorticalAreaType::BrainOutput(
-                    IOCorticalAreaDataType::Percentage(_, _) |
-                    IOCorticalAreaDataType::Percentage2D(_, _) |
-                    IOCorticalAreaDataType::Percentage3D(_, _) |
-                    IOCorticalAreaDataType::Percentage4D(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage2D(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage3D(_, _) |
-                    IOCorticalAreaDataType::SignedPercentage4D(_, _)
+                    IOCorticalAreaDataFlag::Percentage(_, _) |
+                    IOCorticalAreaDataFlag::Percentage2D(_, _) |
+                    IOCorticalAreaDataFlag::Percentage3D(_, _) |
+                    IOCorticalAreaDataFlag::Percentage4D(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage2D(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage3D(_, _) |
+                    IOCorticalAreaDataFlag::SignedPercentage4D(_, _)
                 )
             )
         } else {
@@ -339,8 +339,8 @@ impl FeagiCorticalType {
         self.internal_type.as_ref()
     }
     
-    fn io_type_to_string(io_type: &IOCorticalAreaDataType) -> GString {
-        use IOCorticalAreaDataType::*;
+    fn io_type_to_string(io_type: &IOCorticalAreaDataFlag) -> GString {
+        use IOCorticalAreaDataFlag::*;
         let name = match io_type {
             CartesianPlane(_) => "CartesianPlane",
             Percentage(_, _) => "Percentage",
@@ -352,12 +352,13 @@ impl FeagiCorticalType {
             SignedPercentage3D(_, _) => "SignedPercentage3D",
             SignedPercentage4D(_, _) => "SignedPercentage4D",
             Misc(_) => "Misc",
+            Boolean => "Boolean",
         };
         GString::from(name)
     }
     
-    fn get_frame_handling_from_io(io_type: &IOCorticalAreaDataType) -> GString {
-        use IOCorticalAreaDataType::*;
+    fn get_frame_handling_from_io(io_type: &IOCorticalAreaDataFlag) -> GString {
+        use IOCorticalAreaDataFlag::*;
         let handling = match io_type {
             CartesianPlane(h) => h,
             Percentage(h, _) => h,
@@ -369,6 +370,7 @@ impl FeagiCorticalType {
             SignedPercentage3D(h, _) => h,
             SignedPercentage4D(h, _) => h,
             Misc(h) => h,
+            Boolean => &FrameChangeHandling::Absolute, // Boolean uses absolute by default
         };
         
         match handling {
@@ -377,8 +379,8 @@ impl FeagiCorticalType {
         }
     }
     
-    fn check_frame_handling(io_type: &IOCorticalAreaDataType, target: FrameChangeHandling) -> bool {
-        use IOCorticalAreaDataType::*;
+    fn check_frame_handling(io_type: &IOCorticalAreaDataFlag, target: FrameChangeHandling) -> bool {
+        use IOCorticalAreaDataFlag::*;
         let handling = match io_type {
             CartesianPlane(h) => h,
             Percentage(h, _) => h,
@@ -390,12 +392,13 @@ impl FeagiCorticalType {
             SignedPercentage3D(h, _) => h,
             SignedPercentage4D(h, _) => h,
             Misc(h) => h,
+            Boolean => &FrameChangeHandling::Absolute, // Boolean uses absolute by default
         };
         *handling == target
     }
     
-    fn get_encoding_details(io_type: &IOCorticalAreaDataType) -> Option<Dictionary> {
-        use IOCorticalAreaDataType::*;
+    fn get_encoding_details(io_type: &IOCorticalAreaDataFlag) -> Option<Dictionary> {
+        use IOCorticalAreaDataFlag::*;
         
         match io_type {
             Percentage(_, pos) | Percentage2D(_, pos) | Percentage3D(_, pos) | Percentage4D(_, pos) => {

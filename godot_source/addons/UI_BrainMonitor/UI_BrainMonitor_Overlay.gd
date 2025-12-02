@@ -66,17 +66,22 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 	print("=== FDP HOVER: Checking conditions - Deserializer null? ", _fdp_deserializer == null, " Is OPU? ", cortical_area is OPUCorticalArea)
 	
 	if _fdp_deserializer != null and cortical_area is OPUCorticalArea:
-		print("=== FDP HOVER: Conditions met! Parsing cortical ID: ", cortical_area.cortical_ID)
-		# Parse encoding info directly from cortical ID (e.g., "o_servo_linear_1d_0_0")
+		# Parse encoding info directly from binary cortical ID using FDP's format
 		var encoding_info = _fdp_deserializer.parse_cortical_id_encoding(cortical_area.cortical_ID)
 		print("=== FDP HOVER: Parse result: ", encoding_info)
 		
 		if encoding_info.get("success", false):
 			var encoding_type_val = encoding_info.get("encoding_type", "")
 			var encoding_format_val = encoding_info.get("encoding_format", "")
-			print("=== FDP HOVER: Encoding type: ", encoding_type_val, " format: ", encoding_format_val)
 			
-			# Now decode the FDP value using the parsed encoding info
+			# Use device_count if available, otherwise use a large number to skip validation
+			var num_channels = cortical_area.device_count
+			if num_channels == 0:
+				# Device count not set - use large number to skip channel range check
+				num_channels = 9999
+			print("=== FDP HOVER: Using num_channels: ", num_channels, " (device_count was: ", cortical_area.device_count, ")")
+			
+			# Decode the FDP value using the binary-parsed encoding info
 			var fdp_result = _fdp_deserializer.decode_fdp_value(
 				cortical_area.cortical_ID,
 				neuron_coordinate.x,
@@ -87,7 +92,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 				cortical_area.cortical_dimensions_per_device.x,
 				cortical_area.cortical_dimensions_per_device.y,
 				cortical_area.cortical_dimensions_per_device.z,
-				cortical_area.device_count
+				num_channels
 			)
 			print("=== FDP HOVER: Decode result: ", fdp_result)
 			
@@ -96,7 +101,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 				var channel = fdp_result.get("channel", -1)
 				var value = fdp_result.get("value", 0.0)
 				text += " | FDP:%s CH:%d Value:%.2f%%" % [fdp_version, channel, value]
-				print("=== FDP HOVER: SUCCESS! Added FDP text to overlay")
+				print("=== FDP HOVER: SUCCESS! Text should be visible now!")
 			else:
 				print("=== FDP HOVER: Decode failed: ", fdp_result.get("error", "unknown"))
 		else:

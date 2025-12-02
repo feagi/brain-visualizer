@@ -570,12 +570,20 @@ impl FeagiDataDeserializer {
         result
     }
 
-    /// Parse cortical ID to extract encoding information
+    /// Parse cortical ID to extract encoding information using FDP's binary format
     /// 
-    /// Handles both plain text (e.g., "o_servo_linear_1d_0_0") and base64 encoded IDs.
-    /// Extracts:
-    /// - encoding_type: "linear" or "exponential"  
-    /// - encoding_format: "1d", "2d", "3d", "4d"
+    /// Decodes base64 cortical IDs and extracts encoding info from the binary structure
+    /// as defined in feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type
+    /// 
+    /// Binary format (8 bytes):
+    /// [0] = 'i' or 'o' (input/output)
+    /// [1-3] = 3-char unit identifier (e.g., "mot", "cam")
+    /// [4-5] = data_type_configuration (u16, little-endian):
+    ///         bits 0-3: variant (0=Percentage, 4=SignedPercentage, 5=SignedPercentage2D, etc.)
+    ///         bit 4: frame handling (0=Absolute, 1=Incremental)
+    ///         bit 5: positioning (0=Linear, 1=Fractional)
+    /// [6] = unit_index
+    /// [7] = group_index
     /// 
     /// Returns: Dictionary with {success: bool, encoding_type: String, encoding_format: String, error: String}
     #[func]
@@ -583,47 +591,64 @@ impl FeagiDataDeserializer {
         let mut result = Dictionary::new();
         let id_str = cortical_id.to_string();
         
-        // Check if this is a base64-encoded ID (contains '=' or is not ASCII printable text)
-        let decoded_str = if id_str.contains('=') || !id_str.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-            // Try to decode from base64
-            match BASE64.decode(&id_str) {
-                Ok(bytes) => {
-                    // Convert bytes to string, trimming null bytes
-                    String::from_utf8_lossy(&bytes).trim_end_matches('\0').to_string()
-                }
-                Err(_) => {
-                    // Not valid base64, use as-is
-                    id_str.clone()
-                }
+        // Decode from base64
+        let bytes = match BASE64.decode(&id_str) {
+            Ok(b) => b,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Failed to decode base64: {}", e));
+                result.set("encoding_type", "");
+                result.set("encoding_format", "");
+                return result;
             }
-        } else {
-            // Already plain text
-            id_str.clone()
         };
         
-        // Split by underscore: e.g., "o_servo_linear_1d_0_0" -> ["o", "servo", "linear", "1d", "0", "0"]
-        let parts: Vec<&str> = decoded_str.split('_').collect();
-        
-        if parts.len() < 4 {
+        if bytes.len() != 8 {
             result.set("success", false);
-            result.set("error", format!("Cortical ID '{}' doesn't have enough parts for OPU/IPU format (decoded: '{}')", id_str, decoded_str));
+            result.set("error", format!("Invalid cortical ID length: expected 8 bytes, got {}", bytes.len()));
             result.set("encoding_type", "");
             result.set("encoding_format", "");
             return result;
         }
         
-        // Expected format: {i/o}_{subtype}_{encoding_type}_{format}_{unit}_{group}
-        let prefix = parts[0]; // "i" or "o"
-        if prefix != "i" && prefix != "o" {
+        // Verify this is an IPU or OPU cortical area
+        if bytes[0] != b'i' && bytes[0] != b'o' {
             result.set("success", false);
-            result.set("error", format!("Cortical ID '{}' doesn't start with 'i' or 'o' (decoded: '{}')", id_str, decoded_str));
+            result.set("error", format!("Not an IPU/OPU cortical ID (first byte: {})", bytes[0] as char));
             result.set("encoding_type", "");
             result.set("encoding_format", "");
             return result;
         }
         
-        let encoding_type = parts[2]; // "linear" or "exponential"
-        let encoding_format = parts[3]; // "1d", "2d", "3d", "4d"
+        // Extract data_type_configuration from bytes 4-5 (u16, little-endian)
+        let config = u16::from_le_bytes([bytes[4], bytes[5]]);
+        
+        // Decode configuration bits as per FDP specification
+        let variant = config & 0x0F;          // Bits 0-3: variant type
+        let _frame_handling = (config >> 4) & 0x01; // Bit 4: frame handling (not needed for decoding)
+        let positioning = (config >> 5) & 0x01;     // Bit 5: positioning
+        
+        // Map positioning to encoding_type
+        let encoding_type = match positioning {
+            0 => "linear",
+            1 => "exponential", // Fractional positioning
+            _ => "linear", // Default
+        };
+        
+        // Map variant to encoding_format
+        let encoding_format = match variant {
+            0 => "1d", // Percentage
+            1 => "2d", // Percentage2D
+            2 => "3d", // Percentage3D
+            3 => "4d", // Percentage4D
+            4 => "1d", // SignedPercentage
+            5 => "2d", // SignedPercentage2D
+            6 => "3d", // SignedPercentage3D
+            7 => "4d", // SignedPercentage4D
+            8 => "2d", // CartesianPlane (treat as 2D)
+            9 => "1d", // Misc (treat as 1D)
+            _ => "1d", // Default
+        };
         
         result.set("success", true);
         result.set("encoding_type", encoding_type);
@@ -664,7 +689,7 @@ impl FeagiDataDeserializer {
         let mut result = Dictionary::new();
         
         // FDP version from the crate
-        const FDP_VERSION: &str = "0.0.50-beta.54";
+        const FDP_VERSION: &str = "0.0.50-beta.59";
         
         // Validate inputs
         if voxel_x < 0 || voxel_y < 0 || voxel_z < 0 {
