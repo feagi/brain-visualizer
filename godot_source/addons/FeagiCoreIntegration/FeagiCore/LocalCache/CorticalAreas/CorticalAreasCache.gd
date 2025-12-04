@@ -226,14 +226,27 @@ func FEAGI_load_all_cortical_areas(area_summary_data: Dictionary, area_ID_to_reg
 	for cortical_area_ID in area_summary_data.keys():
 		var area_JSON_summary: Dictionary = area_summary_data[cortical_area_ID]
 		var area_parent_region_ID: StringName
-		if cortical_area_ID in area_ID_to_region_ID_mapping.keys():
+		
+		# Modern: Get parent_region_id directly from cortical area JSON (UUID-based RegionIDs)
+		if "parent_region_id" in area_JSON_summary and area_JSON_summary["parent_region_id"] != null:
+			area_parent_region_ID = area_JSON_summary["parent_region_id"]
+		# Legacy: Try mapping from brain regions (old FEAGI versions)
+		elif cortical_area_ID in area_ID_to_region_ID_mapping.keys():
 			area_parent_region_ID = area_ID_to_region_ID_mapping[cortical_area_ID]
+		# Fallback: Find root region by property instead of hardcoded ID
 		else:
-			push_error("CORE CACHE: Unknown parent region ID for area %s! Defaulting to root region ID!" % cortical_area_ID)
-			area_parent_region_ID = BrainRegion.ROOT_REGION_ID
+			push_warning("CORE CACHE: No parent_region_id for area %s, using root region" % cortical_area_ID)
+			var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+			if root_region == null:
+				push_error("CORE CACHE: Cannot find root region for area %s! Skipping!" % cortical_area_ID)
+				continue
+			area_parent_region_ID = root_region.region_ID
+		
+		# Verify parent region exists
 		if !(area_parent_region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
 			push_error("CORE CACHE: Unknown parent region %s for area %s! Skipping creating this cortical area!" % [area_parent_region_ID, cortical_area_ID] )
 			continue
+		
 		var area_parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[area_parent_region_ID]
 		FEAGI_add_cortical_area_from_dict(area_JSON_summary, area_parent_region, cortical_area_ID)
 
