@@ -9,13 +9,9 @@ func _ready() -> void:
 	_mouse_context_label = $Bottom_Row/MouseContext
 	
 	# Initialize FDP deserializer for decoding voxel values
-	print("=== FDP INIT: Checking for FeagiDataDeserializer class...")
 	if ClassDB.class_exists("FeagiDataDeserializer"):
-		print("=== FDP INIT: FeagiDataDeserializer class found! Creating instance...")
 		_fdp_deserializer = FeagiDataDeserializer.new()
-		print("=== FDP INIT: Instance created successfully!")
 	else:
-		print("=== FDP INIT: WARNING - FeagiDataDeserializer not available!")
 		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 
 ## Clear all text
@@ -23,8 +19,6 @@ func clear() -> void:
 	_mouse_context_label.text = ""
 
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
-	print("=== FDP HOVER: Function called! Area: ", cortical_area.cortical_ID, " Type: ", cortical_area.cortical_type)
-	
 	if cortical_area.cortical_type not in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 		_mouse_context_label.text = "Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate)
 		return
@@ -63,23 +57,16 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 	# This shows what value FDP would produce for this voxel using the actual FDP decoding logic
 	# NOTE: This is currently implemented for OPU areas only. IPU areas will have a different variation.
 	
-	print("=== FDP HOVER: Checking conditions - Deserializer null? ", _fdp_deserializer == null, " Is OPU? ", cortical_area is OPUCorticalArea)
-	
 	if _fdp_deserializer != null and cortical_area is OPUCorticalArea:
-		# Parse encoding info directly from binary cortical ID using FDP's format
+		# Parse encoding info directly from binary cortical ID using FDP's binary format
 		var encoding_info = _fdp_deserializer.parse_cortical_id_encoding(cortical_area.cortical_ID)
-		print("=== FDP HOVER: Parse result: ", encoding_info)
 		
 		if encoding_info.get("success", false):
 			var encoding_type_val = encoding_info.get("encoding_type", "")
 			var encoding_format_val = encoding_info.get("encoding_format", "")
 			
-			# Use device_count if available, otherwise use a large number to skip validation
-			var num_channels = cortical_area.device_count
-			if num_channels == 0:
-				# Device count not set - use large number to skip channel range check
-				num_channels = 9999
-			print("=== FDP HOVER: Using num_channels: ", num_channels, " (device_count was: ", cortical_area.device_count, ")")
+			# Use device_count if available, otherwise use large number to skip validation
+			var num_channels = cortical_area.device_count if cortical_area.device_count > 0 else 9999
 			
 			# Decode the FDP value using the binary-parsed encoding info
 			var fdp_result = _fdp_deserializer.decode_fdp_value(
@@ -94,18 +81,12 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 				cortical_area.cortical_dimensions_per_device.z,
 				num_channels
 			)
-			print("=== FDP HOVER: Decode result: ", fdp_result)
 			
 			if fdp_result.get("success", false):
 				var fdp_version = fdp_result.get("fdp_version", "unknown")
 				var channel = fdp_result.get("channel", -1)
 				var value = fdp_result.get("value", 0.0)
 				text += " | FDP:%s CH:%d Value:%.2f%%" % [fdp_version, channel, value]
-				print("=== FDP HOVER: SUCCESS! Text should be visible now!")
-			else:
-				print("=== FDP HOVER: Decode failed: ", fdp_result.get("error", "unknown"))
-		else:
-			print("=== FDP HOVER: Parse failed: ", encoding_info.get("error", "unknown"))
 	
 	_mouse_context_label.text = text
 

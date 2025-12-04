@@ -2,7 +2,8 @@ extends GenomeObject
 class_name BrainRegion
 ## Defines an area enclosing various [AbstractCorticalArea]s
 
-const ROOT_REGION_ID: StringName = "root" ## This is the ID that is unique to the root region
+## @deprecated Use is_root_region() to check if a region is root. Root regions have no parent.
+const ROOT_REGION_ID: StringName = "root" ## DEPRECATED: Legacy constant for old FEAGI versions with hardcoded "root" ID
 
 signal name_updated(new_name: StringName)
 signal cortical_area_added_to_region(area: AbstractCorticalArea)
@@ -236,8 +237,18 @@ func FEAGI_output_open_remove_link(link: ConnectionChainLink) -> void:
 #region Queries
 
 ## Returns if this region is the root region or not
+## Returns true if this is the root region
+## Root regions have no parent (UUID-based RegionID architecture)
 func is_root_region() -> bool:
-	return _genome_ID == ROOT_REGION_ID
+	# Modern check: Root has no parent (works with UUID-based RegionIDs)
+	if current_parent_region == null:
+		return true
+	
+	# Legacy check: Support old hardcoded "root" ID for backward compatibility
+	if _genome_ID == ROOT_REGION_ID:
+		return true
+	
+	return false
 
 ## Returns if a cortical area is a cortical area within this region (not nested in another region)
 func is_cortical_area_in_region_directly(cortical_area: AbstractCorticalArea) -> bool:

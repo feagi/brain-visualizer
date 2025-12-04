@@ -6,10 +6,10 @@ reloadable = true
 
 [libraries]
 
-macos.debug = "res://../rust_extensions/feagi_type_system/target/debug/libfeagi_type_system.dylib"
-macos.release = "res://../rust_extensions/feagi_type_system/target/release/libfeagi_type_system.dylib"
-windows.debug.x86_64 = "res://../rust_extensions/feagi_type_system/target/debug/feagi_type_system.dll"
-windows.release.x86_64 = "res://../rust_extensions/feagi_type_system/target/release/feagi_type_system.dll"
-linux.debug.x86_64 = "res://../rust_extensions/feagi_type_system/target/debug/libfeagi_type_system.so"
-linux.release.x86_64 = "res://../rust_extensions/feagi_type_system/target/release/libfeagi_type_system.so"
+macos.debug = "libfeagi_type_system.dylib"
+macos.release = "libfeagi_type_system.dylib"
+windows.debug.x86_64 = "libfeagi_type_system.dll"
+windows.release.x86_64 = "libfeagi_type_system.dll"
+linux.debug.x86_64 = "libfeagi_type_system.so"
+linux.release.x86_64 = "libfeagi_type_system.so"
 

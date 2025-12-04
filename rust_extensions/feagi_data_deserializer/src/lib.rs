@@ -2,7 +2,11 @@ use godot::prelude::*;
 use godot::classes::MultiMesh;
 // FeagiByteContainer is imported within functions where needed
 use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use feagi_data_structures::genomic::cortical_area::CorticalID;
+use feagi_data_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
+use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
+    PercentageNeuronPositioning, DataTypeConfigurationFlag,
+};
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -95,10 +99,10 @@ impl FeagiDataDeserializer {
         }
         
         // Detect format based on first byte
-        let first_byte = rust_buffer[0];
+        let _first_byte = rust_buffer[0];
         
         // Log for debugging
-        let preview: String = rust_buffer.iter()
+        let _preview: String = rust_buffer.iter()
             .take(20)
             .map(|b| format!("{:02x}", b))
             .collect::<Vec<_>>()
@@ -570,20 +574,10 @@ impl FeagiDataDeserializer {
         result
     }
 
-    /// Parse cortical ID to extract encoding information using FDP's binary format
+    /// Parse cortical ID to extract encoding information using FDP's actual methods
     /// 
-    /// Decodes base64 cortical IDs and extracts encoding info from the binary structure
-    /// as defined in feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type
-    /// 
-    /// Binary format (8 bytes):
-    /// [0] = 'i' or 'o' (input/output)
-    /// [1-3] = 3-char unit identifier (e.g., "mot", "cam")
-    /// [4-5] = data_type_configuration (u16, little-endian):
-    ///         bits 0-3: variant (0=Percentage, 4=SignedPercentage, 5=SignedPercentage2D, etc.)
-    ///         bit 4: frame handling (0=Absolute, 1=Incremental)
-    ///         bit 5: positioning (0=Linear, 1=Fractional)
-    /// [6] = unit_index
-    /// [7] = group_index
+    /// Uses CorticalID::try_from_base_64() and IOCorticalAreaDataType::try_from_data_type_configuration_flag()
+    /// to parse the binary structure exactly as FDP does.
     /// 
     /// Returns: Dictionary with {success: bool, encoding_type: String, encoding_format: String, error: String}
     #[func]
@@ -591,25 +585,19 @@ impl FeagiDataDeserializer {
         let mut result = Dictionary::new();
         let id_str = cortical_id.to_string();
         
-        // Decode from base64
-        let bytes = match BASE64.decode(&id_str) {
-            Ok(b) => b,
+        // Use FDP's CorticalID parser
+        let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
+            Ok(id) => id,
             Err(e) => {
                 result.set("success", false);
-                result.set("error", format!("Failed to decode base64: {}", e));
+                result.set("error", format!("FDP CorticalID parse error: {}", e));
                 result.set("encoding_type", "");
                 result.set("encoding_format", "");
                 return result;
             }
         };
         
-        if bytes.len() != 8 {
-            result.set("success", false);
-            result.set("error", format!("Invalid cortical ID length: expected 8 bytes, got {}", bytes.len()));
-            result.set("encoding_type", "");
-            result.set("encoding_format", "");
-            return result;
-        }
+        let bytes = cortical_id_obj.as_bytes();
         
         // Verify this is an IPU or OPU cortical area
         if bytes[0] != b'i' && bytes[0] != b'o' {
@@ -620,34 +608,56 @@ impl FeagiDataDeserializer {
             return result;
         }
         
-        // Extract data_type_configuration from bytes 4-5 (u16, little-endian)
-        let config = u16::from_le_bytes([bytes[4], bytes[5]]);
+        // Extract data_type_configuration from bytes 4-5 (u16, little-endian) per FDP spec
+        let config: DataTypeConfigurationFlag = u16::from_le_bytes([bytes[4], bytes[5]]);
         
-        // Decode configuration bits as per FDP specification
-        let variant = config & 0x0F;          // Bits 0-3: variant type
-        let _frame_handling = (config >> 4) & 0x01; // Bit 4: frame handling (not needed for decoding)
-        let positioning = (config >> 5) & 0x01;     // Bit 5: positioning
-        
-        // Map positioning to encoding_type
-        let encoding_type = match positioning {
-            0 => "linear",
-            1 => "exponential", // Fractional positioning
-            _ => "linear", // Default
+        // Use FDP's actual parsing method to decode the configuration
+        let io_data_type = match IOCorticalAreaDataFlag::try_from_data_type_configuration_flag(config) {
+            Ok(dt) => dt,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("FDP IOCorticalAreaDataFlag parse error: {}", e));
+                result.set("encoding_type", "");
+                result.set("encoding_format", "");
+                return result;
+            }
         };
         
-        // Map variant to encoding_format
-        let encoding_format = match variant {
-            0 => "1d", // Percentage
-            1 => "2d", // Percentage2D
-            2 => "3d", // Percentage3D
-            3 => "4d", // Percentage4D
-            4 => "1d", // SignedPercentage
-            5 => "2d", // SignedPercentage2D
-            6 => "3d", // SignedPercentage3D
-            7 => "4d", // SignedPercentage4D
-            8 => "2d", // CartesianPlane (treat as 2D)
-            9 => "1d", // Misc (treat as 1D)
-            _ => "1d", // Default
+        // Extract encoding_type from positioning enum
+        let encoding_type = match io_data_type {
+            IOCorticalAreaDataFlag::Percentage(_, pos) |
+            IOCorticalAreaDataFlag::Percentage2D(_, pos) |
+            IOCorticalAreaDataFlag::Percentage3D(_, pos) |
+            IOCorticalAreaDataFlag::Percentage4D(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage2D(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage3D(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage4D(_, pos) => {
+                match pos {
+                    PercentageNeuronPositioning::Linear => "linear",
+                    PercentageNeuronPositioning::Fractional => "exponential",
+                }
+            }
+            _ => "linear", // CartesianPlane, Misc, Boolean, etc. default to linear
+        };
+        
+        // Extract encoding_format from data type variant
+        let encoding_format = match io_data_type {
+            IOCorticalAreaDataFlag::Percentage(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage(_, _) |
+            IOCorticalAreaDataFlag::Boolean => "1d",
+            
+            IOCorticalAreaDataFlag::Percentage2D(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage2D(_, _) |
+            IOCorticalAreaDataFlag::CartesianPlane(_) => "2d",
+            
+            IOCorticalAreaDataFlag::Percentage3D(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage3D(_, _) => "3d",
+            
+            IOCorticalAreaDataFlag::Percentage4D(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage4D(_, _) => "4d",
+            
+            IOCorticalAreaDataFlag::Misc(_) => "1d",
         };
         
         result.set("success", true);

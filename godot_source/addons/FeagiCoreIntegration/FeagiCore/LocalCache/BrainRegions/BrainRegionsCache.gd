@@ -137,18 +137,37 @@ func _get_configured_root_id() -> StringName:
 	return StringName(String(rid))
 
 ## Returns True if the root region is in the cache
+## Root region is identified by having no parent (UUID-based RegionID architecture)
 func is_root_available() -> bool:
+	# Modern check: Find region with no parent (works with UUID-based RegionIDs)
+	for region in _available_brain_regions.values():
+		if region.is_root_region():
+			return true
+	
+	# Legacy fallback: Check for hardcoded "root" ID
 	var root_id: StringName = _get_configured_root_id()
-	return root_id in _available_brain_regions.keys()
+	if root_id in _available_brain_regions.keys():
+		return true
+	
+	return false
 
 
 ## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
+## Root region is identified by having no parent (UUID-based RegionID architecture)
 func get_root_region() -> BrainRegion:
+	# Modern check: Find region with no parent (works with UUID-based RegionIDs)
+	for region in _available_brain_regions.values():
+		if region.is_root_region():
+			return region
+	
+	# Legacy fallback: Check for hardcoded "root" ID
 	var root_id: StringName = _get_configured_root_id()
-	if !(root_id in _available_brain_regions.keys()):
-		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
-		return null
-	return _available_brain_regions[root_id]
+	if root_id in _available_brain_regions.keys():
+		return _available_brain_regions[root_id]
+	
+	push_error("CORE CACHE: Unable to find root region! No region has null parent and no 'root' ID found!")
+	push_error("CORE CACHE: Available regions: %s" % str(_available_brain_regions.keys()))
+	return null
 
 ## Gets the path of regions that holds the common demoninator path between 2 regions
 ## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
