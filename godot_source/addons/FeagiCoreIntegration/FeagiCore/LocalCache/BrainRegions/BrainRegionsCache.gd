@@ -33,6 +33,11 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
 		for child_region in child_regions:
+			# Skip if child is actually the root (safety check)
+			# This shouldn't happen but prevents errors if API data is malformed
+			if child_region.region_ID == _cached_root_region_id:
+				push_warning("CORE CACHE: Skipping - root region cannot be a child of %s!" % parent_region.region_ID)
+				continue
 			child_region.FEAGI_init_parent_relation(parent_region)
 		
 		# Create cortical ID mapping (but don't add cortical areas yet)
