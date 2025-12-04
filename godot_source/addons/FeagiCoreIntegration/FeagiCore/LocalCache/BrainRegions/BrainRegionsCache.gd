@@ -9,6 +9,7 @@ var available_brain_regions: Dictionary:
 	get: return _available_brain_regions
 
 var _available_brain_regions: Dictionary = {}
+var _cached_root_region_id: StringName = ""  # Cached for O(1) root lookup
 
 ## Calls from FEAGI to update the cache
 #region FEAGI Interactions
@@ -19,6 +20,9 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	# First pass is to generate all the region objects without any children
 	for region_ID: StringName in region_summary_data.keys():
 		_available_brain_regions[region_ID] = BrainRegion.from_FEAGI_JSON_ignore_children(region_summary_data[region_ID], region_ID)
+	
+	# Cache root region ID for O(1) lookup
+	_cache_root_region_id_from_loaded_regions()
 	
 	var cortical_area_mapping: Dictionary = {}
 	# Second pass is to link all child region to a given parent region, and to calculate mappings for cortical IDs to their correct parent region
@@ -71,6 +75,7 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 ## Clears all regions from the cache - used during full genome reload
 func FEAGI_clear_all_regions() -> void:
 	_available_brain_regions.clear()
+	_cached_root_region_id = ""  # Clear root cache
 
 func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []) -> void:
 	if region_ID in _available_brain_regions.keys():
@@ -136,18 +141,27 @@ func _get_configured_root_id() -> StringName:
 		return BrainRegion.ROOT_REGION_ID
 	return StringName(String(rid))
 
+## Cache the root region ID for O(1) access
+## Called after loading all regions
+func _cache_root_region_id_from_loaded_regions() -> void:
+	# Find region with no parent and cache its ID
+	for region in _available_brain_regions.values():
+		if region.is_root_region():
+			_cached_root_region_id = region.region_ID
+			return
+
 ## Returns True if the root region is in the cache
 ## Root region is identified by having no parent (UUID-based RegionID architecture)
 func is_root_available() -> bool:
-	# Modern check: Find region with no parent (works with UUID-based RegionIDs)
+	# O(1) cached lookup
+	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
+		return true
+	
+	# Fallback: Search for region with no parent
 	for region in _available_brain_regions.values():
 		if region.is_root_region():
+			_cached_root_region_id = region.region_ID  # Cache for next time
 			return true
-	
-	# Legacy fallback: Check for hardcoded "root" ID
-	var root_id: StringName = _get_configured_root_id()
-	if root_id in _available_brain_regions.keys():
-		return true
 	
 	return false
 
@@ -155,17 +169,17 @@ func is_root_available() -> bool:
 ## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
 ## Root region is identified by having no parent (UUID-based RegionID architecture)
 func get_root_region() -> BrainRegion:
-	# Modern check: Find region with no parent (works with UUID-based RegionIDs)
+	# O(1) cached lookup
+	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
+		return _available_brain_regions[_cached_root_region_id]
+	
+	# Fallback: Search for region with no parent
 	for region in _available_brain_regions.values():
 		if region.is_root_region():
+			_cached_root_region_id = region.region_ID  # Cache for next time
 			return region
 	
-	# Legacy fallback: Check for hardcoded "root" ID
-	var root_id: StringName = _get_configured_root_id()
-	if root_id in _available_brain_regions.keys():
-		return _available_brain_regions[root_id]
-	
-	push_error("CORE CACHE: Unable to find root region! No region has null parent and no 'root' ID found!")
+	push_error("CORE CACHE: Unable to find root region! No region has null parent!")
 	push_error("CORE CACHE: Available regions: %s" % str(_available_brain_regions.keys()))
 	return null
 
