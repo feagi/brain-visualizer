@@ -32,12 +32,24 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		var child_region_IDs: Array[StringName] = []
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
+		print("🔍 DEBUG: Processing parent region: ", parent_region_ID, " with ", child_regions.size(), " children")
 		for child_region in child_regions:
-			# Skip if child is actually the root (safety check)
-			# This shouldn't happen but prevents errors if API data is malformed
-			if child_region.region_ID == _cached_root_region_id:
-				push_warning("CORE CACHE: Skipping - root region cannot be a child of %s!" % parent_region.region_ID)
-				continue
+			print("🔍 DEBUG: Checking child region: ", child_region.region_ID)
+			# Skip if child is actually the root (safety check using API data)
+			# Check if child has no parent in the API data (indicates it's the root)
+			var child_data = region_summary_data.get(child_region.region_ID)
+			if child_data:
+				var child_parent_id = child_data.get("parent_region_id")
+				print("🔍 DEBUG: Child parent_region_id from API: ", child_parent_id, " (type: ", typeof(child_parent_id), ")")
+				# Root has parent_region_id == null
+				if child_parent_id == null or String(child_parent_id) == "null" or String(child_parent_id) == "":
+					print("CORE CACHE: ✅ Skipping root region %s - it cannot be a child of %s" % [child_region.region_ID, parent_region.region_ID])
+					continue
+			else:
+				print("🔍 DEBUG: No API data found for child region: ", child_region.region_ID)
+			
+			# Now safe to establish parent relationship
+			print("🔍 DEBUG: Establishing parent relationship: ", child_region.region_ID, " -> ", parent_region.region_ID)
 			child_region.FEAGI_init_parent_relation(parent_region)
 		
 		# Create cortical ID mapping (but don't add cortical areas yet)

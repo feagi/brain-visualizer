@@ -84,9 +84,14 @@ func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, c
 
 ## Only called by FEAGI during Genome loading, inits the parent region of this region
 func FEAGI_init_parent_relation(parent_region: BrainRegion) -> void:
-	if is_root_region():
-		push_error("CORE CACHE: Root region cannot be a subregion!")
-		return
+	# Check against cached root ID instead of current_parent_region
+	# (current_parent_region is null for all regions during loading)
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var cached_root_id = FeagiCore.feagi_local_cache.brain_regions._cached_root_region_id
+		if cached_root_id != "" and _genome_ID == cached_root_id:
+			push_error("CORE CACHE: Root region cannot be a subregion!")
+			return
+	
 	_init_self_to_brain_region(parent_region)
 
 ## When an [GenomeObject] gets a parent region set / changed, it calls this function of the new parent instance to register itself
@@ -238,13 +243,15 @@ func FEAGI_output_open_remove_link(link: ConnectionChainLink) -> void:
 
 ## Returns if this region is the root region or not
 ## Returns true if this is the root region
-## Root regions have no parent (UUID-based RegionID architecture)
+## Uses explicit cached root ID instead of inferring from null parent
 func is_root_region() -> bool:
-	# Modern check: Root has no parent (works with UUID-based RegionIDs)
-	if current_parent_region == null:
-		return true
+	# Primary check: Compare against cached root ID (explicit and reliable)
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var cached_root_id = FeagiCore.feagi_local_cache.brain_regions._cached_root_region_id
+		if cached_root_id != "" and _genome_ID == cached_root_id:
+			return true
 	
-	# Legacy check: Support old hardcoded "root" ID for backward compatibility
+	# Legacy fallback: Support old hardcoded "root" ID for backward compatibility
 	if _genome_ID == ROOT_REGION_ID:
 		return true
 	
