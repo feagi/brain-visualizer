@@ -718,18 +718,18 @@ const ICON_CUSTOM_INPUT: StringName = "res://BrainVisualizer/UI/GenericResources
 const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/custom-output.png"
 
 const KNOWN_ICON_PATHS : Dictionary = {
-	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishk00.png",
+	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishk.png",
 	"iv00_C" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00CC.png",
 	"i_hear" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i_hear.png",
 	"i_spos" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/isvp00.png",
 	"i__acc" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__acc.png",
-	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ibat00.png",
+	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ibat.png",
 	"i__bci" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__bci.png",
 	"i__gyr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__gyr.png",
-	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf00.png",
-	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ipro00.png",
+	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf.png",
+	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ipro.png",
 	"i___id" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i___id.png",
-	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/omot00.png",
+	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/omot.png",
 	"___pwr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/_power.png",
 }
 
