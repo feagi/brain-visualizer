@@ -720,15 +720,15 @@ func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = 
 	if is_global_mode:
 		# Global mode - Gray color for all connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
+		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
 	elif is_inhibitory:
 		# Inhibitory connections - Red color
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
-		material.emission_color = Color(0.8, 0.1, 0.1)
+		material.emission = Color(0.8, 0.1, 0.1)
 	else:
 		# Excitatory (non-inhibitory) connections - Green color
 		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
-		material.emission_color = Color(0.1, 0.8, 0.2)
+		material.emission = Color(0.1, 0.8, 0.2)
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.0
@@ -760,7 +760,7 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		var pulse_material = StandardMaterial3D.new()
 		# Both inhibitory and excitatory pulses - Bright white for better visibility
 		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-		pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+		pulse_material.emission = Color(1.0, 1.0, 1.0)
 		
 		pulse_material.emission_enabled = true
 		pulse_material.emission_energy = 4.0
@@ -932,15 +932,15 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 	if is_global_mode:
 		# Global mode - Gray color for recursive connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
+		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
 	elif is_inhibitory:
 		# Inhibitory recursive connections - Dark red/maroon
 		material.albedo_color = Color(0.8, 0.2, 0.2, 0.9)  # Dark red
-		material.emission_color = Color(0.6, 0.1, 0.1)
+		material.emission = Color(0.6, 0.1, 0.1)
 	else:
 		# Excitatory recursive connections - Purple/Magenta color (distinct from regular green)
 		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
-		material.emission_color = Color(0.8, 0.2, 0.8)
+		material.emission = Color(0.8, 0.2, 0.8)
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.5
@@ -978,7 +978,7 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		
 		# Both inhibitory and excitatory recursive - Bright white for visibility
 		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-		pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+		pulse_material.emission = Color(1.0, 1.0, 1.0)
 		
 		pulse_sphere.material_override = pulse_material
 		
@@ -1116,18 +1116,15 @@ func _create_plastic_animated_material(is_inhibitory: bool = false, is_global_mo
 	if is_global_mode:
 		# Global mode - Gray color for all connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)
-		material.emission_color = Color(0.5, 0.5, 0.5)
-		print("     ⚪ Using GRAY PLASTIC material for GLOBAL mode connection")
+		material.emission = Color(0.5, 0.5, 0.5)
 	elif is_inhibitory:
 		# Inhibitory plastic connections - Enhanced red with stronger base emission
 		material.albedo_color = Color(1.0, 0.3, 0.3, 0.95)  # More opaque for visibility
-		material.emission_color = Color(1.0, 0.2, 0.2)  # Brighter emission
-		print("     🔴⚡ Using ANIMATED RED material for INHIBITORY PLASTIC connection")
+		material.emission = Color(1.0, 0.2, 0.2)  # Brighter emission
 	else:
 		# Excitatory plastic connections - Enhanced green with stronger base emission  
 		material.albedo_color = Color(0.3, 1.0, 0.4, 0.95)  # More opaque for visibility
-		material.emission_color = Color(0.2, 1.0, 0.3)  # Brighter emission
-		print("     🟢⚡ Using ANIMATED GREEN material for EXCITATORY PLASTIC connection")
+		material.emission = Color(0.2, 1.0, 0.3)  # Brighter emission
 	
 	material.emission_enabled = true
 	material.emission_energy = 3.0  # Higher base emission for plastic connections

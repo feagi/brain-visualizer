@@ -1211,9 +1211,9 @@ func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) ->
 func _create_qc_guide_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(1.0, 1.0, 1.0, 0.9)
-	m.emission_color = Color(0.9, 0.9, 0.9)
+	m.emission = Color(0.9, 0.9, 0.9)
 	m.emission_enabled = true
-	m.emission_energy = 2.4
+	m.emission_energy_multiplier = 2.4
 	m.flags_unshaded = true
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED

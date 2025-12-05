@@ -195,7 +195,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Use different materials based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Create both transparent and active materials for memory spheres
-		_memory_jello_material = load(MEMORY_JELLO_MAT_PATH).duplicate()
+		_memory_jello_material = load(MEMORY_JELLO_MAT_PATH).duplicate() as ShaderMaterial
 		_memory_transparent_material = _create_transparent_memory_material()
 		
 		# Start with light blue cortical material (inactive state)
@@ -803,7 +803,7 @@ func _create_tesla_coil_spikes() -> void:
 		lightning_material.albedo_color = Color(0.8, 0.9, 1.0, 0.9)  # Blue-white electrical color
 		lightning_material.emission_enabled = true
 		lightning_material.emission = Color(0.9, 0.95, 1.0)  # Bright electrical glow
-		lightning_material.emission_energy = 3.0  # Very bright
+		lightning_material.emission_energy_multiplier = 3.0  # Very bright
 		lightning_material.flags_unshaded = true
 		lightning_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		lightning_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD  # Additive for glow effect
@@ -830,10 +830,17 @@ func _create_tesla_coil_spikes() -> void:
 		var offset_position = spark_direction.normalized() * convergence_offset
 		
 		spike.position = tip_position + offset_position
-		if spike.is_inside_tree():
-			spike.look_at(tip_position + spark_direction * 2.0, Vector3.UP)
-		else:
-			spike.look_at_from_position(tip_position + offset_position, tip_position + spark_direction * 2.0, Vector3.UP)
+		
+		# Manually set rotation to look toward target (avoids look_at issues before adding to tree)
+		var look_target = tip_position + spark_direction * 2.0
+		var direction_to_target = (look_target - spike.position).normalized()
+		if direction_to_target.length() > 0.001:
+			var up = Vector3.UP
+			if abs(direction_to_target.dot(Vector3.UP)) > 0.9:
+				up = Vector3.FORWARD
+			var right = up.cross(direction_to_target).normalized()
+			var corrected_up = direction_to_target.cross(right).normalized()
+			spike.basis = Basis(right, direction_to_target, corrected_up)
 		
 		# Add more random rotation for wider spread and natural lightning look
 		spike.rotation_degrees += Vector3(
@@ -1180,7 +1187,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 ## Create inactive material for memory areas when not firing (light blue like cortical voxels)
 func _create_transparent_memory_material() -> ShaderMaterial:
 	"""Create a light blue cortical area colored version of the memory jello material for inactive state"""
-	var inactive_material = load(MEMORY_JELLO_MAT_PATH).duplicate()
+	var inactive_material = load(MEMORY_JELLO_MAT_PATH).duplicate() as ShaderMaterial
 	
 	# Use the same light blue color as cortical area voxels (matching power cone inactive color)
 	var cortical_blue = Color(0.172451, 0.315246, 0.861982, 0.8)  # Light blue like cortical meshes
