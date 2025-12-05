@@ -6,10 +6,10 @@
 [ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="4_1wwy8"]
 [ext_resource type="Texture2D" uid="uid://bkmehptmh3rhh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="5_smclk"]
 [ext_resource type="Texture2D" uid="uid://bpewdkwkgeov7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="6_5pfvd"]
-[ext_resource type="Texture2D" uid="uid://cqx1n1ng3se1b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_S.png" id="7_dkp02"]
-[ext_resource type="Texture2D" uid="uid://csxb37tdkcsv8" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_C.png" id="8_w4h15"]
-[ext_resource type="Texture2D" uid="uid://cbk7opfxlg3dd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_H.png" id="9_et2nk"]
-[ext_resource type="Texture2D" uid="uid://db7xvu7xapqal" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_D.png" id="10_6622n"]
+[ext_resource type="Texture2D" uid="uid://cgkynnt7icxbp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_S.png" id="7_dkp02"]
+[ext_resource type="Texture2D" uid="uid://bb1koiuqt23fn" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_C.png" id="8_w4h15"]
+[ext_resource type="Texture2D" uid="uid://3p7xrje62t1b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_H.png" id="9_et2nk"]
+[ext_resource type="Texture2D" uid="uid://cujpfgo6o63hg" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_D.png" id="10_6622n"]
 
 [node name="WindowQuickConnectNeuron" type="VBoxContainer"]
 offset_right = 126.0

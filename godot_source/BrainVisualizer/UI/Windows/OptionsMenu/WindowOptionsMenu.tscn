@@ -10,7 +10,7 @@
 [ext_resource type="Script" uid="uid://cvf0xeuwvsqiw" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu_Vision.gd" id="7_tri27"]
 [ext_resource type="PackedScene" uid="uid://cjyix5p3tp3nr" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn" id="8_dx5bi"]
 [ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.tscn" id="10_vgmew"]
-[ext_resource type="FontFile" uid="uid://uiuv87eim3o0" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="11_l7ybt"]
+[ext_resource type="FontFile" uid="uid://bh64osym6xaul" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="11_l7ybt"]
 [ext_resource type="PackedScene" uid="uid://lavpe4aaitvu" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.tscn" id="12_gaeu8"]
 
 [node name="WindowOptionsMenu" type="VBoxContainer"]
