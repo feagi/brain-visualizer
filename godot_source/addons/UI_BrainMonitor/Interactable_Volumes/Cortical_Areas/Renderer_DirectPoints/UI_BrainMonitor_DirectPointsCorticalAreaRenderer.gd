@@ -410,14 +410,10 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 				interval_ms = " [Δ%dms]" % delta_ms
 			set_meta("_last_origin_fire_ms", Time.get_ticks_msec())
 			
-			# print("[%s] 🔥 [%s] (0,0,0) FIRING - %d total neurons%s" % [timestamp, area_id, point_count, interval_ms])  # Spam log - disabled
 			set_meta("_last_had_origin", true)
 		else:
 			# Not firing this frame but had neurons
 			if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
-				var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
-				var timestamp = _get_timestamp_with_ms()
-				print("[%s] ⚫ [%s] (0,0,0) NOT in %d firing neurons" % [timestamp, area_id, point_count])
 				set_meta("_last_had_origin", false)
 		
 		_process_neurons_with_rust(x_array, y_array, z_array)
@@ -425,12 +421,8 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_start_visibility_timer()
 	else:
 		# No neurons firing - clear immediately
-		# TEMP DEBUG: Log empty frames for (0,0,0) tracking
 		if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
-			var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
-			var timestamp = _get_timestamp_with_ms()
-			print("[%s] ⚫ [%s] (0,0,0) NO FIRE - clearing all" % [timestamp, area_id])
-		set_meta("_last_had_origin", false)
+			set_meta("_last_had_origin", false)
 		_clear_all_neurons()
 	
 	# Make power cone use firing colors when neural activity occurs
@@ -606,15 +598,6 @@ func _start_visibility_timer() -> void:
 	# Next burst at t=1000ms arrives before timer expires → seamless
 	# If no burst arrives, clears at t=1500ms (acceptable delay)
 	var timeout = viz_frame_duration * 1.5
-	
-	# TEMP DEBUG: Log timer restart with timeout value
-	if has_meta("_last_timer_log") and (Time.get_ticks_msec() / 1000.0 - get_meta("_last_timer_log")) < 2.0:
-		pass  # Don't spam logs
-	else:
-		var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
-		var timestamp = _get_timestamp_with_ms()
-		print("[%s] ⏰ [%s] Timer started: %.0fms timeout (%.1f Hz rate)" % [timestamp, area_id, timeout * 1000.0, viz_frequency_hz])
-		set_meta("_last_timer_log", Time.get_ticks_msec() / 1000.0)
 	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()

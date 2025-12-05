@@ -391,7 +391,6 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		var desired_dash_spacing = 2.5  # Units between dashes
 		var num_dashes = max(4, int(curve_length / desired_dash_spacing))  # Minimum 4 dashes
 		
-		print("     📏 Curve length: ", curve_length, " → ", num_dashes, " dashes")
 		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
 		for i in range(num_dashes):
@@ -444,8 +443,6 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		# Store dashes for animation
 		connection_node.set_meta("plastic_dashes", connection_node.get_children())
 		_add_dash_wave_animation(connection_node, start_pos, control_point, end_pos)
-		
-		print("     ⚊ Created plastic connection with ", num_dashes, " dashes")
 	else:
 		# For non-plastic connections, use continuous segments
 		var num_segments = 12
@@ -467,13 +464,10 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 			# Create cylinder segment between these two points
 			var segment = _create_curve_segment(point1, point2, i, segment_material)
 			connection_node.add_child(segment)
-		
-		print("     ⚪ Created non-plastic connection with ", num_segments, " segments")
 	
 	# Create pulse animation along this curve
 	_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
 	
-	print("     ✨ Created beautiful 3D curve connection")
 	return connection_node
 
 ## Add traveling wave animation to dashed plastic connections
@@ -481,8 +475,6 @@ func _add_dash_wave_animation(connection_node: Node3D, curve_start: Vector3, cur
 	"""Animate dashes with traveling wave effect for plastic connections"""
 	if not connection_node:
 		return
-	
-	print("       ⚡ Adding traveling dash wave animation")
 	
 	# Get the stored dashes
 	var dashes = connection_node.get_meta("plastic_dashes", []) as Array[Node]
@@ -572,8 +564,6 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 	"""Animate dashes around circular loop with rotating wave patterns"""
 	if not loop_node:
 		return
-	
-	print("       🌀 Adding circular dash wave animation to recursive loop")
 	
 	# Get the stored loop dashes
 	var dashes = loop_node.get_meta("plastic_loop_dashes", []) as Array[Node]
@@ -814,8 +804,6 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		
 		# Add a brief pause at the end before restarting
 		pulse_tween.tween_interval(0.3)
-	
-	print("     ✨ Created ", num_pulses, " animated pulses")
 
 ## Create a recursive (self-looping) connection
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
@@ -853,7 +841,6 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		var desired_dash_spacing = 2.0  # Units between dashes for loops
 		var num_dashes = max(6, int(loop_circumference / desired_dash_spacing))  # Minimum 6 dashes
 		
-		print("     🔄 Loop circumference: ", loop_circumference, " → ", num_dashes, " dashes")
 		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
 		for i in range(num_dashes):
@@ -906,8 +893,6 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		# Store dashes for animation
 		loop_node.set_meta("plastic_loop_dashes", loop_node.get_children())
 		_add_circular_dash_wave_animation(loop_node, center_pos, loop_radius)
-		
-		print("     ⚊ Created plastic recursive loop with ", num_dashes, " dashes")
 	else:
 		# For non-plastic recursive connections, use continuous segments
 		var loop_material = _create_recursive_material(is_inhibitory, is_global_mode)
@@ -1154,8 +1139,6 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 	var base_radius = cylinder_mesh.top_radius
 	var thickness_variation = 0.08  # More subtle thickness variation (8% instead of 15%)
 	var breathing_speed = 2.5 + (t_position * 0.5)  # Speed varies along curve
-	
-	print("       🫁 Adding breathing thickness animation to plastic segment at t=", t_position)
 	
 	# Animate thickness with breathing effect
 	thickness_tween.tween_method(
