@@ -72,4 +72,3 @@ func _on_finish_drag(_from_position: Vector2, to_position: Vector2) -> void:
 func _on_position_changed() -> void:
 	_is_currently_being_dragged = true
 	node_moved.emit()
-
