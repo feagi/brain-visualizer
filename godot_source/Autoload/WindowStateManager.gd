@@ -15,9 +15,6 @@ var _position_check_timer: float = 0.0
 var _position_check_interval: float = 1.0  # Check position every second
 
 func _ready() -> void:
-	# CRITICAL: Make window invisible IMMEDIATELY to prevent flashing at wrong position
-	get_window().visible = false
-	
 	# Load saved state
 	_load_window_state()
 	
@@ -27,20 +24,20 @@ func _ready() -> void:
 	_save_timer.timeout.connect(_save_window_state)
 	add_child(_save_timer)
 	
-	# Restore window state BEFORE showing (prevents flash on wrong monitor)
+	# Restore window state immediately (position and size are applied synchronously)
 	_restore_window_state()
 	
-	# Initialize last saved position to current position
-	_last_saved_position = get_window().position
+	# Get main window reference
+	var window = get_tree().root
 	
-	# NOW show the window at the correct position
-	get_window().visible = true
+	# Initialize last saved position to current position
+	_last_saved_position = window.position
 	
 	# Connect to window events for auto-save
-	get_window().size_changed.connect(_on_window_changed)
-	get_window().close_requested.connect(_on_window_close_requested)
+	window.size_changed.connect(_on_window_changed)
+	window.close_requested.connect(_on_window_close_requested)
 	
-	print("[WindowStateManager] ✅ Window state manager initialized")
+	print("[WindowStateManager] Window state manager initialized")
 
 func _process(delta: float) -> void:
 	# Poll position changes periodically (Godot has no position_changed signal)
@@ -50,12 +47,12 @@ func _process(delta: float) -> void:
 		_check_position_changed()
 
 func _check_position_changed() -> void:
-	var window = get_window()
+	var window = get_tree().root
 	var current_pos = window.position
 	
 	# Only trigger save if position actually changed
 	if current_pos != _last_saved_position:
-		print("[WindowStateManager] 📍 Position changed: (%d, %d) → (%d, %d)" % [
+		print("[WindowStateManager] Position changed: (%d, %d) -> (%d, %d)" % [
 			_last_saved_position.x, _last_saved_position.y,
 			current_pos.x, current_pos.y
 		])
@@ -96,7 +93,7 @@ func _load_window_state() -> void:
 	print("[WindowStateManager] Loaded window state: ", _state_data)
 
 func _save_window_state() -> void:
-	var window = get_window()
+	var window = get_tree().root
 	
 	# Get current window state
 	var state = {
@@ -114,7 +111,7 @@ func _save_window_state() -> void:
 	
 	# Validate state before saving
 	if state.size.width < MIN_WINDOW_WIDTH or state.size.height < MIN_WINDOW_HEIGHT:
-		print("[WindowStateManager] ⚠️  Rejecting invalid window size: ", state.size.width, "x", state.size.height)
+		print("[WindowStateManager] Rejecting invalid window size: ", state.size.width, "x", state.size.height)
 		return
 	
 	_state_data = state
@@ -129,7 +126,7 @@ func _save_window_state() -> void:
 	file.store_string(json_string)
 	file.close()
 	
-	print("[WindowStateManager] 💾 Saved window state: pos=(%d, %d) size=%dx%d screen=%d" % [
+	print("[WindowStateManager] Saved window state: pos=(%d, %d) size=%dx%d screen=%d" % [
 		state.position.x, state.position.y,
 		state.size.width, state.size.height,
 		state.screen
@@ -140,7 +137,7 @@ func _restore_window_state() -> void:
 		print("[WindowStateManager] No window state to restore, using defaults")
 		return
 	
-	var window = get_window()
+	var window = get_tree().root
 	
 	# Validate saved state
 	var saved_width = _state_data.get("size", {}).get("width", 0)
@@ -149,7 +146,7 @@ func _restore_window_state() -> void:
 	var saved_y = _state_data.get("position", {}).get("y", 0)
 	
 	if saved_width < MIN_WINDOW_WIDTH or saved_height < MIN_WINDOW_HEIGHT:
-		print("[WindowStateManager] ⚠️  Saved size %dx%d is below minimum %dx%d, using defaults" % [
+		print("[WindowStateManager] Saved size %dx%d is below minimum %dx%d, using defaults" % [
 			saved_width, saved_height, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
 		])
 		return
@@ -160,7 +157,7 @@ func _restore_window_state() -> void:
 	var saved_screen = _state_data.get("screen", 0)
 	
 	if saved_screen >= screen_count:
-		print("[WindowStateManager] ⚠️  Saved screen %d no longer exists (only %d screens), using primary" % [
+		print("[WindowStateManager] Saved screen %d no longer exists (only %d screens), using primary" % [
 			saved_screen, screen_count
 		])
 		saved_screen = 0
@@ -185,7 +182,7 @@ func _restore_window_state() -> void:
 		# Ensure the screen is set (might be redundant but ensures correctness)
 		window.current_screen = saved_screen
 		
-		print("[WindowStateManager] ✅ Restored window state: pos=(%d, %d) size=%dx%d screen=%d" % [
+		print("[WindowStateManager] Restored window state: pos=(%d, %d) size=%dx%d screen=%d" % [
 			saved_x, saved_y, saved_width, saved_height, saved_screen
 		])
 	else:
@@ -195,4 +192,3 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		# Save on window close request
 		_save_window_state()
-
