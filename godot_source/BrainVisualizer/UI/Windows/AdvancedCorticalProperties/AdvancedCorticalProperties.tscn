@@ -21,10 +21,10 @@
 [ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="18_53725"]
 [ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="19_8v30q"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="20_4gnc7"]
-[ext_resource type="Texture2D" uid="uid://w077yug12k7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="21_rudp3"]
-[ext_resource type="Texture2D" uid="uid://di8630a11ncb5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="22_gf55e"]
-[ext_resource type="Texture2D" uid="uid://oi3pour3qyue" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="23_4pkn4"]
-[ext_resource type="Texture2D" uid="uid://bquoy7fdmhk7l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="24_m25xf"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="21_rudp3"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="22_gf55e"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="23_4pkn4"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="24_m25xf"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4txug"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)

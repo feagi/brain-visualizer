@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d0iq0gxyvi0w7" path="res://BrainVisualizer/UI/GenericElements/Buttons/GenomeObjectSelectorButton/GenomeObjectSelectorButton.gd" id="1_rwtbd"]
 [ext_resource type="Texture2D" uid="uid://4nqvb666obtc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="2_mk553"]
-[ext_resource type="Texture2D" uid="uid://piwrj0vuisem" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_qi2uw"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_qi2uw"]
 
 [node name="GenomeObjectSelectorButton" type="PanelContainer"]
 offset_right = 54.0
