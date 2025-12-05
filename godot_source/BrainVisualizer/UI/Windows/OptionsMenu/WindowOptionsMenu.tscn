@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://uovm7phb0uio"]
+[gd_scene load_steps=13 format=3 uid="uid://dwk5m8n7pq2xa"]
 
 [ext_resource type="Script" uid="uid://bn88ws6po6f24" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.gd" id="1_sn8x3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
