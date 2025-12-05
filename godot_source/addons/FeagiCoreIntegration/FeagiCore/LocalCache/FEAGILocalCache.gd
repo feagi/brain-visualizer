@@ -164,10 +164,15 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			var ipu_device: Dictionary = ipu_devices[ipu_ID]
 			var resolution: Array[int] = [] # Gotta love godot unable to infer types
 			resolution.assign(ipu_device["resolution"])
+			
+			# Handle both old format (cortical_name) and new format (description)
+			var cortical_name: String = ipu_device.get("cortical_name", ipu_device.get("description", "Unknown"))
+			var enabled: bool = ipu_device.get("enabled", true)
+			
 			_IPU_templates[ipu_ID] = CorticalTemplate.new(
 				ipu_ID,
-				ipu_device["enabled"],
-				ipu_device["cortical_name"],
+				enabled,
+				cortical_name,
 				ipu_device["structure"],
 				resolution,
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
@@ -183,10 +188,15 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 			var opu_device: Dictionary = opu_devices[opu_ID]
 			var resolution: Array[int] = [] # Gotta love godot unable to infer types
 			resolution.assign(opu_device["resolution"])
+			
+			# Handle both old format (cortical_name) and new format (description)
+			var cortical_name: String = opu_device.get("cortical_name", opu_device.get("description", "Unknown"))
+			var enabled: bool = opu_device.get("enabled", true)
+			
 			_OPU_templates[opu_ID] = CorticalTemplate.new(
 				opu_ID,
-				opu_device["enabled"],
-				opu_device["cortical_name"],
+				enabled,
+				cortical_name,
 				opu_device["structure"],
 				resolution,
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU

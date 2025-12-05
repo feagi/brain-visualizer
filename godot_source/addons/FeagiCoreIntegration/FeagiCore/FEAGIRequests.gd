@@ -107,7 +107,9 @@ func reload_genome() -> FeagiRequestOutput:
 	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
 	var mappings_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalMapDetailed)
 	var region_request:APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_region_regionsMembers)
-	var templates_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalTypes)
+	# Use dedicated IPU/OPU type endpoints instead of generic cortical_types
+	var ipu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_ipu_types)
+	var opu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_opu_types)
 	var agent_list_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_list)
 	
 	# Get Cortical Area Data
@@ -166,18 +168,51 @@ func reload_genome() -> FeagiRequestOutput:
 	)
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 5 complete: Genome cache updated")
 	
-	# Get Template Data
+	# Get Template Data from dedicated IPU/OPU endpoints
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 6/7: Requesting template data...")
-	var template_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(templates_request)
-	await template_worker.worker_done
-	var template_data: FeagiRequestOutput = template_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(template_data):
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6: Template data request failed!")
-		push_error("FEAGI Requests: Unable to grab FEAGI template summary data!")
-		return template_data
-	var raw_templates: Dictionary = template_data.decode_response_as_dict()
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6a: Requesting IPU types...")
+	var ipu_types_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(ipu_types_request)
+	await ipu_types_worker.worker_done
+	var ipu_types_data: FeagiRequestOutput = ipu_types_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(ipu_types_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6a: IPU types request failed!")
+		push_error("FEAGI Requests: Unable to grab FEAGI IPU types data!")
+		return ipu_types_data
+	
+	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6b: Requesting OPU types...")
+	var opu_types_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(opu_types_request)
+	await opu_types_worker.worker_done
+	var opu_types_data: FeagiRequestOutput = opu_types_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(opu_types_data):
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6b: OPU types request failed!")
+		push_error("FEAGI Requests: Unable to grab FEAGI OPU types data!")
+		return opu_types_data
+	
+	# Transform responses into format expected by cache
+	var ipu_types_dict: Dictionary = ipu_types_data.decode_response_as_dict()
+	var opu_types_dict: Dictionary = opu_types_data.decode_response_as_dict()
+	
+	# name_to_id_mapping maps type_id -> [cortical_instance_ids] from current genome
+	# This will be built from genome data, not from templates (templates just define available types)
+	var ipu_name_mapping: Dictionary = {}
+	var opu_name_mapping: Dictionary = {}
+	
+	# Aggregate into expected structure
+	var aggregated_templates: Dictionary = {
+		"types": {
+			"IPU": {
+				"supported_devices": ipu_types_dict,
+				"name_to_id_mapping": ipu_name_mapping  # Empty for now - will be populated from genome
+			},
+			"OPU": {
+				"supported_devices": opu_types_dict,
+				"name_to_id_mapping": opu_name_mapping  # Empty for now - will be populated from genome
+			}
+		}
+	}
+	
 	# Template data loaded successfully
-	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(raw_templates)
+	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(aggregated_templates)
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 6 complete: Template data retrieved")
 	
 	# Other stuff (asyncronous)
@@ -1518,20 +1553,46 @@ func get_cortical_templates() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 	
-	# Define Request
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalTypes)
+	# Get IPU types
+	var ipu_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_ipu_types)
+	var ipu_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(ipu_request)
+	await ipu_worker.worker_done
+	var ipu_data: FeagiRequestOutput = ipu_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(ipu_data):
+		push_error("FEAGI Requests: Unable to get IPU types!")
+		return ipu_data
 	
-	# Send request and await results
-	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
-	await HTTP_FEAGI_request_worker.worker_done
-	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to get cortical templates!")
-		return FEAGI_response_data
-	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	# Get OPU types
+	var opu_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_opu_types)
+	var opu_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(opu_request)
+	await opu_worker.worker_done
+	var opu_data: FeagiRequestOutput = opu_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(opu_data):
+		push_error("FEAGI Requests: Unable to get OPU types!")
+		return opu_data
+	
+	# Transform and aggregate responses
+	var ipu_types_dict: Dictionary = ipu_data.decode_response_as_dict()
+	var opu_types_dict: Dictionary = opu_data.decode_response_as_dict()
+	
+	# name_to_id_mapping should map type_id -> [cortical_instance_ids] from genome
+	# Leave empty for now - will be populated from genome data if needed
+	var aggregated: Dictionary = {
+		"types": {
+			"IPU": {
+				"supported_devices": ipu_types_dict,
+				"name_to_id_mapping": {}  # Empty - populated from genome, not templates
+			},
+			"OPU": {
+				"supported_devices": opu_types_dict,
+				"name_to_id_mapping": {}  # Empty - populated from genome, not templates
+			}
+		}
+	}
+	
 	print("FEAGI REQUEST: Successfully retrieved cortical template data!")
-	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(response)
-	return FEAGI_response_data
+	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(aggregated)
+	return ipu_data  # Return successful result
 
 ## Get cortical template metadata including supported data types and configurations
 func get_cortical_template_metadata() -> FeagiRequestOutput:
