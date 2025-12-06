@@ -843,28 +843,28 @@ func _update_label_overlap_visibility() -> void:
 	# First, restore all labels to their original visibility state
 	# This ensures labels that were hidden due to previous overlap checks can become visible again
 	for label_info in label_data:
-		# Restore to original visibility - but only if projection was successful
-		# Labels that couldn't be projected are likely off-screen or invalid
-		# CRITICAL: Labels on plates should ALWAYS be visible
-		if label_info.projection_success:
-			if label_info.on_plate:
-				label_info.label.visible = true  # Force visible for labels on plates
-			else:
-				label_info.label.visible = label_info.original_visible
+		# CRITICAL: Labels on plates should ALWAYS be visible (unless they overlap)
+		# Set them visible regardless of projection success
+		if label_info.on_plate:
+			label_info.label.visible = true  # Force visible for labels on plates
+		elif label_info.projection_success:
+			# For non-plate labels, restore to original visibility only if projection succeeded
+			label_info.label.visible = label_info.original_visible
 	
 	# Track which labels to hide (use an array to avoid double-hiding)
 	var labels_to_hide: Array[Label3D] = []
 	
-	# Then hide labels that overlap (only check labels that should be visible)
-	# BUT: Never hide labels that are on plates - they should always be visible
+	# Then hide labels that overlap (check all labels that should be visible, including plate labels)
+	# Plate labels can overlap too, so we need to check them
 	for i in range(label_data.size()):
 		var label1 = label_data[i]
-		# Skip labels on plates - they should always be visible
-		if label1.on_plate:
+		# Only check visibility for labels that were originally visible (or on plates)
+		if not label1.original_visible and not label1.on_plate:
 			continue
 		
-		# Only check visibility for labels that were originally visible
-		if not label1.original_visible:
+		# CRITICAL: If projection failed for a plate label, skip overlap check (keep it visible)
+		# We can't check overlaps without valid screen position
+		if label1.on_plate and not label1.projection_success:
 			continue
 		
 		# Skip if already marked to hide
@@ -873,16 +873,20 @@ func _update_label_overlap_visibility() -> void:
 		
 		for j in range(i + 1, label_data.size()):
 			var label2 = label_data[j]
-			# Skip labels on plates - they should always be visible
-			if label2.on_plate:
+			# Only consider labels that were originally visible (or on plates)
+			if not label2.original_visible and not label2.on_plate:
 				continue
 			
-			# Only consider labels that were originally visible
-			if not label2.original_visible:
+			# CRITICAL: If projection failed for a plate label, skip overlap check (keep it visible)
+			if label2.on_plate and not label2.projection_success:
 				continue
 			
 			# Skip if already marked to hide
 			if label2.label in labels_to_hide:
+				continue
+			
+			# Both labels must have valid screen positions to check overlap
+			if not label1.projection_success or not label2.projection_success:
 				continue
 			
 			# Calculate screen-space distance between labels
@@ -900,14 +904,18 @@ func _update_label_overlap_visibility() -> void:
 					if label2.label not in labels_to_hide:
 						labels_to_hide.append(label2.label)
 	
-	# Apply visibility changes - only hide labels that overlap, preserve others
-	# CRITICAL: Never hide labels on plates
+	# Apply visibility changes
+	# CRITICAL: Plate labels should ALWAYS be visible - don't hide them even if they overlap
+	# This ensures labels on region plates are always visible
 	for label_info in label_data:
 		if label_info.on_plate:
-			label_info.label.visible = true  # Always visible on plates
-		elif label_info.label in labels_to_hide:
-			label_info.label.visible = false
-		# Note: Labels that were originally hidden (and not on plates) stay hidden
+			# Plate labels: ALWAYS visible, never hide them
+			label_info.label.visible = true
+		else:
+			# Non-plate labels: hide if marked to hide
+			if label_info.label in labels_to_hide:
+				label_info.label.visible = false
+			# Otherwise keep their restored visibility state (already set in restore step)
 
 ## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
 func _log_objects_relative_to_camera(context: String = "") -> void:
