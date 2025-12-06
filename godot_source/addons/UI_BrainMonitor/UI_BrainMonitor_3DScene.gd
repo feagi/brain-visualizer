@@ -445,6 +445,9 @@ func _process(delta: float) -> void:
 	# Update combo context after setup has region
 	if _combo:
 		_combo.set_3d_context(self, _representing_region)
+	
+	# Update label visibility to prevent overlaps (throttled for performance)
+	_update_label_overlap_visibility()
 
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
@@ -702,6 +705,209 @@ func _compute_previews_aabb() -> AABB:
 				merged = a2 if !have else merged.merge(a2)
 				have = true
 	return merged if have else AABB()
+
+## Helper function to collect labels from a cortical area visualization
+func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_data: Array[Dictionary], viewport: Viewport) -> void:
+	if viz == null or not is_instance_valid(viz):
+		return
+	
+	# Helper function to check if a label is on a brain region plate
+	var is_label_on_plate = func(label: Label3D) -> bool:
+		var current_parent = label.get_parent()
+		var depth = 0
+		while current_parent != null and depth < 10:
+			if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas" or current_parent.name == "ConflictAreas":
+				return true
+			current_parent = current_parent.get_parent()
+			depth += 1
+		return false
+	
+	# Helper to add a label with screen position calculation
+	# Returns the index of the added label entry, or -1 if not added
+	var add_label = func(label: Label3D, area_id: StringName, should_be_visible: bool) -> int:
+		if label.text == "":
+			return -1
+		
+		# CRITICAL: Labels on plates should ALWAYS be visible
+		var on_plate = is_label_on_plate.call(label)
+		if on_plate:
+			should_be_visible = true
+		
+		var label_pos = label.global_position
+		var distance_to_cam = _pancake_cam.global_position.distance_to(label_pos)
+		# Check if label is in front of camera
+		var cam_forward = -_pancake_cam.global_transform.basis.z
+		var to_label = (label_pos - _pancake_cam.global_position).normalized()
+		if cam_forward.dot(to_label) > 0:  # In front of camera
+			# Project to screen space for overlap detection
+			var viewport_size = viewport.get_visible_rect().size
+			var viewport_cam = viewport.get_camera_3d()
+			var screen_pos = Vector2.ZERO
+			var projection_success = false
+			if viewport_cam != null:
+				# Calculate screen position using camera transform and projection
+				var local_pos = viewport_cam.global_transform.affine_inverse() * label_pos
+				if local_pos.z < 0:  # In front of camera
+					var fov = deg_to_rad(viewport_cam.fov)
+					var aspect = viewport_size.x / max(viewport_size.y, 1.0)
+					var y_scale = tan(fov * 0.5)
+					var x_scale = y_scale * aspect
+					screen_pos = Vector2(
+						viewport_size.x * 0.5 * (1.0 + local_pos.x / (-local_pos.z * x_scale)),
+						viewport_size.y * 0.5 * (1.0 - local_pos.y / (-local_pos.z * y_scale))
+					)
+					# Check if on screen (with some margin for labels near edges)
+					if screen_pos.x >= -100 and screen_pos.x <= viewport_size.x + 100 and screen_pos.y >= -100 and screen_pos.y <= viewport_size.y + 100:
+						projection_success = true
+			
+			var entry_index = label_data.size()
+			label_data.append({
+				"label": label,
+				"position": label_pos,
+				"screen_pos": screen_pos,
+				"distance": distance_to_cam,
+				"area_id": area_id,
+				"original_visible": should_be_visible,
+				"projection_success": projection_success,
+				"on_plate": on_plate
+			})
+			return entry_index
+		return -1
+	
+	# Check DDA renderer label - DDA labels should always be visible if they have text
+	if viz._dda_renderer != null and viz._dda_renderer._friendly_name_label != null:
+		var label = viz._dda_renderer._friendly_name_label
+		var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else ""
+		# DDA labels should always be visible - they're the primary renderer
+		add_label.call(label, area_id, true)
+	
+	# Check DirectPoints renderer label (only if different from DDA)
+	# DirectPoints labels are only visible for memory/power/death areas, or if DDA doesn't exist
+	if viz._directpoints_renderer != null and viz._directpoints_renderer._friendly_name_label != null:
+		var label = viz._directpoints_renderer._friendly_name_label
+		# Check if we already added this label (same as DDA)
+		var already_added = false
+		for data in label_data:
+			if data.label == label:
+				already_added = true
+				break
+		if not already_added:
+			var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else ""
+			# Only process DirectPoints label if DDA doesn't exist (it's the primary renderer)
+			# OR if it's a special area type that should show the label
+			var should_be_visible = (viz._dda_renderer == null or 
+				viz.cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
+				AbstractCorticalArea.is_power_area(area_id) or 
+				AbstractCorticalArea.is_death_area(area_id))
+			add_label.call(label, area_id, should_be_visible)
+
+## Updates label visibility to prevent overlaps when cortical areas are close together
+## Uses 3D distance-based detection: if labels are very close in 3D space, hide the one farther from camera
+func _update_label_overlap_visibility() -> void:
+	if _pancake_cam == null or not _pancake_cam.current:
+		return
+	
+	var viewport := _pancake_cam.get_viewport()
+	if viewport == null:
+		return
+	
+	# Threshold distance in screen space (pixels) - if two labels are closer than this, they overlap
+	const OVERLAP_SCREEN_DISTANCE_THRESHOLD = 80.0  # pixels
+	
+	# Collect all labels (including hidden ones) with their screen positions
+	# We need to check all labels to restore visibility when they no longer overlap
+	var label_data: Array[Dictionary] = []
+	
+	# Collect labels from main scene cortical visualizations
+	for viz in _cortical_visualizations_by_ID.values():
+		_collect_labels_from_cortical_viz(viz, label_data, viewport)
+	
+	# Also collect labels from cortical areas within brain region frames (plates)
+	for region_viz in _brain_region_visualizations_by_ID.values():
+		if region_viz == null or not is_instance_valid(region_viz):
+			continue
+		# Brain region frames have cortical area visualizations stored in _cortical_area_visualizations
+		# Access the property directly - it will be null if it doesn't exist
+		if region_viz.get("_cortical_area_visualizations") != null:
+			var cortical_visualizations = region_viz._cortical_area_visualizations
+			if cortical_visualizations != null:
+				for cortical_viz in cortical_visualizations.values():
+					if cortical_viz != null and is_instance_valid(cortical_viz):
+						_collect_labels_from_cortical_viz(cortical_viz, label_data, viewport)
+	
+	# If no labels found, exit early
+	if label_data.is_empty():
+		return
+	
+	# Detect overlaps based on screen-space distance and hide overlapping labels (keep closest to camera)
+	# First, restore all labels to their original visibility state
+	# This ensures labels that were hidden due to previous overlap checks can become visible again
+	for label_info in label_data:
+		# Restore to original visibility - but only if projection was successful
+		# Labels that couldn't be projected are likely off-screen or invalid
+		# CRITICAL: Labels on plates should ALWAYS be visible
+		if label_info.projection_success:
+			if label_info.on_plate:
+				label_info.label.visible = true  # Force visible for labels on plates
+			else:
+				label_info.label.visible = label_info.original_visible
+	
+	# Track which labels to hide (use an array to avoid double-hiding)
+	var labels_to_hide: Array[Label3D] = []
+	
+	# Then hide labels that overlap (only check labels that should be visible)
+	# BUT: Never hide labels that are on plates - they should always be visible
+	for i in range(label_data.size()):
+		var label1 = label_data[i]
+		# Skip labels on plates - they should always be visible
+		if label1.on_plate:
+			continue
+		
+		# Only check visibility for labels that were originally visible
+		if not label1.original_visible:
+			continue
+		
+		# Skip if already marked to hide
+		if label1.label in labels_to_hide:
+			continue
+		
+		for j in range(i + 1, label_data.size()):
+			var label2 = label_data[j]
+			# Skip labels on plates - they should always be visible
+			if label2.on_plate:
+				continue
+			
+			# Only consider labels that were originally visible
+			if not label2.original_visible:
+				continue
+			
+			# Skip if already marked to hide
+			if label2.label in labels_to_hide:
+				continue
+			
+			# Calculate screen-space distance between labels
+			var screen_dist = label1.screen_pos.distance_to(label2.screen_pos)
+			
+			# If labels are too close in screen space (overlapping), hide the one farther from camera
+			if screen_dist < OVERLAP_SCREEN_DISTANCE_THRESHOLD:
+				if label1.distance > label2.distance:
+					# Label1 is farther, mark it to hide
+					if label1.label not in labels_to_hide:
+						labels_to_hide.append(label1.label)
+					break
+				else:
+					# Label2 is farther, mark it to hide
+					if label2.label not in labels_to_hide:
+						labels_to_hide.append(label2.label)
+	
+	# Apply visibility changes - only hide labels that overlap, preserve others
+	# CRITICAL: Never hide labels on plates
+	for label_info in label_data:
+		if label_info.on_plate:
+			label_info.label.visible = true  # Always visible on plates
+		elif label_info.label in labels_to_hide:
+			label_info.label.visible = false
+		# Note: Labels that were originally hidden (and not on plates) stay hidden
 
 ## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
 func _log_objects_relative_to_camera(context: String = "") -> void:
