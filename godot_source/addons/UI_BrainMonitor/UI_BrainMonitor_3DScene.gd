@@ -634,6 +634,54 @@ func _compute_cortical_data_aabb() -> AABB:
 		have = true
 	return merged if have else AABB()
 
+## Computes world-space AABB for a brain region frame node (includes all its visualizations)
+func _compute_region_frame_aabb(region_frame: Node3D) -> AABB:
+	if region_frame == null or not is_instance_valid(region_frame):
+		return AABB()
+	# Use the existing world AABB computation which handles all children recursively
+	return _compute_world_aabb(region_frame)
+
+## Frames the camera to show the entire AABB with appropriate distance
+func _frame_camera_to_aabb(aabb: AABB) -> void:
+	if _pancake_cam == null:
+		return
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		# Invalid AABB - cannot frame, caller should handle fallback
+		return
+	var center := aabb.position + (aabb.size / 2.0)
+	# Choose a straight-on view along +Z, level (no pitch), so we face the circuit
+	var up := Vector3.UP
+	var dir_hint := Vector3(0, 0, 1) # camera behind +Z looking toward -Z at center
+	# Compute FOVs (guard bad/zero FOV)
+	var fov_used: float = _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad: float = deg_to_rad(fov_used)
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp_size.x / max(1.0, vp_size.y)
+	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	# Half extents
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	# Required distances to fit width and height
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	# Apply learned multipliers from auto_frame
+	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
+	# Padding and clamps
+	var min_dist: float = auto_frame_min_dist
+	var max_dist: float = 3000.0
+	var diag: float = aabb.size.length()
+	var rel_cap: float = diag * 1.5
+	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Set camera position and orientation (level, centered in Y)
+	var cam_pos := center + (dir_hint * distance)
+	cam_pos.y = center.y
+	_pancake_cam.global_position = cam_pos
+	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+	_pancake_cam.current = true
+	_pancake_cam.near = 0.05
+
 ## Computes AABB over active previews (interactive and brain-region previews)
 func _compute_previews_aabb() -> AABB:
 	var have := false
@@ -996,6 +1044,22 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+						# Check for shift+click to focus camera on region
+						if Input.is_key_pressed(KEY_SHIFT):
+							# Shift+Click: Focus camera on the region's bounding box
+							if _pancake_cam:
+								# Compute world-space AABB of the brain region frame (includes all visualizations)
+								var region_aabb = _compute_region_frame_aabb(region_frame)
+								if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
+									# Frame camera to show entire bounding box
+									_frame_camera_to_aabb(region_aabb)
+									print("Shift+Clicked brain region frame: %s - Camera focused on bounding box" % region_frame.representing_region.friendly_name)
+								else:
+									# Fallback: use region frame's global position if AABB is invalid
+									_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
+									print("Shift+Clicked brain region frame: %s - Camera focused (fallback to position)" % region_frame.representing_region.friendly_name)
+							return
+						
 						# Single click on brain region - select it
 						BV.UI.selection_system.clear_all_highlighted()
 						BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
