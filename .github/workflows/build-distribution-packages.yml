@@ -227,6 +227,15 @@ jobs:
         run: |
           cd godot_source
           mkdir -p ../exports
+          
+          # Check if preset exists before attempting export
+          if ! grep -q "name=\"${{ matrix.export_name }}\"" export_presets.cfg; then
+            echo "⚠️ Export preset '${{ matrix.export_name }}' not found in export_presets.cfg"
+            echo "Available presets:"
+            grep "^name=" export_presets.cfg || echo "None found"
+            exit 1
+          fi
+          
           ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
       - name: Verify export
@@ -366,6 +375,15 @@ jobs:
         run: |
           cd godot_source
           mkdir -p ../exports
+          
+          # Check if preset exists before attempting export
+          if ! grep -q "name=\"${{ matrix.export_name }}\"" export_presets.cfg; then
+            echo "⚠️ Export preset '${{ matrix.export_name }}' not found in export_presets.cfg"
+            echo "Available presets:"
+            grep "^name=" export_presets.cfg || echo "None found"
+            exit 1
+          fi
+          
           ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
           
           # Verify export succeeded
