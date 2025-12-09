@@ -56,12 +56,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Checkout feagi-core (dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: feagi/feagi-core
-          ref: main
-          path: ../feagi-core
+      - name: Clone feagi-core (dependency)
+        run: |
+          cd ..
+          git clone --depth 1 --branch main https://github.com/feagi/feagi-core.git
+          ls -la
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -247,12 +246,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Checkout feagi-core (dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: feagi/feagi-core
-          ref: main
-          path: ../feagi-core
+      - name: Clone feagi-core (dependency)
+        run: |
+          cd ..
+          git clone --depth 1 --branch main https://github.com/feagi/feagi-core.git
+          ls -la
 
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v1
@@ -315,12 +313,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Checkout feagi-core (dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: feagi/feagi-core
-          ref: main
-          path: ../feagi-core
+      - name: Clone feagi-core (dependency)
+        run: |
+          cd ..
+          git clone --depth 1 --branch main https://github.com/feagi/feagi-core.git
+          ls -la
 
       - name: Setup Godot (with export templates)
         uses: chickensoft-games/setup-godot@v1
