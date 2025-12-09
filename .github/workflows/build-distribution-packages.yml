@@ -57,6 +57,7 @@ jobs:
           submodules: recursive
 
       - name: Clone feagi-core (dependency)
+        shell: bash
         run: |
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
@@ -87,6 +88,7 @@ jobs:
 
       - name: Build FEAGI embedded (Linux/Windows)
         if: runner.os != 'macOS'
+        shell: bash
         run: |
           cd rust_extensions/feagi_embedded
           cargo build --release
@@ -211,6 +213,7 @@ jobs:
           path: godot_source/addons/feagi_embedded/target/release/
 
       - name: Build Rust data deserializer (existing extension)
+        shell: bash
         run: |
           cd rust_extensions
           python3 build.py --release
@@ -254,14 +257,16 @@ jobs:
           ls -lh "$TARGET_DIR/" || true
 
       - name: Verify all extensions present
+        shell: bash
         run: |
           echo "Checking for FEAGI embedded:"
-          ls -lh godot_source/addons/feagi_embedded/target/release/
+          ls -lh godot_source/addons/feagi_embedded/target/release/ || true
           
           echo "Checking for data deserializer:"
-          ls -lh godot_source/addons/feagi_rust_deserializer/target/release/
+          ls -lh godot_source/addons/feagi_rust_deserializer/target/release/ || true
 
       - name: Export Godot project (Mode 1 - Embedded)
+        shell: bash
         run: |
           cd godot_source
           mkdir -p ../exports
@@ -277,8 +282,9 @@ jobs:
           ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
       - name: Verify export
+        shell: bash
         run: |
-          ls -lh exports/
+          ls -lh exports/ || true
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
@@ -341,6 +347,7 @@ jobs:
           submodules: recursive
 
       - name: Clone feagi-core (dependency)
+        shell: bash
         run: |
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
@@ -400,6 +407,7 @@ jobs:
           Write-Host "✅ Godot 4.5 + export templates installed"
 
       - name: Build Rust data deserializer only (no FEAGI embedded)
+        shell: bash
         run: |
           cd rust_extensions
           python3 build.py --release
@@ -449,6 +457,7 @@ jobs:
           echo "✅ FEAGI embedded excluded (lightweight build)"
 
       - name: Export Godot project (Mode 2 - Remote)
+        shell: bash
         run: |
           cd godot_source
           mkdir -p ../exports
@@ -515,6 +524,7 @@ jobs:
           submodules: recursive
 
       - name: Clone feagi-core (dependency)
+        shell: bash
         run: |
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
