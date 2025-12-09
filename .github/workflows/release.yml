@@ -1,0 +1,386 @@
+name: Release Brain Visualizer
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on any version tag (v1.2.3, v1.2.3-beta.1, etc.)
+  
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g., v1.2.3)'
+        required: true
+
+jobs:
+  release-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install Godot
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+          unzip -q Godot_v4.5-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          
+          # Install export templates
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          
+          echo "✅ Godot + export templates installed"
+          
+          # Verify
+          /Applications/Godot.app/Contents/MacOS/Godot --version
+      
+      - name: Export Brain Visualizer
+        run: |
+          echo "🧠 Exporting Brain Visualizer for macOS..."
+          
+          mkdir -p build
+          
+          /Applications/Godot.app/Contents/MacOS/Godot \
+            --export-release "macOS" \
+            "$(pwd)/build/BrainVisualizer.app" \
+            --path godot_source \
+            --headless
+          
+          if [ ! -d "build/BrainVisualizer.app" ]; then
+            echo "❌ Export failed - BrainVisualizer.app not created"
+            exit 1
+          fi
+          
+          echo "✅ Brain Visualizer exported successfully"
+      
+      - name: Update bundle metadata
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ inputs.tag_name }}"
+            VERSION="${VERSION#v}"
+          fi
+          
+          PLIST="build/BrainVisualizer.app/Contents/Info.plist"
+          
+          # Update bundle identifier
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier org.feagi.brain-visualizer" "$PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string org.feagi.brain-visualizer" "$PLIST"
+          
+          # Update version
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "$PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${VERSION}" "$PLIST"
+          
+          echo "✅ Updated bundle metadata"
+      
+      - name: Package release
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ inputs.tag_name }}"
+            VERSION="${VERSION#v}"
+          fi
+          
+          cd build
+          
+          # Create tarball
+          tar -czf "BrainVisualizer-macos-v${VERSION}.tar.gz" BrainVisualizer.app
+          
+          # Create README
+          cat > README.txt <<'EOF'
+          Brain Visualizer v${VERSION} for macOS
+          
+          This package contains the Brain Visualizer application bundle.
+          
+          Installation:
+          1. Extract this archive
+          2. Move BrainVisualizer.app to /Applications (or desired location)
+          3. Launch the application
+          
+          Note: This is a standalone .app bundle. It does NOT include the FEAGI binary.
+          For the complete FEAGI Desktop Suite (Desktop + BV + FEAGI), download from:
+          https://github.com/neuraville/feagi-desktop
+          
+          For more information, visit: https://github.com/feagi/brain-visualizer
+          EOF
+          
+          echo "✅ Created release package"
+          ls -lh BrainVisualizer-macos-v${VERSION}.tar.gz
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: |
+            build/BrainVisualizer-macos-*.tar.gz
+            build/README.txt
+  
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip xvfb libgl1-mesa-dev
+      
+      - name: Install Godot
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5-stable_linux.x86_64
+          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          
+          # Install export templates
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          
+          echo "✅ Godot + export templates installed"
+          
+          # Verify
+          godot --version
+      
+      - name: Export Brain Visualizer
+        run: |
+          echo "🧠 Exporting Brain Visualizer for Linux..."
+          
+          mkdir -p build
+          
+          # Use xvfb-run for headless export
+          xvfb-run godot \
+            --export-release "Linux/X11" \
+            "$(pwd)/build/BrainVisualizer.x86_64" \
+            --path godot_source \
+            --headless
+          
+          if [ ! -f "build/BrainVisualizer.x86_64" ]; then
+            echo "❌ Export failed - BrainVisualizer.x86_64 not created"
+            exit 1
+          fi
+          
+          chmod +x build/BrainVisualizer.x86_64
+          echo "✅ Brain Visualizer exported successfully"
+      
+      - name: Package release
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ inputs.tag_name }}"
+            VERSION="${VERSION#v}"
+          fi
+          
+          cd build
+          
+          # Create tarball
+          tar -czf "BrainVisualizer-linux-v${VERSION}.tar.gz" BrainVisualizer.x86_64 *.pck
+          
+          # Create README
+          cat > README.txt <<'EOF'
+          Brain Visualizer v${VERSION} for Linux (x86_64)
+          
+          This package contains the Brain Visualizer executable.
+          
+          Installation:
+          1. Extract this archive
+          2. Ensure executable: chmod +x BrainVisualizer.x86_64
+          3. Run: ./BrainVisualizer.x86_64
+          
+          Note: This is a standalone binary. It does NOT include the FEAGI binary.
+          For the complete FEAGI Desktop Suite (Desktop + BV + FEAGI), download from:
+          https://github.com/neuraville/feagi-desktop
+          
+          For more information, visit: https://github.com/feagi/brain-visualizer
+          EOF
+          
+          echo "✅ Created Linux release package"
+          ls -lh BrainVisualizer-linux-v${VERSION}.tar.gz
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-app
+          path: |
+            build/BrainVisualizer-linux-*.tar.gz
+            build/README.txt
+  
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install Godot
+        shell: pwsh
+        run: |
+          Write-Host "📦 Downloading Godot 4.5..."
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+          Expand-Archive -Path godot.zip -DestinationPath godot-install
+          Move-Item godot-install/Godot*.exe godot.exe
+          
+          Write-Host "📦 Downloading export templates..."
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+          
+          # Install export templates
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          New-Item -ItemType Directory -Force -Path $templatesPath
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates
+          Move-Item temp-templates/templates/* $templatesPath -Force
+          
+          Write-Host "✅ Godot + export templates installed"
+          
+          # Verify
+          ./godot.exe --version
+      
+      - name: Export Brain Visualizer
+        shell: pwsh
+        run: |
+          Write-Host "🧠 Exporting Brain Visualizer for Windows..."
+          
+          New-Item -ItemType Directory -Force -Path build
+          
+          ./godot.exe `
+            --export-release "Windows Desktop" `
+            "$(Get-Location)/build/BrainVisualizer.exe" `
+            --path godot_source `
+            --headless
+          
+          if (-not (Test-Path "build/BrainVisualizer.exe")) {
+            Write-Error "❌ Export failed - BrainVisualizer.exe not created"
+            exit 1
+          }
+          
+          Write-Host "✅ Brain Visualizer exported successfully"
+      
+      - name: Package release
+        shell: pwsh
+        run: |
+          $version = "$env:GITHUB_REF" -replace 'refs/tags/v', ''
+          if ([string]::IsNullOrEmpty($version)) {
+            $version = "${{ inputs.tag_name }}" -replace '^v', ''
+          }
+          
+          cd build
+          
+          # Create README
+          @"
+          Brain Visualizer v$version for Windows (x86_64)
+          
+          This package contains the Brain Visualizer executable.
+          
+          Installation:
+          1. Extract this archive
+          2. Run: BrainVisualizer.exe
+          
+          Note: This is a standalone executable. It does NOT include the FEAGI binary.
+          For the complete FEAGI Desktop Suite (Desktop + BV + FEAGI), download from:
+          https://github.com/neuraville/feagi-desktop
+          
+          For more information, visit: https://github.com/feagi/brain-visualizer
+          "@ | Out-File -FilePath README.txt -Encoding ASCII
+          
+          # Create zip
+          Compress-Archive -Path BrainVisualizer.exe,*.pck,README.txt -DestinationPath "BrainVisualizer-windows-v$version.zip" -Force
+          
+          Write-Host "✅ Created Windows release package"
+          Get-ChildItem BrainVisualizer-windows-v$version.zip
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-app
+          path: |
+            build/BrainVisualizer-windows-*.zip
+
+  create-release:
+    needs: [release-macos, release-linux, release-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+      
+      - name: Determine release type
+        id: release_type
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ inputs.tag_name }}"
+            VERSION="${VERSION#v}"
+          fi
+          
+          if [[ "$VERSION" =~ -beta\. ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "Release type: Beta (pre-release)"
+          elif [[ "$VERSION" =~ -alpha\. ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "Release type: Alpha (pre-release)"
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "Release type: Stable"
+          fi
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+      
+      - name: Generate changelog
+        run: |
+          VERSION="${{ steps.release_type.outputs.version }}"
+          
+          cat > release-notes.md <<'EOF'
+          # Brain Visualizer v${VERSION}
+          
+          ## Platform Support
+          - ✅ macOS (Universal .app bundle)
+          - ✅ Linux (x86_64 executable)
+          - ✅ Windows (x86_64 executable)
+          
+          ## Downloads
+          - **macOS**: \`BrainVisualizer-macos-v${VERSION}.tar.gz\`
+          - **Linux**: \`BrainVisualizer-linux-v${VERSION}.tar.gz\`
+          - **Windows**: \`BrainVisualizer-windows-v${VERSION}.zip\`
+          
+          ## ⚠️ Important Note
+          This is a **standalone Brain Visualizer** release. It does NOT include the FEAGI binary.
+          
+          For the **complete FEAGI Desktop Suite** (Desktop UI + Brain Visualizer + FEAGI), download from:
+          👉 [neuraville/feagi-desktop](https://github.com/neuraville/feagi-desktop)
+          
+          ## What's Changed
+          <!-- Add changelog here -->
+          
+          **Full Changelog**: https://github.com/feagi/brain-visualizer/compare/v${VERSION}...v${VERSION}
+          EOF
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name || inputs.tag_name }}
+          name: Brain Visualizer v${{ steps.release_type.outputs.version }}
+          body_path: release-notes.md
+          prerelease: ${{ steps.release_type.outputs.prerelease }}
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
