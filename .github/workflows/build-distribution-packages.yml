@@ -216,6 +216,14 @@ jobs:
         shell: bash
         run: |
           cd rust_extensions
+          
+          # Build feagi_type_system (not included in build.py)
+          echo "🔨 Building feagi_type_system..."
+          cd feagi_type_system
+          cargo build --release
+          cd ..
+          
+          # Build feagi_data_deserializer and feagi_shared_video
           python3 build.py --release
           
           echo "📂 Built libraries:"
@@ -224,37 +232,51 @@ jobs:
       - name: Copy Rust extensions to Godot addons
         shell: bash
         run: |
-          # Find where the build script placed the libraries
-          DESERIALIZER_LIB=$(find rust_extensions -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          echo "🔍 Finding built Rust extensions..."
           
-          if [ -z "$DESERIALIZER_LIB" ]; then
-            echo "❌ libfeagi_data_deserializer not found after build"
-            exit 1
-          fi
+          # Find all three required libraries
+          DESERIALIZER_LIB=$(find rust_extensions/feagi_data_deserializer -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          TYPE_SYSTEM_LIB=$(find rust_extensions/feagi_type_system -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" | grep -E "release|Release" | head -1)
+          SHARED_VIDEO_LIB=$(find rust_extensions/feagi_shared_video -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" | grep -E "release|Release" | head -1)
           
           echo "Found deserializer: $DESERIALIZER_LIB"
+          echo "Found type_system: $TYPE_SYSTEM_LIB"
+          echo "Found shared_video: $SHARED_VIDEO_LIB"
           
-          # Determine platform-specific target directory
+          # Determine platform-specific target directory for deserializer
           case "${{ runner.os }}" in
             Linux)
               TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
               ;;
             macOS)
-              TARGET_SUBDIR="release"  # macOS uses universal binary
+              TARGET_SUBDIR="release"
               ;;
             Windows)
               TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
               ;;
           esac
           
-          TARGET_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
-          mkdir -p "$TARGET_DIR"
+          # Copy deserializer to platform-specific path
+          DESERIALIZER_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$DESERIALIZER_DIR"
+          cp "$DESERIALIZER_LIB" "$DESERIALIZER_DIR/"
+          echo "✅ Copied deserializer to $DESERIALIZER_DIR"
           
-          # Copy to expected location
-          cp "$DESERIALIZER_LIB" "$TARGET_DIR/"
+          # Copy type_system to root of FeagiCoreIntegration (expects it in same dir as .gdextension)
+          INTEGRATION_DIR="godot_source/addons/FeagiCoreIntegration"
+          cp "$TYPE_SYSTEM_LIB" "$INTEGRATION_DIR/"
+          echo "✅ Copied type_system to $INTEGRATION_DIR"
           
-          echo "✅ Copied libraries to $TARGET_DIR"
-          ls -lh "$TARGET_DIR/" || true
+          # shared_video goes to target/release/ subdirectory (per .gdextension config)
+          SHARED_VIDEO_DIR="godot_source/addons/feagi_shared_video/target/release"
+          mkdir -p "$SHARED_VIDEO_DIR"
+          cp "$SHARED_VIDEO_LIB" "$SHARED_VIDEO_DIR/"
+          echo "✅ Copied shared_video to $SHARED_VIDEO_DIR"
+          
+          echo "📂 Final structure:"
+          ls -lh "$DESERIALIZER_DIR/" || true
+          ls -lh "$INTEGRATION_DIR/"libfeagi_* || true
+          ls -lh "$SHARED_VIDEO_DIR/" || true
 
       - name: Verify all extensions present
         shell: bash
@@ -410,6 +432,14 @@ jobs:
         shell: bash
         run: |
           cd rust_extensions
+          
+          # Build feagi_type_system (not included in build.py)
+          echo "🔨 Building feagi_type_system..."
+          cd feagi_type_system
+          cargo build --release
+          cd ..
+          
+          # Build feagi_data_deserializer and feagi_shared_video
           python3 build.py --release
           
           echo "📂 Built libraries:"
@@ -418,37 +448,51 @@ jobs:
       - name: Verify and copy Rust extensions to Godot addons
         shell: bash
         run: |
-          # Find where the build script placed the libraries
-          DESERIALIZER_LIB=$(find rust_extensions -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          echo "🔍 Finding built Rust extensions..."
           
-          if [ -z "$DESERIALIZER_LIB" ]; then
-            echo "❌ libfeagi_data_deserializer not found after build"
-            exit 1
-          fi
+          # Find all three required libraries
+          DESERIALIZER_LIB=$(find rust_extensions/feagi_data_deserializer -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          TYPE_SYSTEM_LIB=$(find rust_extensions/feagi_type_system -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" | grep -E "release|Release" | head -1)
+          SHARED_VIDEO_LIB=$(find rust_extensions/feagi_shared_video -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" | grep -E "release|Release" | head -1)
           
           echo "Found deserializer: $DESERIALIZER_LIB"
+          echo "Found type_system: $TYPE_SYSTEM_LIB"
+          echo "Found shared_video: $SHARED_VIDEO_LIB"
           
-          # Determine platform-specific target directory
+          # Determine platform-specific target directory for deserializer
           case "${{ runner.os }}" in
             Linux)
               TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
               ;;
             macOS)
-              TARGET_SUBDIR="release"  # macOS uses universal binary
+              TARGET_SUBDIR="release"
               ;;
             Windows)
               TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
               ;;
           esac
           
-          TARGET_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
-          mkdir -p "$TARGET_DIR"
+          # Copy deserializer to platform-specific path
+          DESERIALIZER_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$DESERIALIZER_DIR"
+          cp "$DESERIALIZER_LIB" "$DESERIALIZER_DIR/"
+          echo "✅ Copied deserializer to $DESERIALIZER_DIR"
           
-          # Copy to expected location
-          cp "$DESERIALIZER_LIB" "$TARGET_DIR/"
+          # Copy type_system to root of FeagiCoreIntegration (expects it in same dir as .gdextension)
+          INTEGRATION_DIR="godot_source/addons/FeagiCoreIntegration"
+          cp "$TYPE_SYSTEM_LIB" "$INTEGRATION_DIR/"
+          echo "✅ Copied type_system to $INTEGRATION_DIR"
           
-          echo "✅ Copied libraries to $TARGET_DIR"
-          ls -lh "$TARGET_DIR/" || true
+          # shared_video goes to target/release/ subdirectory (per .gdextension config)
+          SHARED_VIDEO_DIR="godot_source/addons/feagi_shared_video/target/release"
+          mkdir -p "$SHARED_VIDEO_DIR"
+          cp "$SHARED_VIDEO_LIB" "$SHARED_VIDEO_DIR/"
+          echo "✅ Copied shared_video to $SHARED_VIDEO_DIR"
+          
+          echo "📂 Final structure:"
+          ls -lh "$DESERIALIZER_DIR/" || true
+          ls -lh "$INTEGRATION_DIR/"libfeagi_* || true
+          ls -lh "$SHARED_VIDEO_DIR/" || true
 
       - name: Remove FEAGI embedded (exclude from this build)
         shell: bash
