@@ -128,6 +128,60 @@ verify_export_templates() {
     return 0
 }
 
+sign_app_bundle() {
+    local app_file="$1"
+    
+    if [[ ! -d "$app_file" ]]; then
+        print_error "App bundle not found: $app_file"
+        return 1
+    fi
+    
+    print_info "Signing app bundle with ad-hoc signature..."
+    
+    # Sign all dylibs in Frameworks first (must be signed before the main executable)
+    if [[ -d "$app_file/Contents/Frameworks" ]]; then
+        print_info "Signing dynamic libraries..."
+        find "$app_file/Contents/Frameworks" -name "*.dylib" -type f | while read -r dylib; do
+            if codesign --force --deep --sign - "$dylib" 2>/dev/null; then
+                print_success "Signed: $(basename "$dylib")"
+            else
+                print_warning "Failed to sign: $(basename "$dylib")"
+            fi
+        done
+    fi
+    
+    # Sign all executables in MacOS
+    if [[ -d "$app_file/Contents/MacOS" ]]; then
+        print_info "Signing executables..."
+        find "$app_file/Contents/MacOS" -type f -perm +111 | while read -r exe; do
+            if codesign --force --deep --sign - "$exe" 2>/dev/null; then
+                print_success "Signed: $(basename "$exe")"
+            else
+                print_warning "Failed to sign: $(basename "$exe")"
+            fi
+        done
+    fi
+    
+    # Sign the entire app bundle
+    print_info "Signing app bundle..."
+    if codesign --force --deep --sign - "$app_file" 2>&1; then
+        print_success "App bundle signed successfully"
+        
+        # Verify the signature
+        if codesign --verify --verbose "$app_file" 2>&1 | grep -q "valid on disk"; then
+            print_success "Code signature verified"
+            return 0
+        else
+            print_warning "Code signature verification failed, but continuing..."
+            return 0
+        fi
+    else
+        print_error "Failed to sign app bundle"
+        print_warning "App may crash on launch due to invalid code signature"
+        return 1
+    fi
+}
+
 run_export() {
     local godot_bin="$1"
     local app_file="${OUTPUT_FILE%.dmg}.app"
@@ -201,6 +255,13 @@ run_export() {
         else
             print_warning "Genomes folder not found at: $genomes_src"
             print_warning "FEAGI will start without a default genome"
+        fi
+        
+        # Sign the app bundle (required for macOS to allow execution)
+        print_header "Code Signing"
+        if ! sign_app_bundle "$app_file"; then
+            print_warning "Code signing failed - app may crash on launch"
+            print_warning "To fix: Ensure you have Xcode Command Line Tools installed"
         fi
         
         return 0
