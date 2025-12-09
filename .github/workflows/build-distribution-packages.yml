@@ -21,7 +21,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  GODOT_VERSION: 4.2.1
+  GODOT_VERSION: 4.5
   FEAGI_VERSION: 2.0.0
 
 jobs:
@@ -60,7 +60,6 @@ jobs:
         run: |
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
-          ls -la
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -155,6 +154,7 @@ jobs:
         uses: chickensoft-games/setup-godot@v1
         with:
           version: ${{ env.GODOT_VERSION }}
+          include-templates: true
           use-dotnet: false
 
       - name: Download FEAGI embedded library
@@ -250,12 +250,12 @@ jobs:
         run: |
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
-          ls -la
 
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v1
         with:
           version: ${{ env.GODOT_VERSION }}
+          include-templates: true
 
       - name: Build Rust data deserializer only (no FEAGI embedded)
         run: |
@@ -272,6 +272,17 @@ jobs:
           cd godot_source
           mkdir -p ../exports
           godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+          
+          # Verify export succeeded
+          echo "📂 Contents of exports directory:"
+          ls -lh ../exports/
+          
+          if [ ! -e "../exports/${{ matrix.output_name }}" ]; then
+            echo "❌ Export failed - ${{ matrix.output_name }} not found"
+            exit 1
+          fi
+          
+          echo "✅ Export successful"
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
@@ -317,7 +328,6 @@ jobs:
         run: |
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
-          ls -la
 
       - name: Setup Godot (with export templates)
         uses: chickensoft-games/setup-godot@v1
