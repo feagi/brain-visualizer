@@ -69,6 +69,7 @@ jobs:
 
       - name: Add macOS universal targets
         if: runner.os == 'macOS'
+        shell: bash
         run: |
           rustup target add aarch64-apple-darwin
           rustup target add x86_64-apple-darwin
@@ -96,6 +97,7 @@ jobs:
 
       - name: Build FEAGI embedded (macOS Universal)
         if: runner.os == 'macOS'
+        shell: bash
         run: |
           cd rust_extensions/feagi_embedded
           
@@ -154,6 +156,7 @@ jobs:
 
       - name: Install Godot (macOS)
         if: runner.os == 'macOS'
+        shell: bash
         run: |
           echo "📦 Downloading Godot 4.5..."
           wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
@@ -171,6 +174,7 @@ jobs:
 
       - name: Install Godot (Linux)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           echo "📦 Downloading Godot 4.5..."
           wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
@@ -310,24 +314,23 @@ jobs:
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
+        shell: bash
         run: |
           cd exports
-          # Create DMG
-          # TODO: Use create-dmg or similar tool
           zip -r BrainVisualizer-Embedded-macOS.zip BrainVisualizer-Embedded.app
 
       - name: Create distribution package (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
           cd exports
-          # Create installer or zip
-          7z a BrainVisualizer-Embedded-Windows.zip BrainVisualizer-Embedded.exe
+          Compress-Archive -Path BrainVisualizer-Embedded.exe -DestinationPath BrainVisualizer-Embedded-Windows.zip -Force
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           cd exports
-          # Create AppImage or tarball
           tar -czf BrainVisualizer-Embedded-Linux.tar.gz BrainVisualizer-Embedded.x86_64
 
       - name: Upload distribution package
@@ -376,6 +379,7 @@ jobs:
 
       - name: Install Godot (macOS)
         if: runner.os == 'macOS'
+        shell: bash
         run: |
           echo "📦 Downloading Godot 4.5..."
           wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
@@ -393,6 +397,7 @@ jobs:
 
       - name: Install Godot (Linux)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           echo "📦 Downloading Godot 4.5..."
           wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
@@ -529,18 +534,21 @@ jobs:
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
+        shell: bash
         run: |
           cd exports
           zip -r BrainVisualizer-Remote-macOS.zip BrainVisualizer-Remote.app
 
       - name: Create distribution package (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
           cd exports
-          7z a BrainVisualizer-Remote-Windows.zip BrainVisualizer-Remote.exe
+          Compress-Archive -Path BrainVisualizer-Remote.exe -DestinationPath BrainVisualizer-Remote-Windows.zip -Force
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           cd exports
           tar -czf BrainVisualizer-Remote-Linux.tar.gz BrainVisualizer-Remote.x86_64
