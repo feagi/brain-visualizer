@@ -21,7 +21,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  GODOT_VERSION: 4.5
+  GODOT_VERSION: 4.5.0
   FEAGI_VERSION: 2.0.0
 
 jobs:
@@ -150,12 +150,59 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Godot
-        uses: chickensoft-games/setup-godot@v1
-        with:
-          version: ${{ env.GODOT_VERSION }}
-          include-templates: true
-          use-dotnet: false
+      - name: Install Godot (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+          unzip -q Godot_v4.5-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Install Godot (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5-stable_linux.x86_64
+          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Install Godot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "📦 Downloading Godot 4.5..."
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+          Expand-Archive -Path godot.zip -DestinationPath godot-install
+          Move-Item godot-install/Godot*.exe godot.exe
+          
+          Write-Host "📦 Downloading export templates..."
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          New-Item -ItemType Directory -Force -Path $templatesPath
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates
+          Move-Item temp-templates/templates/* $templatesPath -Force
+          
+          echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
+          Write-Host "✅ Godot 4.5 + export templates installed"
 
       - name: Download FEAGI embedded library
         uses: actions/download-artifact@v4
@@ -180,7 +227,7 @@ jobs:
         run: |
           cd godot_source
           mkdir -p ../exports
-          godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
       - name: Verify export
         run: |
@@ -251,11 +298,59 @@ jobs:
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
 
-      - name: Setup Godot
-        uses: chickensoft-games/setup-godot@v1
-        with:
-          version: ${{ env.GODOT_VERSION }}
-          include-templates: true
+      - name: Install Godot (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+          unzip -q Godot_v4.5-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Install Godot (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5-stable_linux.x86_64
+          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Install Godot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "📦 Downloading Godot 4.5..."
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+          Expand-Archive -Path godot.zip -DestinationPath godot-install
+          Move-Item godot-install/Godot*.exe godot.exe
+          
+          Write-Host "📦 Downloading export templates..."
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          New-Item -ItemType Directory -Force -Path $templatesPath
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates
+          Move-Item temp-templates/templates/* $templatesPath -Force
+          
+          echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
+          Write-Host "✅ Godot 4.5 + export templates installed"
 
       - name: Build Rust data deserializer only (no FEAGI embedded)
         run: |
@@ -271,7 +366,7 @@ jobs:
         run: |
           cd godot_source
           mkdir -p ../exports
-          godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
           
           # Verify export succeeded
           echo "📂 Contents of exports directory:"
@@ -329,11 +424,21 @@ jobs:
           cd ..
           git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
 
-      - name: Setup Godot (with export templates)
-        uses: chickensoft-games/setup-godot@v1
-        with:
-          version: ${{ env.GODOT_VERSION }}
-          include-templates: true
+      - name: Install Godot
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5-stable_linux.x86_64
+          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          
+          echo "✅ Godot 4.5 + export templates installed"
 
       - name: Build WASM deserializer (if exists)
         continue-on-error: true
