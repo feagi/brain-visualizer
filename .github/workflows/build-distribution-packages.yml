@@ -93,6 +93,14 @@ jobs:
           if [ "$RELEASE_TYPE" == "production" ]; then
             TAG_NAME="v${BASE_VERSION}"
             IS_PRERELEASE="false"
+            
+            # Production tags must not exist
+            if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+              echo "❌ Production tag $TAG_NAME already exists!"
+              echo "Existing tag points to: $(git rev-parse $TAG_NAME)"
+              echo "Production releases cannot be auto-incremented. Use a different version."
+              exit 1
+            fi
           elif [ "$RELEASE_TYPE" == "beta" ]; then
             # Extract beta number or default to 1
             if [[ "$VERSION" =~ -beta\.([0-9]+) ]]; then
@@ -100,7 +108,15 @@ jobs:
             else
               BETA_NUM="1"
             fi
+            
+            # Auto-increment if tag exists
             TAG_NAME="v${BASE_VERSION}-beta.${BETA_NUM}"
+            while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+              echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+              BETA_NUM=$((BETA_NUM + 1))
+              TAG_NAME="v${BASE_VERSION}-beta.${BETA_NUM}"
+            done
+            
             IS_PRERELEASE="true"
           elif [ "$RELEASE_TYPE" == "alpha" ]; then
             # Extract alpha number or default to 1
@@ -109,21 +125,21 @@ jobs:
             else
               ALPHA_NUM="1"
             fi
+            
+            # Auto-increment if tag exists
             TAG_NAME="v${BASE_VERSION}-alpha.${ALPHA_NUM}"
+            while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+              echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+              ALPHA_NUM=$((ALPHA_NUM + 1))
+              TAG_NAME="v${BASE_VERSION}-alpha.${ALPHA_NUM}"
+            done
+            
             IS_PRERELEASE="true"
           fi
           
           echo "✅ Version format valid: $VERSION"
           echo "✅ Release type: $RELEASE_TYPE"
           echo "✅ Tag name: $TAG_NAME"
-          
-          # Check if tag already exists
-          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-            echo "❌ Tag $TAG_NAME already exists!"
-            echo "Existing tag points to: $(git rev-parse $TAG_NAME)"
-            exit 1
-          fi
-          
           echo "✅ Tag $TAG_NAME is available"
           
           # Set outputs
