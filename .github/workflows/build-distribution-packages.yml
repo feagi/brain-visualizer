@@ -59,7 +59,7 @@ jobs:
       - name: Clone feagi-core (dependency)
         run: |
           cd ..
-          git clone --depth 1 --branch main https://github.com/feagi/feagi-core.git
+          git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
           ls -la
 
       - name: Install Rust toolchain
@@ -249,7 +249,7 @@ jobs:
       - name: Clone feagi-core (dependency)
         run: |
           cd ..
-          git clone --depth 1 --branch main https://github.com/feagi/feagi-core.git
+          git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
           ls -la
 
       - name: Setup Godot
@@ -316,7 +316,7 @@ jobs:
       - name: Clone feagi-core (dependency)
         run: |
           cd ..
-          git clone --depth 1 --branch main https://github.com/feagi/feagi-core.git
+          git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
           ls -la
 
       - name: Setup Godot (with export templates)
