@@ -10,6 +10,7 @@ var _IOPU_definition
 var _custom_definition
 var _memory_definition
 var _buttons: HBoxContainer
+var _add_button: Button
 var _type_selected: AbstractCorticalArea.CORTICAL_AREA_TYPE
 var _BM_preview: UI_BrainMonitor_InteractivePreview
 var _context_region: BrainRegion = null
@@ -24,8 +25,10 @@ func _ready() -> void:
 	_custom_definition = _window_internals.get_node("Definition_Custom")
 	_memory_definition = _window_internals.get_node("Definition_Memory")
 	_buttons = _window_internals.get_node("Buttons")
+	_add_button = _window_internals.get_node("Buttons/Add")
 	
 	_selection_options.cortical_type_selected.connect(_step_2_set_details)
+	_IOPU_definition.group_id_validation_changed.connect(_on_group_id_validation_changed)
 
 
 func setup() -> void:
@@ -142,6 +145,14 @@ func _focus_and_hook_name_field(le: LineEdit) -> void:
 func _on_name_enter_submit(_text: String) -> void:
 	_user_requesing_creation()
 
+func _on_group_id_validation_changed(is_valid: bool, message: String) -> void:
+	if _add_button != null:
+		_add_button.disabled = !is_valid
+		if !is_valid:
+			_add_button.tooltip_text = message
+		else:
+			_add_button.tooltip_text = ""
+
 func _back_pressed() -> void:
 	# If user was selecting an IPU/OPU template via the icon selector, return to that selector
 	if _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
@@ -170,12 +181,14 @@ func _user_requesing_creation() -> void:
 				BV.WM.spawn_popup(popup_definition_ipu)
 				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
+			var selected_group_id: int = _IOPU_definition.get_selected_group_id()
+			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
-				
+			
 			if template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 				# Area exists, update
 				var area: IPUCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[template.ID]
@@ -191,13 +204,26 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					FeagiCore.requests.add_IOPU_cortical_area(
+					var data_type_config: int = _IOPU_definition.get_selected_data_type_config()
+					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
-						pos_2d
+						pos_2d,
+						selected_group_id,
+						neurons_per_voxel,
+						data_type_config
 					)
+					if result.has_errored:
+						var error_details = result.decode_response_as_generic_error_code()
+						var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+							"NPU CAPACITY ERROR", 
+							"Failed to create cortical area:\n%s\n\n%s" % [error_details[0], error_details[1]], 
+							"OK"
+						)
+						BV.WM.spawn_popup(popup_definition)
+						return
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var template: CorticalTemplate = _IOPU_definition.get_selected_template()
 			if template == null:
@@ -205,6 +231,8 @@ func _user_requesing_creation() -> void:
 				BV.WM.spawn_popup(popup_definition_opu)
 				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
+			var selected_group_id: int = _IOPU_definition.get_selected_group_id()
+			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
@@ -226,13 +254,26 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					FeagiCore.requests.add_IOPU_cortical_area(
+					var data_type_config_opu: int = _IOPU_definition.get_selected_data_type_config()
+					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
-						pos_2d
+						pos_2d,
+						selected_group_id,
+						neurons_per_voxel,
+						data_type_config_opu
 					)
+					if result.has_errored:
+						var error_details = result.decode_response_as_generic_error_code()
+						var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+							"NPU CAPACITY ERROR", 
+							"Failed to create cortical area:\n%s\n\n%s" % [error_details[0], error_details[1]], 
+							"OK"
+						)
+						BV.WM.spawn_popup(popup_definition)
+						return
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":

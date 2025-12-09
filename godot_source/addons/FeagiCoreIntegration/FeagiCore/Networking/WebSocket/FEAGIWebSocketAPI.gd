@@ -169,8 +169,8 @@ func _process(_delta: float):
 			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
 			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
 				for cortical_id in decoded_result.areas.keys():
-					# Filter out core areas (_death, _power) that can't be visualized
-					if cortical_id == "_death" or cortical_id == "_power":
+					# Filter out _death area (non-visualizable), but allow _power (has custom cone animation)
+					if AbstractCorticalArea.is_death_area(cortical_id):
 						continue
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
@@ -212,6 +212,10 @@ func _process(_delta: float):
 				var raw_packet = _socket.get_packet()
 				var retrieved_ws_data: PackedByteArray
 				var raw_len := raw_packet.size()
+				
+				# 🐛 DEBUG: Log all received packets
+				# print("🔍 [WS-DEBUG] Received packet: %d bytes, first byte: 0x%02x" % [raw_len, raw_packet[0] if raw_len > 0 else 0])
+				
 				# Detect small text frames (e.g., 'updated', 'ping') and handle without decompress to avoid errors
 				if _is_probably_text(raw_packet):
 					var text_payload := raw_packet.get_string_from_ascii().strip_edges()
@@ -225,24 +229,62 @@ func _process(_delta: float):
 						continue
 					# Unknown small text message - ignore after logging
 					continue
-				# Try DEFLATE first (legacy)
-				var decompressed := raw_packet.decompress(DEF_SOCKET_BUFFER_SIZE, 1)
-				if decompressed.size() > 0:
-					retrieved_ws_data = decompressed
-					print("[WS] Decompressed packet: raw_len=", raw_len, " -> dec_len=", retrieved_ws_data.size())
-				else:
-					# Fallback: some FEAGI builds may send uncompressed data over WS
-					# Heuristic: treat as uncompressed if it looks like a FEAGI payload (type 1/8/9/10/11)
-					if _looks_like_feagi_ws_payload(raw_packet):
-						var first_b := -1
-						if raw_len > 0:
-							first_b = int(raw_packet[0])
-						print("[WS] Fallback: treating packet as UNCOMPRESSED. raw_len=", raw_len, ", first_byte=", first_b)
-						retrieved_ws_data = raw_packet
+				
+				# ARCHITECTURE: FEAGI PNS → ZMQ → Bridge PASSTHROUGH → WebSocket → BV process
+				# Data format: Raw FeagiByteContainer containing Type 11 neuron data (may be LZ4 compressed)
+				
+				if not _rust_deserializer:
+					push_error("❌ [WS-DEBUG] Rust deserializer not available!")
+					continue
+				
+				if raw_len == 0:
+					push_error("❌ [WS-DEBUG] Received empty packet!")
+					continue
+				
+				# Log raw packet for debugging
+				# var hex_preview: String = ""
+				# for i in range(min(20, raw_len)):
+				# 	hex_preview += "%02x " % raw_packet[i]
+				# print("📦 [WS-DEBUG] Processing %d bytes: %s" % [raw_len, hex_preview])
+				
+				# Pass raw bytes directly to Rust deserializer - it handles LZ4 decompression internally
+				# Architecture: FEAGI → LZ4 compress → ZMQ → Bridge → BV → Rust (LZ4 decompress + deserialize)
+				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(raw_packet)
+				
+				if not decoded_result or not decoded_result.has("success"):
+					push_error("❌ [WS-DEBUG] Decode failed - no result returned")
+					continue
+				
+				if not decoded_result.success:
+					var error_msg := decoded_result.get("error", "unknown error")
+					push_error("❌ [WS-DEBUG] Decode failed: %s" % error_msg)
+					continue
+				
+				# Successfully decoded
+				# print("✅ [WS-DEBUG] Decode SUCCESS: %d cortical areas" % decoded_result.areas.size())
+				
+				# Process the decoded neuron data
+				for cortical_id in decoded_result.areas.keys():
+					var area_data = decoded_result.areas[cortical_id]
+					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
+					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
+					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
+					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
+					
+					# print("🧠 [WS-DEBUG] Processing area '%s': %d neurons" % [cortical_id, x_array.size()])
+					
+					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
+					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+					if area:
+						# print("✅ [RENDER-DEBUG] Found area '%s', calling FEAGI_set_direct_points_bulk_data() with %d neurons" % [cortical_id, x_array.size()])
+						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+						# print("✅ [RENDER-DEBUG] Called area.FEAGI_set_direct_points_bulk_data() - rendering should happen now")
 					else:
-						push_error("FEAGI WebSocket: Decompression failed - received empty or unknown data! raw_len=" + str(raw_len))
-						continue
-				_process_wrapped_byte_structure(retrieved_ws_data)
+						# print("❌ [RENDER-DEBUG] Area '%s' NOT FOUND in cache! Available areas: %s" % [cortical_id, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()])
+						_handle_missing_cortical_area(cortical_id)
+				
+				# Successfully processed - skip legacy processing
+				continue
 				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
@@ -832,8 +874,9 @@ func _handle_missing_cortical_area(cortical_id: StringName) -> void:
 	# Handle both quoted and unquoted versions (cortical ID may come with quotes)
 	var clean_id := cortical_id_str.strip_edges().replace("'", "").replace('"', "")
 	
-	if clean_id == "_death" or clean_id == "_power":
-		# Core system areas cannot be visualized - silently ignore
+	if AbstractCorticalArea.is_death_area(clean_id):
+		# Death area cannot be visualized - silently ignore
+		# Note: Power area CAN be visualized with custom cone animation, so allow it through
 		return
 	
 	# Skip handling missing areas during genome reload/processing to avoid spam
@@ -942,6 +985,16 @@ func _on_genome_reloaded() -> void:
 	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
 	_missing_cortical_areas.clear()
 	_case_mapping_cache.clear()  # Clear case mapping cache too
+
+func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
+	"""Convert byte array to hex string for debugging"""
+	var hex_str: String = ""
+	var count: int = min(data.size(), max_bytes)
+	for i in range(count):
+		hex_str += "%02x " % data[i]
+	if data.size() > max_bytes:
+		hex_str += "... (%d more bytes)" % (data.size() - max_bytes)
+	return hex_str
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health

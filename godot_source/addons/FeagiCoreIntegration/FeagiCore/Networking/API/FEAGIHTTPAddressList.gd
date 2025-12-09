@@ -4,7 +4,9 @@ class_name FEAGIHTTPAddressList
 
 # Get Requests
 var GET_corticalAreas_ipu: StringName = "/v1/cortical_area/ipu"
+var GET_corticalAreas_ipu_types: StringName = "/v1/cortical_area/ipu/types"
 var GET_corticalAreas_opu: StringName = "/v1/cortical_area/opu"
+var GET_corticalAreas_opu_types: StringName = "/v1/cortical_area/opu/types"
 var GET_corticalAreas_corticalAreaIDList: StringName = "/v1/cortical_area/cortical_area_id_list"
 var GET_neuronMorphologies_morphologyList: StringName = "/v1/morphology/morphology_list"
 var GET_genome_fileName: StringName = "/v1/genome/file_name"
@@ -23,6 +25,7 @@ var GET_corticalArea_corticalIDNameMapping: StringName = '/v1/cortical_area/cort
 var GET_corticalArea_corticalLocations2D: StringName = '/v1/cortical_area/cortical_locations_2d'
 var GET_corticalArea_corticalArea_geometry: StringName = '/v1/cortical_area/cortical_area/geometry'
 var GET_corticalArea_corticalTypes: StringName = "/v1/cortical_area/cortical_types"
+var GET_genome_corticalTemplate: StringName = "/v1/genome/cortical_template"
 var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"
 var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/mappings"
 var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"
@@ -49,6 +52,7 @@ var POST_genome_customCorticalArea: StringName = "/v1/cortical_area/custom_corti
 var POST_corticalArea_clone: StringName = "/v1/cortical_area/clone"
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"
 var POST_genome_append: StringName = "/v1/feagi/genome/append"
+var POST_genome_save: StringName = "/v1/genome/save"
 var POST_genome_amalgamationDestination: StringName = "/v1/genome/amalgamation_destination"
 var POST_region_clone: StringName = "/v1/region/clone"
 var POST_monitoring_neuron_membranePotential_set: StringName = "/v1/insight/neurons/membrane_potential_set"

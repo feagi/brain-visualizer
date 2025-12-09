@@ -45,12 +45,39 @@ var cortical_ID: StringName:
 
 
 
-## The base type of cortical area as understood by FEAGI
+## DEPRECATED: The base type of cortical area as understood by FEAGI (use feagi_cortical_type instead)
 var cortical_type: CORTICAL_AREA_TYPE:
 	get:  return _get_group()
 
+## NEW: Strongly-typed cortical type from Rust (single source of truth)
+var feagi_cortical_type: FeagiCorticalType:
+	get: return _feagi_cortical_type
+	set(value):
+		_feagi_cortical_type = value
+
 var type_as_string: StringName:
 	get: return AbstractCorticalArea.cortical_type_to_str(_get_group())
+
+var _feagi_cortical_type: FeagiCorticalType  # NEW - single source of truth
+
+## IPU/OPU-specific decoded cortical ID fields (only populated for IPU/OPU areas)
+var cortical_subtype: String:
+	get: return _cortical_subtype
+
+var encoding_type: String:
+	get: return _encoding_type
+
+var encoding_format: String:
+	get: return _encoding_format
+
+var unit_id: int:
+	get: return _unit_id
+
+var group_id: int:
+	get: return _group_id
+
+var has_decoded_id_info: bool:
+	get: return _cortical_subtype != ""
 
 ## Is cortical area activity visible?
 var cortical_visibility: bool:
@@ -120,6 +147,13 @@ var _coordinates_3D_available: bool = false  # if coordinates_3D are available f
 var _cortical_visiblity: bool = true
 var _SVO_neuron_activations: PackedByteArray = []
 var _direct_neural_points: PackedByteArray = []
+
+# IPU/OPU-specific decoded cortical ID fields (empty strings if not IPU/OPU)
+var _cortical_subtype: String = ""
+var _encoding_type: String = ""
+var _encoding_format: String = ""
+var _unit_id: int = -1
+var _group_id: int = -1
 
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
 	var differences: int = -1 # first one will always fail
@@ -207,6 +241,41 @@ static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringNam
 
 static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
 	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
+
+## Check if a cortical_ID (in old 6-char or new base64 format) is a special core area
+## Returns the core area name if it matches, or empty string if not
+static func get_special_core_area_name(cortical_id: String) -> String:
+	# Dictionary mapping both old and new formats to their canonical names
+	# CRITICAL: Uses feagi-data-processing format (3 prefix underscores: ___power, ___death)
+	const SPECIAL_CORE_AREAS = {
+		# Power area (legacy formats)
+		"_power": "power",
+		"_power__": "power",
+		"X3Bvd2VyX18=": "power",  # base64 of "_power__" (OLD format)
+		
+		# Power area (NEW format from feagi-data-processing)
+		"___power": "power",
+		"X19fcG93ZXI=": "power",  # base64 of "___power" (NEW format)
+		
+		# Death area (legacy formats)
+		"_death": "death",
+		"_death__": "death",
+		"X2RlYXRoX18=": "death",  # base64 of "_death__" (OLD format)
+		
+		# Death area (NEW format from feagi-data-processing)
+		"___death": "death",
+		"X19fZGVhdGg=": "death",  # base64 of "___death" (NEW format)
+	}
+	
+	return SPECIAL_CORE_AREAS.get(cortical_id, "")
+
+## Check if a cortical_ID is the power area (supports both old and new formats)
+static func is_power_area(cortical_id: String) -> bool:
+	return get_special_core_area_name(cortical_id) == "power"
+
+## Check if a cortical_ID is the death area (supports both old and new formats)
+static func is_death_area(cortical_id: String) -> bool:
+	return get_special_core_area_name(cortical_id) == "death"
 
 static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
 	var output: Array[StringName] = []
@@ -348,9 +417,22 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
+	
+	# NEW: Extract FeagiCorticalType if present
+	if "_feagi_cortical_type" in data.keys():
+		var feagi_type = data["_feagi_cortical_type"]
+		if feagi_type is FeagiCorticalType:
+			_feagi_cortical_type = feagi_type
+	
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 
 		var value = data["cortical_neuron_per_vox_count"]
+		if value != null:
+			_cortical_neuron_per_vox_count = value
+			cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
+	# Also support "neurons_per_voxel" key from API responses
+	if "neurons_per_voxel" in data.keys():
+		var value = data["neurons_per_voxel"]
 		if value != null:
 			_cortical_neuron_per_vox_count = value
 			cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
@@ -360,6 +442,31 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 			_cortical_synaptic_attractivity = value
 			cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
+	# IPU/OPU-specific decoded cortical ID fields
+	if "cortical_subtype" in data.keys():
+		var value = data["cortical_subtype"]
+		if value != null:
+			_cortical_subtype = value
+	
+	if "encoding_type" in data.keys():
+		var value = data["encoding_type"]
+		if value != null:
+			_encoding_type = value
+	
+	if "encoding_format" in data.keys():
+		var value = data["encoding_format"]
+		if value != null:
+			_encoding_format = value
+	
+	if "unit_id" in data.keys():
+		var value = data["unit_id"]
+		if value != null:
+			_unit_id = value
+	
+	if "group_id" in data.keys():
+		var value = data["group_id"]
+		if value != null:
+			_group_id = value
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 

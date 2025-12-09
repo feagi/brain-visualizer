@@ -48,11 +48,16 @@ var _window_manager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
+
+# CRITICAL: Track whether 3D scene has been successfully instantiated
+# This prevents hiding the loading screen before the 3D scene is actually ready
+var _3d_scene_instantiated: bool = false
 var _selection_system: SelectionSystem
 var _temp_bm_holder: UI_Capsules_Capsule
 var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
 var _temp_bm_camera_rot: Vector3
 var _fps_label: Label
+var _loading_status_label: Label
 
 
 func _enter_tree():
@@ -73,6 +78,7 @@ func _ready():
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()
+	_loading_status_label = $TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -103,9 +109,12 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
-	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(func(ready: bool): _update_loading_screen_visibility())
-	FeagiCore.feagi_local_cache.genome_availability_changed.connect(func(available: bool): _update_loading_screen_visibility())
+	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_on_brain_readiness_changed)
+	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
+	FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
+	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
+	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	
@@ -139,11 +148,59 @@ func FEAGI_no_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling FEAGI UI elements due to no genome")
 	window_manager.force_close_all_windows()
 	top_bar.toggle_buttons_interactability(false)
+	
+	# CRITICAL: Mark 3D scene as not instantiated when genome is lost
+	print("UIMANAGER: [3D_SCENE_DEBUG] Marking _3d_scene_instantiated = false (genome lost)")
+	_3d_scene_instantiated = false
+	
+	# Force loading screen check to show loading screen again
+	print("UIMANAGER: [3D_SCENE_DEBUG] Forcing loading screen to show since genome lost")
+	_update_loading_screen_visibility()
 
+
+## Handle brain readiness changes
+func _on_brain_readiness_changed(ready: bool) -> void:
+	if ready:
+		update_loading_status("FEAGI brain is ready")
+	_update_loading_screen_visibility()
+
+## Handle genome availability changes
+func _on_genome_availability_changed(available: bool) -> void:
+	_update_loading_screen_visibility()
+
+## Handle cache reload events
+func _on_cache_reloaded() -> void:
+	update_loading_status("Updating brain visualizer cache...")
+
+## Handle genome load state changes to show/hide loading screen
+func _on_genome_load_state_changed(_current_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
+	_update_loading_screen_visibility()
+
+## Handle websocket health changes to show/hide loading screen
+func _on_websocket_health_changed(_prev_health, _current_health) -> void:
+	_update_loading_screen_visibility()
 
 ## Handle connection state changes to show/hide loading screen
 func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE, new_state: FEAGINetworking.CONNECTION_STATE) -> void:
 	print("UIMANAGER: Connection state changed to: ", FEAGINetworking.CONNECTION_STATE.keys()[new_state])
+	
+	# Update loading status based on connection state
+	match new_state:
+		FEAGINetworking.CONNECTION_STATE.INITIAL_HTTP_PROBING:
+			update_loading_status("Checking FEAGI health...")
+		FEAGINetworking.CONNECTION_STATE.INITIAL_WS_PROBING:
+			update_loading_status("Making Websocket connection...")
+		FEAGINetworking.CONNECTION_STATE.HEALTHY:
+			update_loading_status("Websocket connected successfully!")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP:
+			update_loading_status("Retrying HTTP connection...")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_WS:
+			update_loading_status("Retrying Websocket connection...")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_WS:
+			update_loading_status("Retrying connections...")
+		FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
+			update_loading_status("Disconnected")
+	
 	_update_loading_screen_visibility()
 
 ## Centralized function to determine if loading screen should be visible
@@ -151,20 +208,35 @@ func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE,
 ## 1. Connection is HEALTHY
 ## 2. Brain is ready 
 ## 3. Genome is available
+## 4. Websocket is actually connected (if using websocket transport)
+## 5. Genome load state is GENOME_READY (3D scene has been initialized)
 func _update_loading_screen_visibility() -> void:
 	var connection_healthy = FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY
 	var brain_ready = FeagiCore.feagi_local_cache.brain_readiness
 	var genome_available = FeagiCore.feagi_local_cache.genome_availability
+	var genome_scene_ready = FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
+	
+	# Additional check: If using websocket transport, verify websocket is actually connected
+	var websocket_ok = true
+	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
 	
 	print("UIMANAGER: Loading screen visibility check:")
 	print("  - Connection healthy: %s (state: %s)" % [connection_healthy, FEAGINetworking.CONNECTION_STATE.keys()[FeagiCore.network.connection_state]])
 	print("  - Brain ready: %s" % brain_ready)
 	print("  - Genome available: %s" % genome_available)
+	print("  - Genome scene ready: %s (state: %s)" % [genome_scene_ready, FeagiCore.GENOME_LOAD_STATE.keys()[FeagiCore.genome_load_state]])
+	print("  - 3D scene instantiated: %s" % _3d_scene_instantiated)
+	print("  - Websocket OK: %s (transport: %s)" % [websocket_ok, FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]])
 	
-	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available
+	# CRITICAL: Only hide loading screen when 3D scene is ACTUALLY instantiated
+	# This prevents hiding the loading screen during the gap between genome_load_state becoming GENOME_READY
+	# and the actual 3D scene being created via FEAGI_confirmed_genome()
+	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available and genome_scene_ready and _3d_scene_instantiated and websocket_ok
 	
 	if should_hide_loading_screen:
 		print("UIMANAGER: ✅ All conditions met - hiding loading screen")
+		update_loading_status("Ready!")
 		toggle_loading_screen(false)
 	else:
 		var reasons = []
@@ -172,8 +244,20 @@ func _update_loading_screen_visibility() -> void:
 			reasons.append("connection not healthy")
 		if not brain_ready:
 			reasons.append("brain not ready")
+			if connection_healthy:
+				update_loading_status("Awaiting FEAGI brain readiness...")
 		if not genome_available:
 			reasons.append("no genome available")
+		if not genome_scene_ready:
+			reasons.append("3D scene loading")
+			if connection_healthy and brain_ready and genome_available:
+				update_loading_status("Loading 3D scene...")
+		if genome_scene_ready and not _3d_scene_instantiated:
+			reasons.append("3D scene instantiating")
+			update_loading_status("Initializing 3D scene...")
+		if not websocket_ok:
+			reasons.append("websocket not connected")
+			update_loading_status("Websocket disconnected - reconnecting...")
 		print("UIMANAGER: ❌ Showing loading screen - reasons: %s" % ", ".join(reasons))
 		toggle_loading_screen(true)
 
@@ -184,6 +268,11 @@ func FEAGI_confirmed_genome() -> void:
 	top_bar.toggle_buttons_interactability(true)
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] Checking if Main circuit is available...")
+	print("UIMANAGER: [DEBUG] Brain regions cache state:")
+	print("  - available_brain_regions count: ", FeagiCore.feagi_local_cache.brain_regions._available_brain_regions.size())
+	print("  - available_brain_regions keys: ", FeagiCore.feagi_local_cache.brain_regions._available_brain_regions.keys())
+	print("  - is_root_available(): ", FeagiCore.feagi_local_cache.brain_regions.is_root_available())
+	print("  - ROOT_REGION_ID constant: ", FeagiCore.feagi_local_cache.brain_regions._get_configured_root_id())
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No Main circuit detected - 3D scene cannot initialize!")
 		push_error("UI: Unable to init Main circuit for CB and BM since none was detected!")
@@ -205,9 +294,6 @@ func FEAGI_confirmed_genome() -> void:
 	_root_UI_view.set_this_as_root_view()
 	_root_UI_view.setup_as_single_tab(initial_tabs)
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Circuit Builder setup complete")
-	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling loading screen...")
-	toggle_loading_screen(false)
 	
 	# temp BM
 	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Brain Monitor 3D scene...")
@@ -235,6 +321,16 @@ func FEAGI_confirmed_genome() -> void:
 	# If we restored a previous camera position (e.g., genome reload), disable the startup intro this time
 	if _temp_bm_camera_pos.length() > 0.01:
 		brain_monitor.enable_startup_camera_intro = false
+	
+	# CRITICAL: Mark 3D scene as fully instantiated BEFORE checking loading screen
+	# This ensures loading screen is only hidden when 3D scene is actually visible
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Marking _3d_scene_instantiated = true")
+	_3d_scene_instantiated = true
+	
+	# CRITICAL: Force loading screen visibility check NOW that 3D scene is actually ready
+	# This is the ONLY safe time to hide the loading screen - after all 3D elements exist
+	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene fully initialized - triggering final loading screen check")
+	_update_loading_screen_visibility()
 	
 	# CRITICAL: Create visualizations for any missing child regions (e.g., after cloning)
 	# This ensures cloned regions appear immediately after genome reload
@@ -411,6 +507,34 @@ func show_developer_menu():
 
 func toggle_loading_screen(is_on: bool) -> void:
 	$TempLoadingScreen.visible = is_on
+
+## Update the loading status message displayed on the loading screen
+func update_loading_status(message: String) -> void:
+	if _loading_status_label:
+		_loading_status_label.text = message
+		print("UIMANAGER: Loading status: %s" % message)
+
+## Show the shutdown screen with custom styling
+func show_shutdown_screen() -> void:
+	# Change the title from "Loading..." to "Shutting down..."
+	var loading_label = $TempLoadingScreen/LoadingOverlay/Top_Row/LoadingLabel
+	if loading_label:
+		loading_label.text = "Shutting down..."
+	
+	# Show the screen
+	toggle_loading_screen(true)
+	update_loading_status("Preparing to exit...")
+	
+	# Force UI to update immediately
+	await get_tree().process_frame
+	
+	print("UIMANAGER: ✅ Shutdown screen displayed")
+
+## Update shutdown status (forces UI refresh)
+func update_shutdown_status(message: String) -> void:
+	update_loading_status(message)
+	# Force UI update
+	await get_tree().process_frame
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
@@ -594,18 +718,18 @@ const ICON_CUSTOM_INPUT: StringName = "res://BrainVisualizer/UI/GenericResources
 const ICON_CUSTOM_OUTPUT: StringName = "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/unknowns/custom-output.png"
 
 const KNOWN_ICON_PATHS : Dictionary = {
-	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishk00.png",
-	"iv00_C" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00CC.png",
+	"ishock" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ishk.png",
+	"iv00_C" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iimg.png",
 	"i_hear" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i_hear.png",
 	"i_spos" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/isvp00.png",
 	"i__acc" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__acc.png",
-	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ibat00.png",
+	"i__bat" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ibat.png",
 	"i__bci" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__bci.png",
 	"i__gyr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__gyr.png",
-	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf00.png",
-	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ipro00.png",
+	"i__inf" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf.png",
+	"i__pro" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/ipro.png",
 	"i___id" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i___id.png",
-	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/omot00.png",
+	"o__mot" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/omot.png",
 	"___pwr" : "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/_power.png",
 }
 

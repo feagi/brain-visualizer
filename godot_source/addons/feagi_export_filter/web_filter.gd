@@ -3,6 +3,9 @@ extends EditorExportPlugin
 
 var _renamed: Array[String] = []
 
+func _get_name() -> String:
+	return "FEAGI Export Filter"
+
 func _supports_platform(_platform: EditorExportPlatform) -> bool:
 	# Avoid calling methods that may not exist; we handle gating by features in callbacks
 	return true
@@ -36,13 +39,35 @@ func _export_end() -> void:
 	_renamed.clear()
 
 func _export_file(path: String, type: String, features: PackedStringArray) -> void:
+	# Exclude target/ and bin/ directories from all exports (build artifacts)
+	if "/target/" in path or path.ends_with("/target") or "/bin/" in path or path.ends_with("/bin"):
+		skip()
+		return
+	
+	# Exclude .gdextension.off files (disabled extensions)
+	if path.ends_with(".gdextension.off"):
+		skip()
+		return
+	
+	# Exclude duplicate libraries in feagi_rust_deserializer (disabled addon)
+	if path.begins_with("res://addons/feagi_rust_deserializer/"):
+		skip()
+		return
+	
+	# Exclude duplicate .dylib files (only the ones next to .gdextension should be included)
+	# This prevents multiple copies of the same library from different build locations
+	if path.ends_with(".dylib") or path.ends_with(".so") or path.ends_with(".dll"):
+		# Only allow libraries that are directly in addon root (next to .gdextension)
+		var path_parts = path.split("/")
+		# Check if dylib is in target/ or bin/ subdirectory
+		if "target" in path_parts or "bin" in path_parts:
+			skip()
+			return
+	
 	if not features.has("web"):
 		return
 	# Strip native GDExtension configs from Web exports to avoid warnings
 	if path.ends_with(".gdextension"):
 		skip() # do not include this file
 		return
-	# Also ignore any native library artifacts under the Rust addon
-	if path.begins_with("res://addons/feagi_rust_deserializer/"):
-		skip()
 

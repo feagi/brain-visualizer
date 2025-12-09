@@ -52,8 +52,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
-		_representing_cortial_area.cortical_ID == "_power" or
-		_representing_cortial_area.cortical_ID == "_death" or
+		AbstractCorticalArea.is_power_area(_representing_cortial_area.cortical_ID) or
+		AbstractCorticalArea.is_death_area(_representing_cortial_area.cortical_ID) or
 		_should_use_png_icon(_representing_cortial_area)):
 		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
@@ -210,7 +210,7 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 	# Special cases: Memory and Power cortical areas use DirectPoints rendering
 	if defined_cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
-	elif defined_cortical_area.cortical_ID == "_power":
+	elif AbstractCorticalArea.is_power_area(defined_cortical_area.cortical_ID):
 		return UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 	else:
 		# Use DDA renderer for all other cortical area types
@@ -391,7 +391,6 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		var desired_dash_spacing = 2.5  # Units between dashes
 		var num_dashes = max(4, int(curve_length / desired_dash_spacing))  # Minimum 4 dashes
 		
-		print("     📏 Curve length: ", curve_length, " → ", num_dashes, " dashes")
 		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
 		for i in range(num_dashes):
@@ -444,8 +443,6 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		# Store dashes for animation
 		connection_node.set_meta("plastic_dashes", connection_node.get_children())
 		_add_dash_wave_animation(connection_node, start_pos, control_point, end_pos)
-		
-		print("     ⚊ Created plastic connection with ", num_dashes, " dashes")
 	else:
 		# For non-plastic connections, use continuous segments
 		var num_segments = 12
@@ -467,13 +464,10 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 			# Create cylinder segment between these two points
 			var segment = _create_curve_segment(point1, point2, i, segment_material)
 			connection_node.add_child(segment)
-		
-		print("     ⚪ Created non-plastic connection with ", num_segments, " segments")
 	
 	# Create pulse animation along this curve
 	_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
 	
-	print("     ✨ Created beautiful 3D curve connection")
 	return connection_node
 
 ## Add traveling wave animation to dashed plastic connections
@@ -481,8 +475,6 @@ func _add_dash_wave_animation(connection_node: Node3D, curve_start: Vector3, cur
 	"""Animate dashes with traveling wave effect for plastic connections"""
 	if not connection_node:
 		return
-	
-	print("       ⚡ Adding traveling dash wave animation")
 	
 	# Get the stored dashes
 	var dashes = connection_node.get_meta("plastic_dashes", []) as Array[Node]
@@ -572,8 +564,6 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 	"""Animate dashes around circular loop with rotating wave patterns"""
 	if not loop_node:
 		return
-	
-	print("       🌀 Adding circular dash wave animation to recursive loop")
 	
 	# Get the stored loop dashes
 	var dashes = loop_node.get_meta("plastic_loop_dashes", []) as Array[Node]
@@ -720,15 +710,15 @@ func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = 
 	if is_global_mode:
 		# Global mode - Gray color for all connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
+		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
 	elif is_inhibitory:
 		# Inhibitory connections - Red color
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
-		material.emission_color = Color(0.8, 0.1, 0.1)
+		material.emission = Color(0.8, 0.1, 0.1)
 	else:
 		# Excitatory (non-inhibitory) connections - Green color
 		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
-		material.emission_color = Color(0.1, 0.8, 0.2)
+		material.emission = Color(0.1, 0.8, 0.2)
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.0
@@ -760,7 +750,7 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		var pulse_material = StandardMaterial3D.new()
 		# Both inhibitory and excitatory pulses - Bright white for better visibility
 		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-		pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+		pulse_material.emission = Color(1.0, 1.0, 1.0)
 		
 		pulse_material.emission_enabled = true
 		pulse_material.emission_energy = 4.0
@@ -814,8 +804,6 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		
 		# Add a brief pause at the end before restarting
 		pulse_tween.tween_interval(0.3)
-	
-	print("     ✨ Created ", num_pulses, " animated pulses")
 
 ## Create a recursive (self-looping) connection
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
@@ -853,7 +841,6 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		var desired_dash_spacing = 2.0  # Units between dashes for loops
 		var num_dashes = max(6, int(loop_circumference / desired_dash_spacing))  # Minimum 6 dashes
 		
-		print("     🔄 Loop circumference: ", loop_circumference, " → ", num_dashes, " dashes")
 		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
 		
 		for i in range(num_dashes):
@@ -906,8 +893,6 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		# Store dashes for animation
 		loop_node.set_meta("plastic_loop_dashes", loop_node.get_children())
 		_add_circular_dash_wave_animation(loop_node, center_pos, loop_radius)
-		
-		print("     ⚊ Created plastic recursive loop with ", num_dashes, " dashes")
 	else:
 		# For non-plastic recursive connections, use continuous segments
 		var loop_material = _create_recursive_material(is_inhibitory, is_global_mode)
@@ -932,15 +917,15 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 	if is_global_mode:
 		# Global mode - Gray color for recursive connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-		material.emission_color = Color(0.5, 0.5, 0.5)     # Gray emission
+		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
 	elif is_inhibitory:
 		# Inhibitory recursive connections - Dark red/maroon
 		material.albedo_color = Color(0.8, 0.2, 0.2, 0.9)  # Dark red
-		material.emission_color = Color(0.6, 0.1, 0.1)
+		material.emission = Color(0.6, 0.1, 0.1)
 	else:
 		# Excitatory recursive connections - Purple/Magenta color (distinct from regular green)
 		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
-		material.emission_color = Color(0.8, 0.2, 0.8)
+		material.emission = Color(0.8, 0.2, 0.8)
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.5
@@ -978,7 +963,7 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		
 		# Both inhibitory and excitatory recursive - Bright white for visibility
 		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-		pulse_material.emission_color = Color(1.0, 1.0, 1.0)
+		pulse_material.emission = Color(1.0, 1.0, 1.0)
 		
 		pulse_sphere.material_override = pulse_material
 		
@@ -1031,8 +1016,12 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
-	# Add more cortical area IDs here that should use PNG icons
-	var png_icon_areas = ["_death", "_health", "_energy", "_status"]  # Expandable list
+	# Check for special core areas (supports both old and new formats)
+	if AbstractCorticalArea.is_death_area(area.cortical_ID):
+		return true
+	
+	# Add more cortical area IDs here that should use PNG icons (using old format for now)
+	var png_icon_areas = ["_health", "_energy", "_status"]  # Expandable list
 	return area.cortical_ID in png_icon_areas
 
 ## Helper function to determine if a mapping set contains inhibitory connections
@@ -1112,18 +1101,15 @@ func _create_plastic_animated_material(is_inhibitory: bool = false, is_global_mo
 	if is_global_mode:
 		# Global mode - Gray color for all connections
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)
-		material.emission_color = Color(0.5, 0.5, 0.5)
-		print("     ⚪ Using GRAY PLASTIC material for GLOBAL mode connection")
+		material.emission = Color(0.5, 0.5, 0.5)
 	elif is_inhibitory:
 		# Inhibitory plastic connections - Enhanced red with stronger base emission
 		material.albedo_color = Color(1.0, 0.3, 0.3, 0.95)  # More opaque for visibility
-		material.emission_color = Color(1.0, 0.2, 0.2)  # Brighter emission
-		print("     🔴⚡ Using ANIMATED RED material for INHIBITORY PLASTIC connection")
+		material.emission = Color(1.0, 0.2, 0.2)  # Brighter emission
 	else:
 		# Excitatory plastic connections - Enhanced green with stronger base emission  
 		material.albedo_color = Color(0.3, 1.0, 0.4, 0.95)  # More opaque for visibility
-		material.emission_color = Color(0.2, 1.0, 0.3)  # Brighter emission
-		print("     🟢⚡ Using ANIMATED GREEN material for EXCITATORY PLASTIC connection")
+		material.emission = Color(0.2, 1.0, 0.3)  # Brighter emission
 	
 	material.emission_enabled = true
 	material.emission_energy = 3.0  # Higher base emission for plastic connections
@@ -1153,8 +1139,6 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 	var base_radius = cylinder_mesh.top_radius
 	var thickness_variation = 0.08  # More subtle thickness variation (8% instead of 15%)
 	var breathing_speed = 2.5 + (t_position * 0.5)  # Speed varies along curve
-	
-	print("       🫁 Adding breathing thickness animation to plastic segment at t=", t_position)
 	
 	# Animate thickness with breathing effect
 	thickness_tween.tween_method(

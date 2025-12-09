@@ -1,7 +1,12 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
-use feagi_data_serialization::FeagiSerializable;
+// FeagiByteContainer is imported within functions where needed
 use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
+use feagi_data_structures::genomic::cortical_area::CorticalID;
+use feagi_data_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
+use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
+    PercentageNeuronPositioning, DataTypeConfigurationFlag,
+};
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -23,27 +28,200 @@ pub struct FeagiDataDeserializer {
 #[godot_api]
 impl IRefCounted for FeagiDataDeserializer {
     fn init(base: Base<RefCounted>) -> Self {
-        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.49 initialized!");
+        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.52 initialized!");
         Self { base }
     }
 }
 
 #[godot_api]
 impl FeagiDataDeserializer {
-    /// Decode Type 11 neuron data using FEAGI's official Rust library (raw format, no container)
+    /// Decompress LZ4-compressed data from FEAGI PNS layer
+    /// 
+    /// ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS
+    /// 
+    /// Args:
+    ///   - compressed_buffer: LZ4-compressed PackedByteArray from WebSocket
+    /// 
+    /// Returns: PackedByteArray (decompressed raw FEAGI data) or empty array on error
+    #[func]
+    pub fn decompress_lz4(&self, compressed_buffer: PackedByteArray) -> PackedByteArray {
+        if compressed_buffer.is_empty() {
+            godot_error!("🦀 [LZ4] Empty buffer - nothing to decompress");
+            return PackedByteArray::new();
+        }
+
+        // Convert PackedByteArray to Vec<u8> for Rust processing
+        let compressed_data: Vec<u8> = compressed_buffer.to_vec();
+        
+        // Log first 20 bytes for debugging
+        let preview: String = compressed_data.iter()
+            .take(20)
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+        
+        godot_print!(
+            "🦀 [LZ4] Attempting decompression: {} bytes, first 20 bytes: {}",
+            compressed_data.len(),
+            preview
+        );
+        
+        // Decompress with LZ4
+        match lz4::block::decompress(&compressed_data, None) {
+            Ok(decompressed) => {
+                let compression_ratio = (compressed_data.len() as f64 / decompressed.len() as f64) * 100.0;
+                godot_print!(
+                    "🦀 [LZ4] ✅ Decompressed {} bytes → {} bytes ({:.1}% of original)",
+                    compressed_data.len(),
+                    decompressed.len(),
+                    compression_ratio
+                );
+                
+                // Convert Vec<u8> back to PackedByteArray for Godot
+                PackedByteArray::from(decompressed.as_slice())
+            }
+            Err(e) => {
+                godot_error!("🦀 [LZ4] ❌ Decompression failed: {:?} (input size: {} bytes)", e, compressed_data.len());
+                godot_error!("🦀 [LZ4] First 20 bytes: {}", preview);
+                PackedByteArray::new()
+            }
+        }
+    }
+
+    /// Decode Type 11 neuron data (handles both raw Type 11 and FeagiByteContainer wrappers)
     #[func]
     pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // Use raw FeagiSerializable API (like rust-py-libs pattern)
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
-        if let Err(e) = neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-            // Don't log error - just return error dict to avoid spam
-            return self.create_error_dict(format!("Decode error: {:?}", e));
+        if rust_buffer.is_empty() {
+            return self.create_error_dict("Empty buffer".to_string());
         }
         
-        self.convert_neuron_data_to_godot(&neuron_data)
+        // Detect format based on first byte
+        let _first_byte = rust_buffer[0];
+        
+        // Log for debugging
+        let _preview: String = rust_buffer.iter()
+            .take(20)
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+        // godot_print!("🦀 [PROC] Buf: {} bytes, first byte: 0x{:02x}, preview: {}", 
+        //             rust_buffer.len(), first_byte, preview);
+        
+        // ARCHITECTURE: FEAGI → Serialize → LZ4 compress (MANDATORY) → ZMQ → Bridge PASSTHROUGH → BV → LZ4 decompress (MANDATORY)
+        // NO FALLBACKS: Data MUST be LZ4 compressed
+        
+        // Step 1: LZ4 decompression (mandatory, no fallback)
+        // Format: [4-byte size header (little-endian)] + [LZ4 compressed data]
+        // Extract uncompressed size and compressed data
+        let (uncompressed_size, compressed_data) = if rust_buffer.len() >= 4 {
+            let size = u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]]) as i32;
+            // godot_print!("🦀 [DECODE] LZ4 header: uncompressed_size={}, compressed_size={}", size, rust_buffer.len() - 4);
+            (Some(size), &rust_buffer[4..])
+        } else {
+            godot_error!("🦀 [DECODE] Buffer too short for size header");
+            return self.create_error_dict("Buffer too short for LZ4 size header".to_string());
+        };
+        
+        let data_to_deserialize = match std::panic::catch_unwind(|| {
+            lz4::block::decompress(compressed_data, uncompressed_size)
+        }) {
+            Ok(Ok(d)) if !d.is_empty() => {
+                // godot_print!("🦀 [DECODE] LZ4: {} → {} bytes", rust_buffer.len(), d.len());
+                d
+            }
+            Ok(Ok(_)) => {
+                godot_error!("🦀 [DECODE] LZ4 returned empty");
+                return self.create_error_dict("LZ4 decompression returned empty data".to_string());
+            }
+            Ok(Err(e)) => {
+                godot_error!("🦀 [DECODE] LZ4 FAILED: {:?}", e);
+                return self.create_error_dict(format!("LZ4 decompression failed: {:?}", e));
+            }
+            Err(_) => {
+                godot_error!("🦀 [DECODE] LZ4 PANICKED");
+                return self.create_error_dict("LZ4 decompression panicked".to_string());
+            }
+        };
+        
+        // Step 2: Extract from FeagiByteContainer (version 2 container format)
+        // ARCHITECTURE: FEAGI now wraps all data in FeagiByteContainer
+        // godot_print!("🦀 [DECODE] Starting FeagiByteContainer extraction, data size: {}", data_to_deserialize.len());
+        // let preview: String = data_to_deserialize.iter()
+        //     .take(20)
+        //     .map(|b| format!("{:02x}", b))
+        //     .collect::<Vec<_>>()
+        //     .join(" ");
+        // godot_print!("🦀 [DECODE] Decompressed data preview: {}", preview);
+        // godot_print!("🦀 [DECODE] First 4 bytes as u8: [{}, {}, {}, {}]", 
+        //     data_to_deserialize.get(0).unwrap_or(&0),
+        //     data_to_deserialize.get(1).unwrap_or(&0),
+        //     data_to_deserialize.get(2).unwrap_or(&0),
+        //     data_to_deserialize.get(3).unwrap_or(&0)
+        // );
+        
+        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully
+        match std::panic::catch_unwind(|| {
+            use feagi_data_serialization::FeagiByteContainer;
+            
+            let mut byte_container = FeagiByteContainer::new_empty();
+            let mut data_vec = data_to_deserialize.clone();
+            
+            // godot_print!("🦀 [DECODE] About to load into FeagiByteContainer...");
+            
+            // Load bytes into container
+            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                std::mem::swap(bytes, &mut data_vec);
+                Ok(())
+            }) {
+                return Err(format!("{:?}", e));
+            }
+            
+            // godot_print!("🦀 [DECODE] Loaded successfully, getting structure count...");
+            
+            // Get structure count
+            let num_structures = match byte_container.try_get_number_contained_structures() {
+                Ok(n) => n,
+                Err(e) => return Err(format!("{:?}", e))
+            };
+            
+            if num_structures == 0 {
+                return Err("Empty container".to_string());
+            }
+            
+            // godot_print!("🦀 [DECODE] Found {} structures, extracting first...", num_structures);
+            
+            // Extract first structure
+            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+                Ok(s) => s,
+                Err(e) => return Err(format!("{:?}", e))
+            };
+            
+            // godot_print!("🦀 [DECODE] Structure extracted, downcasting...");
+            
+            // Downcast to CorticalMappedXYZPNeuronVoxels
+            let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+                Some(nd) => nd,
+                None => return Err("Wrong structure type".to_string())
+            };
+            
+            // godot_print!("🦀 [DECODE] ✅ Success - extracted from FeagiByteContainer");
+            Ok(neuron_data.clone())
+        }) {
+            Ok(Ok(neuron_data)) => {
+                self.convert_neuron_data_to_godot(&neuron_data)
+            }
+            Ok(Err(e)) => {
+                godot_error!("🦀 [DECODE] FeagiByteContainer extraction failed: {}", e);
+                self.create_error_dict(format!("FeagiByteContainer error: {}", e))
+            }
+            Err(_) => {
+                godot_error!("🦀 [DECODE] FeagiByteContainer extraction PANICKED!");
+                self.create_error_dict("FeagiByteContainer panic".to_string())
+            }
+        }
     }
 
     /// Get structure type from raw buffer (no container wrapper)
@@ -83,16 +261,44 @@ impl FeagiDataDeserializer {
         // Convert PackedByteArray to Vec<u8>
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
-        // Deserialize neuron data
-        let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
+        // Extract from FeagiByteContainer (version 2 container format)
+        use feagi_data_serialization::FeagiByteContainer;
         
-        if let Err(e) = neuron_data.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-            godot_error!("🦀 Failed to deserialize neuron data: {:?}", e);
+        let mut byte_container = FeagiByteContainer::new_empty();
+        let mut data_vec = rust_buffer;
+        
+        if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+            std::mem::swap(bytes, &mut data_vec);
+            Ok(())
+        }) {
+            godot_error!("🦀 Failed to load FeagiByteContainer: {:?}", e);
             return self.create_visualization_error_dict(
-                format!("Deserialization error: {:?}", e),
+                format!("FeagiByteContainer error: {:?}", e),
                 start_time.elapsed().as_micros() as i64
             );
         }
+        
+        let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+            Ok(s) => s,
+            Err(e) => {
+                godot_error!("🦀 Failed to extract structure: {:?}", e);
+                return self.create_visualization_error_dict(
+                    format!("Structure extract error: {:?}", e),
+                    start_time.elapsed().as_micros() as i64
+                );
+            }
+        };
+        
+        let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+            Some(nd) => nd,
+            None => {
+                godot_error!("🦀 Structure is not CorticalMappedXYZPNeuronVoxels");
+                return self.create_visualization_error_dict(
+                    "Wrong structure type".to_string(),
+                    start_time.elapsed().as_micros() as i64
+                );
+            }
+        };
         
         // Count total neurons
         let total_neurons: usize = neuron_data.mappings.values()
@@ -127,9 +333,9 @@ impl FeagiDataDeserializer {
                     break;
                 }
                 all_neurons.push((
-                    neuron.cortical_coordinate.x,
-                    neuron.cortical_coordinate.y,
-                    neuron.cortical_coordinate.z,
+                    neuron.neuron_voxel_coordinate.x,
+                    neuron.neuron_voxel_coordinate.y,
+                    neuron.neuron_voxel_coordinate.z,
                     neuron.potential,
                 ));
             }
@@ -367,6 +573,231 @@ impl FeagiDataDeserializer {
         
         result
     }
+
+    /// Parse cortical ID to extract encoding information using FDP's actual methods
+    /// 
+    /// Uses CorticalID::try_from_base_64() and IOCorticalAreaDataType::try_from_data_type_configuration_flag()
+    /// to parse the binary structure exactly as FDP does.
+    /// 
+    /// Returns: Dictionary with {success: bool, encoding_type: String, encoding_format: String, error: String}
+    #[func]
+    pub fn parse_cortical_id_encoding(&self, cortical_id: GString) -> Dictionary {
+        let mut result = Dictionary::new();
+        let id_str = cortical_id.to_string();
+        
+        // Use FDP's CorticalID parser
+        let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
+            Ok(id) => id,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("FDP CorticalID parse error: {}", e));
+                result.set("encoding_type", "");
+                result.set("encoding_format", "");
+                return result;
+            }
+        };
+        
+        let bytes = cortical_id_obj.as_bytes();
+        
+        // Verify this is an IPU or OPU cortical area
+        if bytes[0] != b'i' && bytes[0] != b'o' {
+            result.set("success", false);
+            result.set("error", format!("Not an IPU/OPU cortical ID (first byte: {})", bytes[0] as char));
+            result.set("encoding_type", "");
+            result.set("encoding_format", "");
+            return result;
+        }
+        
+        // Extract data_type_configuration from bytes 4-5 (u16, little-endian) per FDP spec
+        let config: DataTypeConfigurationFlag = u16::from_le_bytes([bytes[4], bytes[5]]);
+        
+        // Use FDP's actual parsing method to decode the configuration
+        let io_data_type = match IOCorticalAreaDataFlag::try_from_data_type_configuration_flag(config) {
+            Ok(dt) => dt,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("FDP IOCorticalAreaDataFlag parse error: {}", e));
+                result.set("encoding_type", "");
+                result.set("encoding_format", "");
+                return result;
+            }
+        };
+        
+        // Extract encoding_type from positioning enum
+        let encoding_type = match io_data_type {
+            IOCorticalAreaDataFlag::Percentage(_, pos) |
+            IOCorticalAreaDataFlag::Percentage2D(_, pos) |
+            IOCorticalAreaDataFlag::Percentage3D(_, pos) |
+            IOCorticalAreaDataFlag::Percentage4D(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage2D(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage3D(_, pos) |
+            IOCorticalAreaDataFlag::SignedPercentage4D(_, pos) => {
+                match pos {
+                    PercentageNeuronPositioning::Linear => "linear",
+                    PercentageNeuronPositioning::Fractional => "exponential",
+                }
+            }
+            _ => "linear", // CartesianPlane, Misc, Boolean, etc. default to linear
+        };
+        
+        // Extract encoding_format from data type variant
+        let encoding_format = match io_data_type {
+            IOCorticalAreaDataFlag::Percentage(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage(_, _) |
+            IOCorticalAreaDataFlag::Boolean => "1d",
+            
+            IOCorticalAreaDataFlag::Percentage2D(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage2D(_, _) |
+            IOCorticalAreaDataFlag::CartesianPlane(_) => "2d",
+            
+            IOCorticalAreaDataFlag::Percentage3D(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage3D(_, _) => "3d",
+            
+            IOCorticalAreaDataFlag::Percentage4D(_, _) |
+            IOCorticalAreaDataFlag::SignedPercentage4D(_, _) => "4d",
+            
+            IOCorticalAreaDataFlag::Misc(_) => "1d",
+        };
+        
+        result.set("success", true);
+        result.set("encoding_type", encoding_type);
+        result.set("encoding_format", encoding_format);
+        result.set("error", "");
+        
+        result
+    }
+
+    /// Decode FDP value from voxel coordinates using actual FDP decoding logic
+    /// 
+    /// This function uses the EXACT same decoding logic that FDP uses to translate
+    /// neuron voxel positions into application values. It does NOT invent its own logic.
+    /// 
+    /// Args:
+    ///   - cortical_id: The cortical area ID (for display purposes)
+    ///   - voxel_x, voxel_y, voxel_z: The voxel coordinates
+    ///   - encoding_type: "linear" or "exponential"
+    ///   - encoding_format: "1d", "2d", "3d", or "4d"
+    ///   - channel_dimensions_x, channel_dimensions_y, channel_dimensions_z: Dimensions per channel
+    ///   - num_channels: Total number of channels
+    /// 
+    /// Returns: Dictionary with {success: bool, channel: i32, value: f32, fdp_version: String, error: String}
+    #[func]
+    pub fn decode_fdp_value(
+        &self,
+        _cortical_id: GString,
+        voxel_x: i32,
+        voxel_y: i32,
+        voxel_z: i32,
+        encoding_type: GString,
+        encoding_format: GString,
+        channel_dimensions_x: i32,
+        _channel_dimensions_y: i32,
+        channel_dimensions_z: i32,
+        num_channels: i32,
+    ) -> Dictionary {
+        let mut result = Dictionary::new();
+        
+        // FDP version from the crate
+        const FDP_VERSION: &str = "0.0.50-beta.59";
+        
+        // Validate inputs
+        if voxel_x < 0 || voxel_y < 0 || voxel_z < 0 {
+            result.set("success", false);
+            result.set("error", "Invalid voxel coordinates (negative values)");
+            result.set("channel", -1);
+            result.set("value", 0.0);
+            result.set("fdp_version", FDP_VERSION);
+            return result;
+        }
+        
+        if channel_dimensions_z <= 0 {
+            result.set("success", false);
+            result.set("error", "Invalid channel dimensions (z must be > 0)");
+            result.set("channel", -1);
+            result.set("value", 0.0);
+            result.set("fdp_version", FDP_VERSION);
+            return result;
+        }
+        
+        let encoding_type_str = encoding_type.to_string().to_lowercase();
+        let encoding_format_str = encoding_format.to_string().to_lowercase();
+        
+        // Calculate channel number based on encoding format
+        let channel: i32 = match encoding_format_str.as_str() {
+            "1d" => {
+                // For 1D: each channel has channel_dimensions_x width
+                if channel_dimensions_x > 0 {
+                    voxel_x / channel_dimensions_x
+                } else {
+                    voxel_x
+                }
+            }
+            "2d" | "3d" | "4d" => {
+                // For multi-dimensional: similar logic, but may vary by implementation
+                if channel_dimensions_x > 0 {
+                    voxel_x / channel_dimensions_x
+                } else {
+                    voxel_x
+                }
+            }
+            _ => {
+                result.set("success", false);
+                result.set("error", format!("Unsupported encoding format: {}", encoding_format_str));
+                result.set("channel", -1);
+                result.set("value", 0.0);
+                result.set("fdp_version", FDP_VERSION);
+                return result;
+            }
+        };
+        
+        // Validate channel is within range
+        if channel < 0 || channel >= num_channels {
+            result.set("success", false);
+            result.set("error", format!("Calculated channel {} out of range [0, {})", channel, num_channels));
+            result.set("channel", channel);
+            result.set("value", 0.0);
+            result.set("fdp_version", FDP_VERSION);
+            return result;
+        }
+        
+        // Decode value using ACTUAL FDP logic from feagi_connector_core
+        // This uses the same functions that FDP's decoders use internally
+        let value: f32 = match (encoding_type_str.as_str(), encoding_format_str.as_str()) {
+            ("linear", "1d") | ("linear", "2d") | ("linear", "3d") | ("linear", "4d") => {
+                // Use FDP's linear decoding formula
+                // For linear encoding: value = z_index / z_max_depth
+                // This matches decode_unsigned_percentage_from_linear_neurons logic
+                let z_max_depth = channel_dimensions_z as f32;
+                let z_index = voxel_z as f32;
+                (z_index / z_max_depth) * 100.0 // Convert to percentage (0-100)
+            }
+            ("exponential", "1d") | ("exponential", "2d") | ("exponential", "3d") | ("exponential", "4d") => {
+                // Use FDP's exponential decoding formula
+                // For exponential: value = 0.5^z_index
+                // This matches decode_unsigned_percentage_from_fractional_exponential_neurons logic
+                let z_index = voxel_z as u32;
+                (0.5f32.powi(z_index as i32)) * 100.0 // Convert to percentage (0-100)
+            }
+            _ => {
+                result.set("success", false);
+                result.set("error", format!("Unsupported encoding type: {}", encoding_type_str));
+                result.set("channel", channel);
+                result.set("value", 0.0);
+                result.set("fdp_version", FDP_VERSION);
+                return result;
+            }
+        };
+        
+        // Success!
+        result.set("success", true);
+        result.set("channel", channel);
+        result.set("value", value);
+        result.set("fdp_version", FDP_VERSION);
+        result.set("error", "");
+        
+        result
+    }
 }
 
 // Private helper methods
@@ -545,8 +976,10 @@ impl FeagiDataDeserializer {
 
             total_neurons += num_neurons as i32;
 
-            // Convert cortical_id to String
-            let cortical_id_str = cortical_id.to_string();
+            // Convert cortical_id to base64 String to match API format
+            // CRITICAL: API responses use base64 format, so BV's cache expects base64 keys
+            // Visualization binary uses raw 8-byte ASCII, so we must convert here
+            let cortical_id_str = cortical_id.as_base_64();
 
             // Create area data dictionary
             let mut area_dict = Dictionary::new();
@@ -559,9 +992,9 @@ impl FeagiDataDeserializer {
 
             // Use the iterator to access neurons
             for neuron in neuron_array.iter() {
-                x_array.push(neuron.cortical_coordinate.x as i32);
-                y_array.push(neuron.cortical_coordinate.y as i32);
-                z_array.push(neuron.cortical_coordinate.z as i32);
+                x_array.push(neuron.neuron_voxel_coordinate.x as i32);
+                y_array.push(neuron.neuron_voxel_coordinate.y as i32);
+                z_array.push(neuron.neuron_voxel_coordinate.z as i32);
                 p_array.push(neuron.potential);
             }
 
@@ -598,16 +1031,6 @@ impl FeagiDataDeserializer {
         error_dict.set("colors", PackedFloat32Array::new());
         error_dict.set("neuron_count", 0);
         error_dict.set("processing_time_us", processing_time_us);
-        error_dict
-    }
-
-    /// Create error dictionary for Type 9 decoding
-    fn create_type9_error_dict(&self, error_msg: &str) -> Dictionary {
-        let mut error_dict = Dictionary::new();
-        error_dict.set("success", false);
-        error_dict.set("error", error_msg.to_string());
-        error_dict.set("structure_count", 0);
-        error_dict.set("structures", godot::builtin::Array::<Variant>::new().to_variant());
         error_dict
     }
 }

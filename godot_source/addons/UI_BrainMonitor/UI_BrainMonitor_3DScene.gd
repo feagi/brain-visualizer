@@ -445,6 +445,9 @@ func _process(delta: float) -> void:
 	# Update combo context after setup has region
 	if _combo:
 		_combo.set_3d_context(self, _representing_region)
+	
+	# Update label visibility to prevent overlaps (throttled for performance)
+	_update_label_overlap_visibility()
 
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
@@ -552,7 +555,6 @@ func _auto_frame_camera_to_objects() -> void:
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
-	print("[CAMERA_FRAME] vfov=", fov_used, " distance=", distance, " center=", center, " aabb.size=", aabb.size)
 	_log_objects_relative_to_camera("after_auto_frame")
 
 ## Computes AABB only over cortical and brain region visualizations for reliable framing
@@ -635,6 +637,54 @@ func _compute_cortical_data_aabb() -> AABB:
 		have = true
 	return merged if have else AABB()
 
+## Computes world-space AABB for a brain region frame node (includes all its visualizations)
+func _compute_region_frame_aabb(region_frame: Node3D) -> AABB:
+	if region_frame == null or not is_instance_valid(region_frame):
+		return AABB()
+	# Use the existing world AABB computation which handles all children recursively
+	return _compute_world_aabb(region_frame)
+
+## Frames the camera to show the entire AABB with appropriate distance
+func _frame_camera_to_aabb(aabb: AABB) -> void:
+	if _pancake_cam == null:
+		return
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		# Invalid AABB - cannot frame, caller should handle fallback
+		return
+	var center := aabb.position + (aabb.size / 2.0)
+	# Choose a straight-on view along +Z, level (no pitch), so we face the circuit
+	var up := Vector3.UP
+	var dir_hint := Vector3(0, 0, 1) # camera behind +Z looking toward -Z at center
+	# Compute FOVs (guard bad/zero FOV)
+	var fov_used: float = _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad: float = deg_to_rad(fov_used)
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp_size.x / max(1.0, vp_size.y)
+	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	# Half extents
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	# Required distances to fit width and height
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	# Apply learned multipliers from auto_frame
+	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
+	# Padding and clamps
+	var min_dist: float = auto_frame_min_dist
+	var max_dist: float = 3000.0
+	var diag: float = aabb.size.length()
+	var rel_cap: float = diag * 1.5
+	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Set camera position and orientation (level, centered in Y)
+	var cam_pos := center + (dir_hint * distance)
+	cam_pos.y = center.y
+	_pancake_cam.global_position = cam_pos
+	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+	_pancake_cam.current = true
+	_pancake_cam.near = 0.05
+
 ## Computes AABB over active previews (interactive and brain-region previews)
 func _compute_previews_aabb() -> AABB:
 	var have := false
@@ -655,6 +705,217 @@ func _compute_previews_aabb() -> AABB:
 				merged = a2 if !have else merged.merge(a2)
 				have = true
 	return merged if have else AABB()
+
+## Helper function to collect labels from a cortical area visualization
+func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_data: Array[Dictionary], viewport: Viewport) -> void:
+	if viz == null or not is_instance_valid(viz):
+		return
+	
+	# Helper function to check if a label is on a brain region plate
+	var is_label_on_plate = func(label: Label3D) -> bool:
+		var current_parent = label.get_parent()
+		var depth = 0
+		while current_parent != null and depth < 10:
+			if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas" or current_parent.name == "ConflictAreas":
+				return true
+			current_parent = current_parent.get_parent()
+			depth += 1
+		return false
+	
+	# Helper to add a label with screen position calculation
+	# Returns the index of the added label entry, or -1 if not added
+	var add_label = func(label: Label3D, area_id: StringName, should_be_visible: bool) -> int:
+		if label.text == "":
+			return -1
+		
+		# CRITICAL: Labels on plates should ALWAYS be visible
+		var on_plate = is_label_on_plate.call(label)
+		if on_plate:
+			should_be_visible = true
+		
+		var label_pos = label.global_position
+		var distance_to_cam = _pancake_cam.global_position.distance_to(label_pos)
+		# Check if label is in front of camera
+		var cam_forward = -_pancake_cam.global_transform.basis.z
+		var to_label = (label_pos - _pancake_cam.global_position).normalized()
+		if cam_forward.dot(to_label) > 0:  # In front of camera
+			# Project to screen space for overlap detection
+			var viewport_size = viewport.get_visible_rect().size
+			var viewport_cam = viewport.get_camera_3d()
+			var screen_pos = Vector2.ZERO
+			var projection_success = false
+			if viewport_cam != null:
+				# Calculate screen position using camera transform and projection
+				var local_pos = viewport_cam.global_transform.affine_inverse() * label_pos
+				if local_pos.z < 0:  # In front of camera
+					var fov = deg_to_rad(viewport_cam.fov)
+					var aspect = viewport_size.x / max(viewport_size.y, 1.0)
+					var y_scale = tan(fov * 0.5)
+					var x_scale = y_scale * aspect
+					screen_pos = Vector2(
+						viewport_size.x * 0.5 * (1.0 + local_pos.x / (-local_pos.z * x_scale)),
+						viewport_size.y * 0.5 * (1.0 - local_pos.y / (-local_pos.z * y_scale))
+					)
+					# Check if on screen (with some margin for labels near edges)
+					if screen_pos.x >= -100 and screen_pos.x <= viewport_size.x + 100 and screen_pos.y >= -100 and screen_pos.y <= viewport_size.y + 100:
+						projection_success = true
+			
+			var entry_index = label_data.size()
+			label_data.append({
+				"label": label,
+				"position": label_pos,
+				"screen_pos": screen_pos,
+				"distance": distance_to_cam,
+				"area_id": area_id,
+				"original_visible": should_be_visible,
+				"projection_success": projection_success,
+				"on_plate": on_plate
+			})
+			return entry_index
+		return -1
+	
+	# Check DDA renderer label - DDA labels should always be visible if they have text
+	if viz._dda_renderer != null and viz._dda_renderer._friendly_name_label != null:
+		var label = viz._dda_renderer._friendly_name_label
+		var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else ""
+		# DDA labels should always be visible - they're the primary renderer
+		add_label.call(label, area_id, true)
+	
+	# Check DirectPoints renderer label (only if different from DDA)
+	# DirectPoints labels are only visible for memory/power/death areas, or if DDA doesn't exist
+	if viz._directpoints_renderer != null and viz._directpoints_renderer._friendly_name_label != null:
+		var label = viz._directpoints_renderer._friendly_name_label
+		# Check if we already added this label (same as DDA)
+		var already_added = false
+		for data in label_data:
+			if data.label == label:
+				already_added = true
+				break
+		if not already_added:
+			var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else ""
+			# Only process DirectPoints label if DDA doesn't exist (it's the primary renderer)
+			# OR if it's a special area type that should show the label
+			var should_be_visible = (viz._dda_renderer == null or 
+				viz.cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
+				AbstractCorticalArea.is_power_area(area_id) or 
+				AbstractCorticalArea.is_death_area(area_id))
+			add_label.call(label, area_id, should_be_visible)
+
+## Updates label visibility to prevent overlaps when cortical areas are close together
+## Uses 3D distance-based detection: if labels are very close in 3D space, hide the one farther from camera
+func _update_label_overlap_visibility() -> void:
+	if _pancake_cam == null or not _pancake_cam.current:
+		return
+	
+	var viewport := _pancake_cam.get_viewport()
+	if viewport == null:
+		return
+	
+	# Threshold distance in screen space (pixels) - if two labels are closer than this, they overlap
+	const OVERLAP_SCREEN_DISTANCE_THRESHOLD = 80.0  # pixels
+	
+	# Collect all labels (including hidden ones) with their screen positions
+	# We need to check all labels to restore visibility when they no longer overlap
+	var label_data: Array[Dictionary] = []
+	
+	# Collect labels from main scene cortical visualizations
+	for viz in _cortical_visualizations_by_ID.values():
+		_collect_labels_from_cortical_viz(viz, label_data, viewport)
+	
+	# Also collect labels from cortical areas within brain region frames (plates)
+	for region_viz in _brain_region_visualizations_by_ID.values():
+		if region_viz == null or not is_instance_valid(region_viz):
+			continue
+		# Brain region frames have cortical area visualizations stored in _cortical_area_visualizations
+		# Access the property directly - it will be null if it doesn't exist
+		if region_viz.get("_cortical_area_visualizations") != null:
+			var cortical_visualizations = region_viz._cortical_area_visualizations
+			if cortical_visualizations != null:
+				for cortical_viz in cortical_visualizations.values():
+					if cortical_viz != null and is_instance_valid(cortical_viz):
+						_collect_labels_from_cortical_viz(cortical_viz, label_data, viewport)
+	
+	# If no labels found, exit early
+	if label_data.is_empty():
+		return
+	
+	# Detect overlaps based on screen-space distance and hide overlapping labels (keep closest to camera)
+	# First, restore all labels to their original visibility state
+	# This ensures labels that were hidden due to previous overlap checks can become visible again
+	for label_info in label_data:
+		# CRITICAL: Labels on plates should ALWAYS be visible (unless they overlap)
+		# Set them visible regardless of projection success
+		if label_info.on_plate:
+			label_info.label.visible = true  # Force visible for labels on plates
+		elif label_info.projection_success:
+			# For non-plate labels, restore to original visibility only if projection succeeded
+			label_info.label.visible = label_info.original_visible
+	
+	# Track which labels to hide (use an array to avoid double-hiding)
+	var labels_to_hide: Array[Label3D] = []
+	
+	# Then hide labels that overlap (check all labels that should be visible, including plate labels)
+	# Plate labels can overlap too, so we need to check them
+	for i in range(label_data.size()):
+		var label1 = label_data[i]
+		# Only check visibility for labels that were originally visible (or on plates)
+		if not label1.original_visible and not label1.on_plate:
+			continue
+		
+		# CRITICAL: If projection failed for a plate label, skip overlap check (keep it visible)
+		# We can't check overlaps without valid screen position
+		if label1.on_plate and not label1.projection_success:
+			continue
+		
+		# Skip if already marked to hide
+		if label1.label in labels_to_hide:
+			continue
+		
+		for j in range(i + 1, label_data.size()):
+			var label2 = label_data[j]
+			# Only consider labels that were originally visible (or on plates)
+			if not label2.original_visible and not label2.on_plate:
+				continue
+			
+			# CRITICAL: If projection failed for a plate label, skip overlap check (keep it visible)
+			if label2.on_plate and not label2.projection_success:
+				continue
+			
+			# Skip if already marked to hide
+			if label2.label in labels_to_hide:
+				continue
+			
+			# Both labels must have valid screen positions to check overlap
+			if not label1.projection_success or not label2.projection_success:
+				continue
+			
+			# Calculate screen-space distance between labels
+			var screen_dist = label1.screen_pos.distance_to(label2.screen_pos)
+			
+			# If labels are too close in screen space (overlapping), hide the one farther from camera
+			if screen_dist < OVERLAP_SCREEN_DISTANCE_THRESHOLD:
+				if label1.distance > label2.distance:
+					# Label1 is farther, mark it to hide
+					if label1.label not in labels_to_hide:
+						labels_to_hide.append(label1.label)
+					break
+				else:
+					# Label2 is farther, mark it to hide
+					if label2.label not in labels_to_hide:
+						labels_to_hide.append(label2.label)
+	
+	# Apply visibility changes
+	# CRITICAL: Plate labels should ALWAYS be visible - don't hide them even if they overlap
+	# This ensures labels on region plates are always visible
+	for label_info in label_data:
+		if label_info.on_plate:
+			# Plate labels: ALWAYS visible, never hide them
+			label_info.label.visible = true
+		else:
+			# Non-plate labels: hide if marked to hide
+			if label_info.label in labels_to_hide:
+				label_info.label.visible = false
+			# Otherwise keep their restored visibility state (already set in restore step)
 
 ## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
 func _log_objects_relative_to_camera(context: String = "") -> void:
@@ -699,12 +960,6 @@ func _log_objects_relative_to_camera(context: String = "") -> void:
 			else:
 				behind.append(label)
 
-	print("[CAMERA_VIS] ", context, " in_front=", in_front.size(), " behind=", behind.size())
-	if in_front.size() > 0:
-		print("[CAMERA_VIS] front samples: ", ", ".join(in_front.slice(0, min(5, in_front.size()))))
-	if behind.size() > 0:
-		print("[CAMERA_VIS] behind samples: ", ", ".join(behind.slice(0, min(5, behind.size()))))
-
 ## User moved camera - print detailed framing diagnostics for learning desired heuristics
 func _on_user_camera_moved() -> void:
 	if _pancake_cam == null:
@@ -717,7 +972,6 @@ func _on_user_camera_moved() -> void:
 	var vp := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp.x / max(1.0, vp.y)
 	var dist := cam_pos.distance_to(center)
-	print("[CAMERA_SAMPLES] pos=", cam_pos, " look_at=", center, " dist=", snapped(dist, 0.01), " vfov=", vfov, " aspect=", snapped(aspect, 0.001), " aabb_pos=", aabb.position, " aabb_size=", aabb.size)
 
 ## Handle user pressing R to reset camera using auto-frame logic
 func _on_user_camera_reset_requested() -> void:
@@ -1004,6 +1258,22 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+						# Check for shift+click to focus camera on region
+						if Input.is_key_pressed(KEY_SHIFT):
+							# Shift+Click: Focus camera on the region's bounding box
+							if _pancake_cam:
+								# Compute world-space AABB of the brain region frame (includes all visualizations)
+								var region_aabb = _compute_region_frame_aabb(region_frame)
+								if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
+									# Frame camera to show entire bounding box
+									_frame_camera_to_aabb(region_aabb)
+									print("Shift+Clicked brain region frame: %s - Camera focused on bounding box" % region_frame.representing_region.friendly_name)
+								else:
+									# Fallback: use region frame's global position if AABB is invalid
+									_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
+									print("Shift+Clicked brain region frame: %s - Camera focused (fallback to position)" % region_frame.representing_region.friendly_name)
+							return
+						
 						# Single click on brain region - select it
 						BV.UI.selection_system.clear_all_highlighted()
 						BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
@@ -1219,9 +1489,9 @@ func _create_qc_guide_segment(start_pos: Vector3, end_pos: Vector3, idx: int) ->
 func _create_qc_guide_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(1.0, 1.0, 1.0, 0.9)
-	m.emission_color = Color(0.9, 0.9, 0.9)
+	m.emission = Color(0.9, 0.9, 0.9)
 	m.emission_enabled = true
-	m.emission_energy = 2.4
+	m.emission_energy_multiplier = 2.4
 	m.flags_unshaded = true
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED

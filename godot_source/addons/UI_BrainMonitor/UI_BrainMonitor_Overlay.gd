@@ -3,9 +3,16 @@ class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
 var _mouse_context_label: Label
+var _fdp_deserializer: FeagiDataDeserializer = null
 
 func _ready() -> void:
 	_mouse_context_label = $Bottom_Row/MouseContext
+	
+	# Initialize FDP deserializer for decoding voxel values
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		_fdp_deserializer = FeagiDataDeserializer.new()
+	else:
+		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 
 ## Clear all text
 func clear() -> void:
@@ -45,6 +52,42 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			Vector3i(2,2,0): direction = " - Pitch Backward"
 			Vector3i(3,2,0): direction = " - Roll Right"
 		text += direction
+	
+	# NEW FEATURE: Add FDP-decoded value information for OPU areas only
+	# This shows what value FDP would produce for this voxel using the actual FDP decoding logic
+	# NOTE: This is currently implemented for OPU areas only. IPU areas will have a different variation.
+	
+	if _fdp_deserializer != null and cortical_area is OPUCorticalArea:
+		# Parse encoding info directly from binary cortical ID using FDP's binary format
+		var encoding_info = _fdp_deserializer.parse_cortical_id_encoding(cortical_area.cortical_ID)
+		
+		if encoding_info.get("success", false):
+			var encoding_type_val = encoding_info.get("encoding_type", "")
+			var encoding_format_val = encoding_info.get("encoding_format", "")
+			
+			# Use device_count if available, otherwise use large number to skip validation
+			var num_channels = cortical_area.device_count if cortical_area.device_count > 0 else 9999
+			
+			# Decode the FDP value using the binary-parsed encoding info
+			var fdp_result = _fdp_deserializer.decode_fdp_value(
+				cortical_area.cortical_ID,
+				neuron_coordinate.x,
+				neuron_coordinate.y,
+				neuron_coordinate.z,
+				encoding_type_val,
+				encoding_format_val,
+				cortical_area.cortical_dimensions_per_device.x,
+				cortical_area.cortical_dimensions_per_device.y,
+				cortical_area.cortical_dimensions_per_device.z,
+				num_channels
+			)
+			
+			if fdp_result.get("success", false):
+				var fdp_version = fdp_result.get("fdp_version", "unknown")
+				var channel = fdp_result.get("channel", -1)
+				var value = fdp_result.get("value", 0.0)
+				text += " | FDP:%s CH:%d Value:%.2f%%" % [fdp_version, channel, value]
+	
 	_mouse_context_label.text = text
 
 ## Show plate hover context (region name + plate kind)

@@ -208,6 +208,23 @@ func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
 	_populate_core_morphology_icons(restrictions)
 
+## Priority order for core morphologies (user-defined)
+const CORE_MORPHOLOGY_PRIORITY = [
+	"projector",
+	"block_to_block",
+	"lateral_+x",
+	"lateral_-x",
+	"lateral_+y",
+	"lateral_-y",
+	"lateral_+z",
+	"lateral_-z",
+	"last_to_first",
+	"projector_xy",
+	"projector_yz",
+	"projector_xz",
+	# Rest will be sorted alphabetically
+]
+
 ## Populates the horizontal icon bar with only CORE (system) morphologies.
 ## If restrictions are provided, the set is intersected with allowed names and excludes disallowed ones.
 func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMorphology = null) -> void:
@@ -230,11 +247,15 @@ func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMor
 	print("  - restrictions: allowed=", allowed_names, " disallowed=", disallowed_names)
 	var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 
-	# Iterate available morphologies by ID (cache key) and add CORE ones with valid icons
+	# Get and sort core morphologies by priority
+	var morphology_names = FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()
+	var sorted_names = _sort_morphologies_by_priority(morphology_names)
+	
+	# Iterate sorted morphologies and add CORE ones with valid icons
 	var total_core_seen: int = 0
 	var total_core_after_filter: int = 0
 	var total_icons_added: int = 0
-	for morphology_name in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+	for morphology_name in sorted_names:
 		var morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name]
 		if morphology.internal_class != BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE:
 			continue
@@ -309,6 +330,30 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 	slot.add_child(button)
 	slot.add_child(name_label)
 	return slot
+
+## Sort morphology names by priority order
+func _sort_morphologies_by_priority(names: Array) -> Array:
+	var sorted = names.duplicate()
+	sorted.sort_custom(func(a, b):
+		var a_priority = CORE_MORPHOLOGY_PRIORITY.find(String(a))
+		var b_priority = CORE_MORPHOLOGY_PRIORITY.find(String(b))
+		
+		# Both in priority list - sort by priority index
+		if a_priority != -1 and b_priority != -1:
+			return a_priority < b_priority
+		
+		# Only A in priority list - A comes first
+		if a_priority != -1:
+			return true
+		
+		# Only B in priority list - B comes first
+		if b_priority != -1:
+			return false
+		
+		# Neither in priority list - sort alphabetically
+		return String(a) < String(b)
+	)
+	return sorted
 
 ## When a core-icon shortcut is pressed, select it in the list to drive existing flows.
 func _on_core_icon_pressed(morphology: BaseMorphology) -> void:

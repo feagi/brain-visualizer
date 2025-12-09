@@ -1,0 +1,443 @@
+name: Build Distribution Packages (3 Modes)
+
+on:
+  push:
+    branches: [ main, release/** ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      build_embedded:
+        description: 'Build Mode 1 (Desktop Embedded)'
+        type: boolean
+        default: true
+      build_remote:
+        description: 'Build Mode 2 (Desktop Remote)'
+        type: boolean
+        default: true
+      build_web:
+        description: 'Build Mode 3 (Web)'
+        type: boolean
+        default: true
+
+env:
+  CARGO_TERM_COLOR: always
+  GODOT_VERSION: 4.2.1
+  FEAGI_VERSION: 2.0.0
+
+jobs:
+  #
+  # ============ MODE 1: DESKTOP EMBEDDED ============
+  #
+  
+  build-feagi-embedded:
+    name: Build FEAGI Embedded for ${{ matrix.platform }}
+    if: github.event.inputs.build_embedded != 'false'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            artifact_name: feagi-embedded-linux
+            lib_name: libfeagi_embedded.so
+          - os: macos-latest
+            platform: macOS
+            artifact_name: feagi-embedded-macos
+            lib_name: libfeagi_embedded.dylib
+          - os: windows-latest
+            platform: Windows
+            artifact_name: feagi-embedded-windows
+            lib_name: feagi_embedded.dll
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Add macOS universal targets
+        if: runner.os == 'macOS'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            brain-visualizer/rust_extensions/feagi_embedded/target
+            feagi/target
+            feagi-core/target
+          key: ${{ runner.os }}-feagi-embedded-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-feagi-embedded-
+
+      - name: Build FEAGI embedded (Linux/Windows)
+        if: runner.os != 'macOS'
+        run: |
+          cd brain-visualizer/rust_extensions/feagi_embedded
+          cargo build --release
+          ls -lh target/release/
+
+      - name: Build FEAGI embedded (macOS Universal)
+        if: runner.os == 'macOS'
+        run: |
+          cd brain-visualizer/rust_extensions/feagi_embedded
+          
+          # Build for both architectures
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          
+          # Create universal binary
+          mkdir -p target/release
+          lipo -create \
+            target/aarch64-apple-darwin/release/${{ matrix.lib_name }} \
+            target/x86_64-apple-darwin/release/${{ matrix.lib_name }} \
+            -output target/release/${{ matrix.lib_name }}
+          
+          # Verify
+          lipo -info target/release/${{ matrix.lib_name }}
+          ls -lh target/release/${{ matrix.lib_name }}
+
+      - name: Upload FEAGI embedded library
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: brain-visualizer/rust_extensions/feagi_embedded/target/release/${{ matrix.lib_name }}
+          retention-days: 7
+
+  export-desktop-embedded:
+    name: Export Mode 1 - Desktop Embedded (${{ matrix.platform }})
+    needs: build-feagi-embedded
+    if: github.event.inputs.build_embedded != 'false'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            export_name: "Linux/X11"
+            output_name: BrainVisualizer-Embedded.x86_64
+            feagi_lib: feagi-embedded-linux
+          - os: macos-latest
+            platform: macOS
+            export_name: "macOS"
+            output_name: BrainVisualizer-Embedded.app
+            feagi_lib: feagi-embedded-macos
+          - os: windows-latest
+            platform: Windows
+            export_name: "Windows Desktop"
+            output_name: BrainVisualizer-Embedded.exe
+            feagi_lib: feagi-embedded-windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+
+      - name: Download FEAGI embedded library
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.feagi_lib }}
+          path: brain-visualizer/godot_source/addons/feagi_embedded/target/release/
+
+      - name: Build Rust data deserializer (existing extension)
+        run: |
+          cd brain-visualizer/rust_extensions
+          python3 build.py --release
+
+      - name: Verify all extensions present
+        run: |
+          echo "Checking for FEAGI embedded:"
+          ls -lh brain-visualizer/godot_source/addons/feagi_embedded/target/release/
+          
+          echo "Checking for data deserializer:"
+          ls -lh brain-visualizer/godot_source/addons/feagi_rust_deserializer/target/release/
+
+      - name: Export Godot project (Mode 1 - Embedded)
+        run: |
+          cd brain-visualizer/godot_source
+          mkdir -p ../exports
+          godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+
+      - name: Verify export
+        run: |
+          ls -lh brain-visualizer/exports/
+
+      - name: Create distribution package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd brain-visualizer/exports
+          # Create DMG
+          # TODO: Use create-dmg or similar tool
+          zip -r BrainVisualizer-Embedded-macOS.zip BrainVisualizer-Embedded.app
+
+      - name: Create distribution package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd brain-visualizer/exports
+          # Create installer or zip
+          7z a BrainVisualizer-Embedded-Windows.zip BrainVisualizer-Embedded.exe
+
+      - name: Create distribution package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd brain-visualizer/exports
+          # Create AppImage or tarball
+          tar -czf BrainVisualizer-Embedded-Linux.tar.gz BrainVisualizer-Embedded.x86_64
+
+      - name: Upload distribution package
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrainVisualizer-Embedded-${{ matrix.platform }}
+          path: brain-visualizer/exports/BrainVisualizer-Embedded-*
+          retention-days: 30
+
+  #
+  # ============ MODE 2: DESKTOP REMOTE ============
+  #
+  
+  export-desktop-remote:
+    name: Export Mode 2 - Desktop Remote (${{ matrix.platform }})
+    if: github.event.inputs.build_remote != 'false'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            export_name: "Linux/X11"
+            output_name: BrainVisualizer-Remote.x86_64
+          - os: macos-latest
+            platform: macOS
+            export_name: "macOS"
+            output_name: BrainVisualizer-Remote.app
+          - os: windows-latest
+            platform: Windows
+            export_name: "Windows Desktop"
+            output_name: BrainVisualizer-Remote.exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: ${{ env.GODOT_VERSION }}
+
+      - name: Build Rust data deserializer only (no FEAGI embedded)
+        run: |
+          cd brain-visualizer/rust_extensions
+          python3 build.py --release
+
+      - name: Remove FEAGI embedded (exclude from this build)
+        run: |
+          rm -rf brain-visualizer/godot_source/addons/feagi_embedded
+          echo "✅ FEAGI embedded excluded (lightweight build)"
+
+      - name: Export Godot project (Mode 2 - Remote)
+        run: |
+          cd brain-visualizer/godot_source
+          mkdir -p ../exports
+          godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+
+      - name: Create distribution package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd brain-visualizer/exports
+          zip -r BrainVisualizer-Remote-macOS.zip BrainVisualizer-Remote.app
+
+      - name: Create distribution package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd brain-visualizer/exports
+          7z a BrainVisualizer-Remote-Windows.zip BrainVisualizer-Remote.exe
+
+      - name: Create distribution package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd brain-visualizer/exports
+          tar -czf BrainVisualizer-Remote-Linux.tar.gz BrainVisualizer-Remote.x86_64
+
+      - name: Upload distribution package
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrainVisualizer-Remote-${{ matrix.platform }}
+          path: brain-visualizer/exports/BrainVisualizer-Remote-*
+          retention-days: 30
+
+  #
+  # ============ MODE 3: WEB ============
+  #
+  
+  export-web:
+    name: Export Mode 3 - Web (HTML5)
+    if: github.event.inputs.build_web != 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Godot (with export templates)
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          include-templates: true
+
+      - name: Build WASM deserializer (if exists)
+        continue-on-error: true
+        run: |
+          if [ -d "brain-visualizer/rust_extensions/feagi_wasm_processing" ]; then
+            cd brain-visualizer/rust_extensions/feagi_wasm_processing
+            # Build WASM version
+            cargo build --release --target wasm32-unknown-unknown
+            wasm-bindgen target/wasm32-unknown-unknown/release/feagi_wasm_processing.wasm \
+              --out-dir ../../godot_source/wasm/ --target web
+          fi
+
+      - name: Export Godot project (Web)
+        run: |
+          cd brain-visualizer/godot_source
+          mkdir -p ../exports/web
+          godot --headless --export-release "Web" ../exports/web/index.html
+
+      - name: Verify web export
+        run: |
+          ls -lh brain-visualizer/exports/web/
+          echo "✅ Web export complete"
+
+      - name: Create web distribution archive
+        run: |
+          cd brain-visualizer/exports
+          tar -czf BrainVisualizer-Web.tar.gz web/
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrainVisualizer-Web
+          path: brain-visualizer/exports/BrainVisualizer-Web.tar.gz
+          retention-days: 30
+
+  #
+  # ============ CREATE RELEASE ============
+  #
+  
+  create-release:
+    name: Create GitHub Release
+    needs: [export-desktop-embedded, export-desktop-remote, export-web]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -lRh artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/BrainVisualizer-Embedded-*/*
+            artifacts/BrainVisualizer-Remote-*/*
+            artifacts/BrainVisualizer-Web/*
+          body: |
+            # Brain Visualizer ${{ github.ref_name }}
+            
+            ## Three Distribution Modes
+            
+            ### Mode 1: Desktop Embedded (~200MB)
+            **Includes FEAGI in-process - No external dependencies!**
+            - ✅ One-click install and run
+            - ✅ Microsecond-latency performance
+            - ✅ Works offline
+            - ✅ No Docker, no Python, no setup
+            
+            Downloads:
+            - macOS (Universal): `BrainVisualizer-Embedded-macOS.zip`
+            - Windows (x86_64): `BrainVisualizer-Embedded-Windows.zip`
+            - Linux (x86_64): `BrainVisualizer-Embedded-Linux.tar.gz`
+            
+            ### Mode 2: Desktop Remote (~50MB)
+            **Lightweight client for remote FEAGI**
+            - ✅ Small download
+            - ✅ Connect to shared FEAGI server
+            - ✅ Multiple clients can connect to one FEAGI
+            
+            Downloads:
+            - macOS (Universal): `BrainVisualizer-Remote-macOS.zip`
+            - Windows (x86_64): `BrainVisualizer-Remote-Windows.zip`
+            - Linux (x86_64): `BrainVisualizer-Remote-Linux.tar.gz`
+            
+            **Requirements:** Separate FEAGI server (Docker or binary)
+            
+            ### Mode 3: Web (~20MB)
+            **Browser-based application**
+            - ✅ No installation required
+            - ✅ Works on any modern browser
+            - ✅ Cloud FEAGI integration
+            
+            Download:
+            - Web Bundle: `BrainVisualizer-Web.tar.gz`
+            
+            **Requirements:** Hosted FEAGI server
+            
+            ## What's New
+            
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+        draft: false
+        prerelease: false
+
+  #
+  # ============ SUMMARY ============
+  #
+  
+  build-summary:
+    name: Build Summary
+    needs: [export-desktop-embedded, export-desktop-remote, export-web]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Display build results
+        run: |
+          echo "========================================="
+          echo "  Brain Visualizer Build Summary"
+          echo "========================================="
+          echo ""
+          echo "Mode 1 (Desktop Embedded): ${{ needs.export-desktop-embedded.result }}"
+          echo "Mode 2 (Desktop Remote):   ${{ needs.export-desktop-remote.result }}"
+          echo "Mode 3 (Web):              ${{ needs.export-web.result }}"
+          echo ""
+          echo "========================================="
+
