@@ -443,6 +443,7 @@ jobs:
           ls -lh "$TARGET_DIR/" || true
 
       - name: Remove FEAGI embedded (exclude from this build)
+        shell: bash
         run: |
           rm -rf godot_source/addons/feagi_embedded
           echo "✅ FEAGI embedded excluded (lightweight build)"
