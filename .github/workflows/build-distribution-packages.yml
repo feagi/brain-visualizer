@@ -191,15 +191,15 @@ jobs:
         run: |
           Write-Host "📦 Downloading Godot 4.5..."
           Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
-          Expand-Archive -Path godot.zip -DestinationPath godot-install
-          Move-Item godot-install/Godot*.exe godot.exe
+          Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
+          Move-Item godot-install/Godot*.exe godot.exe -Force
           
           Write-Host "📦 Downloading export templates..."
           Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
           $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
           New-Item -ItemType Directory -Force -Path $templatesPath
-          Expand-Archive -Path templates.tpz -DestinationPath temp-templates
-          Move-Item temp-templates/templates/* $templatesPath -Force
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
+          Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse
           
           echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
           Write-Host "✅ Godot 4.5 + export templates installed"
@@ -339,15 +339,15 @@ jobs:
         run: |
           Write-Host "📦 Downloading Godot 4.5..."
           Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
-          Expand-Archive -Path godot.zip -DestinationPath godot-install
-          Move-Item godot-install/Godot*.exe godot.exe
+          Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
+          Move-Item godot-install/Godot*.exe godot.exe -Force
           
           Write-Host "📦 Downloading export templates..."
           Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
           $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
           New-Item -ItemType Directory -Force -Path $templatesPath
-          Expand-Archive -Path templates.tpz -DestinationPath temp-templates
-          Move-Item temp-templates/templates/* $templatesPath -Force
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
+          Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse
           
           echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
           Write-Host "✅ Godot 4.5 + export templates installed"
