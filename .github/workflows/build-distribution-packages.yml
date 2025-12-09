@@ -214,6 +214,44 @@ jobs:
         run: |
           cd rust_extensions
           python3 build.py --release
+          
+          echo "📂 Built libraries:"
+          find . -name "*.so" -o -name "*.dylib" -o -name "*.dll" | head -20
+
+      - name: Copy Rust extensions to Godot addons
+        shell: bash
+        run: |
+          # Find where the build script placed the libraries
+          DESERIALIZER_LIB=$(find rust_extensions -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          
+          if [ -z "$DESERIALIZER_LIB" ]; then
+            echo "❌ libfeagi_data_deserializer not found after build"
+            exit 1
+          fi
+          
+          echo "Found deserializer: $DESERIALIZER_LIB"
+          
+          # Determine platform-specific target directory
+          case "${{ runner.os }}" in
+            Linux)
+              TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
+              ;;
+            macOS)
+              TARGET_SUBDIR="release"  # macOS uses universal binary
+              ;;
+            Windows)
+              TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
+              ;;
+          esac
+          
+          TARGET_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$TARGET_DIR"
+          
+          # Copy to expected location
+          cp "$DESERIALIZER_LIB" "$TARGET_DIR/"
+          
+          echo "✅ Copied libraries to $TARGET_DIR"
+          ls -lh "$TARGET_DIR/" || true
 
       - name: Verify all extensions present
         run: |
@@ -365,6 +403,44 @@ jobs:
         run: |
           cd rust_extensions
           python3 build.py --release
+          
+          echo "📂 Built libraries:"
+          find . -name "*.so" -o -name "*.dylib" -o -name "*.dll" | head -20
+
+      - name: Verify and copy Rust extensions to Godot addons
+        shell: bash
+        run: |
+          # Find where the build script placed the libraries
+          DESERIALIZER_LIB=$(find rust_extensions -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          
+          if [ -z "$DESERIALIZER_LIB" ]; then
+            echo "❌ libfeagi_data_deserializer not found after build"
+            exit 1
+          fi
+          
+          echo "Found deserializer: $DESERIALIZER_LIB"
+          
+          # Determine platform-specific target directory
+          case "${{ runner.os }}" in
+            Linux)
+              TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
+              ;;
+            macOS)
+              TARGET_SUBDIR="release"  # macOS uses universal binary
+              ;;
+            Windows)
+              TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
+              ;;
+          esac
+          
+          TARGET_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$TARGET_DIR"
+          
+          # Copy to expected location
+          cp "$DESERIALIZER_LIB" "$TARGET_DIR/"
+          
+          echo "✅ Copied libraries to $TARGET_DIR"
+          ls -lh "$TARGET_DIR/" || true
 
       - name: Remove FEAGI embedded (exclude from this build)
         run: |
