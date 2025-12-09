@@ -73,7 +73,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            brain-visualizer/rust_extensions/feagi_embedded/target
+            rust_extensions/feagi_embedded/target
             feagi/target
             feagi-core/target
           key: ${{ runner.os }}-feagi-embedded-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
@@ -83,14 +83,14 @@ jobs:
       - name: Build FEAGI embedded (Linux/Windows)
         if: runner.os != 'macOS'
         run: |
-          cd brain-visualizer/rust_extensions/feagi_embedded
+          cd rust_extensions/feagi_embedded
           cargo build --release
           ls -lh target/release/
 
       - name: Build FEAGI embedded (macOS Universal)
         if: runner.os == 'macOS'
         run: |
-          cd brain-visualizer/rust_extensions/feagi_embedded
+          cd rust_extensions/feagi_embedded
           
           # Build for both architectures
           cargo build --release --target aarch64-apple-darwin
@@ -111,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: brain-visualizer/rust_extensions/feagi_embedded/target/release/${{ matrix.lib_name }}
+          path: rust_extensions/feagi_embedded/target/release/${{ matrix.lib_name }}
           retention-days: 7
 
   export-desktop-embedded:
@@ -155,35 +155,35 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.feagi_lib }}
-          path: brain-visualizer/godot_source/addons/feagi_embedded/target/release/
+          path: godot_source/addons/feagi_embedded/target/release/
 
       - name: Build Rust data deserializer (existing extension)
         run: |
-          cd brain-visualizer/rust_extensions
+          cd rust_extensions
           python3 build.py --release
 
       - name: Verify all extensions present
         run: |
           echo "Checking for FEAGI embedded:"
-          ls -lh brain-visualizer/godot_source/addons/feagi_embedded/target/release/
+          ls -lh godot_source/addons/feagi_embedded/target/release/
           
           echo "Checking for data deserializer:"
-          ls -lh brain-visualizer/godot_source/addons/feagi_rust_deserializer/target/release/
+          ls -lh godot_source/addons/feagi_rust_deserializer/target/release/
 
       - name: Export Godot project (Mode 1 - Embedded)
         run: |
-          cd brain-visualizer/godot_source
+          cd godot_source
           mkdir -p ../exports
           godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
       - name: Verify export
         run: |
-          ls -lh brain-visualizer/exports/
+          ls -lh exports/
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
         run: |
-          cd brain-visualizer/exports
+          cd exports
           # Create DMG
           # TODO: Use create-dmg or similar tool
           zip -r BrainVisualizer-Embedded-macOS.zip BrainVisualizer-Embedded.app
@@ -191,14 +191,14 @@ jobs:
       - name: Create distribution package (Windows)
         if: runner.os == 'Windows'
         run: |
-          cd brain-visualizer/exports
+          cd exports
           # Create installer or zip
           7z a BrainVisualizer-Embedded-Windows.zip BrainVisualizer-Embedded.exe
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
         run: |
-          cd brain-visualizer/exports
+          cd exports
           # Create AppImage or tarball
           tar -czf BrainVisualizer-Embedded-Linux.tar.gz BrainVisualizer-Embedded.x86_64
 
@@ -206,7 +206,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: BrainVisualizer-Embedded-${{ matrix.platform }}
-          path: brain-visualizer/exports/BrainVisualizer-Embedded-*
+          path: exports/BrainVisualizer-Embedded-*
           retention-days: 30
 
   #
@@ -247,43 +247,43 @@ jobs:
 
       - name: Build Rust data deserializer only (no FEAGI embedded)
         run: |
-          cd brain-visualizer/rust_extensions
+          cd rust_extensions
           python3 build.py --release
 
       - name: Remove FEAGI embedded (exclude from this build)
         run: |
-          rm -rf brain-visualizer/godot_source/addons/feagi_embedded
+          rm -rf godot_source/addons/feagi_embedded
           echo "✅ FEAGI embedded excluded (lightweight build)"
 
       - name: Export Godot project (Mode 2 - Remote)
         run: |
-          cd brain-visualizer/godot_source
+          cd godot_source
           mkdir -p ../exports
           godot --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
         run: |
-          cd brain-visualizer/exports
+          cd exports
           zip -r BrainVisualizer-Remote-macOS.zip BrainVisualizer-Remote.app
 
       - name: Create distribution package (Windows)
         if: runner.os == 'Windows'
         run: |
-          cd brain-visualizer/exports
+          cd exports
           7z a BrainVisualizer-Remote-Windows.zip BrainVisualizer-Remote.exe
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
         run: |
-          cd brain-visualizer/exports
+          cd exports
           tar -czf BrainVisualizer-Remote-Linux.tar.gz BrainVisualizer-Remote.x86_64
 
       - name: Upload distribution package
         uses: actions/upload-artifact@v4
         with:
           name: BrainVisualizer-Remote-${{ matrix.platform }}
-          path: brain-visualizer/exports/BrainVisualizer-Remote-*
+          path: exports/BrainVisualizer-Remote-*
           retention-days: 30
 
   #
@@ -310,8 +310,8 @@ jobs:
       - name: Build WASM deserializer (if exists)
         continue-on-error: true
         run: |
-          if [ -d "brain-visualizer/rust_extensions/feagi_wasm_processing" ]; then
-            cd brain-visualizer/rust_extensions/feagi_wasm_processing
+          if [ -d "rust_extensions/feagi_wasm_processing" ]; then
+            cd rust_extensions/feagi_wasm_processing
             # Build WASM version
             cargo build --release --target wasm32-unknown-unknown
             wasm-bindgen target/wasm32-unknown-unknown/release/feagi_wasm_processing.wasm \
@@ -320,25 +320,25 @@ jobs:
 
       - name: Export Godot project (Web)
         run: |
-          cd brain-visualizer/godot_source
+          cd godot_source
           mkdir -p ../exports/web
           godot --headless --export-release "Web" ../exports/web/index.html
 
       - name: Verify web export
         run: |
-          ls -lh brain-visualizer/exports/web/
+          ls -lh exports/web/
           echo "✅ Web export complete"
 
       - name: Create web distribution archive
         run: |
-          cd brain-visualizer/exports
+          cd exports
           tar -czf BrainVisualizer-Web.tar.gz web/
 
       - name: Upload web build
         uses: actions/upload-artifact@v4
         with:
           name: BrainVisualizer-Web
-          path: brain-visualizer/exports/BrainVisualizer-Web.tar.gz
+          path: exports/BrainVisualizer-Web.tar.gz
           retention-days: 30
 
   #
