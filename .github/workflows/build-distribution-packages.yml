@@ -415,8 +415,8 @@ jobs:
             ## What's New
             
             See [CHANGELOG.md](CHANGELOG.md) for details.
-        draft: false
-        prerelease: false
+          draft: false
+          prerelease: false
 
   #
   # ============ SUMMARY ============
