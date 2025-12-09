@@ -7,37 +7,39 @@ var has_timed_out: bool = false ## Did FEAGI not respond?
 var has_errored: bool = false ## Did feagi return an error (HTTP 400)
 var is_mid_poll: bool = false ## Is this a polling call output that isnt finished?
 var response_body: PackedByteArray = [] # The raw data FEAGI returned to us
+var response_code: int = 0 # HTTP response code (0 = no response, 200 = success, 4xx/5xx = error)
 var failed_requirement: bool: ## If a requirement was failed in [FEAGIRequests]
 	get: return failed_requirement_key != ""
 var success: bool: ## If everything went ok
 	get: return !(has_timed_out or has_errored or failed_requirement)
 
-func _init(timed_out: bool, errored: bool, mid_poll: bool, data: PackedByteArray, reason_failed: StringName = ""):
+func _init(timed_out: bool, errored: bool, mid_poll: bool, data: PackedByteArray, reason_failed: StringName = "", http_code: int = 0):
 	has_timed_out = timed_out
 	has_errored = errored
 	is_mid_poll = mid_poll
 	response_body = data
 	failed_requirement_key = reason_failed
+	response_code = http_code
 
 ## We didn't even make a call, this is just used by [FEAGIRequests] to handle a precondition failure
 static func requirement_fail(reason_failed_key: StringName) -> FeagiRequestOutput:
-	return FeagiRequestOutput.new(false, false, false, [], reason_failed_key)
+	return FeagiRequestOutput.new(false, false, false, [], reason_failed_key, 0)
 
 ## Generate a sucessful response
-static func response_success(http_response: PackedByteArray, is_mid_poll: bool) -> FeagiRequestOutput: 
-	return FeagiRequestOutput.new(false, false, is_mid_poll, http_response)
+static func response_success(http_response: PackedByteArray, is_mid_poll: bool, http_code: int = 200) -> FeagiRequestOutput: 
+	return FeagiRequestOutput.new(false, false, is_mid_poll, http_response, "", http_code)
 
 ## Generate a response where feagi didnt respond to the http call
 static func response_no_response(is_mid_poll: bool) -> FeagiRequestOutput:
-	return FeagiRequestOutput.new(true, false, is_mid_poll, [])
+	return FeagiRequestOutput.new(true, false, is_mid_poll, [], "", 0)
 
 ## Generate a response where feagi responded with an error
-static func response_error_response(http_response: PackedByteArray, is_mid_poll: bool) -> FeagiRequestOutput:
-	return FeagiRequestOutput.new(false, true, is_mid_poll, http_response)
+static func response_error_response(http_response: PackedByteArray, is_mid_poll: bool, http_code: int = 400) -> FeagiRequestOutput:
+	return FeagiRequestOutput.new(false, true, is_mid_poll, http_response, "", http_code)
 
 ## Best used in requests were multiple calls were made, but we wish to return an overall success
 static func generic_success() -> FeagiRequestOutput:
-	return FeagiRequestOutput.new(false, false, false, [])
+	return FeagiRequestOutput.new(false, false, false, [], "", 200)
 
 
 func decode_response_as_string() -> String:

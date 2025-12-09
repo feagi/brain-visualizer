@@ -154,6 +154,29 @@ This indicates stale compiled scripts. Fix:
 2. Delete `.godot` directory: `rm -rf godot_source/.godot`
 3. Re-export
 
+### App crashes immediately with "Code Signature Invalid"
+
+**Symptom:** App crashes on launch with crash report showing:
+- `Exception Type: EXC_CRASH (SIGKILL (Code Signature Invalid))`
+- `codeSigningTrustLevel: 4294967295` (untrusted)
+
+**Cause:** macOS requires all apps to be code signed. Unsigned apps are killed immediately.
+
+**Fix:** The export script now automatically signs the app. If you have an existing unsigned app:
+
+```bash
+cd godot_source
+./sign_app.sh "path/to/Brain Visualizer.app"
+```
+
+Or re-export the app - signing is now automatic:
+```bash
+cd godot_source
+./export_macos.sh
+```
+
+**Note:** Ad-hoc signing (using `-`) is sufficient for local development. For distribution, use a developer certificate.
+
 ### App shows "Disconnected"
 
 This usually means:
@@ -174,7 +197,8 @@ Expected log for embedded mode:
 
 - The script builds a **Universal Binary** (x86_64 + arm64)
 - All Rust libraries must be universal binaries
-- Signing and notarization are optional but recommended for distribution
+- **Code signing is automatic** - The export script automatically signs the app with ad-hoc signature
+- Signing and notarization with developer certificate are optional but recommended for distribution
 
 ### Windows (TODO)
 
@@ -212,7 +236,8 @@ After building:
 1. Test the exported app
 2. Verify all Rust extensions load correctly
 3. Test FEAGI embedded mode
-4. (Optional) Sign and notarize for distribution
+4. Verify code signature (automatic, but you can verify with `codesign -dv "Brain Visualizer.app"`)
+5. (Optional) Sign with developer certificate and notarize for distribution
 
 ## Resources
 

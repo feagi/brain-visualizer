@@ -79,7 +79,7 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 func retrieve_output_and_close() -> FeagiRequestOutput:
 	if _output_response == null:
 		push_error("FEAGI NETWORK HTTP: Output retrieved before HTTP call was complete! Returning Empty Error Call. This will likely cause issues!")
-		_output_response = FeagiRequestOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+		_output_response = FeagiRequestOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING, 0)
 	queue_free()
 	return _output_response
 
@@ -87,7 +87,7 @@ func retrieve_output_and_close() -> FeagiRequestOutput:
 func retrieve_output_and_continue() -> FeagiRequestOutput:
 	if _output_response == null:
 		push_error("FEAGI NETWORK HTTP: Output retrieved before any HTTP call was complete! Returning Empty Error Call. This will likely cause issues!")
-		return FeagiRequestOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+		return FeagiRequestOutput.response_error_response([], _request_definition.call_type == CALL_PROCESS_TYPE.POLLING, 0)
 	return _output_response
 
 ## Kills the worker early
@@ -106,6 +106,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 		if _number_retries_done >= _request_definition.number_of_retries_allowed:
 			push_error("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
 			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+			_output_response.response_code = 0  # Ensure response_code is set
 			worker_done.emit()
 			worker_failed_to_recover_from_retrying.emit()
 			return
@@ -129,7 +130,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	# FEAGI responded with an error
 	if response_code != 200:
 		push_warning("FEAGI NETWORK HTTP: FEAGI responded from endpoint: %s with HTTP error code: %s" % [_request_definition.full_address, response_code])
-		_output_response = FeagiRequestOutput.response_error_response(body, _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+		_output_response = FeagiRequestOutput.response_error_response(body, _request_definition.call_type == CALL_PROCESS_TYPE.POLLING, response_code)
 		worker_done.emit()
 		return
 	
@@ -137,7 +138,7 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	match(_request_definition.call_type):
 		CALL_PROCESS_TYPE.SINGLE:
 			# Single call, nothing else to do
-			_output_response = FeagiRequestOutput.response_success(body, false)
+			_output_response = FeagiRequestOutput.response_success(body, false, response_code)
 			worker_done.emit()
 			return
 		CALL_PROCESS_TYPE.POLLING:
@@ -147,19 +148,19 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			match polling_response:
 				BasePollingMethod.POLLING_CONFIRMATION.COMPLETE:
 					# We are done polling!
-					_output_response = FeagiRequestOutput.response_success(body, true)
+					_output_response = FeagiRequestOutput.response_success(body, true, response_code)
 					worker_done.emit()
 					_timer.stop()
 					return
 				BasePollingMethod.POLLING_CONFIRMATION.INCOMPLETE:
 					# not done polling, keep going!
-					_output_response = FeagiRequestOutput.response_success(body, true)
+					_output_response = FeagiRequestOutput.response_success(body, true, response_code)
 					worker_retrieved_latest_poll.emit(_output_response)
 					return
 				BasePollingMethod.POLLING_CONFIRMATION.ERROR:
 					#n This actually shouldnt be possible. Report error and close
 					push_error("FEAGI NETWORK HTTP: Polling endpoint has failed! Halting!")
-					_output_response = FeagiRequestOutput.response_error_response(body, _request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
+					_output_response = FeagiRequestOutput.response_error_response(body, _request_definition.call_type == CALL_PROCESS_TYPE.POLLING, response_code)
 					worker_done.emit()
 					_timer.stop()
 					return

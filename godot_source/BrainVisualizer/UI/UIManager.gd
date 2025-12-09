@@ -517,7 +517,7 @@ func update_loading_status(message: String) -> void:
 ## Show the shutdown screen with custom styling
 func show_shutdown_screen() -> void:
 	# Change the title from "Loading..." to "Shutting down..."
-	var loading_label = $TempLoadingScreen/LoadingOverlay/Top_Row/LoadingLabel
+	var loading_label = $TempLoadingScreen/LoadingOverlay/VBoxContainer/Label
 	if loading_label:
 		loading_label.text = "Shutting down..."
 	
