@@ -464,7 +464,27 @@ jobs:
       - name: Verify export
         shell: bash
         run: |
+          echo "📂 Contents of exports directory:"
           ls -lh exports/ || true
+          
+          # On Windows, verify both .exe and .pck exist (since embed_pck=false)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            if [ -f "exports/${{ matrix.output_name }}" ]; then
+              echo "✅ Found .exe: ${{ matrix.output_name }}"
+            else
+              echo "❌ Missing .exe: ${{ matrix.output_name }}"
+              exit 1
+            fi
+            
+            # Check for .pck file (should match .exe name)
+            PCK_NAME=$(echo "${{ matrix.output_name }}" | sed 's/\.exe$/.pck/')
+            if [ -f "exports/$PCK_NAME" ]; then
+              echo "✅ Found .pck: $PCK_NAME"
+            else
+              echo "⚠️  Missing .pck: $PCK_NAME (expected with embed_pck=false)"
+              echo "   This may cause runtime errors if not embedded"
+            fi
+          fi
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
@@ -478,7 +498,24 @@ jobs:
         shell: pwsh
         run: |
           cd exports
-          Compress-Archive -Path BrainVisualizer-Embedded.exe -DestinationPath BrainVisualizer-Embedded-Windows.zip -Force
+          # Godot exports with embed_pck=false create both .exe and .pck files
+          # Both files must be included in the distribution package
+          $files = @()
+          if (Test-Path "BrainVisualizer-Embedded.exe") {
+            $files += "BrainVisualizer-Embedded.exe"
+          }
+          if (Test-Path "BrainVisualizer-Embedded.pck") {
+            $files += "BrainVisualizer-Embedded.pck"
+          }
+          if ($files.Count -eq 0) {
+            Write-Host "❌ No .exe or .pck files found in exports directory"
+            Get-ChildItem -Path . | Format-Table
+            exit 1
+          }
+          Write-Host "📦 Including files in zip:"
+          $files | ForEach-Object { Write-Host "  - $_" }
+          Compress-Archive -Path $files -DestinationPath BrainVisualizer-Embedded-Windows.zip -Force
+          Write-Host "✅ Created BrainVisualizer-Embedded-Windows.zip"
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
@@ -743,7 +780,19 @@ jobs:
             exit 1
           fi
           
-          echo "✅ Export successful"
+          echo "✅ Export successful - .exe created"
+          
+          # On Windows, verify .pck file exists (since embed_pck=false)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            PCK_NAME=$(echo "${{ matrix.output_name }}" | sed 's/\.exe$/.pck/')
+            if [ -f "../exports/$PCK_NAME" ]; then
+              echo "✅ .pck file created: $PCK_NAME"
+            else
+              echo "⚠️  .pck file not found: $PCK_NAME"
+              echo "   Expected with embed_pck=false in export_presets.cfg"
+              echo "   This may cause issues if not included in distribution package"
+            fi
+          fi
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
@@ -757,7 +806,24 @@ jobs:
         shell: pwsh
         run: |
           cd exports
-          Compress-Archive -Path BrainVisualizer-Remote.exe -DestinationPath BrainVisualizer-Remote-Windows.zip -Force
+          # Godot exports with embed_pck=false create both .exe and .pck files
+          # Both files must be included in the distribution package
+          $files = @()
+          if (Test-Path "BrainVisualizer-Remote.exe") {
+            $files += "BrainVisualizer-Remote.exe"
+          }
+          if (Test-Path "BrainVisualizer-Remote.pck") {
+            $files += "BrainVisualizer-Remote.pck"
+          }
+          if ($files.Count -eq 0) {
+            Write-Host "❌ No .exe or .pck files found in exports directory"
+            Get-ChildItem -Path . | Format-Table
+            exit 1
+          }
+          Write-Host "📦 Including files in zip:"
+          $files | ForEach-Object { Write-Host "  - $_" }
+          Compress-Archive -Path $files -DestinationPath BrainVisualizer-Remote-Windows.zip -Force
+          Write-Host "✅ Created BrainVisualizer-Remote-Windows.zip"
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
