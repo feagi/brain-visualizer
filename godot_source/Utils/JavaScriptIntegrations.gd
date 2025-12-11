@@ -28,7 +28,7 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 	var feagi_socket_port: int
 	var feagi_TLD: StringName
 	var feagi_SSL: StringName
-	var feagi_socket_SSL: StringName
+	var feagi_socket_SSL: StringName = "ws://"  # Initialize WebSocket protocol prefix
 	var feagi_root_web_address: StringName
 	var feagi_root_websocket_address: StringName
 	var feagi_socket_address: StringName

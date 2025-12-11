@@ -59,8 +59,32 @@ func _ready() -> void:
 	else:
 		# HTML5 or remote desktop mode
 		print("🌐 [BV] Remote mode - connecting to external FEAGI...")
-		# Try to grab the network settings from javascript, but manually define the network settings to use as fallback if the javascript fails
-		FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+		
+		# Check if launched from FEAGI Desktop - use environment variables if available
+		var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
+		if launched_from_desktop == "true":
+			# Use environment variables set by feagi-desktop
+			var api_url = OS.get_environment("FEAGI_API_URL")
+			if api_url.is_empty():
+				api_url = "http://127.0.0.1:8000"
+			
+			var ws_host = OS.get_environment("FEAGI_WS_HOST")
+			if ws_host.is_empty():
+				ws_host = "127.0.0.1"
+			
+			var ws_port_str = OS.get_environment("FEAGI_WS_PORT")
+			var ws_port = int(ws_port_str) if ws_port_str else 9050
+			var ws_url = "ws://%s:%d" % [ws_host, ws_port]
+			
+			print("   [BV] Using FEAGI Desktop environment variables:")
+			print("   [BV]   API URL: %s" % api_url)
+			print("   [BV]   WebSocket: %s" % ws_url)
+			
+			var endpoint_details = FeagiEndpointDetails.create_from(api_url, ws_url)
+			FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+		else:
+			# Web build or manual launch - try JavaScript first, fallback to defaults
+			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
