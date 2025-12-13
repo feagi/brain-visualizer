@@ -13,3 +13,24 @@ windows.release.x86_64 = "feagi_type_system.dll"
 linux.debug.x86_64 = "libfeagi_type_system.so"
 linux.release.x86_64 = "libfeagi_type_system.so"
 
+[dependencies]
+
+macos.debug = {
+    "libfeagi_type_system.dylib": ""
+}
+macos.release = {
+    "libfeagi_type_system.dylib": ""
+}
+windows.debug.x86_64 = {
+    "feagi_type_system.dll": ""
+}
+windows.release.x86_64 = {
+    "feagi_type_system.dll": ""
+}
+linux.debug.x86_64 = {
+    "libfeagi_type_system.so": ""
+}
+linux.release.x86_64 = {
+    "libfeagi_type_system.so": ""
+}
+

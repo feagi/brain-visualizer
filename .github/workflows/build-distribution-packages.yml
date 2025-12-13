@@ -486,6 +486,61 @@ jobs:
             fi
           fi
 
+      - name: Verify GDExtension DLLs included in export (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "🔍 Verifying GDExtension DLLs were exported..."
+          echo ""
+          echo "📂 Full export directory contents:"
+          find exports -type f -name "*.dll" -o -name "*.exe" -o -name "*.pck" || true
+          echo ""
+          
+          # Check for required DLLs
+          MISSING_DLLS=0
+          
+          if [ -f "exports/feagi_data_deserializer.dll" ]; then
+            echo "✅ Found feagi_data_deserializer.dll"
+          else
+            echo "❌ MISSING: feagi_data_deserializer.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_type_system.dll" ]; then
+            echo "✅ Found feagi_type_system.dll"
+          else
+            echo "❌ MISSING: feagi_type_system.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_shared_video.dll" ]; then
+            echo "✅ Found feagi_shared_video.dll"
+          else
+            echo "❌ MISSING: feagi_shared_video.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_embedded.dll" ]; then
+            echo "✅ Found feagi_embedded.dll (Mode 1)"
+          else
+            echo "⚠️  feagi_embedded.dll not found (expected for Mode 1)"
+          fi
+          
+          if [ $MISSING_DLLS -eq 1 ]; then
+            echo ""
+            echo "❌ ERROR: Required GDExtension DLLs are missing from export!"
+            echo "This will cause Brain Visualizer to fail at runtime."
+            echo ""
+            echo "Possible causes:"
+            echo "  1. .gdextension files missing [dependencies] section"
+            echo "  2. DLLs not in expected location before export"
+            echo "  3. Godot export failed to include dependencies"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All required GDExtension DLLs present in export"
+
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
         shell: bash
@@ -498,8 +553,8 @@ jobs:
         shell: pwsh
         run: |
           cd exports
-          # Godot exports with embed_pck=false create both .exe and .pck files
-          # Both files must be included in the distribution package
+          # Godot exports with embed_pck=false create both .exe, .pck, and DLL files
+          # All files must be included in the distribution package
           $files = @()
           if (Test-Path "BrainVisualizer-Embedded.exe") {
             $files += "BrainVisualizer-Embedded.exe"
@@ -507,15 +562,32 @@ jobs:
           if (Test-Path "BrainVisualizer-Embedded.pck") {
             $files += "BrainVisualizer-Embedded.pck"
           }
+          
+          # Include all GDExtension DLLs (required for runtime)
+          $dlls = Get-ChildItem -Path . -Filter "*.dll" -File
+          foreach ($dll in $dlls) {
+            $files += $dll.Name
+            Write-Host "  📦 Including DLL: $($dll.Name)"
+          }
+          
           if ($files.Count -eq 0) {
-            Write-Host "❌ No .exe or .pck files found in exports directory"
+            Write-Host "❌ No files found in exports directory"
             Get-ChildItem -Path . | Format-Table
             exit 1
           }
-          Write-Host "📦 Including files in zip:"
+          
+          Write-Host ""
+          Write-Host "📦 Creating Windows distribution package with:"
           $files | ForEach-Object { Write-Host "  - $_" }
+          Write-Host ""
+          
           Compress-Archive -Path $files -DestinationPath BrainVisualizer-Embedded-Windows.zip -Force
           Write-Host "✅ Created BrainVisualizer-Embedded-Windows.zip"
+          
+          # Verify zip contents
+          Write-Host ""
+          Write-Host "📋 Zip file contents:"
+          Get-ChildItem -Path BrainVisualizer-Embedded-Windows.zip | Select-Object Name, Length | Format-Table
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'
@@ -794,6 +866,59 @@ jobs:
             fi
           fi
 
+      - name: Verify GDExtension DLLs included in export (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "🔍 Verifying GDExtension DLLs were exported (Mode 2 - Remote)..."
+          echo ""
+          echo "📂 Full export directory contents:"
+          find exports -type f -name "*.dll" -o -name "*.exe" -o -name "*.pck" || true
+          echo ""
+          
+          # Check for required DLLs (Mode 2 doesn't include feagi_embedded.dll)
+          MISSING_DLLS=0
+          
+          if [ -f "exports/feagi_data_deserializer.dll" ]; then
+            echo "✅ Found feagi_data_deserializer.dll"
+          else
+            echo "❌ MISSING: feagi_data_deserializer.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_type_system.dll" ]; then
+            echo "✅ Found feagi_type_system.dll"
+          else
+            echo "❌ MISSING: feagi_type_system.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_shared_video.dll" ]; then
+            echo "✅ Found feagi_shared_video.dll"
+          else
+            echo "❌ MISSING: feagi_shared_video.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_embedded.dll" ]; then
+            echo "⚠️  Found feagi_embedded.dll (should NOT be in Mode 2)"
+          fi
+          
+          if [ $MISSING_DLLS -eq 1 ]; then
+            echo ""
+            echo "❌ ERROR: Required GDExtension DLLs are missing from export!"
+            echo "This will cause Brain Visualizer to fail at runtime."
+            echo ""
+            echo "Possible causes:"
+            echo "  1. .gdextension files missing [dependencies] section"
+            echo "  2. DLLs not in expected location before export"
+            echo "  3. Godot export failed to include dependencies"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All required GDExtension DLLs present in export (Mode 2)"
+
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
         shell: bash
@@ -806,8 +931,8 @@ jobs:
         shell: pwsh
         run: |
           cd exports
-          # Godot exports with embed_pck=false create both .exe and .pck files
-          # Both files must be included in the distribution package
+          # Godot exports with embed_pck=false create both .exe, .pck, and DLL files
+          # All files must be included in the distribution package
           $files = @()
           if (Test-Path "BrainVisualizer-Remote.exe") {
             $files += "BrainVisualizer-Remote.exe"
@@ -815,15 +940,32 @@ jobs:
           if (Test-Path "BrainVisualizer-Remote.pck") {
             $files += "BrainVisualizer-Remote.pck"
           }
+          
+          # Include all GDExtension DLLs (required for runtime)
+          $dlls = Get-ChildItem -Path . -Filter "*.dll" -File
+          foreach ($dll in $dlls) {
+            $files += $dll.Name
+            Write-Host "  📦 Including DLL: $($dll.Name)"
+          }
+          
           if ($files.Count -eq 0) {
-            Write-Host "❌ No .exe or .pck files found in exports directory"
+            Write-Host "❌ No files found in exports directory"
             Get-ChildItem -Path . | Format-Table
             exit 1
           }
-          Write-Host "📦 Including files in zip:"
+          
+          Write-Host ""
+          Write-Host "📦 Creating Windows distribution package with:"
           $files | ForEach-Object { Write-Host "  - $_" }
+          Write-Host ""
+          
           Compress-Archive -Path $files -DestinationPath BrainVisualizer-Remote-Windows.zip -Force
           Write-Host "✅ Created BrainVisualizer-Remote-Windows.zip"
+          
+          # Verify zip contents
+          Write-Host ""
+          Write-Host "📋 Zip file contents:"
+          Get-ChildItem -Path BrainVisualizer-Remote-Windows.zip | Select-Object Name, Length | Format-Table
 
       - name: Create distribution package (Linux)
         if: runner.os == 'Linux'

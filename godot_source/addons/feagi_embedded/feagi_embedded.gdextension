@@ -10,3 +10,24 @@ windows.debug.x86_64 = "feagi_embedded.dll"
 windows.release.x86_64 = "feagi_embedded.dll"
 linux.debug.x86_64 = "libfeagi_embedded.so"
 linux.release.x86_64 = "libfeagi_embedded.so"
+
+[dependencies]
+
+macos.debug = {
+    "libfeagi_embedded.dylib": ""
+}
+macos.release = {
+    "libfeagi_embedded.dylib": ""
+}
+windows.debug.x86_64 = {
+    "feagi_embedded.dll": ""
+}
+windows.release.x86_64 = {
+    "feagi_embedded.dll": ""
+}
+linux.debug.x86_64 = {
+    "libfeagi_embedded.so": ""
+}
+linux.release.x86_64 = {
+    "libfeagi_embedded.so": ""
+}
