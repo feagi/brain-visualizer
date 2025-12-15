@@ -10,6 +10,7 @@ var UI_manager: UIManager:
 
 var _UI_manager: UIManager
 var _feagi_embedded = null  # Holds FeagiEmbedded instance (RefCounted)
+var _feagi_wasm_manager: FeagiWasmManager = null  # Holds FeagiWasmManager instance (web builds)
 
 #NOTE: This is where it all starts, if you wish to see how BV connects to FEAGI, start here
 func _ready() -> void:
@@ -140,6 +141,65 @@ func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_st
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:
 	_UI_manager.window_manager.spawn_amalgamation_window(amalgamation_id, genome_title, dimensions)
+
+## Phase 4: Initialize FEAGI WASM engine for web builds
+func _initialize_feagi_wasm() -> void:
+	"""Initialize FEAGI WASM engine for web platform"""
+	_feagi_wasm_manager = FeagiWasmManager.new()
+	add_child(_feagi_wasm_manager)
+	
+	# Connect signals
+	_feagi_wasm_manager.genome_loaded.connect(_on_wasm_genome_loaded)
+	_feagi_wasm_manager.burst_processed.connect(_on_wasm_burst_processed)
+	_feagi_wasm_manager.error_occurred.connect(_on_wasm_error_occurred)
+	_feagi_wasm_manager.storage_initialized.connect(_on_wasm_storage_initialized)
+	_feagi_wasm_manager.genome_saved.connect(_on_wasm_genome_saved)
+	
+	print("✅ FEAGI WASM manager initialized")
+
+func _on_wasm_genome_loaded() -> void:
+	"""Handle genome loaded event from WASM engine"""
+	print("✅ [BV] WASM genome loaded")
+	# Notify UI manager (similar to FeagiCore genome ready)
+	_UI_manager.FEAGI_confirmed_genome()
+
+func _on_wasm_burst_processed(result: Dictionary) -> void:
+	"""Handle burst processed event from WASM engine"""
+	if result.has("fired_neurons"):
+		# Convert fired neurons to visualization format
+		# This will need to integrate with existing visualization system
+		print("📊 [BV] Burst processed: ", result.get("neuron_count", 0), " neurons fired")
+		# TODO: Update visualization with fired neurons
+
+func _on_wasm_error_occurred(error: String) -> void:
+	"""Handle error from WASM engine"""
+	push_error("FEAGI WASM error: " + error)
+	StatusReporter.report_error("FEAGI WASM: " + error)
+
+func _on_wasm_storage_initialized() -> void:
+	"""Handle storage initialization"""
+	print("✅ [BV] WASM storage initialized")
+
+func _on_wasm_genome_saved(genome_id: String) -> void:
+	"""Handle genome saved event"""
+	print("✅ [BV] Genome saved to storage: ", genome_id)
+
+## Load genome from file (for web builds, uses WASM engine)
+func load_genome_from_file(path: String) -> void:
+	"""Load genome from file path"""
+	if OS.has_feature("web") and _feagi_wasm_manager != null:
+		# Web build - use WASM engine
+		var file = FileAccess.open(path, FileAccess.READ)
+		if file:
+			var genome_json = file.get_as_text()
+			file.close()
+			_feagi_wasm_manager.load_genome_from_json(genome_json)
+		else:
+			push_error("Failed to read genome file: " + path)
+	else:
+		# Desktop build - use existing FEAGI (embedded or remote)
+		# TODO: Integrate with existing genome loading mechanism
+		push_warning("Genome loading from file not yet integrated for desktop mode")
 
 ## Initialize FEAGI as a subprocess (desktop mode)
 func _initialize_feagi_subprocess():
