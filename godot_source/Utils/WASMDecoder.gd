@@ -228,7 +228,10 @@ static func create_feagi_engine() -> JavaScriptObject:
 			return null;
 		}
 		try {
+			// Create engine instance
 			var engine = new window.__feagi_wasm_module.FeagiEngine();
+			// Store globally for APIRequestWorker to access
+			window.__feagi_engine = engine;
 			return engine;
 		} catch(e) {
 			console.error('Failed to create FeagiEngine:', e);

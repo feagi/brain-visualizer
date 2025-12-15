@@ -50,15 +50,19 @@ var cortical_type: CORTICAL_AREA_TYPE:
 	get:  return _get_group()
 
 ## NEW: Strongly-typed cortical type from Rust (single source of truth)
-var feagi_cortical_type: FeagiCorticalType:
+## Note: Uses Variant for web compatibility (GDExtensions not available on web)
+var feagi_cortical_type: Variant:
 	get: return _feagi_cortical_type
 	set(value):
-		_feagi_cortical_type = value
+		if GDExtensionHelper.is_feagi_cortical_type_available():
+			_feagi_cortical_type = value
+		else:
+			_feagi_cortical_type = null
 
 var type_as_string: StringName:
 	get: return AbstractCorticalArea.cortical_type_to_str(_get_group())
 
-var _feagi_cortical_type: FeagiCorticalType  # NEW - single source of truth
+var _feagi_cortical_type: Variant  # NEW - single source of truth (Variant for web compatibility)
 
 ## IPU/OPU-specific decoded cortical ID fields (only populated for IPU/OPU areas)
 var cortical_subtype: String:
@@ -418,10 +422,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	
 	are_details_placeholder_data = false # Assuming if ANY data is updated here, that all data here is not placeholders
 	
-	# NEW: Extract FeagiCorticalType if present
-	if "_feagi_cortical_type" in data.keys():
+	# NEW: Extract FeagiCorticalType if present (only if GDExtensions available)
+	if "_feagi_cortical_type" in data.keys() and GDExtensionHelper.is_feagi_cortical_type_available():
 		var feagi_type = data["_feagi_cortical_type"]
-		if feagi_type is FeagiCorticalType:
+		# Type check only if GDExtension is available
+		if ClassDB.class_exists("FeagiCorticalType") and feagi_type.get_script() != null:
 			_feagi_cortical_type = feagi_type
 	
 	# Cortical Parameters

@@ -79,8 +79,12 @@ DEST_WASM_DIR="$OUT_DIR/$WASM_DIR_REL"
 if [[ -d "$SRC_WASM_DIR" ]]; then
   mkdir -p "$DEST_WASM_DIR"
   echo "Copying WASM files from $SRC_WASM_DIR to $DEST_WASM_DIR"
+  # Copy Type 11 decoder (existing)
   cp -f "$SRC_WASM_DIR/feagi_wasm_processing.js" "$DEST_WASM_DIR/" 2>/dev/null || echo "Warning: feagi_wasm_processing.js not found"
   cp -f "$SRC_WASM_DIR/feagi_wasm_processing_bg.wasm" "$DEST_WASM_DIR/" 2>/dev/null || echo "Warning: feagi_wasm_processing_bg.wasm not found"
+  # Copy FEAGI WASM engine (Phase 4)
+  cp -f "$SRC_WASM_DIR/feagi_wasm.js" "$DEST_WASM_DIR/" 2>/dev/null || echo "Warning: feagi_wasm.js not found (run feagi-wasm/scripts/copy-to-bv.sh first)"
+  cp -f "$SRC_WASM_DIR/feagi_wasm_bg.wasm" "$DEST_WASM_DIR/" 2>/dev/null || echo "Warning: feagi_wasm_bg.wasm not found (run feagi-wasm/scripts/copy-to-bv.sh first)"
 else
   echo "Warning: WASM directory $SRC_WASM_DIR not found - web build may not have WASM decoder"
 fi

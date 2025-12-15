@@ -81,7 +81,11 @@ func setup(area: AbstractCorticalArea) -> void:
 	else:
 		_visualization_settings = VisualizationSettings.new()
 	
-	# Initialize Rust processor - REQUIRED, no fallback!
+	# Initialize Rust processor (only on desktop - not available on web)
+	if OS.has_feature("web"):
+		push_warning("🦀 Rust deserializer not available on web builds - direct points rendering will be disabled")
+		return
+	
 	if not ClassDB.class_exists("FeagiDataDeserializer"):
 		push_error("🦀 CRITICAL: Rust deserializer not found! Build with: cd rust_extensions/feagi_data_deserializer && ./build.sh")
 		return

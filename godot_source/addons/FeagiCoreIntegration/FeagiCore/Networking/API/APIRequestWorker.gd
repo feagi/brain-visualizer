@@ -54,7 +54,12 @@ func _poll_call_from_timer() -> void:
 ## data is either a Dictionary or stringable Array, and is sent for POST, PUT, and DELETE requests
 ## This function is called externally by [SingleCallWorker]
 func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, data: Variant = null) -> void:
+	# Check if we're in WASM standalone mode and should use WASM REST API adapter
+	if OS.has_feature("web") and _should_use_wasm_adapter(requestAddress):
+		_make_wasm_api_call(requestAddress, method, data)
+		return
 
+	# Normal HTTP request path
 	match(method):
 		HTTPClient.METHOD_GET:
 			request(requestAddress, _outgoing_headers, method)
@@ -74,6 +79,122 @@ func _make_call_to_FEAGI(requestAddress: StringName, method: HTTPClient.Method, 
 			# var debug_JSON = JSON.stringify(data)
 			request(requestAddress, _outgoing_headers, method, JSON.stringify(data))
 			return
+
+## Check if we should use WASM adapter for this request
+func _should_use_wasm_adapter(requestAddress: StringName) -> bool:
+	if not OS.has_feature("web"):
+		return false
+	
+	# Check URL parameter for standalone mode
+	var standalone_mode = JavaScriptIntegrations.get_url_parameter("standalone")
+	if standalone_mode == "true" or standalone_mode == "1":
+		return true
+	
+	# Check if FeagiEngine is available and has a loaded genome
+	var engine_ready = JavaScriptBridge.eval("typeof window.__feagi_engine !== 'undefined' && window.__feagi_engine !== null")
+	if engine_ready:
+		var genome_loaded = JavaScriptBridge.eval("window.__feagi_engine.isGenomeLoaded()")
+		if genome_loaded:
+			return true
+	
+	return false
+
+## Make API call via WASM REST API adapter
+func _make_wasm_api_call(requestAddress: StringName, method: HTTPClient.Method, data: Variant = null) -> void:
+	# Extract path from full address (remove protocol and host)
+	var path = _extract_path_from_address(requestAddress)
+	if path == "":
+		path = requestAddress  # Fallback to full address
+	
+	# Convert HTTPClient.Method to string
+	var method_str = "GET"
+	match(method):
+		HTTPClient.METHOD_GET:
+			method_str = "GET"
+		HTTPClient.METHOD_POST:
+			method_str = "POST"
+		HTTPClient.METHOD_PUT:
+			method_str = "PUT"
+		HTTPClient.METHOD_DELETE:
+			method_str = "DELETE"
+	
+	# Prepare body for POST/PUT/DELETE
+	var body_str: String = ""
+	if data != null:
+		body_str = JSON.stringify(data)
+	
+	# Call WASM REST API adapter via JavaScript
+	# Store result in window for polling
+	JavaScriptBridge.eval("""
+		(function() {
+			window.__feagi_wasm_api_call_ready = false;
+			window.__feagi_wasm_api_response = null;
+			window.__feagi_wasm_api_error = null;
+			
+			// Get FeagiEngine from WASMDecoder
+			if (typeof window.__feagi_engine === 'undefined' || window.__feagi_engine === null) {
+				window.__feagi_wasm_api_error = 'FeagiEngine not initialized';
+				window.__feagi_wasm_api_call_ready = true;
+				return;
+			}
+			
+			var engine = window.__feagi_engine;
+			var method = """ + JSON.stringify(method_str) + """;
+			var path = """ + JSON.stringify(path) + """;
+			var body = """ + JSON.stringify(body_str) + """;
+			
+			engine.handleRestApiCall(method, path, body || null).then(function(response) {
+				window.__feagi_wasm_api_response = response;
+				window.__feagi_wasm_api_call_ready = true;
+			}).catch(function(error) {
+				window.__feagi_wasm_api_error = String(error);
+				window.__feagi_wasm_api_call_ready = true;
+			});
+		})();
+	""")
+	
+	# Poll for result
+	_poll_wasm_api_response()
+
+## Extract API path from full HTTP address
+func _extract_path_from_address(address: StringName) -> String:
+	var addr_str = String(address)
+	# Remove protocol (http:// or https://)
+	if addr_str.begins_with("http://"):
+		addr_str = addr_str.substr(7)
+	elif addr_str.begins_with("https://"):
+		addr_str = addr_str.substr(8)
+	
+	# Find first / after host
+	var slash_pos = addr_str.find("/")
+	if slash_pos >= 0:
+		return addr_str.substr(slash_pos)
+	
+	return ""
+
+## Poll for WASM API response
+func _poll_wasm_api_response() -> void:
+	var ready = JavaScriptBridge.eval("window.__feagi_wasm_api_call_ready === true")
+	var error = JavaScriptBridge.eval("window.__feagi_wasm_api_error")
+	var response = JavaScriptBridge.eval("window.__feagi_wasm_api_response")
+	
+	if ready:
+		# Clear window variables
+		JavaScriptBridge.eval("window.__feagi_wasm_api_call_ready = null; window.__feagi_wasm_api_response = null; window.__feagi_wasm_api_error = null;")
+		
+		if error != null and typeof(error) == TYPE_STRING and error != "":
+			# Error response
+			var error_body = error.to_utf8_buffer()
+			_call_complete(HTTPRequest.RESULT_CONNECTION_ERROR, 500, [], error_body)
+		else:
+			# Success response - parse JSON string to bytes
+			var response_str = String(response) if response != null else "{}"
+			var response_body = response_str.to_utf8_buffer()
+			_call_complete(HTTPRequest.RESULT_SUCCESS, 200, [], response_body)
+	else:
+		# Still waiting, check again next frame
+		await get_tree().process_frame
+		_poll_wasm_api_response()
 
 ## Returns whatever the worker got from FEAGI (or didn't if timed out), then deletes the worker
 func retrieve_output_and_close() -> FeagiRequestOutput:

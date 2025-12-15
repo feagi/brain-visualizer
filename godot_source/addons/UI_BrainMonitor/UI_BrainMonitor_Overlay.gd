@@ -3,14 +3,17 @@ class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
 var _mouse_context_label: Label
-var _fdp_deserializer: FeagiDataDeserializer = null
+var _fdp_deserializer: Variant = null  # FeagiDataDeserializer (Variant for web compatibility)
 
 func _ready() -> void:
 	_mouse_context_label = $Bottom_Row/MouseContext
 	
-	# Initialize FDP deserializer for decoding voxel values
-	if ClassDB.class_exists("FeagiDataDeserializer"):
-		_fdp_deserializer = FeagiDataDeserializer.new()
+	# Initialize FDP deserializer for decoding voxel values (only if GDExtension available)
+	if not OS.has_feature("web") and ClassDB.class_exists("FeagiDataDeserializer"):
+		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+	elif OS.has_feature("web"):
+		# On web builds, FDP deserializer is not available (GDExtensions not supported)
+		pass  # FDP voxel decoding will be disabled on web
 	else:
 		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 

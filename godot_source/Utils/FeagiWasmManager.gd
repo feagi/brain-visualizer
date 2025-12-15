@@ -40,7 +40,7 @@ func _initialize_engine() -> void:
 		_initialize_engine()
 		return
 	
-	# Create engine instance
+	# Create engine instance (WASMDecoder will store it globally in window.__feagi_engine)
 	feagi_engine = WASMDecoder.create_feagi_engine()
 	if feagi_engine == null:
 		emit_signal("error_occurred", "Failed to create FEAGI engine")
@@ -48,6 +48,7 @@ func _initialize_engine() -> void:
 	
 	is_initialized = true
 	print("✅ FeagiEngine initialized successfully")
+	print("   Engine stored globally at window.__feagi_engine for REST API adapter")
 
 ## Initialize IndexedDB storage
 func init_storage() -> void:

@@ -132,3 +132,117 @@ static func overwrite_with_details_from_address_bar(fallback_details: FeagiEndpo
 	
 	
 	return output
+
+## Get URL parameter value (web builds only)
+static func get_url_parameter(param_name: String) -> String:
+	"""Get URL parameter value from current page"""
+	if not OS.has_feature("web"):
+		return ""
+	
+	var value = JavaScriptBridge.eval("""
+		(function() {
+			var url = new URL(window.location.href);
+			return url.searchParams.get('%s') || null;
+		})();
+	""" % param_name)
+	
+	return String(value) if value != null else ""
+
+## Load file via HTTP fetch (for auto-detection in same directory)
+## Triggers async load - use poll_file_load_result() to get result
+static func load_file_via_http(filename: String) -> void:
+	"""Trigger async file load from same directory via HTTP fetch"""
+	if not OS.has_feature("web"):
+		return
+	
+	# Use a Promise-based approach and store result in window
+	JavaScriptBridge.eval("""
+		window.__feagi_file_load_ready = false;
+		window.__feagi_file_load_contents = null;
+		(async function() {
+			try {
+				var base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+				var url = base + '%s';
+				var response = await fetch(url);
+				if (response.ok) {
+					var text = await response.text();
+					window.__feagi_file_load_contents = text;
+					window.__feagi_file_load_ready = true;
+				} else {
+					window.__feagi_file_load_contents = '';
+					window.__feagi_file_load_ready = true;
+				}
+			} catch (e) {
+				window.__feagi_file_load_contents = '';
+				window.__feagi_file_load_ready = true;
+			}
+		})();
+	""" % filename)
+
+## Poll for file load result (call after load_file_via_http)
+static func poll_file_load_result() -> String:
+	"""Check if file load has a result ready"""
+	if not OS.has_feature("web"):
+		return ""
+	
+	var ready = JavaScriptBridge.eval("window.__feagi_file_load_ready || false")
+	if ready:
+		var contents = JavaScriptBridge.eval("window.__feagi_file_load_contents || ''")
+		JavaScriptBridge.eval("window.__feagi_file_load_ready = false; window.__feagi_file_load_contents = null;")
+		return String(contents) if contents != null and contents != "" else ""
+	
+	return ""
+
+## Load file via HTML5 File API (deprecated - use load_file_via_http + poll_file_load_result)
+## This function is kept for compatibility but should not be used
+static func load_file_via_file_api(_filename: String) -> String:
+	"""Deprecated - use load_file_via_http() + poll_file_load_result() async pattern instead"""
+	push_warning("load_file_via_file_api() is deprecated - use async pattern instead")
+	return ""
+
+## Show HTML5 file picker for genome loading
+## Stores result in window.__feagi_picked_file_contents for polling
+static func show_file_picker_for_genome(_target_object: Object, _callback_method: String) -> void:
+	"""Show HTML5 file picker - result available via poll_file_picker_result()"""
+	if not OS.has_feature("web"):
+		push_error("File picker only available on web builds")
+		return
+	
+	JavaScriptBridge.eval("""
+		(function() {
+			window.__feagi_file_picker_ready = false;
+			window.__feagi_file_picker_contents = null;
+			var input = document.createElement('input');
+			input.type = 'file';
+			input.accept = '.json';
+			input.onchange = function(e) {
+				var file = e.target.files[0];
+				if (file) {
+					var reader = new FileReader();
+					reader.onload = function(e) {
+						window.__feagi_file_picker_contents = e.target.result;
+						window.__feagi_file_picker_ready = true;
+					};
+					reader.readAsText(file);
+				} else {
+					window.__feagi_file_picker_ready = true;
+					window.__feagi_file_picker_contents = null;
+				}
+			};
+			input.click();
+		})();
+	""")
+
+## Poll for file picker result (call after show_file_picker_for_genome)
+static func poll_file_picker_result() -> String:
+	"""Check if file picker has a result ready"""
+	if not OS.has_feature("web"):
+		return ""
+	
+	var ready = JavaScriptBridge.eval("window.__feagi_file_picker_ready || false")
+	if ready:
+		var contents = JavaScriptBridge.eval("window.__feagi_file_picker_contents || ''")
+		JavaScriptBridge.eval("window.__feagi_file_picker_ready = false; window.__feagi_file_picker_contents = null;")
+		return String(contents) if contents != null else ""
+	
+	return ""

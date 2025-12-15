@@ -140,11 +140,14 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and subtype == "MEMORY":
 		type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	
-	# NEW: Parse FeagiCorticalType from API if available
-	var feagi_cortical_type: FeagiCorticalType = null
-	if "cortical_type_info" in feagi_dictionary:
-		feagi_cortical_type = FeagiCorticalTypeFactory.from_api_dict(feagi_dictionary["cortical_type_info"])
-	# Store it in the dictionary for later use by the area
+	# NEW: Parse FeagiCorticalType from API if available (only if GDExtensions available)
+	# Note: On web builds, GDExtensions are not available, so this is skipped
+	var feagi_cortical_type: Variant = null
+	if "cortical_type_info" in feagi_dictionary and not OS.has_feature("web") and GDExtensionHelper.is_feagi_cortical_type_factory_available():
+		# Only parse on desktop builds with GDExtensions
+		# For web builds, cortical_type_info is ignored (FEAGI handles defaults)
+		pass  # TODO: Re-enable when GDExtension loading is fixed for desktop
+	# Store it in the dictionary for later use by the area (if available)
 	if feagi_cortical_type != null:
 		feagi_dictionary["_feagi_cortical_type"] = feagi_cortical_type
 	

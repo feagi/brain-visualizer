@@ -59,33 +59,80 @@ func _ready() -> void:
 			_initialize_feagi_embedded()
 	else:
 		# HTML5 or remote desktop mode
-		print("🌐 [BV] Remote mode - connecting to external FEAGI...")
-		
-		# Check if launched from FEAGI Desktop - use environment variables if available
-		var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
-		if launched_from_desktop == "true":
-			# Use environment variables set by feagi-desktop
-			var api_url = OS.get_environment("FEAGI_API_URL")
-			if api_url.is_empty():
-				api_url = "http://127.0.0.1:8000"
+		if OS.has_feature("web"):
+			# Web build - check if we should use standalone WASM mode
+			_initialize_feagi_wasm()
 			
-			var ws_host = OS.get_environment("FEAGI_WS_HOST")
-			if ws_host.is_empty():
-				ws_host = "127.0.0.1"
+			# Check URL parameter to see if we should skip remote FEAGI
+			var standalone_mode = JavaScriptIntegrations.get_url_parameter("standalone")
+			if standalone_mode == "true" or standalone_mode == "1":
+				print("🌐 [BV] Standalone WASM mode - skipping remote FEAGI connection")
+				# Try to auto-load genome from same directory
+				_try_auto_load_genome_from_directory()
+				return
 			
-			var ws_port_str = OS.get_environment("FEAGI_WS_PORT")
-			var ws_port = int(ws_port_str) if ws_port_str else 9050
-			var ws_url = "ws://%s:%d" % [ws_host, ws_port]
-			
-			print("   [BV] Using FEAGI Desktop environment variables:")
-			print("   [BV]   API URL: %s" % api_url)
-			print("   [BV]   WebSocket: %s" % ws_url)
-			
-			var endpoint_details = FeagiEndpointDetails.create_from(api_url, ws_url)
-			FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+			# Check if launched from FEAGI Desktop - use environment variables if available
+			var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
+			if launched_from_desktop == "true":
+				# Use environment variables set by feagi-desktop
+				var api_url = OS.get_environment("FEAGI_API_URL")
+				if api_url.is_empty():
+					api_url = "http://127.0.0.1:8000"
+				
+				var ws_host = OS.get_environment("FEAGI_WS_HOST")
+				if ws_host.is_empty():
+					ws_host = "127.0.0.1"
+				
+				var ws_port_str = OS.get_environment("FEAGI_WS_PORT")
+				var ws_port = int(ws_port_str) if ws_port_str else 9050
+				var ws_url = "ws://%s:%d" % [ws_host, ws_port]
+				
+				print("   [BV] Using FEAGI Desktop environment variables:")
+				print("   [BV]   API URL: %s" % api_url)
+				print("   [BV]   WebSocket: %s" % ws_url)
+				
+				var endpoint_details = FeagiEndpointDetails.create_from(api_url, ws_url)
+				FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+			else:
+				# Web build - try JavaScript first, fallback to defaults
+				# But also allow standalone mode if no FEAGI URL is provided
+				var feagi_url = JavaScriptIntegrations.get_url_parameter("feagi_url")
+				var ip_address = JavaScriptIntegrations.get_url_parameter("ip_address")
+				if (feagi_url == null or feagi_url == "") and (ip_address == null or ip_address == ""):
+					print("🌐 [BV] No FEAGI URL provided - using standalone WASM mode")
+					print("🌐 [BV] To connect to remote FEAGI, add ?feagi_url=... or ?ip_address=... to URL")
+					# Try to auto-load genome from same directory
+					_try_auto_load_genome_from_directory()
+				else:
+					FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
 		else:
-			# Web build or manual launch - try JavaScript first, fallback to defaults
-			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+			# Desktop remote mode
+			print("🌐 [BV] Remote mode - connecting to external FEAGI...")
+			# Check if launched from FEAGI Desktop - use environment variables if available
+			var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
+			if launched_from_desktop == "true":
+				# Use environment variables set by feagi-desktop
+				var api_url = OS.get_environment("FEAGI_API_URL")
+				if api_url.is_empty():
+					api_url = "http://127.0.0.1:8000"
+				
+				var ws_host = OS.get_environment("FEAGI_WS_HOST")
+				if ws_host.is_empty():
+					ws_host = "127.0.0.1"
+				
+				var ws_port_str = OS.get_environment("FEAGI_WS_PORT")
+				var ws_port = int(ws_port_str) if ws_port_str else 9050
+				var ws_url = "ws://%s:%d" % [ws_host, ws_port]
+				
+				print("   [BV] Using FEAGI Desktop environment variables:")
+				print("   [BV]   API URL: %s" % api_url)
+				print("   [BV]   WebSocket: %s" % ws_url)
+				
+				var endpoint_details = FeagiEndpointDetails.create_from(api_url, ws_url)
+				FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+			else:
+				# Desktop remote mode - try JavaScript first, fallback to defaults
+				FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)
@@ -187,19 +234,117 @@ func _on_wasm_genome_saved(genome_id: String) -> void:
 ## Load genome from file (for web builds, uses WASM engine)
 func load_genome_from_file(path: String) -> void:
 	"""Load genome from file path"""
-	if OS.has_feature("web") and _feagi_wasm_manager != null:
-		# Web build - use WASM engine
+	if OS.has_feature("web"):
+		# Web build - use HTTP fetch (file must be in same directory or subdirectory)
+		if _feagi_wasm_manager == null:
+			_initialize_feagi_wasm()
+			await get_tree().process_frame
+		
+		if _feagi_wasm_manager != null:
+			_load_genome_via_file_api(path)
+		else:
+			push_error("FEAGI WASM manager not initialized")
+	else:
+		# Desktop build - use file system directly
 		var file = FileAccess.open(path, FileAccess.READ)
 		if file:
 			var genome_json = file.get_as_text()
 			file.close()
-			_feagi_wasm_manager.load_genome_from_json(genome_json)
-		else:
-			push_error("Failed to read genome file: " + path)
+			# Desktop build - use existing FEAGI (embedded or remote)
+			# TODO: Integrate with existing genome loading mechanism
+			push_warning("Genome loading from file not yet integrated for desktop mode")
+
+## Load genome using HTTP fetch (web builds only)
+func _load_genome_via_file_api(filename: String) -> void:
+	"""Load genome file using HTTP fetch (file must be accessible via HTTP)"""
+	if not OS.has_feature("web") or _feagi_wasm_manager == null:
+		push_error("File loading only available on web builds with WASM")
+		return
+	
+	# Trigger async load
+	JavaScriptIntegrations.load_file_via_http(filename)
+	
+	# Wait for load to complete
+	var genome_json = await _load_file_async(filename)
+	if genome_json != null and genome_json != "":
+		_feagi_wasm_manager.load_genome_from_json(genome_json)
 	else:
-		# Desktop build - use existing FEAGI (embedded or remote)
-		# TODO: Integrate with existing genome loading mechanism
-		push_warning("Genome loading from file not yet integrated for desktop mode")
+		push_error("Failed to load genome file: " + filename)
+
+## Try to auto-load genome from same directory (web builds)
+func _try_auto_load_genome_from_directory() -> void:
+	"""Try to find and load genome files in the same directory"""
+	if not OS.has_feature("web"):
+		return
+	
+	# Ensure WASM manager is initialized
+	if _feagi_wasm_manager == null:
+		_initialize_feagi_wasm()
+		# Wait a frame for initialization
+		await get_tree().process_frame
+	
+	if _feagi_wasm_manager == null:
+		push_error("Failed to initialize FEAGI WASM manager")
+		return
+	
+	# Check for common genome file names
+	var genome_files = ["genome.json", "brain.json", "connectome.json"]
+	for filename in genome_files:
+		print("🔍 [BV] Checking for genome file: " + filename)
+		var genome_json = await _load_file_async(filename)
+		if genome_json != null and genome_json != "":
+			print("✅ [BV] Auto-loaded genome from: " + filename)
+			_feagi_wasm_manager.load_genome_from_json(genome_json)
+			return
+	
+	print("ℹ️ [BV] No genome file found in directory - use 'Load Genome' button to load manually")
+
+## Load file asynchronously via HTTP
+func _load_file_async(filename: String) -> String:
+	"""Load file asynchronously and return contents"""
+	if not OS.has_feature("web"):
+		return ""
+	
+	# Trigger async load
+	JavaScriptIntegrations.load_file_via_http(filename)
+	
+	# Poll for result (non-blocking)
+	var max_attempts = 50  # 5 seconds max
+	for i in range(max_attempts):
+		var result = JavaScriptIntegrations.poll_file_load_result()
+		if result != "":
+			return result
+		await get_tree().process_frame
+	
+	return ""
+
+## Show file picker for genome loading (web builds)
+func show_genome_file_picker() -> void:
+	"""Show HTML5 file picker for genome loading"""
+	if not OS.has_feature("web") or _feagi_wasm_manager == null:
+		push_error("File picker only available on web builds with WASM")
+		return
+	
+	JavaScriptIntegrations.show_file_picker_for_genome(self, "_on_genome_file_selected")
+	# Poll for result in next frame
+	_check_file_picker_result()
+
+func _check_file_picker_result() -> void:
+	"""Poll for file picker result"""
+	var result = JavaScriptIntegrations.poll_file_picker_result()
+	if result != "":
+		_on_genome_file_selected(result)
+	elif result == "":
+		# Still waiting or cancelled - check again next frame
+		await get_tree().process_frame
+		_check_file_picker_result()
+
+func _on_genome_file_selected(genome_json: String) -> void:
+	"""Callback when genome file is selected via file picker"""
+	if genome_json != null and genome_json != "":
+		_feagi_wasm_manager.load_genome_from_json(genome_json)
+	else:
+		push_error("Failed to load genome file")
 
 ## Initialize FEAGI as a subprocess (desktop mode)
 func _initialize_feagi_subprocess():

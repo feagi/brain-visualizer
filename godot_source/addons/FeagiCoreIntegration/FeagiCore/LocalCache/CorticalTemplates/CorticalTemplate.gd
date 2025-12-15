@@ -22,7 +22,8 @@ var cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	get: return _cortical_type
 
 ## NEW: Strongly-typed cortical type from Rust
-var feagi_cortical_type: FeagiCorticalType:
+## Note: Uses Variant for web compatibility (GDExtensions not available on web)
+var feagi_cortical_type: Variant:
 	get: return _feagi_cortical_type
 
 ## Unit default topology data from API (maps unit index to position and dimensions)
@@ -35,10 +36,10 @@ var _cortical_name: StringName
 var _structure: STRUCTURE
 var _resolution: Vector3i
 var _cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE  # DEPRECATED
-var _feagi_cortical_type: FeagiCorticalType  # NEW
+var _feagi_cortical_type: Variant  # NEW (Variant for web compatibility)
 var _unit_default_topology: Dictionary = {}  # NEW: {unit_index: {"relative_position": [x,y,z], "dimensions": [x,y,z]}}
 
-func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, feagi_type: FeagiCorticalType = null, topology: Dictionary = {}) -> void:
+func _init(template_ID: StringName, template_enabled: bool, template_name: StringName, structure_name: StringName, resolution_array: Array[int], cortical_reference_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, feagi_type: Variant = null, topology: Dictionary = {}) -> void:
 	_ID = template_ID
 	_is_enabled = template_enabled
 	_cortical_name = template_name

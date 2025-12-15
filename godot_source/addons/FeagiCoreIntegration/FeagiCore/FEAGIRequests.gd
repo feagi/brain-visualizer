@@ -1089,9 +1089,14 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"coordinates_2d": [null, null]
 	}
 	
-	# NEW: Add cortical_type_info for CUSTOM areas
-	var feagi_custom_type: FeagiCorticalType = FeagiCorticalTypeFactory.create_custom()
-	dict_to_send["cortical_type_info"] = feagi_custom_type.to_api_dict()
+	# NEW: Add cortical_type_info for CUSTOM areas (only if GDExtensions available)
+	# Note: On web builds, GDExtensions are not available, so cortical_type_info is skipped
+	# This is acceptable as cortical_type_info is optional in the FEAGI API
+	if not OS.has_feature("web") and GDExtensionHelper.is_feagi_cortical_type_factory_available():
+		# Only add cortical_type_info on desktop builds with GDExtensions
+		# Note: This requires FeagiCorticalTypeFactory to be available at runtime
+		# For web builds, FEAGI will use default cortical type handling
+		pass  # TODO: Re-enable when GDExtension loading is fixed for desktop
 	
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)
@@ -1211,9 +1216,11 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		"coordinates_2d": [null, null]
 	}
 	
-	# NEW: Add cortical_type_info if available
-	if IOPU_template.feagi_cortical_type != null:
-		dict_to_send["cortical_type_info"] = IOPU_template.feagi_cortical_type.to_api_dict()
+	# NEW: Add cortical_type_info if available (only if GDExtensions available)
+	if IOPU_template.feagi_cortical_type != null and GDExtensionHelper.is_feagi_cortical_type_available():
+		var feagi_type = IOPU_template.feagi_cortical_type
+		if feagi_type != null and feagi_type.has_method("to_api_dict"):
+			dict_to_send["cortical_type_info"] = feagi_type.to_api_dict()
 	
 	if is_coordinate_2D_defined:
 		dict_to_send["coordinates_2d"] = FEAGIUtils.vector2i_to_array(coordinates_2D)

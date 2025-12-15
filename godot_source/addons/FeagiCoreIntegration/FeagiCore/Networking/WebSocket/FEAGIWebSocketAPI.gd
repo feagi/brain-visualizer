@@ -108,6 +108,12 @@ func _ready():
 func _init_rust_deserializer() -> void:
 	if _rust_deserializer != null:
 		return
+	
+	# Skip on web builds - GDExtensions not available
+	if OS.has_feature("web"):
+		print("🦀 FEAGI Rust deserializer skipped on web build (GDExtensions not supported)")
+		return
+	
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
 		if _rust_deserializer:
