@@ -38,6 +38,13 @@ Added independent, semi-transparent +/- buttons at the **far top-right corner** 
 - No modifications to TopBar functionality
 - Scale control is completely separate
 
+### 4. Project Settings (Critical Fix)
+#### project.godot
+- **Changed**: `window/stretch/mode` from `"canvas_items"` to `"disabled"`
+- **Removed**: `window/stretch/scale=0.5` (no longer needed)
+- **Reason**: The `canvas_items` stretch mode was causing automatic UI scaling based on window size
+- **Result**: UI elements now maintain their sizes based ONLY on theme, not window width
+
 ## Scale System
 
 ### Available Scales
@@ -146,6 +153,7 @@ BrainVisualizer/
 3. **Fixed Size**: Buttons maintain 48x48px size regardless of theme scale
 4. **Anchoring**: Anchored to top-right corner to stay in position
 5. **Simplicity**: Minimal, focused implementation with single purpose
+6. **Window Stretch Disabled**: Removed automatic UI scaling based on window size - scaling ONLY controlled by +/- buttons
 
 ## Migration Notes
 - No backward compatibility concerns (new feature)
@@ -153,3 +161,6 @@ BrainVisualizer/
 - ScaleControl is additive, doesn't modify existing code
 - Uses existing theme system and scale values
 - No changes to UIManager's scaling logic
+- **IMPORTANT**: Disabled window stretch mode - UI no longer scales with window size
+  - Before: Window resize → automatic UI scaling (BAD)
+  - After: Window resize → no effect on UI, only +/- buttons control scaling (GOOD)
