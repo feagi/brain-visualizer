@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://xuo7sffioktt" path="res://BrainVisualizer/UI/CircuitBuilder/TempSplit.gd" id="6_r3y8u"]
 [ext_resource type="PackedScene" uid="uid://bpam2w7i6dg8w" path="res://BrainVisualizer/UI/UIView/UIView.tscn" id="7_ee4d5"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
+[ext_resource type="PackedScene" uid="uid://c8scale_control" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.tscn" id="8_scale"]
 [ext_resource type="Script" uid="uid://ceahb5atex4dj" path="res://BrainVisualizer/UI/Windows/WindowManager.gd" id="9_eg4r6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
@@ -59,6 +60,8 @@ mouse_filter = 2
 
 [node name="TopBar" parent="UIManager" instance=ExtResource("1_yk4pp")]
 mouse_filter = 2
+
+[node name="ScaleControl" parent="UIManager" instance=ExtResource("8_scale")]
 
 [node name="WindowManager" type="Node" parent="UIManager"]
 script = ExtResource("9_eg4r6")

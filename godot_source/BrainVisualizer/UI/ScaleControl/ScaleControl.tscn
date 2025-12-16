@@ -1,0 +1,61 @@
+[gd_scene load_steps=10 format=3 uid="uid://c8scale_control"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.gd" id="1_scale"]
+[ext_resource type="Texture2D" uid="uid://cg426mv2xsngk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="2_zoom_in_s"]
+[ext_resource type="Texture2D" uid="uid://p50gm8kyuyqf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="3_zoom_in_c"]
+[ext_resource type="Texture2D" uid="uid://btc3gkgoeomma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="4_zoom_in_h"]
+[ext_resource type="Texture2D" uid="uid://brc1qexp6eajy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="5_zoom_in_d"]
+[ext_resource type="Texture2D" uid="uid://bju6nvb78mvmc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="6_zoom_out_s"]
+[ext_resource type="Texture2D" uid="uid://dh415j4p2qk2b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="7_zoom_out_c"]
+[ext_resource type="Texture2D" uid="uid://iwxqjaw2as5t" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="8_zoom_out_h"]
+[ext_resource type="Texture2D" uid="uid://c3limm84uggd7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="9_zoom_out_d"]
+
+[node name="ScaleControl" type="Control"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -70.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 126.0
+grow_horizontal = 0
+mouse_filter = 2
+script = ExtResource("1_scale")
+
+[node name="Panel" type="PanelContainer" parent="."]
+modulate = Color(1, 1, 1, 0.7)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="IncreaseButton" type="TextureButton" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Increase UI Size"
+texture_normal = ExtResource("2_zoom_in_s")
+texture_pressed = ExtResource("3_zoom_in_c")
+texture_hover = ExtResource("4_zoom_in_h")
+texture_disabled = ExtResource("5_zoom_in_d")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="DecreaseButton" type="TextureButton" parent="Panel/VBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Decrease UI Size"
+texture_normal = ExtResource("6_zoom_out_s")
+texture_pressed = ExtResource("7_zoom_out_c")
+texture_hover = ExtResource("8_zoom_out_h")
+texture_disabled = ExtResource("9_zoom_out_d")
+ignore_texture_size = true
+stretch_mode = 0
+
+[connection signal="pressed" from="Panel/VBoxContainer/IncreaseButton" to="." method="_increase_scale"]
+[connection signal="pressed" from="Panel/VBoxContainer/DecreaseButton" to="." method="_decrease_scale"]
+
