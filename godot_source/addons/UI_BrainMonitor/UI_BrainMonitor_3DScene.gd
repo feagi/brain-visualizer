@@ -1244,41 +1244,63 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 							cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
 							cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
 						else:
-							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+							# Check for left-click or right-click (right-click handles Ctrl+Click on Mac)
+							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 								# Additional safety check - object might have been freed
 								if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 									continue
-								BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
-								BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
-								#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
-								#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
+								
+								# Check for ctrl+click (or right-click, which is Ctrl+click on Mac) to focus camera on cortical area
+								if Input.is_physical_key_pressed(KEY_CTRL) or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+									# Ctrl+Click: Focus camera on the cortical area's bounding box
+									if _pancake_cam:
+										# Compute world-space AABB of the cortical area renderer
+										var cortical_aabb = _compute_world_aabb(hit_parent)
+										if cortical_aabb.size != Vector3.ZERO and (cortical_aabb.size.x + cortical_aabb.size.y + cortical_aabb.size.z) > 0.01:
+											# Frame camera to show entire bounding box
+											_frame_camera_to_aabb(cortical_aabb)
+											print("Focused camera on cortical area: %s" % hit_parent_parent.cortical_area.cortical_ID)
+										else:
+											# Fallback: use cortical area's global position if AABB is invalid
+											_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
+											print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
+									continue
+								
+								# Single left-click on cortical area - select it (only for MAIN button without Ctrl)
+								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+									BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
+									BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
+									#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
+									#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
 			
 			# Check if we hit a brain region frame (by checking script global name)
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:
-					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-						# Check for shift+click to focus camera on region
-						if Input.is_key_pressed(KEY_SHIFT):
-							# Shift+Click: Focus camera on the region's bounding box
+					# Check for left-click or right-click (right-click handles Ctrl+Click on Mac)
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+						# Check for ctrl+click (or right-click, which is Ctrl+click on Mac) to focus camera on region
+						if Input.is_physical_key_pressed(KEY_CTRL) or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+							# Ctrl+Click: Focus camera on the region's bounding box
 							if _pancake_cam:
 								# Compute world-space AABB of the brain region frame (includes all visualizations)
 								var region_aabb = _compute_region_frame_aabb(region_frame)
 								if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
 									# Frame camera to show entire bounding box
 									_frame_camera_to_aabb(region_aabb)
-									print("Shift+Clicked brain region frame: %s - Camera focused on bounding box" % region_frame.representing_region.friendly_name)
+									print("Focused camera on brain region: %s" % region_frame.representing_region.friendly_name)
 								else:
 									# Fallback: use region frame's global position if AABB is invalid
 									_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
-									print("Shift+Clicked brain region frame: %s - Camera focused (fallback to position)" % region_frame.representing_region.friendly_name)
+									print("Focused camera on brain region: %s (fallback)" % region_frame.representing_region.friendly_name)
 							return
 						
-						# Single click on brain region - select it
-						BV.UI.selection_system.clear_all_highlighted()
-						BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
-						BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
-						print("🧠 Clicked brain region frame: %s" % region_frame.representing_region.friendly_name)
+						# Single left-click on brain region - select it (only for MAIN button without Ctrl)
+						if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+							BV.UI.selection_system.clear_all_highlighted()
+							BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
+							BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
+							print("🧠 Clicked brain region frame: %s" % region_frame.representing_region.friendly_name)
 						
 						# Check for double-click (simple implementation)
 						region_frame.handle_double_click()

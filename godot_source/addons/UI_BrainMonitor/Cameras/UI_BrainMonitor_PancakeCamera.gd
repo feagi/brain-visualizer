@@ -140,6 +140,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				var bm_mouse_position: Vector2 = mouse_button_event.position
 				var bm_double_clicked: bool = mouse_button_event.double_click
 				
+				# Capture modifier keys from the event for web/desktop compatibility
+				var bm_ctrl: bool = mouse_button_event.ctrl_pressed
+				var bm_shift: bool = mouse_button_event.shift_pressed
+				var bm_alt: bool = mouse_button_event.alt_pressed
+				
 				# Dragging calculation
 				var bm_was_dragging: bool = false # we only say we are dragging for the last held mouse button released
 				if bm_pressed:
@@ -155,7 +160,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 				var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
 				
-				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging)
+				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging, bm_ctrl, bm_shift, bm_alt)
 				var bm_click_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_click_event]
 				BM_input_events.emit(bm_click_events)
 			return
@@ -165,9 +170,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			var mouse_motion_event: InputEventMouseMotion = event as InputEventMouseMotion
 			var bm_mouse_position: Vector2 = mouse_motion_event.position
 			
+			# Capture modifier keys from the event for web/desktop compatibility
+			var bm_ctrl: bool = mouse_motion_event.ctrl_pressed
+			var bm_shift: bool = mouse_motion_event.shift_pressed
+			var bm_alt: bool = mouse_motion_event.alt_pressed
+			
 			var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 			var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
-			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(held_bm_buttons, start_pos, end_pos)
+			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(held_bm_buttons, start_pos, end_pos, bm_ctrl, bm_shift, bm_alt)
 			var bm_hover_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_hover_event]
 			BM_input_events.emit(bm_hover_events)
 			return

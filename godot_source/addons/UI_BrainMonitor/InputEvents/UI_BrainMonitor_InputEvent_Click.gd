@@ -7,7 +7,7 @@ var button_pressed: bool # is the button starting to be pressed (false if being 
 var button_double_clicked: bool # was the button being double clicked (only possible if being pressed)
 var was_dragging: bool = false # were we dragging this button before this event? Only true when the last held button is released!
 
-func _init(buttons_being_held: Array[CLICK_BUTTON], start_position: Vector3, end_position: Vector3, is_pressed: bool, is_double_clicked: bool, button_involved: CLICK_BUTTON, was_previously_dragging: bool = false):
+func _init(buttons_being_held: Array[CLICK_BUTTON], start_position: Vector3, end_position: Vector3, is_pressed: bool, is_double_clicked: bool, button_involved: CLICK_BUTTON, was_previously_dragging: bool = false, ctrl_held: bool = false, shift_held: bool = false, alt_held: bool = false):
 	all_buttons_being_held = buttons_being_held
 	ray_start_point = start_position
 	ray_end_point = end_position
@@ -15,3 +15,6 @@ func _init(buttons_being_held: Array[CLICK_BUTTON], start_position: Vector3, end
 	button_double_clicked = is_double_clicked
 	button = button_involved
 	was_dragging = was_previously_dragging
+	ctrl_pressed = ctrl_held
+	shift_pressed = shift_held
+	alt_pressed = alt_held
