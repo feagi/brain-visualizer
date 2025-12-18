@@ -246,7 +246,7 @@ feagi_embedded (GDExtension)
 └── feagi (Rust library)
     ├── feagi-burst-engine
     ├── feagi-bdu
-    ├── feagi-pns
+    ├── feagi-io
     ├── feagi-services
     ├── feagi-api
     └── 20+ other crates

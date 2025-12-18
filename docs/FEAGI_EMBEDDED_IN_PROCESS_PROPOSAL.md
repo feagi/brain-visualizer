@@ -92,7 +92,7 @@ pub use feagi_config::FeagiConfig;
 
 // Re-export types needed by embedders
 pub use feagi_burst_engine::RawFireQueueSnapshot;
-pub use feagi_data_structures::genomic::CorticalID;
+pub use feagi-data-structures::genomic::CorticalID;
 
 /// Visualization callback signature
 /// 
@@ -299,7 +299,7 @@ pub struct FeagiComponents {
 
 ### 1.3 Update PNS to Support Direct Callbacks
 
-**File:** `feagi-core/crates/feagi-pns/src/lib.rs`
+**File:** `feagi-core/crates/feagi-io/src/lib.rs`
 
 ```rust
 use std::sync::{Arc, Mutex};
@@ -638,7 +638,7 @@ impl FeagiEmbedded {
         PackedInt32Array,
         PackedFloat32Array,
     ) {
-        use feagi_data_structures::neuron_voxels::xyzp::{
+        use feagi-data-structures::neuron_voxels::xyzp::{
             CorticalMappedXYZPNeuronVoxels, NeuronVoxelXYZPArrays,
         };
         

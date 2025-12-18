@@ -8,10 +8,10 @@ edition = "2021"
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["experimental-wasm", "lazy-function-tables"] }
 
 # FEAGI data serialization library (local paths to feagi-core)
-feagi_data_serialization = { path = "../../../feagi-core/crates/feagi_data_serialization" }
-feagi_data_structures = { path = "../../../feagi-core/crates/feagi_data_structures" }
+feagi-data-serialization = { path = "../../../feagi-core/crates/feagi-data-serialization" }
+feagi-data-structures = { path = "../../../feagi-core/crates/feagi-data-structures" }
 # FEAGI data processing library for FDP decoding (local path to feagi-core)
-feagi_connector_core = { path = "../../../feagi-core/crates/feagi_connector_core" }
+feagi-connector-core = { path = "../../../feagi-core/crates/feagi-connector-core" }
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }

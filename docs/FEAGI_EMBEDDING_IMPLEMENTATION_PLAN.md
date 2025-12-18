@@ -106,7 +106,7 @@ pub fn set_visualization_callback(&self, callback: VisualizationCallback)
 
 #### 1.3 Add Callback Support to PNS
 
-**File:** `feagi-core/crates/feagi-pns/src/lib.rs`
+**File:** `feagi-core/crates/feagi-io/src/lib.rs`
 
 **Changes:**
 ```rust

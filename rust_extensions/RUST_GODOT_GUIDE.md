@@ -166,7 +166,7 @@ godot = {
     branch = "master", 
     features = ["experimental-wasm", "lazy-function-tables"] 
 }
-feagi_data_serialization = "0.0.50-beta.18"
+feagi-data-serialization = "0.0.50-beta.18"
 ```
 
 ### 3. Web Build Configuration
