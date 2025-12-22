@@ -475,7 +475,7 @@ func _create_world3d_with_environment() -> World3D:
 	# Fallback: Create basic environment if can't copy
 	var environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.0951993, 0.544281, 0.999948, 1)  # Sky blue
+	environment.background_color = Color(0.08, 0.11, 0.15, 1)  # Dark blue-black (slightly brighter)
 	new_world.environment = environment
 	
 	return new_world
