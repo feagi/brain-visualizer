@@ -11,9 +11,9 @@ description = "FEAGI Embedded - GDExtension for running FEAGI in Godot applicati
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 
 # FEAGI library (local path)
-feagi = { path = "../../../feagi-rust", default-features = false, features = ["embedded"] }
+feagi = { path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
 feagi-config = { path = "../../../feagi-core/crates/feagi-config" }
-feagi-burst-engine = { path = "../../../feagi-core/crates/feagi-burst-engine" }
+feagi-npu-burst-engine = { path = "../../../feagi-core/crates/feagi-npu/burst-engine" }
 
 # Error handling
 anyhow = "1.0"

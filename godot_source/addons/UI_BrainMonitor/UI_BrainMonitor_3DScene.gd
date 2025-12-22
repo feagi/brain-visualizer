@@ -1359,7 +1359,7 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	_node_3D_root.add_child(preview)  # CRITICAL FIX: Add to 3D scene root, not brain monitor container
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 	_active_previews.append(preview)
-	preview.tree_exiting.connect(_preview_closing)
+	preview.tree_exiting.connect(func(): _preview_closing(preview))
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
 	# Keep camera framing valid while preview is added or moved/resized by user

@@ -1248,12 +1248,17 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 				
 				print("FEAGI REQUEST: Adding cortical area %s to cache" % cortical_id)
 				# Add to cache using FEAGI_add_cortical_area_from_dict which handles all types
+				var parent_region_id: StringName = area_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID)
+				var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(
+					parent_region_id,
+					FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+				)
+				if parent_region == null:
+					push_error("FEAGI REQUEST: Parent region '%s' not found and root region unavailable, cannot add cortical area '%s'" % [parent_region_id, cortical_id])
+					continue
 				FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(
 					area_dict,
-					FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(
-						area_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID),
-						FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[BrainRegion.ROOT_REGION_ID]
-					),
+					parent_region,
 					cortical_id
 				)
 	else:

@@ -35,6 +35,12 @@ const PULSE_DISTANCE_MAX_SCALE: float = 5.0
 func _apply_distance_scale_to_pulse(pulse_sphere: MeshInstance3D) -> void:
 	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null:
 		return
+	# Check if the node is in the scene tree before accessing global_position
+	if not pulse_sphere.is_inside_tree():
+		# Node not in tree yet, use default scale and defer scaling until next frame when it should be in tree
+		pulse_sphere.scale = Vector3(PULSE_DISTANCE_MIN_SCALE, PULSE_DISTANCE_MIN_SCALE, PULSE_DISTANCE_MIN_SCALE)
+		call_deferred("_apply_distance_scale_to_pulse", pulse_sphere)
+		return
 	var viewport := get_viewport()
 	if viewport == null:
 		return

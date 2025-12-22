@@ -70,16 +70,38 @@ func decode_response_as_array() -> Array:
 func decode_response_as_generic_error_code() -> PackedStringArray:
 	var error_code: StringName = "UNDECODABLE"
 	var friendly_description: StringName = "UNDECODABLE"
-	var feagi_error_response = JSON.parse_string(response_body.get_string_from_utf8()) # should be dictionary but may be null
-	if feagi_error_response is Dictionary:
-		# Try FEAGI's current format first
-		if "error_code" in feagi_error_response.keys():
-			error_code = str(feagi_error_response["error_code"])
-		elif "code" in feagi_error_response.keys():
-			error_code = str(feagi_error_response["code"])
-		
-		if "message" in feagi_error_response.keys():
-			friendly_description = str(feagi_error_response["message"])
-		elif "description" in feagi_error_response.keys():
-			friendly_description = str(feagi_error_response["description"])
+	var response_string: String = response_body.get_string_from_utf8()
+	
+	# Check if response is empty
+	if response_string == "":
+		return PackedStringArray([error_code, friendly_description])
+	
+	var trimmed_response: String = response_string.strip_edges()
+	
+	# Check if response looks like JSON (starts with { or [)
+	var is_json: bool = trimmed_response.begins_with("{") or trimmed_response.begins_with("[")
+	
+	if is_json:
+		# Try to parse as JSON - parse_string returns null on failure
+		var feagi_error_response = JSON.parse_string(trimmed_response)
+		if feagi_error_response is Dictionary:
+			# Try FEAGI's current format first
+			if "error_code" in feagi_error_response.keys():
+				error_code = str(feagi_error_response["error_code"])
+			elif "code" in feagi_error_response.keys():
+				error_code = str(feagi_error_response["code"])
+			
+			if "message" in feagi_error_response.keys():
+				friendly_description = str(feagi_error_response["message"])
+			elif "description" in feagi_error_response.keys():
+				friendly_description = str(feagi_error_response["description"])
+		else:
+			# JSON parsing failed or returned non-dictionary, treat as plain text error
+			friendly_description = trimmed_response
+			error_code = "JSON_PARSE_FAILED"
+	else:
+		# Not JSON, treat as plain text error message
+		friendly_description = trimmed_response
+		error_code = "PLAIN_TEXT_ERROR"
+	
 	return PackedStringArray([error_code, friendly_description])
