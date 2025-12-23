@@ -10,8 +10,8 @@ godot = { git = "https://github.com/godot-rust/gdext", branch = "master", featur
 # FEAGI data serialization library (local paths to feagi-core)
 feagi-data-serialization = { path = "../../../feagi-core/crates/feagi-data-serialization" }
 feagi-data-structures = { path = "../../../feagi-core/crates/feagi-data-structures" }
-# FEAGI data processing library for FDP decoding (local path to feagi-core)
-feagi-connector-core = { path = "../../../feagi-core/crates/feagi-connector-core" }
+# FEAGI sensorimotor library for FDP decoding (local path to feagi-core)
+feagi-sensorimotor = { path = "../../../feagi-core/crates/feagi-sensorimotor" }
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }
