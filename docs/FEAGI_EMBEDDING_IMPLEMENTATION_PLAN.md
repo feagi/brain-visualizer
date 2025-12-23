@@ -209,7 +209,7 @@ godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 feagi = { path = "../../../../feagi", default-features = false, features = ["embedded"] }
 feagi-config = { path = "../../../../feagi-core/crates/feagi-config" }
 feagi-burst-engine = { path = "../../../../feagi-core/crates/feagi-burst-engine" }
-feagi-data-structures = { path = "../../../../feagi-core/crates/feagi-data-structures" }
+feagi-structures = { path = "../../../../feagi-core/crates/feagi-structures" }
 
 anyhow = "1.0"
 parking_lot = "0.12"

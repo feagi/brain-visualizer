@@ -361,8 +361,8 @@ godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 feagi = { path = "../../../../feagi", default-features = false, features = ["embedded"] }
 feagi-config = { path = "../../../../feagi-core/crates/feagi-config" }
 feagi-burst-engine = { path = "../../../../feagi-core/crates/feagi-burst-engine" }
-feagi-data-structures = { path = "../../../../feagi-core/crates/feagi-data-structures" }
-feagi-data-serialization = { path = "../../../../feagi-core/crates/feagi-data-serialization" }
+feagi-structures = { path = "../../../../feagi-core/crates/feagi-structures" }
+feagi-serialization = { path = "../../../../feagi-core/crates/feagi-serialization" }
 
 # Additional deps
 anyhow = "1.0"

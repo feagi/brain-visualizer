@@ -164,7 +164,7 @@ impl FeagiDataDeserializer {
         
         // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully
         match std::panic::catch_unwind(|| {
-            use feagi_data_serialization::FeagiByteContainer;
+            use feagi_serialization::FeagiByteContainer;
             
             let mut byte_container = FeagiByteContainer::new_empty();
             let mut data_vec = data_to_deserialize.clone();
@@ -262,7 +262,7 @@ impl FeagiDataDeserializer {
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
         // Extract from FeagiByteContainer (version 2 container format)
-        use feagi_data_serialization::FeagiByteContainer;
+        use feagi_serialization::FeagiByteContainer;
         
         let mut byte_container = FeagiByteContainer::new_empty();
         let mut data_vec = rust_buffer;

@@ -57,8 +57,8 @@ Modified `mouse_over_single_cortical_area()` to:
 
 All FDP dependencies updated to **v0.0.50-beta.59**:
 ```toml
-feagi-data-structures = "0.0.50-beta.59"
-feagi-data-serialization = "0.0.50-beta.59"
+feagi-structures = "0.0.1-beta.1"
+feagi-serialization = "0.0.1-beta.1"
 feagi-sensorimotor = "0.0.50-beta.59"
 base64 = "0.22"  # For base64 cortical ID decoding
 ```

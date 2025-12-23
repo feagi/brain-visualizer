@@ -10,7 +10,7 @@ Successfully replaced the custom GDScript WebSocket data deserialization code wi
 - **Location**: `rust_extensions/feagi_data_deserializer/`
 - **Dependencies**: 
   - `gdext` (Godot Rust bindings)
-  - `feagi-data-serialization` (FEAGI's official data processing library)
+  - `feagi-serialization` (FEAGI's official data processing library)
 - **Build Output**: 2.7MB optimized shared library
 
 ### 2. Core Functionality
@@ -88,7 +88,7 @@ WebSocket Bytes → Rust Deserializer (REQUIRED) → Godot Arrays → Brain Visu
 ## 🚦 Current Status
 
 ### ✅ Completed
-- [x] Rust project setup with gdext and feagi-data-serialization
+- [x] Rust project setup with gdext and feagi-serialization
 - [x] GDExtension wrapper implementation
 - [x] GDScript integration with fallback support
 - [x] Build automation and documentation
