@@ -400,7 +400,8 @@ func _setup_bm_prevew() -> void:
 			resizes.append(_vector_dimensions_spin.user_updated_vector)
 		var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 		# Host uses area's actual FEAGI LFF
-		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+		# Don't auto-frame camera when opening properties of existing cortical area
+		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 		_preview.connect_UI_signals(moves, resizes, closes)
 		# Ensure main preview is cleared when window closes
 		_preview.tree_exiting.connect(func(): _preview = null)
@@ -415,7 +416,8 @@ func _setup_bm_prevew() -> void:
 			if not _is_isvi_segment:
 				moves.append(_vector_position.user_updated_vector)
 				resizes.append(_vector_dimensions_spin.user_updated_vector)
-			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			# Don't auto-frame camera when reopening properties
+			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 			_preview.connect_UI_signals(moves, resizes, [close_window_requesed_no_arg, _button_summary_send.pressed])
 			_preview.tree_exiting.connect(func(): _preview = null)
 			_host_preview_bm = host_bm
@@ -443,7 +445,8 @@ func _setup_bm_prevew() -> void:
 			else:
 				# Region tab: actual FEAGI LFF
 				per_bm_position = _vector_position.current_vector
-			var mirror = bm.create_preview(per_bm_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			# Don't auto-frame camera for auxiliary previews
+			var mirror = bm.create_preview(per_bm_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 			mirror.connect_UI_signals([], resizes_only, closes_only)
 			mirror.tree_exiting.connect(func(): _aux_previews.erase(mirror); _aux_preview_to_bm.erase(mirror))
 			_aux_previews.append(mirror)
@@ -770,7 +773,8 @@ func _enable_3D_preview(): #NOTE only currently works with single
 			push_error("AdvancedCorticalProperties: No brain monitor available for 3D preview!")
 			return
 		var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
-		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area)
+		# Don't auto-frame camera when opening multi-select cortical properties
+		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area, false)
 		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 		
 
@@ -1186,7 +1190,8 @@ func _init_isvi_previews() -> void:
 		var cortical_type = segment.cortical_type
 		var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 		
-		var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment)
+		# Don't auto-frame camera when creating isvi segment previews
+		var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment, false)
 		new_preview.connect_UI_signals([], [], closes_only)
 		
 		# Store this preview
@@ -1378,7 +1383,8 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			# Create new preview for this segment
 			var cortical_type = segment.cortical_type
 			var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-			var new_preview = _host_preview_bm.create_preview(segment_pos_final, segment_dims, false, cortical_type, segment)
+			# Don't auto-frame camera when creating isvi segment previews during layout changes
+			var new_preview = _host_preview_bm.create_preview(segment_pos_final, segment_dims, false, cortical_type, segment, false)
 			new_preview.connect_UI_signals([], [], closes_only)
 			new_preview.set_warning_state(_isvi_would_overflow)
 			

@@ -1354,7 +1354,7 @@ func remove_neuron_cortical_are_selection_restrictions() -> void:
 	_restrict_neuron_selection_to = null
 
 ## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
-func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null) -> UI_BrainMonitor_InteractivePreview:
+func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null, auto_frame_on_create: bool = true) -> UI_BrainMonitor_InteractivePreview:
 	var preview: UI_BrainMonitor_InteractivePreview = UI_BrainMonitor_InteractivePreview.new()
 	_node_3D_root.add_child(preview)  # CRITICAL FIX: Add to 3D scene root, not brain monitor container
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
@@ -1363,15 +1363,31 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
 	# Keep camera framing valid while preview is added or moved/resized by user
+	# Use weak reference to self to avoid capturing freed objects
+	var weak_self = weakref(self)
 	preview.user_moved_preview.connect(func(_pos: Vector3i):
-		# Debounce: schedule after one frame
-		get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+		# Check if self still exists before scheduling callback
+		if weak_self.get_ref():
+			# Debounce: schedule after one frame
+			get_tree().create_timer(0.0).timeout.connect(func():
+				if weak_self.get_ref():
+					_auto_frame_camera_to_objects()
+			)
 	)
 	preview.user_resized_preview.connect(func(_dim: Vector3i):
-		get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+		# Check if self still exists before scheduling callback
+		if weak_self.get_ref():
+			get_tree().create_timer(0.0).timeout.connect(func():
+				if weak_self.get_ref():
+					_auto_frame_camera_to_objects()
+			)
 	)
-	# Immediately frame to include this new preview (deferred by one frame)
-	get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+	# Immediately frame to include this new preview (deferred by one frame) - only if requested
+	if auto_frame_on_create:
+		get_tree().create_timer(0.0).timeout.connect(func():
+			if weak_self.get_ref():
+				_auto_frame_camera_to_objects()
+		)
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates
@@ -1383,11 +1399,20 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
+	# Use weak reference to self to avoid capturing freed objects
+	var weak_self = weakref(self)
 	# Reframe when brain-region preview is created or moved (defer by one frame)
-	get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+	get_tree().create_timer(0.0).timeout.connect(func():
+		if weak_self.get_ref():
+			_auto_frame_camera_to_objects()
+	)
 	if not preview.user_moved_preview.is_connected(func(_p): pass):
 		preview.user_moved_preview.connect(func(_pos: Vector3i):
-			get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+			if weak_self.get_ref():
+				get_tree().create_timer(0.0).timeout.connect(func():
+					if weak_self.get_ref():
+						_auto_frame_camera_to_objects()
+				)
 		)
 	return preview
 
