@@ -1251,14 +1251,14 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 							cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
 							cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
 						else:
-							# Check for left-click or right-click (right-click handles Ctrl+Click on Mac)
+							# Check for left-click or right-click
 							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 								# Additional safety check - object might have been freed
 								if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 									continue
 								
-								# Check for ctrl+click (or right-click, which is Ctrl+click on Mac) to focus camera on cortical area
-								if Input.is_physical_key_pressed(KEY_CTRL) or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+								# Check for ctrl+click to focus camera on cortical area
+								if Input.is_physical_key_pressed(KEY_CTRL):
 									# Ctrl+Click: Focus camera on the cortical area's bounding box
 									if _pancake_cam:
 										# Compute world-space AABB of the cortical area renderer
@@ -1284,10 +1284,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:
-					# Check for left-click or right-click (right-click handles Ctrl+Click on Mac)
+					# Check for left-click or right-click
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-						# Check for ctrl+click (or right-click, which is Ctrl+click on Mac) to focus camera on region
-						if Input.is_physical_key_pressed(KEY_CTRL) or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+						# Check for ctrl+click to focus camera on region
+						if Input.is_physical_key_pressed(KEY_CTRL):
 							# Ctrl+Click: Focus camera on the region's bounding box
 							if _pancake_cam:
 								# Compute world-space AABB of the brain region frame (includes all visualizations)
