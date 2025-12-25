@@ -22,6 +22,7 @@ var _active_brain_monitor = null  # Store reference to brain monitor
 var _preview_close_signals: Array[Signal] = []  # Store close signals
 var _template_metadata: Dictionary = {}  # Fetched from /v1/genome/cortical_template
 var _selected_data_type_config: int = 4  # Default: SignedPercentage(Absolute, Linear) for OPU
+var _metadata_ready: bool = false  # Flag to track if template metadata has been loaded
 
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
@@ -38,8 +39,10 @@ func _ready() -> void:
 	location.user_updated_vector.connect(_on_location_changed)
 	location_changed_from_dropdown.connect(_on_location_changed)
 	
-	# Fetch cortical template metadata from FEAGI API
-	_fetch_template_metadata()
+	# Fetch cortical template metadata from FEAGI API - MUST complete before user can select templates
+	await _fetch_template_metadata()
+	_metadata_ready = true
+	print("PartSpawnCorticalAreaIOPU: Template metadata loaded, ready for user interaction")
 	
 
 
@@ -234,6 +237,7 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	group_id.value = first_available_id
 	
 	# Populate data type dropdowns for this template
+	print("PartSpawnCorticalAreaIOPU: Populating dropdowns for template ID='%s'" % cortical_template.ID)
 	_populate_data_type_dropdowns(cortical_template.ID)
 	
 	# Update location if an existing area exists
@@ -382,16 +386,30 @@ func get_neurons_per_voxel() -> int:
 
 func _fetch_template_metadata() -> void:
 	"""Fetch cortical template metadata from FEAGI API"""
+	print("PartSpawnCorticalAreaIOPU: Fetching template metadata from FEAGI...")
 	var response: FeagiRequestOutput = await FeagiCore.requests.get_cortical_template_metadata()
 	if response.success:
 		_template_metadata = response.decode_response_as_dict()
-		print("PartSpawnCorticalAreaIOPU: Fetched template metadata for %d types" % _template_metadata.size())
+		print("PartSpawnCorticalAreaIOPU: ✓ Fetched template metadata for %d types" % _template_metadata.size())
+		print("PartSpawnCorticalAreaIOPU: Available template keys: %s" % str(_template_metadata.keys()))
 	else:
-		push_error("PartSpawnCorticalAreaIOPU: Failed to fetch template metadata")
+		push_error("PartSpawnCorticalAreaIOPU: ✗ Failed to fetch template metadata: %s" % response.error)
 		_template_metadata = {}
+
 
 func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	"""Populate dropdowns based on selected template's supported data types"""
+	print("PartSpawnCorticalAreaIOPU: _populate_data_type_dropdowns called with key='%s'" % cortical_type_key)
+	
+	# Wait for metadata to be ready if it's still loading
+	if not _metadata_ready:
+		push_warning("PartSpawnCorticalAreaIOPU: Metadata not ready yet, waiting...")
+		while not _metadata_ready:
+			await get_tree().process_frame
+		print("PartSpawnCorticalAreaIOPU: Metadata is now ready, continuing...")
+	
+	print("PartSpawnCorticalAreaIOPU: _template_metadata has %d entries" % _template_metadata.size())
+	
 	# Clear existing options
 	data_type_variant.clear()
 	frame_handling.clear()
@@ -399,16 +417,26 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	
 	# Check if we have metadata for this template
 	if cortical_type_key not in _template_metadata:
-		push_warning("PartSpawnCorticalAreaIOPU: No metadata for " + cortical_type_key)
-		# Add defaults
-		_add_default_dropdown_options()
+		push_error("PartSpawnCorticalAreaIOPU: No metadata for template '%s'. Cannot create cortical area without API data." % cortical_type_key)
+		push_error("PartSpawnCorticalAreaIOPU: Available keys in metadata: %s" % str(_template_metadata.keys()))
+		# Show error to user
+		data_type_variant.add_item("ERROR: Template metadata not loaded")
+		frame_handling.add_item("ERROR: Restart Brain Visualizer")
+		data_type_variant.disabled = true
+		frame_handling.disabled = true
+		positioning.visible = false
 		return
 	
 	var template_data: Dictionary = _template_metadata[cortical_type_key]
 	var supported_types: Array = template_data.get("supported_data_types", [])
 	
 	if supported_types.is_empty():
-		_add_default_dropdown_options()
+		push_error("PartSpawnCorticalAreaIOPU: Template '%s' has no supported_data_types. FEAGI API returned invalid data." % cortical_type_key)
+		data_type_variant.add_item("ERROR: No supported data types")
+		frame_handling.add_item("ERROR: Check FEAGI connection")
+		data_type_variant.disabled = true
+		frame_handling.disabled = true
+		positioning.visible = false
 		return
 	
 	# Collect unique values for each dropdown
@@ -436,13 +464,31 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 		var key: String = "%s|%s|%s" % [variant, frame, pos_str]
 		config_map[key] = config_val
 	
-	# Populate dropdowns
+	# Populate dropdowns and ensure they're enabled
+	data_type_variant.disabled = false
+	frame_handling.disabled = false
+	
 	for v in variants:
 		data_type_variant.add_item(v)
 	for f in frames:
 		frame_handling.add_item(f)
-	for p in positionings:
-		positioning.add_item(p)
+	
+	# Only populate positioning dropdown if the template has positioning options
+	# For Misc/CartesianPlane/Boolean, positioning will be empty array
+	if positionings.size() > 0:
+		for p in positionings:
+			positioning.add_item(p)
+		positioning.visible = true
+		# Find and show the label for positioning
+		var positioning_label = positioning.get_parent().get_node_or_null("Label")
+		if positioning_label:
+			positioning_label.visible = true
+	else:
+		# Hide positioning dropdown for variants that don't support it
+		positioning.visible = false
+		var positioning_label = positioning.get_parent().get_node_or_null("Label")
+		if positioning_label:
+			positioning_label.visible = false
 	
 	# Store config map for later lookup
 	data_type_variant.set_meta("config_map", config_map)
@@ -460,26 +506,6 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	
 	_update_selected_config_value()
 
-func _add_default_dropdown_options() -> void:
-	"""Add default options when API data not available"""
-	# Data Type Variants
-	data_type_variant.add_item("SignedPercentage")
-	data_type_variant.add_item("Percentage")
-	
-	# Frame Handling
-	frame_handling.add_item("Absolute")
-	frame_handling.add_item("Incremental")
-	
-	# Positioning
-	positioning.add_item("Linear")
-	positioning.add_item("Fractional")
-	
-	# Select defaults for OPU
-	if not _is_IPU_not_OPU:
-		data_type_variant.select(0)  # SignedPercentage
-	frame_handling.select(0)  # Absolute
-	positioning.select(0)  # Linear
-
 func _on_data_type_variant_changed(_index: int) -> void:
 	_update_selected_config_value()
 
@@ -493,7 +519,11 @@ func _update_selected_config_value() -> void:
 	"""Calculate the data_type_config value from selected dropdowns"""
 	var variant_text: String = data_type_variant.get_item_text(data_type_variant.selected) if data_type_variant.selected >= 0 else ""
 	var frame_text: String = frame_handling.get_item_text(frame_handling.selected) if frame_handling.selected >= 0 else ""
-	var pos_text: String = positioning.get_item_text(positioning.selected) if positioning.selected >= 0 else ""
+	
+	# Only get positioning if the dropdown is visible and has a selection
+	var pos_text: String = ""
+	if positioning.visible and positioning.selected >= 0:
+		pos_text = positioning.get_item_text(positioning.selected)
 	
 	# Try to lookup from API config map
 	if data_type_variant.has_meta("config_map"):
@@ -504,33 +534,16 @@ func _update_selected_config_value() -> void:
 			print("PartSpawnCorticalAreaIOPU: Found config_value=%d for key='%s'" % [_selected_data_type_config, key])
 			return
 		else:
-			# Debug: Print all keys in config_map to see what's available
-			print("PartSpawnCorticalAreaIOPU: Key '%s' not found in config_map. Available keys:" % key)
+			# Config map lookup failed - this is a critical error
+			push_error("PartSpawnCorticalAreaIOPU: Invalid data type combination '%s'. Available options:" % key)
 			for k in config_map.keys():
-				print("  - '%s' -> %d" % [k, config_map[k]])
+				push_error("  - '%s' -> %d" % [k, config_map[k]])
+			_selected_data_type_config = 0  # Invalid config - will fail at API
+			return
 	
-	# Fallback: Calculate manually using the same bit-packing as Rust
-	var variant_bits: int = _variant_name_to_bits(variant_text)
-	var frame_bits: int = 1 if frame_text == "Incremental" else 0
-	var positioning_bits: int = 1 if pos_text == "Fractional" else 0
-	
-	_selected_data_type_config = variant_bits | (frame_bits << 4) | (positioning_bits << 5)
-	print("PartSpawnCorticalAreaIOPU: Calculated config_value=%d (variant=%d, frame=%d, pos=%d) for '%s|%s|%s'" % [_selected_data_type_config, variant_bits, frame_bits, positioning_bits, variant_text, frame_text, pos_text])
-
-func _variant_name_to_bits(name: String) -> int:
-	"""Convert variant name to bits (0-3 for variant type)"""
-	match name:
-		"Percentage": return 0
-		"Percentage2D": return 1
-		"Percentage3D": return 2
-		"Percentage4D": return 3
-		"SignedPercentage": return 4
-		"SignedPercentage2D": return 5
-		"SignedPercentage3D": return 6
-		"SignedPercentage4D": return 7
-		"CartesianPlane": return 8
-		"Misc": return 9
-		_: return 0
+	# No config map available - cannot proceed
+	push_error("PartSpawnCorticalAreaIOPU: No config_map metadata available. Cannot determine data_type_config value.")
+	_selected_data_type_config = 0  # Invalid config - will fail at API
 
 func get_selected_data_type_config() -> int:
 	"""Get the currently selected data type configuration value"""
