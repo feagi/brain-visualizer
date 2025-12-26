@@ -73,6 +73,9 @@ var _shm_last_error: String = ""
 var _shm_attempting: bool = false
 var _shm_debug_logs: bool = false
 
+# Rate-limited WS backlog diagnostics (logging only)
+var _ws_last_backlog_log_ms: int = 0
+
 # SHM update rate tracking
 var _shm_updates_received: int = 0
 var _shm_last_rate_log_time: float = 0.0
@@ -208,10 +211,22 @@ func _process(_delta: float):
 				print("[%s] ✅ [WS] Transitioning to CONNECTED state - notifying network layer" % _get_timestamp())
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
+			var backlog_start := _socket.get_available_packet_count()
+			var drained_packets := 0
+			var drained_bytes := 0
+			var t_start_us := Time.get_ticks_usec()
+
+			# REAL-TIME SEMANTICS:
+			# Drain backlog but only decode the newest *binary* visualization packet.
+			# This prevents drift when decode/render can't keep up with publish rate.
+			var newest_binary: PackedByteArray = PackedByteArray()
+			var newest_binary_len := 0
+
 			while _socket.get_available_packet_count():
-				var raw_packet = _socket.get_packet()
-				var retrieved_ws_data: PackedByteArray
+				var raw_packet: PackedByteArray = _socket.get_packet()
 				var raw_len := raw_packet.size()
+				drained_packets += 1
+				drained_bytes += raw_len
 				
 				# 🐛 DEBUG: Log all received packets
 				# print("🔍 [WS-DEBUG] Received packet: %d bytes, first byte: 0x%02x" % [raw_len, raw_packet[0] if raw_len > 0 else 0])
@@ -233,58 +248,43 @@ func _process(_delta: float):
 				# ARCHITECTURE: FEAGI PNS → ZMQ → Bridge PASSTHROUGH → WebSocket → BV process
 				# Data format: Raw FeagiByteContainer containing Type 11 neuron data (may be LZ4 compressed)
 				
-				if not _rust_deserializer:
-					push_error("❌ [WS-DEBUG] Rust deserializer not available!")
-					continue
-				
-				if raw_len == 0:
-					push_error("❌ [WS-DEBUG] Received empty packet!")
-					continue
-				
-				# Log raw packet for debugging
-				# var hex_preview: String = ""
-				# for i in range(min(20, raw_len)):
-				# 	hex_preview += "%02x " % raw_packet[i]
-				# print("📦 [WS-DEBUG] Processing %d bytes: %s" % [raw_len, hex_preview])
-				
-				# Pass raw bytes directly to Rust deserializer - it handles LZ4 decompression internally
-				# Architecture: FEAGI → LZ4 compress → ZMQ → Bridge → BV → Rust (LZ4 decompress + deserialize)
-				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(raw_packet)
-				
-				if not decoded_result or not decoded_result.has("success"):
-					push_error("❌ [WS-DEBUG] Decode failed - no result returned")
-					continue
-				
-				if not decoded_result.success:
-					var error_msg := decoded_result.get("error", "unknown error")
-					push_error("❌ [WS-DEBUG] Decode failed: %s" % error_msg)
-					continue
-				
-				# Successfully decoded
-				# print("✅ [WS-DEBUG] Decode SUCCESS: %d cortical areas" % decoded_result.areas.size())
-				
-				# Process the decoded neuron data
-				for cortical_id in decoded_result.areas.keys():
-					var area_data = decoded_result.areas[cortical_id]
-					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
-					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
-					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
-					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
-					
-					# print("🧠 [WS-DEBUG] Processing area '%s': %d neurons" % [cortical_id, x_array.size()])
-					
-					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
-					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-					if area:
-						# print("✅ [RENDER-DEBUG] Found area '%s', calling FEAGI_set_direct_points_bulk_data() with %d neurons" % [cortical_id, x_array.size()])
-						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-						# print("✅ [RENDER-DEBUG] Called area.FEAGI_set_direct_points_bulk_data() - rendering should happen now")
-					else:
-						# print("❌ [RENDER-DEBUG] Area '%s' NOT FOUND in cache! Available areas: %s" % [cortical_id, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()])
-						_handle_missing_cortical_area(cortical_id)
-				
-				# Successfully processed - skip legacy processing
+				# Keep only the newest binary packet; we'll decode once after draining.
+				if raw_len > 0:
+					newest_binary = raw_packet
+					newest_binary_len = raw_len
 				continue
+
+			# Decode newest binary packet (if any)
+			if newest_binary_len > 0:
+				if not _rust_deserializer:
+					push_error("❌ [WS] Rust deserializer not available!")
+				else:
+					var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
+					if not decoded_result or not decoded_result.has("success"):
+						push_error("❌ [WS] Decode failed - no result returned")
+					elif not decoded_result.success:
+						var error_msg := decoded_result.get("error", "unknown error")
+						push_error("❌ [WS] Decode failed: %s" % error_msg)
+					else:
+						for cortical_id in decoded_result.areas.keys():
+							var area_data = decoded_result.areas[cortical_id]
+							var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
+							var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
+							var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
+							var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
+							
+							FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
+							var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+							if area:
+								area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+							else:
+								_handle_missing_cortical_area(cortical_id)
+
+			var now_ms := Time.get_ticks_msec()
+			if now_ms - _ws_last_backlog_log_ms >= 5000:
+				_ws_last_backlog_log_ms = now_ms
+				var elapsed_ms := float(Time.get_ticks_usec() - t_start_us) / 1000.0
+				print("[WS][DIAG] backlog_start=%d drained_packets=%d drained_bytes=%d newest_binary_len=%d loop_ms=%.2f" % [backlog_start, drained_packets, drained_bytes, newest_binary_len, elapsed_ms])
 				
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
