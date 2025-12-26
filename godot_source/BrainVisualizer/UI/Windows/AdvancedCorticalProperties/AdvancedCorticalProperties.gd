@@ -1037,13 +1037,19 @@ func _safe_delete_afferent_mapping(source_area: AbstractCorticalArea, dest_area:
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot delete afferent mapping - FeagiCore or requests not available")
 		return
-	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	if result.has_errored:
+		push_error("UI: Failed to delete afferent mapping %s -> %s" % [source_area.cortical_ID, dest_area.cortical_ID])
+		return
 
 func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area: AbstractCorticalArea) -> void:
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot delete efferent mapping - FeagiCore or requests not available")
 		return
-	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	if result.has_errored:
+		push_error("UI: Failed to delete efferent mapping %s -> %s" % [source_area.cortical_ID, dest_area.cortical_ID])
+		return
 
 #endregion
 

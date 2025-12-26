@@ -1442,7 +1442,10 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
 		print("FEAGI REQUEST: ❌ Request data sent: %s" % properties)
 		return FEAGI_response_data
-	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
+	
+	# Re-fetch the cortical area from FEAGI to ensure cache is synchronized with backend
+	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % editing_ID)
+	await get_cortical_area(editing_ID)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 
@@ -1465,9 +1468,10 @@ func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], propertie
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to update %d cortical area!" % len(editing_areas))
 		return FEAGI_response_data
-	for ID in AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas):
-		properties["cortical_id"] = ID
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
+	
+	# Re-fetch all updated cortical areas from FEAGI to ensure cache is synchronized with backend
+	print("FEAGI REQUEST: Multi-PUT succeeded for %d areas, re-fetching from FEAGI to sync cache" % len(editing_areas))
+	await get_cortical_areas(editing_areas)
 	print("FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
 	return FEAGI_response_data
 

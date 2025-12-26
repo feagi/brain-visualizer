@@ -129,8 +129,20 @@ func get_CB_tabs() -> Array[CircuitBuilder]:
 ## Returns true if the open tab is representing the Main circuit
 func is_current_top_view_root_region() -> bool:
 	var top_control = get_current_tab_control()
+	if top_control == null:
+		return false
+	
 	if top_control is CircuitBuilder:
-		return (top_control as CircuitBuilder).representing_region.is_root_region()
+		var cb = top_control as CircuitBuilder
+		if cb.representing_region == null:
+			return false
+		return cb.representing_region.is_root_region()
+	elif top_control is UI_BrainMonitor_3DScene:
+		var bm = top_control as UI_BrainMonitor_3DScene
+		if bm.representing_region == null:
+			return false
+		return bm.representing_region.is_root_region()
+	
 	push_error("UI: Unknown top control!")
 	return false
 

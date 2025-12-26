@@ -428,18 +428,18 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "cortical_neuron_per_vox_count" in data.keys(): 
 		var value = data["cortical_neuron_per_vox_count"]
 		if value != null:
-			_cortical_neuron_per_vox_count = value
+			_cortical_neuron_per_vox_count = int(value)
 			cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
 	# Also support "neurons_per_voxel" key from API responses
 	if "neurons_per_voxel" in data.keys():
 		var value = data["neurons_per_voxel"]
 		if value != null:
-			_cortical_neuron_per_vox_count = value
+			_cortical_neuron_per_vox_count = int(value)
 			cortical_neuron_per_vox_count_updated.emit(_cortical_neuron_per_vox_count, self)
 	if "cortical_synaptic_attractivity" in data.keys(): 
 		var value = data["cortical_synaptic_attractivity"]
 		if value != null:
-			_cortical_synaptic_attractivity = value
+			_cortical_synaptic_attractivity = int(value)
 			cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
 	
 	# IPU/OPU-specific decoded cortical ID fields
@@ -461,12 +461,12 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "unit_id" in data.keys():
 		var value = data["unit_id"]
 		if value != null:
-			_unit_id = value
+			_unit_id = int(value)
 	
 	if "group_id" in data.keys():
 		var value = data["group_id"]
 		if value != null:
-			_group_id = value
+			_group_id = int(value)
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
