@@ -278,6 +278,8 @@ func _send_update(send_button: Button) -> void:
 				close_window()
 			else:
 				print("UI: Successfully updated cortical areas %s" % area_names_str)
+				# Refresh UI from cache to show updated values
+				_refresh_all_relevant()
 		else:
 			# Special handling for isvi segments - need to update all segments in the group
 			if _is_isvi_segment and len(_isvi_all_segments) > 1:
@@ -301,6 +303,8 @@ func _send_update(send_button: Button) -> void:
 					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Partial Update Failure", error_message))
 				else:
 					print("UI: Successfully updated all %d isvi segments" % success_count)
+				# Refresh UI from cache to show updated values
+				_refresh_all_relevant()
 			else:
 				# Normal single area update
 				var cortical_id = _cortical_area_refs[0].cortical_ID
@@ -328,6 +332,8 @@ func _send_update(send_button: Button) -> void:
 					close_window()
 				else:
 					print("UI: Successfully updated cortical area '%s'" % cortical_id)
+					# Refresh UI from cache to show updated values
+					_refresh_all_relevant()
 		
 		# Clear the update dictionary
 		_growing_cortical_update.clear()

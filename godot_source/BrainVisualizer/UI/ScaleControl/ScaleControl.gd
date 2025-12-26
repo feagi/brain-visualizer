@@ -32,3 +32,5 @@ func _update_button_states() -> void:
 	_increase_button.disabled = _index_scale == len(BV.UI.possible_UI_scales) - 1
 	_decrease_button.disabled = _index_scale == 0
 
+
+

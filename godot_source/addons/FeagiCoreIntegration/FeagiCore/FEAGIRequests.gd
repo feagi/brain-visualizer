@@ -1053,11 +1053,17 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
 	
 	for cortical_id in responses_dict.keys():
-		var area_data: Dictionary = responses_dict[cortical_id]
-		# The response already contains all properties at the root level (not nested)
-		# Just ensure cortical_id is in the dict
+		var area_data_raw: Dictionary = responses_dict[cortical_id]
+		# Handle both response formats:
+		# - { "cortical_id": { ...properties... } }
+		# - { "cortical_id": { "properties": { ...properties... } } }
+		var area_data: Dictionary = area_data_raw
+		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary:
+			area_data = area_data_raw["properties"]
+		# Ensure cortical_id is in the dict (some responses omit it).
+		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
-			area_data["cortical_id"] = cortical_id
+			area_data["cortical_id"] = StringName(cortical_id)
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
 	return FEAGI_response_data

@@ -49,24 +49,53 @@ func _init(cortical_area_ref: AbstractCorticalArea) -> void:
 
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
-	if "neuron_post_synaptic_potential" in data.keys(): 
+	# Post Synaptic Potential - check both API format and transformed format
+	if "neuron_post_synaptic_potential" in data.keys():
 		var value = data["neuron_post_synaptic_potential"]
 		if value != null:
 			neuron_post_synaptic_potential = value
-	if "neuron_post_synaptic_potential_max" in data.keys(): 
+	elif "postsynaptic_current" in data.keys():
+		var value = data["postsynaptic_current"]
+		if value != null:
+			neuron_post_synaptic_potential = value
+	
+	# PSP Max - check both formats
+	if "neuron_post_synaptic_potential_max" in data.keys():
 		var value = data["neuron_post_synaptic_potential_max"]
 		if value != null:
 			neuron_post_synaptic_potential_max = value
-	if "neuron_degeneracy_coefficient" in data.keys(): 
+	elif "postsynaptic_current_max" in data.keys():
+		var value = data["postsynaptic_current_max"]
+		if value != null:
+			neuron_post_synaptic_potential_max = value
+	
+	# Degeneracy Coefficient - check both formats
+	if "neuron_degeneracy_coefficient" in data.keys():
 		var value = data["neuron_degeneracy_coefficient"]
 		if value != null:
 			neuron_degeneracy_coefficient = value
+	elif "degeneration" in data.keys():
+		var value = data["degeneration"]
+		if value != null:
+			neuron_degeneracy_coefficient = value
+	
+	# PSP Uniform Distribution - check both formats
 	if "neuron_psp_uniform_distribution" in data.keys(): 
 		var value = data["neuron_psp_uniform_distribution"]
 		if value != null:
 			neuron_psp_uniform_distribution = value
+	elif "psp_uniform_distribution" in data.keys():
+		var value = data["psp_uniform_distribution"]
+		if value != null:
+			neuron_psp_uniform_distribution = value
+	
+	# MP Driven PSP - check both formats
 	if "neuron_mp_driven_psp" in data.keys():
 		var value = data["neuron_mp_driven_psp"]
+		if value != null:
+			neuron_mp_driven_psp = value
+	elif "mp_driven_psp" in data.keys():
+		var value = data["mp_driven_psp"]
 		if value != null:
 			neuron_mp_driven_psp = value
 	return
