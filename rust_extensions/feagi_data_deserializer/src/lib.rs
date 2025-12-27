@@ -1,10 +1,10 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
 // FeagiByteContainer is imported within functions where needed
-use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
-use feagi_data_structures::genomic::cortical_area::CorticalID;
-use feagi_data_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
-use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
+use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
+use feagi_structures::genomic::cortical_area::CorticalID;
+use feagi_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
+use feagi_structures::genomic::cortical_area::io_cortical_area_data_type::{
     PercentageNeuronPositioning, DataTypeConfigurationFlag,
 };
 
@@ -162,57 +162,51 @@ impl FeagiDataDeserializer {
         //     data_to_deserialize.get(3).unwrap_or(&0)
         // );
         
-        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully
-        match std::panic::catch_unwind(|| {
+        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully.
+        // Perf: avoid cloning the decompressed payload and avoid cloning the decoded neuron map.
+        // We convert to Godot PackedArrays while the container/boxed struct is still alive.
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             use feagi_serialization::FeagiByteContainer;
-            
+
             let mut byte_container = FeagiByteContainer::new_empty();
-            let mut data_vec = data_to_deserialize.clone();
-            
-            // godot_print!("🦀 [DECODE] About to load into FeagiByteContainer...");
-            
-            // Load bytes into container
+            let mut data_vec = data_to_deserialize;
+
+            // Load bytes into container (move via swap; no extra payload clone)
             if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
                 std::mem::swap(bytes, &mut data_vec);
                 Ok(())
             }) {
                 return Err(format!("{:?}", e));
             }
-            
-            // godot_print!("🦀 [DECODE] Loaded successfully, getting structure count...");
-            
+
             // Get structure count
             let num_structures = match byte_container.try_get_number_contained_structures() {
                 Ok(n) => n,
-                Err(e) => return Err(format!("{:?}", e))
+                Err(e) => return Err(format!("{:?}", e)),
             };
-            
+
             if num_structures == 0 {
                 return Err("Empty container".to_string());
             }
-            
-            // godot_print!("🦀 [DECODE] Found {} structures, extracting first...", num_structures);
-            
+
             // Extract first structure
             let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
                 Ok(s) => s,
-                Err(e) => return Err(format!("{:?}", e))
+                Err(e) => return Err(format!("{:?}", e)),
             };
-            
-            // godot_print!("🦀 [DECODE] Structure extracted, downcasting...");
-            
+
             // Downcast to CorticalMappedXYZPNeuronVoxels
-            let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+            let neuron_data = match boxed_struct
+                .as_any()
+                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+            {
                 Some(nd) => nd,
-                None => return Err("Wrong structure type".to_string())
+                None => return Err("Wrong structure type".to_string()),
             };
-            
-            // godot_print!("🦀 [DECODE] ✅ Success - extracted from FeagiByteContainer");
-            Ok(neuron_data.clone())
-        }) {
-            Ok(Ok(neuron_data)) => {
-                self.convert_neuron_data_to_godot(&neuron_data)
-            }
+
+            Ok(self.convert_neuron_data_to_godot(neuron_data))
+        })) {
+            Ok(Ok(dict)) => dict,
             Ok(Err(e)) => {
                 godot_error!("🦀 [DECODE] FeagiByteContainer extraction failed: {}", e);
                 self.create_error_dict(format!("FeagiByteContainer error: {}", e))

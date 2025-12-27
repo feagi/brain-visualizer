@@ -268,10 +268,11 @@ func _process(_delta: float):
 					else:
 						for cortical_id in decoded_result.areas.keys():
 							var area_data = decoded_result.areas[cortical_id]
-							var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
-							var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
-							var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
-							var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
+							# Perf: Rust deserializer already returns PackedArrays; avoid repacking/copying here.
+							var x_array := area_data.get("x_array") as PackedInt32Array
+							var y_array := area_data.get("y_array") as PackedInt32Array
+							var z_array := area_data.get("z_array") as PackedInt32Array
+							var p_array := area_data.get("p_array") as PackedFloat32Array
 							
 							FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
 							var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
