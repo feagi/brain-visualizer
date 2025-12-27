@@ -358,6 +358,41 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# For now, clear all points if we receive SVO data
 	_clear_all_neurons()
 
+## Brain Visualizer desktop WS fast-path: expose MultiMesh for direct Rust updates.
+func bv_get_multimesh() -> MultiMesh:
+	return _multi_mesh
+
+## Brain Visualizer desktop WS fast-path: expose current dimensions (Vector3) for transform/color calculations.
+func bv_get_dimensions() -> Vector3:
+	return Vector3(_dimensions.x, _dimensions.y, _dimensions.z)
+
+## Brain Visualizer desktop WS fast-path: keep behavior parity (timers/animations/material changes)
+## while rendering is applied directly to MultiMesh by Rust.
+func bv_notify_activity(point_count: int) -> void:
+	var current_time = Time.get_ticks_msec() / 1000.0
+	
+	# Track update time (used by existing debug/diagnostics)
+	if not has_meta("_last_update_time"):
+		set_meta("_last_update_time", 0.0)
+	set_meta("_last_update_time", current_time)
+	
+	if point_count > 0:
+		_trigger_power_firing_animation()
+		set_meta("_last_fire_time", current_time)
+		_start_visibility_timer()
+		
+		# Make power cone use firing colors when neural activity occurs
+		if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
+			_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))
+			_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
+			_power_material.set_shader_parameter("emission_energy", 1.5)
+		
+		# Make memory sphere use active jello material when neural activity occurs
+		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+			_outline_mesh_instance.material_override = _memory_jello_material
+	else:
+		_clear_all_neurons()
+
 func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
 	"""Handle Type 11 direct neural points data - Rust-accelerated processing"""
 	

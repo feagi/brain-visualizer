@@ -46,6 +46,13 @@ var _case_mapping_cache: Dictionary = {}  # lowercase_id -> actual_cached_id
 var _rust_deserializer = null
 const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
 
+# Desktop-only WS fast-path: apply Type 11 packets directly to MultiMesh via Rust (no per-area arrays/signal dispatch).
+const _USE_DESKTOP_TYPE11_FASTPATH: bool = true
+var _bv_fast_multimeshes_by_id: Dictionary = {}
+var _bv_fast_dimensions_by_id: Dictionary = {}
+var _bv_fast_cache_last_refresh_ms: int = 0
+const _BV_FAST_CACHE_REFRESH_INTERVAL_MS: int = 1000
+
 # Queue Type 11 messages on Web until WASM is ready
 var _pending_type11: Array = []
 var _waiting_for_wasm: bool = false
@@ -259,34 +266,66 @@ func _process(_delta: float):
 				if not _rust_deserializer:
 					push_error("❌ [WS] Rust deserializer not available!")
 				else:
-					var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
-					if not decoded_result or not decoded_result.has("success"):
-						push_error("❌ [WS] Decode failed - no result returned")
-					elif not decoded_result.success:
-						var error_msg := decoded_result.get("error", "unknown error")
-						push_error("❌ [WS] Decode failed: %s" % error_msg)
+					if _USE_DESKTOP_TYPE11_FASTPATH and not OS.has_feature("web"):
+						_refresh_bv_fastpath_cache_if_needed()
+						var perf: Dictionary = _rust_deserializer.apply_type11_packet_to_multimeshes(
+							newest_binary,
+							_bv_fast_multimeshes_by_id,
+							_bv_fast_dimensions_by_id,
+							true # clear_all_before_apply
+						)
+						# Optional: preserve side-effects (timers/animations) without moving arrays through signals.
+						if perf and perf.has("area_counts"):
+							for cortical_id in perf.area_counts.keys():
+								var count: int = int(perf.area_counts[cortical_id])
+								var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
+								var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
+								if area:
+									area.BV_notify_directpoints_activity(count)
+						# Extend existing diag with stage timings (rate-limited below).
+						if perf:
+							set_meta("_ws_last_perf", perf)
 					else:
-						for cortical_id in decoded_result.areas.keys():
-							var area_data = decoded_result.areas[cortical_id]
-							# Perf: Rust deserializer already returns PackedArrays; avoid repacking/copying here.
-							var x_array := area_data.get("x_array") as PackedInt32Array
-							var y_array := area_data.get("y_array") as PackedInt32Array
-							var z_array := area_data.get("z_array") as PackedInt32Array
-							var p_array := area_data.get("p_array") as PackedFloat32Array
-							
-							FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
-							var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-							if area:
-								area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-							else:
-								_handle_missing_cortical_area(cortical_id)
+						# Legacy desktop path (kept for parity/testing); web uses WASM decoder above.
+						var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
+						if not decoded_result or not decoded_result.has("success"):
+							push_error("❌ [WS] Decode failed - no result returned")
+						elif not decoded_result.success:
+							var error_msg := decoded_result.get("error", "unknown error")
+							push_error("❌ [WS] Decode failed: %s" % error_msg)
+						else:
+							for cortical_id in decoded_result.areas.keys():
+								var area_data = decoded_result.areas[cortical_id]
+								# Perf: Rust deserializer already returns PackedArrays; avoid repacking/copying here.
+								var x_array := area_data.get("x_array") as PackedInt32Array
+								var y_array := area_data.get("y_array") as PackedInt32Array
+								var z_array := area_data.get("z_array") as PackedInt32Array
+								var p_array := area_data.get("p_array") as PackedFloat32Array
+								
+								FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
+								var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
+								if area:
+									area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
+								else:
+									_handle_missing_cortical_area(cortical_id)
 
 			var now_ms := Time.get_ticks_msec()
 			if now_ms - _ws_last_backlog_log_ms >= 5000:
 				_ws_last_backlog_log_ms = now_ms
 				var elapsed_ms := float(Time.get_ticks_usec() - t_start_us) / 1000.0
-				print("[WS][DIAG] backlog_start=%d drained_packets=%d drained_bytes=%d newest_binary_len=%d loop_ms=%.2f" % [backlog_start, drained_packets, drained_bytes, newest_binary_len, elapsed_ms])
-				
+				var perf_tail := ""
+				if has_meta("_ws_last_perf"):
+					var perf = get_meta("_ws_last_perf")
+					if perf and perf.has("total_ms"):
+						perf_tail = " | lz4_ms=%.2f parse_ms=%.2f clear_ms=%.2f apply_ms=%.2f areas=%d neurons=%d" % [
+							float(perf.get("lz4_ms", 0.0)),
+							float(perf.get("container_parse_ms", 0.0)),
+							float(perf.get("clear_ms", 0.0)),
+							float(perf.get("multimesh_apply_ms", 0.0)),
+							int(perf.get("areas_applied", 0)),
+							int(perf.get("neurons_applied", 0)),
+						]
+				print("[WS][DIAG] backlog_start=%d drained_packets=%d drained_bytes=%d newest_binary_len=%d loop_ms=%.2f%s" % [backlog_start, drained_packets, drained_bytes, newest_binary_len, elapsed_ms, perf_tail])
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
 			pass
@@ -636,6 +675,29 @@ func _is_probably_text(bytes: PackedByteArray) -> bool:
 		if b < 32 or b > 126:
 			return false
 	return true
+
+func _refresh_bv_fastpath_cache_if_needed() -> void:
+	if OS.has_feature("web"):
+		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _bv_fast_cache_last_refresh_ms < _BV_FAST_CACHE_REFRESH_INTERVAL_MS:
+		return
+	_bv_fast_cache_last_refresh_ms = now_ms
+	_bv_fast_multimeshes_by_id.clear()
+	_bv_fast_dimensions_by_id.clear()
+	if not FeagiCore.feagi_local_cache:
+		return
+	var areas_dict: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	for cortical_id in areas_dict.keys():
+		var area: AbstractCorticalArea = areas_dict.get(cortical_id)
+		if area == null:
+			continue
+		# Normalize keys to String for stable Rust lookups (StringName vs String key mismatches are easy to hit).
+		var key_str := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
+		var mm := area.BV_get_directpoints_multimesh()
+		if mm != null:
+			_bv_fast_multimeshes_by_id[key_str] = mm
+			_bv_fast_dimensions_by_id[key_str] = area.BV_get_directpoints_dimensions()
 
 # 𒓉 -------- Shared Memory Visualization Support --------
 func _init_shm_visualization() -> void:

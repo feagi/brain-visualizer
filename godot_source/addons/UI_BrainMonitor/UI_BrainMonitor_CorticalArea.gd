@@ -110,9 +110,16 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.recieved_new_direct_neural_points_bulk.is_connected(_directpoints_renderer._on_received_direct_neural_points_bulk):
 			defined_cortical_area.recieved_new_direct_neural_points_bulk.connect(_directpoints_renderer._on_received_direct_neural_points_bulk)
 			# print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")  # Suppressed - causes output overflow
+
+	# Register DirectPoints renderer resources for the desktop WS fast-path (Rust -> MultiMesh).
+	# This does NOT change web export behavior (web uses WASM path).
+	if _directpoints_renderer != null and _directpoints_renderer.has_method("bv_get_multimesh"):
+		var mm := _directpoints_renderer.call("bv_get_multimesh") as MultiMesh
+		var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
+		defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
 	
 	# print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")  # Suppressed - causes output overflow
-	
+
 	# Connect to cache reload events to refresh connection curves
 	if FeagiCore.feagi_local_cache:
 		if not FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
@@ -134,6 +141,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.recursive_cortical_area_removed.is_connected(_on_mapping_changed):
 			defined_cortical_area.recursive_cortical_area_removed.connect(_on_mapping_changed)
 		# print("🔗 CONNECTED: Mapping change signals for real-time curve updates")  # Suppressed - causes output overflow
+
+func _exit_tree() -> void:
+	# Unregister fast-path references to avoid stale node references across scene teardown.
+	if _representing_cortial_area != null:
+		_representing_cortial_area.BV_unregister_directpoints_renderer()
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:

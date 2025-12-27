@@ -552,9 +552,11 @@ func _on_agent_reregistration_needed(reason: String):
 		print("🔍 [AGENT-REG] Agent re-registration completed")
 		
 		# If WebSocket was disconnected, reconnect it now
-		if network.websocket_API.socket_health != network.websocket_API.WEBSOCKET_HEALTH.CONNECTED:
+		# Use get("websocket_API") to avoid Godot parser false-positive on external typed members.
+		var ws = network.get("websocket_API")
+		if ws and ws.socket_health != ws.WEBSOCKET_HEALTH.CONNECTED:
 			print("🔍 [AGENT-REG] WebSocket not connected after re-registration - reconnecting...")
-			network.websocket_API.connect_websocket()
+			ws.connect_websocket()
 	else:
 		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[conn_state])
 
