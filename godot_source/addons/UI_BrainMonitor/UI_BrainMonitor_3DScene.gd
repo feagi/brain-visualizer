@@ -1683,6 +1683,7 @@ func has_cortical_area_visualization(cortical_id: String) -> bool:
 	return cortical_id in _cortical_visualizations_by_ID
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
+	print("🗑️ _remove_cortical_area CALLED for cortical_ID: %s" % area.cortical_ID)
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
@@ -1690,8 +1691,10 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_previously_moused_over_volumes.erase(rendering_area)
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	if is_instance_valid(rendering_area):
+		print("🗑️ _remove_cortical_area: Queueing free for rendering_area of %s" % area.cortical_ID)
 		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
+	print("🗑️ _remove_cortical_area: Completed removal of %s from 3D scene" % area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
