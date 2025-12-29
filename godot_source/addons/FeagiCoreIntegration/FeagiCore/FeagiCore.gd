@@ -461,12 +461,7 @@ func reload_genome_await():
 		await network._call_register_agent_for_shm()
 	# Schedule a short watchdog to ensure WS stays connected after reload
 	_ensure_ws_connected_after_reload(30)
-	
-	# DEBUG: Check what we actually loaded
-	print("FEAGICORE: [3D_SCENE_DEBUG] 🔍 Genome reload debug info:")
-	print("  - Cortical areas loaded: %d" % feagi_local_cache.cortical_areas.available_cortical_areas.size())
-	print("  - Brain regions loaded: %d" % feagi_local_cache.brain_regions.available_brain_regions.size())
-	print("  - Root region available: %s" % feagi_local_cache.brain_regions.is_root_available())
+
 	if feagi_local_cache.brain_regions.is_root_available():
 		var root = feagi_local_cache.brain_regions.get_root_region()
 		print("  - Root region name: %s" % root.friendly_name)

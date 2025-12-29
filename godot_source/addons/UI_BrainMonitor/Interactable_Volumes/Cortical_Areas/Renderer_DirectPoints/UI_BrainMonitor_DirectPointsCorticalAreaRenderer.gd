@@ -306,8 +306,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	var mm := bv_get_multimesh()
 	var dims := bv_get_dimensions()
 	area.BV_register_directpoints_renderer(self, mm, dims)
-	if _cortical_area_id == "Y21lbTFfX04=":
-		print("[BV][MEM] DirectPoints self-registered fast-path: mm_null=%s dims=%s" % [str(mm == null), str(dims)])
 	
 
 func update_friendly_name(new_name: String) -> void:
@@ -376,12 +374,6 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 
 ## Brain Visualizer desktop WS fast-path: expose MultiMesh for direct Rust updates.
 func bv_get_multimesh() -> MultiMesh:
-	# Targeted debug for memory area registration issues
-	if _cortical_area_id == "Y21lbTFfX04=":
-		print("[BV][MEM][DIRECTPOINTS] bv_get_multimesh(): _multi_mesh_null=%s _mmi_null=%s" % [
-			str(_multi_mesh == null),
-			str(_multi_mesh_instance == null),
-		])
 	# Be robust: if _multi_mesh wasn't assigned for any reason, return the instance's multimesh.
 	if _multi_mesh != null:
 		return _multi_mesh
@@ -391,8 +383,6 @@ func bv_get_multimesh() -> MultiMesh:
 
 ## Brain Visualizer desktop WS fast-path: expose current dimensions (Vector3) for transform/color calculations.
 func bv_get_dimensions() -> Vector3:
-	if _cortical_area_id == "Y21lbTFfX04=":
-		print("[BV][MEM][DIRECTPOINTS] bv_get_dimensions(): _dimensions=%s" % str(_dimensions))
 	return Vector3(_dimensions.x, _dimensions.y, _dimensions.z)
 
 ## Brain Visualizer desktop WS fast-path: keep behavior parity (timers/animations/material changes)
@@ -404,15 +394,6 @@ func bv_notify_activity(point_count: int) -> void:
 	if not has_meta("_last_update_time"):
 		set_meta("_last_update_time", 0.0)
 	set_meta("_last_update_time", current_time)
-
-	# Targeted debug: confirm memory firing animation path is actually invoked.
-	if _cortical_area_id == "Y21lbTFfX04=":
-		print("[BV][MEM][DIRECTPOINTS] bv_notify_activity: points=%d outline_null=%s jello_null=%s transparent_null=%s" % [
-			point_count,
-			str(_outline_mesh_instance == null),
-			str(_memory_jello_material == null),
-			str(_memory_transparent_material == null),
-		])
 	
 	if point_count > 0:
 		_trigger_power_firing_animation()
@@ -1113,12 +1094,10 @@ func _on_memory_area_stats_updated(stats: Dictionary) -> void:
 	
 	# Check if this memory area has stats
 	if _cortical_area_id not in stats:
-		print("   🔮 No stats found for memory area: ", _cortical_area_id)
 		return
 	
 	var area_stats = stats[_cortical_area_id]
 	if not area_stats.has("neuron_count"):
-		print("   🔮 No neuron_count in stats for memory area: ", _cortical_area_id)
 		return
 	
 	var neuron_count = int(area_stats["neuron_count"])

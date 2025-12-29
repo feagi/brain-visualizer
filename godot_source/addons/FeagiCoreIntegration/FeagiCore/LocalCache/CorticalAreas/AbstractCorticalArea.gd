@@ -513,13 +513,6 @@ func BV_register_directpoints_renderer(renderer: Object, multimesh: MultiMesh, d
 	_bv_directpoints_renderer = renderer
 	_bv_directpoints_multimesh = multimesh
 	_bv_directpoints_dimensions = dimensions
-	# Targeted diagnostics for memory area visualization
-	if cortical_ID == "Y21lbTFfX04=":
-		print("[BV][MEM] BV_register_directpoints_renderer: mm_null=%s dims=%s renderer_null=%s" % [
-			str(multimesh == null),
-			str(dimensions),
-			str(renderer == null),
-		])
 
 ## Brain Visualizer: unregister DirectPoints renderer resources (scene teardown).
 func BV_unregister_directpoints_renderer() -> void:
@@ -529,8 +522,6 @@ func BV_unregister_directpoints_renderer() -> void:
 
 ## Brain Visualizer: retrieve registered MultiMesh for fast-path rendering (may be null if not registered/visible).
 func BV_get_directpoints_multimesh() -> MultiMesh:
-	if cortical_ID == "Y21lbTFfX04=":
-		print("[BV][MEM] BV_get_directpoints_multimesh: mm_null=%s" % str(_bv_directpoints_multimesh == null))
 	return _bv_directpoints_multimesh
 
 ## Brain Visualizer: retrieve registered dimensions for fast-path rendering.

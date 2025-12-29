@@ -117,8 +117,6 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		var mm := _directpoints_renderer.call("bv_get_multimesh") as MultiMesh
 		var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
 		defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
-		if defined_cortical_area.cortical_ID == "Y21lbTFfX04=":
-			print("[BV][MEM] Registered DirectPoints fast-path: mm_null=%s dims=%s" % [str(mm == null), str(dims)])
 		
 		# If renderer resources aren't ready yet (rare timing), retry registration on a deferred tick.
 		# This is important for memory areas: desktop WS Type11 fast-path only updates areas with a registered MultiMesh.

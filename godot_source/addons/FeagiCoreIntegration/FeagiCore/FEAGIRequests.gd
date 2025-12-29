@@ -661,18 +661,6 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		var inputs = response.get("inputs", [])
 		var outputs = response.get("outputs", [])
 		
-		# Debug: Check if cortical areas exist in cache before creating partial mappings
-		for area_id in inputs:
-			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(area_id)
-			print("    🔍 Checking INPUT area %s: %s" % [area_id, "FOUND" if area else "NOT FOUND"])
-			if area:
-				print("      🏠 Area parent region: %s" % (area.current_parent_region.region_ID if area.current_parent_region else "None"))
-		
-		for area_id in outputs:
-			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(area_id)
-			print("    🔍 Checking OUTPUT area %s: %s" % [area_id, "FOUND" if area else "NOT FOUND"])  
-			if area:
-				print("      🏠 Area parent region: %s" % (area.current_parent_region.region_ID if area.current_parent_region else "None"))
 		
 		var seed: Dictionary = {}
 		seed[response["region_id"]] = {
@@ -953,18 +941,13 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	print("FEAGI REQUEST: HTTP response received for %s - checking for errors..." % checking_cortical_ID)
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
 		var raw_response = FEAGI_response_data.decode_response_as_string()
 		push_error("FEAGI Requests: Unable to grab cortical area details of %s! Error: %s - %s" % [checking_cortical_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ HTTP request failed for %s - Error code: %s, Description: %s" % [checking_cortical_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
 		return FEAGI_response_data
 	
-	print("FEAGI REQUEST: HTTP response OK for %s - decoding response..." % checking_cortical_ID)
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully retrieved details of cortical area %s - response keys: %s" % [checking_cortical_ID, response.keys()])
 	
 	# Handle nested properties structure - FEAGI returns {"properties": {...}}
 	var properties_dict: Dictionary = response
@@ -973,9 +956,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
 	
 	# Check if cortical area exists in cache - if not, create it; if yes, update it
-	print("FEAGI REQUEST: Checking if %s exists in cache (current cache size: %d)" % [checking_cortical_ID, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size()])
 	if checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-		print("FEAGI REQUEST: %s already exists - updating" % checking_cortical_ID)
 		# Prevent incorrect reassignment to root if backend omits true parent region
 		# If server reports parent_region_id as root but cache shows a non-root parent, trust cache
 		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[checking_cortical_ID]
@@ -983,16 +964,11 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			var reported_parent: StringName = properties_dict["parent_region_id"]
 			var current_parent: StringName = existing_area.current_parent_region.region_ID if existing_area != null and existing_area.current_parent_region != null else BrainRegion.ROOT_REGION_ID
 			if reported_parent == BrainRegion.ROOT_REGION_ID and current_parent != BrainRegion.ROOT_REGION_ID:
-				print("FEAGI REQUEST: Overriding incorrect parent_region_id 'root' with existing parent '%s' for %s" % [current_parent, checking_cortical_ID])
 				properties_dict["parent_region_id"] = current_parent
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
 	else:
-		print("FEAGI REQUEST: %s does not exist - creating new cortical area" % checking_cortical_ID)
-		print("FEAGI REQUEST: Properties keys: %s" % properties_dict.keys())
-		
 		# Need to create the cortical area - find the parent region first
 		var parent_region_id: StringName = properties_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID)
-		print("FEAGI REQUEST: Using parent region: %s" % parent_region_id)
 		
 		if parent_region_id not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
 			push_warning("FEAGI REQUEST: Parent region '%s' not found for cortical area '%s', using root region" % [parent_region_id, checking_cortical_ID])
@@ -1013,9 +989,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			return FeagiRequestOutput.requirement_fail("INVALID_PARENT_REGION")
 		
 		var parent_region: BrainRegion = parent_region_data as BrainRegion
-		print("FEAGI REQUEST: About to call FEAGI_add_cortical_area_from_dict for %s" % checking_cortical_ID)
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, checking_cortical_ID)
-		print("FEAGI REQUEST: Finished calling FEAGI_add_cortical_area_from_dict for %s" % checking_cortical_ID)
 	return FEAGI_response_data
 
 ### Requests information on multiple cortical areas

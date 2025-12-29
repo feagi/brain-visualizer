@@ -270,18 +270,8 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 
 ## Called by [FEAGICLocalCache] upon reloading genome
 func FEAGI_load_all_cortical_areas(area_summary_data: Dictionary, area_ID_to_region_ID_mapping : Dictionary) -> void:
-	print("DEBUG [GENOME LOAD]: Received area_summary_data with ", area_summary_data.size(), " areas")
-	
 	for cortical_area_ID in area_summary_data.keys():
 		var area_JSON_summary: Dictionary = area_summary_data[cortical_area_ID]
-		
-		# DEBUG: Check raw data for specific memory area
-		if cortical_area_ID == "Y21lbTFfX04=":
-			print("DEBUG [GENOME LOAD]: Found memory area Y21lbTFfX04=")
-			print("DEBUG [GENOME LOAD]: Raw keys: ", area_JSON_summary.keys())
-			print("DEBUG [GENOME LOAD]: Has cortical_type: ", "cortical_type" in area_JSON_summary)
-			if "cortical_type" in area_JSON_summary:
-				print("DEBUG [GENOME LOAD]: cortical_type = ", area_JSON_summary["cortical_type"])
 		
 		var area_parent_region_ID: StringName
 		
