@@ -117,6 +117,13 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		var mm := _directpoints_renderer.call("bv_get_multimesh") as MultiMesh
 		var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
 		defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
+		if defined_cortical_area.cortical_ID == "Y21lbTFfX04=":
+			print("[BV][MEM] Registered DirectPoints fast-path: mm_null=%s dims=%s" % [str(mm == null), str(dims)])
+		
+		# If renderer resources aren't ready yet (rare timing), retry registration on a deferred tick.
+		# This is important for memory areas: desktop WS Type11 fast-path only updates areas with a registered MultiMesh.
+		if mm == null or dims == Vector3.ZERO:
+			_schedule_directpoints_fastpath_registration_retry(defined_cortical_area)
 	
 	# print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")  # Suppressed - causes output overflow
 
@@ -146,6 +153,27 @@ func _exit_tree() -> void:
 	# Unregister fast-path references to avoid stale node references across scene teardown.
 	if _representing_cortial_area != null:
 		_representing_cortial_area.BV_unregister_directpoints_renderer()
+
+func _schedule_directpoints_fastpath_registration_retry(defined_cortical_area: AbstractCorticalArea) -> void:
+	# Keep retries bounded and quiet.
+	if defined_cortical_area == null or _directpoints_renderer == null:
+		return
+	if not has_meta("_bv_fastpath_reg_retry"):
+		set_meta("_bv_fastpath_reg_retry", 0)
+	var attempt: int = int(get_meta("_bv_fastpath_reg_retry"))
+	if attempt >= 10:
+		return
+	set_meta("_bv_fastpath_reg_retry", attempt + 1)
+	call_deferred("_retry_directpoints_fastpath_registration", defined_cortical_area)
+
+func _retry_directpoints_fastpath_registration(defined_cortical_area: AbstractCorticalArea) -> void:
+	if defined_cortical_area == null or _directpoints_renderer == null:
+		return
+	if not _directpoints_renderer.has_method("bv_get_multimesh"):
+		return
+	var mm := _directpoints_renderer.call("bv_get_multimesh") as MultiMesh
+	var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
+	defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:

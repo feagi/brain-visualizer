@@ -274,6 +274,96 @@ func _process(_delta: float):
 							_bv_fast_dimensions_by_id,
 							true # clear_all_before_apply
 						)
+						# Targeted diagnostics for memory cortical area visualization:
+						# Confirms whether BV has the memory area registered for fast-path AND whether the Type 11 packet contains it.
+						var mem_id := "Y21lbTFfX04="
+						# Senior-level debug: log UNPACKED (decoded) Type 11 payload (throttled).
+						# This bypasses fast-path cache/multimesh and answers: "what did BV actually receive?"
+						var now_ms := Time.get_ticks_msec()
+						if not has_meta("_type11_decoded_last_log_ms"):
+							set_meta("_type11_decoded_last_log_ms", 0)
+						var last_decoded_ms: int = int(get_meta("_type11_decoded_last_log_ms"))
+						if now_ms - last_decoded_ms >= 1000:
+							set_meta("_type11_decoded_last_log_ms", now_ms)
+							var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
+							var ok: bool = bool(decoded.get("success", false))
+							var areas_any: Variant = decoded.get("areas", null)
+							var areas: Dictionary = areas_any as Dictionary
+							if ok and areas is Dictionary:
+								# Build compact per-area summary: "<id>:<points>"
+								var area_summaries: Array = []
+								for k in areas.keys():
+									var k_str := String(k).strip_edges()
+									var area_any: Variant = areas.get(k, null)
+									var area_data: Dictionary = area_any as Dictionary
+									var x_array: PackedInt32Array = area_data.get("x_array", PackedInt32Array())
+									area_summaries.append("%s:%d" % [k_str, x_array.size()])
+								print("[WS][TYPE11][DECODED] bytes=%d areas=%d [%s]" % [
+									newest_binary_len,
+									areas.size(),
+									", ".join(area_summaries),
+								])
+
+								# If memory is present, print a short XYZP preview.
+								if areas.has(mem_id):
+									var mem_any: Variant = areas.get(mem_id, null)
+									var mem_area: Dictionary = mem_any as Dictionary
+									var mx: PackedInt32Array = mem_area.get("x_array", PackedInt32Array())
+									var my: PackedInt32Array = mem_area.get("y_array", PackedInt32Array())
+									var mz: PackedInt32Array = mem_area.get("z_array", PackedInt32Array())
+									var mp: PackedFloat32Array = mem_area.get("p_array", PackedFloat32Array())
+									var n := mx.size()
+									var preview_n := min(4, n)
+									var preview: Array = []
+									for i in range(preview_n):
+										preview.append("(%d,%d,%d,%.3f)" % [mx[i], my[i], mz[i], mp[i]])
+									print("[WS][TYPE11][MEM][DECODED] id=%s points=%d preview=%s" % [
+										mem_id,
+										n,
+										", ".join(preview),
+									])
+
+									# Critical: trigger memory jelly firing animation even if desktop WS fast-path cache
+									# is missing MultiMesh/dimensions (multimesh_null/dims=0).
+									#
+									# We bypass fast-path by routing ONLY the memory area through the normal bulk-array path,
+									# which drives the DirectPoints renderer material swap (jelly animation) without needing
+									# a registered MultiMesh.
+									if n > 0:
+										var mem_area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(mem_id)
+										if mem_area_obj:
+											# Feed decoded arrays into the standard bulk path (signals already wired).
+											mem_area_obj.FEAGI_set_direct_points_bulk_data(mx, my, mz, mp)
+											# Also notify activity (if renderer was registered, this is a cheap extra).
+											mem_area_obj.BV_notify_directpoints_activity(n)
+										else:
+											print("[WS][TYPE11][MEM] decoded has %s but BV cache missing cortical area object" % mem_id)
+							else:
+								var err := "unknown"
+								if decoded and decoded.has("error"):
+									err = str(decoded.get("error"))
+								print("[WS][TYPE11][DECODED] failed: %s (bytes=%d)" % [err, newest_binary_len])
+
+						# Quick receive log (throttled): proves BV is receiving memory activity in Type 11.
+						if perf and perf.has("area_counts") and perf.area_counts.has(mem_id):
+							if not has_meta("_mem_type11_last_log_ms"):
+								set_meta("_mem_type11_last_log_ms", 0)
+							var last_ms: int = int(get_meta("_mem_type11_last_log_ms"))
+							if now_ms - last_ms >= 1000:
+								set_meta("_mem_type11_last_log_ms", now_ms)
+								print("[WS][TYPE11][MEM] Received memory activity: %s points=%d" % [mem_id, int(perf.area_counts[mem_id])])
+						if _bv_fast_multimeshes_by_id.has(mem_id) and perf and perf.has("area_counts"):
+							var ac: Dictionary = perf.area_counts
+							if not ac.has(mem_id):
+								print("[WS][TYPE11][MEM] BV cache HAS %s, but packet missing it (areas_applied=%d, neurons=%d)" % [
+									mem_id,
+									int(perf.get("areas_applied", 0)),
+									int(perf.get("neurons_applied", 0)),
+								])
+							else:
+								print("[WS][TYPE11][MEM] Packet includes %s with %d points" % [mem_id, int(ac[mem_id])])
+						elif (not _bv_fast_multimeshes_by_id.has(mem_id)) and perf and perf.has("area_counts") and perf.area_counts.has(mem_id):
+							print("[WS][TYPE11][MEM] Packet HAS %s but BV fast-path cache missing it (likely renderer not registered)" % mem_id)
 						# Optional: preserve side-effects (timers/animations) without moving arrays through signals.
 						if perf and perf.has("area_counts"):
 							for cortical_id in perf.area_counts.keys():
@@ -695,6 +785,14 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 		# Normalize keys to String for stable Rust lookups (StringName vs String key mismatches are easy to hit).
 		var key_str := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
 		var mm := area.BV_get_directpoints_multimesh()
+		# Targeted diagnostics for the memory cortical area
+		if key_str == "Y21lbTFfX04=":
+			print("[WS][FASTPATH-CACHE][MEM] area_id=%s type=%s multimesh_null=%s dims=%s" % [
+				key_str,
+				str(area.cortical_type),
+				str(mm == null),
+				str(area.BV_get_directpoints_dimensions()),
+			])
 		if mm != null:
 			_bv_fast_multimeshes_by_id[key_str] = mm
 			_bv_fast_dimensions_by_id[key_str] = area.BV_get_directpoints_dimensions()

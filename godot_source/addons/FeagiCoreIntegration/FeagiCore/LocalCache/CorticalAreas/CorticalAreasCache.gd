@@ -132,13 +132,53 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 	if override_cortical_ID != &"":
 		# Some dictionary responses do not include the ID. This allows adding it if that is the case
 		feagi_dictionary["cortical_id"] = override_cortical_ID
-	# Parse cortical type (deprecated enum and new Rust type)
-	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.cortical_type_str_to_type(feagi_dictionary["cortical_group"])
+	
+	# DEBUG: Print all available keys to diagnose cortical_type issue
+	var debug_cortical_id = feagi_dictionary.get("cortical_id", "UNKNOWN_ID")
+	print("DEBUG [CORTICAL PARSE]: ========================================")
+	print("DEBUG [CORTICAL PARSE]: Parsing area: ", debug_cortical_id)
+	print("DEBUG [CORTICAL PARSE]: Available keys: ", feagi_dictionary.keys())
+	print("DEBUG [CORTICAL PARSE]: Has 'cortical_type': ", "cortical_type" in feagi_dictionary)
+	if "cortical_type" in feagi_dictionary:
+		print("DEBUG [CORTICAL PARSE]: cortical_type value = '", feagi_dictionary["cortical_type"], "'")
+	else:
+		print("DEBUG [CORTICAL PARSE]: ❌ cortical_type MISSING from dictionary!")
+	print("DEBUG [CORTICAL PARSE]: ========================================")
+	
+	# Parse cortical type
+	# NEW: Use cortical_type field from Rust API if available (preferred)
+	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE
+	if "cortical_type" in feagi_dictionary:
+		# Use new explicit cortical_type field from Rust (normalize for safety)
+		# NOTE: Some FEAGI versions may send "MEMORY"/"Memory" etc. BV expects stable types.
+		var cortical_type_str := String(feagi_dictionary["cortical_type"]).strip_edges().to_lower()
+		print("DEBUG [%s]: cortical_type='%s' (normalized='%s')" % [debug_cortical_id, feagi_dictionary["cortical_type"], cortical_type_str])
+		match cortical_type_str:
+			"memory":
+				type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+				print("  → Detected as MEMORY type")
+			"sensory":
+				type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+			"motor":
+				type = AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+			"core":
+				type = AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE
+			_:
+				type = AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+				print("  → Detected as CUSTOM type (cortical_type='", feagi_dictionary["cortical_type"], "')")
+	else:
+		# Fallback: Use cortical_group (legacy Python API)
+		print("DEBUG [%s]: No cortical_type field, using cortical_group fallback" % debug_cortical_id)
+		type = AbstractCorticalArea.cortical_type_str_to_type(feagi_dictionary["cortical_group"])
+		var subtype: StringName = ""
+		if "cortical_sub_group" in feagi_dictionary:
+			subtype = feagi_dictionary["cortical_sub_group"]
+		if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and subtype == "MEMORY":
+			type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	
 	var subtype: StringName = ""
 	if "cortical_sub_group" in feagi_dictionary:
 		subtype = feagi_dictionary["cortical_sub_group"]
-	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and subtype == "MEMORY":
-		type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	
 	# NEW: Parse FeagiCorticalType from API if available
 	var feagi_cortical_type: FeagiCorticalType = null
@@ -154,6 +194,13 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 	if "visible" in feagi_dictionary.keys():
 		visibility = feagi_dictionary["visible"]
 	var dimensions: Vector3i = _safe_convert_to_vector3i(feagi_dictionary["cortical_dimensions"], "cortical_dimensions")
+	# Memory cortical areas are represented as a special animated object and are invariant in FEAGI:
+	# they should always be 1x1x1 in voxel-space.
+	# Enforce this here so BV renderers and fast-path registration do not end up with zero dimensions.
+	if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		if dimensions != Vector3i(1, 1, 1):
+			print("DEBUG [%s]: Overriding MEMORY dimensions %s -> (1,1,1)" % [debug_cortical_id, str(dimensions)])
+		dimensions = Vector3i(1, 1, 1)
 	var position_3D: Vector3i = _safe_convert_to_vector3i(feagi_dictionary["coordinates_3d"], "coordinates_3d")
 	var position_2D: Vector2i = Vector2i(0,0)
 	var position_2D_defined: bool = false
@@ -223,8 +270,19 @@ func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 
 ## Called by [FEAGICLocalCache] upon reloading genome
 func FEAGI_load_all_cortical_areas(area_summary_data: Dictionary, area_ID_to_region_ID_mapping : Dictionary) -> void:
+	print("DEBUG [GENOME LOAD]: Received area_summary_data with ", area_summary_data.size(), " areas")
+	
 	for cortical_area_ID in area_summary_data.keys():
 		var area_JSON_summary: Dictionary = area_summary_data[cortical_area_ID]
+		
+		# DEBUG: Check raw data for specific memory area
+		if cortical_area_ID == "Y21lbTFfX04=":
+			print("DEBUG [GENOME LOAD]: Found memory area Y21lbTFfX04=")
+			print("DEBUG [GENOME LOAD]: Raw keys: ", area_JSON_summary.keys())
+			print("DEBUG [GENOME LOAD]: Has cortical_type: ", "cortical_type" in area_JSON_summary)
+			if "cortical_type" in area_JSON_summary:
+				print("DEBUG [GENOME LOAD]: cortical_type = ", area_JSON_summary["cortical_type"])
+		
 		var area_parent_region_ID: StringName
 		
 		# Modern: Get parent_region_id directly from cortical area JSON (UUID-based RegionIDs)
