@@ -76,12 +76,14 @@ var _memory_active_emission: Color
 var _memory_active_emission_energy: float
 var _memory_active_rim_intensity: float
 var _memory_active_jello_strength: float
+var _memory_active_activity_level: float
 
 var _memory_inactive_albedo: Color
 var _memory_inactive_emission: Color
 var _memory_inactive_emission_energy: float
 var _memory_inactive_rim_intensity: float
 var _memory_inactive_jello_strength: float
+var _memory_inactive_activity_level: float
 
 func setup(area: AbstractCorticalArea) -> void:
 	print("🧠 DIRECTPOINTS RENDERER SETUP for cortical area: %s" % area.cortical_ID)
@@ -809,7 +811,7 @@ func _trigger_power_firing_animation() -> void:
 	
 	# Animate firing progress from 0.0 to 1.0 over 0.5 seconds
 	_firing_tween.tween_method(
-		func(progress: float): _power_material.set_shader_parameter("firing_progress", progress),
+		Callable(self, "_set_power_firing_progress"),
 		0.0,
 		1.0,
 		0.5
@@ -817,11 +819,17 @@ func _trigger_power_firing_animation() -> void:
 	
 	# After animation completes, fade out the effect
 	_firing_tween.tween_method(
-		func(progress: float): _power_material.set_shader_parameter("firing_progress", progress),
+		Callable(self, "_set_power_firing_progress"),
 		1.0,
 		0.0,
 		0.3
 	)
+
+func _set_power_firing_progress(progress: float) -> void:
+	"""Tween callback to update power cone firing progress deterministically (no lambdas)."""
+	if _power_material == null:
+		return
+	_power_material.set_shader_parameter("firing_progress", progress)
 
 func _create_tesla_coil_spikes() -> void:
 	"""Create electrical spikes that emanate from the power cone tip"""
@@ -1182,15 +1190,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 			var flicker_speed = randf_range(0.05, 0.15)  # Fast flickering
 			var random_freq = randf_range(20, 40)  # Capture random frequency
 			flicker_tween.tween_method(
-				func(intensity: float): 
-					var material = spike.material_override as StandardMaterial3D
-					if material:
-						# Flicker between full brightness and dim
-						var time_value = Time.get_ticks_msec() / 1000.0  # Convert to seconds
-						var flicker_value = sin(time_value * random_freq) * 0.5 + 0.5
-						material.emission_energy = 1.0 + flicker_value * 3.0
-						# Occasionally make it invisible for crackling effect
-						spike.visible = randf() > 0.1,  # 90% visible, 10% invisible for crackling
+				Callable(self, "_tesla_flicker_step").bind(spike, random_freq),
 				0.0,
 				1.0,
 				flicker_speed
@@ -1204,13 +1204,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 			var base_position = tip_position  # Capture tip_position in local scope
 			var spike_index = i  # Capture loop index
 			movement_tween.tween_method(
-				func(t: float):
-					var noise_offset = Vector3(
-						sin(t * 10 + spike_index) * 0.1,
-						cos(t * 8 + spike_index) * 0.05,
-						sin(t * 12 + spike_index) * 0.1
-					)
-					spike.position = base_position + noise_offset,
+				Callable(self, "_tesla_move_step").bind(spike, base_position, spike_index),
 				0.0,
 				TAU,
 				movement_speed
@@ -1227,6 +1221,31 @@ func _set_tesla_coil_active(active: bool) -> void:
 		for spike in _tesla_coil_spikes:
 			spike.visible = false
 
+func _tesla_flicker_step(_t: float, spike: MeshInstance3D, random_freq: float) -> void:
+	"""Tween callback for tesla spike flicker (no lambdas; parser-safe)."""
+	if spike == null:
+		return
+	var material := spike.material_override as StandardMaterial3D
+	if material == null:
+		return
+	# Flicker between full brightness and dim
+	var time_value = Time.get_ticks_msec() / 1000.0  # Convert to seconds
+	var flicker_value = sin(time_value * random_freq) * 0.5 + 0.5
+	material.emission_energy = 1.0 + flicker_value * 3.0
+	# Occasionally make it invisible for crackling effect
+	spike.visible = randf() > 0.1  # 90% visible, 10% invisible for crackling
+
+func _tesla_move_step(t: float, spike: MeshInstance3D, base_position: Vector3, spike_index: int) -> void:
+	"""Tween callback for tesla spike jitter motion (no lambdas; parser-safe)."""
+	if spike == null:
+		return
+	var noise_offset = Vector3(
+		sin(t * 10 + spike_index) * 0.1,
+		cos(t * 8 + spike_index) * 0.05,
+		sin(t * 12 + spike_index) * 0.1
+	)
+	spike.position = base_position + noise_offset
+
 ## Create inactive material for memory areas when not firing (light blue like cortical voxels)
 func _create_transparent_memory_material() -> ShaderMaterial:
 	"""Create a light blue cortical area colored version of the memory jello material for inactive state"""
@@ -1238,6 +1257,7 @@ func _create_transparent_memory_material() -> ShaderMaterial:
 	inactive_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
 	inactive_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow like cortical areas
 	inactive_material.set_shader_parameter("rim_intensity", 0.8)  # Moderate rim lighting
+	inactive_material.set_shader_parameter("activity_level", 0.0)  # No internal activity when inactive
 	
 	return inactive_material 
 
@@ -1251,12 +1271,14 @@ func _init_memory_material_targets() -> void:
 	_memory_active_emission_energy = float(_memory_jello_material.get_shader_parameter("emission_energy"))
 	_memory_active_rim_intensity = float(_memory_jello_material.get_shader_parameter("rim_intensity"))
 	_memory_active_jello_strength = float(_memory_jello_material.get_shader_parameter("jello_strength"))
+	_memory_active_activity_level = float(_memory_jello_material.get_shader_parameter("activity_level"))
 	
 	_memory_inactive_albedo = _memory_transparent_material.get_shader_parameter("albedo_color")
 	_memory_inactive_emission = _memory_transparent_material.get_shader_parameter("emission_color")
 	_memory_inactive_emission_energy = float(_memory_transparent_material.get_shader_parameter("emission_energy"))
 	_memory_inactive_rim_intensity = float(_memory_transparent_material.get_shader_parameter("rim_intensity"))
 	_memory_inactive_jello_strength = float(_memory_transparent_material.get_shader_parameter("jello_strength"))
+	_memory_inactive_activity_level = float(_memory_transparent_material.get_shader_parameter("activity_level"))
 
 func _apply_memory_material_inactive_state() -> void:
 	"""Immediately apply inactive state to the active material (used at startup)."""
@@ -1267,6 +1289,7 @@ func _apply_memory_material_inactive_state() -> void:
 	_memory_jello_material.set_shader_parameter("emission_energy", _memory_inactive_emission_energy)
 	_memory_jello_material.set_shader_parameter("rim_intensity", _memory_inactive_rim_intensity)
 	_memory_jello_material.set_shader_parameter("jello_strength", _memory_inactive_jello_strength)
+	_memory_jello_material.set_shader_parameter("activity_level", _memory_inactive_activity_level)
 
 func _set_memory_activity_state(is_active: bool) -> void:
 	"""Smoothly fade memory sphere between inactive/active states by tweening shader parameters."""
@@ -1283,12 +1306,14 @@ func _set_memory_activity_state(is_active: bool) -> void:
 	var from_emission_energy: float = float(_memory_jello_material.get_shader_parameter("emission_energy"))
 	var from_rim_intensity: float = float(_memory_jello_material.get_shader_parameter("rim_intensity"))
 	var from_jello_strength: float = float(_memory_jello_material.get_shader_parameter("jello_strength"))
+	var from_activity_level: float = float(_memory_jello_material.get_shader_parameter("activity_level"))
 	
 	var to_albedo: Color = _memory_active_albedo if is_active else _memory_inactive_albedo
 	var to_emission: Color = _memory_active_emission if is_active else _memory_inactive_emission
 	var to_emission_energy: float = _memory_active_emission_energy if is_active else _memory_inactive_emission_energy
 	var to_rim_intensity: float = _memory_active_rim_intensity if is_active else _memory_inactive_rim_intensity
 	var to_jello_strength: float = _memory_active_jello_strength if is_active else _memory_inactive_jello_strength
+	var to_activity_level: float = _memory_active_activity_level if is_active else _memory_inactive_activity_level
 	
 	# Slightly quicker fade-in than fade-out for a softer "pulse" feel.
 	var duration := 0.12 if is_active else 0.25
@@ -1297,16 +1322,49 @@ func _set_memory_activity_state(is_active: bool) -> void:
 	_memory_activity_tween.set_trans(Tween.TRANS_SINE)
 	_memory_activity_tween.set_ease(Tween.EASE_OUT if is_active else Tween.EASE_IN_OUT)
 	_memory_activity_tween.tween_method(
-		func(t: float) -> void:
-			_memory_jello_material.set_shader_parameter("albedo_color", from_albedo.lerp(to_albedo, t))
-			_memory_jello_material.set_shader_parameter("emission_color", from_emission.lerp(to_emission, t))
-			_memory_jello_material.set_shader_parameter("emission_energy", lerpf(from_emission_energy, to_emission_energy, t))
-			_memory_jello_material.set_shader_parameter("rim_intensity", lerpf(from_rim_intensity, to_rim_intensity, t))
-			_memory_jello_material.set_shader_parameter("jello_strength", lerpf(from_jello_strength, to_jello_strength, t)),
+		Callable(self, "_memory_activity_step").bind(
+			from_albedo,
+			from_emission,
+			from_emission_energy,
+			from_rim_intensity,
+			from_jello_strength,
+			from_activity_level,
+			to_albedo,
+			to_emission,
+			to_emission_energy,
+			to_rim_intensity,
+			to_jello_strength,
+			to_activity_level
+		),
 		0.0,
 		1.0,
 		duration
 	)
+
+func _memory_activity_step(
+	t: float,
+	from_albedo: Color,
+	from_emission: Color,
+	from_emission_energy: float,
+	from_rim_intensity: float,
+	from_jello_strength: float,
+	from_activity_level: float,
+	to_albedo: Color,
+	to_emission: Color,
+	to_emission_energy: float,
+	to_rim_intensity: float,
+	to_jello_strength: float,
+	to_activity_level: float
+) -> void:
+	"""Tween callback to fade memory visual state (no lambdas; parser-safe)."""
+	if _memory_jello_material == null:
+		return
+	_memory_jello_material.set_shader_parameter("albedo_color", from_albedo.lerp(to_albedo, t))
+	_memory_jello_material.set_shader_parameter("emission_color", from_emission.lerp(to_emission, t))
+	_memory_jello_material.set_shader_parameter("emission_energy", lerpf(from_emission_energy, to_emission_energy, t))
+	_memory_jello_material.set_shader_parameter("rim_intensity", lerpf(from_rim_intensity, to_rim_intensity, t))
+	_memory_jello_material.set_shader_parameter("jello_strength", lerpf(from_jello_strength, to_jello_strength, t))
+	_memory_jello_material.set_shader_parameter("activity_level", lerpf(from_activity_level, to_activity_level, t))
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
