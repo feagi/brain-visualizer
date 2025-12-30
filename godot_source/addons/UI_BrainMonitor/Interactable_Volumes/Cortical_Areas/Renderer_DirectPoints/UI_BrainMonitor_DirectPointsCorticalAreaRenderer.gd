@@ -68,6 +68,20 @@ var _tesla_coil_tweens: Array[Tween] = []  # Store active tweens to stop them la
 # Memory area materials for state switching
 var _memory_jello_material: ShaderMaterial  # Active firing state material
 var _memory_transparent_material: ShaderMaterial  # Inactive transparent state material
+var _memory_activity_tween: Tween  # Smooth fade between inactive/active states
+
+# Cached parameter targets for smooth transitions
+var _memory_active_albedo: Color
+var _memory_active_emission: Color
+var _memory_active_emission_energy: float
+var _memory_active_rim_intensity: float
+var _memory_active_jello_strength: float
+
+var _memory_inactive_albedo: Color
+var _memory_inactive_emission: Color
+var _memory_inactive_emission_energy: float
+var _memory_inactive_rim_intensity: float
+var _memory_inactive_jello_strength: float
 
 func setup(area: AbstractCorticalArea) -> void:
 	print("🧠 DIRECTPOINTS RENDERER SETUP for cortical area: %s" % area.cortical_ID)
@@ -198,8 +212,10 @@ func setup(area: AbstractCorticalArea) -> void:
 		_memory_jello_material = load(MEMORY_JELLO_MAT_PATH).duplicate() as ShaderMaterial
 		_memory_transparent_material = _create_transparent_memory_material()
 		
-		# Start with light blue cortical material (inactive state)
-		_outline_mesh_instance.material_override = _memory_transparent_material
+		# Cache active/inactive parameter targets and start in inactive state with smooth fades.
+		_init_memory_material_targets()
+		_apply_memory_material_inactive_state()
+		_outline_mesh_instance.material_override = _memory_jello_material
 		_outline_mesh_instance.visible = true  # Always visible with light blue cortical color
 		_outline_mat = null  # Memory areas don't use the outline shader material
 	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
@@ -406,9 +422,9 @@ func bv_notify_activity(point_count: int) -> void:
 			_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
 			_power_material.set_shader_parameter("emission_energy", 1.5)
 		
-		# Make memory sphere use active jello material when neural activity occurs
+		# Make memory sphere fade into active state when neural activity occurs
 		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
-			_outline_mesh_instance.material_override = _memory_jello_material
+			_set_memory_activity_state(true)
 	else:
 		_clear_all_neurons()
 
@@ -485,9 +501,9 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
 		_power_material.set_shader_parameter("emission_energy", 1.5)
 	
-	# Make memory sphere use active jello material when neural activity occurs
+	# Make memory sphere fade into active state when neural activity occurs
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
-		_outline_mesh_instance.material_override = _memory_jello_material
+		_set_memory_activity_state(true)
 
 func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
 	"""Process neurons using Rust - applies directly to MultiMesh (FASTEST!)"""
@@ -618,9 +634,9 @@ func _clear_all_neurons() -> void:
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
 	
-	# Restore memory sphere to transparent state when neurons are cleared
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
-		_outline_mesh_instance.material_override = _memory_transparent_material
+	# Fade memory sphere back to inactive state when neurons are cleared
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+		_set_memory_activity_state(false)
 
 func _start_visibility_timer() -> void:
 	"""Start the visibility timer with buffer for smooth updates"""
@@ -675,9 +691,9 @@ func _on_visibility_timeout() -> void:
 		_power_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow
 	
 	# Make memory sphere return to transparent state when no neural activity
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
-		# print("   🔮 Memory sphere becoming inactive - switching to transparent material")  # Suppressed to reduce log spam
-		_outline_mesh_instance.material_override = _memory_transparent_material
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+		# print("   🔮 Memory sphere becoming inactive - fading to inactive state")  # Suppressed to reduce log spam
+		_set_memory_activity_state(false)
 
 func _get_timestamp_with_ms() -> String:
 	"""Get timestamp with millisecond precision for debug logging"""
@@ -1224,6 +1240,73 @@ func _create_transparent_memory_material() -> ShaderMaterial:
 	inactive_material.set_shader_parameter("rim_intensity", 0.8)  # Moderate rim lighting
 	
 	return inactive_material 
+
+func _init_memory_material_targets() -> void:
+	"""Cache active/inactive shader parameters so we can tween between them for subtle flashing."""
+	if _memory_jello_material == null or _memory_transparent_material == null:
+		return
+	
+	_memory_active_albedo = _memory_jello_material.get_shader_parameter("albedo_color")
+	_memory_active_emission = _memory_jello_material.get_shader_parameter("emission_color")
+	_memory_active_emission_energy = float(_memory_jello_material.get_shader_parameter("emission_energy"))
+	_memory_active_rim_intensity = float(_memory_jello_material.get_shader_parameter("rim_intensity"))
+	_memory_active_jello_strength = float(_memory_jello_material.get_shader_parameter("jello_strength"))
+	
+	_memory_inactive_albedo = _memory_transparent_material.get_shader_parameter("albedo_color")
+	_memory_inactive_emission = _memory_transparent_material.get_shader_parameter("emission_color")
+	_memory_inactive_emission_energy = float(_memory_transparent_material.get_shader_parameter("emission_energy"))
+	_memory_inactive_rim_intensity = float(_memory_transparent_material.get_shader_parameter("rim_intensity"))
+	_memory_inactive_jello_strength = float(_memory_transparent_material.get_shader_parameter("jello_strength"))
+
+func _apply_memory_material_inactive_state() -> void:
+	"""Immediately apply inactive state to the active material (used at startup)."""
+	if _memory_jello_material == null:
+		return
+	_memory_jello_material.set_shader_parameter("albedo_color", _memory_inactive_albedo)
+	_memory_jello_material.set_shader_parameter("emission_color", _memory_inactive_emission)
+	_memory_jello_material.set_shader_parameter("emission_energy", _memory_inactive_emission_energy)
+	_memory_jello_material.set_shader_parameter("rim_intensity", _memory_inactive_rim_intensity)
+	_memory_jello_material.set_shader_parameter("jello_strength", _memory_inactive_jello_strength)
+
+func _set_memory_activity_state(is_active: bool) -> void:
+	"""Smoothly fade memory sphere between inactive/active states by tweening shader parameters."""
+	if _memory_jello_material == null:
+		return
+	
+	# Avoid stacking tweens
+	if _memory_activity_tween != null and _memory_activity_tween.is_valid():
+		_memory_activity_tween.kill()
+		_memory_activity_tween = null
+	
+	var from_albedo: Color = _memory_jello_material.get_shader_parameter("albedo_color")
+	var from_emission: Color = _memory_jello_material.get_shader_parameter("emission_color")
+	var from_emission_energy: float = float(_memory_jello_material.get_shader_parameter("emission_energy"))
+	var from_rim_intensity: float = float(_memory_jello_material.get_shader_parameter("rim_intensity"))
+	var from_jello_strength: float = float(_memory_jello_material.get_shader_parameter("jello_strength"))
+	
+	var to_albedo: Color = _memory_active_albedo if is_active else _memory_inactive_albedo
+	var to_emission: Color = _memory_active_emission if is_active else _memory_inactive_emission
+	var to_emission_energy: float = _memory_active_emission_energy if is_active else _memory_inactive_emission_energy
+	var to_rim_intensity: float = _memory_active_rim_intensity if is_active else _memory_inactive_rim_intensity
+	var to_jello_strength: float = _memory_active_jello_strength if is_active else _memory_inactive_jello_strength
+	
+	# Slightly quicker fade-in than fade-out for a softer "pulse" feel.
+	var duration := 0.12 if is_active else 0.25
+	
+	_memory_activity_tween = create_tween()
+	_memory_activity_tween.set_trans(Tween.TRANS_SINE)
+	_memory_activity_tween.set_ease(Tween.EASE_OUT if is_active else Tween.EASE_IN_OUT)
+	_memory_activity_tween.tween_method(
+		func(t: float) -> void:
+			_memory_jello_material.set_shader_parameter("albedo_color", from_albedo.lerp(to_albedo, t))
+			_memory_jello_material.set_shader_parameter("emission_color", from_emission.lerp(to_emission, t))
+			_memory_jello_material.set_shader_parameter("emission_energy", lerpf(from_emission_energy, to_emission_energy, t))
+			_memory_jello_material.set_shader_parameter("rim_intensity", lerpf(from_rim_intensity, to_rim_intensity, t))
+			_memory_jello_material.set_shader_parameter("jello_strength", lerpf(from_jello_strength, to_jello_strength, t)),
+		0.0,
+		1.0,
+		duration
+	)
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
