@@ -612,7 +612,7 @@ layout_mode = 2
 alignment = 2
 script = ExtResource("9_xe4wg")
 max_value = 99999999999999
-min_value = 0
+min_value = 1
 
 [node name="GAP" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 custom_minimum_size = Vector2(0, 5)

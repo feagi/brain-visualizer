@@ -1110,21 +1110,13 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
 	
-	# Calculate size based on neuron count
-	# Base size: 1.0 (normal cortical area size)
-	# Scale factor: logarithmic scaling to prevent huge spheres
-	var base_size = 1.0
-	var scale_factor = 1.0
-	
-	if neuron_count > 0:
-		# Logarithmic scaling: log10(neuron_count + 1) + 1
-		# This gives: 0 neurons = 1.0x, 10 neurons = 2.0x, 100 neurons = 3.0x, etc.
-		scale_factor = log(neuron_count + 1) / log(10) + 1.0
-		# Cap the maximum size to prevent overly large spheres
-		scale_factor = min(scale_factor, 5.0)  # Max 5x size
-	
-	var sphere_radius = base_size * scale_factor * 0.5  # 0.5 is the base radius
-	var sphere_height = base_size * scale_factor * 1.0  # 1.0 is the base height
+	# Size the memory sphere by treating its volume as proportional to neuron_count.
+	#
+	# Requirement (per user): sphere volume == total memory neurons in the area.
+	# For a sphere: V = (4/3) * PI * r^3  =>  r = cbrt((3 * V) / (4 * PI))
+	var volume := float(neuron_count)
+	var sphere_radius := pow((3.0 * volume) / (4.0 * PI), 1.0 / 3.0)
+	var sphere_height := sphere_radius * 2.0
 	
 	
 	# Update the sphere mesh

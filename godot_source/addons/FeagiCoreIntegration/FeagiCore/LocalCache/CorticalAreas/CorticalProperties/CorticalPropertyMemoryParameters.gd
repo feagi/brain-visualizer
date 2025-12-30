@@ -72,7 +72,7 @@ var temporal_depth: int:
 var _initial_neuron_lifespan: int = 0
 var _lifespan_growth_rate: int = 0
 var _longterm_memory_threshold: int = 0
-var _temporal_depth: int = 0
+var _temporal_depth: int = 1
 var _cortical_area: AbstractCorticalArea
 
 func _init(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -97,6 +97,9 @@ func _set_longterm_memory_threshold(new_val: int) -> void:
 	longterm_memory_threshold_updated.emit(new_val, _cortical_area)
 
 func _set_temporal_depth(new_val: int) -> void:
+	# temporal_depth=0 is invalid (pattern detector requires at least one timestep)
+	if new_val < 1:
+		new_val = 1
 	if new_val == _temporal_depth:
 		return
 	_temporal_depth = new_val
