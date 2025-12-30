@@ -5,6 +5,12 @@ render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specula
 uniform float jello_strength : hint_range(0.0, 0.8) = 0.25;
 uniform float jello_frequency : hint_range(0.1, 10.0) = 3.0;
 uniform float jello_speed : hint_range(0.1, 8.0) = 2.0;
+// Size-aware wobble scaling
+// - As the sphere grows, a fixed displacement becomes visually subtle.
+// - We scale wobble amplitude based on local radius (|VERTEX|) so larger spheres wobble more.
+uniform float jello_size_scale : hint_range(0.0, 4.0) = 1.0;
+uniform float jello_size_power : hint_range(0.0, 2.0) = 0.5;
+uniform float jello_reference_radius : hint_range(0.01, 10.0) = 0.5;
 
 // Material properties
 uniform vec4 albedo_color : source_color = vec4(0.8, 0.2, 0.1, 0.8);
@@ -30,8 +36,12 @@ void vertex() {
     float wave2 = sin(pos.y * jello_frequency * 1.3 + time * 0.7) * jello_strength;
     float wave3 = sin(pos.z * jello_frequency * 0.8 + time * 1.2) * jello_strength;
     
-    // Combine waves and apply to normal direction for outward displacement
-    vec3 displacement = NORMAL * (wave1 + wave2 + wave3) * 0.33;
+    // Combine waves and apply to normal direction for outward displacement.
+    // Size-aware amplitude scaling: larger radius -> more visible wobble.
+    float radius = length(pos);
+    float denom = max(jello_reference_radius, 0.0001);
+    float size_factor = pow(radius / denom, jello_size_power) * jello_size_scale;
+    vec3 displacement = NORMAL * (wave1 + wave2 + wave3) * 0.33 * size_factor;
     
     // Apply the displacement
     VERTEX += displacement;
