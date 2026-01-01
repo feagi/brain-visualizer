@@ -1184,8 +1184,6 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 				if _friendly_name_label != null:
 					var label_y_offset = sphere_radius + 2.0
 					_friendly_name_label.global_position = Vector3(current_pos.x, sphere_center_y + label_y_offset, current_pos.z)
-				
-				print("   🔮 Adjusted memory sphere Y position to %.2f (radius: %.2f) to stay above plate" % [sphere_center_y, sphere_radius])
 
 ## Helper to find the parent brain region 3D visualization
 func _find_parent_brain_region() -> UI_BrainMonitor_BrainRegion3D:
