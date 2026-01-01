@@ -1153,6 +1153,64 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 		if collision_shape and collision_shape.shape is SphereShape3D:
 			var sphere_shape = collision_shape.shape as SphereShape3D
 			sphere_shape.radius = sphere_radius
+	
+	# If this memory area is positioned on a brain region plate, recalculate Y position
+	# to keep the sphere bottom above the plate surface as it grows
+	if _is_on_brain_region_plate() and _static_body != null:
+		# Constants from UI_BrainMonitor_BrainRegion3D
+		const PLATE_HEIGHT: float = 1.0
+		const AREA_ABOVE_PLATE_GAP: float = 3.0
+		
+		# Find the parent brain region to get plate position
+		var brain_region_viz = _find_parent_brain_region()
+		if brain_region_viz != null:
+			# Get the plate node to find its actual global Y position
+			var plate_node = _find_plate_node(brain_region_viz)
+			if plate_node != null:
+				# Plate top is at plate center Y + PLATE_HEIGHT / 2.0
+				var plate_center_y = plate_node.global_position.y
+				var plate_top_y = plate_center_y + PLATE_HEIGHT / 2.0
+				
+				# Areas should have their bottom at AREA_ABOVE_PLATE_GAP above the plate top
+				# For a sphere, the center Y should be at: plate_top_y + AREA_ABOVE_PLATE_GAP + sphere_radius
+				var sphere_bottom_y = plate_top_y + AREA_ABOVE_PLATE_GAP
+				var sphere_center_y = sphere_bottom_y + sphere_radius
+				
+				# Update the static body's global Y position to keep sphere afloat
+				var current_pos = _static_body.global_position
+				_static_body.global_position = Vector3(current_pos.x, sphere_center_y, current_pos.z)
+				
+				# Also update the friendly name label position
+				if _friendly_name_label != null:
+					var label_y_offset = sphere_radius + 2.0
+					_friendly_name_label.global_position = Vector3(current_pos.x, sphere_center_y + label_y_offset, current_pos.z)
+				
+				print("   🔮 Adjusted memory sphere Y position to %.2f (radius: %.2f) to stay above plate" % [sphere_center_y, sphere_radius])
+
+## Helper to find the parent brain region 3D visualization
+func _find_parent_brain_region() -> UI_BrainMonitor_BrainRegion3D:
+	var current := get_parent()
+	while current != null:
+		if current is UI_BrainMonitor_BrainRegion3D:
+			return current as UI_BrainMonitor_BrainRegion3D
+		current = current.get_parent()
+	return null
+
+## Helper to find the plate node (InputPlate, OutputPlate, or ConflictPlate) for this area
+func _find_plate_node(brain_region_viz: UI_BrainMonitor_BrainRegion3D) -> Node3D:
+	# Check which container this area is in to determine which plate to use
+	var container = get_parent()
+	while container != null and container != brain_region_viz:
+		if container.name == "InputAreas":
+			return brain_region_viz.get_node_or_null("RegionAssembly/InputPlate") as Node3D
+		elif container.name == "OutputAreas":
+			return brain_region_viz.get_node_or_null("RegionAssembly/OutputPlate") as Node3D
+		elif container.name == "ConflictAreas":
+			return brain_region_viz.get_node_or_null("RegionAssembly/ConflictPlate") as Node3D
+		container = container.get_parent()
+	
+	# Fallback: try to find any plate
+	return brain_region_viz.get_node_or_null("RegionAssembly/InputPlate") as Node3D
 
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""
