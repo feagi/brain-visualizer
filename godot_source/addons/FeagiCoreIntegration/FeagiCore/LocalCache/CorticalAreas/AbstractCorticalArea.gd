@@ -76,9 +76,12 @@ var encoding_type: String:
 var encoding_format: String:
 	get: return _encoding_format
 
+## Cortical subunit index (which area within a cortical unit, e.g., segment 0-4 for isvi)
 var unit_id: int:
 	get: return _unit_id
 
+## Cortical unit index (which unit of this type, encoded in byte 7 of cortical ID)
+## This identifies which instance of a cortical unit type (e.g., unit 0, unit 1, etc.)
 var group_id: int:
 	get: return _group_id
 

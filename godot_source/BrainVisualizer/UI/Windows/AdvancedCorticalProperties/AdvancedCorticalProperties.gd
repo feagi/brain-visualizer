@@ -19,8 +19,7 @@ var _host_preview_bm: UI_BrainMonitor_3DScene = null
 
 # isvi segmented vision variables
 var _is_isvi_segment: bool = false
-var _isvi_group_id: int = -1
-var _isvi_unit_id: int = -1
+var _isvi_unit_id: int = -1  # Cortical unit index (which unit of this type)
 var _isvi_all_segments: Array[AbstractCorticalArea] = []
 var _isvi_segment_previews: Dictionary = {}  # Maps unit_id to preview object
 var _isvi_original_z_values: Dictionary = {}  # Maps unit_id to original z coordinate (captured at detection)
@@ -598,7 +597,6 @@ var _label_cortical_subtype: Label = null
 var _label_encoding_type: Label = null
 var _label_encoding_format: Label = null
 var _label_unit_id: Label = null
-var _label_group_id: Label = null
 
 func _init_summary() -> void:
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
@@ -695,7 +693,7 @@ func _init_ipu_opu_decoded_info() -> void:
 	var encoding_label = "Encoding:" if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU else "Decoding:"
 	_label_encoding_type = create_label_row.call(encoding_label)
 	_label_encoding_format = create_label_row.call("Format:")
-	_label_group_id = create_label_row.call("Group ID:", true)  # Swapped order, right-justified
+	_label_unit_id = create_label_row.call("Unit ID:", true)  # Swapped order, right-justified
 	_label_unit_id = create_label_row.call("Unit ID:", true)    # Swapped order, right-justified
 
 func _refresh_from_cache_summary() -> void:
@@ -756,7 +754,7 @@ func _refresh_ipu_opu_decoded_info() -> void:
 		_label_cortical_subtype.text = area.cortical_subtype
 		_label_encoding_type.text = area.encoding_type
 		_label_encoding_format.text = area.encoding_format
-		_label_group_id.text = str(area.group_id)  # Swapped order
+		_label_unit_id.text = str(area.group_id)  # group_id property stores unit index
 		_label_unit_id.text = str(area.unit_id)    # Swapped order
 		
 		# Make container visible
@@ -1077,7 +1075,7 @@ func _detect_and_setup_isvi_segment() -> void:
 		return
 	
 	_is_isvi_segment = true
-	_isvi_group_id = area.group_id
+	_isvi_unit_id = area.group_id  # group_id property stores unit index
 	_isvi_unit_id = area.unit_id
 	
 	# Find all 9 segments in this group
@@ -1088,12 +1086,12 @@ func _detect_and_setup_isvi_segment() -> void:
 	for cortical_area in all_cortical_areas:
 		if cortical_area.cortical_subtype == "isvi":
 			isvi_count += 1
-			if cortical_area.group_id == _isvi_group_id:
+			if cortical_area.group_id == _isvi_unit_id:  # group_id property stores unit index
 				_isvi_all_segments.append(cortical_area)
 				# Capture original z value for this segment
 				_isvi_original_z_values[cortical_area.unit_id] = cortical_area.coordinates_3D.z
 	
-	print("UI: isvi segment detected - Unit ", _isvi_unit_id, " in Group ", _isvi_group_id, " (", len(_isvi_all_segments), " total segments)")
+	print("UI: isvi segment detected - Subunit ", _isvi_unit_id, " in Unit ", area.group_id, " (", len(_isvi_all_segments), " total segments)")
 
 ## Calculate layout positions (x, y only) for all segments in an isvi group
 ## Returns Dictionary of unit_id -> Vector2i (x, y position)

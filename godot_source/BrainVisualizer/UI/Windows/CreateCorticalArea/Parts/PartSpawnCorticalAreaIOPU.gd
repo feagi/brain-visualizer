@@ -3,17 +3,17 @@ class_name PartSpawnCorticalAreaIOPU
 
 signal calculated_dimensions_updated(new_size: Vector3i)
 signal location_changed_from_dropdown(new_location: Vector3i)
-signal group_id_validation_changed(is_valid: bool, message: String)
+signal unit_id_validation_changed(is_valid: bool, message: String)
 
 var location: Vector3iSpinboxField
 var device_count: SpinBox
-var group_id: SpinBox
+var unit_id: SpinBox
 var data_type_variant: OptionButton
 var frame_handling: OptionButton
 var positioning: OptionButton
 var _iopu_image: TextureRect
 var _device_name_label: Label
-var _group_id_status_label: Label
+var _unit_id_status_label: Label
 var _current_dimensions_as_per_device_count: Vector3i = Vector3i(1,1,1)
 var _is_IPU_not_OPU: bool
 var _selected_template: CorticalTemplate = null
@@ -27,13 +27,13 @@ var _metadata_ready: bool = false  # Flag to track if template metadata has been
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
 	device_count = $HBoxContainer/Fields/ChannelCount
-	group_id = $HBoxContainer/Fields/GroupID
+	unit_id = $HBoxContainer/Fields/UnitID
 	data_type_variant = $HBoxContainer/Fields/DataTypeVariant
 	frame_handling = $HBoxContainer/Fields/FrameHandling
 	positioning = $HBoxContainer/Fields/Positioning
 	_iopu_image = $HBoxContainer/TextureRect
 	_device_name_label = $HBoxContainer2/TopSection/DeviceName
-	_group_id_status_label = $GroupIDStatus
+	_unit_id_status_label = $UnitIDStatus
 	
 	# Connect to location changes to update all preview boxes
 	location.user_updated_vector.connect(_on_location_changed)
@@ -147,12 +147,12 @@ func _create_single_preview_box(pos: Vector3i, dims: Vector3i) -> void:
 	_preview_boxes.append(preview)
 
 func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
-	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest group_id)"""
+	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest unit_id)"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
 	var unit_dimensions: Dictionary = {}  # {unit_index: Vector3i dimensions}
-	var largest_group_id: int = -1
-	
-	# First pass: find the largest group_id for this cortical type
+	var largest_unit_id: int = -1
+
+	# First pass: find the largest unit_id for this cortical type
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
@@ -163,12 +163,12 @@ func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
 		if cortical_subtype == cortical_type_key:
-			var group_id_val: int = decoded_bytes[7]
-			if group_id_val > largest_group_id:
-				largest_group_id = group_id_val
-	
-	# Second pass: collect dimensions from areas with the largest group_id
-	if largest_group_id >= 0:
+			var unit_id_val: int = decoded_bytes[7]
+			if unit_id_val > largest_unit_id:
+				largest_unit_id = unit_id_val
+
+	# Second pass: collect dimensions from areas with the largest unit_id
+	if largest_unit_id >= 0:
 		for cortical_id: StringName in existing_areas.keys():
 			var cortical_id_str: String = String(cortical_id)
 			var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
@@ -177,24 +177,24 @@ func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 			
 			var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
 			var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
-			var group_id_val: int = decoded_bytes[7]
+			var unit_id_val: int = decoded_bytes[7]
 			var unit_index: int = decoded_bytes[6]
 			
-			if cortical_subtype == cortical_type_key and group_id_val == largest_group_id:
+			if cortical_subtype == cortical_type_key and unit_id_val == largest_unit_id:
 				var area = existing_areas[cortical_id]
 				unit_dimensions[unit_index] = area.dimensions_3D
 	
 	return unit_dimensions
 
 func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
-	"""Find existing cortical areas of the same type and return neurons_per_voxel from largest group_id"""
+	"""Find existing cortical areas of the same type and return neurons_per_voxel from largest unit_id"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
-	var largest_group_id: int = -1
+	var largest_unit_id: int = -1
 	var neurons_per_voxel: int = 1  # Default
 	
 	print("PartSpawnCorticalAreaIOPU: Looking for existing neurons_per_voxel for type: %s" % cortical_type_key)
 	
-	# Find the largest group_id for this cortical type and get its neurons_per_voxel
+	# Find the largest unit_id for this cortical type and get its neurons_per_voxel
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
@@ -205,16 +205,16 @@ func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
 		if cortical_subtype == cortical_type_key:
-			var group_id_val: int = decoded_bytes[7]
+			var unit_id_val: int = decoded_bytes[7]
 			var area = existing_areas[cortical_id]
 			var area_neurons_per_voxel: int = area.cortical_neuron_per_vox_count
-			print("  Found %s group %d with neurons_per_voxel=%d" % [cortical_subtype, group_id_val, area_neurons_per_voxel])
+			print("  Found %s unit %d with neurons_per_voxel=%d" % [cortical_subtype, unit_id_val, area_neurons_per_voxel])
 			
-			if group_id_val > largest_group_id:
-				largest_group_id = group_id_val
+			if unit_id_val > largest_unit_id:
+				largest_unit_id = unit_id_val
 				neurons_per_voxel = area_neurons_per_voxel
 	
-	print("  → Using neurons_per_voxel=%d (from group_id=%d)" % [neurons_per_voxel, largest_group_id])
+	print("  → Using neurons_per_voxel=%d (from unit_id=%d)" % [neurons_per_voxel, largest_unit_id])
 	return neurons_per_voxel
 
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
@@ -232,9 +232,9 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	if _device_name_label != null:
 		_device_name_label.text = str(cortical_template.cortical_name)
 	
-	# Set group_id to first available value
-	var first_available_id = _find_first_available_group_id(cortical_template.ID)
-	group_id.value = first_available_id
+	# Set unit_id to first available value
+	var first_available_id = _find_first_available_unit_id(cortical_template.ID)
+	unit_id.value = first_available_id
 	
 	# Populate data type dropdowns for this template
 	print("PartSpawnCorticalAreaIOPU: Populating dropdowns for template ID='%s'" % cortical_template.ID)
@@ -294,18 +294,18 @@ func get_selected_template() -> CorticalTemplate:
 
 func apply_preselected_template(template: CorticalTemplate) -> void:
 	_apply_template_selection(template)
-	# Validate group ID after template is applied
-	_validate_group_id()
+	# Validate unit ID after template is applied
+	_validate_unit_id()
 
-func _on_group_id_changed(_value: float) -> void:
-	_validate_group_id()
+func _on_unit_id_changed(_value: float) -> void:
+	_validate_unit_id()
 
-func _find_first_available_group_id(cortical_type_key: String) -> int:
-	"""Find the first available (unused) group ID for the given cortical type"""
+func _find_first_available_unit_id(cortical_type_key: String) -> int:
+	"""Find the first available (unused) unit ID for the given cortical type"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
-	var used_group_ids: Array[int] = []
+	var used_unit_ids: Array[int] = []
 	
-	# Collect all used group IDs for this cortical type
+	# Collect all used unit IDs for this cortical type
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		
@@ -318,35 +318,35 @@ func _find_first_available_group_id(cortical_type_key: String) -> int:
 		var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
-		# If this matches our type, record its group_id
+		# If this matches our type, record its unit_id
 		if cortical_subtype == cortical_type_key:
-			var existing_group_id: int = decoded_bytes[7]
-			used_group_ids.append(existing_group_id)
+			var existing_unit_id: int = decoded_bytes[7]
+			used_unit_ids.append(existing_unit_id)
 	
 	# Find the first available ID (0-255)
 	for candidate_id in range(256):
-		if candidate_id not in used_group_ids:
+		if candidate_id not in used_unit_ids:
 			return candidate_id
 	
 	# If all IDs are taken (unlikely), return 0
 	return 0
 
-func _validate_group_id() -> void:
+func _validate_unit_id() -> void:
 	if _selected_template == null:
-		_group_id_status_label.text = ""
-		group_id_validation_changed.emit(true, "")
+		_unit_id_status_label.text = ""
+		unit_id_validation_changed.emit(true, "")
 		return
-	
-	var selected_group_id: int = int(group_id.value)
+
+	var selected_unit_id: int = int(unit_id.value)
 	var cortical_type_key: String = _selected_template.ID
 	
-	# Check if this cortical type + group ID combination already exists
+	# Check if this cortical type + unit ID combination already exists
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
 	
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		
-		# Decode the base64 cortical ID to extract cortical_subtype and group_id
+		# Decode the base64 cortical ID to extract cortical_subtype and unit_id
 		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
 		if decoded_bytes.size() != 8:
 			continue  # Invalid cortical ID, skip
@@ -357,26 +357,26 @@ func _validate_group_id() -> void:
 		
 		# Check if this matches our template ID
 		if cortical_subtype == cortical_type_key:
-			# Extract group_id (byte 7)
-			var existing_group_id: int = decoded_bytes[7]
+			# Extract unit_id (byte 7)
+			var existing_unit_id: int = decoded_bytes[7]
 			
-			if existing_group_id == selected_group_id:
-				# Found a match - this group ID is already used!
+			if existing_unit_id == selected_unit_id:
+				# Found a match - this unit ID is already used!
 				var area_name: String = existing_areas[cortical_id].friendly_name
-				var message: String = "⚠ Group ID %d already exists for %s (%s)" % [selected_group_id, cortical_type_key, area_name]
-				_group_id_status_label.text = message
-				_group_id_status_label.modulate = Color(1.0, 0.5, 0.5)  # Red tint
-				group_id_validation_changed.emit(false, message)
+				var message: String = "⚠ Unit ID %d already exists for %s (%s)" % [selected_unit_id, cortical_type_key, area_name]
+				_unit_id_status_label.text = message
+				_unit_id_status_label.modulate = Color(1.0, 0.5, 0.5)  # Red tint
+				unit_id_validation_changed.emit(false, message)
 				return
 	
-	# Group ID is available
-	var message: String = "✓ Group ID %d is available for %s" % [selected_group_id, cortical_type_key]
-	_group_id_status_label.text = message
-	_group_id_status_label.modulate = Color(0.5, 1.0, 0.5)  # Green tint
-	group_id_validation_changed.emit(true, "")
+	# Unit ID is available
+	var message: String = "✓ Unit ID %d is available for %s" % [selected_unit_id, cortical_type_key]
+	_unit_id_status_label.text = message
+	_unit_id_status_label.modulate = Color(0.5, 1.0, 0.5)  # Green tint
+	unit_id_validation_changed.emit(true, "")
 
-func get_selected_group_id() -> int:
-	return int(group_id.value)
+func get_selected_unit_id() -> int:
+	return int(unit_id.value)
 
 func get_neurons_per_voxel() -> int:
 	"""Get neurons_per_voxel inherited from existing cortical areas or default to 1"""

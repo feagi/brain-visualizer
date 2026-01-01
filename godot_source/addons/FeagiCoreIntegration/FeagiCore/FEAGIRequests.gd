@@ -1063,7 +1063,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"cortical_name": cortical_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),  # API field name (category: IPU/OPU/CORE/etc)
 		"brain_region_id": parent_region.region_ID,
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
@@ -1122,7 +1122,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		"cortical_name": cortical_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),  # API field name (category: IPU/OPU/CORE/etc)
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null],
 		"sub_group_id": "MEMORY",
@@ -1158,7 +1158,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 
 
 ## Adds a IPU / OPU cortical area. NOTE: IPUs/OPUs can ONLY be in the root region!
-func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), group_id: int = 0, neurons_per_voxel: int = 1, data_type_config: int = 0) -> FeagiRequestOutput:
+func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), unit_id: int = 0, neurons_per_voxel: int = 1, data_type_config: int = 0) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -1178,14 +1178,14 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		push_error("FEAGI Requests: Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return FeagiRequestOutput.requirement_fail("NON_IOPU")
 	
-	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with group_id %d, neurons_per_voxel %d, data_type_config %d" % [IOPU_template.cortical_name, group_id, neurons_per_voxel, data_type_config])
+	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with unit_id %d, neurons_per_voxel %d, data_type_config %d" % [IOPU_template.cortical_name, unit_id, neurons_per_voxel, data_type_config])
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"cortical_id": IOPU_template.ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_type": AbstractCorticalArea.cortical_type_to_str(IOPU_template.cortical_type),
 		"device_count": device_count,
-		"group_id": group_id,
+		"unit_id": unit_id,
 		"neurons_per_voxel": neurons_per_voxel,
 		"data_type_config": data_type_config,
 		"coordinates_2d": [null, null]
@@ -1254,7 +1254,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 			# Fallback for single unit (backward compatibility)
 			await get_cortical_area(response["cortical_id"])
 	
-	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, group %d have been added to cache." % [IOPU_template.ID, group_id])
+	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, unit %d have been added to cache." % [IOPU_template.ID, unit_id])
 	
 	return FEAGI_response_data
 

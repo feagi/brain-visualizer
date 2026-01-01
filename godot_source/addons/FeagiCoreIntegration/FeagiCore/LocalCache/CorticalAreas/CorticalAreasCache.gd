@@ -167,7 +167,7 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 				type = AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 				print("  → Detected as CUSTOM type (cortical_type='", feagi_dictionary["cortical_type"], "')")
 	else:
-		# Fallback: Use cortical_group (legacy Python API)
+		# Fallback: Use cortical_group (API field name for category: IPU/OPU/CORE/etc)
 		print("DEBUG [%s]: No cortical_type field, using cortical_group fallback" % debug_cortical_id)
 		type = AbstractCorticalArea.cortical_type_str_to_type(feagi_dictionary["cortical_group"])
 		var subtype: StringName = ""

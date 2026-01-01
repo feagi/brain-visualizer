@@ -17,7 +17,7 @@ use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
 // ============================================================================
 
 /// Convert CorticalAreaType to category string
-fn to_cortical_group(cortical_type: &CorticalAreaType) -> &'static str {
+fn to_cortical_category(cortical_type: &CorticalAreaType) -> &'static str {
     match cortical_type {
         CorticalAreaType::Core(_) => "CORE",
         CorticalAreaType::Custom(_) => "CUSTOM",
@@ -87,7 +87,7 @@ impl FeagiCorticalType {
     pub fn get_category(&self) -> GString {
         if let Some(ref cortical_type) = self.internal_type {
             // No longer needed - using direct functions
-            GString::from(to_cortical_group(cortical_type))
+            GString::from(to_cortical_category(cortical_type))
         } else {
             GString::from("UNKNOWN")
         }

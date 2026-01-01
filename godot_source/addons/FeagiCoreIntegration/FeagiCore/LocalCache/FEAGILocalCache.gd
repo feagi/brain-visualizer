@@ -665,19 +665,28 @@ func _set_IPU_OPU_to_capability_key_mappings(IPU_mappings: Dictionary, OPU_mappi
 
 #region Brain Region Cache Auto-Refresh
 
+## Controls verbose cache logging in this module.
+## Disabled by default to avoid console spam during high-frequency mapping/cache updates.
+const _ENABLE_CACHE_INFO_LOGS: bool = false
+
+func _cache_info(message: String) -> void:
+	if not _ENABLE_CACHE_INFO_LOGS:
+		return
+	print(message)
+
 ## Called when a new mapping is created - refreshes brain region cache designations
 func _on_mapping_created(mapping: InterCorticalMappingSet) -> void:
-	print("🔄 FEAGI CACHE: Auto-refreshing brain region cache due to mapping creation: %s -> %s" % [mapping.source_cortical_area.cortical_ID, mapping.destination_cortical_area.cortical_ID])
+	_cache_info("FEAGI CACHE: Auto-refreshing brain region cache due to mapping creation: %s -> %s" % [mapping.source_cortical_area.cortical_ID, mapping.destination_cortical_area.cortical_ID])
 	_refresh_brain_region_cache_for_mapping(mapping)
 
 ## Called when an existing mapping is updated - refreshes brain region cache designations  
 func _on_mapping_updated(mapping: InterCorticalMappingSet) -> void:
-	print("🔄 FEAGI CACHE: Auto-refreshing brain region cache due to mapping update: %s -> %s" % [mapping.source_cortical_area.cortical_ID, mapping.destination_cortical_area.cortical_ID])
+	_cache_info("FEAGI CACHE: Auto-refreshing brain region cache due to mapping update: %s -> %s" % [mapping.source_cortical_area.cortical_ID, mapping.destination_cortical_area.cortical_ID])
 	_refresh_brain_region_cache_for_mapping(mapping)
 
 ## Called when a new brain region is created - immediately refresh its cache and connect to its signals
 func _on_brain_region_added(region: BrainRegion) -> void:
-	print("🔄 FEAGI CACHE: Auto-refreshing cache for newly created brain region: %s" % region.region_ID)
+	_cache_info("FEAGI CACHE: Auto-refreshing cache for newly created brain region: %s" % region.region_ID)
 	
 	# Connect to this region's area addition/removal signals for future updates
 	region.cortical_area_added_to_region.connect(_on_cortical_area_added_to_region)
@@ -690,7 +699,7 @@ func _on_brain_region_added(region: BrainRegion) -> void:
 
 ## Called when a brain region is about to be removed - disconnect from its signals
 func _on_brain_region_about_to_be_removed(region: BrainRegion) -> void:
-	print("🔄 FEAGI CACHE: Disconnecting signals for brain region about to be removed: %s" % region.region_ID)
+	_cache_info("FEAGI CACHE: Disconnecting signals for brain region about to be removed: %s" % region.region_ID)
 	
 	# Disconnect from this region's signals
 	if region.cortical_area_added_to_region.is_connected(_on_cortical_area_added_to_region):
@@ -702,14 +711,14 @@ func _on_brain_region_about_to_be_removed(region: BrainRegion) -> void:
 func _on_cortical_area_added_to_region(area: AbstractCorticalArea) -> void:
 	var region = area.current_parent_region
 	if region:
-		print("🔄 FEAGI CACHE: Auto-refreshing brain region cache due to area addition: %s added to %s" % [area.cortical_ID, region.region_ID])
+		_cache_info("FEAGI CACHE: Auto-refreshing brain region cache due to area addition: %s added to %s" % [area.cortical_ID, region.region_ID])
 		_refresh_single_brain_region_cache(region)
 
 ## Called when a cortical area is removed from a brain region - refresh that region's cache  
 func _on_cortical_area_removed_from_region(area: AbstractCorticalArea) -> void:
 	# Note: We need to get the region from the signal context since the area might already be moved
 	# For now, we'll refresh all regions that might be affected
-	print("🔄 FEAGI CACHE: Auto-refreshing brain region caches due to area removal: %s" % area.cortical_ID)
+	_cache_info("FEAGI CACHE: Auto-refreshing brain region caches due to area removal: %s" % area.cortical_ID)
 	
 	# Since the area might have been moved, refresh all regions to be safe
 	# This is less efficient but ensures correctness
@@ -731,7 +740,7 @@ func _refresh_brain_region_cache_for_mapping(mapping: InterCorticalMappingSet) -
 
 ## Refreshes the partial mapping cache for a specific brain region
 func _refresh_single_brain_region_cache(region: BrainRegion) -> void:
-	print("🔄 FEAGI CACHE: Refreshing cache designations for brain region: %s" % region.region_ID)
+	_cache_info("FEAGI CACHE: Refreshing cache designations for brain region: %s" % region.region_ID)
 	
 	# Derive input/output designations from current cortical mappings and connections
 	_update_brain_region_io_designations_from_local_mappings(region)
@@ -804,9 +813,10 @@ func _update_brain_region_io_designations_from_local_mappings(region: BrainRegio
 	# Only create synthetic mappings for truly new areas
 	if new_input_areas.size() > 0 or new_output_areas.size() > 0:
 		_create_synthetic_partial_mappings_for_region(region, new_input_areas, new_output_areas)
-		print("✅ FEAGI CACHE: Added synthetic I/O designations - Region: %s, New Inputs: %d, New Outputs: %d" % [region.region_ID, new_input_areas.size(), new_output_areas.size()])
+		_cache_info("FEAGI CACHE: Added synthetic I/O designations - Region: %s, New Inputs: %d, New Outputs: %d" % [region.region_ID, new_input_areas.size(), new_output_areas.size()])
 	else:
-		print("✅ FEAGI CACHE: No new I/O designations needed - Region: %s already has adequate mappings" % region.region_ID)
+		# Suppressed (default) to reduce log spam for no-op refreshes.
+		_cache_info("FEAGI CACHE: No new I/O designations needed - Region: %s already has adequate mappings" % region.region_ID)
 
 ## Creates synthetic partial mappings for a brain region based on analyzed input/output areas
 func _create_synthetic_partial_mappings_for_region(region: BrainRegion, input_areas: Array[AbstractCorticalArea], output_areas: Array[AbstractCorticalArea]) -> void:
@@ -858,7 +868,7 @@ func _clear_region_partial_mappings(region: BrainRegion) -> void:
 
 ## Connects to signals from all existing brain regions (called during genome load)
 func _connect_to_existing_brain_region_signals() -> void:
-	print("🔄 FEAGI CACHE: Connecting to signals from %d existing brain regions" % brain_regions.available_brain_regions.size())
+	_cache_info("FEAGI CACHE: Connecting to signals from %d existing brain regions" % brain_regions.available_brain_regions.size())
 	
 	for region_id in brain_regions.available_brain_regions.keys():
 		var region = brain_regions.available_brain_regions[region_id]
