@@ -107,6 +107,12 @@ var direct_neural_points: PackedByteArray:
 var neuron_count: int:
 	get: return AbstractCorticalArea.get_neuron_count(_dimensions_3D, _cortical_neuron_per_vox_count)
 
+## Heatmap chunk size for large-area visualization (x, y, z)
+## If set, this area uses heatmap aggregation instead of individual neuron rendering
+## null = normal rendering, Vector3i = heatmap mode with chunk dimensions
+var heatmap_chunk_size: Vector3i:
+	get: return _heatmap_chunk_size
+
 var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
 
 ## Has a 2D location been specified in FEAGI yet or is still unknown?
@@ -163,6 +169,9 @@ var _encoding_type: String = ""
 var _encoding_format: String = ""
 var _unit_id: int = -1
 var _group_id: int = -1
+
+# Heatmap chunk size for large-area visualization (null = normal rendering)
+var _heatmap_chunk_size: Vector3i = Vector3i.ZERO  # ZERO means not set (use normal rendering)
 
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
 	var differences: int = -1 # first one will always fail
@@ -478,6 +487,16 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		var value = data["group_id"]
 		if value != null:
 			_group_id = int(value)
+	
+	# Heatmap chunk size for large-area visualization
+	if "heatmap_chunk_size" in data.keys():
+		var value = data["heatmap_chunk_size"]
+		if value != null and value is Array and value.size() == 3:
+			_heatmap_chunk_size = Vector3i(int(value[0]), int(value[1]), int(value[2]))
+		else:
+			_heatmap_chunk_size = Vector3i.ZERO  # Not set = normal rendering
+	else:
+		_heatmap_chunk_size = Vector3i.ZERO  # Not set = normal rendering
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
