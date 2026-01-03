@@ -52,8 +52,10 @@ func fast_initial_health_check() -> FeagiRequestOutput:
 	fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 	fast_health_check_request.data_to_send_to_FEAGI = null
 	
-	# FAST settings for startup
-	fast_health_check_request.http_timeout = 2.0
+	# FAST settings for startup (but with increased timeout for large injections)
+	# Increased from 2.0 to 15.0 to tolerate large sensory injections that may block burst loop
+	# Large NIfTI frames can take 5-10 seconds to inject, causing temporary API unresponsiveness
+	fast_health_check_request.http_timeout = 15.0  # Increased timeout: 15 seconds to handle large injections
 	fast_health_check_request.number_of_retries_allowed = 1
 	
 	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(fast_health_check_request)
@@ -1215,6 +1217,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 	print("FEAGI REQUEST: Successfully created %d cortical area(s) for %s (first ID: %s)" % [unit_count, IOPU_template.cortical_name, response.get("cortical_id", "")])
 	
 	# Add all created areas directly to cache using the full details returned in response
+	var created_cortical_ids: Array[StringName] = []
 	if "areas" in response and response["areas"] is Array:
 		var areas: Array = response["areas"]
 		print("FEAGI REQUEST: Adding %d cortical areas directly to cache from response" % areas.size())
@@ -1241,6 +1244,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 					parent_region,
 					cortical_id
 				)
+				created_cortical_ids.append(cortical_id)
 	else:
 		push_warning("FEAGI REQUEST: Response missing 'areas' field - falling back to fetching properties")
 		# Fallback: fetch properties if server doesn't return them
@@ -1250,9 +1254,22 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 			for cortical_id in cortical_ids:
 				if cortical_id != "":
 					await get_cortical_area(cortical_id)
+					created_cortical_ids.append(StringName(cortical_id))
 		else:
 			# Fallback for single unit (backward compatibility)
 			await get_cortical_area(response["cortical_id"])
+			created_cortical_ids.append(StringName(response["cortical_id"]))
+	
+	# Ensure all created areas appear in the correct region's 3D view immediately
+	# This fixes timing issues with large areas where get_cortical_area takes longer
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region != null:
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(root_region)
+		if bm != null:
+			for cortical_id in created_cortical_ids:
+				var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id, null)
+				if new_area_obj != null:
+					bm._add_cortical_area(new_area_obj)
 	
 	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, unit %d have been added to cache." % [IOPU_template.ID, unit_id])
 	

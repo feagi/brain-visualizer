@@ -224,6 +224,10 @@ func _user_requesing_creation() -> void:
 						)
 						BV.WM.spawn_popup(popup_definition)
 						return
+					# Wait a frame to ensure visualization is rendered before cleaning up preview
+					await get_tree().process_frame
+					# Explicitly clear previews for IOPU areas to ensure they're removed
+					_IOPU_definition._clear_all_previews()
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var template: CorticalTemplate = _IOPU_definition.get_selected_template()
 			if template == null:
@@ -274,6 +278,10 @@ func _user_requesing_creation() -> void:
 						)
 						BV.WM.spawn_popup(popup_definition)
 						return
+					# Wait a frame to ensure visualization is rendered before cleaning up preview
+					await get_tree().process_frame
+					# Explicitly clear previews for IOPU areas to ensure they're removed
+					_IOPU_definition._clear_all_previews()
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":

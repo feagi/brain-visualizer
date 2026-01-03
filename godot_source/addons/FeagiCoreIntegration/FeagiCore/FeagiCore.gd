@@ -53,7 +53,9 @@ var _simulation_timestep_timer: Timer
 
 # Health check failure tracking
 var _consecutive_health_failures: int = 0
-const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 3
+# Increased from 3 to 6 to tolerate large sensory injections that may block burst loop
+# Large NIfTI frames (5M+ voxels) can take 5-10 seconds to inject, causing temporary API unresponsiveness
+const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 6
 
 
 
@@ -195,7 +197,9 @@ func _start_periodic_simulation_timestep_check() -> void:
 
 	_simulation_timestep_timer = Timer.new()
 	_simulation_timestep_timer.name = "SimulationTimestepTimer"
-	_simulation_timestep_timer.wait_time = 2.0
+	# Increased from 2.0 to 3.0 to reduce frequency during large sensory injections
+	# Large NIfTI frames may block burst loop for several seconds, so less frequent checks reduce false positives
+	_simulation_timestep_timer.wait_time = 3.0
 	_simulation_timestep_timer.timeout.connect(_fetch_simulation_timestep)
 	_simulation_timestep_timer.autostart = false
 	add_child(_simulation_timestep_timer)
@@ -232,8 +236,11 @@ func _fetch_simulation_timestep() -> void:
 	fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 	fast_health_check_request.data_to_send_to_FEAGI = null
 	
-	# Set custom fast-failing settings (bypassing global defaults)
-	fast_health_check_request.http_timeout = 3.0  # Fast timeout: 3 seconds instead of 10
+	# Set custom timeout settings (bypassing global defaults)
+	# Increased from 3.0 to 20.0 to tolerate large sensory injections that may block burst loop
+	# Large NIfTI frames (5M+ voxels) can take 5-10 seconds to inject atomically, causing temporary API unresponsiveness
+	# The default 10s timeout is too short when burst loop is blocked by large injections
+	fast_health_check_request.http_timeout = 20.0  # Increased timeout: 20 seconds to handle large injections
 	fast_health_check_request.number_of_retries_allowed = 1  # Only 1 retry instead of 5 (bypasses global setting)
 	
 	var health_check_worker: APIRequestWorker = network.http_API.make_HTTP_call(fast_health_check_request)
