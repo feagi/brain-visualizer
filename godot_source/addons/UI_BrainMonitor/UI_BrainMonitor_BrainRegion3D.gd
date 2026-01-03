@@ -437,32 +437,17 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 			cortical_viz._dda_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
 			print("      🔍 Updated DDA outline scaling")
 	
-	# Update DirectPoints renderer dimensions (but preserve positioning)  
+	# Update DirectPoints renderer dimensions (but preserve positioning)
+	# Use update_dimensions() method to ensure all properties are updated correctly
+	# Position is preserved because update_dimensions() uses existing _position_godot_space
 	if cortical_viz._directpoints_renderer != null:
-		# Update scale but NOT position
-		cortical_viz._directpoints_renderer._dimensions = new_dimensions
-		if cortical_viz._directpoints_renderer._static_body != null:
-			cortical_viz._directpoints_renderer._static_body.scale = new_dimensions
-			# print("      📏 Updated DirectPoints renderer scale: %s" % new_dimensions)  # Suppressed - too frequent
-		
-		# Update collision shape size
-		var collision_shape = cortical_viz._directpoints_renderer._static_body.get_child(0) as CollisionShape3D
-		if collision_shape and collision_shape.shape is BoxShape3D:
-			if cortical_viz._directpoints_renderer._should_use_png_icon_by_id(cortical_viz.cortical_area.cortical_ID):
-				(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # PNG icon collision
-			else:
-				(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
-			# print("      🔲 Updated DirectPoints collision shape")  # Suppressed - too frequent
-		
-		# Update outline mesh scale
-		if cortical_viz._directpoints_renderer._outline_mesh_instance != null:
-			cortical_viz._directpoints_renderer._outline_mesh_instance.scale = new_dimensions
-			# print("      🔍 Updated DirectPoints outline scale")  # Suppressed - too frequent
-		
-		# Update outline material scaling
-		if cortical_viz._directpoints_renderer._outline_mat != null:
-			cortical_viz._directpoints_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
-			# print("      🎨 Updated DirectPoints outline material")  # Suppressed - too frequent
+		# Store current position to ensure it's preserved
+		var current_position = cortical_viz._directpoints_renderer._position_godot_space
+		cortical_viz._directpoints_renderer.update_dimensions(new_dimensions)
+		# Restore position if it was changed (shouldn't be, but safety check)
+		if cortical_viz._directpoints_renderer._position_godot_space != current_position:
+			cortical_viz._directpoints_renderer._static_body.position = current_position
+			cortical_viz._directpoints_renderer._position_godot_space = current_position
 	
 	print("    ✅ Brain region dimension update completed (positioning preserved)")
 	
