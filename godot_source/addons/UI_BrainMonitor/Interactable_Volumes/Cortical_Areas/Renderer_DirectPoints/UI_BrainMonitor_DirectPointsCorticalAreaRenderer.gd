@@ -332,6 +332,12 @@ func setup(area: AbstractCorticalArea) -> void:
 				print("   🔮 Applying initial memory sphere size: ", neuron_count, " neurons")
 				_update_memory_sphere_size(neuron_count)
 	
+	# Connect to delay_between_bursts changes to update timer duration dynamically
+	# This is the authoritative source (updated from FEAGI API), not the health check cache
+	if FeagiCore:
+		FeagiCore.delay_between_bursts_updated.connect(_on_delay_between_bursts_changed)
+		print("   ⏱️  Connected to delay_between_bursts_updated signal for dynamic updates")
+	
 	# Setup visibility timer for neuron firing timeout
 	_visibility_timer = Timer.new()
 	_visibility_timer.name = "NeuronVisibilityTimer"
@@ -483,7 +489,9 @@ func bv_notify_activity(point_count: int) -> void:
 		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
 			_set_memory_activity_state(true)
 	else:
-		_clear_all_neurons()
+		# No neurons firing - don't clear immediately, let timer handle it
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
 
 func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
 	"""Handle Type 11 direct neural points data - Rust-accelerated processing"""
@@ -544,13 +552,17 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 				set_meta("_last_had_origin", false)
 		
 		_process_neurons_with_rust(x_array, y_array, z_array)
-		# Start timer - neurons visible for exactly 1 frame period
+		# Start timer - neurons visible for exactly simulation_timestep duration
 		_start_visibility_timer()
 	else:
-		# No neurons firing - clear immediately
+		# No neurons firing in this update - don't clear immediately
+		# Let the visibility timer handle clearing after simulation_timestep expires
+		# This ensures neurons stay visible for the full timestep even if empty updates arrive
 		if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
 			set_meta("_last_had_origin", false)
-		_clear_all_neurons()
+		# Only clear if timer has already expired (no active firing)
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
 	
 	# Make power cone use firing colors when neural activity occurs
 	if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
@@ -605,8 +617,9 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	
 	# Check if we have any data
 	if points_data.size() == 0:
-		# No neurons firing - clear immediately
-		_clear_all_neurons()
+		# No neurons firing - don't clear immediately, let timer handle it
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
 		return
 	
 	# Trigger power cone firing animation if this is the power cortical area
@@ -620,8 +633,9 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		return
 	
 	if point_count == 0:
-		# No neurons firing - clear immediately
-		_clear_all_neurons()
+		# No neurons firing - don't clear immediately, let timer handle it
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
 		return
 	
 	# Convert to bulk arrays efficiently
@@ -709,11 +723,23 @@ func _clear_all_neurons() -> void:
 
 func _start_visibility_timer() -> void:
 	"""Start the visibility timer with buffer for smooth updates"""
-	if not FeagiCore or not FeagiCore.feagi_local_cache:
-		print("🔥 DirectPoints: Cannot start timer - FeagiCore or cache not available")
+	if not FeagiCore:
+		print("🔥 DirectPoints: Cannot start timer - FeagiCore not available")
 		return
 	
-	var simulation_timestep = FeagiCore.feagi_local_cache.simulation_timestep
+	# Use delay_between_bursts from FeagiCore (authoritative source from FEAGI API)
+	# This is the same value TOPBAR uses and is updated when FEAGI changes simulation_timestep
+	var delay_between_bursts = FeagiCore.delay_between_bursts
+	
+	# Fallback to cache if delay_between_bursts is 0 (not yet initialized)
+	if delay_between_bursts <= 0.0 and FeagiCore.feagi_local_cache:
+		delay_between_bursts = FeagiCore.feagi_local_cache.simulation_timestep
+		if delay_between_bursts > 0.0:
+			print("   ⚠️  Using fallback simulation_timestep from cache: %.3f seconds" % delay_between_bursts)
+	
+	if delay_between_bursts <= 0.0:
+		print("🔥 DirectPoints: Cannot start timer - delay_between_bursts is 0 or invalid")
+		return
 	
 	# Stop existing timer if running
 	if _visibility_timer.time_left > 0:
@@ -722,24 +748,25 @@ func _start_visibility_timer() -> void:
 	# Record when neurons started displaying
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
 	
-	# CRITICAL: Neurons should stay visible for full burst duration
-	# Use negotiated visualization rate from FEAGI (or fallback to 60 Hz)
-	# BV requests up to 60 Hz, FEAGI negotiates based on burst frequency
-	var viz_frequency_hz = 60.0  # Default (matches registration request)
-	# Read from FEAGINetworking (where it's stored during registration)
-	if FeagiCore and FeagiCore.network and FeagiCore.network.has_meta("_negotiated_viz_hz"):
-		viz_frequency_hz = FeagiCore.network.get_meta("_negotiated_viz_hz")
-	
-	var viz_frame_duration = 1.0 / viz_frequency_hz
-	
-	# Use 1.5x frame period to ensure overlap and prevent flashing
-	# At 1 Hz: fires at t=0, visible until t=1500ms
-	# Next burst at t=1000ms arrives before timer expires → seamless
-	# If no burst arrives, clears at t=1500ms (acceptable delay)
-	var timeout = viz_frame_duration * 1.5
+	# CRITICAL: Neurons should stay visible for exactly one simulation timestep
+	# This matches the FEAGI simulation cycle duration
+	var timeout = delay_between_bursts
 	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()
+
+func _on_delay_between_bursts_changed(new_delay: float) -> void:
+	"""Called when FEAGI delay_between_bursts changes - update any active timers"""
+	# If timer is currently running, update it with new delay
+	if _visibility_timer.time_left > 0 and new_delay > 0.0:
+		var remaining_time = _visibility_timer.time_left
+		var new_timeout = new_delay
+		
+		# If we're more than halfway through, just use the new delay
+		# Otherwise, preserve remaining time proportionally
+		if remaining_time < new_delay * 0.5:
+			_visibility_timer.wait_time = new_timeout
+			_visibility_timer.start()
 
 func _on_visibility_timeout() -> void:
 	"""Called when the visibility timer expires - clear all neurons"""
@@ -863,6 +890,20 @@ func _trigger_power_firing_animation() -> void:
 	if not AbstractCorticalArea.is_power_area(_cortical_area_id) or _power_material == null:
 		return
 	
+	# Get delay_between_bursts for animation duration (same as visibility timer)
+	var delay_between_bursts = 0.8  # Default fallback
+	if FeagiCore:
+		delay_between_bursts = FeagiCore.delay_between_bursts
+		# Fallback to cache if not yet initialized
+		if delay_between_bursts <= 0.0 and FeagiCore.feagi_local_cache:
+			delay_between_bursts = FeagiCore.feagi_local_cache.simulation_timestep
+	
+	# Use fallback if still invalid
+	if delay_between_bursts <= 0.0:
+		delay_between_bursts = 0.8
+	
+	var simulation_timestep = delay_between_bursts
+	
 	# print("   ⚡ Triggering power cone firing animation!")  # Suppressed to reduce log spam
 	
 	# Make power cone use firing colors when firing animation starts
@@ -876,12 +917,16 @@ func _trigger_power_firing_animation() -> void:
 	# Reset firing progress to 0
 	_power_material.set_shader_parameter("firing_progress", 0.0)
 	
-	# Animate firing progress from 0.0 to 1.0 over 0.5 seconds
+	# Animate firing progress from 0.0 to 1.0 over simulation_timestep
+	# Maintain same proportions as before (62.5% up, 37.5% down)
+	var up_duration = simulation_timestep * 0.625
+	var down_duration = simulation_timestep * 0.375
+	
 	_firing_tween.tween_method(
 		Callable(self, "_set_power_firing_progress"),
 		0.0,
 		1.0,
-		0.5
+		up_duration
 	)
 	
 	# After animation completes, fade out the effect
@@ -889,7 +934,7 @@ func _trigger_power_firing_animation() -> void:
 		Callable(self, "_set_power_firing_progress"),
 		1.0,
 		0.0,
-		0.3
+		down_duration
 	)
 
 func _set_power_firing_progress(progress: float) -> void:

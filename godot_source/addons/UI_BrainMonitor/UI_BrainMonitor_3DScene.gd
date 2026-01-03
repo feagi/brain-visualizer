@@ -1221,11 +1221,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if _UI_layer_for_BM:
 					_UI_layer_for_BM.clear_plate_hover()
 				
-				# Right-click on empty space resets camera (same as pressing R)
-				if bm_input_event is UI_BrainMonitor_InputEvent_Click and bm_input_event.button_pressed:
-					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-						print("Right-clicked empty space - Resetting camera")
-						_on_user_camera_reset_requested()
+				# Right-click camera reset removed to allow trackpad rotation
+				# Users can still reset camera by pressing R key
 				
 				continue
 				

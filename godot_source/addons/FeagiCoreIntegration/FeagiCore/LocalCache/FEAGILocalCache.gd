@@ -527,9 +527,11 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		if value != null:
 			var new_timestep = float(value)
 			if new_timestep != simulation_timestep:
-				print("🔥 FEAGI CACHE: Updated simulation_timestep from %s to %s seconds" % [simulation_timestep, new_timestep])
+				print("🔥 FEAGI CACHE: Updated simulation_timestep from %s to %s seconds (from FEAGI health check 'simulation_timestep' field)" % [simulation_timestep, new_timestep])
 				simulation_timestep = new_timestep
 				simulation_timestep_changed.emit(simulation_timestep)
+		else:
+			print("🔥 FEAGI CACHE: Health check contains 'simulation_timestep' key but value is null")
 	elif "burst_frequency" in health:
 		var value = health["burst_frequency"]
 		if value != null:
@@ -538,10 +540,17 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 				# Convert frequency to timestep (1/frequency)
 				var timestep = 1.0 / frequency
 				if timestep != simulation_timestep:
-					print("🔥 FEAGI CACHE: Converted burst_frequency %s Hz to simulation_timestep %s seconds" % [frequency, timestep])
+					print("🔥 FEAGI CACHE: Converted burst_frequency %s Hz to simulation_timestep %s seconds (FEAGI did not send 'simulation_timestep', using 'burst_frequency' instead)" % [frequency, timestep])
 					simulation_timestep = timestep
 					simulation_timestep_changed.emit(simulation_timestep)
 			# Silently ignore invalid burst_frequency (0.0) to avoid spam
+		else:
+			print("🔥 FEAGI CACHE: Health check contains 'burst_frequency' key but value is null")
+	else:
+		# Log when neither field is present (only once to avoid spam)
+		if not has_meta("_logged_missing_timestep"):
+			print("🔥 FEAGI CACHE: WARNING - Health check does not contain 'simulation_timestep' or 'burst_frequency'. Using default/cached value: %s seconds" % simulation_timestep)
+			set_meta("_logged_missing_timestep", true)
 	
 	# Handle memory area stats
 	if "memory_area_stats" in health:
