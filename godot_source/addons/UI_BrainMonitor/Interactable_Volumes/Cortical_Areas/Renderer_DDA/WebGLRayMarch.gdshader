@@ -165,14 +165,22 @@ void fragment()
 	}
 	// else: keep full opacity for thin areas (like 64x64x1, 1000000x1x1, etc.)
 	
-	float wall_transparency = base_transparency * thickness_factor;
+	// BOUNDARY PROXIMITY: Reduce wall transparency near cube boundaries to minimize obstruction
+	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face
+	float min_distance_to_face = min(min(distance_to_faces.x, distance_to_faces.y), distance_to_faces.z);
+	float boundary_proximity_factor = 1.0;
+	
+	// Reduce opacity significantly when near boundaries (within 5% of cube edge)
+	if (min_distance_to_face < 0.05) {
+		// Scale from 1.0 (at 0.05) down to 0.1 (at 0.0) for very smooth fade
+		boundary_proximity_factor = mix(0.1, 1.0, min_distance_to_face / 0.05);
+	}
+	
+	float wall_transparency = base_transparency * thickness_factor * boundary_proximity_factor;
 
 	// EDGE DETECTION: Add thin light gray lines only on the 12 cube edges
-	float edge_thickness = 0.01; // Very thin edge lines
+	float edge_thickness = 0.005; // Thinner edge lines (reduced from 0.01)
 	bool is_on_edge = false;
-	
-	// Check if we're near any of the 12 cube edges (where 2 faces meet)
-	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face
 	
 	// Count how many faces we're close to
 	int faces_close_to = 0;
@@ -190,8 +198,8 @@ void fragment()
 	
 	// Apply edge color only on the actual edges
 	if (is_on_edge) {
-		final_color.rgb = vec3(0.7, 0.7, 0.7); // Light gray edges
-		final_color.a = max(wall_transparency, 0.5); // 50% opacity for edges
+		final_color.rgb = vec3(0.3, 0.3, 0.3); // Even darker gray edges
+		final_color.a = max(wall_transparency, 0.06); // Reduced opacity to 6% to minimize obstruction
 	}
 	
 	if(neuron_highlight_has_hit)
