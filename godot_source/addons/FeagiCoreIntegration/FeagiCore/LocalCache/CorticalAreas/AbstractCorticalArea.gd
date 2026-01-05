@@ -111,7 +111,11 @@ var neuron_count: int:
 ## If set, this area uses aggregated rendering instead of individual neuron rendering
 ## null = normal rendering, Vector3i = aggregated rendering mode with granularity dimensions
 var visualization_voxel_granularity: Vector3i:
-	get: return _visualization_voxel_granularity
+	get: 
+		# Default is 1x1x1 if not set (null/empty means default)
+		if _visualization_voxel_granularity == Vector3i.ZERO:
+			return Vector3i(1, 1, 1)
+		return _visualization_voxel_granularity
 
 var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
 
@@ -170,8 +174,8 @@ var _encoding_format: String = ""
 var _unit_id: int = -1
 var _group_id: int = -1
 
-# Visualization voxel granularity for large-area rendering (null = normal rendering)
-var _visualization_voxel_granularity: Vector3i = Vector3i.ZERO  # ZERO means not set (use normal rendering)
+# Visualization voxel granularity for large-area rendering (default is 1x1x1)
+var _visualization_voxel_granularity: Vector3i = Vector3i(1, 1, 1)  # Default is 1x1x1
 
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
 	var differences: int = -1 # first one will always fail
@@ -437,9 +441,9 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 				var z = int(float(value["z"])) if value["z"] != null else 0
 				_visualization_voxel_granularity = Vector3i(x, y, z)
 			else:
-				_visualization_voxel_granularity = Vector3i.ZERO
+				_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
 		else:
-			_visualization_voxel_granularity = Vector3i.ZERO
+			_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
 	
 	if "parent_region_id" in data.keys():
 		if !(data["parent_region_id"] in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
@@ -527,9 +531,9 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 				var z = int(float(value["z"])) if value["z"] != null else 0
 				_visualization_voxel_granularity = Vector3i(x, y, z)
 			else:
-				_visualization_voxel_granularity = Vector3i.ZERO
+				_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
 		else:
-			_visualization_voxel_granularity = Vector3i.ZERO
+			_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 

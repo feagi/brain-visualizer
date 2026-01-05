@@ -38,7 +38,7 @@ var _cortical_area: AbstractCorticalArea = null  # Reference to area for accessi
 
 # Aggregated rendering mode
 var _is_aggregated_mode: bool = false
-var _visualization_voxel_granularity: Vector3i = Vector3i.ZERO
+var _visualization_voxel_granularity: Vector3i = Vector3i(1, 1, 1)  # Default is 1x1x1
 
 # State tracking
 var _is_hovered_over: bool = false
@@ -97,7 +97,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Check if this area uses aggregated rendering mode
 	_visualization_voxel_granularity = area.visualization_voxel_granularity
-	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i.ZERO
+	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
 	if _is_aggregated_mode:
 		print("   🔥 [%s] AGGREGATED RENDERING MODE enabled - granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
 	
@@ -391,7 +391,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		var new_granularity = area_to_check.visualization_voxel_granularity
 		if new_granularity != _visualization_voxel_granularity:
 			_visualization_voxel_granularity = new_granularity
-			_is_aggregated_mode = _visualization_voxel_granularity != Vector3i.ZERO
+			_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
 			if _is_aggregated_mode:
 				# Update mesh size for aggregated rendering mode
 				var chunk_mesh = BoxMesh.new()
