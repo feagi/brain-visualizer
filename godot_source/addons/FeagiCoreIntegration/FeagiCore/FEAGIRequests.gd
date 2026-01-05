@@ -951,6 +951,12 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	
+	# Log visualization_voxel_granularity if present
+	if "visualization_voxel_granularity" in response:
+		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in top-level for %s: %s (type: %s)" % [checking_cortical_ID, response["visualization_voxel_granularity"], typeof(response["visualization_voxel_granularity"])])
+	if "properties" in response and response["properties"] is Dictionary and "visualization_voxel_granularity" in response["properties"]:
+		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in properties for %s: %s" % [checking_cortical_ID, response["properties"]["visualization_voxel_granularity"]])
+	
 	# Handle nested properties structure - FEAGI returns {"properties": {...}}
 	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
 	var properties_dict: Dictionary = response
@@ -961,6 +967,8 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		for key in response.keys():
 			if key != "properties" and not key in properties_dict:
 				properties_dict[key] = response[key]
+				if key == "visualization_voxel_granularity":
+					print("🔵 FEAGI REQUEST: Passing visualization_voxel_granularity to cache for %s: %s (type: %s)" % [checking_cortical_ID, response[key], typeof(response[key])])
 	properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
 	
 	# Check if cortical area exists in cache - if not, create it; if yes, update it
@@ -1036,6 +1044,12 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	
 	for cortical_id in responses_dict.keys():
 		var area_data_raw: Dictionary = responses_dict[cortical_id]
+		# Log visualization_voxel_granularity if present
+		if "visualization_voxel_granularity" in area_data_raw:
+			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in top-level for %s: %s" % [cortical_id, area_data_raw["visualization_voxel_granularity"]])
+		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary and "visualization_voxel_granularity" in area_data_raw["properties"]:
+			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in properties for %s: %s" % [cortical_id, area_data_raw["properties"]["visualization_voxel_granularity"]])
+		
 		# Handle both response formats:
 		# - { "cortical_id": { ...properties... } }
 		# - { "cortical_id": { "properties": { ...properties... } } }
@@ -1047,10 +1061,13 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 			for key in area_data_raw.keys():
 				if key != "properties":
 					area_data[key] = area_data_raw[key]  # Top-level always wins
+					if key == "visualization_voxel_granularity":
+						print("🔵 FEAGI REQUEST: [MULTI] Passing visualization_voxel_granularity to cache for %s: %s" % [cortical_id, area_data_raw[key]])
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
 			area_data["cortical_id"] = StringName(cortical_id)
+		print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
 	return FEAGI_response_data
@@ -1435,20 +1452,29 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	if network_check != null:
 		return network_check
 	
+	# Log what we're sending
+	print("🔵 FEAGI REQUEST: update_cortical_area called for area: %s" % editing_ID)
+	print("🔵 FEAGI REQUEST: Properties being sent: %s" % properties)
+	if "visualization_voxel_granularity" in properties:
+		print("🔵 FEAGI REQUEST: visualization_voxel_granularity value: %s (type: %s)" % [properties["visualization_voxel_granularity"], typeof(properties["visualization_voxel_granularity"])])
+	
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
-	print("FEAGI REQUEST: Making PUT request to %s for cortical area %s with data: %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID, properties])
+	print("🔵 FEAGI REQUEST: Making PUT request to %s for cortical area %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID])
+	print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+	
+	print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
+	if FEAGI_response_data.has_errored:
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
 		var raw_response = FEAGI_response_data.decode_response_as_string()
 		push_error("FEAGI Requests: Unable to update cortical area of ID %s! Error: %s - %s" % [editing_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ PUT request failed for %s - Error code: %s, Description: %s" % [editing_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
-		print("FEAGI REQUEST: ❌ Request data sent: %s" % properties)
+		print("🔴 FEAGI REQUEST: ❌ PUT request failed for %s - Error code: %s, Description: %s" % [editing_ID, error_details[0], error_details[1]])
+		print("🔴 FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
+		print("🔴 FEAGI REQUEST: ❌ Request data sent: %s" % properties)
 		return FEAGI_response_data
 	
 	# Re-fetch the cortical area from FEAGI to ensure cache is synchronized with backend
@@ -1463,24 +1489,40 @@ func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], propertie
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 
+	# Log what we're sending
+	var cortical_ids = AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas)
+	print("🔵 FEAGI REQUEST: update_cortical_areas called for %d areas: %s" % [len(editing_areas), cortical_ids])
+	print("🔵 FEAGI REQUEST: Properties being sent: %s" % properties)
+	if "visualization_voxel_granularity" in properties:
+		print("🔵 FEAGI REQUEST: visualization_voxel_granularity value: %s (type: %s)" % [properties["visualization_voxel_granularity"], typeof(properties["visualization_voxel_granularity"])])
 	
 	# Define Request
-	properties["cortical_id_list"] = AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas)
+	properties["cortical_id_list"] = cortical_ids
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea, properties)
+	
+	print("🔵 FEAGI REQUEST: Sending PUT request to: %s" % FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea)
+	print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	
+	print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
+	if FEAGI_response_data.has_errored:
+		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
+		var raw_response = FEAGI_response_data.decode_response_as_string()
+		print("🔴 FEAGI REQUEST: API Error - Code: %s, Description: %s" % [error_details[0], error_details[1]])
+		print("🔴 FEAGI REQUEST: Raw response: %s" % raw_response)
+	
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to update %d cortical area!" % len(editing_areas))
 		return FEAGI_response_data
 	
 	# Re-fetch all updated cortical areas from FEAGI to ensure cache is synchronized with backend
-	print("FEAGI REQUEST: Multi-PUT succeeded for %d areas, re-fetching from FEAGI to sync cache" % len(editing_areas))
+	print("🔵 FEAGI REQUEST: Multi-PUT succeeded for %d areas, re-fetching from FEAGI to sync cache" % len(editing_areas))
 	await get_cortical_areas(editing_areas)
-	print("FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
+	print("🔵 FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
 	return FEAGI_response_data
 
 

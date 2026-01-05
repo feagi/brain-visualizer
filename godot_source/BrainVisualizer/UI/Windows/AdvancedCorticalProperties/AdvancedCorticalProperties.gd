@@ -225,8 +225,11 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
 		_growing_cortical_update[send_button.name] = {}
+	var original_value = value
 	if value is Vector3i:
 		value = FEAGIUtils.vector3i_to_array(value)
+		if key_name == "visualization_voxel_granularity":
+			print("🔵 UI: visualization_voxel_granularity changed from Vector3i %s to array %s" % [original_value, value])
 	elif value is Vector3:
 		value = FEAGIUtils.vector3_to_array(value)
 	elif key_name == "neuron_excitability":
@@ -239,6 +242,8 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
 		value = float(value) / 100.0
 	_growing_cortical_update[send_button.name][key_name] = value
+	if key_name == "visualization_voxel_granularity":
+		print("🔵 UI: Added %s = %s to update dict for button %s" % [key_name, value, send_button.name])
 	send_button.disabled = false
 
 func _send_update(send_button: Button) -> void:
@@ -282,9 +287,11 @@ func _send_update(send_button: Button) -> void:
 				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 				close_window()
 			else:
-				print("UI: Successfully updated cortical areas %s" % area_names_str)
+				print("✅ UI: Successfully updated cortical areas %s" % area_names_str)
+				print("🔵 UI: Refreshing UI from cache to show updated values...")
 				# Refresh UI from cache to show updated values
 				_refresh_all_relevant()
+				print("🔵 UI: Refresh complete. Current visualization_voxel_granularity value: %s" % _cortical_area_refs[0].visualization_voxel_granularity)
 		else:
 			# Special handling for isvi segments - need to update all segments in the group
 			if _is_isvi_segment and len(_isvi_all_segments) > 1:
@@ -336,9 +343,12 @@ func _send_update(send_button: Button) -> void:
 					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 					close_window()
 				else:
-					print("UI: Successfully updated cortical area '%s'" % cortical_id)
+					print("✅ UI: Successfully updated cortical area '%s'" % cortical_id)
+					print("🔵 UI: Refreshing UI from cache to show updated values...")
 					# Refresh UI from cache to show updated values
 					_refresh_all_relevant()
+					if len(_cortical_area_refs) > 0:
+						print("🔵 UI: Refresh complete. Current visualization_voxel_granularity value: %s" % _cortical_area_refs[0].visualization_voxel_granularity)
 		
 		# Clear the update dictionary
 		_growing_cortical_update.clear()
@@ -620,7 +630,6 @@ func _init_summary() -> void:
 	
 	_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
 	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
-	_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
 	
 	# TODO renable region button, but check to make sure all types can be moved
 	
@@ -636,12 +645,15 @@ func _init_summary() -> void:
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+		# Note: visualization_voxel_granularity not connected for multi-select (read-only)
 
 		
 	else:
 		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
+		if _vector_visualization_voxel_granularity != null:
+			_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		
@@ -730,8 +742,11 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
+		# Set visualization_voxel_granularity directly like position and dimensions
 		if _vector_visualization_voxel_granularity != null:
-			_vector_visualization_voxel_granularity.current_vector = _cortical_area_refs[0].visualization_voxel_granularity
+			var granularity_value = _cortical_area_refs[0].visualization_voxel_granularity
+			print("🔵 UI: Setting visualization_voxel_granularity in UI to: %s (from cache)" % granularity_value)
+			_vector_visualization_voxel_granularity.current_vector = granularity_value
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_device_count_section.visible = true
 			_update_control_with_value_from_areas(_device_count, "", "device_count")

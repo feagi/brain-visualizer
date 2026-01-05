@@ -112,7 +112,7 @@ var neuron_count: int:
 ## null = normal rendering, Vector3i = aggregated rendering mode with granularity dimensions
 var visualization_voxel_granularity: Vector3i:
 	get: 
-		# Default is 1x1x1 if not set (null/empty means default)
+		# Default is 1x1x1 if not set or if somehow 0,0,0 (should never happen)
 		if _visualization_voxel_granularity == Vector3i.ZERO:
 			return Vector3i(1, 1, 1)
 		return _visualization_voxel_granularity
@@ -424,26 +424,37 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 		else:
 			FEAGI_change_coordinates_3D(_safe_convert_to_vector3i(data["coordinates_3d"], "coordinates_3d"))
 	
+	# Visualization voxel granularity - default is 1x1x1 if not present or null
 	if "visualization_voxel_granularity" in data.keys():
 		var value = data["visualization_voxel_granularity"]
+		print("🔵 CACHE: Processing visualization_voxel_granularity for %s: value=%s, type=%s" % [cortical_ID, value, typeof(value)])
 		if value != null:
 			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
 			# Value can be int or float, so convert to float first then int
 			if value is Array and value.size() == 3:
-				var x = int(float(value[0])) if value[0] != null else 0
-				var y = int(float(value[1])) if value[1] != null else 0
-				var z = int(float(value[2])) if value[2] != null else 0
-				_visualization_voxel_granularity = Vector3i(x, y, z)
+				var x = int(float(value[0])) if value[0] != null else 1
+				var y = int(float(value[1])) if value[1] != null else 1
+				var z = int(float(value[2])) if value[2] != null else 1
+				# Treat 0,0,0 as default (1,1,1) - API might return 0,0,0 for default
+				if x == 0 and y == 0 and z == 0:
+					_visualization_voxel_granularity = Vector3i(1, 1, 1)
+					print("🔵 CACHE: Converted 0,0,0 to default 1,1,1 for %s" % cortical_ID)
+				else:
+					_visualization_voxel_granularity = Vector3i(x, y, z)
+					print("🔵 CACHE: Set visualization_voxel_granularity to %s for %s" % [_visualization_voxel_granularity, cortical_ID])
 			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
 			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
-				var x = int(float(value["x"])) if value["x"] != null else 0
-				var y = int(float(value["y"])) if value["y"] != null else 0
-				var z = int(float(value["z"])) if value["z"] != null else 0
+				var x = int(float(value["x"])) if value["x"] != null else 1
+				var y = int(float(value["y"])) if value["y"] != null else 1
+				var z = int(float(value["z"])) if value["z"] != null else 1
 				_visualization_voxel_granularity = Vector3i(x, y, z)
 			else:
 				_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
 		else:
 			_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
+	else:
+		# Field not present in response - default is 1x1x1
+		_visualization_voxel_granularity = Vector3i(1, 1, 1)
 	
 	if "parent_region_id" in data.keys():
 		if !(data["parent_region_id"] in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
@@ -514,26 +525,37 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 			_group_id = int(value)
 	
 	# Visualization voxel granularity for large-area rendering (also handled in FEAGI_apply_full_dictionary for updates)
+	# Visualization voxel granularity - default is 1x1x1 if not present or null
 	if "visualization_voxel_granularity" in data.keys():
 		var value = data["visualization_voxel_granularity"]
+		print("🔵 CACHE: Processing visualization_voxel_granularity for %s: value=%s, type=%s" % [cortical_ID, value, typeof(value)])
 		if value != null:
 			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
 			# Value can be int or float, so convert to float first then int
 			if value is Array and value.size() == 3:
-				var x = int(float(value[0])) if value[0] != null else 0
-				var y = int(float(value[1])) if value[1] != null else 0
-				var z = int(float(value[2])) if value[2] != null else 0
-				_visualization_voxel_granularity = Vector3i(x, y, z)
+				var x = int(float(value[0])) if value[0] != null else 1
+				var y = int(float(value[1])) if value[1] != null else 1
+				var z = int(float(value[2])) if value[2] != null else 1
+				# Treat 0,0,0 as default (1,1,1) - API might return 0,0,0 for default
+				if x == 0 and y == 0 and z == 0:
+					_visualization_voxel_granularity = Vector3i(1, 1, 1)
+					print("🔵 CACHE: Converted 0,0,0 to default 1,1,1 for %s" % cortical_ID)
+				else:
+					_visualization_voxel_granularity = Vector3i(x, y, z)
+					print("🔵 CACHE: Set visualization_voxel_granularity to %s for %s" % [_visualization_voxel_granularity, cortical_ID])
 			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
 			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
-				var x = int(float(value["x"])) if value["x"] != null else 0
-				var y = int(float(value["y"])) if value["y"] != null else 0
-				var z = int(float(value["z"])) if value["z"] != null else 0
+				var x = int(float(value["x"])) if value["x"] != null else 1
+				var y = int(float(value["y"])) if value["y"] != null else 1
+				var z = int(float(value["z"])) if value["z"] != null else 1
 				_visualization_voxel_granularity = Vector3i(x, y, z)
 			else:
 				_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
 		else:
 			_visualization_voxel_granularity = Vector3i(1, 1, 1)  # Default
+	else:
+		# Field not present in response - default is 1x1x1
+		_visualization_voxel_granularity = Vector3i(1, 1, 1)
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
