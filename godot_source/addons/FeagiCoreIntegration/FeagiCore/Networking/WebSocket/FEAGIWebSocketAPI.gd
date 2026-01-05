@@ -721,6 +721,9 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 		var key_str := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
 		var mm := area.BV_get_directpoints_multimesh()
 		if mm != null:
+			# Keep renderer visuals (mesh sizing) in sync with latest cortical properties.
+			# Desktop Type11 fast-path bypasses per-area bulk signals, so we refresh explicitly here.
+			area.BV_refresh_directpoints_renderer_visuals()
 			_bv_fast_multimeshes_by_id[key_str] = mm
 			_bv_fast_dimensions_by_id[key_str] = area.BV_get_directpoints_dimensions()
 

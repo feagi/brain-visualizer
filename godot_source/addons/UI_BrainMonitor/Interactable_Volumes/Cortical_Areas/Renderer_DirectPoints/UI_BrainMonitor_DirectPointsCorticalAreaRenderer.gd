@@ -23,6 +23,9 @@ const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interact
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
 
+# Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
+const _VOXEL_VISUAL_SCALE: float = 0.8
+
 # Rendering components
 var _static_body: StaticBody3D
 var _multi_mesh_instance: MultiMeshInstance3D
@@ -176,20 +179,12 @@ func setup(area: AbstractCorticalArea) -> void:
 		_multi_mesh.mesh = invisible_mesh
 	elif _is_aggregated_mode:
 		# Aggregated rendering mode: use granularity-sized boxes to represent aggregated activity
-		var chunk_mesh = BoxMesh.new()
-		# Convert chunk size to Godot space (chunk dimensions in voxel space)
-		# Scale to match chunk size, with slight gap between chunks
-		var chunk_size_godot = Vector3(
-		_visualization_voxel_granularity.x * 0.9,  # 90% to show gaps between chunks
-		_visualization_voxel_granularity.y * 0.9,
-		_visualization_voxel_granularity.z * 0.9
-		)
-		chunk_mesh.size = chunk_size_godot
-		_multi_mesh.mesh = chunk_mesh
-		print("   🔥 [%s] Using aggregated rendering mesh size: %s (voxel space: %s)" % [_cortical_area_id, chunk_size_godot, _visualization_voxel_granularity])
+		# IMPORTANT: Rust sets instance transform scale to (1 / dimensions) and the parent _static_body scales by (dimensions),
+		# so the mesh `size` here is effectively in world units. Keep it consistent with the normal voxel size.
+		_apply_multimesh_mesh_for_current_granularity()
 	else:
 		var voxel_mesh = BoxMesh.new()
-		voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
+		voxel_mesh.size = Vector3(_VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE)  # Slightly smaller than 1.0 to show individual voxels
 		_multi_mesh.mesh = voxel_mesh
 	
 	# Create material for neuron voxels with Z-DEPTH COLORING support
@@ -379,36 +374,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
 	
-	# Refresh visualization_voxel_granularity from area (in case area was resized and granularity was recalculated)
-	var area_to_check = _cortical_area
-	if area_to_check == null and FeagiCore and FeagiCore.feagi_local_cache:
-		# Fallback: get area from cache if reference is missing
-		if _cortical_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-			area_to_check = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[_cortical_area_id]
-			_cortical_area = area_to_check  # Update reference for future use
-	
-	if area_to_check != null:
-		var new_granularity = area_to_check.visualization_voxel_granularity
-		if new_granularity != _visualization_voxel_granularity:
-			_visualization_voxel_granularity = new_granularity
-			_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
-			if _is_aggregated_mode:
-				# Update mesh size for aggregated rendering mode
-				var chunk_mesh = BoxMesh.new()
-				var chunk_size_godot = Vector3(
-					_visualization_voxel_granularity.x * 0.9,
-					_visualization_voxel_granularity.y * 0.9,
-					_visualization_voxel_granularity.z * 0.9
-				)
-				chunk_mesh.size = chunk_size_godot
-				_multi_mesh.mesh = chunk_mesh
-				print("   🔥 [%s] Updated visualization voxel granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
-			else:
-				# Revert to normal voxel mesh
-				var voxel_mesh = BoxMesh.new()
-				voxel_mesh.size = Vector3(0.8, 0.8, 0.8)
-				_multi_mesh.mesh = voxel_mesh
-				print("   🔥 [%s] Disabled aggregated rendering mode - using normal voxels" % _cortical_area_id)
+	# Refresh visualization_voxel_granularity from cache and update mesh if needed.
+	# (BV allows editing this at runtime; don't rely on dimension changes to refresh mesh.)
+	_refresh_visualization_voxel_granularity_from_cache()
 	
 	# Update static body scale and position
 	_static_body.scale = _dimensions
@@ -495,6 +463,9 @@ func bv_notify_activity(point_count: int) -> void:
 
 func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
 	"""Handle Type 11 direct neural points data - Rust-accelerated processing"""
+	# Granularity can be changed by the user at runtime; ensure mesh sizing/mode is updated
+	# before applying new instance transforms.
+	_refresh_visualization_voxel_granularity_from_cache()
 	
 	var point_count = x_array.size()
 	var current_time = Time.get_ticks_msec() / 1000.0
@@ -552,27 +523,66 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 				set_meta("_last_had_origin", false)
 		
 		_process_neurons_with_rust(x_array, y_array, z_array)
-		# Start timer - neurons visible for exactly simulation_timestep duration
+		# Keep neurons/chunks visible for the configured timestep window.
 		_start_visibility_timer()
 	else:
-		# No neurons firing in this update - don't clear immediately
-		# Let the visibility timer handle clearing after simulation_timestep expires
-		# This ensures neurons stay visible for the full timestep even if empty updates arrive
-		if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
-			set_meta("_last_had_origin", false)
-		# Only clear if timer has already expired (no active firing)
+		# No neurons firing in this update - don't clear immediately.
+		# Let the visibility timer handle clearing after the timestep expires.
 		if _visibility_timer.time_left <= 0.0:
 			_clear_all_neurons()
+
+func _refresh_visualization_voxel_granularity_from_cache() -> void:
+	"""Refresh visualization_voxel_granularity from cache and update the MultiMesh mesh if it changed.
 	
-	# Make power cone use firing colors when neural activity occurs
-	if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
-		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))
-		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
-		_power_material.set_shader_parameter("emission_energy", 1.5)
+	This must be fast and safe to call frequently (called during Type11 updates).
+	"""
+	# Special areas don't use voxel meshes for visualization.
+	if AbstractCorticalArea.is_power_area(_cortical_area_id) or _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	if _multi_mesh == null:
+		return
 	
-	# Make memory sphere fade into active state when neural activity occurs
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
-		_set_memory_activity_state(true)
+	var area_to_check = _cortical_area
+	if area_to_check == null and FeagiCore and FeagiCore.feagi_local_cache:
+		if _cortical_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+			area_to_check = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[_cortical_area_id]
+			_cortical_area = area_to_check
+	
+	if area_to_check == null:
+		return
+	
+	var new_granularity: Vector3i = area_to_check.visualization_voxel_granularity
+	if new_granularity == _visualization_voxel_granularity:
+		return
+	
+	_visualization_voxel_granularity = new_granularity
+	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
+	_apply_multimesh_mesh_for_current_granularity()
+
+func _apply_multimesh_mesh_for_current_granularity() -> void:
+	"""Apply the MultiMesh mesh based on current granularity.
+	
+	- Normal mode: fixed voxel size.
+	- Aggregated mode: voxel size scales linearly with granularity so it stays proportional to the cortical volume.
+	"""
+	if _multi_mesh == null:
+		return
+	
+	if _is_aggregated_mode:
+		var chunk_mesh := BoxMesh.new()
+		# IMPORTANT:
+		# - For axes with granularity > 1, chunks should tile without gaps across the cortical volume.
+		# - For axes with granularity == 1, keep the same voxel thickness (0.8) to match normal mode visuals.
+		var size_x: float = float(_visualization_voxel_granularity.x) if _visualization_voxel_granularity.x > 1 else _VOXEL_VISUAL_SCALE
+		var size_y: float = float(_visualization_voxel_granularity.y) if _visualization_voxel_granularity.y > 1 else _VOXEL_VISUAL_SCALE
+		var size_z: float = float(_visualization_voxel_granularity.z) if _visualization_voxel_granularity.z > 1 else _VOXEL_VISUAL_SCALE
+		var chunk_size_godot := Vector3(size_x, size_y, size_z)
+		chunk_mesh.size = chunk_size_godot
+		_multi_mesh.mesh = chunk_mesh
+	else:
+		var voxel_mesh := BoxMesh.new()
+		voxel_mesh.size = Vector3(_VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE)
+		_multi_mesh.mesh = voxel_mesh
 
 func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
 	"""Process neurons using Rust - applies directly to MultiMesh (FASTEST!)

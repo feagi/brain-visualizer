@@ -615,6 +615,12 @@ func BV_notify_directpoints_activity(point_count: int) -> void:
 	if _bv_directpoints_renderer != null and _bv_directpoints_renderer.has_method("bv_notify_activity"):
 		_bv_directpoints_renderer.call("bv_notify_activity", point_count)
 
+## Brain Visualizer: refresh DirectPoints renderer visuals when cortical properties change.
+## This is critical for the desktop Type11 WS fast-path because it bypasses per-area bulk signals.
+func BV_refresh_directpoints_renderer_visuals() -> void:
+	if _bv_directpoints_renderer != null and _bv_directpoints_renderer.has_method("_refresh_visualization_voxel_granularity_from_cache"):
+		_bv_directpoints_renderer.call("_refresh_visualization_voxel_granularity_from_cache")
+
 func FEAGI_set_no_visualizeation_data() -> void:
 	if len(_SVO_neuron_activations) != 7:
 		_SVO_neuron_activations = PackedByteArray([1,0,1,0, 0 ,255,255,255])
