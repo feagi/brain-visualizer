@@ -34,11 +34,11 @@ var _friendly_name_label: Label3D
 # Cortical area properties
 var _cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
 var _cortical_area_id: String
-var _cortical_area: AbstractCorticalArea = null  # Reference to area for accessing heatmap_chunk_size
+var _cortical_area: AbstractCorticalArea = null  # Reference to area for accessing visualization_voxel_granularity
 
-# Heatmap mode
-var _is_heatmap_mode: bool = false
-var _heatmap_chunk_size: Vector3i = Vector3i.ZERO
+# Aggregated rendering mode
+var _is_aggregated_mode: bool = false
+var _visualization_voxel_granularity: Vector3i = Vector3i.ZERO
 
 # State tracking
 var _is_hovered_over: bool = false
@@ -93,13 +93,13 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
-	_cortical_area = area  # Store reference for accessing heatmap_chunk_size
+	_cortical_area = area  # Store reference for accessing visualization_voxel_granularity
 	
-	# Check if this area uses heatmap mode
-	_heatmap_chunk_size = area.heatmap_chunk_size
-	_is_heatmap_mode = _heatmap_chunk_size != Vector3i.ZERO
-	if _is_heatmap_mode:
-		print("   🔥 [%s] HEATMAP MODE enabled - chunk size: %s" % [_cortical_area_id, _heatmap_chunk_size])
+	# Check if this area uses aggregated rendering mode
+	_visualization_voxel_granularity = area.visualization_voxel_granularity
+	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i.ZERO
+	if _is_aggregated_mode:
+		print("   🔥 [%s] AGGREGATED RENDERING MODE enabled - granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
 	
 	# Load visualization settings (create default if not exists)
 	if ResourceLoader.exists("res://BrainVisualizer/Configs/visualization_settings.tres"):
@@ -163,7 +163,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create voxel (cube) mesh for each neuron - maintaining familiar voxel appearance
 	# For power and memory areas, we don't want individual neuron cubes since the shape itself shows firing
-	# For heatmap mode, use chunk-sized boxes instead of small voxels
+	# For aggregated rendering mode, use granularity-sized boxes instead of small voxels
 	if AbstractCorticalArea.is_power_area(area.cortical_ID):
 		# Use a very small invisible mesh for power areas (firing animation is on the cone itself)
 		var invisible_mesh = BoxMesh.new()
@@ -174,19 +174,19 @@ func setup(area: AbstractCorticalArea) -> void:
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
-	elif _is_heatmap_mode:
-		# Heatmap mode: use chunk-sized boxes to represent aggregated activity
+	elif _is_aggregated_mode:
+		# Aggregated rendering mode: use granularity-sized boxes to represent aggregated activity
 		var chunk_mesh = BoxMesh.new()
 		# Convert chunk size to Godot space (chunk dimensions in voxel space)
 		# Scale to match chunk size, with slight gap between chunks
 		var chunk_size_godot = Vector3(
-			_heatmap_chunk_size.x * 0.9,  # 90% to show gaps between chunks
-			_heatmap_chunk_size.y * 0.9,
-			_heatmap_chunk_size.z * 0.9
+		_visualization_voxel_granularity.x * 0.9,  # 90% to show gaps between chunks
+		_visualization_voxel_granularity.y * 0.9,
+		_visualization_voxel_granularity.z * 0.9
 		)
 		chunk_mesh.size = chunk_size_godot
 		_multi_mesh.mesh = chunk_mesh
-		print("   🔥 [%s] Using heatmap chunk mesh size: %s (voxel space: %s)" % [_cortical_area_id, chunk_size_godot, _heatmap_chunk_size])
+		print("   🔥 [%s] Using aggregated rendering mesh size: %s (voxel space: %s)" % [_cortical_area_id, chunk_size_godot, _visualization_voxel_granularity])
 	else:
 		var voxel_mesh = BoxMesh.new()
 		voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
@@ -379,7 +379,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
 	
-	# Refresh heatmap_chunk_size from area (in case area was resized and chunk size was recalculated)
+	# Refresh visualization_voxel_granularity from area (in case area was resized and granularity was recalculated)
 	var area_to_check = _cortical_area
 	if area_to_check == null and FeagiCore and FeagiCore.feagi_local_cache:
 		# Fallback: get area from cache if reference is missing
@@ -388,27 +388,27 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 			_cortical_area = area_to_check  # Update reference for future use
 	
 	if area_to_check != null:
-		var new_chunk_size = area_to_check.heatmap_chunk_size
-		if new_chunk_size != _heatmap_chunk_size:
-			_heatmap_chunk_size = new_chunk_size
-			_is_heatmap_mode = _heatmap_chunk_size != Vector3i.ZERO
-			if _is_heatmap_mode:
-				# Update mesh size for heatmap mode
+		var new_granularity = area_to_check.visualization_voxel_granularity
+		if new_granularity != _visualization_voxel_granularity:
+			_visualization_voxel_granularity = new_granularity
+			_is_aggregated_mode = _visualization_voxel_granularity != Vector3i.ZERO
+			if _is_aggregated_mode:
+				# Update mesh size for aggregated rendering mode
 				var chunk_mesh = BoxMesh.new()
 				var chunk_size_godot = Vector3(
-					_heatmap_chunk_size.x * 0.9,
-					_heatmap_chunk_size.y * 0.9,
-					_heatmap_chunk_size.z * 0.9
+					_visualization_voxel_granularity.x * 0.9,
+					_visualization_voxel_granularity.y * 0.9,
+					_visualization_voxel_granularity.z * 0.9
 				)
 				chunk_mesh.size = chunk_size_godot
 				_multi_mesh.mesh = chunk_mesh
-				print("   🔥 [%s] Updated heatmap chunk size: %s" % [_cortical_area_id, _heatmap_chunk_size])
+				print("   🔥 [%s] Updated visualization voxel granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
 			else:
 				# Revert to normal voxel mesh
 				var voxel_mesh = BoxMesh.new()
 				voxel_mesh.size = Vector3(0.8, 0.8, 0.8)
 				_multi_mesh.mesh = voxel_mesh
-				print("   🔥 [%s] Disabled heatmap mode - using normal voxels" % _cortical_area_id)
+				print("   🔥 [%s] Disabled aggregated rendering mode - using normal voxels" % _cortical_area_id)
 	
 	# Update static body scale and position
 	_static_body.scale = _dimensions
@@ -577,24 +577,24 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
 	"""Process neurons using Rust - applies directly to MultiMesh (FASTEST!)
 	
-	For heatmap mode:
-	- Coordinates are chunk centers (already aggregated by backend)
-	- Mesh size is set to chunk dimensions in setup()
+	For aggregated rendering mode:
+	- Coordinates are granularity centers (already aggregated by backend)
+	- Mesh size is set to granularity dimensions in setup()
 	- Rust processor converts chunk center coordinates to Godot space correctly
 	"""
 	
 	var point_count = x_array.size()
 	
-	# Warn if exceeding threshold (but not for heatmap mode - fewer chunks expected)
-	if point_count > _warning_threshold and not _is_heatmap_mode:
+	# Warn if exceeding threshold (but not for aggregated rendering mode - fewer chunks expected)
+	if point_count > _warning_threshold and not _is_aggregated_mode:
 		print("   ⚠️  [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
-	elif _is_heatmap_mode and point_count > 0:
-		# Log heatmap processing (chunks, not neurons)
+	elif _is_aggregated_mode and point_count > 0:
+		# Log aggregated rendering processing (chunks, not neurons)
 		if point_count % 100 == 0 or point_count <= 10:
-			print("   🔥 [%s] Processing %d heatmap chunks" % [_cortical_area_id, point_count])
+			print("   🔥 [%s] Processing %d aggregated rendering chunks" % [_cortical_area_id, point_count])
 	
 	# Call Rust to apply directly to MultiMesh - NO GDScript LOOP!
-	# NOTE: For heatmap mode, coordinates are chunk centers, mesh size is chunk dimensions
+	# NOTE: For aggregated rendering mode, coordinates are granularity centers, mesh size is granularity dimensions
 	# Rust processor will correctly position chunk boxes in Godot space
 	var result = _rust_processor.apply_arrays_to_multimesh(
 		_multi_mesh,

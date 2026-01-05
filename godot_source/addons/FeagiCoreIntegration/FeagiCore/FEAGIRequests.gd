@@ -952,10 +952,16 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	
 	# Handle nested properties structure - FEAGI returns {"properties": {...}}
+	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
 	var properties_dict: Dictionary = response
-	if "properties" in response:
-		properties_dict = response["properties"]
-		properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
+	if "properties" in response and response["properties"] is Dictionary:
+		# Merge top-level fields with properties (top-level takes precedence)
+		properties_dict = response["properties"].duplicate()
+		# Copy top-level fields that aren't in properties (like visualization_voxel_granularity, cortical_type, etc.)
+		for key in response.keys():
+			if key != "properties" and not key in properties_dict:
+				properties_dict[key] = response[key]
+	properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
 	
 	# Check if cortical area exists in cache - if not, create it; if yes, update it
 	if checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
@@ -1035,7 +1041,12 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		# - { "cortical_id": { "properties": { ...properties... } } }
 		var area_data: Dictionary = area_data_raw
 		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary:
-			area_data = area_data_raw["properties"]
+			# Merge top-level fields with properties (top-level takes precedence for fields like visualization_voxel_granularity)
+			area_data = area_data_raw["properties"].duplicate()
+			# Copy top-level fields - top-level takes precedence (overwrites properties version)
+			for key in area_data_raw.keys():
+				if key != "properties":
+					area_data[key] = area_data_raw[key]  # Top-level always wins
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:

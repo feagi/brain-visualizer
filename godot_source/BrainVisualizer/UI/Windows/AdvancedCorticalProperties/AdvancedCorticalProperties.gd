@@ -149,6 +149,9 @@ func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool)
 	_section_cortical_area_monitoring.visible = is_advanced_options_visible
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
+	if control == null:
+		push_error("AdvancedCorticalProperties: Attempted to update null control for property '%s'" % property_name)
+		return
 	if AbstractCorticalArea.do_cortical_areas_have_matching_values_for_property(_cortical_area_refs, composition_section_name, property_name):
 		_set_control_to_value(control, _cortical_area_refs[0].return_property_by_name_and_section(composition_section_name, property_name))
 	else:
@@ -190,6 +193,9 @@ func _set_control_to_value(control: Control, value: Variant) -> void:
 		
 
 func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
+	if control == null:
+		push_error("AdvancedCorticalProperties: Attempted to connect null control for key '%s'" % FEAGI_key_name)
+		return
 	if (control as Variant).has_signal("user_interacted"):
 		(control as Variant).user_interacted.connect(_enable_button.bind(send_update_button))
 	if control is TextInput:
@@ -589,6 +595,7 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 @export var _vector_dimensions_spin: Vector3iSpinboxField
 @export var _vector_dimensions_nonspin: Vector3iField
 @export var _vector_position: Vector3iSpinboxField
+@export var _vector_visualization_voxel_granularity: Vector3iSpinboxField
 @export var _button_summary_send: Button
 
 # IPU/OPU-specific decoded ID fields (created programmatically)
@@ -613,6 +620,7 @@ func _init_summary() -> void:
 	
 	_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
 	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
+	_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
 	
 	# TODO renable region button, but check to make sure all types can be moved
 	
@@ -623,6 +631,8 @@ func _init_summary() -> void:
 		_region_button.text = "Multiple Selected"
 		_line_cortical_ID.text = "Multiple Selected"
 		_vector_position.editable = false # TODO show multiple values
+		if _vector_visualization_voxel_granularity != null:
+			_vector_visualization_voxel_granularity.editable = false # TODO show multiple values
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
@@ -711,6 +721,7 @@ func _refresh_from_cache_summary() -> void:
 	if len(_cortical_area_refs) != 1:
 		_line_cortical_name.text = "Multiple Selected"
 		_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
+		_update_control_with_value_from_areas(_vector_visualization_voxel_granularity, "", "visualization_voxel_granularity")
 		#TODO connect size vector
 	else:
 		# single
@@ -719,6 +730,8 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
+		if _vector_visualization_voxel_granularity != null:
+			_vector_visualization_voxel_granularity.current_vector = _cortical_area_refs[0].visualization_voxel_granularity
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_device_count_section.visible = true
 			_update_control_with_value_from_areas(_device_count, "", "device_count")

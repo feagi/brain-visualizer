@@ -107,11 +107,11 @@ var direct_neural_points: PackedByteArray:
 var neuron_count: int:
 	get: return AbstractCorticalArea.get_neuron_count(_dimensions_3D, _cortical_neuron_per_vox_count)
 
-## Heatmap chunk size for large-area visualization (x, y, z)
-## If set, this area uses heatmap aggregation instead of individual neuron rendering
-## null = normal rendering, Vector3i = heatmap mode with chunk dimensions
-var heatmap_chunk_size: Vector3i:
-	get: return _heatmap_chunk_size
+## Visualization voxel granularity for large-area rendering (x, y, z)
+## If set, this area uses aggregated rendering instead of individual neuron rendering
+## null = normal rendering, Vector3i = aggregated rendering mode with granularity dimensions
+var visualization_voxel_granularity: Vector3i:
+	get: return _visualization_voxel_granularity
 
 var are_details_placeholder_data: bool = true ## We don't have the true values for details yet
 
@@ -170,8 +170,8 @@ var _encoding_format: String = ""
 var _unit_id: int = -1
 var _group_id: int = -1
 
-# Heatmap chunk size for large-area visualization (null = normal rendering)
-var _heatmap_chunk_size: Vector3i = Vector3i.ZERO  # ZERO means not set (use normal rendering)
+# Visualization voxel granularity for large-area rendering (null = normal rendering)
+var _visualization_voxel_granularity: Vector3i = Vector3i.ZERO  # ZERO means not set (use normal rendering)
 
 static func do_cortical_areas_have_matching_values_for_property(areas: Array[AbstractCorticalArea], composition_section_name: StringName, property_name: StringName) -> bool:
 	var differences: int = -1 # first one will always fail
@@ -420,6 +420,27 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 		else:
 			FEAGI_change_coordinates_3D(_safe_convert_to_vector3i(data["coordinates_3d"], "coordinates_3d"))
 	
+	if "visualization_voxel_granularity" in data.keys():
+		var value = data["visualization_voxel_granularity"]
+		if value != null:
+			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
+			# Value can be int or float, so convert to float first then int
+			if value is Array and value.size() == 3:
+				var x = int(float(value[0])) if value[0] != null else 0
+				var y = int(float(value[1])) if value[1] != null else 0
+				var z = int(float(value[2])) if value[2] != null else 0
+				_visualization_voxel_granularity = Vector3i(x, y, z)
+			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
+			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
+				var x = int(float(value["x"])) if value["x"] != null else 0
+				var y = int(float(value["y"])) if value["y"] != null else 0
+				var z = int(float(value["z"])) if value["z"] != null else 0
+				_visualization_voxel_granularity = Vector3i(x, y, z)
+			else:
+				_visualization_voxel_granularity = Vector3i.ZERO
+		else:
+			_visualization_voxel_granularity = Vector3i.ZERO
+	
 	if "parent_region_id" in data.keys():
 		if !(data["parent_region_id"] in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
 			push_error("Unable to find new region ID %s for cortical area %s" % [data["parent_region_id"], cortical_ID])
@@ -488,15 +509,27 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		if value != null:
 			_group_id = int(value)
 	
-	# Heatmap chunk size for large-area visualization
-	if "heatmap_chunk_size" in data.keys():
-		var value = data["heatmap_chunk_size"]
-		if value != null and value is Array and value.size() == 3:
-			_heatmap_chunk_size = Vector3i(int(value[0]), int(value[1]), int(value[2]))
+	# Visualization voxel granularity for large-area rendering (also handled in FEAGI_apply_full_dictionary for updates)
+	if "visualization_voxel_granularity" in data.keys():
+		var value = data["visualization_voxel_granularity"]
+		if value != null:
+			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
+			# Value can be int or float, so convert to float first then int
+			if value is Array and value.size() == 3:
+				var x = int(float(value[0])) if value[0] != null else 0
+				var y = int(float(value[1])) if value[1] != null else 0
+				var z = int(float(value[2])) if value[2] != null else 0
+				_visualization_voxel_granularity = Vector3i(x, y, z)
+			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
+			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
+				var x = int(float(value["x"])) if value["x"] != null else 0
+				var y = int(float(value["y"])) if value["y"] != null else 0
+				var z = int(float(value["z"])) if value["z"] != null else 0
+				_visualization_voxel_granularity = Vector3i(x, y, z)
+			else:
+				_visualization_voxel_granularity = Vector3i.ZERO
 		else:
-			_heatmap_chunk_size = Vector3i.ZERO  # Not set = normal rendering
-	else:
-		_heatmap_chunk_size = Vector3i.ZERO  # Not set = normal rendering
+			_visualization_voxel_granularity = Vector3i.ZERO
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 
@@ -581,9 +614,19 @@ func return_property_by_name_and_section(composition_section_name: StringName, p
 		section_object = get(composition_section_name) # Assumption is that all cortical areas in the selected array have the section
 		if section_object == null:
 			return null # if the section doesnt exist
+		return section_object.get(property_name)
 	else:
-		section_object = self # to allow us to grab universal properties on the [AbstractCorticalArea] directly
-	return section_object.get(property_name)
+		# For properties on self, access directly (get() doesn't work with custom getters)
+		# Handle common properties that have custom getters
+		if property_name == "visualization_voxel_granularity":
+			return visualization_voxel_granularity
+		elif property_name == "dimensions_3D":
+			return dimensions_3D
+		elif property_name == "coordinates_3D":
+			return coordinates_3D
+		else:
+			# Try get() for other properties
+			return get(property_name)
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
