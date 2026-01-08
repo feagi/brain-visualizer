@@ -132,12 +132,12 @@ void fragment()
 
 
 
-	/// Calculate wall count color for "background" - OUTER SHELL ONLY
-	ivec3 number_walls_per_direction = get_number_wall_intersections(local_vert_space_m05_05, individual_voxel_size, ray_direction_mn);
-	
-	// Calculate if we're near the outer boundary (shell rendering)
+	// IMPORTANT: Do NOT use get_number_wall_intersections() for transparency.
+	// That path is marked as broken (artifacting) and it produces interior "cross planes"
+	// in thin areas (e.g., 1x1x10) that obscure neuron firing.
+	//
+	// Instead: render ONLY a thin outer shell (faces) and solid geometric edges.
 	vec3 abs_position = abs(local_vert_space_m05_05); // Distance from center
-	float max_distance = max(max(abs_position.x, abs_position.y), abs_position.z); // Distance to nearest face
 	
 	// Calculate dimensions and proportions
 	float dim_x = float(voxel_count_x);
@@ -189,41 +189,24 @@ void fragment()
 		aspect_adjustment = 1.0 + 0.2 * min(1.0, (aspect_ratio - 10.0) / 50.0);
 	}
 	
-	// Calculate base transparency from wall intersections
-	float base_transparency = (float(number_walls_per_direction.x) + float(number_walls_per_direction.y) + float(number_walls_per_direction.z)) * voxel_opacity;
-	
-	// Apply size-based opacity factor
-	float interior_transparency = base_transparency * size_opacity_factor * aspect_adjustment;
-	
-	// BOUNDARY PROXIMITY: Enhance border visibility, especially for smaller areas
-	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face
+	// Thin outer shell only (no interior walls)
+	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face (0 at face)
 	float min_distance_to_face = min(min(distance_to_faces.x, distance_to_faces.y), distance_to_faces.z);
-	float boundary_zone = 0.08; // Wider boundary zone for smoother transitions
+	float shell_thickness = 0.02; // Thin shell in mesh space (0..0.5)
+	float shell_mask = 1.0 - smoothstep(0.0, shell_thickness, min_distance_to_face); // 1 at face, 0 inside
 	
-	// For borders (near edges), we want HIGHER opacity, especially for small areas
-	// For interior (far from edges), we apply size-based transparency
-	float border_opacity_boost = 1.0;
-	float is_near_border = 1.0 - smoothstep(0.0, boundary_zone, min_distance_to_face); // 1.0 at edge, 0.0 in interior
+	// Faces should stay faint so they don't obscure neuron firing (especially in narrow areas).
+	// Edges will provide the strong visual boundary instead.
+	float face_alpha_scale = 0.25; // default for tiny areas (multiplies voxel_opacity)
+	if (volume_log >= 2.0) face_alpha_scale = 0.18;
+	if (volume_log >= 3.0) face_alpha_scale = 0.12;
+	if (volume_log >= 4.0) face_alpha_scale = 0.08;
 	
-	if (is_near_border > 0.0) {
-		// Calculate border opacity boost: stronger for smaller areas
-		float border_strength = 1.0;
-		if (volume_log < 2.0) {
-			// Small areas: Strong border boost (3-5x opacity at edges)
-			border_strength = 3.0 + 2.0 * (2.0 - volume_log); // 3.0 to 5.0
-		} else if (volume_log < 3.0) {
-			// Medium areas: Moderate border boost (1.5-3x)
-			border_strength = 1.5 + 1.5 * (3.0 - volume_log); // 1.5 to 3.0
-		} else {
-			// Large areas: Minimal border boost (1.2-1.5x)
-			border_strength = 1.2 + 0.3 * min(1.0, (4.0 - volume_log)); // 1.2 to 1.5
-		}
-		
-		// Apply smooth transition from interior to border
-		border_opacity_boost = mix(1.0, border_strength, is_near_border);
-	}
+	// Narrow/elongated areas: make faces extremely faint (avoid the "blue tube" masking firing)
+	if (aspect_ratio > 3.0) face_alpha_scale *= 0.25;
+	if (aspect_ratio > 8.0) face_alpha_scale *= 0.1;
 	
-	float wall_transparency = interior_transparency * border_opacity_boost;
+	float wall_transparency = voxel_opacity * shell_mask * face_alpha_scale;
 
 	// EDGE DETECTION: Detect geometric edges (where 2-3 faces meet) only
 	// These are the actual edges/corners where faces meet, not the entire surfaces
