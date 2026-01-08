@@ -1092,7 +1092,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit_body: StaticBody3D = hit[&"collider"]
 			
 			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
-			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
 					var plate_kind := ""
@@ -1100,6 +1100,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
 						"ConflictPlateClickArea": plate_kind = "Conflict plate"
+						"MotherPlateClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
 					var region_name: String = "Region"
@@ -1173,8 +1174,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									if abs(local.x) <= half_x and abs(local.z) <= half_z:
 										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
 										break
-			# Check if we hit a plate click area (input/output/conflict)
-			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+			# Check if we hit a plate click area (input/output/conflict/mother)
+			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
 					var plate_kind := ""
@@ -1182,6 +1183,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
 						"ConflictPlateClickArea": plate_kind = "Conflict plate"
+						"MotherPlateClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
 					var region_name := "Region"
@@ -1309,7 +1311,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						# Check for double-click (simple implementation)
 						region_frame.handle_double_click()
 			# If clicking on a plate, clear the label on mouse up (we only show on hover)
-			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				if _UI_layer_for_BM and not bm_input_event.button_pressed:
 					_UI_layer_for_BM.clear_plate_hover()
 			

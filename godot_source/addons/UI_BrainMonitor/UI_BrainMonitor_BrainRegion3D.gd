@@ -1169,6 +1169,44 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 				if bm and bm._UI_layer_for_BM:
 					bm._UI_layer_for_BM.clear_plate_hover()
 			)
+
+	# Create collision body for MOTHER PLATE (bottom binder under all plates)
+	# This improves hover/click picking when the user is targeting the lower plate surface.
+	var mother_plate_node: MeshInstance3D = get_node_or_null("RegionAssembly/MotherPlate") as MeshInstance3D
+	if mother_plate_node != null and mother_plate_node.mesh is BoxMesh:
+		var mother_collision := StaticBody3D.new()
+		mother_collision.name = "MotherPlateClickArea"
+		mother_collision.collision_layer = 1
+		mother_collision.collision_mask = 1
+
+		var mother_collision_shape := CollisionShape3D.new()
+		mother_collision_shape.name = "CollisionShape"
+		var mother_box_shape := BoxShape3D.new()
+		var mother_size: Vector3 = (mother_plate_node.mesh as BoxMesh).size
+		# Slightly thicker to guarantee hits from above/below.
+		mother_box_shape.size = Vector3(mother_size.x, 2.0, mother_size.z)
+		mother_collision_shape.shape = mother_box_shape
+		mother_collision.add_child(mother_collision_shape)
+		add_child(mother_collision)
+
+		# Snap collider to the actual MotherPlate center.
+		if mother_plate_node.is_inside_tree():
+			mother_collision.global_position = mother_plate_node.global_position
+		else:
+			mother_collision.position = mother_plate_node.position
+
+		# Show overlay plate context
+		mother_collision.mouse_entered.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				# Bottom plate should show only the region name (no "(plate kind)" suffix)
+				bm._UI_layer_for_BM.show_plate_hover(_representing_region.friendly_name, "")
+		)
+		mother_collision.mouse_exited.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				bm._UI_layer_for_BM.clear_plate_hover()
+		)
 	
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()

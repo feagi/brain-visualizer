@@ -92,7 +92,11 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 
 ## Show plate hover context (region name + plate kind)
 func show_plate_hover(region_name: String, plate_kind: String) -> void:
-	_mouse_context_label.text = "Circuit - " + region_name + " (" + plate_kind + ")"
+	var kind := plate_kind.strip_edges()
+	if kind == "":
+		_mouse_context_label.text = "Circuit - " + region_name
+		return
+	_mouse_context_label.text = "Circuit - " + region_name + " (" + kind + ")"
 
 ## Clear plate hover context (only if no cortical hover text is present)
 func clear_plate_hover() -> void:
