@@ -225,8 +225,9 @@ void fragment()
 	
 	float wall_transparency = interior_transparency * border_opacity_boost;
 
-	// EDGE DETECTION: Add thin lines on the 12 cube edges with size-sensitive opacity
-	float edge_thickness = 0.008; // Slightly thicker for better visibility
+	// EDGE DETECTION: Detect geometric edges (where 2-3 faces meet) only
+	// These are the actual edges/corners where faces meet, not the entire surfaces
+	float edge_thickness = 0.008; // Thickness of the edge line
 	bool is_on_edge = false;
 	
 	// Count how many faces we're close to
@@ -243,46 +244,48 @@ void fragment()
 	/// Calculate final pixel color - PRESERVE SHELL TRANSPARENCY
 	final_color.a = wall_transparency;
 	
-	// Apply edge color with size-sensitive opacity boost
+	// RENDER GEOMETRIC EDGES ONLY: Solid lines where faces meet
 	if (is_on_edge) {
-		final_color.rgb = vec3(0.4, 0.4, 0.5); // Slightly brighter gray-blue for better contrast
+		// Edge color for clear visibility
+		final_color.rgb = vec3(0.45, 0.5, 0.6); // Gray-blue for good contrast
 		
-		// Edge opacity: Higher for small areas, lower for large areas
-		float edge_opacity_min = 0.15; // Minimum edge opacity for large areas
-		float edge_opacity_max = 0.8; // Maximum edge opacity for small areas
+		// Calculate guaranteed minimum edge opacity - ensures visibility even for large transparent areas
+		float edge_opacity_min = 0.5; // Minimum guaranteed opacity for large areas (solid line)
+		float edge_opacity_max = 0.95; // Maximum opacity for small areas
 		
-		// Calculate edge opacity based on area size
 		float edge_opacity;
 		if (volume_log < 1.0) {
-			// Very small areas: High edge opacity
+			// Very small areas: Near-solid edges
 			edge_opacity = edge_opacity_max;
 		} else if (volume_log < 2.0) {
-			// Small areas: Medium-high edge opacity
-			edge_opacity = 0.6 + 0.2 * (2.0 - volume_log); // 0.6 to 0.8
+			// Small areas: High edge opacity
+			edge_opacity = 0.8 + 0.15 * (2.0 - volume_log); // 0.8 to 0.95
 		} else if (volume_log < 3.0) {
-			// Medium areas: Medium edge opacity
-			edge_opacity = 0.3 + 0.3 * (3.0 - volume_log); // 0.3 to 0.6
+			// Medium areas: Medium-high edge opacity
+			edge_opacity = 0.6 + 0.2 * (3.0 - volume_log); // 0.6 to 0.8
 		} else {
-			// Large areas: Lower edge opacity
-			edge_opacity = edge_opacity_min + 0.15 * min(1.0, (4.0 - volume_log)); // 0.15 to 0.3
+			// Large areas: Guaranteed minimum visibility (solid line)
+			// Scale from edge_opacity_min up to 0.6 for medium-large
+			edge_opacity = edge_opacity_min + 0.1 * min(1.0, (4.0 - volume_log)); // 0.5 to 0.6
 		}
 		
-		// Ensure edges are always more visible than interior, but not overbright
-		final_color.a = max(wall_transparency, min(edge_opacity, 0.9));
+		// Edges always override interior transparency for visibility
+		final_color.a = max(wall_transparency, edge_opacity);
 	}
 	
 	if(neuron_highlight_has_hit)
 	{
 		final_color.b = 1.0;
-		// Keep shell transparency instead of forcing alpha = 1.0
-		final_color.a = max(wall_transparency, 0.8); // Slightly more visible when highlighted
+		// Neuron highlighting takes precedence - ensure high visibility
+		// Preserve boundary visibility if it's higher, otherwise use highlight opacity
+		final_color.a = max(final_color.a, 0.8); // Minimum 0.8 when highlighted
 	}
 
 	if(neuron_selection_has_hit)
 	{
 		final_color.g = 1.0;
-		// Keep shell transparency instead of forcing alpha = 1.0
-		final_color.a = max(wall_transparency, 0.8); // Slightly more visible when selected
+		// Neuron selection takes precedence - ensure high visibility
+		final_color.a = max(final_color.a, 0.8); // Minimum 0.8 when selected
 	}
 
 	if(neuron_activation_has_hit)
@@ -292,8 +295,9 @@ void fragment()
 		float z_offset_color = local_hit_space_mn.z;
 		
 		final_color.rgb = vec3(z_offset_color, 0.0, 0.0);
-		// Keep shell transparency instead of forcing alpha = 1.0
-		final_color.a = max(wall_transparency, 0.6); // More visible when neurons are active
+		// Neuron activation takes precedence - ensure visibility
+		// Use max to preserve boundary visibility if higher, otherwise ensure minimum for firing neurons
+		final_color.a = max(final_color.a, 0.6); // Minimum 0.6 when neurons are active
 	}
 
 
