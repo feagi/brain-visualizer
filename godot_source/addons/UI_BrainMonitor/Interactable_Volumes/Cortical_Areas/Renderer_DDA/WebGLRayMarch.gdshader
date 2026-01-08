@@ -139,47 +139,94 @@ void fragment()
 	vec3 abs_position = abs(local_vert_space_m05_05); // Distance from center
 	float max_distance = max(max(abs_position.x, abs_position.y), abs_position.z); // Distance to nearest face
 	
-	// SMART TRANSPARENCY: Only reduce opacity when there's actual layer accumulation
+	// Calculate dimensions and proportions
 	float dim_x = float(voxel_count_x);
 	float dim_y = float(voxel_count_y);
 	float dim_z = float(voxel_count_z);
+	float max_dimension = max(max(dim_x, dim_y), dim_z);
+	float min_dimension = min(min(dim_x, dim_y), dim_z);
+	float volume = dim_x * dim_y * dim_z;
 	
-	// Calculate base transparency
+	// Calculate aspect ratio (how elongated/flat the area is)
+	// High aspect ratio = thin/flat area (e.g., 64x64x1), low = cubic (e.g., 5x5x5)
+	float aspect_ratio = max_dimension / max(min_dimension, 1.0);
+	
+	// SIZE-BASED OPACITY SCALING: Inverse relationship between size and opacity
+	// Small areas need high opacity to be visible, large areas need low opacity to not obscure neurons
+	float size_opacity_factor = 1.0;
+	
+	// Determine area "size category" based on volume and max dimension
+	// Use logarithmic scaling for smooth transitions
+	float volume_log = log(max(volume, 1.0)) / log(10.0); // log10 of volume
+	
+	if (volume_log < 1.0) {
+		// Very small areas (1-10 voxels): High opacity (0.8-1.0)
+		// Example: 2x2x2 = 8 voxels, 3x3x1 = 9 voxels
+		size_opacity_factor = 0.8 + 0.2 * (1.0 - volume_log); // 0.8 to 1.0
+	} else if (volume_log < 2.0) {
+		// Small areas (10-100 voxels): Medium-high opacity (0.5-0.8)
+		// Example: 4x4x4 = 64 voxels, 5x5x4 = 100 voxels
+		size_opacity_factor = 0.5 + 0.3 * (2.0 - volume_log); // 0.5 to 0.8
+	} else if (volume_log < 3.0) {
+		// Medium areas (100-1000 voxels): Medium opacity (0.2-0.5)
+		// Example: 10x10x10 = 1000 voxels
+		size_opacity_factor = 0.2 + 0.3 * (3.0 - volume_log); // 0.2 to 0.5
+	} else if (volume_log < 4.0) {
+		// Large areas (1000-10000 voxels): Low-medium opacity (0.08-0.2)
+		// Example: 20x20x20 = 8000 voxels
+		size_opacity_factor = 0.08 + 0.12 * (4.0 - volume_log); // 0.08 to 0.2
+	} else {
+		// Very large areas (10000+ voxels): Very low opacity (0.02-0.08)
+		// Example: 50x50x10 = 25000 voxels
+		size_opacity_factor = 0.02 + 0.06 * min(1.0, (5.0 - volume_log)); // 0.02 to 0.08
+	}
+	
+	// Adjust for aspect ratio: Thin/flat areas need slightly higher opacity for borders
+	// This ensures 64x64x1 areas have visible borders even though volume is small
+	float aspect_adjustment = 1.0;
+	if (aspect_ratio > 10.0) {
+		// Very thin areas: Boost opacity slightly (up to 1.2x)
+		aspect_adjustment = 1.0 + 0.2 * min(1.0, (aspect_ratio - 10.0) / 50.0);
+	}
+	
+	// Calculate base transparency from wall intersections
 	float base_transparency = (float(number_walls_per_direction.x) + float(number_walls_per_direction.y) + float(number_walls_per_direction.z)) * voxel_opacity;
 	
-	// Only reduce transparency if ALL dimensions are >= 2 (to avoid affecting thin areas)
-	float thickness_factor = 1.0; // Default: keep full opacity
+	// Apply size-based opacity factor
+	float interior_transparency = base_transparency * size_opacity_factor * aspect_adjustment;
 	
-	if (dim_x >= 2.0 && dim_y >= 2.0 && dim_z >= 2.0) {
-		// All dimensions are thick enough to cause layer accumulation
-		float max_dimension = max(max(dim_x, dim_y), dim_z);
-		
-		if (max_dimension > 20.0) {
-			// Very thick areas (like 30x30x30 or 50x50x10): Very transparent
-			thickness_factor = 0.02; // 2% opacity
-		} else if (max_dimension > 10.0) {
-			// Medium thick areas: Moderately transparent
-			thickness_factor = 0.1; // 10% opacity
-		}
-		// else: keep full opacity for smaller thick areas
-	}
-	// else: keep full opacity for thin areas (like 64x64x1, 1000000x1x1, etc.)
-	
-	// BOUNDARY PROXIMITY: Reduce wall transparency near cube boundaries to minimize obstruction
+	// BOUNDARY PROXIMITY: Enhance border visibility, especially for smaller areas
 	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face
 	float min_distance_to_face = min(min(distance_to_faces.x, distance_to_faces.y), distance_to_faces.z);
-	float boundary_proximity_factor = 1.0;
+	float boundary_zone = 0.08; // Wider boundary zone for smoother transitions
 	
-	// Reduce opacity significantly when near boundaries (within 5% of cube edge)
-	if (min_distance_to_face < 0.05) {
-		// Scale from 1.0 (at 0.05) down to 0.1 (at 0.0) for very smooth fade
-		boundary_proximity_factor = mix(0.1, 1.0, min_distance_to_face / 0.05);
+	// For borders (near edges), we want HIGHER opacity, especially for small areas
+	// For interior (far from edges), we apply size-based transparency
+	float border_opacity_boost = 1.0;
+	float is_near_border = 1.0 - smoothstep(0.0, boundary_zone, min_distance_to_face); // 1.0 at edge, 0.0 in interior
+	
+	if (is_near_border > 0.0) {
+		// Calculate border opacity boost: stronger for smaller areas
+		float border_strength = 1.0;
+		if (volume_log < 2.0) {
+			// Small areas: Strong border boost (3-5x opacity at edges)
+			border_strength = 3.0 + 2.0 * (2.0 - volume_log); // 3.0 to 5.0
+		} else if (volume_log < 3.0) {
+			// Medium areas: Moderate border boost (1.5-3x)
+			border_strength = 1.5 + 1.5 * (3.0 - volume_log); // 1.5 to 3.0
+		} else {
+			// Large areas: Minimal border boost (1.2-1.5x)
+			border_strength = 1.2 + 0.3 * min(1.0, (4.0 - volume_log)); // 1.2 to 1.5
+		}
+		
+		// Apply smooth transition from interior to border
+		border_opacity_boost = mix(1.0, border_strength, is_near_border);
 	}
 	
-	float wall_transparency = base_transparency * thickness_factor * boundary_proximity_factor;
+	float wall_transparency = interior_transparency * border_opacity_boost;
 
-	// EDGE DETECTION: Add thin light gray lines only on the 12 cube edges
-	float edge_thickness = 0.005; // Thinner edge lines (reduced from 0.01)
+	// EDGE DETECTION: Add thin lines on the 12 cube edges with size-sensitive opacity
+	float edge_thickness = 0.008; // Slightly thicker for better visibility
 	bool is_on_edge = false;
 	
 	// Count how many faces we're close to
@@ -196,10 +243,32 @@ void fragment()
 	/// Calculate final pixel color - PRESERVE SHELL TRANSPARENCY
 	final_color.a = wall_transparency;
 	
-	// Apply edge color only on the actual edges
+	// Apply edge color with size-sensitive opacity boost
 	if (is_on_edge) {
-		final_color.rgb = vec3(0.3, 0.3, 0.3); // Even darker gray edges
-		final_color.a = max(wall_transparency, 0.06); // Reduced opacity to 6% to minimize obstruction
+		final_color.rgb = vec3(0.4, 0.4, 0.5); // Slightly brighter gray-blue for better contrast
+		
+		// Edge opacity: Higher for small areas, lower for large areas
+		float edge_opacity_min = 0.15; // Minimum edge opacity for large areas
+		float edge_opacity_max = 0.8; // Maximum edge opacity for small areas
+		
+		// Calculate edge opacity based on area size
+		float edge_opacity;
+		if (volume_log < 1.0) {
+			// Very small areas: High edge opacity
+			edge_opacity = edge_opacity_max;
+		} else if (volume_log < 2.0) {
+			// Small areas: Medium-high edge opacity
+			edge_opacity = 0.6 + 0.2 * (2.0 - volume_log); // 0.6 to 0.8
+		} else if (volume_log < 3.0) {
+			// Medium areas: Medium edge opacity
+			edge_opacity = 0.3 + 0.3 * (3.0 - volume_log); // 0.3 to 0.6
+		} else {
+			// Large areas: Lower edge opacity
+			edge_opacity = edge_opacity_min + 0.15 * min(1.0, (4.0 - volume_log)); // 0.15 to 0.3
+		}
+		
+		// Ensure edges are always more visible than interior, but not overbright
+		final_color.a = max(wall_transparency, min(edge_opacity, 0.9));
 	}
 	
 	if(neuron_highlight_has_hit)
