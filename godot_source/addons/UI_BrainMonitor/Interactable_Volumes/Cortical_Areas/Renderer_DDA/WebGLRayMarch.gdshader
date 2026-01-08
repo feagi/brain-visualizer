@@ -20,10 +20,19 @@ uniform sampler2D activation_SVO : hint_default_black;
 uniform sampler2D highlight_SVO: hint_default_black;
 uniform sampler2D selection_SVO: hint_default_black;
 
+// Edge visibility tuning (Option 5: distance-based scaling)
+// Goal: thin/small areas remain readable from far away without reintroducing interior artifacts.
+uniform float edge_camera_near : hint_range(0.0, 200.0) = 12.0; // Distance where edge boost begins
+uniform float edge_camera_far : hint_range(0.0, 500.0) = 80.0;  // Distance where edge boost maxes out
+uniform float edge_thickness_near : hint_range(0.001, 0.05) = 0.008; // Baseline edge thickness
+uniform float edge_thickness_far : hint_range(0.001, 0.08) = 0.02;   // Thicker edges when zoomed out
+uniform float edge_opacity_far_boost : hint_range(0.0, 0.6) = 0.25;  // Extra opacity added when zoomed out
+
 varying vec3 local_vert_space_m05_05; // Goes from -0.5 -> 0.5  across the actual mesh surface of the cube
 //varying vec3 local_vert_space_0_1; // Goes from 0.0 -> 1.0 across the actual mesh surface of the cube
 //varying vec3 shared_SVO_vert_space; //  0.0 - 1.0, but for the size of the Sparse Voxel Octet tree cube, this means any non-2^n mesh will not reach 1.0
 varying vec3 individual_voxel_size; // Normalized (0 - 1.0) size of each voxel (mesh wise)
+varying vec3 world_pos_ws; // World-space position (interpolated) for distance-based edge scaling
 
 // Calculates the distance the ray traveled within the entire object // TESTED, NO ARTIFACTS
 float get_distance_traveled_by_ray_in_entire_object(vec3 starting_normalized_position, vec3 normalized_ray_direction)
@@ -81,6 +90,7 @@ void vertex() {
 
 	// Constants
 	individual_voxel_size = vec3(1.0 / float(voxel_count_x), 1.0 / float(voxel_count_y), 1.0 / float(voxel_count_z));
+	world_pos_ws = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
 
@@ -210,7 +220,17 @@ void fragment()
 
 	// EDGE DETECTION: Detect geometric edges (where 2-3 faces meet) only
 	// These are the actual edges/corners where faces meet, not the entire surfaces
-	float edge_thickness = 0.008; // Thickness of the edge line
+	// Distance-based scaling: thicker + more opaque edges when camera is far away.
+	// Note: we use interpolated world_pos_ws for stable behavior.
+	float cam_dist = distance(world_pos_ws, CAMERA_POSITION_WORLD);
+	float edge_dist_t = smoothstep(edge_camera_near, edge_camera_far, cam_dist);
+
+	// Size-based cap: large cortical areas shouldn't get excessively thick edges when zoomed out.
+	// volume_log: 2 -> ~100 voxels, 4 -> ~10,000 voxels
+	float edge_large_area_t = smoothstep(2.0, 4.0, volume_log);
+	float edge_thickness_far_capped = mix(edge_thickness_far, edge_thickness_far * 0.5, edge_large_area_t);
+
+	float edge_thickness = mix(edge_thickness_near, edge_thickness_far_capped, edge_dist_t);
 	bool is_on_edge = false;
 	
 	// Count how many faces we're close to
@@ -251,6 +271,9 @@ void fragment()
 			// Scale from edge_opacity_min up to 0.6 for medium-large
 			edge_opacity = edge_opacity_min + 0.1 * min(1.0, (4.0 - volume_log)); // 0.5 to 0.6
 		}
+
+		// Zoomed-out boost (Option 5): edges get more visible at distance.
+		edge_opacity = min(edge_opacity + (edge_opacity_far_boost * edge_dist_t), 1.0);
 		
 		// Edges always override interior transparency for visibility
 		final_color.a = max(wall_transparency, edge_opacity);
