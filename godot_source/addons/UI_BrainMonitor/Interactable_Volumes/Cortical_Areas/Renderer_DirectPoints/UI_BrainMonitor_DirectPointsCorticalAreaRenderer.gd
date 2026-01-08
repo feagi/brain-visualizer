@@ -485,6 +485,11 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	# Trigger power cone firing animation if this is the power cortical area
 	if point_count > 0:
 		_trigger_power_firing_animation()
+		# Memory areas don't display individual neuron voxels (MultiMesh uses an invisible mesh).
+		# Their "firing" is the sphere material transitioning into an active jello state.
+		# This must be triggered on the bulk (signal) path as well as the desktop WS fast-path.
+		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+			_set_memory_activity_state(true)
 	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
