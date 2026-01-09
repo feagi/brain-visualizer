@@ -252,6 +252,11 @@ func _fetch_simulation_timestep() -> void:
 		var health_data: Dictionary = response.decode_response_as_dict()
 		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 		
+		# If we previously marked HTTP as RETRYING (e.g., FEAGI restart), a successful health check
+		# must restore CONNECTABLE so the UI can exit RETRYING_HTTP.
+		if network.http_API.http_health == network.http_API.HTTP_HEALTH.RETRYING:
+			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
+		
 		# If we were disconnected and health check succeeds, restore connection states
 		if network.connection_state == FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
 			# Restore HTTP health to CONNECTABLE

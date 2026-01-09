@@ -108,7 +108,8 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
 			_output_response.response_code = 0  # Ensure response_code is set
 			worker_done.emit()
-			worker_failed_to_recover_from_retrying.emit()
+			# Critical: emit self so FEAGIHTTPAPI can correctly clear retry tracking and update HTTP health.
+			worker_failed_to_recover_from_retrying.emit(self)
 			return
 		# Retry connection
 		retrying_connection.emit(_number_retries_done + 1, _request_definition.number_of_retries_allowed, _request_definition, self)
