@@ -5,6 +5,7 @@ var PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/Circu
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
 const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png")
+const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -22,6 +23,25 @@ func _ready():
 	_tab_bar.tab_close_pressed.connect(_on_user_close_tab)
 	PREFAB_CIRCUITBUILDER = load("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 	tab_changed.connect(_on_top_tab_change)
+	
+	# Ensure TabContainer + TabBar participate in BV's theme-driven UI scaling.
+	BV.UI.theme_changed.connect(_theme_updated)
+	_theme_updated(BV.UI.loaded_theme)
+
+func _theme_updated(new_theme: Theme) -> void:
+	# TabContainer does not automatically participate in the theme_changed flow unless we opt-in.
+	# Applying theme here ensures tab headers (Circuit Builder / Brain Region 3D viewer tabs) scale with +/- UI magnification.
+	theme = new_theme
+	if _tab_bar != null:
+		_tab_bar.theme = new_theme
+		_apply_tab_icon_max_width()
+
+func _apply_tab_icon_max_width() -> void:
+	if _tab_bar == null:
+		return
+	var scaled_width: int = int(round(float(TAB_ICON_MAX_WIDTH_BASE_PX) * BV.UI.loaded_theme_scale.x))
+	for i in range(get_tab_count()):
+		_tab_bar.set_tab_icon_max_width(i, scaled_width)
 
 func setup(inital_tabs: Array[Control]) -> void:
 	for tab in inital_tabs:
@@ -205,7 +225,7 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 		add_child(cb)
 		var tab_idx: int = get_tab_idx_from_control(cb)
 		set_tab_icon(tab_idx , ICON_CB)
-		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
+		_apply_tab_icon_max_width()
 		current_tab = tab_idx
 		cb.user_request_viewing_subregion.connect(_internal_CB_requesting_CB_view_of_region)
 		return
@@ -214,7 +234,7 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 		add_child(bm) # Add to tab container
 		var tab_idx: int = get_tab_idx_from_control(bm)
 		set_tab_icon(tab_idx , ICON_BM)
-		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
+		_apply_tab_icon_max_width()
 		current_tab = tab_idx
 		return
 	push_error("UI: Unknown control type added to UITabContainer! Ignoring!")
@@ -225,7 +245,7 @@ func _add_control_view_as_tab_with_region_info(region_view: Control, region: Bra
 		add_child(bm) # Add to tab container
 		var tab_idx: int = get_tab_idx_from_control(bm)
 		set_tab_icon(tab_idx , ICON_BM)
-		_tab_bar.set_tab_icon_max_width(tab_idx, 20) #TODO
+		_apply_tab_icon_max_width()
 		current_tab = tab_idx
 		return
 	else:
