@@ -148,8 +148,16 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		# print("🔗 CONNECTED: Mapping change signals for real-time curve updates")  # Suppressed - causes output overflow
 
 func _exit_tree() -> void:
-	# Unregister fast-path references to avoid stale node references across scene teardown.
-	if _representing_cortial_area != null:
+	# Unregister desktop WS fast-path references only on actual teardown.
+	#
+	# IMPORTANT:
+	# - This node is frequently re-parented (e.g. when brain-region plates "move" I/O areas onto plates).
+	# - Re-parenting triggers `_exit_tree()` even though the node is not being destroyed.
+	# - If we unregister on re-parent, FEAGI's desktop Type 11 fast-path no longer has a MultiMesh target,
+	#   so neuron activity appears "missing" until a new BrainMonitor tab is opened and re-registers.
+	#
+	# `is_queued_for_deletion()` is true for real teardown (queue_free / scene shutdown), but false for re-parent.
+	if _representing_cortial_area != null and is_queued_for_deletion():
 		_representing_cortial_area.BV_unregister_directpoints_renderer()
 
 func _schedule_directpoints_fastpath_registration_retry(defined_cortical_area: AbstractCorticalArea) -> void:
