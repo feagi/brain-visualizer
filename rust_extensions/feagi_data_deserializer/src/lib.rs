@@ -3,9 +3,9 @@ use godot::classes::MultiMesh;
 // FeagiByteContainer is imported within functions where needed
 use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 use feagi_structures::genomic::cortical_area::CorticalID;
-use feagi_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
-use feagi_structures::genomic::cortical_area::io_cortical_area_data_type::{
-    PercentageNeuronPositioning, DataTypeConfigurationFlag,
+use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
+use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_flag::{
+    IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
 };
 
 // Rayon is only available on native platforms (not WASM)
@@ -828,14 +828,14 @@ impl FeagiDataDeserializer {
         }
         
         // Extract data_type_configuration from bytes 4-5 (u16, little-endian) per FDP spec
-        let config: DataTypeConfigurationFlag = u16::from_le_bytes([bytes[4], bytes[5]]);
+        let config: IOCorticalAreaConfigurationFlagBitmask = u16::from_le_bytes([bytes[4], bytes[5]]);
         
         // Use FDP's actual parsing method to decode the configuration
-        let io_data_type = match IOCorticalAreaDataFlag::try_from_data_type_configuration_flag(config) {
+        let io_data_type = match IOCorticalAreaConfigurationFlag::try_from_data_type_configuration_flag(config) {
             Ok(dt) => dt,
             Err(e) => {
                 result.set("success", false);
-                result.set("error", format!("FDP IOCorticalAreaDataFlag parse error: {}", e));
+                result.set("error", format!("FDP IOCorticalAreaConfigurationFlag parse error: {}", e));
                 result.set("encoding_type", "");
                 result.set("encoding_format", "");
                 return result;
@@ -844,14 +844,14 @@ impl FeagiDataDeserializer {
         
         // Extract encoding_type from positioning enum
         let encoding_type = match io_data_type {
-            IOCorticalAreaDataFlag::Percentage(_, pos) |
-            IOCorticalAreaDataFlag::Percentage2D(_, pos) |
-            IOCorticalAreaDataFlag::Percentage3D(_, pos) |
-            IOCorticalAreaDataFlag::Percentage4D(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage2D(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage3D(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage4D(_, pos) => {
+            IOCorticalAreaConfigurationFlag::Percentage(_, pos) |
+            IOCorticalAreaConfigurationFlag::Percentage2D(_, pos) |
+            IOCorticalAreaConfigurationFlag::Percentage3D(_, pos) |
+            IOCorticalAreaConfigurationFlag::Percentage4D(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, pos) => {
                 match pos {
                     PercentageNeuronPositioning::Linear => "linear",
                     PercentageNeuronPositioning::Fractional => "exponential",
@@ -862,21 +862,21 @@ impl FeagiDataDeserializer {
         
         // Extract encoding_format from data type variant
         let encoding_format = match io_data_type {
-            IOCorticalAreaDataFlag::Percentage(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage(_, _) |
-            IOCorticalAreaDataFlag::Boolean => "1d",
+            IOCorticalAreaConfigurationFlag::Percentage(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage(_, _) |
+            IOCorticalAreaConfigurationFlag::Boolean => "1d",
             
-            IOCorticalAreaDataFlag::Percentage2D(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage2D(_, _) |
-            IOCorticalAreaDataFlag::CartesianPlane(_) => "2d",
+            IOCorticalAreaConfigurationFlag::Percentage2D(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _) |
+            IOCorticalAreaConfigurationFlag::CartesianPlane(_) => "2d",
             
-            IOCorticalAreaDataFlag::Percentage3D(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage3D(_, _) => "3d",
+            IOCorticalAreaConfigurationFlag::Percentage3D(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _) => "3d",
             
-            IOCorticalAreaDataFlag::Percentage4D(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage4D(_, _) => "4d",
+            IOCorticalAreaConfigurationFlag::Percentage4D(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _) => "4d",
             
-            IOCorticalAreaDataFlag::Misc(_) => "1d",
+            IOCorticalAreaConfigurationFlag::Misc(_) => "1d",
         };
         
         result.set("success", true);

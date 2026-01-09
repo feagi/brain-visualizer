@@ -204,7 +204,7 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					var data_type_config: int = _IOPU_definition.get_selected_data_type_config()
+					var data_type_configs_by_subunit: Dictionary = _IOPU_definition.get_selected_data_type_configs_by_subunit()
 					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
@@ -213,7 +213,7 @@ func _user_requesing_creation() -> void:
 						pos_2d,
 						selected_unit_id,
 						neurons_per_voxel,
-						data_type_config
+						data_type_configs_by_subunit
 					)
 					if result.has_errored:
 						var error_details = result.decode_response_as_generic_error_code()
@@ -258,7 +258,7 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					var data_type_config_opu: int = _IOPU_definition.get_selected_data_type_config()
+					var data_type_configs_by_subunit_opu: Dictionary = _IOPU_definition.get_selected_data_type_configs_by_subunit()
 					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
@@ -267,7 +267,7 @@ func _user_requesing_creation() -> void:
 						pos_2d,
 						selected_unit_id,
 						neurons_per_voxel,
-						data_type_config_opu
+						data_type_configs_by_subunit_opu
 					)
 					if result.has_errored:
 						var error_details = result.decode_response_as_generic_error_code()

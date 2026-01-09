@@ -24,6 +24,12 @@ var _template_metadata: Dictionary = {}  # Fetched from /v1/genome/cortical_temp
 var _selected_data_type_config: int = 4  # Default: SignedPercentage(Absolute, Linear) for OPU
 var _metadata_ready: bool = false  # Flag to track if template metadata has been loaded
 
+# BREAKING CHANGE (unreleased FEAGI API):
+# `cortical_template` metadata is now per-subunit (heterogeneous subunits supported).
+var _subunit_configs_container: VBoxContainer = null
+var _subunit_rows: Dictionary = {}  # subunit_idx -> {"variant": OptionButton, "frame": OptionButton, "pos": OptionButton, "config_map": Dictionary}
+var _selected_data_type_configs_by_subunit: Dictionary = {}  # subunit_idx -> config_value (int)
+
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
 	device_count = $HBoxContainer/Fields/ChannelCount
@@ -34,6 +40,7 @@ func _ready() -> void:
 	_iopu_image = $HBoxContainer/TextureRect
 	_device_name_label = $HBoxContainer2/TopSection/DeviceName
 	_unit_id_status_label = $UnitIDStatus
+	_ensure_subunit_configs_container()
 	
 	# Connect to location changes to update all preview boxes
 	location.user_updated_vector.connect(_on_location_changed)
@@ -238,7 +245,7 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	
 	# Populate data type dropdowns for this template
 	print("PartSpawnCorticalAreaIOPU: Populating dropdowns for template ID='%s'" % cortical_template.ID)
-	_populate_data_type_dropdowns(cortical_template.ID)
+	_populate_subunit_dropdowns(cortical_template.ID)
 	
 	# Update location if an existing area exists
 	if cortical_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
@@ -396,6 +403,177 @@ func _fetch_template_metadata() -> void:
 		push_error("PartSpawnCorticalAreaIOPU: ✗ Failed to fetch template metadata: %s" % response.error)
 		_template_metadata = {}
 
+func _ensure_subunit_configs_container() -> void:
+	"""Create the per-subunit config UI container once."""
+	if _subunit_configs_container != null and is_instance_valid(_subunit_configs_container):
+		return
+	_subunit_configs_container = VBoxContainer.new()
+	_subunit_configs_container.name = "SubunitConfigs"
+	_subunit_configs_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(_subunit_configs_container)
+
+func _clear_subunit_dropdowns() -> void:
+	if _subunit_configs_container == null:
+		return
+	for child in _subunit_configs_container.get_children():
+		child.queue_free()
+	_subunit_rows.clear()
+	_selected_data_type_configs_by_subunit.clear()
+
+func _hide_legacy_data_type_controls() -> void:
+	# Hide the old single-dropdown controls; the new UI is per-subunit.
+	data_type_variant.visible = false
+	frame_handling.visible = false
+	positioning.visible = false
+	var labels_node = $HBoxContainer/Labels
+	if labels_node.has_node("Label4"):
+		labels_node.get_node("Label4").visible = false
+	if labels_node.has_node("Label5"):
+		labels_node.get_node("Label5").visible = false
+	if labels_node.has_node("Label6"):
+		labels_node.get_node("Label6").visible = false
+
+func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
+	"""Populate per-subunit dropdowns based on FEAGI template metadata (heterogeneous subunits supported)."""
+	print("PartSpawnCorticalAreaIOPU: _populate_subunit_dropdowns called with key='%s'" % cortical_type_key)
+	_hide_legacy_data_type_controls()
+	_clear_subunit_dropdowns()
+
+	# Wait for metadata to be ready if it's still loading
+	if not _metadata_ready:
+		push_warning("PartSpawnCorticalAreaIOPU: Metadata not ready yet, waiting...")
+		while not _metadata_ready:
+			await get_tree().process_frame
+
+	if cortical_type_key not in _template_metadata:
+		push_error("PartSpawnCorticalAreaIOPU: No metadata for template '%s'. Cannot populate subunits." % cortical_type_key)
+		var err = Label.new()
+		err.text = "ERROR: Template metadata not loaded"
+		_subunit_configs_container.add_child(err)
+		return
+
+	var template_data: Dictionary = _template_metadata[cortical_type_key]
+	var subunits: Dictionary = template_data.get("subunits", {})
+	if subunits.is_empty():
+		push_error("PartSpawnCorticalAreaIOPU: Template '%s' has no subunits. API/schema mismatch." % cortical_type_key)
+		var err2 = Label.new()
+		err2.text = "ERROR: No subunits in template (update FEAGI core)"
+		_subunit_configs_container.add_child(err2)
+		return
+
+	var sorted_keys: Array = subunits.keys()
+	sorted_keys.sort_custom(func(a, b): return int(a) < int(b))
+
+	for subunit_key in sorted_keys:
+		var subunit: Dictionary = subunits.get(subunit_key, {})
+		var supported_types: Array = subunit.get("supported_data_types", [])
+		if supported_types.is_empty():
+			push_error("PartSpawnCorticalAreaIOPU: Subunit %s has no supported_data_types" % str(subunit_key))
+			continue
+
+		var rel_pos: Array = subunit.get("relative_position", [0, 0, 0])
+		var dims: Array = subunit.get("channel_dimensions_default", [1, 1, 1])
+
+		var row = HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		var title = Label.new()
+		title.custom_minimum_size = Vector2(220, 0)
+		title.text = "Subunit %s  rel=%s  dims=%s" % [str(subunit_key), str(rel_pos), str(dims)]
+		title.autowrap_mode = TextServer.AUTOWRAP_WORD
+		row.add_child(title)
+
+		var variant_dd = OptionButton.new()
+		var frame_dd = OptionButton.new()
+		var pos_dd = OptionButton.new()
+		variant_dd.custom_minimum_size = Vector2(140, 0)
+		frame_dd.custom_minimum_size = Vector2(120, 0)
+		pos_dd.custom_minimum_size = Vector2(120, 0)
+
+		row.add_child(variant_dd)
+		row.add_child(frame_dd)
+		row.add_child(pos_dd)
+		_subunit_configs_container.add_child(row)
+
+		var variants: Array[String] = []
+		var frames: Array[String] = []
+		var positionings: Array[String] = []
+		var config_map: Dictionary = {}  # "variant|frame|pos" -> config_value
+
+		for data_type in supported_types:
+			var variant: String = data_type.get("variant", "")
+			var frame: String = data_type.get("frame_change_handling", "")
+			var pos = data_type.get("percentage_positioning", null)
+			var config_val: int = int(data_type.get("config_value", 0))
+
+			if variant != "" and variant not in variants:
+				variants.append(variant)
+			if frame != "" and frame not in frames:
+				frames.append(frame)
+			if pos != null and str(pos) not in positionings:
+				positionings.append(str(pos))
+
+			var pos_str: String = "" if pos == null else str(pos)
+			var key: String = "%s|%s|%s" % [variant, frame, pos_str]
+			config_map[key] = config_val
+
+		for v in variants:
+			variant_dd.add_item(v)
+		for f in frames:
+			frame_dd.add_item(f)
+
+		if positionings.size() == 0:
+			pos_dd.visible = false
+		else:
+			for p in positionings:
+				pos_dd.add_item(p)
+			pos_dd.visible = true
+
+		var sub_idx: int = int(subunit_key)
+		_subunit_rows[sub_idx] = {
+			"variant": variant_dd,
+			"frame": frame_dd,
+			"pos": pos_dd,
+			"config_map": config_map,
+		}
+
+		# Deterministic defaults: first option in each dropdown.
+		if variants.size() > 0:
+			variant_dd.select(0)
+		if frames.size() > 0:
+			frame_dd.select(0)
+		if positionings.size() > 0:
+			pos_dd.select(0)
+
+		variant_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
+		frame_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
+		pos_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
+
+		_update_selected_subunit_config(sub_idx)
+
+func _update_selected_subunit_config(subunit_idx: int) -> void:
+	if not _subunit_rows.has(subunit_idx):
+		return
+	var row: Dictionary = _subunit_rows[subunit_idx]
+	var variant_dd: OptionButton = row["variant"]
+	var frame_dd: OptionButton = row["frame"]
+	var pos_dd: OptionButton = row["pos"]
+	var config_map: Dictionary = row["config_map"]
+
+	var variant_text: String = variant_dd.get_item_text(variant_dd.selected) if variant_dd.selected >= 0 else ""
+	var frame_text: String = frame_dd.get_item_text(frame_dd.selected) if frame_dd.selected >= 0 else ""
+
+	var pos_text: String = ""
+	if pos_dd.visible and pos_dd.selected >= 0:
+		pos_text = pos_dd.get_item_text(pos_dd.selected)
+
+	var key: String = "%s|%s|%s" % [variant_text, frame_text, pos_text]
+	if key in config_map:
+		_selected_data_type_configs_by_subunit[subunit_idx] = int(config_map[key])
+	else:
+		push_error("PartSpawnCorticalAreaIOPU: Invalid subunit config combo for subunit %d: '%s'" % [subunit_idx, key])
+		_selected_data_type_configs_by_subunit[subunit_idx] = 0
+
 
 func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	"""Populate dropdowns based on selected template's supported data types"""
@@ -548,3 +726,7 @@ func _update_selected_config_value() -> void:
 func get_selected_data_type_config() -> int:
 	"""Get the currently selected data type configuration value"""
 	return _selected_data_type_config
+
+func get_selected_data_type_configs_by_subunit() -> Dictionary:
+	"""Get selected data_type_config values keyed by subunit index (int)."""
+	return _selected_data_type_configs_by_subunit.duplicate()
