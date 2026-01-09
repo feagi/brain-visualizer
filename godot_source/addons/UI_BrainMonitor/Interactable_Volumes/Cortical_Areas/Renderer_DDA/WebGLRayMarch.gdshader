@@ -279,31 +279,55 @@ void fragment()
 		final_color.a = max(wall_transparency, edge_opacity);
 	}
 	
-	if(neuron_highlight_has_hit)
-	{
+	// Do not render the hover highlight overlay when there is any activation on this pixel ray.
+	// Otherwise the hover mask can visually cover neuron firing while you interact.
+	// Depth-based priority: determine which overlay is closest to camera
+	// Compare distances for selection, highlight, and activation - closest wins
+	float min_overlay_distance = 999999.0;
+	int closest_overlay = 0; // 0=none, 1=highlight, 2=selection, 3=activation
+	
+	if(neuron_highlight_has_hit) {
+		float dist = length(neuron_highlight_hit_offset_svon);
+		if(dist < min_overlay_distance) {
+			min_overlay_distance = dist;
+			closest_overlay = 1;
+		}
+	}
+	
+	if(neuron_selection_has_hit) {
+		float dist = length(neuron_selection_hit_offset_svon);
+		if(dist < min_overlay_distance) {
+			min_overlay_distance = dist;
+			closest_overlay = 2;
+		}
+	}
+	
+	if(neuron_activation_has_hit) {
+		float dist = length(neuron_activation_hit_offset_svon);
+		if(dist < min_overlay_distance) {
+			min_overlay_distance = dist;
+			closest_overlay = 3;
+		}
+	}
+	
+	// Render only the closest overlay
+	if(closest_overlay == 1) {
+		// Highlight (blue)
 		final_color.b = 1.0;
-		// Neuron highlighting takes precedence - ensure high visibility
-		// Preserve boundary visibility if it's higher, otherwise use highlight opacity
-		final_color.a = max(final_color.a, 0.8); // Minimum 0.8 when highlighted
+		final_color.a = max(final_color.a, 0.8);
 	}
-
-	if(neuron_selection_has_hit)
-	{
+	else if(closest_overlay == 2) {
+		// Selection (green) - but make it semi-transparent so activation behind it shows through
 		final_color.g = 1.0;
-		// Neuron selection takes precedence - ensure high visibility
-		final_color.a = max(final_color.a, 0.8); // Minimum 0.8 when selected
+		final_color.a = max(final_color.a, 0.3); // Very transparent so red firing shows through
 	}
-
-	if(neuron_activation_has_hit)
-	{
-		//final_color.rgb += vec3(0.3, -0.3, 0.3);
+	else if(closest_overlay == 3) {
+		// Activation (red) - always full visibility
 		vec3 local_hit_space_mn = local_SVO_space_to_vert_0_1_space(neuron_activation_hit_coordinate_svon, voxel_counts_per_dim, shared_SVO_depth);
 		float z_offset_color = local_hit_space_mn.z;
-		
-		final_color.rgb = vec3(z_offset_color, 0.0, 0.0);
-		// Neuron activation takes precedence - ensure visibility
-		// Use max to preserve boundary visibility if higher, otherwise ensure minimum for firing neurons
-		final_color.a = max(final_color.a, 0.6); // Minimum 0.6 when neurons are active
+		float activation_red = max(z_offset_color, 0.35);
+		final_color.rgb = vec3(activation_red, 0.0, 0.0);
+		final_color.a = max(final_color.a, 0.85); // High visibility for firing
 	}
 
 
