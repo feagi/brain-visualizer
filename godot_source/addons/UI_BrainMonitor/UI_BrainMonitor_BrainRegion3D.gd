@@ -705,15 +705,15 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
 		if cortical_viz._dda_renderer._friendly_name_label != null:
-			# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-			var label_y_offset = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+			var label_y_offset = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
 			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 	
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
 		if cortical_viz._directpoints_renderer._friendly_name_label != null:
-			# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-			var label_y_offset = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+			var label_y_offset = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
 			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 
 func _get_plate_global_z(is_input: bool) -> float:
@@ -1963,16 +1963,16 @@ func _update_io_area_global_positions() -> void:
 			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 				cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
 				if cortical_viz._dda_renderer._friendly_name_label != null:
-					# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-					var label_y_offset = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+					var label_y_offset = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 			
 			# Update DirectPoints renderer position  
 			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 				cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
 				if cortical_viz._directpoints_renderer._friendly_name_label != null:
-					# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-					var label_y_offset = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+					var label_y_offset = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 		else:
 			print("        ❌ No coordinates found for %s - this shouldn't happen!" % cortical_id)
@@ -2017,15 +2017,15 @@ func _update_io_area_positions_DISABLED() -> void:
 			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 				cortical_viz._dda_renderer._static_body.position = new_position
 				if cortical_viz._dda_renderer._friendly_name_label != null:
-					# Label positioned 2.0 units above the top of the cortical area
-					var label_y = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned 2.0 units below the bottom of the cortical area
+					var label_y = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._dda_renderer._friendly_name_label.position = new_position + Vector3(0.0, label_y, 0.0)
 			
 			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 				cortical_viz._directpoints_renderer._static_body.position = new_position
 				if cortical_viz._directpoints_renderer._friendly_name_label != null:
-					# Label positioned 2.0 units above the top of the cortical area
-					var label_y = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned 2.0 units below the bottom of the cortical area
+					var label_y = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._directpoints_renderer._friendly_name_label.position = new_position + Vector3(0.0, label_y, 0.0)
 		else:
 			print("      ⚠️  Could not find relative coordinates for %s - skipping reposition" % cortical_id)

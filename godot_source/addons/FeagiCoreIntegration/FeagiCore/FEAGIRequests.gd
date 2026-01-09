@@ -2192,7 +2192,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		# Update local cache first, then refresh
 		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
 		# Fallback: refresh regions containing the source and destination areas
-		_refresh_regions_containing_areas([source_area, destination_area])
+		await _refresh_regions_containing_areas([source_area, destination_area])
 	
 	#var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
 	#mapping_set.mappings_changed.emit(mapping_set)
@@ -2324,6 +2324,9 @@ func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array
 			mappings_to_remove.append(mapping)
 	
 	for mapping in mappings_to_remove:
+		# Ensure the associated ConnectionChainLink(s) are deregistered cleanly.
+		# Otherwise the 3D plate composition can remain stale (open links not removed).
+		mapping.FEAGI_deleted_mapping_set()
 		brain_region.partial_mappings.erase(mapping)
 	
 	# Create new partial mappings based on FEAGI response
@@ -2361,12 +2364,30 @@ func _refresh_regions_containing_areas(areas: Array[AbstractCorticalArea]) -> vo
 					print("    📍 Found in region: %s" % region.friendly_name)
 	
 	# Refresh all affected regions
-	for region_id in regions_to_refresh:
-		print("  🔄 Triggering refresh for region: %s" % region_id)
-		_refresh_region_visualization(region_id)
-	
 	if regions_to_refresh.is_empty():
 		print("  ⚠️  No regions found containing the specified areas")
+		return
+
+	# Pull authoritative I/O lists from FEAGI and update partial mappings (drives plate composition)
+	var summary_out: FeagiRequestOutput = await get_regions_summary()
+	if summary_out.has_errored:
+		print("  ⚠️  Unable to refresh regions summary from FEAGI - leaving visualization unchanged")
+		return
+	var summary_dict: Dictionary = summary_out.decode_response_as_dict()
+
+	var subset: Dictionary = {}
+	for region_id in regions_to_refresh:
+		if summary_dict.has(region_id):
+			subset[region_id] = summary_dict[region_id]
+
+	if subset.is_empty():
+		print("  ⚠️  FEAGI region summary did not include any of the target regions")
+		return
+
+	print("  🔄 Applying refreshed I/O membership for %d region(s)" % subset.size())
+	_process_brain_region_io_updates(subset)
+	
+	# Note: _process_brain_region_io_updates() will trigger per-region visualization refresh.
 
 ## CRITICAL: Disables recursive refresh signals to prevent infinite loops during FEAGI data updates
 func _disable_region_refresh_signals() -> void:

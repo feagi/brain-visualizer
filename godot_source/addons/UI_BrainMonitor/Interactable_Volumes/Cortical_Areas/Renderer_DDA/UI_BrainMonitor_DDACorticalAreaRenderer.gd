@@ -67,7 +67,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	
 	_static_body.position = _position_godot_space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0 )
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
@@ -75,7 +75,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0 )
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)

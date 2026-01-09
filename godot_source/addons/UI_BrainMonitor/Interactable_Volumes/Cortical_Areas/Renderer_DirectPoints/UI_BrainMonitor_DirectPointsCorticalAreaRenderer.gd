@@ -361,7 +361,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0)
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -399,7 +399,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0)
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -1311,7 +1311,7 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 				
 				# Also update the friendly name label position
 				if _friendly_name_label != null:
-					var label_y_offset = sphere_radius + 2.0
+					var label_y_offset = -(sphere_radius + 2.0)
 					_friendly_name_label.global_position = Vector3(current_pos.x, sphere_center_y + label_y_offset, current_pos.z)
 
 ## Helper to find the parent brain region 3D visualization
