@@ -124,6 +124,23 @@ func _ready() -> void:
 	queue_redraw()
 	# Ensure background redraws on resize/theme changes for consistent back plate
 	resized.connect(func(): queue_redraw())
+	
+	# BrainMonitor tabs run inside a SubViewport; theme inheritance may not reach this subtree.
+	# Opt-in to BV's theme-driven scaling so these "top bar" buttons resize with +/- UI scaling.
+	BV.UI.theme_changed.connect(_on_theme_changed)
+	_on_theme_changed(BV.UI.loaded_theme)
+
+func _on_theme_changed(new_theme: Theme) -> void:
+	theme = new_theme
+	_apply_theme_sizes_recursive(self)
+
+func _apply_theme_sizes_recursive(node: Node) -> void:
+	for child in node.get_children():
+		if child is TextureButton:
+			(child as TextureButton).custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(child, "TextureButton")
+		elif child is TextureRect:
+			(child as TextureRect).custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(child, "TextureRect")
+		_apply_theme_sizes_recursive(child)
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
 	_is_3d_context = true
