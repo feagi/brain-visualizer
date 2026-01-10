@@ -1412,7 +1412,9 @@ func _populate_cortical_areas() -> void:
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
 		# Connect to our custom dimension update handler that preserves brain region positioning
-		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_input_areas_container.add_child(existing_viz)
@@ -1460,7 +1462,9 @@ func _populate_cortical_areas() -> void:
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
 		# Connect to our custom dimension update handler that preserves brain region positioning
-		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_output_areas_container.add_child(existing_viz)
@@ -1508,7 +1512,9 @@ func _populate_cortical_areas() -> void:
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
 		# Connect to our custom dimension update handler that preserves brain region positioning
-		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_conflict_areas_container.add_child(existing_viz)
@@ -2100,8 +2106,9 @@ func _connect_area_signals(area: AbstractCorticalArea) -> void:
 			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
 
 	# Also connect to dimension changes which might affect positioning
-	if not area.dimensions_3D_updated.is_connected(_on_area_dimensions_changed):
-		area.dimensions_3D_updated.connect(_on_area_dimensions_changed.bind(area))
+	var cb_dim := _on_area_dimensions_changed.bind(area)
+	if not area.dimensions_3D_updated.is_connected(cb_dim):
+		area.dimensions_3D_updated.connect(cb_dim)
 		print("  📐 Connected to dimensions_updated for area: %s" % area.cortical_ID)
 
 ## Disconnects signals previously connected for a cortical area
@@ -2275,11 +2282,16 @@ func _refresh_frame_contents() -> void:
 func _update_label_position_after_refresh() -> void:
 	if not _representing_region:
 		return
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
 
 	# During refresh/rebuild we temporarily clear `_frame_container` while nodes are queued for deletion.
 	# Defer label attachment/positioning until the RegionAssembly container is recreated.
 	if _frame_container == null:
-		call_deferred("_update_label_position_after_refresh")
+		# Avoid recursively queueing deferred calls (can lead to stale callables during teardown/rebuild).
+		await get_tree().process_frame
+		if _frame_container == null or is_queued_for_deletion() or not is_inside_tree():
+			return
 		return
 	
 	# Ensure label exists - recreate if destroyed during cleanup
@@ -2445,6 +2457,8 @@ func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
 	if not _connection_monitoring_enabled:
 		print("🔇 MONITORING: Ignoring connection change for %s (monitoring disabled)" % area.cortical_ID)
 		return
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
 		
 	print("🔗 CONNECTION CHANGE: Area %s connections changed, checking I/O status" % area.cortical_ID)
 	# Small delay to ensure connection changes are fully processed
@@ -2454,6 +2468,8 @@ func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
 func _on_area_dimensions_changed(area: AbstractCorticalArea) -> void:
 	if not _connection_monitoring_enabled:
 		print("🔇 MONITORING: Ignoring dimension change for %s (monitoring disabled)" % area.cortical_ID)
+		return
+	if is_queued_for_deletion() or not is_inside_tree():
 		return
 	# Debounce multiple dimension changes in a single frame
 	print("📐 DIMENSION CHANGE: Area %s dimensions changed -> scheduling comprehensive plate rebuild" % area.cortical_ID)
