@@ -66,13 +66,18 @@ func _ready() -> void:
 	_core_bar = _window_internals.get_node("CoreMorphologiesBar")
 	_core_icons = _window_internals.get_node("CoreMorphologiesBar/Icons")
 	
-	_step3_scroll.morphology_selected.connect(_set_morphology)
+	# Guard against duplicate connections if this window is re-instantiated or _ready runs more than once.
+	if not _step3_scroll.morphology_selected.is_connected(_set_morphology):
+		_step3_scroll.morphology_selected.connect(_set_morphology)
 	# Update icon bar reactively when morphologies change (e.g., when 'class' becomes 'core')
-	FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_on_morphology_cache_changed)
-	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_on_morphology_cache_changed)
+	if not FeagiCore.feagi_local_cache.morphologies.morphology_updated.is_connected(_on_morphology_cache_changed):
+		FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_on_morphology_cache_changed)
+	if not FeagiCore.feagi_local_cache.morphologies.morphology_added.is_connected(_on_morphology_cache_changed):
+		FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_on_morphology_cache_changed)
 	
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
-	BV.UI.selection_system.objects_selection_event_called.connect(_on_user_selection)
+	if not BV.UI.selection_system.objects_selection_event_called.is_connected(_on_user_selection):
+		BV.UI.selection_system.objects_selection_event_called.connect(_on_user_selection)
 	
 	
 	_step1_panel.theme_type_variation = "PanelContainer_QC_incomplete"

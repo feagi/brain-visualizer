@@ -2259,6 +2259,12 @@ func _refresh_frame_contents() -> void:
 	# Repopulate (will reuse existing I/O visualizations where possible)
 	_populate_cortical_areas()
 	
+	# Ensure plate sizing/layout is fully recomputed.
+	# _refresh_frame_contents() rebuilds plates synchronously and relies on queue_free(), which
+	# does not take effect until the end of the frame. The comprehensive recalculation coroutine
+	# properly yields to let old nodes be freed before rebuilding, avoiding stale plate sizing.
+	call_deferred("_recalculate_plates_and_positioning_after_dimension_change")
+	
 	# Validate plate alignment
 	call_deferred("_validate_plate_alignment")
 	
@@ -2268,6 +2274,12 @@ func _refresh_frame_contents() -> void:
 ## Updates the region label position to center it between the new plates after refresh
 func _update_label_position_after_refresh() -> void:
 	if not _representing_region:
+		return
+
+	# During refresh/rebuild we temporarily clear `_frame_container` while nodes are queued for deletion.
+	# Defer label attachment/positioning until the RegionAssembly container is recreated.
+	if _frame_container == null:
+		call_deferred("_update_label_position_after_refresh")
 		return
 	
 	# Ensure label exists - recreate if destroyed during cleanup

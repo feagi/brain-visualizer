@@ -395,20 +395,16 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 		collapsibles[i].is_open = expanded[i]
 
 func _setup_bm_prevew() -> void:
-	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
-	var preview_position = _get_preview_position_for_cortical_area()
-	
 	# Determine the cortical area context (if any)
 	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
 	
-	# Host BM: the one that contains this area (child-of); receives both MOVE and RESIZE
+	# Host BM: ONLY the brain monitor representing the cortical area's direct parent region.
+	# This intentionally ignores any additional scenes that may display the area as region I/O.
 	var host_bm: UI_BrainMonitor_3DScene = null
 	if existing_area and existing_area.current_parent_region:
 		host_bm = BV.UI.get_brain_monitor_for_region(existing_area.current_parent_region)
 	if host_bm == null:
-		host_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
-	if host_bm == null:
-		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
+		push_error("AdvancedCorticalProperties: No brain monitor found for cortical area's parent region; cannot create preview.")
 		return
 	
 	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
@@ -427,6 +423,15 @@ func _setup_bm_prevew() -> void:
 		# Ensure main preview is cleared when window closes
 		_preview.tree_exiting.connect(func(): _preview = null)
 		_host_preview_bm = host_bm
+		
+		# For isvi segments, initialize previews for other segments only after the main preview exists.
+		if _is_isvi_segment:
+			# Cleanup any stale previews before recreating
+			for preview in _isvi_segment_previews.values():
+				if preview != null:
+					preview.queue_free()
+			_isvi_segment_previews.clear()
+			_init_isvi_previews()
 	else:
 		# If host changed (tab switch), relocate main preview
 		if _preview.get_parent() != host_bm._node_3D_root:
@@ -442,41 +447,14 @@ func _setup_bm_prevew() -> void:
 			_preview.connect_UI_signals(moves, resizes, [close_window_requesed_no_arg, _button_summary_send.pressed])
 			_preview.tree_exiting.connect(func(): _preview = null)
 			_host_preview_bm = host_bm
-	
-	# Clear any stale aux mirrors before recreating
-	for aux in _aux_previews:
-		if aux != null:
-			aux.queue_free()
-	_aux_previews.clear()
-	_aux_preview_to_bm.clear()
-	
-	# Resize-only auxiliary previews: show on all visible 3D scenes as per rule
-	var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-	var resizes_only: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
-	# Mirror to all visible brain monitors that would display this area (directly or as I/O), excluding host
-	var all_visible := BV.UI.get_all_visible_brain_monitors()
-	for bm in all_visible:
-		if bm == null or bm == host_bm:
-			continue
-		if existing_area == null or BV.UI._would_brain_monitor_accept_cortical_area(bm, existing_area):
-			var per_bm_position: Vector3i
-			if bm == BV.UI.temp_root_bm:
-				# Root/main: plate-aligned position
-				per_bm_position = _get_preview_position_for_cortical_area()
-			else:
-				# Region tab: actual FEAGI LFF
-				per_bm_position = _vector_position.current_vector
-			# Don't auto-frame camera for auxiliary previews
-			var mirror = bm.create_preview(per_bm_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
-			mirror.connect_UI_signals([], resizes_only, closes_only)
-			mirror.tree_exiting.connect(func(): _aux_previews.erase(mirror); _aux_preview_to_bm.erase(mirror))
-			_aux_previews.append(mirror)
-			_aux_preview_to_bm[mirror] = bm
-	
-	# CRITICAL: Also connect to resize signal to update preview position for I/O areas (keeps center aligned on plates)
-	# Skip for isvi segments - they use manual layout calculation
-	if not _is_isvi_segment and not _vector_dimensions_spin.user_updated_vector.is_connected(_update_preview_for_io_area_resize):
-		_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
+			
+			# If host changed and this is an isvi segment, re-create segment previews in the new host BM.
+			if _is_isvi_segment:
+				for preview in _isvi_segment_previews.values():
+					if preview != null:
+						preview.queue_free()
+				_isvi_segment_previews.clear()
+				_init_isvi_previews()
 
 ## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
 func _get_preview_position_for_cortical_area() -> Vector3i:
@@ -753,13 +731,8 @@ func _refresh_from_cache_summary() -> void:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
 		else:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
-		
-		# Set up preview for this cortical area
-		_setup_bm_prevew()
-		
-		# If this is an isvi segment, also set up previews for all other segments
-		if _is_isvi_segment:
-			_init_isvi_previews()
+		# NOTE: 3D preview is intentionally NOT created on window open.
+		# It will appear when the user starts editing position/dimensions.
 			
 
 func _user_press_edit_region() -> void:
