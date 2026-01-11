@@ -118,6 +118,7 @@ vertical = true
 layout_mode = 2
 size_flags_vertical = 3
 alignment = 1
+theme_override_constants/separation = 18
 
 [node name="Label" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
@@ -143,13 +144,13 @@ alignment = 1
 
 [node name="WarningTitle" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 34
 text = "Warning: Flashing Lights"
 horizontal_alignment = 1
 
 [node name="WarningBody" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 custom_minimum_size = Vector2(900, 0)
 autowrap_mode = 3
 text = "This application may contain flashing lights and patterns.\n\nFlashing lights can trigger seizures for people with photosensitive epilepsy.\nIf you feel unwell, stop using the application immediately."

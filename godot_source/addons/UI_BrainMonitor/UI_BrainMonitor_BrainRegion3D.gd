@@ -411,6 +411,7 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 	var cortical_viz = _cortical_area_visualizations.get(cortical_id)
 	if cortical_viz == null:
 		push_error("Brain region dimension update: Could not find visualization for area %s" % cortical_id)
+		_dimension_recalc_in_progress = false
 		return
 	
 	# Update DDA renderer dimensions (but preserve positioning)
@@ -460,6 +461,10 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if not _representing_region:
 		return
+	# This method is async (awaits frames) and can race with teardown/refresh.
+	# Guard against operating on freed nodes or a node that is leaving the scene tree.
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
 		
 	
 	# 1. Regenerate I/O coordinates with new dimensions (includes new plate size calculations)
@@ -474,6 +479,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		if direct_child is Node3D and direct_child.name == "RegionAssembly":
 			direct_child.queue_free()
 	await get_tree().process_frame
+	if is_queued_for_deletion() or not is_inside_tree() or not _representing_region:
+		return
 
 	# Also remove old click collision bodies attached directly to this node (if tied to previous sizes)
 	for direct_child in get_children():
@@ -481,6 +488,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 			direct_child.queue_free()
 	# Process removal of click areas
 	await get_tree().process_frame
+	if is_queued_for_deletion() or not is_inside_tree() or not _representing_region:
+		return
 	
 	# 3. Recreate plates with new sizes
 	# Recreate the main frame container before adding plates
@@ -608,8 +617,18 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	call_deferred("_update_label_position_after_refresh")
 
 	# 4. Reposition all I/O cortical areas using new coordinates
-	for cortical_id in _cortical_area_visualizations.keys():
-		var cortical_viz = _cortical_area_visualizations[cortical_id]
+	# IMPORTANT: this function can resume after awaits while a refresh/removal has queued frees.
+	# Never pass potentially freed nodes into typed methods; validate instances before calling.
+	var cortical_ids := _cortical_area_visualizations.keys()
+	for cortical_id in cortical_ids:
+		var viz_any = _cortical_area_visualizations.get(cortical_id)
+		if viz_any == null or not is_instance_valid(viz_any):
+			# Clean stale references opportunistically.
+			_cortical_area_visualizations.erase(cortical_id)
+			continue
+		var cortical_viz := viz_any as UI_BrainMonitor_CorticalArea
+		if cortical_viz == null:
+			continue
 		
 		# Find new position for this cortical area
 		var found_new_position = false
