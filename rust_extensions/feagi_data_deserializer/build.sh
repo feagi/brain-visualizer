@@ -14,8 +14,10 @@ echo "Platform detected: $PLATFORM"
 echo "Building in release mode (optimized for performance)..."
 cargo build --release
 
-# Copy the built library to the Godot addons directory root
-GODOT_ADDON_DIR="../../godot_source/addons/feagi_rust_deserializer"
+# Copy the built library next to the .gdextension that Godot actually loads.
+# IMPORTANT: `addons/FeagiCoreIntegration/feagi_data_deserializer.gdextension` references
+# `libfeagi_data_deserializer.dylib` with no path, so the dylib must live in the same folder.
+GODOT_ADDON_DIR="../../godot_source/addons/FeagiCoreIntegration"
 mkdir -p "$GODOT_ADDON_DIR"
 
 case "$PLATFORM" in

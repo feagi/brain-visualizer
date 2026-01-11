@@ -13,7 +13,7 @@ crate-type = ["cdylib"]
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["serde"] }
 
 # FEAGI core dependencies (local paths to feagi-core)
-feagi_data_structures = { path = "../../../feagi-core/crates/feagi_data_structures" }
+feagi-structures = { path = "../../../feagi-core/crates/feagi-structures" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

@@ -189,6 +189,6 @@ These files still reference old icon names and should be updated in future itera
 ## Related Documentation
 
 - **FEAGI Core API:** `/Users/nadji/code/FEAGI-2.0/feagi-core/IPU_OPU_TYPES_ENDPOINTS_IMPLEMENTATION.md`
-- **Template Definitions:** `/Users/nadji/code/FEAGI-2.0/feagi-data-processing/feagi_data_structures/src/templates/`
+- **Template Definitions:** `/Users/nadji/code/FEAGI-2.0/feagi-data-processing/feagi-data-structures/src/templates/`
 - **Icon Rename Plan:** `godot_source/BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/RENAME_PLAN.md`
 

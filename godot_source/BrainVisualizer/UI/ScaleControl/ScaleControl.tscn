@@ -59,3 +59,5 @@ stretch_mode = 0
 [connection signal="pressed" from="Panel/VBoxContainer/IncreaseButton" to="." method="_increase_scale"]
 [connection signal="pressed" from="Panel/VBoxContainer/DecreaseButton" to="." method="_decrease_scale"]
 
+
+

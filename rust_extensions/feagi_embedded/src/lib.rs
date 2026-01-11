@@ -507,8 +507,8 @@ impl FeagiEmbedded {
              feagi=debug,\
              feagi_api=trace,\
              feagi_services=debug,\
-             feagi_pns=debug,\
-             feagi_burst_engine=debug,\
+             feagi_io=debug,\
+             feagi_npu_burst_engine=debug,\
              feagi_bdu=debug,\
              feagi_evo=debug,\
              axum=trace,\

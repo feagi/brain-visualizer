@@ -3,17 +3,17 @@ class_name PartSpawnCorticalAreaIOPU
 
 signal calculated_dimensions_updated(new_size: Vector3i)
 signal location_changed_from_dropdown(new_location: Vector3i)
-signal group_id_validation_changed(is_valid: bool, message: String)
+signal unit_id_validation_changed(is_valid: bool, message: String)
 
 var location: Vector3iSpinboxField
 var device_count: SpinBox
-var group_id: SpinBox
+var unit_id: SpinBox
 var data_type_variant: OptionButton
 var frame_handling: OptionButton
 var positioning: OptionButton
 var _iopu_image: TextureRect
 var _device_name_label: Label
-var _group_id_status_label: Label
+var _unit_id_status_label: Label
 var _current_dimensions_as_per_device_count: Vector3i = Vector3i(1,1,1)
 var _is_IPU_not_OPU: bool
 var _selected_template: CorticalTemplate = null
@@ -22,24 +22,34 @@ var _active_brain_monitor = null  # Store reference to brain monitor
 var _preview_close_signals: Array[Signal] = []  # Store close signals
 var _template_metadata: Dictionary = {}  # Fetched from /v1/genome/cortical_template
 var _selected_data_type_config: int = 4  # Default: SignedPercentage(Absolute, Linear) for OPU
+var _metadata_ready: bool = false  # Flag to track if template metadata has been loaded
+
+# BREAKING CHANGE (unreleased FEAGI API):
+# `cortical_template` metadata is now per-subunit (heterogeneous subunits supported).
+var _subunit_configs_container: VBoxContainer = null
+var _subunit_rows: Dictionary = {}  # subunit_idx -> {"variant": OptionButton, "frame": OptionButton, "pos": OptionButton, "config_map": Dictionary}
+var _selected_data_type_configs_by_subunit: Dictionary = {}  # subunit_idx -> config_value (int)
 
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
 	device_count = $HBoxContainer/Fields/ChannelCount
-	group_id = $HBoxContainer/Fields/GroupID
+	unit_id = $HBoxContainer/Fields/UnitID
 	data_type_variant = $HBoxContainer/Fields/DataTypeVariant
 	frame_handling = $HBoxContainer/Fields/FrameHandling
 	positioning = $HBoxContainer/Fields/Positioning
 	_iopu_image = $HBoxContainer/TextureRect
 	_device_name_label = $HBoxContainer2/TopSection/DeviceName
-	_group_id_status_label = $GroupIDStatus
+	_unit_id_status_label = $UnitIDStatus
+	_ensure_subunit_configs_container()
 	
 	# Connect to location changes to update all preview boxes
 	location.user_updated_vector.connect(_on_location_changed)
 	location_changed_from_dropdown.connect(_on_location_changed)
 	
-	# Fetch cortical template metadata from FEAGI API
-	_fetch_template_metadata()
+	# Fetch cortical template metadata from FEAGI API - MUST complete before user can select templates
+	await _fetch_template_metadata()
+	_metadata_ready = true
+	print("PartSpawnCorticalAreaIOPU: Template metadata loaded, ready for user interaction")
 	
 
 
@@ -144,12 +154,12 @@ func _create_single_preview_box(pos: Vector3i, dims: Vector3i) -> void:
 	_preview_boxes.append(preview)
 
 func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
-	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest group_id)"""
+	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest unit_id)"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
 	var unit_dimensions: Dictionary = {}  # {unit_index: Vector3i dimensions}
-	var largest_group_id: int = -1
-	
-	# First pass: find the largest group_id for this cortical type
+	var largest_unit_id: int = -1
+
+	# First pass: find the largest unit_id for this cortical type
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
@@ -160,12 +170,12 @@ func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
 		if cortical_subtype == cortical_type_key:
-			var group_id_val: int = decoded_bytes[7]
-			if group_id_val > largest_group_id:
-				largest_group_id = group_id_val
-	
-	# Second pass: collect dimensions from areas with the largest group_id
-	if largest_group_id >= 0:
+			var unit_id_val: int = decoded_bytes[7]
+			if unit_id_val > largest_unit_id:
+				largest_unit_id = unit_id_val
+
+	# Second pass: collect dimensions from areas with the largest unit_id
+	if largest_unit_id >= 0:
 		for cortical_id: StringName in existing_areas.keys():
 			var cortical_id_str: String = String(cortical_id)
 			var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
@@ -174,24 +184,24 @@ func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 			
 			var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
 			var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
-			var group_id_val: int = decoded_bytes[7]
+			var unit_id_val: int = decoded_bytes[7]
 			var unit_index: int = decoded_bytes[6]
 			
-			if cortical_subtype == cortical_type_key and group_id_val == largest_group_id:
+			if cortical_subtype == cortical_type_key and unit_id_val == largest_unit_id:
 				var area = existing_areas[cortical_id]
 				unit_dimensions[unit_index] = area.dimensions_3D
 	
 	return unit_dimensions
 
 func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
-	"""Find existing cortical areas of the same type and return neurons_per_voxel from largest group_id"""
+	"""Find existing cortical areas of the same type and return neurons_per_voxel from largest unit_id"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
-	var largest_group_id: int = -1
+	var largest_unit_id: int = -1
 	var neurons_per_voxel: int = 1  # Default
 	
 	print("PartSpawnCorticalAreaIOPU: Looking for existing neurons_per_voxel for type: %s" % cortical_type_key)
 	
-	# Find the largest group_id for this cortical type and get its neurons_per_voxel
+	# Find the largest unit_id for this cortical type and get its neurons_per_voxel
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
@@ -202,16 +212,16 @@ func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
 		if cortical_subtype == cortical_type_key:
-			var group_id_val: int = decoded_bytes[7]
+			var unit_id_val: int = decoded_bytes[7]
 			var area = existing_areas[cortical_id]
 			var area_neurons_per_voxel: int = area.cortical_neuron_per_vox_count
-			print("  Found %s group %d with neurons_per_voxel=%d" % [cortical_subtype, group_id_val, area_neurons_per_voxel])
+			print("  Found %s unit %d with neurons_per_voxel=%d" % [cortical_subtype, unit_id_val, area_neurons_per_voxel])
 			
-			if group_id_val > largest_group_id:
-				largest_group_id = group_id_val
+			if unit_id_val > largest_unit_id:
+				largest_unit_id = unit_id_val
 				neurons_per_voxel = area_neurons_per_voxel
 	
-	print("  → Using neurons_per_voxel=%d (from group_id=%d)" % [neurons_per_voxel, largest_group_id])
+	print("  → Using neurons_per_voxel=%d (from unit_id=%d)" % [neurons_per_voxel, largest_unit_id])
 	return neurons_per_voxel
 
 func _drop_down_changed(cortical_template: CorticalTemplate) -> void:
@@ -229,12 +239,13 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	if _device_name_label != null:
 		_device_name_label.text = str(cortical_template.cortical_name)
 	
-	# Set group_id to first available value
-	var first_available_id = _find_first_available_group_id(cortical_template.ID)
-	group_id.value = first_available_id
+	# Set unit_id to first available value
+	var first_available_id = _find_first_available_unit_id(cortical_template.ID)
+	unit_id.value = first_available_id
 	
 	# Populate data type dropdowns for this template
-	_populate_data_type_dropdowns(cortical_template.ID)
+	print("PartSpawnCorticalAreaIOPU: Populating dropdowns for template ID='%s'" % cortical_template.ID)
+	_populate_subunit_dropdowns(cortical_template.ID)
 	
 	# Update location if an existing area exists
 	if cortical_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
@@ -290,18 +301,18 @@ func get_selected_template() -> CorticalTemplate:
 
 func apply_preselected_template(template: CorticalTemplate) -> void:
 	_apply_template_selection(template)
-	# Validate group ID after template is applied
-	_validate_group_id()
+	# Validate unit ID after template is applied
+	_validate_unit_id()
 
-func _on_group_id_changed(_value: float) -> void:
-	_validate_group_id()
+func _on_unit_id_changed(_value: float) -> void:
+	_validate_unit_id()
 
-func _find_first_available_group_id(cortical_type_key: String) -> int:
-	"""Find the first available (unused) group ID for the given cortical type"""
+func _find_first_available_unit_id(cortical_type_key: String) -> int:
+	"""Find the first available (unused) unit ID for the given cortical type"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
-	var used_group_ids: Array[int] = []
+	var used_unit_ids: Array[int] = []
 	
-	# Collect all used group IDs for this cortical type
+	# Collect all used unit IDs for this cortical type
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		
@@ -314,35 +325,35 @@ func _find_first_available_group_id(cortical_type_key: String) -> int:
 		var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
-		# If this matches our type, record its group_id
+		# If this matches our type, record its unit_id
 		if cortical_subtype == cortical_type_key:
-			var existing_group_id: int = decoded_bytes[7]
-			used_group_ids.append(existing_group_id)
+			var existing_unit_id: int = decoded_bytes[7]
+			used_unit_ids.append(existing_unit_id)
 	
 	# Find the first available ID (0-255)
 	for candidate_id in range(256):
-		if candidate_id not in used_group_ids:
+		if candidate_id not in used_unit_ids:
 			return candidate_id
 	
 	# If all IDs are taken (unlikely), return 0
 	return 0
 
-func _validate_group_id() -> void:
+func _validate_unit_id() -> void:
 	if _selected_template == null:
-		_group_id_status_label.text = ""
-		group_id_validation_changed.emit(true, "")
+		_unit_id_status_label.text = ""
+		unit_id_validation_changed.emit(true, "")
 		return
-	
-	var selected_group_id: int = int(group_id.value)
+
+	var selected_unit_id: int = int(unit_id.value)
 	var cortical_type_key: String = _selected_template.ID
 	
-	# Check if this cortical type + group ID combination already exists
+	# Check if this cortical type + unit ID combination already exists
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
 	
 	for cortical_id: StringName in existing_areas.keys():
 		var cortical_id_str: String = String(cortical_id)
 		
-		# Decode the base64 cortical ID to extract cortical_subtype and group_id
+		# Decode the base64 cortical ID to extract cortical_subtype and unit_id
 		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
 		if decoded_bytes.size() != 8:
 			continue  # Invalid cortical ID, skip
@@ -353,26 +364,26 @@ func _validate_group_id() -> void:
 		
 		# Check if this matches our template ID
 		if cortical_subtype == cortical_type_key:
-			# Extract group_id (byte 7)
-			var existing_group_id: int = decoded_bytes[7]
+			# Extract unit_id (byte 7)
+			var existing_unit_id: int = decoded_bytes[7]
 			
-			if existing_group_id == selected_group_id:
-				# Found a match - this group ID is already used!
+			if existing_unit_id == selected_unit_id:
+				# Found a match - this unit ID is already used!
 				var area_name: String = existing_areas[cortical_id].friendly_name
-				var message: String = "⚠ Group ID %d already exists for %s (%s)" % [selected_group_id, cortical_type_key, area_name]
-				_group_id_status_label.text = message
-				_group_id_status_label.modulate = Color(1.0, 0.5, 0.5)  # Red tint
-				group_id_validation_changed.emit(false, message)
+				var message: String = "⚠ Unit ID %d already exists for %s (%s)" % [selected_unit_id, cortical_type_key, area_name]
+				_unit_id_status_label.text = message
+				_unit_id_status_label.modulate = Color(1.0, 0.5, 0.5)  # Red tint
+				unit_id_validation_changed.emit(false, message)
 				return
 	
-	# Group ID is available
-	var message: String = "✓ Group ID %d is available for %s" % [selected_group_id, cortical_type_key]
-	_group_id_status_label.text = message
-	_group_id_status_label.modulate = Color(0.5, 1.0, 0.5)  # Green tint
-	group_id_validation_changed.emit(true, "")
+	# Unit ID is available
+	var message: String = "✓ Unit ID %d is available for %s" % [selected_unit_id, cortical_type_key]
+	_unit_id_status_label.text = message
+	_unit_id_status_label.modulate = Color(0.5, 1.0, 0.5)  # Green tint
+	unit_id_validation_changed.emit(true, "")
 
-func get_selected_group_id() -> int:
-	return int(group_id.value)
+func get_selected_unit_id() -> int:
+	return int(unit_id.value)
 
 func get_neurons_per_voxel() -> int:
 	"""Get neurons_per_voxel inherited from existing cortical areas or default to 1"""
@@ -382,16 +393,201 @@ func get_neurons_per_voxel() -> int:
 
 func _fetch_template_metadata() -> void:
 	"""Fetch cortical template metadata from FEAGI API"""
+	print("PartSpawnCorticalAreaIOPU: Fetching template metadata from FEAGI...")
 	var response: FeagiRequestOutput = await FeagiCore.requests.get_cortical_template_metadata()
 	if response.success:
 		_template_metadata = response.decode_response_as_dict()
-		print("PartSpawnCorticalAreaIOPU: Fetched template metadata for %d types" % _template_metadata.size())
+		print("PartSpawnCorticalAreaIOPU: ✓ Fetched template metadata for %d types" % _template_metadata.size())
+		print("PartSpawnCorticalAreaIOPU: Available template keys: %s" % str(_template_metadata.keys()))
 	else:
-		push_error("PartSpawnCorticalAreaIOPU: Failed to fetch template metadata")
+		push_error("PartSpawnCorticalAreaIOPU: ✗ Failed to fetch template metadata: %s" % response.error)
 		_template_metadata = {}
+
+func _ensure_subunit_configs_container() -> void:
+	"""Create the per-subunit config UI container once."""
+	if _subunit_configs_container != null and is_instance_valid(_subunit_configs_container):
+		return
+	_subunit_configs_container = VBoxContainer.new()
+	_subunit_configs_container.name = "SubunitConfigs"
+	_subunit_configs_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(_subunit_configs_container)
+
+func _clear_subunit_dropdowns() -> void:
+	if _subunit_configs_container == null:
+		return
+	for child in _subunit_configs_container.get_children():
+		child.queue_free()
+	_subunit_rows.clear()
+	_selected_data_type_configs_by_subunit.clear()
+
+func _hide_legacy_data_type_controls() -> void:
+	# Hide the old single-dropdown controls; the new UI is per-subunit.
+	data_type_variant.visible = false
+	frame_handling.visible = false
+	positioning.visible = false
+	var labels_node = $HBoxContainer/Labels
+	if labels_node.has_node("Label4"):
+		labels_node.get_node("Label4").visible = false
+	if labels_node.has_node("Label5"):
+		labels_node.get_node("Label5").visible = false
+	if labels_node.has_node("Label6"):
+		labels_node.get_node("Label6").visible = false
+
+func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
+	"""Populate per-subunit dropdowns based on FEAGI template metadata (heterogeneous subunits supported)."""
+	print("PartSpawnCorticalAreaIOPU: _populate_subunit_dropdowns called with key='%s'" % cortical_type_key)
+	_hide_legacy_data_type_controls()
+	_clear_subunit_dropdowns()
+
+	# Wait for metadata to be ready if it's still loading
+	if not _metadata_ready:
+		push_warning("PartSpawnCorticalAreaIOPU: Metadata not ready yet, waiting...")
+		while not _metadata_ready:
+			await get_tree().process_frame
+
+	if cortical_type_key not in _template_metadata:
+		push_error("PartSpawnCorticalAreaIOPU: No metadata for template '%s'. Cannot populate subunits." % cortical_type_key)
+		var err = Label.new()
+		err.text = "ERROR: Template metadata not loaded"
+		_subunit_configs_container.add_child(err)
+		return
+
+	var template_data: Dictionary = _template_metadata[cortical_type_key]
+	var subunits: Dictionary = template_data.get("subunits", {})
+	if subunits.is_empty():
+		push_error("PartSpawnCorticalAreaIOPU: Template '%s' has no subunits. API/schema mismatch." % cortical_type_key)
+		var err2 = Label.new()
+		err2.text = "ERROR: No subunits in template (update FEAGI core)"
+		_subunit_configs_container.add_child(err2)
+		return
+
+	var sorted_keys: Array = subunits.keys()
+	sorted_keys.sort_custom(func(a, b): return int(a) < int(b))
+
+	for subunit_key in sorted_keys:
+		var subunit: Dictionary = subunits.get(subunit_key, {})
+		var supported_types: Array = subunit.get("supported_data_types", [])
+		if supported_types.is_empty():
+			push_error("PartSpawnCorticalAreaIOPU: Subunit %s has no supported_data_types" % str(subunit_key))
+			continue
+
+		var rel_pos: Array = subunit.get("relative_position", [0, 0, 0])
+		var dims: Array = subunit.get("channel_dimensions_default", [1, 1, 1])
+
+		var row = HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		var title = Label.new()
+		title.custom_minimum_size = Vector2(220, 0)
+		title.text = "Subunit %s  rel=%s  dims=%s" % [str(subunit_key), str(rel_pos), str(dims)]
+		title.autowrap_mode = TextServer.AUTOWRAP_WORD
+		row.add_child(title)
+
+		var variant_dd = OptionButton.new()
+		var frame_dd = OptionButton.new()
+		var pos_dd = OptionButton.new()
+		variant_dd.custom_minimum_size = Vector2(140, 0)
+		frame_dd.custom_minimum_size = Vector2(120, 0)
+		pos_dd.custom_minimum_size = Vector2(120, 0)
+
+		row.add_child(variant_dd)
+		row.add_child(frame_dd)
+		row.add_child(pos_dd)
+		_subunit_configs_container.add_child(row)
+
+		var variants: Array[String] = []
+		var frames: Array[String] = []
+		var positionings: Array[String] = []
+		var config_map: Dictionary = {}  # "variant|frame|pos" -> config_value
+
+		for data_type in supported_types:
+			var variant: String = data_type.get("variant", "")
+			var frame: String = data_type.get("frame_change_handling", "")
+			var pos = data_type.get("percentage_positioning", null)
+			var config_val: int = int(data_type.get("config_value", 0))
+
+			if variant != "" and variant not in variants:
+				variants.append(variant)
+			if frame != "" and frame not in frames:
+				frames.append(frame)
+			if pos != null and str(pos) not in positionings:
+				positionings.append(str(pos))
+
+			var pos_str: String = "" if pos == null else str(pos)
+			var key: String = "%s|%s|%s" % [variant, frame, pos_str]
+			config_map[key] = config_val
+
+		for v in variants:
+			variant_dd.add_item(v)
+		for f in frames:
+			frame_dd.add_item(f)
+
+		if positionings.size() == 0:
+			pos_dd.visible = false
+		else:
+			for p in positionings:
+				pos_dd.add_item(p)
+			pos_dd.visible = true
+
+		var sub_idx: int = int(subunit_key)
+		_subunit_rows[sub_idx] = {
+			"variant": variant_dd,
+			"frame": frame_dd,
+			"pos": pos_dd,
+			"config_map": config_map,
+		}
+
+		# Deterministic defaults: first option in each dropdown.
+		if variants.size() > 0:
+			variant_dd.select(0)
+		if frames.size() > 0:
+			frame_dd.select(0)
+		if positionings.size() > 0:
+			pos_dd.select(0)
+
+		variant_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
+		frame_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
+		pos_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
+
+		_update_selected_subunit_config(sub_idx)
+
+func _update_selected_subunit_config(subunit_idx: int) -> void:
+	if not _subunit_rows.has(subunit_idx):
+		return
+	var row: Dictionary = _subunit_rows[subunit_idx]
+	var variant_dd: OptionButton = row["variant"]
+	var frame_dd: OptionButton = row["frame"]
+	var pos_dd: OptionButton = row["pos"]
+	var config_map: Dictionary = row["config_map"]
+
+	var variant_text: String = variant_dd.get_item_text(variant_dd.selected) if variant_dd.selected >= 0 else ""
+	var frame_text: String = frame_dd.get_item_text(frame_dd.selected) if frame_dd.selected >= 0 else ""
+
+	var pos_text: String = ""
+	if pos_dd.visible and pos_dd.selected >= 0:
+		pos_text = pos_dd.get_item_text(pos_dd.selected)
+
+	var key: String = "%s|%s|%s" % [variant_text, frame_text, pos_text]
+	if key in config_map:
+		_selected_data_type_configs_by_subunit[subunit_idx] = int(config_map[key])
+	else:
+		push_error("PartSpawnCorticalAreaIOPU: Invalid subunit config combo for subunit %d: '%s'" % [subunit_idx, key])
+		_selected_data_type_configs_by_subunit[subunit_idx] = 0
+
 
 func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	"""Populate dropdowns based on selected template's supported data types"""
+	print("PartSpawnCorticalAreaIOPU: _populate_data_type_dropdowns called with key='%s'" % cortical_type_key)
+	
+	# Wait for metadata to be ready if it's still loading
+	if not _metadata_ready:
+		push_warning("PartSpawnCorticalAreaIOPU: Metadata not ready yet, waiting...")
+		while not _metadata_ready:
+			await get_tree().process_frame
+		print("PartSpawnCorticalAreaIOPU: Metadata is now ready, continuing...")
+	
+	print("PartSpawnCorticalAreaIOPU: _template_metadata has %d entries" % _template_metadata.size())
+	
 	# Clear existing options
 	data_type_variant.clear()
 	frame_handling.clear()
@@ -399,16 +595,26 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	
 	# Check if we have metadata for this template
 	if cortical_type_key not in _template_metadata:
-		push_warning("PartSpawnCorticalAreaIOPU: No metadata for " + cortical_type_key)
-		# Add defaults
-		_add_default_dropdown_options()
+		push_error("PartSpawnCorticalAreaIOPU: No metadata for template '%s'. Cannot create cortical area without API data." % cortical_type_key)
+		push_error("PartSpawnCorticalAreaIOPU: Available keys in metadata: %s" % str(_template_metadata.keys()))
+		# Show error to user
+		data_type_variant.add_item("ERROR: Template metadata not loaded")
+		frame_handling.add_item("ERROR: Restart Brain Visualizer")
+		data_type_variant.disabled = true
+		frame_handling.disabled = true
+		positioning.visible = false
 		return
 	
 	var template_data: Dictionary = _template_metadata[cortical_type_key]
 	var supported_types: Array = template_data.get("supported_data_types", [])
 	
 	if supported_types.is_empty():
-		_add_default_dropdown_options()
+		push_error("PartSpawnCorticalAreaIOPU: Template '%s' has no supported_data_types. FEAGI API returned invalid data." % cortical_type_key)
+		data_type_variant.add_item("ERROR: No supported data types")
+		frame_handling.add_item("ERROR: Check FEAGI connection")
+		data_type_variant.disabled = true
+		frame_handling.disabled = true
+		positioning.visible = false
 		return
 	
 	# Collect unique values for each dropdown
@@ -436,13 +642,31 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 		var key: String = "%s|%s|%s" % [variant, frame, pos_str]
 		config_map[key] = config_val
 	
-	# Populate dropdowns
+	# Populate dropdowns and ensure they're enabled
+	data_type_variant.disabled = false
+	frame_handling.disabled = false
+	
 	for v in variants:
 		data_type_variant.add_item(v)
 	for f in frames:
 		frame_handling.add_item(f)
-	for p in positionings:
-		positioning.add_item(p)
+	
+	# Only populate positioning dropdown if the template has positioning options
+	# For Misc/CartesianPlane/Boolean, positioning will be empty array
+	if positionings.size() > 0:
+		for p in positionings:
+			positioning.add_item(p)
+		positioning.visible = true
+		# Find and show the label for positioning
+		var positioning_label = positioning.get_parent().get_node_or_null("Label")
+		if positioning_label:
+			positioning_label.visible = true
+	else:
+		# Hide positioning dropdown for variants that don't support it
+		positioning.visible = false
+		var positioning_label = positioning.get_parent().get_node_or_null("Label")
+		if positioning_label:
+			positioning_label.visible = false
 	
 	# Store config map for later lookup
 	data_type_variant.set_meta("config_map", config_map)
@@ -460,26 +684,6 @@ func _populate_data_type_dropdowns(cortical_type_key: String) -> void:
 	
 	_update_selected_config_value()
 
-func _add_default_dropdown_options() -> void:
-	"""Add default options when API data not available"""
-	# Data Type Variants
-	data_type_variant.add_item("SignedPercentage")
-	data_type_variant.add_item("Percentage")
-	
-	# Frame Handling
-	frame_handling.add_item("Absolute")
-	frame_handling.add_item("Incremental")
-	
-	# Positioning
-	positioning.add_item("Linear")
-	positioning.add_item("Fractional")
-	
-	# Select defaults for OPU
-	if not _is_IPU_not_OPU:
-		data_type_variant.select(0)  # SignedPercentage
-	frame_handling.select(0)  # Absolute
-	positioning.select(0)  # Linear
-
 func _on_data_type_variant_changed(_index: int) -> void:
 	_update_selected_config_value()
 
@@ -493,7 +697,11 @@ func _update_selected_config_value() -> void:
 	"""Calculate the data_type_config value from selected dropdowns"""
 	var variant_text: String = data_type_variant.get_item_text(data_type_variant.selected) if data_type_variant.selected >= 0 else ""
 	var frame_text: String = frame_handling.get_item_text(frame_handling.selected) if frame_handling.selected >= 0 else ""
-	var pos_text: String = positioning.get_item_text(positioning.selected) if positioning.selected >= 0 else ""
+	
+	# Only get positioning if the dropdown is visible and has a selection
+	var pos_text: String = ""
+	if positioning.visible and positioning.selected >= 0:
+		pos_text = positioning.get_item_text(positioning.selected)
 	
 	# Try to lookup from API config map
 	if data_type_variant.has_meta("config_map"):
@@ -504,34 +712,21 @@ func _update_selected_config_value() -> void:
 			print("PartSpawnCorticalAreaIOPU: Found config_value=%d for key='%s'" % [_selected_data_type_config, key])
 			return
 		else:
-			# Debug: Print all keys in config_map to see what's available
-			print("PartSpawnCorticalAreaIOPU: Key '%s' not found in config_map. Available keys:" % key)
+			# Config map lookup failed - this is a critical error
+			push_error("PartSpawnCorticalAreaIOPU: Invalid data type combination '%s'. Available options:" % key)
 			for k in config_map.keys():
-				print("  - '%s' -> %d" % [k, config_map[k]])
+				push_error("  - '%s' -> %d" % [k, config_map[k]])
+			_selected_data_type_config = 0  # Invalid config - will fail at API
+			return
 	
-	# Fallback: Calculate manually using the same bit-packing as Rust
-	var variant_bits: int = _variant_name_to_bits(variant_text)
-	var frame_bits: int = 1 if frame_text == "Incremental" else 0
-	var positioning_bits: int = 1 if pos_text == "Fractional" else 0
-	
-	_selected_data_type_config = variant_bits | (frame_bits << 4) | (positioning_bits << 5)
-	print("PartSpawnCorticalAreaIOPU: Calculated config_value=%d (variant=%d, frame=%d, pos=%d) for '%s|%s|%s'" % [_selected_data_type_config, variant_bits, frame_bits, positioning_bits, variant_text, frame_text, pos_text])
-
-func _variant_name_to_bits(name: String) -> int:
-	"""Convert variant name to bits (0-3 for variant type)"""
-	match name:
-		"Percentage": return 0
-		"Percentage2D": return 1
-		"Percentage3D": return 2
-		"Percentage4D": return 3
-		"SignedPercentage": return 4
-		"SignedPercentage2D": return 5
-		"SignedPercentage3D": return 6
-		"SignedPercentage4D": return 7
-		"CartesianPlane": return 8
-		"Misc": return 9
-		_: return 0
+	# No config map available - cannot proceed
+	push_error("PartSpawnCorticalAreaIOPU: No config_map metadata available. Cannot determine data_type_config value.")
+	_selected_data_type_config = 0  # Invalid config - will fail at API
 
 func get_selected_data_type_config() -> int:
 	"""Get the currently selected data type configuration value"""
 	return _selected_data_type_config
+
+func get_selected_data_type_configs_by_subunit() -> Dictionary:
+	"""Get selected data_type_config values keyed by subunit index (int)."""
+	return _selected_data_type_configs_by_subunit.duplicate()

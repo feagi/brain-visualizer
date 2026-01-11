@@ -475,7 +475,7 @@ func _create_world3d_with_environment() -> World3D:
 	# Fallback: Create basic environment if can't copy
 	var environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.0951993, 0.544281, 0.999948, 1)  # Sky blue
+	environment.background_color = Color(0.08, 0.11, 0.15, 1)  # Dark blue-black (slightly brighter)
 	new_world.environment = environment
 	
 	return new_world
@@ -1092,7 +1092,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit_body: StaticBody3D = hit[&"collider"]
 			
 			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
-			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
 					var plate_kind := ""
@@ -1100,6 +1100,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
 						"ConflictPlateClickArea": plate_kind = "Conflict plate"
+						"MotherPlateClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
 					var region_name: String = "Region"
@@ -1173,8 +1174,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									if abs(local.x) <= half_x and abs(local.z) <= half_z:
 										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
 										break
-			# Check if we hit a plate click area (input/output/conflict)
-			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+			# Check if we hit a plate click area (input/output/conflict/mother)
+			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
 					var plate_kind := ""
@@ -1182,6 +1183,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
 						"ConflictPlateClickArea": plate_kind = "Conflict plate"
+						"MotherPlateClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
 					var region_name := "Region"
@@ -1221,11 +1223,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if _UI_layer_for_BM:
 					_UI_layer_for_BM.clear_plate_hover()
 				
-				# Right-click on empty space resets camera (same as pressing R)
-				if bm_input_event is UI_BrainMonitor_InputEvent_Click and bm_input_event.button_pressed:
-					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-						print("Right-clicked empty space - Resetting camera")
-						_on_user_camera_reset_requested()
+				# Right-click camera reset removed to allow trackpad rotation
+				# Users can still reset camera by pressing R key
 				
 				continue
 				
@@ -1251,14 +1250,14 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 							cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
 							cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
 						else:
-							# Check for left-click or right-click (right-click handles Ctrl+Click on Mac)
+							# Check for left-click or right-click
 							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 								# Additional safety check - object might have been freed
 								if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 									continue
 								
-								# Check for ctrl+click (or right-click, which is Ctrl+click on Mac) to focus camera on cortical area
-								if Input.is_physical_key_pressed(KEY_CTRL) or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+								# Check for ctrl+click to focus camera on cortical area
+								if Input.is_physical_key_pressed(KEY_CTRL):
 									# Ctrl+Click: Focus camera on the cortical area's bounding box
 									if _pancake_cam:
 										# Compute world-space AABB of the cortical area renderer
@@ -1284,10 +1283,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:
-					# Check for left-click or right-click (right-click handles Ctrl+Click on Mac)
+					# Check for left-click or right-click
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-						# Check for ctrl+click (or right-click, which is Ctrl+click on Mac) to focus camera on region
-						if Input.is_physical_key_pressed(KEY_CTRL) or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+						# Check for ctrl+click to focus camera on region
+						if Input.is_physical_key_pressed(KEY_CTRL):
 							# Ctrl+Click: Focus camera on the region's bounding box
 							if _pancake_cam:
 								# Compute world-space AABB of the brain region frame (includes all visualizations)
@@ -1312,7 +1311,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						# Check for double-click (simple implementation)
 						region_frame.handle_double_click()
 			# If clicking on a plate, clear the label on mouse up (we only show on hover)
-			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea":
+			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				if _UI_layer_for_BM and not bm_input_event.button_pressed:
 					_UI_layer_for_BM.clear_plate_hover()
 			
@@ -1354,24 +1353,40 @@ func remove_neuron_cortical_are_selection_restrictions() -> void:
 	_restrict_neuron_selection_to = null
 
 ## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
-func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null) -> UI_BrainMonitor_InteractivePreview:
+func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null, auto_frame_on_create: bool = true) -> UI_BrainMonitor_InteractivePreview:
 	var preview: UI_BrainMonitor_InteractivePreview = UI_BrainMonitor_InteractivePreview.new()
 	_node_3D_root.add_child(preview)  # CRITICAL FIX: Add to 3D scene root, not brain monitor container
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 	_active_previews.append(preview)
-	preview.tree_exiting.connect(_preview_closing)
+	preview.tree_exiting.connect(func(): _preview_closing(preview))
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
 	# Keep camera framing valid while preview is added or moved/resized by user
+	# Use weak reference to self to avoid capturing freed objects
+	var weak_self = weakref(self)
 	preview.user_moved_preview.connect(func(_pos: Vector3i):
-		# Debounce: schedule after one frame
-		get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+		# Check if self still exists before scheduling callback
+		if weak_self.get_ref():
+			# Debounce: schedule after one frame
+			get_tree().create_timer(0.0).timeout.connect(func():
+				if weak_self.get_ref():
+					_auto_frame_camera_to_objects()
+			)
 	)
 	preview.user_resized_preview.connect(func(_dim: Vector3i):
-		get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+		# Check if self still exists before scheduling callback
+		if weak_self.get_ref():
+			get_tree().create_timer(0.0).timeout.connect(func():
+				if weak_self.get_ref():
+					_auto_frame_camera_to_objects()
+			)
 	)
-	# Immediately frame to include this new preview (deferred by one frame)
-	get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+	# Immediately frame to include this new preview (deferred by one frame) - only if requested
+	if auto_frame_on_create:
+		get_tree().create_timer(0.0).timeout.connect(func():
+			if weak_self.get_ref():
+				_auto_frame_camera_to_objects()
+		)
 	return preview
 
 ## Allows external elements to create a brain region preview showing dual plates
@@ -1383,11 +1398,20 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
+	# Use weak reference to self to avoid capturing freed objects
+	var weak_self = weakref(self)
 	# Reframe when brain-region preview is created or moved (defer by one frame)
-	get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+	get_tree().create_timer(0.0).timeout.connect(func():
+		if weak_self.get_ref():
+			_auto_frame_camera_to_objects()
+	)
 	if not preview.user_moved_preview.is_connected(func(_p): pass):
 		preview.user_moved_preview.connect(func(_pos: Vector3i):
-			get_tree().create_timer(0.0).timeout.connect(func(): _auto_frame_camera_to_objects())
+			if weak_self.get_ref():
+				get_tree().create_timer(0.0).timeout.connect(func():
+					if weak_self.get_ref():
+						_auto_frame_camera_to_objects()
+				)
 		)
 	return preview
 
@@ -1658,6 +1682,7 @@ func has_cortical_area_visualization(cortical_id: String) -> bool:
 	return cortical_id in _cortical_visualizations_by_ID
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
+	print("🗑️ _remove_cortical_area CALLED for cortical_ID: %s" % area.cortical_ID)
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
@@ -1665,8 +1690,10 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_previously_moused_over_volumes.erase(rendering_area)
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	if is_instance_valid(rendering_area):
+		print("🗑️ _remove_cortical_area: Queueing free for rendering_area of %s" % area.cortical_ID)
 		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
+	print("🗑️ _remove_cortical_area: Completed removal of %s from 3D scene" % area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow

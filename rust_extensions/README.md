@@ -79,7 +79,7 @@ cargo build --release
 
 The build process will:
 1. Download and compile the gdext library
-2. Clone and build the feagi_data_serialization library
+2. Clone and build the feagi-serialization library
 3. Generate the shared library (.dylib on macOS, .dll on Windows, .so on Linux)
 
 ### Integration

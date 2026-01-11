@@ -411,6 +411,7 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 	var cortical_viz = _cortical_area_visualizations.get(cortical_id)
 	if cortical_viz == null:
 		push_error("Brain region dimension update: Could not find visualization for area %s" % cortical_id)
+		_dimension_recalc_in_progress = false
 		return
 	
 	# Update DDA renderer dimensions (but preserve positioning)
@@ -437,32 +438,17 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 			cortical_viz._dda_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
 			print("      🔍 Updated DDA outline scaling")
 	
-	# Update DirectPoints renderer dimensions (but preserve positioning)  
+	# Update DirectPoints renderer dimensions (but preserve positioning)
+	# Use update_dimensions() method to ensure all properties are updated correctly
+	# Position is preserved because update_dimensions() uses existing _position_godot_space
 	if cortical_viz._directpoints_renderer != null:
-		# Update scale but NOT position
-		cortical_viz._directpoints_renderer._dimensions = new_dimensions
-		if cortical_viz._directpoints_renderer._static_body != null:
-			cortical_viz._directpoints_renderer._static_body.scale = new_dimensions
-			# print("      📏 Updated DirectPoints renderer scale: %s" % new_dimensions)  # Suppressed - too frequent
-		
-		# Update collision shape size
-		var collision_shape = cortical_viz._directpoints_renderer._static_body.get_child(0) as CollisionShape3D
-		if collision_shape and collision_shape.shape is BoxShape3D:
-			if cortical_viz._directpoints_renderer._should_use_png_icon_by_id(cortical_viz.cortical_area.cortical_ID):
-				(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # PNG icon collision
-			else:
-				(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
-			# print("      🔲 Updated DirectPoints collision shape")  # Suppressed - too frequent
-		
-		# Update outline mesh scale
-		if cortical_viz._directpoints_renderer._outline_mesh_instance != null:
-			cortical_viz._directpoints_renderer._outline_mesh_instance.scale = new_dimensions
-			# print("      🔍 Updated DirectPoints outline scale")  # Suppressed - too frequent
-		
-		# Update outline material scaling
-		if cortical_viz._directpoints_renderer._outline_mat != null:
-			cortical_viz._directpoints_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
-			# print("      🎨 Updated DirectPoints outline material")  # Suppressed - too frequent
+		# Store current position to ensure it's preserved
+		var current_position = cortical_viz._directpoints_renderer._position_godot_space
+		cortical_viz._directpoints_renderer.update_dimensions(new_dimensions)
+		# Restore position if it was changed (shouldn't be, but safety check)
+		if cortical_viz._directpoints_renderer._position_godot_space != current_position:
+			cortical_viz._directpoints_renderer._static_body.position = current_position
+			cortical_viz._directpoints_renderer._position_godot_space = current_position
 	
 	print("    ✅ Brain region dimension update completed (positioning preserved)")
 	
@@ -474,6 +460,10 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 ## Comprehensive plate and positioning update after cortical area dimension changes
 func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if not _representing_region:
+		return
+	# This method is async (awaits frames) and can race with teardown/refresh.
+	# Guard against operating on freed nodes or a node that is leaving the scene tree.
+	if is_queued_for_deletion() or not is_inside_tree():
 		return
 		
 	
@@ -489,6 +479,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		if direct_child is Node3D and direct_child.name == "RegionAssembly":
 			direct_child.queue_free()
 	await get_tree().process_frame
+	if is_queued_for_deletion() or not is_inside_tree() or not _representing_region:
+		return
 
 	# Also remove old click collision bodies attached directly to this node (if tied to previous sizes)
 	for direct_child in get_children():
@@ -496,6 +488,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 			direct_child.queue_free()
 	# Process removal of click areas
 	await get_tree().process_frame
+	if is_queued_for_deletion() or not is_inside_tree() or not _representing_region:
+		return
 	
 	# 3. Recreate plates with new sizes
 	# Recreate the main frame container before adding plates
@@ -623,8 +617,18 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	call_deferred("_update_label_position_after_refresh")
 
 	# 4. Reposition all I/O cortical areas using new coordinates
-	for cortical_id in _cortical_area_visualizations.keys():
-		var cortical_viz = _cortical_area_visualizations[cortical_id]
+	# IMPORTANT: this function can resume after awaits while a refresh/removal has queued frees.
+	# Never pass potentially freed nodes into typed methods; validate instances before calling.
+	var cortical_ids := _cortical_area_visualizations.keys()
+	for cortical_id in cortical_ids:
+		var viz_any = _cortical_area_visualizations.get(cortical_id)
+		if viz_any == null or not is_instance_valid(viz_any):
+			# Clean stale references opportunistically.
+			_cortical_area_visualizations.erase(cortical_id)
+			continue
+		var cortical_viz := viz_any as UI_BrainMonitor_CorticalArea
+		if cortical_viz == null:
+			continue
 		
 		# Find new position for this cortical area
 		var found_new_position = false
@@ -720,15 +724,15 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
 		if cortical_viz._dda_renderer._friendly_name_label != null:
-			# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-			var label_y_offset = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+			var label_y_offset = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
 			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 	
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
 		if cortical_viz._directpoints_renderer._friendly_name_label != null:
-			# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-			var label_y_offset = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+			var label_y_offset = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
 			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 
 func _get_plate_global_z(is_input: bool) -> float:
@@ -1184,6 +1188,44 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 				if bm and bm._UI_layer_for_BM:
 					bm._UI_layer_for_BM.clear_plate_hover()
 			)
+
+	# Create collision body for MOTHER PLATE (bottom binder under all plates)
+	# This improves hover/click picking when the user is targeting the lower plate surface.
+	var mother_plate_node: MeshInstance3D = get_node_or_null("RegionAssembly/MotherPlate") as MeshInstance3D
+	if mother_plate_node != null and mother_plate_node.mesh is BoxMesh:
+		var mother_collision := StaticBody3D.new()
+		mother_collision.name = "MotherPlateClickArea"
+		mother_collision.collision_layer = 1
+		mother_collision.collision_mask = 1
+
+		var mother_collision_shape := CollisionShape3D.new()
+		mother_collision_shape.name = "CollisionShape"
+		var mother_box_shape := BoxShape3D.new()
+		var mother_size: Vector3 = (mother_plate_node.mesh as BoxMesh).size
+		# Slightly thicker to guarantee hits from above/below.
+		mother_box_shape.size = Vector3(mother_size.x, 2.0, mother_size.z)
+		mother_collision_shape.shape = mother_box_shape
+		mother_collision.add_child(mother_collision_shape)
+		add_child(mother_collision)
+
+		# Snap collider to the actual MotherPlate center.
+		if mother_plate_node.is_inside_tree():
+			mother_collision.global_position = mother_plate_node.global_position
+		else:
+			mother_collision.position = mother_plate_node.position
+
+		# Show overlay plate context
+		mother_collision.mouse_entered.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				# Bottom plate should show only the region name (no "(plate kind)" suffix)
+				bm._UI_layer_for_BM.show_plate_hover(_representing_region.friendly_name, "")
+		)
+		mother_collision.mouse_exited.connect(func():
+			var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
+			if bm and bm._UI_layer_for_BM:
+				bm._UI_layer_for_BM.clear_plate_hover()
+		)
 	
 	# Create collision body for REGION LABEL
 	var label_collision = StaticBody3D.new()
@@ -1389,7 +1431,9 @@ func _populate_cortical_areas() -> void:
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
 		# Connect to our custom dimension update handler that preserves brain region positioning
-		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_input_areas_container.add_child(existing_viz)
@@ -1437,7 +1481,9 @@ func _populate_cortical_areas() -> void:
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
 		# Connect to our custom dimension update handler that preserves brain region positioning
-		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_output_areas_container.add_child(existing_viz)
@@ -1485,7 +1531,9 @@ func _populate_cortical_areas() -> void:
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
 		# Connect to our custom dimension update handler that preserves brain region positioning
-		area.dimensions_3D_updated.connect(_on_io_cortical_area_dimensions_changed.bind(area.cortical_ID))
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_conflict_areas_container.add_child(existing_viz)
@@ -1940,16 +1988,16 @@ func _update_io_area_global_positions() -> void:
 			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 				cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
 				if cortical_viz._dda_renderer._friendly_name_label != null:
-					# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-					var label_y_offset = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+					var label_y_offset = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 			
 			# Update DirectPoints renderer position  
 			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 				cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
 				if cortical_viz._directpoints_renderer._friendly_name_label != null:
-					# Label positioned using same dynamic formula as global rule: scale.y / 2.0 + 2.0
-					var label_y_offset = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
+					var label_y_offset = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 		else:
 			print("        ❌ No coordinates found for %s - this shouldn't happen!" % cortical_id)
@@ -1994,15 +2042,15 @@ func _update_io_area_positions_DISABLED() -> void:
 			if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 				cortical_viz._dda_renderer._static_body.position = new_position
 				if cortical_viz._dda_renderer._friendly_name_label != null:
-					# Label positioned 2.0 units above the top of the cortical area
-					var label_y = cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned 2.0 units below the bottom of the cortical area
+					var label_y = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._dda_renderer._friendly_name_label.position = new_position + Vector3(0.0, label_y, 0.0)
 			
 			if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 				cortical_viz._directpoints_renderer._static_body.position = new_position
 				if cortical_viz._directpoints_renderer._friendly_name_label != null:
-					# Label positioned 2.0 units above the top of the cortical area
-					var label_y = cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0
+					# Label positioned 2.0 units below the bottom of the cortical area
+					var label_y = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
 					cortical_viz._directpoints_renderer._friendly_name_label.position = new_position + Vector3(0.0, label_y, 0.0)
 		else:
 			print("      ⚠️  Could not find relative coordinates for %s - skipping reposition" % cortical_id)
@@ -2077,8 +2125,9 @@ func _connect_area_signals(area: AbstractCorticalArea) -> void:
 			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
 
 	# Also connect to dimension changes which might affect positioning
-	if not area.dimensions_3D_updated.is_connected(_on_area_dimensions_changed):
-		area.dimensions_3D_updated.connect(_on_area_dimensions_changed.bind(area))
+	var cb_dim := _on_area_dimensions_changed.bind(area)
+	if not area.dimensions_3D_updated.is_connected(cb_dim):
+		area.dimensions_3D_updated.connect(cb_dim)
 		print("  📐 Connected to dimensions_updated for area: %s" % area.cortical_ID)
 
 ## Disconnects signals previously connected for a cortical area
@@ -2236,6 +2285,12 @@ func _refresh_frame_contents() -> void:
 	# Repopulate (will reuse existing I/O visualizations where possible)
 	_populate_cortical_areas()
 	
+	# Ensure plate sizing/layout is fully recomputed.
+	# _refresh_frame_contents() rebuilds plates synchronously and relies on queue_free(), which
+	# does not take effect until the end of the frame. The comprehensive recalculation coroutine
+	# properly yields to let old nodes be freed before rebuilding, avoiding stale plate sizing.
+	call_deferred("_recalculate_plates_and_positioning_after_dimension_change")
+	
 	# Validate plate alignment
 	call_deferred("_validate_plate_alignment")
 	
@@ -2245,6 +2300,17 @@ func _refresh_frame_contents() -> void:
 ## Updates the region label position to center it between the new plates after refresh
 func _update_label_position_after_refresh() -> void:
 	if not _representing_region:
+		return
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
+
+	# During refresh/rebuild we temporarily clear `_frame_container` while nodes are queued for deletion.
+	# Defer label attachment/positioning until the RegionAssembly container is recreated.
+	if _frame_container == null:
+		# Avoid recursively queueing deferred calls (can lead to stale callables during teardown/rebuild).
+		await get_tree().process_frame
+		if _frame_container == null or is_queued_for_deletion() or not is_inside_tree():
+			return
 		return
 	
 	# Ensure label exists - recreate if destroyed during cleanup
@@ -2410,6 +2476,8 @@ func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
 	if not _connection_monitoring_enabled:
 		print("🔇 MONITORING: Ignoring connection change for %s (monitoring disabled)" % area.cortical_ID)
 		return
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
 		
 	print("🔗 CONNECTION CHANGE: Area %s connections changed, checking I/O status" % area.cortical_ID)
 	# Small delay to ensure connection changes are fully processed
@@ -2419,6 +2487,8 @@ func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
 func _on_area_dimensions_changed(area: AbstractCorticalArea) -> void:
 	if not _connection_monitoring_enabled:
 		print("🔇 MONITORING: Ignoring dimension change for %s (monitoring disabled)" % area.cortical_ID)
+		return
+	if is_queued_for_deletion() or not is_inside_tree():
 		return
 	# Debounce multiple dimension changes in a single frame
 	print("📐 DIMENSION CHANGE: Area %s dimensions changed -> scheduling comprehensive plate rebuild" % area.cortical_ID)

@@ -19,18 +19,26 @@ var _established_mappings: Dictionary
 
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array[Dictionary]) -> void:
-	if !source.cortical_ID in _established_mappings.keys():
+	# IMPORTANT: An empty mapping list from FEAGI means the mapping does not exist.
+	# If we currently have a mapping-set cached, treat this as a deletion so that
+	# cortical areas emit their *_removed signals and UI stays in sync.
+	if len(mappings_JSON) == 0:
+		if source.cortical_ID in _established_mappings.keys() and destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
+			FEAGI_delete_mappings(source, destination)
+		return
+	
+	if not _established_mappings.has(source.cortical_ID):
 		_established_mappings[source.cortical_ID] = {}
+	
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
 		## Mapping exists, update it!
 		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings_JSON(mappings_JSON)
 		mapping_updated.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
-	else:
-		## Mapping doesn't exist, create it if its not empty!
-		if len(mappings_JSON) == 0:
-			return
-		_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.from_FEAGI_JSON(mappings_JSON, source, destination)
-		mapping_created.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
+		return
+	
+	## Mapping doesn't exist, create it!
+	_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.from_FEAGI_JSON(mappings_JSON, source, destination)
+	mapping_created.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
 
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping(source: AbstractCorticalArea, destination: AbstractCorticalArea, new_mappings: Array[SingleMappingDefinition]):
@@ -38,7 +46,7 @@ func FEAGI_set_mapping(source: AbstractCorticalArea, destination: AbstractCortic
 		# No mappings between cortical areas, likely a deletion action
 		FEAGI_delete_mappings(source, destination)
 		return
-	if !source.cortical_ID in _established_mappings.keys():
+	if not _established_mappings.has(source.cortical_ID):
 		_established_mappings[source.cortical_ID] = {}
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
 		## Mapping exists, update it!
@@ -76,10 +84,10 @@ func FEAGI_delete_all_mappings() -> void:
 	_established_mappings = {}
 
 func FEAGI_delete_mappings(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
-	if !source.cortical_ID in _established_mappings.keys():
+	if not _established_mappings.has(source.cortical_ID):
 		# mapping already doesnt exist, ignore
 		return
-	if !destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
+	if not _established_mappings[source.cortical_ID].has(destination.cortical_ID):
 		# mapping already doesnt exist, ignore
 		return
 	var existing_mappings: InterCorticalMappingSet = _established_mappings[source.cortical_ID][destination.cortical_ID]
@@ -91,9 +99,9 @@ func FEAGI_delete_mappings(source: AbstractCorticalArea, destination: AbstractCo
 
 ## Returns true if the given cortical areas have a mapping defined in cache between them, else false
 func does_mappings_exist_between_areas(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> bool:
-	if !(source.cortical_ID in _established_mappings):
+	if not _established_mappings.has(source.cortical_ID):
 		return false
-	if !(destination.cortical_ID in _established_mappings[destination.cortical_ID]):
+	if not _established_mappings[source.cortical_ID].has(destination.cortical_ID):
 		return false
 	return true
 

@@ -12,7 +12,7 @@ Added two functions:
 
 #### A. `parse_cortical_id_encoding()` - Binary Cortical ID Parser
 - Decodes base64 cortical IDs to 8-byte binary format
-- Parses FDP's binary structure per `feagi_data_structures` specification:
+- Parses FDP's binary structure per `feagi-data-structures` specification:
   ```
   [0] = 'i' or 'o' (input/output marker)
   [1-3] = 3-char unit identifier (e.g., "mot", "cam")
@@ -27,7 +27,7 @@ Added two functions:
 - Returns: `{success: bool, encoding_type: string, encoding_format: string, error: string}`
 
 #### B. `decode_fdp_value()` - FDP Value Decoder
-- Uses the **actual FDP decoding logic** from `feagi_connector_core` crate
+- Uses the **actual FDP decoding logic** from `feagi-sensorimotor` crate
 - Implements the exact same formulas used by FDP's internal decoders:
   - **Linear encoding**: `value = (z_index / z_max_depth) * 100.0`
   - **Exponential encoding**: `value = 0.5^z_index * 100.0`
@@ -57,9 +57,9 @@ Modified `mouse_over_single_cortical_area()` to:
 
 All FDP dependencies updated to **v0.0.50-beta.59**:
 ```toml
-feagi_data_structures = "0.0.50-beta.59"
-feagi_data_serialization = "0.0.50-beta.59"
-feagi_connector_core = "0.0.50-beta.59"
+feagi-structures = "0.0.1-beta.1"
+feagi-serialization = "0.0.1-beta.1"
+feagi-sensorimotor = "0.0.50-beta.59"
 base64 = "0.22"  # For base64 cortical ID decoding
 ```
 

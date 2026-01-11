@@ -19,8 +19,7 @@ var _host_preview_bm: UI_BrainMonitor_3DScene = null
 
 # isvi segmented vision variables
 var _is_isvi_segment: bool = false
-var _isvi_group_id: int = -1
-var _isvi_unit_id: int = -1
+var _isvi_unit_id: int = -1  # Cortical unit index (which unit of this type)
 var _isvi_all_segments: Array[AbstractCorticalArea] = []
 var _isvi_segment_previews: Dictionary = {}  # Maps unit_id to preview object
 var _isvi_original_z_values: Dictionary = {}  # Maps unit_id to original z coordinate (captured at detection)
@@ -150,6 +149,9 @@ func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool)
 	_section_cortical_area_monitoring.visible = is_advanced_options_visible
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
+	if control == null:
+		push_error("AdvancedCorticalProperties: Attempted to update null control for property '%s'" % property_name)
+		return
 	if AbstractCorticalArea.do_cortical_areas_have_matching_values_for_property(_cortical_area_refs, composition_section_name, property_name):
 		_set_control_to_value(control, _cortical_area_refs[0].return_property_by_name_and_section(composition_section_name, property_name))
 	else:
@@ -191,6 +193,9 @@ func _set_control_to_value(control: Control, value: Variant) -> void:
 		
 
 func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
+	if control == null:
+		push_error("AdvancedCorticalProperties: Attempted to connect null control for key '%s'" % FEAGI_key_name)
+		return
 	if (control as Variant).has_signal("user_interacted"):
 		(control as Variant).user_interacted.connect(_enable_button.bind(send_update_button))
 	if control is TextInput:
@@ -220,8 +225,11 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
 		_growing_cortical_update[send_button.name] = {}
+	var original_value = value
 	if value is Vector3i:
 		value = FEAGIUtils.vector3i_to_array(value)
+		if key_name == "visualization_voxel_granularity":
+			print("🔵 UI: visualization_voxel_granularity changed from Vector3i %s to array %s" % [original_value, value])
 	elif value is Vector3:
 		value = FEAGIUtils.vector3_to_array(value)
 	elif key_name == "neuron_excitability":
@@ -234,6 +242,8 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 		# Convert from 0-100 percentage back to 0-1 range for FEAGI API
 		value = float(value) / 100.0
 	_growing_cortical_update[send_button.name][key_name] = value
+	if key_name == "visualization_voxel_granularity":
+		print("🔵 UI: Added %s = %s to update dict for button %s" % [key_name, value, send_button.name])
 	send_button.disabled = false
 
 func _send_update(send_button: Button) -> void:
@@ -277,7 +287,11 @@ func _send_update(send_button: Button) -> void:
 				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 				close_window()
 			else:
-				print("UI: Successfully updated cortical areas %s" % area_names_str)
+				print("✅ UI: Successfully updated cortical areas %s" % area_names_str)
+				print("🔵 UI: Refreshing UI from cache to show updated values...")
+				# Refresh UI from cache to show updated values
+				_refresh_all_relevant()
+				print("🔵 UI: Refresh complete. Current visualization_voxel_granularity value: %s" % _cortical_area_refs[0].visualization_voxel_granularity)
 		else:
 			# Special handling for isvi segments - need to update all segments in the group
 			if _is_isvi_segment and len(_isvi_all_segments) > 1:
@@ -301,6 +315,8 @@ func _send_update(send_button: Button) -> void:
 					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Partial Update Failure", error_message))
 				else:
 					print("UI: Successfully updated all %d isvi segments" % success_count)
+				# Refresh UI from cache to show updated values
+				_refresh_all_relevant()
 			else:
 				# Normal single area update
 				var cortical_id = _cortical_area_refs[0].cortical_ID
@@ -327,7 +343,12 @@ func _send_update(send_button: Button) -> void:
 					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 					close_window()
 				else:
-					print("UI: Successfully updated cortical area '%s'" % cortical_id)
+					print("✅ UI: Successfully updated cortical area '%s'" % cortical_id)
+					print("🔵 UI: Refreshing UI from cache to show updated values...")
+					# Refresh UI from cache to show updated values
+					_refresh_all_relevant()
+					if len(_cortical_area_refs) > 0:
+						print("🔵 UI: Refresh complete. Current visualization_voxel_granularity value: %s" % _cortical_area_refs[0].visualization_voxel_granularity)
 		
 		# Clear the update dictionary
 		_growing_cortical_update.clear()
@@ -374,20 +395,16 @@ func _set_expanded_sections(expanded: Array[bool]) -> void:
 		collapsibles[i].is_open = expanded[i]
 
 func _setup_bm_prevew() -> void:
-	# CRITICAL FIX: Use plate location for I/O areas, not API coordinates
-	var preview_position = _get_preview_position_for_cortical_area()
-	
 	# Determine the cortical area context (if any)
 	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
 	
-	# Host BM: the one that contains this area (child-of); receives both MOVE and RESIZE
+	# Host BM: ONLY the brain monitor representing the cortical area's direct parent region.
+	# This intentionally ignores any additional scenes that may display the area as region I/O.
 	var host_bm: UI_BrainMonitor_3DScene = null
 	if existing_area and existing_area.current_parent_region:
 		host_bm = BV.UI.get_brain_monitor_for_region(existing_area.current_parent_region)
 	if host_bm == null:
-		host_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
-	if host_bm == null:
-		push_error("AdvancedCorticalProperties: No brain monitor available for preview creation!")
+		push_error("AdvancedCorticalProperties: No brain monitor found for cortical area's parent region; cannot create preview.")
 		return
 	
 	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
@@ -400,11 +417,21 @@ func _setup_bm_prevew() -> void:
 			resizes.append(_vector_dimensions_spin.user_updated_vector)
 		var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 		# Host uses area's actual FEAGI LFF
-		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+		# Don't auto-frame camera when opening properties of existing cortical area
+		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 		_preview.connect_UI_signals(moves, resizes, closes)
 		# Ensure main preview is cleared when window closes
 		_preview.tree_exiting.connect(func(): _preview = null)
 		_host_preview_bm = host_bm
+		
+		# For isvi segments, initialize previews for other segments only after the main preview exists.
+		if _is_isvi_segment:
+			# Cleanup any stale previews before recreating
+			for preview in _isvi_segment_previews.values():
+				if preview != null:
+					preview.queue_free()
+			_isvi_segment_previews.clear()
+			_init_isvi_previews()
 	else:
 		# If host changed (tab switch), relocate main preview
 		if _preview.get_parent() != host_bm._node_3D_root:
@@ -415,44 +442,19 @@ func _setup_bm_prevew() -> void:
 			if not _is_isvi_segment:
 				moves.append(_vector_position.user_updated_vector)
 				resizes.append(_vector_dimensions_spin.user_updated_vector)
-			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
+			# Don't auto-frame camera when reopening properties
+			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 			_preview.connect_UI_signals(moves, resizes, [close_window_requesed_no_arg, _button_summary_send.pressed])
 			_preview.tree_exiting.connect(func(): _preview = null)
 			_host_preview_bm = host_bm
-	
-	# Clear any stale aux mirrors before recreating
-	for aux in _aux_previews:
-		if aux != null:
-			aux.queue_free()
-	_aux_previews.clear()
-	_aux_preview_to_bm.clear()
-	
-	# Resize-only auxiliary previews: show on all visible 3D scenes as per rule
-	var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-	var resizes_only: Array[Signal] = [_vector_dimensions_spin.user_updated_vector]
-	# Mirror to all visible brain monitors that would display this area (directly or as I/O), excluding host
-	var all_visible := BV.UI.get_all_visible_brain_monitors()
-	for bm in all_visible:
-		if bm == null or bm == host_bm:
-			continue
-		if existing_area == null or BV.UI._would_brain_monitor_accept_cortical_area(bm, existing_area):
-			var per_bm_position: Vector3i
-			if bm == BV.UI.temp_root_bm:
-				# Root/main: plate-aligned position
-				per_bm_position = _get_preview_position_for_cortical_area()
-			else:
-				# Region tab: actual FEAGI LFF
-				per_bm_position = _vector_position.current_vector
-			var mirror = bm.create_preview(per_bm_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area)
-			mirror.connect_UI_signals([], resizes_only, closes_only)
-			mirror.tree_exiting.connect(func(): _aux_previews.erase(mirror); _aux_preview_to_bm.erase(mirror))
-			_aux_previews.append(mirror)
-			_aux_preview_to_bm[mirror] = bm
-	
-	# CRITICAL: Also connect to resize signal to update preview position for I/O areas (keeps center aligned on plates)
-	# Skip for isvi segments - they use manual layout calculation
-	if not _is_isvi_segment and not _vector_dimensions_spin.user_updated_vector.is_connected(_update_preview_for_io_area_resize):
-		_vector_dimensions_spin.user_updated_vector.connect(_update_preview_for_io_area_resize)
+			
+			# If host changed and this is an isvi segment, re-create segment previews in the new host BM.
+			if _is_isvi_segment:
+				for preview in _isvi_segment_previews.values():
+					if preview != null:
+						preview.queue_free()
+				_isvi_segment_previews.clear()
+				_init_isvi_previews()
 
 ## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
 func _get_preview_position_for_cortical_area() -> Vector3i:
@@ -581,6 +583,7 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 @export var _vector_dimensions_spin: Vector3iSpinboxField
 @export var _vector_dimensions_nonspin: Vector3iField
 @export var _vector_position: Vector3iSpinboxField
+@export var _vector_visualization_voxel_granularity: Vector3iSpinboxField
 @export var _button_summary_send: Button
 
 # IPU/OPU-specific decoded ID fields (created programmatically)
@@ -589,7 +592,6 @@ var _label_cortical_subtype: Label = null
 var _label_encoding_type: Label = null
 var _label_encoding_format: Label = null
 var _label_unit_id: Label = null
-var _label_group_id: Label = null
 
 func _init_summary() -> void:
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
@@ -616,15 +618,20 @@ func _init_summary() -> void:
 		_region_button.text = "Multiple Selected"
 		_line_cortical_ID.text = "Multiple Selected"
 		_vector_position.editable = false # TODO show multiple values
+		if _vector_visualization_voxel_granularity != null:
+			_vector_visualization_voxel_granularity.editable = false # TODO show multiple values
 		_vector_dimensions_spin.visible = false
 		_vector_dimensions_nonspin.visible = true
 		_connect_control_to_update_button(_vector_dimensions_nonspin, "cortical_dimensions", _button_summary_send)
+		# Note: visualization_voxel_granularity not connected for multi-select (read-only)
 
 		
 	else:
 		# Single
 		_connect_control_to_update_button(_line_cortical_name, "cortical_name", _button_summary_send)
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
+		if _vector_visualization_voxel_granularity != null:
+			_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		
@@ -686,7 +693,7 @@ func _init_ipu_opu_decoded_info() -> void:
 	var encoding_label = "Encoding:" if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU else "Decoding:"
 	_label_encoding_type = create_label_row.call(encoding_label)
 	_label_encoding_format = create_label_row.call("Format:")
-	_label_group_id = create_label_row.call("Group ID:", true)  # Swapped order, right-justified
+	_label_unit_id = create_label_row.call("Unit ID:", true)  # Swapped order, right-justified
 	_label_unit_id = create_label_row.call("Unit ID:", true)    # Swapped order, right-justified
 
 func _refresh_from_cache_summary() -> void:
@@ -704,6 +711,7 @@ func _refresh_from_cache_summary() -> void:
 	if len(_cortical_area_refs) != 1:
 		_line_cortical_name.text = "Multiple Selected"
 		_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
+		_update_control_with_value_from_areas(_vector_visualization_voxel_granularity, "", "visualization_voxel_granularity")
 		#TODO connect size vector
 	else:
 		# single
@@ -712,19 +720,19 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
+		# Set visualization_voxel_granularity directly like position and dimensions
+		if _vector_visualization_voxel_granularity != null:
+			var granularity_value = _cortical_area_refs[0].visualization_voxel_granularity
+			print("🔵 UI: Setting visualization_voxel_granularity in UI to: %s (from cache)" % granularity_value)
+			_vector_visualization_voxel_granularity.current_vector = granularity_value
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_device_count_section.visible = true
 			_update_control_with_value_from_areas(_device_count, "", "device_count")
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
 		else:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
-		
-		# Set up preview for this cortical area
-		_setup_bm_prevew()
-		
-		# If this is an isvi segment, also set up previews for all other segments
-		if _is_isvi_segment:
-			_init_isvi_previews()
+		# NOTE: 3D preview is intentionally NOT created on window open.
+		# It will appear when the user starts editing position/dimensions.
 			
 
 func _user_press_edit_region() -> void:
@@ -747,7 +755,7 @@ func _refresh_ipu_opu_decoded_info() -> void:
 		_label_cortical_subtype.text = area.cortical_subtype
 		_label_encoding_type.text = area.encoding_type
 		_label_encoding_format.text = area.encoding_format
-		_label_group_id.text = str(area.group_id)  # Swapped order
+		_label_unit_id.text = str(area.group_id)  # group_id property stores unit index
 		_label_unit_id.text = str(area.unit_id)    # Swapped order
 		
 		# Make container visible
@@ -770,7 +778,8 @@ func _enable_3D_preview(): #NOTE only currently works with single
 			push_error("AdvancedCorticalProperties: No brain monitor available for 3D preview!")
 			return
 		var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
-		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area)
+		# Don't auto-frame camera when opening multi-select cortical properties
+		var preview: UI_BrainMonitor_InteractivePreview = active_bm.create_preview(_vector_position.current_vector, _vector_dimensions_nonspin.current_vector, false, cortical_type, existing_area, false)
 		preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 		
 
@@ -1033,13 +1042,19 @@ func _safe_delete_afferent_mapping(source_area: AbstractCorticalArea, dest_area:
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot delete afferent mapping - FeagiCore or requests not available")
 		return
-	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	if result.has_errored:
+		push_error("UI: Failed to delete afferent mapping %s -> %s" % [source_area.cortical_ID, dest_area.cortical_ID])
+		return
 
 func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area: AbstractCorticalArea) -> void:
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot delete efferent mapping - FeagiCore or requests not available")
 		return
-	FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
+	if result.has_errored:
+		push_error("UI: Failed to delete efferent mapping %s -> %s" % [source_area.cortical_ID, dest_area.cortical_ID])
+		return
 
 #endregion
 
@@ -1061,7 +1076,7 @@ func _detect_and_setup_isvi_segment() -> void:
 		return
 	
 	_is_isvi_segment = true
-	_isvi_group_id = area.group_id
+	_isvi_unit_id = area.group_id  # group_id property stores unit index
 	_isvi_unit_id = area.unit_id
 	
 	# Find all 9 segments in this group
@@ -1072,12 +1087,12 @@ func _detect_and_setup_isvi_segment() -> void:
 	for cortical_area in all_cortical_areas:
 		if cortical_area.cortical_subtype == "isvi":
 			isvi_count += 1
-			if cortical_area.group_id == _isvi_group_id:
+			if cortical_area.group_id == _isvi_unit_id:  # group_id property stores unit index
 				_isvi_all_segments.append(cortical_area)
 				# Capture original z value for this segment
 				_isvi_original_z_values[cortical_area.unit_id] = cortical_area.coordinates_3D.z
 	
-	print("UI: isvi segment detected - Unit ", _isvi_unit_id, " in Group ", _isvi_group_id, " (", len(_isvi_all_segments), " total segments)")
+	print("UI: isvi segment detected - Subunit ", _isvi_unit_id, " in Unit ", area.group_id, " (", len(_isvi_all_segments), " total segments)")
 
 ## Calculate layout positions (x, y only) for all segments in an isvi group
 ## Returns Dictionary of unit_id -> Vector2i (x, y position)
@@ -1186,7 +1201,8 @@ func _init_isvi_previews() -> void:
 		var cortical_type = segment.cortical_type
 		var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
 		
-		var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment)
+		# Don't auto-frame camera when creating isvi segment previews
+		var new_preview = _host_preview_bm.create_preview(segment_pos, segment_dims, false, cortical_type, segment, false)
 		new_preview.connect_UI_signals([], [], closes_only)
 		
 		# Store this preview
@@ -1378,7 +1394,8 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			# Create new preview for this segment
 			var cortical_type = segment.cortical_type
 			var closes_only: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-			var new_preview = _host_preview_bm.create_preview(segment_pos_final, segment_dims, false, cortical_type, segment)
+			# Don't auto-frame camera when creating isvi segment previews during layout changes
+			var new_preview = _host_preview_bm.create_preview(segment_pos_final, segment_dims, false, cortical_type, segment, false)
 			new_preview.connect_UI_signals([], [], closes_only)
 			new_preview.set_warning_state(_isvi_would_overflow)
 			

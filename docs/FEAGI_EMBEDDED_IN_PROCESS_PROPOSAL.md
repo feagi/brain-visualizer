@@ -92,7 +92,7 @@ pub use feagi_config::FeagiConfig;
 
 // Re-export types needed by embedders
 pub use feagi_burst_engine::RawFireQueueSnapshot;
-pub use feagi_data_structures::genomic::CorticalID;
+pub use feagi-data-structures::genomic::CorticalID;
 
 /// Visualization callback signature
 /// 
@@ -299,7 +299,7 @@ pub struct FeagiComponents {
 
 ### 1.3 Update PNS to Support Direct Callbacks
 
-**File:** `feagi-core/crates/feagi-pns/src/lib.rs`
+**File:** `feagi-core/crates/feagi-io/src/lib.rs`
 
 ```rust
 use std::sync::{Arc, Mutex};
@@ -361,8 +361,8 @@ godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 feagi = { path = "../../../../feagi", default-features = false, features = ["embedded"] }
 feagi-config = { path = "../../../../feagi-core/crates/feagi-config" }
 feagi-burst-engine = { path = "../../../../feagi-core/crates/feagi-burst-engine" }
-feagi-data-structures = { path = "../../../../feagi-core/crates/feagi-data-structures" }
-feagi-data-serialization = { path = "../../../../feagi-core/crates/feagi-data-serialization" }
+feagi-structures = { path = "../../../../feagi-core/crates/feagi-structures" }
+feagi-serialization = { path = "../../../../feagi-core/crates/feagi-serialization" }
 
 # Additional deps
 anyhow = "1.0"
@@ -638,7 +638,7 @@ impl FeagiEmbedded {
         PackedInt32Array,
         PackedFloat32Array,
     ) {
-        use feagi_data_structures::neuron_voxels::xyzp::{
+        use feagi-data-structures::neuron_voxels::xyzp::{
             CorticalMappedXYZPNeuronVoxels, NeuronVoxelXYZPArrays,
         };
         

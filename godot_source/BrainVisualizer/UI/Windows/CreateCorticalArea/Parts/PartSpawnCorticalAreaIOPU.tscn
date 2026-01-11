@@ -46,7 +46,7 @@ theme_type_variation = &"VBoxContainer_farther"
 [node name="Label" type="Label" parent="HBoxContainer/Labels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Group ID:"
+text = "Unit ID:"
 vertical_alignment = 1
 
 [node name="Label3" type="Label" parent="HBoxContainer/Labels"]
@@ -83,7 +83,7 @@ vertical_alignment = 1
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_farther"
 
-[node name="GroupID" type="SpinBox" parent="HBoxContainer/Fields"]
+[node name="UnitID" type="SpinBox" parent="HBoxContainer/Fields"]
 layout_mode = 2
 min_value = 0.0
 max_value = 255.0
@@ -114,12 +114,12 @@ layout_mode = 2
 texture = ExtResource("4_1tced")
 expand_mode = 2
 
-[node name="GroupIDStatus" type="Label" parent="."]
+[node name="UnitIDStatus" type="Label" parent="."]
 layout_mode = 2
 text = ""
 horizontal_alignment = 1
 
-[connection signal="value_changed" from="HBoxContainer/Fields/GroupID" to="." method="_on_group_id_changed"]
+[connection signal="value_changed" from="HBoxContainer/Fields/UnitID" to="." method="_on_unit_id_changed"]
 [connection signal="value_changed" from="HBoxContainer/Fields/ChannelCount" to="." method="_proxy_device_count_changes"]
 [connection signal="item_selected" from="HBoxContainer/Fields/DataTypeVariant" to="." method="_on_data_type_variant_changed"]
 [connection signal="item_selected" from="HBoxContainer/Fields/FrameHandling" to="." method="_on_frame_handling_changed"]

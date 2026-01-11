@@ -20,10 +20,19 @@ uniform sampler2D activation_SVO : hint_default_black;
 uniform sampler2D highlight_SVO: hint_default_black;
 uniform sampler2D selection_SVO: hint_default_black;
 
+// Edge visibility tuning (Option 5: distance-based scaling)
+// Goal: thin/small areas remain readable from far away without reintroducing interior artifacts.
+uniform float edge_camera_near : hint_range(0.0, 200.0) = 12.0; // Distance where edge boost begins
+uniform float edge_camera_far : hint_range(0.0, 500.0) = 80.0;  // Distance where edge boost maxes out
+uniform float edge_thickness_near : hint_range(0.001, 0.05) = 0.008; // Baseline edge thickness
+uniform float edge_thickness_far : hint_range(0.001, 0.08) = 0.02;   // Thicker edges when zoomed out
+uniform float edge_opacity_far_boost : hint_range(0.0, 0.6) = 0.25;  // Extra opacity added when zoomed out
+
 varying vec3 local_vert_space_m05_05; // Goes from -0.5 -> 0.5  across the actual mesh surface of the cube
 //varying vec3 local_vert_space_0_1; // Goes from 0.0 -> 1.0 across the actual mesh surface of the cube
 //varying vec3 shared_SVO_vert_space; //  0.0 - 1.0, but for the size of the Sparse Voxel Octet tree cube, this means any non-2^n mesh will not reach 1.0
 varying vec3 individual_voxel_size; // Normalized (0 - 1.0) size of each voxel (mesh wise)
+varying vec3 world_pos_ws; // World-space position (interpolated) for distance-based edge scaling
 
 // Calculates the distance the ray traveled within the entire object // TESTED, NO ARTIFACTS
 float get_distance_traveled_by_ray_in_entire_object(vec3 starting_normalized_position, vec3 normalized_ray_direction)
@@ -81,6 +90,7 @@ void vertex() {
 
 	// Constants
 	individual_voxel_size = vec3(1.0 / float(voxel_count_x), 1.0 / float(voxel_count_y), 1.0 / float(voxel_count_z));
+	world_pos_ws = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
 
@@ -132,47 +142,96 @@ void fragment()
 
 
 
-	/// Calculate wall count color for "background" - OUTER SHELL ONLY
-	ivec3 number_walls_per_direction = get_number_wall_intersections(local_vert_space_m05_05, individual_voxel_size, ray_direction_mn);
-	
-	// Calculate if we're near the outer boundary (shell rendering)
+	// IMPORTANT: Do NOT use get_number_wall_intersections() for transparency.
+	// That path is marked as broken (artifacting) and it produces interior "cross planes"
+	// in thin areas (e.g., 1x1x10) that obscure neuron firing.
+	//
+	// Instead: render ONLY a thin outer shell (faces) and solid geometric edges.
 	vec3 abs_position = abs(local_vert_space_m05_05); // Distance from center
-	float max_distance = max(max(abs_position.x, abs_position.y), abs_position.z); // Distance to nearest face
 	
-	// SMART TRANSPARENCY: Only reduce opacity when there's actual layer accumulation
+	// Calculate dimensions and proportions
 	float dim_x = float(voxel_count_x);
 	float dim_y = float(voxel_count_y);
 	float dim_z = float(voxel_count_z);
+	float max_dimension = max(max(dim_x, dim_y), dim_z);
+	float min_dimension = min(min(dim_x, dim_y), dim_z);
+	float volume = dim_x * dim_y * dim_z;
 	
-	// Calculate base transparency
-	float base_transparency = (float(number_walls_per_direction.x) + float(number_walls_per_direction.y) + float(number_walls_per_direction.z)) * voxel_opacity;
+	// Calculate aspect ratio (how elongated/flat the area is)
+	// High aspect ratio = thin/flat area (e.g., 64x64x1), low = cubic (e.g., 5x5x5)
+	float aspect_ratio = max_dimension / max(min_dimension, 1.0);
 	
-	// Only reduce transparency if ALL dimensions are >= 2 (to avoid affecting thin areas)
-	float thickness_factor = 1.0; // Default: keep full opacity
+	// SIZE-BASED OPACITY SCALING: Inverse relationship between size and opacity
+	// Small areas need high opacity to be visible, large areas need low opacity to not obscure neurons
+	float size_opacity_factor = 1.0;
 	
-	if (dim_x >= 2.0 && dim_y >= 2.0 && dim_z >= 2.0) {
-		// All dimensions are thick enough to cause layer accumulation
-		float max_dimension = max(max(dim_x, dim_y), dim_z);
-		
-		if (max_dimension > 20.0) {
-			// Very thick areas (like 30x30x30 or 50x50x10): Very transparent
-			thickness_factor = 0.02; // 2% opacity
-		} else if (max_dimension > 10.0) {
-			// Medium thick areas: Moderately transparent
-			thickness_factor = 0.1; // 10% opacity
-		}
-		// else: keep full opacity for smaller thick areas
+	// Determine area "size category" based on volume and max dimension
+	// Use logarithmic scaling for smooth transitions
+	float volume_log = log(max(volume, 1.0)) / log(10.0); // log10 of volume
+	
+	if (volume_log < 1.0) {
+		// Very small areas (1-10 voxels): High opacity (0.8-1.0)
+		// Example: 2x2x2 = 8 voxels, 3x3x1 = 9 voxels
+		size_opacity_factor = 0.8 + 0.2 * (1.0 - volume_log); // 0.8 to 1.0
+	} else if (volume_log < 2.0) {
+		// Small areas (10-100 voxels): Medium-high opacity (0.5-0.8)
+		// Example: 4x4x4 = 64 voxels, 5x5x4 = 100 voxels
+		size_opacity_factor = 0.5 + 0.3 * (2.0 - volume_log); // 0.5 to 0.8
+	} else if (volume_log < 3.0) {
+		// Medium areas (100-1000 voxels): Medium opacity (0.2-0.5)
+		// Example: 10x10x10 = 1000 voxels
+		size_opacity_factor = 0.2 + 0.3 * (3.0 - volume_log); // 0.2 to 0.5
+	} else if (volume_log < 4.0) {
+		// Large areas (1000-10000 voxels): Low-medium opacity (0.08-0.2)
+		// Example: 20x20x20 = 8000 voxels
+		size_opacity_factor = 0.08 + 0.12 * (4.0 - volume_log); // 0.08 to 0.2
+	} else {
+		// Very large areas (10000+ voxels): Very low opacity (0.02-0.08)
+		// Example: 50x50x10 = 25000 voxels
+		size_opacity_factor = 0.02 + 0.06 * min(1.0, (5.0 - volume_log)); // 0.02 to 0.08
 	}
-	// else: keep full opacity for thin areas (like 64x64x1, 1000000x1x1, etc.)
 	
-	float wall_transparency = base_transparency * thickness_factor;
+	// Adjust for aspect ratio: Thin/flat areas need slightly higher opacity for borders
+	// This ensures 64x64x1 areas have visible borders even though volume is small
+	float aspect_adjustment = 1.0;
+	if (aspect_ratio > 10.0) {
+		// Very thin areas: Boost opacity slightly (up to 1.2x)
+		aspect_adjustment = 1.0 + 0.2 * min(1.0, (aspect_ratio - 10.0) / 50.0);
+	}
+	
+	// Thin outer shell only (no interior walls)
+	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face (0 at face)
+	float min_distance_to_face = min(min(distance_to_faces.x, distance_to_faces.y), distance_to_faces.z);
+	float shell_thickness = 0.02; // Thin shell in mesh space (0..0.5)
+	float shell_mask = 1.0 - smoothstep(0.0, shell_thickness, min_distance_to_face); // 1 at face, 0 inside
+	
+	// Faces should stay faint so they don't obscure neuron firing (especially in narrow areas).
+	// Edges will provide the strong visual boundary instead.
+	float face_alpha_scale = 0.25; // default for tiny areas (multiplies voxel_opacity)
+	if (volume_log >= 2.0) face_alpha_scale = 0.18;
+	if (volume_log >= 3.0) face_alpha_scale = 0.12;
+	if (volume_log >= 4.0) face_alpha_scale = 0.08;
+	
+	// Narrow/elongated areas: make faces extremely faint (avoid the "blue tube" masking firing)
+	if (aspect_ratio > 3.0) face_alpha_scale *= 0.25;
+	if (aspect_ratio > 8.0) face_alpha_scale *= 0.1;
+	
+	float wall_transparency = voxel_opacity * shell_mask * face_alpha_scale;
 
-	// EDGE DETECTION: Add thin light gray lines only on the 12 cube edges
-	float edge_thickness = 0.01; // Very thin edge lines
+	// EDGE DETECTION: Detect geometric edges (where 2-3 faces meet) only
+	// These are the actual edges/corners where faces meet, not the entire surfaces
+	// Distance-based scaling: thicker + more opaque edges when camera is far away.
+	// Note: we use interpolated world_pos_ws for stable behavior.
+	float cam_dist = distance(world_pos_ws, CAMERA_POSITION_WORLD);
+	float edge_dist_t = smoothstep(edge_camera_near, edge_camera_far, cam_dist);
+
+	// Size-based cap: large cortical areas shouldn't get excessively thick edges when zoomed out.
+	// volume_log: 2 -> ~100 voxels, 4 -> ~10,000 voxels
+	float edge_large_area_t = smoothstep(2.0, 4.0, volume_log);
+	float edge_thickness_far_capped = mix(edge_thickness_far, edge_thickness_far * 0.5, edge_large_area_t);
+
+	float edge_thickness = mix(edge_thickness_near, edge_thickness_far_capped, edge_dist_t);
 	bool is_on_edge = false;
-	
-	// Check if we're near any of the 12 cube edges (where 2 faces meet)
-	vec3 distance_to_faces = vec3(0.5) - abs_position; // Distance to each face
 	
 	// Count how many faces we're close to
 	int faces_close_to = 0;
@@ -188,35 +247,87 @@ void fragment()
 	/// Calculate final pixel color - PRESERVE SHELL TRANSPARENCY
 	final_color.a = wall_transparency;
 	
-	// Apply edge color only on the actual edges
+	// RENDER GEOMETRIC EDGES ONLY: Solid lines where faces meet
 	if (is_on_edge) {
-		final_color.rgb = vec3(0.7, 0.7, 0.7); // Light gray edges
-		final_color.a = max(wall_transparency, 0.5); // 50% opacity for edges
+		// Edge color for clear visibility
+		final_color.rgb = vec3(0.45, 0.5, 0.6); // Gray-blue for good contrast
+		
+		// Calculate guaranteed minimum edge opacity - ensures visibility even for large transparent areas
+		float edge_opacity_min = 0.5; // Minimum guaranteed opacity for large areas (solid line)
+		float edge_opacity_max = 0.95; // Maximum opacity for small areas
+		
+		float edge_opacity;
+		if (volume_log < 1.0) {
+			// Very small areas: Near-solid edges
+			edge_opacity = edge_opacity_max;
+		} else if (volume_log < 2.0) {
+			// Small areas: High edge opacity
+			edge_opacity = 0.8 + 0.15 * (2.0 - volume_log); // 0.8 to 0.95
+		} else if (volume_log < 3.0) {
+			// Medium areas: Medium-high edge opacity
+			edge_opacity = 0.6 + 0.2 * (3.0 - volume_log); // 0.6 to 0.8
+		} else {
+			// Large areas: Guaranteed minimum visibility (solid line)
+			// Scale from edge_opacity_min up to 0.6 for medium-large
+			edge_opacity = edge_opacity_min + 0.1 * min(1.0, (4.0 - volume_log)); // 0.5 to 0.6
+		}
+
+		// Zoomed-out boost (Option 5): edges get more visible at distance.
+		edge_opacity = min(edge_opacity + (edge_opacity_far_boost * edge_dist_t), 1.0);
+		
+		// Edges always override interior transparency for visibility
+		final_color.a = max(wall_transparency, edge_opacity);
 	}
 	
-	if(neuron_highlight_has_hit)
-	{
+	// Do not render the hover highlight overlay when there is any activation on this pixel ray.
+	// Otherwise the hover mask can visually cover neuron firing while you interact.
+	// Depth-based priority: determine which overlay is closest to camera
+	// Compare distances for selection, highlight, and activation - closest wins
+	float min_overlay_distance = 999999.0;
+	int closest_overlay = 0; // 0=none, 1=highlight, 2=selection, 3=activation
+	
+	if(neuron_highlight_has_hit) {
+		float dist = length(neuron_highlight_hit_offset_svon);
+		if(dist < min_overlay_distance) {
+			min_overlay_distance = dist;
+			closest_overlay = 1;
+		}
+	}
+	
+	if(neuron_selection_has_hit) {
+		float dist = length(neuron_selection_hit_offset_svon);
+		if(dist < min_overlay_distance) {
+			min_overlay_distance = dist;
+			closest_overlay = 2;
+		}
+	}
+	
+	if(neuron_activation_has_hit) {
+		float dist = length(neuron_activation_hit_offset_svon);
+		if(dist < min_overlay_distance) {
+			min_overlay_distance = dist;
+			closest_overlay = 3;
+		}
+	}
+	
+	// Render only the closest overlay
+	if(closest_overlay == 1) {
+		// Highlight (blue)
 		final_color.b = 1.0;
-		// Keep shell transparency instead of forcing alpha = 1.0
-		final_color.a = max(wall_transparency, 0.8); // Slightly more visible when highlighted
+		final_color.a = max(final_color.a, 0.8);
 	}
-
-	if(neuron_selection_has_hit)
-	{
+	else if(closest_overlay == 2) {
+		// Selection (green) - but make it semi-transparent so activation behind it shows through
 		final_color.g = 1.0;
-		// Keep shell transparency instead of forcing alpha = 1.0
-		final_color.a = max(wall_transparency, 0.8); // Slightly more visible when selected
+		final_color.a = max(final_color.a, 0.3); // Very transparent so red firing shows through
 	}
-
-	if(neuron_activation_has_hit)
-	{
-		//final_color.rgb += vec3(0.3, -0.3, 0.3);
+	else if(closest_overlay == 3) {
+		// Activation (red) - always full visibility
 		vec3 local_hit_space_mn = local_SVO_space_to_vert_0_1_space(neuron_activation_hit_coordinate_svon, voxel_counts_per_dim, shared_SVO_depth);
 		float z_offset_color = local_hit_space_mn.z;
-		
-		final_color.rgb = vec3(z_offset_color, 0.0, 0.0);
-		// Keep shell transparency instead of forcing alpha = 1.0
-		final_color.a = max(wall_transparency, 0.6); // More visible when neurons are active
+		float activation_red = max(z_offset_color, 0.35);
+		final_color.rgb = vec3(activation_red, 0.0, 0.0);
+		final_color.a = max(final_color.a, 0.85); // High visibility for firing
 	}
 
 

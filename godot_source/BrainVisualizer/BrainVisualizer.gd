@@ -14,7 +14,6 @@ var _feagi_wasm_manager: FeagiWasmManager = null  # Holds FeagiWasmManager insta
 
 #NOTE: This is where it all starts, if you wish to see how BV connects to FEAGI, start here
 func _ready() -> void:
-	
 	# Zeroth step is just to collect references and make connections
 	_UI_manager = $UIManager
 	FeagiCore.genome_load_state_changed.connect(_on_genome_state_change)

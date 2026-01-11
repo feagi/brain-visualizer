@@ -35,6 +35,12 @@ const PULSE_DISTANCE_MAX_SCALE: float = 5.0
 func _apply_distance_scale_to_pulse(pulse_sphere: MeshInstance3D) -> void:
 	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null:
 		return
+	# Check if the node is in the scene tree before accessing global_position
+	if not pulse_sphere.is_inside_tree():
+		# Node not in tree yet, use default scale and defer scaling until next frame when it should be in tree
+		pulse_sphere.scale = Vector3(PULSE_DISTANCE_MIN_SCALE, PULSE_DISTANCE_MIN_SCALE, PULSE_DISTANCE_MIN_SCALE)
+		call_deferred("_apply_distance_scale_to_pulse", pulse_sphere)
+		return
 	var viewport := get_viewport()
 	if viewport == null:
 		return
@@ -104,9 +110,21 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.recieved_new_direct_neural_points_bulk.is_connected(_directpoints_renderer._on_received_direct_neural_points_bulk):
 			defined_cortical_area.recieved_new_direct_neural_points_bulk.connect(_directpoints_renderer._on_received_direct_neural_points_bulk)
 			# print("🚀 CONNECTED: Type 11 (Bulk Neural Points) signal for optimized DirectPoints rendering")  # Suppressed - causes output overflow
+
+	# Register DirectPoints renderer resources for the desktop WS fast-path (Rust -> MultiMesh).
+	# This does NOT change web export behavior (web uses WASM path).
+	if _directpoints_renderer != null and _directpoints_renderer.has_method("bv_get_multimesh"):
+		var mm := _directpoints_renderer.call("bv_get_multimesh") as MultiMesh
+		var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
+		defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
+		
+		# If renderer resources aren't ready yet (rare timing), retry registration on a deferred tick.
+		# This is important for memory areas: desktop WS Type11 fast-path only updates areas with a registered MultiMesh.
+		if mm == null or dims == Vector3.ZERO:
+			_schedule_directpoints_fastpath_registration_retry(defined_cortical_area)
 	
 	# print("✅ DUAL RENDERER SETUP: DDA (translucent structure) + DirectPoints (individual neurons)")  # Suppressed - causes output overflow
-	
+
 	# Connect to cache reload events to refresh connection curves
 	if FeagiCore.feagi_local_cache:
 		if not FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
@@ -128,6 +146,40 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.recursive_cortical_area_removed.is_connected(_on_mapping_changed):
 			defined_cortical_area.recursive_cortical_area_removed.connect(_on_mapping_changed)
 		# print("🔗 CONNECTED: Mapping change signals for real-time curve updates")  # Suppressed - causes output overflow
+
+func _exit_tree() -> void:
+	# Unregister desktop WS fast-path references only on actual teardown.
+	#
+	# IMPORTANT:
+	# - This node is frequently re-parented (e.g. when brain-region plates "move" I/O areas onto plates).
+	# - Re-parenting triggers `_exit_tree()` even though the node is not being destroyed.
+	# - If we unregister on re-parent, FEAGI's desktop Type 11 fast-path no longer has a MultiMesh target,
+	#   so neuron activity appears "missing" until a new BrainMonitor tab is opened and re-registers.
+	#
+	# `is_queued_for_deletion()` is true for real teardown (queue_free / scene shutdown), but false for re-parent.
+	if _representing_cortial_area != null and is_queued_for_deletion():
+		_representing_cortial_area.BV_unregister_directpoints_renderer()
+
+func _schedule_directpoints_fastpath_registration_retry(defined_cortical_area: AbstractCorticalArea) -> void:
+	# Keep retries bounded and quiet.
+	if defined_cortical_area == null or _directpoints_renderer == null:
+		return
+	if not has_meta("_bv_fastpath_reg_retry"):
+		set_meta("_bv_fastpath_reg_retry", 0)
+	var attempt: int = int(get_meta("_bv_fastpath_reg_retry"))
+	if attempt >= 10:
+		return
+	set_meta("_bv_fastpath_reg_retry", attempt + 1)
+	call_deferred("_retry_directpoints_fastpath_registration", defined_cortical_area)
+
+func _retry_directpoints_fastpath_registration(defined_cortical_area: AbstractCorticalArea) -> void:
+	if defined_cortical_area == null or _directpoints_renderer == null:
+		return
+	if not _directpoints_renderer.has_method("bv_get_multimesh"):
+		return
+	var mm := _directpoints_renderer.call("bv_get_multimesh") as MultiMesh
+	var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
+	defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:

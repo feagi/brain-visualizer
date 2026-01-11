@@ -23,6 +23,9 @@ const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interact
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
 
+# Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
+const _VOXEL_VISUAL_SCALE: float = 0.8
+
 # Rendering components
 var _static_body: StaticBody3D
 var _multi_mesh_instance: MultiMeshInstance3D
@@ -34,6 +37,11 @@ var _friendly_name_label: Label3D
 # Cortical area properties
 var _cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
 var _cortical_area_id: String
+var _cortical_area: AbstractCorticalArea = null  # Reference to area for accessing visualization_voxel_granularity
+
+# Aggregated rendering mode
+var _is_aggregated_mode: bool = false
+var _visualization_voxel_granularity: Vector3i = Vector3i(1, 1, 1)  # Default is 1x1x1
 
 # State tracking
 var _is_hovered_over: bool = false
@@ -68,12 +76,33 @@ var _tesla_coil_tweens: Array[Tween] = []  # Store active tweens to stop them la
 # Memory area materials for state switching
 var _memory_jello_material: ShaderMaterial  # Active firing state material
 var _memory_transparent_material: ShaderMaterial  # Inactive transparent state material
+var _memory_activity_tween: Tween  # Smooth fade between inactive/active states
+
+# Cached parameter targets for smooth transitions
+var _memory_active_albedo: Color
+var _memory_active_emission: Color
+var _memory_active_emission_energy: float
+var _memory_active_rim_intensity: float
+var _memory_active_jello_strength: float
+
+var _memory_inactive_albedo: Color
+var _memory_inactive_emission: Color
+var _memory_inactive_emission_energy: float
+var _memory_inactive_rim_intensity: float
+var _memory_inactive_jello_strength: float
 
 func setup(area: AbstractCorticalArea) -> void:
 	print("🧠 DIRECTPOINTS RENDERER SETUP for cortical area: %s" % area.cortical_ID)
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
+	_cortical_area = area  # Store reference for accessing visualization_voxel_granularity
+	
+	# Check if this area uses aggregated rendering mode
+	_visualization_voxel_granularity = area.visualization_voxel_granularity
+	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
+	if _is_aggregated_mode:
+		print("   🔥 [%s] AGGREGATED RENDERING MODE enabled - granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
 	
 	# Load visualization settings (create default if not exists)
 	if ResourceLoader.exists("res://BrainVisualizer/Configs/visualization_settings.tres"):
@@ -137,6 +166,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create voxel (cube) mesh for each neuron - maintaining familiar voxel appearance
 	# For power and memory areas, we don't want individual neuron cubes since the shape itself shows firing
+	# For aggregated rendering mode, use granularity-sized boxes instead of small voxels
 	if AbstractCorticalArea.is_power_area(area.cortical_ID):
 		# Use a very small invisible mesh for power areas (firing animation is on the cone itself)
 		var invisible_mesh = BoxMesh.new()
@@ -147,9 +177,14 @@ func setup(area: AbstractCorticalArea) -> void:
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
+	elif _is_aggregated_mode:
+		# Aggregated rendering mode: use granularity-sized boxes to represent aggregated activity
+		# IMPORTANT: Rust sets instance transform scale to (1 / dimensions) and the parent _static_body scales by (dimensions),
+		# so the mesh `size` here is effectively in world units. Keep it consistent with the normal voxel size.
+		_apply_multimesh_mesh_for_current_granularity()
 	else:
 		var voxel_mesh = BoxMesh.new()
-		voxel_mesh.size = Vector3(0.8, 0.8, 0.8)  # Slightly smaller than 1.0 to show individual voxels
+		voxel_mesh.size = Vector3(_VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE)  # Slightly smaller than 1.0 to show individual voxels
 		_multi_mesh.mesh = voxel_mesh
 	
 	# Create material for neuron voxels with Z-DEPTH COLORING support
@@ -198,8 +233,10 @@ func setup(area: AbstractCorticalArea) -> void:
 		_memory_jello_material = load(MEMORY_JELLO_MAT_PATH).duplicate() as ShaderMaterial
 		_memory_transparent_material = _create_transparent_memory_material()
 		
-		# Start with light blue cortical material (inactive state)
-		_outline_mesh_instance.material_override = _memory_transparent_material
+		# Cache active/inactive parameter targets and start in inactive state with smooth fades.
+		_init_memory_material_targets()
+		_apply_memory_material_inactive_state()
+		_outline_mesh_instance.material_override = _memory_jello_material
 		_outline_mesh_instance.visible = true  # Always visible with light blue cortical color
 		_outline_mat = null  # Memory areas don't use the outline shader material
 	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
@@ -290,12 +327,28 @@ func setup(area: AbstractCorticalArea) -> void:
 				print("   🔮 Applying initial memory sphere size: ", neuron_count, " neurons")
 				_update_memory_sphere_size(neuron_count)
 	
+	# Connect to delay_between_bursts changes to update timer duration dynamically
+	# This is the authoritative source (updated from FEAGI API), not the health check cache
+	if FeagiCore:
+		FeagiCore.delay_between_bursts_updated.connect(_on_delay_between_bursts_changed)
+		print("   ⏱️  Connected to delay_between_bursts_updated signal for dynamic updates")
+	
 	# Setup visibility timer for neuron firing timeout
 	_visibility_timer = Timer.new()
 	_visibility_timer.name = "NeuronVisibilityTimer"
 	_visibility_timer.one_shot = true
 	_visibility_timer.timeout.connect(_on_visibility_timeout)
 	add_child(_visibility_timer)
+
+	# Desktop WS Type11 fast-path registration:
+	# UI_BrainMonitor_CorticalArea also tries to register, but we self-register here to guarantee
+	# memory/power areas are registered even if scene timing/signal wiring changes.
+	# This is required for:
+	# - `_refresh_bv_fastpath_cache_if_needed()` (MultiMesh + dims lookup)
+	# - `BV_notify_directpoints_activity()` (memory jelly animation)
+	var mm := bv_get_multimesh()
+	var dims := bv_get_dimensions()
+	area.BV_register_directpoints_renderer(self, mm, dims)
 	
 
 func update_friendly_name(new_name: String) -> void:
@@ -308,14 +361,22 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0)
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
 		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
+	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
+	# Force non-zero dimensions so desktop WS Type11 fast-path does not treat this as uninitialized.
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
+	
+	# Refresh visualization_voxel_granularity from cache and update mesh if needed.
+	# (BV allows editing this at runtime; don't rely on dimension changes to refresh mesh.)
+	_refresh_visualization_voxel_granularity_from_cache()
 	
 	# Update static body scale and position
 	_static_body.scale = _dimensions
@@ -338,7 +399,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0)
+		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -358,8 +419,53 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# For now, clear all points if we receive SVO data
 	_clear_all_neurons()
 
+## Brain Visualizer desktop WS fast-path: expose MultiMesh for direct Rust updates.
+func bv_get_multimesh() -> MultiMesh:
+	# Be robust: if _multi_mesh wasn't assigned for any reason, return the instance's multimesh.
+	if _multi_mesh != null:
+		return _multi_mesh
+	if _multi_mesh_instance != null:
+		return _multi_mesh_instance.multimesh
+	return null
+
+## Brain Visualizer desktop WS fast-path: expose current dimensions (Vector3) for transform/color calculations.
+func bv_get_dimensions() -> Vector3:
+	return Vector3(_dimensions.x, _dimensions.y, _dimensions.z)
+
+## Brain Visualizer desktop WS fast-path: keep behavior parity (timers/animations/material changes)
+## while rendering is applied directly to MultiMesh by Rust.
+func bv_notify_activity(point_count: int) -> void:
+	var current_time = Time.get_ticks_msec() / 1000.0
+	
+	# Track update time (used by existing debug/diagnostics)
+	if not has_meta("_last_update_time"):
+		set_meta("_last_update_time", 0.0)
+	set_meta("_last_update_time", current_time)
+	
+	if point_count > 0:
+		_trigger_power_firing_animation()
+		set_meta("_last_fire_time", current_time)
+		_start_visibility_timer()
+		
+		# Make power cone use firing colors when neural activity occurs
+		if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
+			_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))
+			_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
+			_power_material.set_shader_parameter("emission_energy", 1.5)
+		
+		# Make memory sphere fade into active state when neural activity occurs
+		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+			_set_memory_activity_state(true)
+	else:
+		# No neurons firing - don't clear immediately, let timer handle it
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
+
 func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array) -> void:
 	"""Handle Type 11 direct neural points data - Rust-accelerated processing"""
+	# Granularity can be changed by the user at runtime; ensure mesh sizing/mode is updated
+	# before applying new instance transforms.
+	_refresh_visualization_voxel_granularity_from_cache()
 	
 	var point_count = x_array.size()
 	var current_time = Time.get_ticks_msec() / 1000.0
@@ -379,6 +485,11 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	# Trigger power cone firing animation if this is the power cortical area
 	if point_count > 0:
 		_trigger_power_firing_animation()
+		# Memory areas don't display individual neuron voxels (MultiMesh uses an invisible mesh).
+		# Their "firing" is the sphere material transitioning into an active jello state.
+		# This must be triggered on the bulk (signal) path as well as the desktop WS fast-path.
+		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+			_set_memory_activity_state(true)
 	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
@@ -417,34 +528,89 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 				set_meta("_last_had_origin", false)
 		
 		_process_neurons_with_rust(x_array, y_array, z_array)
-		# Start timer - neurons visible for exactly 1 frame period
+		# Keep neurons/chunks visible for the configured timestep window.
 		_start_visibility_timer()
 	else:
-		# No neurons firing - clear immediately
-		if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
-			set_meta("_last_had_origin", false)
-		_clear_all_neurons()
+		# No neurons firing in this update - don't clear immediately.
+		# Let the visibility timer handle clearing after the timestep expires.
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
+
+func _refresh_visualization_voxel_granularity_from_cache() -> void:
+	"""Refresh visualization_voxel_granularity from cache and update the MultiMesh mesh if it changed.
 	
-	# Make power cone use firing colors when neural activity occurs
-	if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
-		_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))
-		_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))
-		_power_material.set_shader_parameter("emission_energy", 1.5)
+	This must be fast and safe to call frequently (called during Type11 updates).
+	"""
+	# Special areas don't use voxel meshes for visualization.
+	if AbstractCorticalArea.is_power_area(_cortical_area_id) or _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	if _multi_mesh == null:
+		return
 	
-	# Make memory sphere use active jello material when neural activity occurs
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
-		_outline_mesh_instance.material_override = _memory_jello_material
+	var area_to_check = _cortical_area
+	if area_to_check == null and FeagiCore and FeagiCore.feagi_local_cache:
+		if _cortical_area_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+			area_to_check = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[_cortical_area_id]
+			_cortical_area = area_to_check
+	
+	if area_to_check == null:
+		return
+	
+	var new_granularity: Vector3i = area_to_check.visualization_voxel_granularity
+	if new_granularity == _visualization_voxel_granularity:
+		return
+	
+	_visualization_voxel_granularity = new_granularity
+	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
+	_apply_multimesh_mesh_for_current_granularity()
+
+func _apply_multimesh_mesh_for_current_granularity() -> void:
+	"""Apply the MultiMesh mesh based on current granularity.
+	
+	- Normal mode: fixed voxel size.
+	- Aggregated mode: voxel size scales linearly with granularity so it stays proportional to the cortical volume.
+	"""
+	if _multi_mesh == null:
+		return
+	
+	if _is_aggregated_mode:
+		var chunk_mesh := BoxMesh.new()
+		# IMPORTANT:
+		# - For axes with granularity > 1, chunks should tile without gaps across the cortical volume.
+		# - For axes with granularity == 1, keep the same voxel thickness (0.8) to match normal mode visuals.
+		var size_x: float = float(_visualization_voxel_granularity.x) if _visualization_voxel_granularity.x > 1 else _VOXEL_VISUAL_SCALE
+		var size_y: float = float(_visualization_voxel_granularity.y) if _visualization_voxel_granularity.y > 1 else _VOXEL_VISUAL_SCALE
+		var size_z: float = float(_visualization_voxel_granularity.z) if _visualization_voxel_granularity.z > 1 else _VOXEL_VISUAL_SCALE
+		var chunk_size_godot := Vector3(size_x, size_y, size_z)
+		chunk_mesh.size = chunk_size_godot
+		_multi_mesh.mesh = chunk_mesh
+	else:
+		var voxel_mesh := BoxMesh.new()
+		voxel_mesh.size = Vector3(_VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE, _VOXEL_VISUAL_SCALE)
+		_multi_mesh.mesh = voxel_mesh
 
 func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array) -> void:
-	"""Process neurons using Rust - applies directly to MultiMesh (FASTEST!)"""
+	"""Process neurons using Rust - applies directly to MultiMesh (FASTEST!)
+	
+	For aggregated rendering mode:
+	- Coordinates are granularity centers (already aggregated by backend)
+	- Mesh size is set to granularity dimensions in setup()
+	- Rust processor converts chunk center coordinates to Godot space correctly
+	"""
 	
 	var point_count = x_array.size()
 	
-	# Warn if exceeding threshold
-	if point_count > _warning_threshold:
+	# Warn if exceeding threshold (but not for aggregated rendering mode - fewer chunks expected)
+	if point_count > _warning_threshold and not _is_aggregated_mode:
 		print("   ⚠️  [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
+	elif _is_aggregated_mode and point_count > 0:
+		# Log aggregated rendering processing (chunks, not neurons)
+		if point_count % 100 == 0 or point_count <= 10:
+			print("   🔥 [%s] Processing %d aggregated rendering chunks" % [_cortical_area_id, point_count])
 	
 	# Call Rust to apply directly to MultiMesh - NO GDScript LOOP!
+	# NOTE: For aggregated rendering mode, coordinates are granularity centers, mesh size is granularity dimensions
+	# Rust processor will correctly position chunk boxes in Godot space
 	var result = _rust_processor.apply_arrays_to_multimesh(
 		_multi_mesh,
 		x_array,
@@ -466,8 +632,9 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	
 	# Check if we have any data
 	if points_data.size() == 0:
-		# No neurons firing - clear immediately
-		_clear_all_neurons()
+		# No neurons firing - don't clear immediately, let timer handle it
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
 		return
 	
 	# Trigger power cone firing animation if this is the power cortical area
@@ -481,8 +648,9 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 		return
 	
 	if point_count == 0:
-		# No neurons firing - clear immediately
-		_clear_all_neurons()
+		# No neurons firing - don't clear immediately, let timer handle it
+		if _visibility_timer.time_left <= 0.0:
+			_clear_all_neurons()
 		return
 	
 	# Convert to bulk arrays efficiently
@@ -564,17 +732,29 @@ func _clear_all_neurons() -> void:
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
 	
-	# Restore memory sphere to transparent state when neurons are cleared
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
-		_outline_mesh_instance.material_override = _memory_transparent_material
+	# Fade memory sphere back to inactive state when neurons are cleared
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+		_set_memory_activity_state(false)
 
 func _start_visibility_timer() -> void:
 	"""Start the visibility timer with buffer for smooth updates"""
-	if not FeagiCore or not FeagiCore.feagi_local_cache:
-		print("🔥 DirectPoints: Cannot start timer - FeagiCore or cache not available")
+	if not FeagiCore:
+		print("🔥 DirectPoints: Cannot start timer - FeagiCore not available")
 		return
 	
-	var simulation_timestep = FeagiCore.feagi_local_cache.simulation_timestep
+	# Use delay_between_bursts from FeagiCore (authoritative source from FEAGI API)
+	# This is the same value TOPBAR uses and is updated when FEAGI changes simulation_timestep
+	var delay_between_bursts = FeagiCore.delay_between_bursts
+	
+	# Fallback to cache if delay_between_bursts is 0 (not yet initialized)
+	if delay_between_bursts <= 0.0 and FeagiCore.feagi_local_cache:
+		delay_between_bursts = FeagiCore.feagi_local_cache.simulation_timestep
+		if delay_between_bursts > 0.0:
+			print("   ⚠️  Using fallback simulation_timestep from cache: %.3f seconds" % delay_between_bursts)
+	
+	if delay_between_bursts <= 0.0:
+		print("🔥 DirectPoints: Cannot start timer - delay_between_bursts is 0 or invalid")
+		return
 	
 	# Stop existing timer if running
 	if _visibility_timer.time_left > 0:
@@ -583,24 +763,25 @@ func _start_visibility_timer() -> void:
 	# Record when neurons started displaying
 	_neuron_display_start_time = Time.get_ticks_msec() / 1000.0
 	
-	# CRITICAL: Neurons should stay visible for full burst duration
-	# Use negotiated visualization rate from FEAGI (or fallback to 60 Hz)
-	# BV requests up to 60 Hz, FEAGI negotiates based on burst frequency
-	var viz_frequency_hz = 60.0  # Default (matches registration request)
-	# Read from FEAGINetworking (where it's stored during registration)
-	if FeagiCore and FeagiCore.network and FeagiCore.network.has_meta("_negotiated_viz_hz"):
-		viz_frequency_hz = FeagiCore.network.get_meta("_negotiated_viz_hz")
-	
-	var viz_frame_duration = 1.0 / viz_frequency_hz
-	
-	# Use 1.5x frame period to ensure overlap and prevent flashing
-	# At 1 Hz: fires at t=0, visible until t=1500ms
-	# Next burst at t=1000ms arrives before timer expires → seamless
-	# If no burst arrives, clears at t=1500ms (acceptable delay)
-	var timeout = viz_frame_duration * 1.5
+	# CRITICAL: Neurons should stay visible for exactly one simulation timestep
+	# This matches the FEAGI simulation cycle duration
+	var timeout = delay_between_bursts
 	
 	_visibility_timer.wait_time = timeout
 	_visibility_timer.start()
+
+func _on_delay_between_bursts_changed(new_delay: float) -> void:
+	"""Called when FEAGI delay_between_bursts changes - update any active timers"""
+	# If timer is currently running, update it with new delay
+	if _visibility_timer.time_left > 0 and new_delay > 0.0:
+		var remaining_time = _visibility_timer.time_left
+		var new_timeout = new_delay
+		
+		# If we're more than halfway through, just use the new delay
+		# Otherwise, preserve remaining time proportionally
+		if remaining_time < new_delay * 0.5:
+			_visibility_timer.wait_time = new_timeout
+			_visibility_timer.start()
 
 func _on_visibility_timeout() -> void:
 	"""Called when the visibility timer expires - clear all neurons"""
@@ -621,9 +802,9 @@ func _on_visibility_timeout() -> void:
 		_power_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow
 	
 	# Make memory sphere return to transparent state when no neural activity
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_transparent_material:
-		# print("   🔮 Memory sphere becoming inactive - switching to transparent material")  # Suppressed to reduce log spam
-		_outline_mesh_instance.material_override = _memory_transparent_material
+	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
+		# print("   🔮 Memory sphere becoming inactive - fading to inactive state")  # Suppressed to reduce log spam
+		_set_memory_activity_state(false)
 
 func _get_timestamp_with_ms() -> String:
 	"""Get timestamp with millisecond precision for debug logging"""
@@ -724,6 +905,20 @@ func _trigger_power_firing_animation() -> void:
 	if not AbstractCorticalArea.is_power_area(_cortical_area_id) or _power_material == null:
 		return
 	
+	# Get delay_between_bursts for animation duration (same as visibility timer)
+	var delay_between_bursts = 0.8  # Default fallback
+	if FeagiCore:
+		delay_between_bursts = FeagiCore.delay_between_bursts
+		# Fallback to cache if not yet initialized
+		if delay_between_bursts <= 0.0 and FeagiCore.feagi_local_cache:
+			delay_between_bursts = FeagiCore.feagi_local_cache.simulation_timestep
+	
+	# Use fallback if still invalid
+	if delay_between_bursts <= 0.0:
+		delay_between_bursts = 0.8
+	
+	var simulation_timestep = delay_between_bursts
+	
 	# print("   ⚡ Triggering power cone firing animation!")  # Suppressed to reduce log spam
 	
 	# Make power cone use firing colors when firing animation starts
@@ -737,21 +932,31 @@ func _trigger_power_firing_animation() -> void:
 	# Reset firing progress to 0
 	_power_material.set_shader_parameter("firing_progress", 0.0)
 	
-	# Animate firing progress from 0.0 to 1.0 over 0.5 seconds
+	# Animate firing progress from 0.0 to 1.0 over simulation_timestep
+	# Maintain same proportions as before (62.5% up, 37.5% down)
+	var up_duration = simulation_timestep * 0.625
+	var down_duration = simulation_timestep * 0.375
+	
 	_firing_tween.tween_method(
-		func(progress: float): _power_material.set_shader_parameter("firing_progress", progress),
+		Callable(self, "_set_power_firing_progress"),
 		0.0,
 		1.0,
-		0.5
+		up_duration
 	)
 	
 	# After animation completes, fade out the effect
 	_firing_tween.tween_method(
-		func(progress: float): _power_material.set_shader_parameter("firing_progress", progress),
+		Callable(self, "_set_power_firing_progress"),
 		1.0,
 		0.0,
-		0.3
+		down_duration
 	)
+
+func _set_power_firing_progress(progress: float) -> void:
+	"""Tween callback to update power cone firing progress deterministically (no lambdas)."""
+	if _power_material == null:
+		return
+	_power_material.set_shader_parameter("firing_progress", progress)
 
 func _create_tesla_coil_spikes() -> void:
 	"""Create electrical spikes that emanate from the power cone tip"""
@@ -1040,12 +1245,10 @@ func _on_memory_area_stats_updated(stats: Dictionary) -> void:
 	
 	# Check if this memory area has stats
 	if _cortical_area_id not in stats:
-		print("   🔮 No stats found for memory area: ", _cortical_area_id)
 		return
 	
 	var area_stats = stats[_cortical_area_id]
 	if not area_stats.has("neuron_count"):
-		print("   🔮 No neuron_count in stats for memory area: ", _cortical_area_id)
 		return
 	
 	var neuron_count = int(area_stats["neuron_count"])
@@ -1058,21 +1261,13 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
 	
-	# Calculate size based on neuron count
-	# Base size: 1.0 (normal cortical area size)
-	# Scale factor: logarithmic scaling to prevent huge spheres
-	var base_size = 1.0
-	var scale_factor = 1.0
-	
-	if neuron_count > 0:
-		# Logarithmic scaling: log10(neuron_count + 1) + 1
-		# This gives: 0 neurons = 1.0x, 10 neurons = 2.0x, 100 neurons = 3.0x, etc.
-		scale_factor = log(neuron_count + 1) / log(10) + 1.0
-		# Cap the maximum size to prevent overly large spheres
-		scale_factor = min(scale_factor, 5.0)  # Max 5x size
-	
-	var sphere_radius = base_size * scale_factor * 0.5  # 0.5 is the base radius
-	var sphere_height = base_size * scale_factor * 1.0  # 1.0 is the base height
+	# Size the memory sphere by treating its volume as proportional to neuron_count.
+	#
+	# Requirement (per user): sphere volume == total memory neurons in the area.
+	# For a sphere: V = (4/3) * PI * r^3  =>  r = cbrt((3 * V) / (4 * PI))
+	var volume := float(neuron_count)
+	var sphere_radius := pow((3.0 * volume) / (4.0 * PI), 1.0 / 3.0)
+	var sphere_height := sphere_radius * 2.0
 	
 	
 	# Update the sphere mesh
@@ -1087,6 +1282,62 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 		if collision_shape and collision_shape.shape is SphereShape3D:
 			var sphere_shape = collision_shape.shape as SphereShape3D
 			sphere_shape.radius = sphere_radius
+	
+	# If this memory area is positioned on a brain region plate, recalculate Y position
+	# to keep the sphere bottom above the plate surface as it grows
+	if _is_on_brain_region_plate() and _static_body != null:
+		# Constants from UI_BrainMonitor_BrainRegion3D
+		const PLATE_HEIGHT: float = 1.0
+		const AREA_ABOVE_PLATE_GAP: float = 3.0
+		
+		# Find the parent brain region to get plate position
+		var brain_region_viz = _find_parent_brain_region()
+		if brain_region_viz != null:
+			# Get the plate node to find its actual global Y position
+			var plate_node = _find_plate_node(brain_region_viz)
+			if plate_node != null:
+				# Plate top is at plate center Y + PLATE_HEIGHT / 2.0
+				var plate_center_y = plate_node.global_position.y
+				var plate_top_y = plate_center_y + PLATE_HEIGHT / 2.0
+				
+				# Areas should have their bottom at AREA_ABOVE_PLATE_GAP above the plate top
+				# For a sphere, the center Y should be at: plate_top_y + AREA_ABOVE_PLATE_GAP + sphere_radius
+				var sphere_bottom_y = plate_top_y + AREA_ABOVE_PLATE_GAP
+				var sphere_center_y = sphere_bottom_y + sphere_radius
+				
+				# Update the static body's global Y position to keep sphere afloat
+				var current_pos = _static_body.global_position
+				_static_body.global_position = Vector3(current_pos.x, sphere_center_y, current_pos.z)
+				
+				# Also update the friendly name label position
+				if _friendly_name_label != null:
+					var label_y_offset = -(sphere_radius + 2.0)
+					_friendly_name_label.global_position = Vector3(current_pos.x, sphere_center_y + label_y_offset, current_pos.z)
+
+## Helper to find the parent brain region 3D visualization
+func _find_parent_brain_region() -> UI_BrainMonitor_BrainRegion3D:
+	var current := get_parent()
+	while current != null:
+		if current is UI_BrainMonitor_BrainRegion3D:
+			return current as UI_BrainMonitor_BrainRegion3D
+		current = current.get_parent()
+	return null
+
+## Helper to find the plate node (InputPlate, OutputPlate, or ConflictPlate) for this area
+func _find_plate_node(brain_region_viz: UI_BrainMonitor_BrainRegion3D) -> Node3D:
+	# Check which container this area is in to determine which plate to use
+	var container = get_parent()
+	while container != null and container != brain_region_viz:
+		if container.name == "InputAreas":
+			return brain_region_viz.get_node_or_null("RegionAssembly/InputPlate") as Node3D
+		elif container.name == "OutputAreas":
+			return brain_region_viz.get_node_or_null("RegionAssembly/OutputPlate") as Node3D
+		elif container.name == "ConflictAreas":
+			return brain_region_viz.get_node_or_null("RegionAssembly/ConflictPlate") as Node3D
+		container = container.get_parent()
+	
+	# Fallback: try to find any plate
+	return brain_region_viz.get_node_or_null("RegionAssembly/InputPlate") as Node3D
 
 func _set_tesla_coil_active(active: bool) -> void:
 	"""Activate or deactivate the tesla coil electrical spikes"""
@@ -1122,15 +1373,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 			var flicker_speed = randf_range(0.05, 0.15)  # Fast flickering
 			var random_freq = randf_range(20, 40)  # Capture random frequency
 			flicker_tween.tween_method(
-				func(intensity: float): 
-					var material = spike.material_override as StandardMaterial3D
-					if material:
-						# Flicker between full brightness and dim
-						var time_value = Time.get_ticks_msec() / 1000.0  # Convert to seconds
-						var flicker_value = sin(time_value * random_freq) * 0.5 + 0.5
-						material.emission_energy = 1.0 + flicker_value * 3.0
-						# Occasionally make it invisible for crackling effect
-						spike.visible = randf() > 0.1,  # 90% visible, 10% invisible for crackling
+				Callable(self, "_tesla_flicker_step").bind(spike, random_freq),
 				0.0,
 				1.0,
 				flicker_speed
@@ -1144,13 +1387,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 			var base_position = tip_position  # Capture tip_position in local scope
 			var spike_index = i  # Capture loop index
 			movement_tween.tween_method(
-				func(t: float):
-					var noise_offset = Vector3(
-						sin(t * 10 + spike_index) * 0.1,
-						cos(t * 8 + spike_index) * 0.05,
-						sin(t * 12 + spike_index) * 0.1
-					)
-					spike.position = base_position + noise_offset,
+				Callable(self, "_tesla_move_step").bind(spike, base_position, spike_index),
 				0.0,
 				TAU,
 				movement_speed
@@ -1167,6 +1404,31 @@ func _set_tesla_coil_active(active: bool) -> void:
 		for spike in _tesla_coil_spikes:
 			spike.visible = false
 
+func _tesla_flicker_step(_t: float, spike: MeshInstance3D, random_freq: float) -> void:
+	"""Tween callback for tesla spike flicker (no lambdas; parser-safe)."""
+	if spike == null:
+		return
+	var material := spike.material_override as StandardMaterial3D
+	if material == null:
+		return
+	# Flicker between full brightness and dim
+	var time_value = Time.get_ticks_msec() / 1000.0  # Convert to seconds
+	var flicker_value = sin(time_value * random_freq) * 0.5 + 0.5
+	material.emission_energy = 1.0 + flicker_value * 3.0
+	# Occasionally make it invisible for crackling effect
+	spike.visible = randf() > 0.1  # 90% visible, 10% invisible for crackling
+
+func _tesla_move_step(t: float, spike: MeshInstance3D, base_position: Vector3, spike_index: int) -> void:
+	"""Tween callback for tesla spike jitter motion (no lambdas; parser-safe)."""
+	if spike == null:
+		return
+	var noise_offset = Vector3(
+		sin(t * 10 + spike_index) * 0.1,
+		cos(t * 8 + spike_index) * 0.05,
+		sin(t * 12 + spike_index) * 0.1
+	)
+	spike.position = base_position + noise_offset
+
 ## Create inactive material for memory areas when not firing (light blue like cortical voxels)
 func _create_transparent_memory_material() -> ShaderMaterial:
 	"""Create a light blue cortical area colored version of the memory jello material for inactive state"""
@@ -1180,6 +1442,101 @@ func _create_transparent_memory_material() -> ShaderMaterial:
 	inactive_material.set_shader_parameter("rim_intensity", 0.8)  # Moderate rim lighting
 	
 	return inactive_material 
+
+func _init_memory_material_targets() -> void:
+	"""Cache active/inactive shader parameters so we can tween between them for subtle flashing."""
+	if _memory_jello_material == null or _memory_transparent_material == null:
+		return
+	
+	_memory_active_albedo = _memory_jello_material.get_shader_parameter("albedo_color")
+	_memory_active_emission = _memory_jello_material.get_shader_parameter("emission_color")
+	_memory_active_emission_energy = float(_memory_jello_material.get_shader_parameter("emission_energy"))
+	_memory_active_rim_intensity = float(_memory_jello_material.get_shader_parameter("rim_intensity"))
+	_memory_active_jello_strength = float(_memory_jello_material.get_shader_parameter("jello_strength"))
+	
+	_memory_inactive_albedo = _memory_transparent_material.get_shader_parameter("albedo_color")
+	_memory_inactive_emission = _memory_transparent_material.get_shader_parameter("emission_color")
+	_memory_inactive_emission_energy = float(_memory_transparent_material.get_shader_parameter("emission_energy"))
+	_memory_inactive_rim_intensity = float(_memory_transparent_material.get_shader_parameter("rim_intensity"))
+	_memory_inactive_jello_strength = float(_memory_transparent_material.get_shader_parameter("jello_strength"))
+
+func _apply_memory_material_inactive_state() -> void:
+	"""Immediately apply inactive state to the active material (used at startup)."""
+	if _memory_jello_material == null:
+		return
+	_memory_jello_material.set_shader_parameter("albedo_color", _memory_inactive_albedo)
+	_memory_jello_material.set_shader_parameter("emission_color", _memory_inactive_emission)
+	_memory_jello_material.set_shader_parameter("emission_energy", _memory_inactive_emission_energy)
+	_memory_jello_material.set_shader_parameter("rim_intensity", _memory_inactive_rim_intensity)
+	_memory_jello_material.set_shader_parameter("jello_strength", _memory_inactive_jello_strength)
+
+func _set_memory_activity_state(is_active: bool) -> void:
+	"""Smoothly fade memory sphere between inactive/active states by tweening shader parameters."""
+	if _memory_jello_material == null:
+		return
+	
+	# Avoid stacking tweens
+	if _memory_activity_tween != null and _memory_activity_tween.is_valid():
+		_memory_activity_tween.kill()
+		_memory_activity_tween = null
+	
+	var from_albedo: Color = _memory_jello_material.get_shader_parameter("albedo_color")
+	var from_emission: Color = _memory_jello_material.get_shader_parameter("emission_color")
+	var from_emission_energy: float = float(_memory_jello_material.get_shader_parameter("emission_energy"))
+	var from_rim_intensity: float = float(_memory_jello_material.get_shader_parameter("rim_intensity"))
+	var from_jello_strength: float = float(_memory_jello_material.get_shader_parameter("jello_strength"))
+	
+	var to_albedo: Color = _memory_active_albedo if is_active else _memory_inactive_albedo
+	var to_emission: Color = _memory_active_emission if is_active else _memory_inactive_emission
+	var to_emission_energy: float = _memory_active_emission_energy if is_active else _memory_inactive_emission_energy
+	var to_rim_intensity: float = _memory_active_rim_intensity if is_active else _memory_inactive_rim_intensity
+	var to_jello_strength: float = _memory_active_jello_strength if is_active else _memory_inactive_jello_strength
+	
+	# Slightly quicker fade-in than fade-out for a softer "pulse" feel.
+	var duration := 0.12 if is_active else 0.25
+	
+	_memory_activity_tween = create_tween()
+	_memory_activity_tween.set_trans(Tween.TRANS_SINE)
+	_memory_activity_tween.set_ease(Tween.EASE_OUT if is_active else Tween.EASE_IN_OUT)
+	_memory_activity_tween.tween_method(
+		Callable(self, "_memory_activity_step").bind(
+			from_albedo,
+			from_emission,
+			from_emission_energy,
+			from_rim_intensity,
+			from_jello_strength,
+			to_albedo,
+			to_emission,
+			to_emission_energy,
+			to_rim_intensity,
+			to_jello_strength
+		),
+		0.0,
+		1.0,
+		duration
+	)
+
+func _memory_activity_step(
+	t: float,
+	from_albedo: Color,
+	from_emission: Color,
+	from_emission_energy: float,
+	from_rim_intensity: float,
+	from_jello_strength: float,
+	to_albedo: Color,
+	to_emission: Color,
+	to_emission_energy: float,
+	to_rim_intensity: float,
+	to_jello_strength: float
+) -> void:
+	"""Tween callback to fade memory visual state (no lambdas; parser-safe)."""
+	if _memory_jello_material == null:
+		return
+	_memory_jello_material.set_shader_parameter("albedo_color", from_albedo.lerp(to_albedo, t))
+	_memory_jello_material.set_shader_parameter("emission_color", from_emission.lerp(to_emission, t))
+	_memory_jello_material.set_shader_parameter("emission_energy", lerpf(from_emission_energy, to_emission_energy, t))
+	_memory_jello_material.set_shader_parameter("rim_intensity", lerpf(from_rim_intensity, to_rim_intensity, t))
+	_memory_jello_material.set_shader_parameter("jello_strength", lerpf(from_jello_strength, to_jello_strength, t))
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:

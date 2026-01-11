@@ -67,7 +67,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	
 	_static_body.position = _position_godot_space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0 )
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
@@ -75,7 +75,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, _static_body.scale.y / 2.0 + 2.0, 0.0 )
+	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
@@ -90,18 +90,41 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_selection_SVO = SVOTree.create_SVOTree(new_dimensions)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
+	# Validate data size - need at least 4 bytes for dimensions (2x uint16)
+	if visualization_data.size() < 4:
+		print("⚠️ SVO RENDERER: Skipping invalid data (size too small: ", visualization_data.size(), " bytes)")
+		return
+	
 	print("🔄 SVO RENDERER: Processing Type 10 (NEURON_FLAT/SVO) visualization data (", visualization_data.size(), " bytes)")
 	
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
-	if retrieved_image_dimensions != _activation_image_dimensions:
+	
+	# Validate dimensions
+	if retrieved_image_dimensions.x <= 0 or retrieved_image_dimensions.y <= 0:
+		print("⚠️ SVO RENDERER: Skipping invalid dimensions: ", retrieved_image_dimensions)
+		return
+	
+	# Calculate expected data size: 4 bytes header + image data
+	var expected_image_data_size = retrieved_image_dimensions.x * retrieved_image_dimensions.y * 4  # FORMAT_RF = 4 bytes per pixel
+	var expected_total_size = 4 + expected_image_data_size
+	
+	if visualization_data.size() < expected_total_size:
+		print("⚠️ SVO RENDERER: Data size mismatch. Expected ", expected_total_size, " bytes, got ", visualization_data.size())
+		return
+	
+	# Always use create_from_data + set_image for atomic texture replacement to prevent flashing
+	# This avoids the non-atomic set_data() + update() path which can cause brief cleared states
+	_activation_image = Image.create_from_data(retrieved_image_dimensions.x, retrieved_image_dimensions.y, false, Image.Format.FORMAT_RF, visualization_data.slice(4))
+	_activation_image_texture.set_image(_activation_image)
+	
+	var dimensions_changed = retrieved_image_dimensions != _activation_image_dimensions
+	if dimensions_changed:
 		_activation_image_dimensions = retrieved_image_dimensions
-		_activation_image = Image.create_from_data(_activation_image_dimensions.x, _activation_image_dimensions.y, false, Image.Format.FORMAT_RF, visualization_data.slice(4))
-		_activation_image_texture.set_image(_activation_image)
 		print("   📊 Created new SVO texture: ", _activation_image_dimensions)
 	else:
-		_activation_image.set_data(_activation_image_dimensions.x, _activation_image_dimensions.y, false, Image.Format.FORMAT_RF, visualization_data.slice(4)) # TODO is there a way to set this data without reallocating it?
-		_activation_image_texture.update(_activation_image)
 		print("   🔄 Updated existing SVO texture: ", _activation_image_dimensions)
+	
+	# Update shader parameter - texture reference is stable, so this should not cause flashing
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:

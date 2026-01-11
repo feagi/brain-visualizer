@@ -28,7 +28,7 @@ func _ready() -> void:
 	_add_button = _window_internals.get_node("Buttons/Add")
 	
 	_selection_options.cortical_type_selected.connect(_step_2_set_details)
-	_IOPU_definition.group_id_validation_changed.connect(_on_group_id_validation_changed)
+	_IOPU_definition.unit_id_validation_changed.connect(_on_unit_id_validation_changed)
 
 
 func setup() -> void:
@@ -145,7 +145,7 @@ func _focus_and_hook_name_field(le: LineEdit) -> void:
 func _on_name_enter_submit(_text: String) -> void:
 	_user_requesing_creation()
 
-func _on_group_id_validation_changed(is_valid: bool, message: String) -> void:
+func _on_unit_id_validation_changed(is_valid: bool, message: String) -> void:
 	if _add_button != null:
 		_add_button.disabled = !is_valid
 		if !is_valid:
@@ -181,7 +181,7 @@ func _user_requesing_creation() -> void:
 				BV.WM.spawn_popup(popup_definition_ipu)
 				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
-			var selected_group_id: int = _IOPU_definition.get_selected_group_id()
+			var selected_unit_id: int = _IOPU_definition.get_selected_unit_id()
 			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
@@ -204,16 +204,16 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					var data_type_config: int = _IOPU_definition.get_selected_data_type_config()
+					var data_type_configs_by_subunit: Dictionary = _IOPU_definition.get_selected_data_type_configs_by_subunit()
 					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
 						pos_2d,
-						selected_group_id,
+						selected_unit_id,
 						neurons_per_voxel,
-						data_type_config
+						data_type_configs_by_subunit
 					)
 					if result.has_errored:
 						var error_details = result.decode_response_as_generic_error_code()
@@ -224,6 +224,10 @@ func _user_requesing_creation() -> void:
 						)
 						BV.WM.spawn_popup(popup_definition)
 						return
+					# Wait a frame to ensure visualization is rendered before cleaning up preview
+					await get_tree().process_frame
+					# Explicitly clear previews for IOPU areas to ensure they're removed
+					_IOPU_definition._clear_all_previews()
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var template: CorticalTemplate = _IOPU_definition.get_selected_template()
 			if template == null:
@@ -231,7 +235,7 @@ func _user_requesing_creation() -> void:
 				BV.WM.spawn_popup(popup_definition_opu)
 				return
 			var device_count: int = int(_IOPU_definition.device_count.value)
-			var selected_group_id: int = _IOPU_definition.get_selected_group_id()
+			var selected_unit_id: int = _IOPU_definition.get_selected_unit_id()
 			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
 			
 			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
@@ -254,16 +258,16 @@ func _user_requesing_creation() -> void:
 			else:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
-					var data_type_config_opu: int = _IOPU_definition.get_selected_data_type_config()
+					var data_type_configs_by_subunit_opu: Dictionary = _IOPU_definition.get_selected_data_type_configs_by_subunit()
 					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
 						_IOPU_definition.location.current_vector,
 						true,
 						pos_2d,
-						selected_group_id,
+						selected_unit_id,
 						neurons_per_voxel,
-						data_type_config_opu
+						data_type_configs_by_subunit_opu
 					)
 					if result.has_errored:
 						var error_details = result.decode_response_as_generic_error_code()
@@ -274,6 +278,10 @@ func _user_requesing_creation() -> void:
 						)
 						BV.WM.spawn_popup(popup_definition)
 						return
+					# Wait a frame to ensure visualization is rendered before cleaning up preview
+					await get_tree().process_frame
+					# Explicitly clear previews for IOPU areas to ensure they're removed
+					_IOPU_definition._clear_all_previews()
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":

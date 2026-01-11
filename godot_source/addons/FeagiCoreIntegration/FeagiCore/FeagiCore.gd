@@ -53,7 +53,9 @@ var _simulation_timestep_timer: Timer
 
 # Health check failure tracking
 var _consecutive_health_failures: int = 0
-const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 3
+# Increased from 3 to 6 to tolerate large sensory injections that may block burst loop
+# Large NIfTI frames (5M+ voxels) can take 5-10 seconds to inject, causing temporary API unresponsiveness
+const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 6
 
 
 
@@ -195,7 +197,9 @@ func _start_periodic_simulation_timestep_check() -> void:
 
 	_simulation_timestep_timer = Timer.new()
 	_simulation_timestep_timer.name = "SimulationTimestepTimer"
-	_simulation_timestep_timer.wait_time = 2.0
+	# Increased from 2.0 to 3.0 to reduce frequency during large sensory injections
+	# Large NIfTI frames may block burst loop for several seconds, so less frequent checks reduce false positives
+	_simulation_timestep_timer.wait_time = 3.0
 	_simulation_timestep_timer.timeout.connect(_fetch_simulation_timestep)
 	_simulation_timestep_timer.autostart = false
 	add_child(_simulation_timestep_timer)
@@ -232,8 +236,11 @@ func _fetch_simulation_timestep() -> void:
 	fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 	fast_health_check_request.data_to_send_to_FEAGI = null
 	
-	# Set custom fast-failing settings (bypassing global defaults)
-	fast_health_check_request.http_timeout = 3.0  # Fast timeout: 3 seconds instead of 10
+	# Set custom timeout settings (bypassing global defaults)
+	# Increased from 3.0 to 20.0 to tolerate large sensory injections that may block burst loop
+	# Large NIfTI frames (5M+ voxels) can take 5-10 seconds to inject atomically, causing temporary API unresponsiveness
+	# The default 10s timeout is too short when burst loop is blocked by large injections
+	fast_health_check_request.http_timeout = 20.0  # Increased timeout: 20 seconds to handle large injections
 	fast_health_check_request.number_of_retries_allowed = 1  # Only 1 retry instead of 5 (bypasses global setting)
 	
 	var health_check_worker: APIRequestWorker = network.http_API.make_HTTP_call(fast_health_check_request)
@@ -244,6 +251,11 @@ func _fetch_simulation_timestep() -> void:
 		_consecutive_health_failures = 0
 		var health_data: Dictionary = response.decode_response_as_dict()
 		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
+		
+		# If we previously marked HTTP as RETRYING (e.g., FEAGI restart), a successful health check
+		# must restore CONNECTABLE so the UI can exit RETRYING_HTTP.
+		if network.http_API.http_health == network.http_API.HTTP_HEALTH.RETRYING:
+			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
 		
 		# If we were disconnected and health check succeeds, restore connection states
 		if network.connection_state == FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
@@ -461,12 +473,7 @@ func reload_genome_await():
 		await network._call_register_agent_for_shm()
 	# Schedule a short watchdog to ensure WS stays connected after reload
 	_ensure_ws_connected_after_reload(30)
-	
-	# DEBUG: Check what we actually loaded
-	print("FEAGICORE: [3D_SCENE_DEBUG] 🔍 Genome reload debug info:")
-	print("  - Cortical areas loaded: %d" % feagi_local_cache.cortical_areas.available_cortical_areas.size())
-	print("  - Brain regions loaded: %d" % feagi_local_cache.brain_regions.available_brain_regions.size())
-	print("  - Root region available: %s" % feagi_local_cache.brain_regions.is_root_available())
+
 	if feagi_local_cache.brain_regions.is_root_available():
 		var root = feagi_local_cache.brain_regions.get_root_region()
 		print("  - Root region name: %s" % root.friendly_name)
@@ -552,9 +559,11 @@ func _on_agent_reregistration_needed(reason: String):
 		print("🔍 [AGENT-REG] Agent re-registration completed")
 		
 		# If WebSocket was disconnected, reconnect it now
-		if network.websocket_API.socket_health != network.websocket_API.WEBSOCKET_HEALTH.CONNECTED:
+		# Use get("websocket_API") to avoid Godot parser false-positive on external typed members.
+		var ws = network.get("websocket_API")
+		if ws and ws.socket_health != ws.WEBSOCKET_HEALTH.CONNECTED:
 			print("🔍 [AGENT-REG] WebSocket not connected after re-registration - reconnecting...")
-			network.websocket_API.connect_websocket()
+			ws.connect_websocket()
 	else:
 		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[conn_state])
 

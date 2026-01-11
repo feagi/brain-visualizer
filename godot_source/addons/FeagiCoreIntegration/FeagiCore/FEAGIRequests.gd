@@ -52,8 +52,10 @@ func fast_initial_health_check() -> FeagiRequestOutput:
 	fast_health_check_request.call_type = APIRequestWorker.CALL_PROCESS_TYPE.SINGLE
 	fast_health_check_request.data_to_send_to_FEAGI = null
 	
-	# FAST settings for startup
-	fast_health_check_request.http_timeout = 2.0
+	# FAST settings for startup (but with increased timeout for large injections)
+	# Increased from 2.0 to 15.0 to tolerate large sensory injections that may block burst loop
+	# Large NIfTI frames can take 5-10 seconds to inject, causing temporary API unresponsiveness
+	fast_health_check_request.http_timeout = 15.0  # Increased timeout: 15 seconds to handle large injections
 	fast_health_check_request.number_of_retries_allowed = 1
 	
 	var health_check_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(fast_health_check_request)
@@ -661,18 +663,6 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		var inputs = response.get("inputs", [])
 		var outputs = response.get("outputs", [])
 		
-		# Debug: Check if cortical areas exist in cache before creating partial mappings
-		for area_id in inputs:
-			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(area_id)
-			print("    🔍 Checking INPUT area %s: %s" % [area_id, "FOUND" if area else "NOT FOUND"])
-			if area:
-				print("      🏠 Area parent region: %s" % (area.current_parent_region.region_ID if area.current_parent_region else "None"))
-		
-		for area_id in outputs:
-			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(area_id)
-			print("    🔍 Checking OUTPUT area %s: %s" % [area_id, "FOUND" if area else "NOT FOUND"])  
-			if area:
-				print("      🏠 Area parent region: %s" % (area.current_parent_region.region_ID if area.current_parent_region else "None"))
 		
 		var seed: Dictionary = {}
 		seed[response["region_id"]] = {
@@ -953,29 +943,36 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	print("FEAGI REQUEST: HTTP response received for %s - checking for errors..." % checking_cortical_ID)
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
 		var raw_response = FEAGI_response_data.decode_response_as_string()
 		push_error("FEAGI Requests: Unable to grab cortical area details of %s! Error: %s - %s" % [checking_cortical_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ HTTP request failed for %s - Error code: %s, Description: %s" % [checking_cortical_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
 		return FEAGI_response_data
 	
-	print("FEAGI REQUEST: HTTP response OK for %s - decoding response..." % checking_cortical_ID)
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully retrieved details of cortical area %s - response keys: %s" % [checking_cortical_ID, response.keys()])
+	
+	# Log visualization_voxel_granularity if present
+	if "visualization_voxel_granularity" in response:
+		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in top-level for %s: %s (type: %s)" % [checking_cortical_ID, response["visualization_voxel_granularity"], typeof(response["visualization_voxel_granularity"])])
+	if "properties" in response and response["properties"] is Dictionary and "visualization_voxel_granularity" in response["properties"]:
+		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in properties for %s: %s" % [checking_cortical_ID, response["properties"]["visualization_voxel_granularity"]])
 	
 	# Handle nested properties structure - FEAGI returns {"properties": {...}}
+	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
 	var properties_dict: Dictionary = response
-	if "properties" in response:
-		properties_dict = response["properties"]
-		properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
+	if "properties" in response and response["properties"] is Dictionary:
+		# Merge top-level fields with properties (top-level takes precedence)
+		properties_dict = response["properties"].duplicate()
+		# Copy top-level fields that aren't in properties (like visualization_voxel_granularity, cortical_type, etc.)
+		for key in response.keys():
+			if key != "properties" and not key in properties_dict:
+				properties_dict[key] = response[key]
+				if key == "visualization_voxel_granularity":
+					print("🔵 FEAGI REQUEST: Passing visualization_voxel_granularity to cache for %s: %s (type: %s)" % [checking_cortical_ID, response[key], typeof(response[key])])
+	properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
 	
 	# Check if cortical area exists in cache - if not, create it; if yes, update it
-	print("FEAGI REQUEST: Checking if %s exists in cache (current cache size: %d)" % [checking_cortical_ID, FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size()])
 	if checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-		print("FEAGI REQUEST: %s already exists - updating" % checking_cortical_ID)
 		# Prevent incorrect reassignment to root if backend omits true parent region
 		# If server reports parent_region_id as root but cache shows a non-root parent, trust cache
 		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[checking_cortical_ID]
@@ -983,16 +980,11 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			var reported_parent: StringName = properties_dict["parent_region_id"]
 			var current_parent: StringName = existing_area.current_parent_region.region_ID if existing_area != null and existing_area.current_parent_region != null else BrainRegion.ROOT_REGION_ID
 			if reported_parent == BrainRegion.ROOT_REGION_ID and current_parent != BrainRegion.ROOT_REGION_ID:
-				print("FEAGI REQUEST: Overriding incorrect parent_region_id 'root' with existing parent '%s' for %s" % [current_parent, checking_cortical_ID])
 				properties_dict["parent_region_id"] = current_parent
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
 	else:
-		print("FEAGI REQUEST: %s does not exist - creating new cortical area" % checking_cortical_ID)
-		print("FEAGI REQUEST: Properties keys: %s" % properties_dict.keys())
-		
 		# Need to create the cortical area - find the parent region first
 		var parent_region_id: StringName = properties_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID)
-		print("FEAGI REQUEST: Using parent region: %s" % parent_region_id)
 		
 		if parent_region_id not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
 			push_warning("FEAGI REQUEST: Parent region '%s' not found for cortical area '%s', using root region" % [parent_region_id, checking_cortical_ID])
@@ -1013,9 +1005,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			return FeagiRequestOutput.requirement_fail("INVALID_PARENT_REGION")
 		
 		var parent_region: BrainRegion = parent_region_data as BrainRegion
-		print("FEAGI REQUEST: About to call FEAGI_add_cortical_area_from_dict for %s" % checking_cortical_ID)
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, checking_cortical_ID)
-		print("FEAGI REQUEST: Finished calling FEAGI_add_cortical_area_from_dict for %s" % checking_cortical_ID)
 	return FEAGI_response_data
 
 ### Requests information on multiple cortical areas
@@ -1053,11 +1043,31 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
 	
 	for cortical_id in responses_dict.keys():
-		var area_data: Dictionary = responses_dict[cortical_id]
-		# The response already contains all properties at the root level (not nested)
-		# Just ensure cortical_id is in the dict
+		var area_data_raw: Dictionary = responses_dict[cortical_id]
+		# Log visualization_voxel_granularity if present
+		if "visualization_voxel_granularity" in area_data_raw:
+			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in top-level for %s: %s" % [cortical_id, area_data_raw["visualization_voxel_granularity"]])
+		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary and "visualization_voxel_granularity" in area_data_raw["properties"]:
+			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in properties for %s: %s" % [cortical_id, area_data_raw["properties"]["visualization_voxel_granularity"]])
+		
+		# Handle both response formats:
+		# - { "cortical_id": { ...properties... } }
+		# - { "cortical_id": { "properties": { ...properties... } } }
+		var area_data: Dictionary = area_data_raw
+		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary:
+			# Merge top-level fields with properties (top-level takes precedence for fields like visualization_voxel_granularity)
+			area_data = area_data_raw["properties"].duplicate()
+			# Copy top-level fields - top-level takes precedence (overwrites properties version)
+			for key in area_data_raw.keys():
+				if key != "properties":
+					area_data[key] = area_data_raw[key]  # Top-level always wins
+					if key == "visualization_voxel_granularity":
+						print("🔵 FEAGI REQUEST: [MULTI] Passing visualization_voxel_granularity to cache for %s: %s" % [cortical_id, area_data_raw[key]])
+		# Ensure cortical_id is in the dict (some responses omit it).
+		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
-			area_data["cortical_id"] = cortical_id
+			area_data["cortical_id"] = StringName(cortical_id)
+		print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
 	return FEAGI_response_data
@@ -1083,7 +1093,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 		"cortical_name": cortical_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),  # API field name (category: IPU/OPU/CORE/etc)
 		"brain_region_id": parent_region.region_ID,
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null]
@@ -1142,7 +1152,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		"cortical_name": cortical_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_dimensions": FEAGIUtils.vector3i_to_array(dimensions),
-		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),
+		"cortical_group": AbstractCorticalArea.cortical_type_to_str(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM),  # API field name (category: IPU/OPU/CORE/etc)
 		"cortical_sub_group": "",
 		"coordinates_2d": [null, null],
 		"sub_group_id": "MEMORY",
@@ -1177,8 +1187,12 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 	return FEAGI_response_data
 
 
-## Adds a IPU / OPU cortical area. NOTE: IPUs/OPUs can ONLY be in the root region!
-func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), group_id: int = 0, neurons_per_voxel: int = 1, data_type_config: int = 0) -> FeagiRequestOutput:
+## Adds a IPU / OPU cortical area (may create multiple cortical areas for multi-subunit templates).
+## NOTE: IPUs/OPUs can ONLY be in the root region!
+##
+## BREAKING CHANGE (unreleased FEAGI API):
+## `data_type_config` is now per-subunit: `data_type_configs_by_subunit` (Dictionary: subunit_idx -> config_value).
+func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), unit_id: int = 0, neurons_per_voxel: int = 1, data_type_configs_by_subunit: Dictionary = {}) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -1198,16 +1212,16 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		push_error("FEAGI Requests: Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return FeagiRequestOutput.requirement_fail("NON_IOPU")
 	
-	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with group_id %d, neurons_per_voxel %d, data_type_config %d" % [IOPU_template.cortical_name, group_id, neurons_per_voxel, data_type_config])
+	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with unit_id %d, neurons_per_voxel %d, data_type_configs_by_subunit=%s" % [IOPU_template.cortical_name, unit_id, neurons_per_voxel, str(data_type_configs_by_subunit)])
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"cortical_id": IOPU_template.ID,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 		"cortical_type": AbstractCorticalArea.cortical_type_to_str(IOPU_template.cortical_type),
 		"device_count": device_count,
-		"group_id": group_id,
+		"unit_id": unit_id,
 		"neurons_per_voxel": neurons_per_voxel,
-		"data_type_config": data_type_config,
+		"data_type_configs_by_subunit": data_type_configs_by_subunit,
 		"coordinates_2d": [null, null]
 	}
 	
@@ -1235,6 +1249,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 	print("FEAGI REQUEST: Successfully created %d cortical area(s) for %s (first ID: %s)" % [unit_count, IOPU_template.cortical_name, response.get("cortical_id", "")])
 	
 	# Add all created areas directly to cache using the full details returned in response
+	var created_cortical_ids: Array[StringName] = []
 	if "areas" in response and response["areas"] is Array:
 		var areas: Array = response["areas"]
 		print("FEAGI REQUEST: Adding %d cortical areas directly to cache from response" % areas.size())
@@ -1248,14 +1263,20 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 				
 				print("FEAGI REQUEST: Adding cortical area %s to cache" % cortical_id)
 				# Add to cache using FEAGI_add_cortical_area_from_dict which handles all types
+				var parent_region_id: StringName = area_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID)
+				var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(
+					parent_region_id,
+					FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+				)
+				if parent_region == null:
+					push_error("FEAGI REQUEST: Parent region '%s' not found and root region unavailable, cannot add cortical area '%s'" % [parent_region_id, cortical_id])
+					continue
 				FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(
 					area_dict,
-					FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(
-						area_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID),
-						FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[BrainRegion.ROOT_REGION_ID]
-					),
+					parent_region,
 					cortical_id
 				)
+				created_cortical_ids.append(cortical_id)
 	else:
 		push_warning("FEAGI REQUEST: Response missing 'areas' field - falling back to fetching properties")
 		# Fallback: fetch properties if server doesn't return them
@@ -1265,11 +1286,24 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 			for cortical_id in cortical_ids:
 				if cortical_id != "":
 					await get_cortical_area(cortical_id)
+					created_cortical_ids.append(StringName(cortical_id))
 		else:
 			# Fallback for single unit (backward compatibility)
 			await get_cortical_area(response["cortical_id"])
+			created_cortical_ids.append(StringName(response["cortical_id"]))
 	
-	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, group %d have been added to cache." % [IOPU_template.ID, group_id])
+	# Ensure all created areas appear in the correct region's 3D view immediately
+	# This fixes timing issues with large areas where get_cortical_area takes longer
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region != null:
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(root_region)
+		if bm != null:
+			for cortical_id in created_cortical_ids:
+				var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id, null)
+				if new_area_obj != null:
+					bm._add_cortical_area(new_area_obj)
+	
+	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, unit %d have been added to cache." % [IOPU_template.ID, unit_id])
 	
 	return FEAGI_response_data
 
@@ -1422,22 +1456,34 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	if network_check != null:
 		return network_check
 	
+	# Log what we're sending
+	print("🔵 FEAGI REQUEST: update_cortical_area called for area: %s" % editing_ID)
+	print("🔵 FEAGI REQUEST: Properties being sent: %s" % properties)
+	if "visualization_voxel_granularity" in properties:
+		print("🔵 FEAGI REQUEST: visualization_voxel_granularity value: %s (type: %s)" % [properties["visualization_voxel_granularity"], typeof(properties["visualization_voxel_granularity"])])
+	
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
-	print("FEAGI REQUEST: Making PUT request to %s for cortical area %s with data: %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID, properties])
+	print("🔵 FEAGI REQUEST: Making PUT request to %s for cortical area %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID])
+	print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+	
+	print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
+	if FEAGI_response_data.has_errored:
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
 		var raw_response = FEAGI_response_data.decode_response_as_string()
 		push_error("FEAGI Requests: Unable to update cortical area of ID %s! Error: %s - %s" % [editing_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ PUT request failed for %s - Error code: %s, Description: %s" % [editing_ID, error_details[0], error_details[1]])
-		print("FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
-		print("FEAGI REQUEST: ❌ Request data sent: %s" % properties)
+		print("🔴 FEAGI REQUEST: ❌ PUT request failed for %s - Error code: %s, Description: %s" % [editing_ID, error_details[0], error_details[1]])
+		print("🔴 FEAGI REQUEST: ❌ Raw response body: %s" % raw_response)
+		print("🔴 FEAGI REQUEST: ❌ Request data sent: %s" % properties)
 		return FEAGI_response_data
-	FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
+	
+	# Re-fetch the cortical area from FEAGI to ensure cache is synchronized with backend
+	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % editing_ID)
+	await get_cortical_area(editing_ID)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
 	return FEAGI_response_data
 
@@ -1447,23 +1493,40 @@ func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], propertie
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
 
+	# Log what we're sending
+	var cortical_ids = AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas)
+	print("🔵 FEAGI REQUEST: update_cortical_areas called for %d areas: %s" % [len(editing_areas), cortical_ids])
+	print("🔵 FEAGI REQUEST: Properties being sent: %s" % properties)
+	if "visualization_voxel_granularity" in properties:
+		print("🔵 FEAGI REQUEST: visualization_voxel_granularity value: %s (type: %s)" % [properties["visualization_voxel_granularity"], typeof(properties["visualization_voxel_granularity"])])
 	
 	# Define Request
-	properties["cortical_id_list"] = AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas)
+	properties["cortical_id_list"] = cortical_ids
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea, properties)
+	
+	print("🔵 FEAGI REQUEST: Sending PUT request to: %s" % FeagiCore.network.http_API.address_list.PUT_corticalArea_multi_corticalArea)
+	print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	
+	print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
+	if FEAGI_response_data.has_errored:
+		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
+		var raw_response = FEAGI_response_data.decode_response_as_string()
+		print("🔴 FEAGI REQUEST: API Error - Code: %s, Description: %s" % [error_details[0], error_details[1]])
+		print("🔴 FEAGI REQUEST: Raw response: %s" % raw_response)
+	
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to update %d cortical area!" % len(editing_areas))
 		return FEAGI_response_data
-	for ID in AbstractCorticalArea.cortical_area_array_to_ID_array(editing_areas):
-		properties["cortical_id"] = ID
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties)
-	print("FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
+	
+	# Re-fetch all updated cortical areas from FEAGI to ensure cache is synchronized with backend
+	print("🔵 FEAGI REQUEST: Multi-PUT succeeded for %d areas, re-fetching from FEAGI to sync cache" % len(editing_areas))
+	await get_cortical_areas(editing_areas)
+	print("🔵 FEAGI REQUEST: Successfully updated %d cortical area!" % len(editing_areas))
 	return FEAGI_response_data
 
 
@@ -2129,7 +2192,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		# Update local cache first, then refresh
 		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
 		# Fallback: refresh regions containing the source and destination areas
-		_refresh_regions_containing_areas([source_area, destination_area])
+		await _refresh_regions_containing_areas([source_area, destination_area])
 	
 	#var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
 	#mapping_set.mappings_changed.emit(mapping_set)
@@ -2261,6 +2324,9 @@ func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array
 			mappings_to_remove.append(mapping)
 	
 	for mapping in mappings_to_remove:
+		# Ensure the associated ConnectionChainLink(s) are deregistered cleanly.
+		# Otherwise the 3D plate composition can remain stale (open links not removed).
+		mapping.FEAGI_deleted_mapping_set()
 		brain_region.partial_mappings.erase(mapping)
 	
 	# Create new partial mappings based on FEAGI response
@@ -2298,12 +2364,30 @@ func _refresh_regions_containing_areas(areas: Array[AbstractCorticalArea]) -> vo
 					print("    📍 Found in region: %s" % region.friendly_name)
 	
 	# Refresh all affected regions
-	for region_id in regions_to_refresh:
-		print("  🔄 Triggering refresh for region: %s" % region_id)
-		_refresh_region_visualization(region_id)
-	
 	if regions_to_refresh.is_empty():
 		print("  ⚠️  No regions found containing the specified areas")
+		return
+
+	# Pull authoritative I/O lists from FEAGI and update partial mappings (drives plate composition)
+	var summary_out: FeagiRequestOutput = await get_regions_summary()
+	if summary_out.has_errored:
+		print("  ⚠️  Unable to refresh regions summary from FEAGI - leaving visualization unchanged")
+		return
+	var summary_dict: Dictionary = summary_out.decode_response_as_dict()
+
+	var subset: Dictionary = {}
+	for region_id in regions_to_refresh:
+		if summary_dict.has(region_id):
+			subset[region_id] = summary_dict[region_id]
+
+	if subset.is_empty():
+		print("  ⚠️  FEAGI region summary did not include any of the target regions")
+		return
+
+	print("  🔄 Applying refreshed I/O membership for %d region(s)" % subset.size())
+	_process_brain_region_io_updates(subset)
+	
+	# Note: _process_brain_region_io_updates() will trigger per-region visualization refresh.
 
 ## CRITICAL: Disables recursive refresh signals to prevent infinite loops during FEAGI data updates
 func _disable_region_refresh_signals() -> void:

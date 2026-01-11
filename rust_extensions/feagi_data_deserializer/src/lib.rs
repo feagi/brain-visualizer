@@ -1,11 +1,11 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
 // FeagiByteContainer is imported within functions where needed
-use feagi_data_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
-use feagi_data_structures::genomic::cortical_area::CorticalID;
-use feagi_data_structures::genomic::cortical_area::IOCorticalAreaDataFlag;
-use feagi_data_structures::genomic::cortical_area::io_cortical_area_data_type::{
-    PercentageNeuronPositioning, DataTypeConfigurationFlag,
+use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
+use feagi_structures::genomic::cortical_area::CorticalID;
+use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
+use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_flag::{
+    IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
 };
 
 // Rayon is only available on native platforms (not WASM)
@@ -162,57 +162,51 @@ impl FeagiDataDeserializer {
         //     data_to_deserialize.get(3).unwrap_or(&0)
         // );
         
-        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully
-        match std::panic::catch_unwind(|| {
-            use feagi_data_serialization::FeagiByteContainer;
-            
+        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully.
+        // Perf: avoid cloning the decompressed payload and avoid cloning the decoded neuron map.
+        // We convert to Godot PackedArrays while the container/boxed struct is still alive.
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            use feagi_serialization::FeagiByteContainer;
+
             let mut byte_container = FeagiByteContainer::new_empty();
-            let mut data_vec = data_to_deserialize.clone();
-            
-            // godot_print!("🦀 [DECODE] About to load into FeagiByteContainer...");
-            
-            // Load bytes into container
+            let mut data_vec = data_to_deserialize;
+
+            // Load bytes into container (move via swap; no extra payload clone)
             if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
                 std::mem::swap(bytes, &mut data_vec);
                 Ok(())
             }) {
                 return Err(format!("{:?}", e));
             }
-            
-            // godot_print!("🦀 [DECODE] Loaded successfully, getting structure count...");
-            
+
             // Get structure count
             let num_structures = match byte_container.try_get_number_contained_structures() {
                 Ok(n) => n,
-                Err(e) => return Err(format!("{:?}", e))
+                Err(e) => return Err(format!("{:?}", e)),
             };
-            
+
             if num_structures == 0 {
                 return Err("Empty container".to_string());
             }
-            
-            // godot_print!("🦀 [DECODE] Found {} structures, extracting first...", num_structures);
-            
+
             // Extract first structure
             let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
                 Ok(s) => s,
-                Err(e) => return Err(format!("{:?}", e))
+                Err(e) => return Err(format!("{:?}", e)),
             };
-            
-            // godot_print!("🦀 [DECODE] Structure extracted, downcasting...");
-            
+
             // Downcast to CorticalMappedXYZPNeuronVoxels
-            let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+            let neuron_data = match boxed_struct
+                .as_any()
+                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+            {
                 Some(nd) => nd,
-                None => return Err("Wrong structure type".to_string())
+                None => return Err("Wrong structure type".to_string()),
             };
-            
-            // godot_print!("🦀 [DECODE] ✅ Success - extracted from FeagiByteContainer");
-            Ok(neuron_data.clone())
-        }) {
-            Ok(Ok(neuron_data)) => {
-                self.convert_neuron_data_to_godot(&neuron_data)
-            }
+
+            Ok(self.convert_neuron_data_to_godot(neuron_data))
+        })) {
+            Ok(Ok(dict)) => dict,
             Ok(Err(e)) => {
                 godot_error!("🦀 [DECODE] FeagiByteContainer extraction failed: {}", e);
                 self.create_error_dict(format!("FeagiByteContainer error: {}", e))
@@ -262,7 +256,7 @@ impl FeagiDataDeserializer {
         let rust_buffer: Vec<u8> = buffer.to_vec();
         
         // Extract from FeagiByteContainer (version 2 container format)
-        use feagi_data_serialization::FeagiByteContainer;
+        use feagi_serialization::FeagiByteContainer;
         
         let mut byte_container = FeagiByteContainer::new_empty();
         let mut data_vec = rust_buffer;
@@ -468,6 +462,231 @@ impl FeagiDataDeserializer {
         result
     }
 
+    /// Desktop WS fast-path: decode a Type 11 packet and apply directly to MultiMeshes (GPU instancing).
+    /// This avoids constructing per-area Dictionaries and large PackedArray payloads in GDScript.
+    ///
+    /// Args:
+    ///  - buffer: raw WebSocket packet (LZ4 header + compressed FeagiByteContainer)
+    ///  - multimeshes_by_id: Dictionary[cortical_id -> MultiMesh]
+    ///  - dimensions_by_id: Dictionary[cortical_id -> Vector3]
+    ///  - clear_all_before_apply: if true, sets instance_count=0 on all registered MultiMeshes first
+    ///
+    /// Returns Dictionary with timing breakdown (ms) and per-area neuron counts.
+    #[func]
+    pub fn apply_type11_packet_to_multimeshes(
+        &self,
+        buffer: PackedByteArray,
+        multimeshes_by_id: Dictionary,
+        dimensions_by_id: Dictionary,
+        clear_all_before_apply: bool,
+    ) -> Dictionary {
+        let total_start = std::time::Instant::now();
+
+        let mut out = Dictionary::new();
+        out.set("success", false);
+        out.set("error", "");
+        out.set("lz4_ms", 0.0);
+        out.set("container_parse_ms", 0.0);
+        out.set("clear_ms", 0.0);
+        out.set("multimesh_apply_ms", 0.0);
+        out.set("total_ms", 0.0);
+        out.set("areas_applied", 0);
+        out.set("neurons_applied", 0);
+        out.set("area_counts", Dictionary::new());
+
+        let rust_buffer: Vec<u8> = buffer.to_vec();
+        if rust_buffer.len() < 4 {
+            out.set("error", "Buffer too short for LZ4 size header");
+            out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
+            return out;
+        }
+
+        let uncompressed_size =
+            u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]])
+                as i32;
+        let compressed_data = &rust_buffer[4..];
+
+        let lz4_start = std::time::Instant::now();
+        let data_to_deserialize = match std::panic::catch_unwind(|| {
+            lz4::block::decompress(compressed_data, Some(uncompressed_size))
+        }) {
+            Ok(Ok(d)) if !d.is_empty() => d,
+            Ok(Ok(_)) => {
+                out.set("error", "LZ4 decompression returned empty data");
+                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
+                return out;
+            }
+            Ok(Err(e)) => {
+                out.set("error", format!("LZ4 decompression failed: {:?}", e));
+                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
+                return out;
+            }
+            Err(_) => {
+                out.set("error", "LZ4 decompression panicked");
+                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
+                return out;
+            }
+        };
+        out.set("lz4_ms", lz4_start.elapsed().as_secs_f64() * 1000.0);
+
+        // Parse + apply inside one unwind boundary to avoid cloning decoded neuron data.
+        let parse_and_apply_start = std::time::Instant::now();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            use feagi_serialization::FeagiByteContainer;
+
+            let mut byte_container = FeagiByteContainer::new_empty();
+            let mut data_vec = data_to_deserialize;
+
+            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                std::mem::swap(bytes, &mut data_vec);
+                Ok(())
+            }) {
+                return Err(format!("{:?}", e));
+            }
+
+            let num_structures = match byte_container.try_get_number_contained_structures() {
+                Ok(n) => n,
+                Err(e) => return Err(format!("{:?}", e)),
+            };
+            if num_structures == 0 {
+                return Err("Empty container".to_string());
+            }
+
+            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+                Ok(s) => s,
+                Err(e) => return Err(format!("{:?}", e)),
+            };
+
+            let neuron_data = match boxed_struct
+                .as_any()
+                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+            {
+                Some(nd) => nd,
+                None => return Err("Wrong structure type".to_string()),
+            };
+
+            let container_parse_ms = parse_and_apply_start.elapsed().as_secs_f64() * 1000.0;
+
+            // Clear all registered MultiMeshes first (optional but deterministic: no stale points).
+            let clear_start = std::time::Instant::now();
+            if clear_all_before_apply {
+                for (_k, v) in multimeshes_by_id.iter_shared() {
+                    if let Ok(mut mm) = v.try_to::<Gd<MultiMesh>>() {
+                        mm.set_instance_count(0);
+                    }
+                }
+            }
+            let clear_ms = clear_start.elapsed().as_secs_f64() * 1000.0;
+
+            let apply_start = std::time::Instant::now();
+            let mut areas_applied: i32 = 0;
+            let mut neurons_applied: i32 = 0;
+            let mut area_counts = Dictionary::new();
+
+            for (cortical_id, neuron_array) in neuron_data.mappings.iter() {
+                let num_neurons = neuron_array.len();
+                if num_neurons == 0 {
+                    continue;
+                }
+
+                let cortical_id_str = cortical_id.as_base_64();
+
+                let mm_var = multimeshes_by_id.get(cortical_id_str.as_str());
+                let dims_var = dimensions_by_id.get(cortical_id_str.as_str());
+                let (mm_var, dims_var) = match (mm_var, dims_var) {
+                    (Some(m), Some(d)) => (m, d),
+                    _ => continue,
+                };
+
+                let mut multi_mesh = match mm_var.try_to::<Gd<MultiMesh>>() {
+                    Ok(m) => m,
+                    Err(_) => continue,
+                };
+                let dimensions = match dims_var.try_to::<Vector3>() {
+                    Ok(d) => d,
+                    Err(_) => continue,
+                };
+
+                // Set instance count and apply transforms/colors directly.
+                multi_mesh.set_instance_count(num_neurons as i32);
+
+                let half_dimensions =
+                    Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
+                let offset = Vector3::new(0.5, 0.5, 0.5);
+                let scale =
+                    Vector3::new(1.0 / dimensions.x, 1.0 / dimensions.y, 1.0 / -dimensions.z);
+                let z_max = dimensions.z;
+
+                for (i, neuron) in neuron_array.iter().enumerate() {
+                    let x = neuron.neuron_voxel_coordinate.x as u32;
+                    let y = neuron.neuron_voxel_coordinate.y as u32;
+                    let z = neuron.neuron_voxel_coordinate.z as u32;
+
+                    let transform_data =
+                        Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
+                    let color_data = Self::calculate_color(z, z_max);
+
+                    let basis = Basis::from_rows(
+                        Vector3::new(transform_data[0], transform_data[1], transform_data[2]),
+                        Vector3::new(transform_data[4], transform_data[5], transform_data[6]),
+                        Vector3::new(transform_data[8], transform_data[9], transform_data[10]),
+                    );
+                    let origin =
+                        Vector3::new(transform_data[3], transform_data[7], transform_data[11]);
+                    let transform = Transform3D::new(basis, origin);
+
+                    let color =
+                        Color::from_rgba(color_data[0], color_data[1], color_data[2], color_data[3]);
+
+                    multi_mesh.set_instance_transform(i as i32, transform);
+                    multi_mesh.set_instance_color(i as i32, color);
+                }
+
+                areas_applied += 1;
+                neurons_applied += num_neurons as i32;
+                area_counts.set(cortical_id_str.as_str(), num_neurons as i32);
+            }
+
+            let multimesh_apply_ms = apply_start.elapsed().as_secs_f64() * 1000.0;
+            Ok((
+                container_parse_ms,
+                clear_ms,
+                multimesh_apply_ms,
+                areas_applied,
+                neurons_applied,
+                area_counts,
+            ))
+        }));
+
+        match result {
+            Ok(Ok((
+                container_parse_ms,
+                clear_ms,
+                multimesh_apply_ms,
+                areas_applied,
+                neurons_applied,
+                area_counts,
+            ))) => {
+                out.set("container_parse_ms", container_parse_ms);
+                out.set("clear_ms", clear_ms);
+                out.set("multimesh_apply_ms", multimesh_apply_ms);
+                out.set("areas_applied", areas_applied);
+                out.set("neurons_applied", neurons_applied);
+                out.set("area_counts", area_counts);
+                out.set("success", true);
+            }
+            Ok(Err(e)) => {
+                out.set("error", format!("FeagiByteContainer error: {}", e));
+            }
+            Err(_) => {
+                out.set("error", "FeagiByteContainer panic");
+            }
+        }
+
+        out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
+        out
+    }
+
     /// Process pre-deserialized neuron arrays for visualization (optimized path)
     /// This is used when arrays are already deserialized and we just need transforms/colors
     /// 
@@ -609,14 +828,14 @@ impl FeagiDataDeserializer {
         }
         
         // Extract data_type_configuration from bytes 4-5 (u16, little-endian) per FDP spec
-        let config: DataTypeConfigurationFlag = u16::from_le_bytes([bytes[4], bytes[5]]);
+        let config: IOCorticalAreaConfigurationFlagBitmask = u16::from_le_bytes([bytes[4], bytes[5]]);
         
         // Use FDP's actual parsing method to decode the configuration
-        let io_data_type = match IOCorticalAreaDataFlag::try_from_data_type_configuration_flag(config) {
+        let io_data_type = match IOCorticalAreaConfigurationFlag::try_from_data_type_configuration_flag(config) {
             Ok(dt) => dt,
             Err(e) => {
                 result.set("success", false);
-                result.set("error", format!("FDP IOCorticalAreaDataFlag parse error: {}", e));
+                result.set("error", format!("FDP IOCorticalAreaConfigurationFlag parse error: {}", e));
                 result.set("encoding_type", "");
                 result.set("encoding_format", "");
                 return result;
@@ -625,14 +844,14 @@ impl FeagiDataDeserializer {
         
         // Extract encoding_type from positioning enum
         let encoding_type = match io_data_type {
-            IOCorticalAreaDataFlag::Percentage(_, pos) |
-            IOCorticalAreaDataFlag::Percentage2D(_, pos) |
-            IOCorticalAreaDataFlag::Percentage3D(_, pos) |
-            IOCorticalAreaDataFlag::Percentage4D(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage2D(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage3D(_, pos) |
-            IOCorticalAreaDataFlag::SignedPercentage4D(_, pos) => {
+            IOCorticalAreaConfigurationFlag::Percentage(_, pos) |
+            IOCorticalAreaConfigurationFlag::Percentage2D(_, pos) |
+            IOCorticalAreaConfigurationFlag::Percentage3D(_, pos) |
+            IOCorticalAreaConfigurationFlag::Percentage4D(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, pos) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, pos) => {
                 match pos {
                     PercentageNeuronPositioning::Linear => "linear",
                     PercentageNeuronPositioning::Fractional => "exponential",
@@ -643,21 +862,21 @@ impl FeagiDataDeserializer {
         
         // Extract encoding_format from data type variant
         let encoding_format = match io_data_type {
-            IOCorticalAreaDataFlag::Percentage(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage(_, _) |
-            IOCorticalAreaDataFlag::Boolean => "1d",
+            IOCorticalAreaConfigurationFlag::Percentage(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage(_, _) |
+            IOCorticalAreaConfigurationFlag::Boolean => "1d",
             
-            IOCorticalAreaDataFlag::Percentage2D(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage2D(_, _) |
-            IOCorticalAreaDataFlag::CartesianPlane(_) => "2d",
+            IOCorticalAreaConfigurationFlag::Percentage2D(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _) |
+            IOCorticalAreaConfigurationFlag::CartesianPlane(_) => "2d",
             
-            IOCorticalAreaDataFlag::Percentage3D(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage3D(_, _) => "3d",
+            IOCorticalAreaConfigurationFlag::Percentage3D(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _) => "3d",
             
-            IOCorticalAreaDataFlag::Percentage4D(_, _) |
-            IOCorticalAreaDataFlag::SignedPercentage4D(_, _) => "4d",
+            IOCorticalAreaConfigurationFlag::Percentage4D(_, _) |
+            IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _) => "4d",
             
-            IOCorticalAreaDataFlag::Misc(_) => "1d",
+            IOCorticalAreaConfigurationFlag::Misc(_) => "1d",
         };
         
         result.set("success", true);

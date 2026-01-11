@@ -171,8 +171,25 @@ func _choose_from_api(type_key: String, metadata: Dictionary) -> void:
 	else:
 		cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
 	
-	# Extract unit_default_topology from metadata
+	# Extract unit topology for preview boxes.
+	#
+	# Primary source (existing BV flow):
+	# - `/v1/cortical_area/{ipu,opu}/types` provides `unit_default_topology` already in BV format:
+	#   { idx: { "relative_position": [x,y,z], "dimensions": [x,y,z] }, ... }
+	#
+	# Fallback (new schema for `/v1/genome/cortical_template`):
+	# - derive the same structure from `subunits`.
 	var unit_topology: Dictionary = metadata.get("unit_default_topology", {})
+	if unit_topology.is_empty():
+		var subunits: Dictionary = metadata.get("subunits", {})
+		for subunit_key in subunits.keys():
+			var subunit: Dictionary = subunits.get(subunit_key, {})
+			var rel_pos: Array = subunit.get("relative_position", [0, 0, 0])
+			var dims: Array = subunit.get("channel_dimensions_default", [1, 1, 1])
+			unit_topology[int(subunit_key)] = {
+				"relative_position": rel_pos,
+				"dimensions": dims,
+			}
 	
 	# Create the template object
 	var template: CorticalTemplate = CorticalTemplate.new(
