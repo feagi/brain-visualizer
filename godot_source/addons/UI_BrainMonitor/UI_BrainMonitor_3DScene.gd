@@ -1970,11 +1970,10 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	# Only create if the area is directly in this region OR it's needed as I/O for a child region
 	if not is_directly_in_root and not is_io_of_child_region:
+		print("  ❌ BM REJECTED %s: not in region %s (directly=%s, io=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_root, is_io_of_child_region])
 		return null
-	# print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])  # Suppressed - too verbose
-	# print("  🎯 INSTANCE: Adding to brain monitor instance %d" % get_instance_id())  # Suppressed - too verbose
-	# print("  🎯 INSTANCE: Adding to 3D root %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])  # Suppressed - too verbose
 	
+	print("  ✅ BM ADDING %s: visualization started in region %s" % [area.cortical_ID, _representing_region.region_ID])
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
 	_node_3D_root.add_child(rendering_area)
 	# print("  🎯 ADDED: Cortical area %s added as child to 3D root instance %d" % [area.cortical_ID, _node_3D_root.get_instance_id()])  # Suppressed - too verbose

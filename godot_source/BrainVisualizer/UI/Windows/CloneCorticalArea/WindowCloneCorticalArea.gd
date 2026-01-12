@@ -51,7 +51,18 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 
 func _clone_pressed():
 	#TODO check for conflicting name and alert user
-	await FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _field_wiring_toggle.button_pressed) #TODO remove root region
+	var target_parent_region: BrainRegion = _cloning_cortical_area.current_parent_region
+	if target_parent_region == null:
+		push_error("WindowCloneCorticalArea: Cannot clone '%s' because its parent region is null" % _cloning_cortical_area.cortical_ID)
+		return
+	await FeagiCore.requests.clone_cortical_area(
+		_cloning_cortical_area,
+		_field_cortical_name.text,
+		_field_2d_location.current_vector,
+		_field_3d_location.current_vector,
+		target_parent_region,
+		_field_wiring_toggle.button_pressed
+	)
 	# Explicitly clean up preview before closing window
 	_cleanup_preview()
 	close_window()

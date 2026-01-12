@@ -1325,10 +1325,14 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	# New unified clone endpoint
 	var dict_to_send: Dictionary = {
 		"source_area_id": cloning_area.cortical_ID,
+		"new_name": String(new_name),
 		"clone_cortical_mapping": clone_cortical_mapping,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(new_position_3D),
-		"coordinates_2d": FEAGIUtils.vector2i_to_array(new_position_2D)
+		"coordinates_2d": FEAGIUtils.vector2i_to_array(new_position_2D),
+		"parent_region_id": parent_region.region_ID
 	}
+	print("FEAGI REQUEST: Clone cortical payload keys: %s" % [dict_to_send.keys()])
+	print("FEAGI REQUEST: Clone cortical payload JSON: %s" % [JSON.stringify(dict_to_send)])
 	# Double-check network components
 	var network_check = _check_network_components_ready()
 	if network_check != null:
@@ -1347,7 +1351,66 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, new_id])
 	# Refresh area details and region membership incrementally
 	if new_id != "":
+		# Match "Create cortical area" behavior: add a placeholder into local cache immediately,
+		# then fetch authoritative details from FEAGI. This ensures the region BM tab renders
+		# instantly instead of waiting for downstream refreshes.
+		if !(StringName(new_id) in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
+			if parent_region != null:
+				match cloning_area.cortical_type:
+					AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+						FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_memory_cortical_area(
+							StringName(new_id),
+							StringName(new_name),
+							new_position_3D,
+							cloning_area.dimensions_3D,
+							true,
+							new_position_2D,
+							parent_region,
+							{},
+							cloning_area.cortical_visibility
+						)
+					_:
+						FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_custom_cortical_area(
+							StringName(new_id),
+							StringName(new_name),
+							new_position_3D,
+							cloning_area.dimensions_3D,
+							true,
+							new_position_2D,
+							parent_region,
+							{},
+							cloning_area.cortical_visibility
+						)
+		
 		await get_cortical_area(new_id)
+		
+		# Immediate UI placement: do not rely on regions_summary timing.
+		# We already know the expected parent region at clone-time (source area's parent),
+		# and FEAGI is authoritative about the same membership.
+		var final_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
+		
+		if final_area_obj != null and parent_region != null:
+			var current_parent_id = final_area_obj.current_parent_region.region_ID if final_area_obj.current_parent_region != null else &""
+			if current_parent_id != parent_region.region_ID:
+				print("FEAGI REQUEST: Force-correcting cloned area %s parent %s -> %s for immediate UI placement" % [new_id, current_parent_id, parent_region.region_ID])
+				final_area_obj.FEAGI_change_parent_brain_region(parent_region)
+		
+		# If the region's Brain Monitor tab exists, ensure the visualization is added immediately.
+		if BV.UI and final_area_obj != null and parent_region != null:
+			var target_region_id: StringName = parent_region.region_ID
+			var any_bm_found: bool = false
+			var all_bms: Array[UI_BrainMonitor_3DScene] = BV.UI._find_all_brain_monitors_in_scene_tree()
+			for bm: UI_BrainMonitor_3DScene in all_bms:
+				if bm == null or bm.representing_region == null:
+					continue
+				if bm.representing_region.region_ID != target_region_id:
+					continue
+				any_bm_found = true
+				print("FEAGI REQUEST: Manually injecting cloned area %s into BM for region %s" % [new_id, target_region_id])
+				bm._add_cortical_area(final_area_obj)
+			if !any_bm_found:
+				print("⚠️ FEAGI REQUEST: No Brain Monitor tab found for region %s to auto-add cloned area %s" % [target_region_id, new_id])
+		
 		var regions_summary: FeagiRequestOutput = await get_regions_summary()
 		if regions_summary != null and regions_summary.success:
 			var regions_dict: Dictionary = regions_summary.decode_response_as_dict()

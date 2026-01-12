@@ -83,6 +83,7 @@ func setup(region: BrainRegion) -> void:
 	region.input_link_added.connect(_CACHE_link_parent_input_added)
 	region.output_link_added.connect(_CACHE_link_parent_output_added)
 	region.input_open_link_added.connect(_CACHE_link_region_input_open_added)
+	region.output_open_link_added.connect(_CACHE_link_region_output_open_added)
 	
 
 #region Responses to Cache Signals
@@ -118,9 +119,9 @@ func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	region_node.node_moved.connect(_genome_object_moved)
 	subregion.subregion_removed_from_region.connect(_CACHE_remove_subregion)
 	for link: ConnectionChainLink in subregion.input_open_chain_links:
-		_CACHE_link_region_input_open_added(region_node, link)
+		_CACHE_link_region_input_open_added(link)
 	for link: ConnectionChainLink in subregion.output_open_chain_links:
-		_CACHE_link_region_output_open_added(region_node, link)
+		_CACHE_link_region_output_open_added(link)
 	#TODO  _CACHE_link_region_input_open_added _CACHE_link_region_output_open_added need to be signal responsive!
 
 func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
@@ -225,12 +226,44 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	line.setup(source_terminal.active_port, destination_endpoint, link)
 
 # This is called from the Brain Region nodes directly
-func _CACHE_link_region_input_open_added(region_node: CBNodeRegion, link: ConnectionChainLink) -> void:
-	region_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT_OPEN, link.parent_chain.partial_mapping_set.internal_target_cortical_area.friendly_name, PREFAB_NODE_TERMINAL)
+func _CACHE_link_region_input_open_added(link: ConnectionChainLink) -> void:
+	var target_region: BrainRegion = null
+	if link.is_destination_region():
+		target_region = link.destination as BrainRegion
+	elif link.is_source_region():
+		target_region = link.source as BrainRegion
+	
+	if target_region == null:
+		return
+	if !(target_region.region_ID in _subregion_nodes):
+		return
+	
+	var region_node: CBNodeRegion = _subregion_nodes[target_region.region_ID]
+	region_node.CB_add_connection_terminal(
+		CBNodeTerminal.TYPE.INPUT_OPEN,
+		link.parent_chain.partial_mapping_set.internal_target_cortical_area.friendly_name,
+		PREFAB_NODE_TERMINAL
+	)
 	
 # This is called from the Brain Region nodes directly
-func _CACHE_link_region_output_open_added(region_node: CBNodeRegion, link: ConnectionChainLink) -> void:
-	region_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT_OPEN, link.parent_chain.partial_mapping_set.internal_target_cortical_area.friendly_name, PREFAB_NODE_TERMINAL)
+func _CACHE_link_region_output_open_added(link: ConnectionChainLink) -> void:
+	var target_region: BrainRegion = null
+	if link.is_source_region():
+		target_region = link.source as BrainRegion
+	elif link.is_destination_region():
+		target_region = link.destination as BrainRegion
+	
+	if target_region == null:
+		return
+	if !(target_region.region_ID in _subregion_nodes):
+		return
+	
+	var region_node: CBNodeRegion = _subregion_nodes[target_region.region_ID]
+	region_node.CB_add_connection_terminal(
+		CBNodeTerminal.TYPE.OUTPUT_OPEN,
+		link.parent_chain.partial_mapping_set.internal_target_cortical_area.friendly_name,
+		PREFAB_NODE_TERMINAL
+	)
 	
 
 #endregion

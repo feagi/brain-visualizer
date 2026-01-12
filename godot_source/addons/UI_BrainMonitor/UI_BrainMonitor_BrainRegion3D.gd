@@ -2107,17 +2107,30 @@ func _start_connection_monitoring() -> void:
 func _connect_area_signals(area: AbstractCorticalArea) -> void:
 	# Connect to concrete mapping structure change signals on the cortical area
 	if area.has_signal("afferent_input_cortical_area_added"):
+		# Backward safety: older versions bound the area, which caused signature mismatch
+		var old_cb_aff_add := _on_area_connections_changed.bind(area)
+		if area.afferent_input_cortical_area_added.is_connected(old_cb_aff_add):
+			area.afferent_input_cortical_area_added.disconnect(old_cb_aff_add)
 		if not area.afferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
-			area.afferent_input_cortical_area_added.connect(_on_area_connections_changed.bind(area))
+			area.afferent_input_cortical_area_added.connect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_added"):
+		var old_cb_eff_add := _on_area_connections_changed.bind(area)
+		if area.efferent_input_cortical_area_added.is_connected(old_cb_eff_add):
+			area.efferent_input_cortical_area_added.disconnect(old_cb_eff_add)
 		if not area.efferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
-			area.efferent_input_cortical_area_added.connect(_on_area_connections_changed.bind(area))
+			area.efferent_input_cortical_area_added.connect(_on_area_connections_changed)
 	if area.has_signal("afferent_input_cortical_area_removed"):
+		var old_cb_aff_rem := _on_area_connections_changed.bind(area)
+		if area.afferent_input_cortical_area_removed.is_connected(old_cb_aff_rem):
+			area.afferent_input_cortical_area_removed.disconnect(old_cb_aff_rem)
 		if not area.afferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
-			area.afferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
+			area.afferent_input_cortical_area_removed.connect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_removed"):
+		var old_cb_eff_rem := _on_area_connections_changed.bind(area)
+		if area.efferent_input_cortical_area_removed.is_connected(old_cb_eff_rem):
+			area.efferent_input_cortical_area_removed.disconnect(old_cb_eff_rem)
 		if not area.efferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
-			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
+			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed)
 
 	# Also connect to dimension changes which might affect positioning
 	var cb_dim := _on_area_dimensions_changed.bind(area)
@@ -2129,22 +2142,30 @@ func _connect_area_signals(area: AbstractCorticalArea) -> void:
 func _disconnect_area_signals(area: AbstractCorticalArea) -> void:
 	if area == null:
 		return
-	# Recreate the same bound callables used during connect
+	# Backward safety: disconnect both legacy (bound) and current (unbound) callables.
 	var cb_conn := _on_area_connections_changed.bind(area)
 	var cb_dim := _on_area_dimensions_changed.bind(area)
 	# Mapping structure change signals
 	if area.has_signal("afferent_input_cortical_area_added"):
 		if area.afferent_input_cortical_area_added.is_connected(cb_conn):
 			area.afferent_input_cortical_area_added.disconnect(cb_conn)
+		if area.afferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
+			area.afferent_input_cortical_area_added.disconnect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_added"):
 		if area.efferent_input_cortical_area_added.is_connected(cb_conn):
 			area.efferent_input_cortical_area_added.disconnect(cb_conn)
+		if area.efferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
+			area.efferent_input_cortical_area_added.disconnect(_on_area_connections_changed)
 	if area.has_signal("afferent_input_cortical_area_removed"):
 		if area.afferent_input_cortical_area_removed.is_connected(cb_conn):
 			area.afferent_input_cortical_area_removed.disconnect(cb_conn)
+		if area.afferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
+			area.afferent_input_cortical_area_removed.disconnect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_removed"):
 		if area.efferent_input_cortical_area_removed.is_connected(cb_conn):
 			area.efferent_input_cortical_area_removed.disconnect(cb_conn)
+		if area.efferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
+			area.efferent_input_cortical_area_removed.disconnect(_on_area_connections_changed)
 	# Dimension change signal
 	if area.dimensions_3D_updated.is_connected(cb_dim):
 		area.dimensions_3D_updated.disconnect(cb_dim)
@@ -2467,14 +2488,13 @@ func debug_current_system_state() -> void:
 	print("    🔴 Conflict container: %s" % ("EXISTS" if _conflict_areas_container else "NULL"))
 
 ## Called when connections change for an area in this region (with monitoring control)
-func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
+func _on_area_connections_changed(_other_area: AbstractCorticalArea, _mapping_set: InterCorticalMappingSet) -> void:
 	if not _connection_monitoring_enabled:
-		print("🔇 MONITORING: Ignoring connection change for %s (monitoring disabled)" % area.cortical_ID)
+		# Avoid noisy output for mapping refresh storms.
 		return
 	if is_queued_for_deletion() or not is_inside_tree():
 		return
 		
-	print("🔗 CONNECTION CHANGE: Area %s connections changed, checking I/O status" % area.cortical_ID)
 	# Small delay to ensure connection changes are fully processed
 	call_deferred("_check_io_status_and_refresh")
 
