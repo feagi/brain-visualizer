@@ -38,6 +38,8 @@
 [ext_resource type="Texture2D" uid="uid://bf7pyukfpp6lm" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png" id="24_3d_bm_c"]
 [ext_resource type="Texture2D" uid="uid://bifpogme5tcti" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_H.png" id="25_3d_bm_h"]
 [ext_resource type="Texture2D" uid="uid://yign32sg7jln" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_D.png" id="26_3d_bm_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="27_move_icon"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="28_resize_icon"]
 
 [node name="QuickCorticalMenu" type="VBoxContainer"]
 size_flags_horizontal = 0
@@ -168,6 +170,32 @@ texture_disabled = ExtResource("14_acjss")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="Move3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Move Cortical Area (3D)"
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("27_move_icon")
+texture_pressed = ExtResource("27_move_icon")
+texture_hover = ExtResource("27_move_icon")
+texture_disabled = ExtResource("27_move_icon")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Resize3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Resize Cortical Area (3D)"
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("28_resize_icon")
+texture_pressed = ExtResource("28_resize_icon")
+texture_hover = ExtResource("28_resize_icon")
+texture_disabled = ExtResource("28_resize_icon")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="Delete" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
@@ -186,4 +214,6 @@ stretch_mode = 5
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToRegion" to="." method="_button_add_to_region"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Move3D" to="." method="_button_move_3d"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Resize3D" to="." method="_button_resize_3d"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Delete" to="." method="_button_delete"]

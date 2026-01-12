@@ -46,6 +46,12 @@ var movement_mode: MODE = MODE.TANK
 var allow_user_control: bool = true # set to false externally if user interacting with other UI element
 var FPS_sensitivity : float = 3
 
+# When false, camera panning via click+drag is disabled (but BM input events still emit).
+var allow_tank_pan: bool = true
+
+func set_tank_pan_enabled(is_enabled: bool) -> void:
+	allow_tank_pan = is_enabled
+
 var _parent_viewport: Viewport
 var _initial_position: Vector3
 var _initial_euler_rotation: Vector3
@@ -116,7 +122,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						rotation.y += event.relative.x * -TANK_CAMERA_ROTATION_SPEED
 						return
 					
-					if Input.is_mouse_button_pressed(key_tank_pan_button):
+					if allow_tank_pan and Input.is_mouse_button_pressed(key_tank_pan_button):
 						var move: Vector3 = Vector3(event.relative.x * -TANK_CAMERA_PAN_SPEED, event.relative.y * TANK_CAMERA_PAN_SPEED, 0)
 						translate(move)
 				elif event is InputEventMouseButton:
@@ -249,7 +255,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			MODE.FPS:
 				pass
 			MODE.TANK:
-				translate(Vector3(event.delta.x,0, event.delta.y)) # why doesnt this inherit from mouse?
+				if allow_tank_pan:
+					translate(Vector3(event.delta.x,0, event.delta.y)) # why doesnt this inherit from mouse?
 
 
 func _process(delta):

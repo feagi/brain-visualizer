@@ -11,6 +11,7 @@ script = ExtResource("1_m6ysq")
 layout_mode = 2
 collapsed = true
 dragger_visibility = 2
+touch_dragger_enabled = false
 vertical = true
 
 [node name="Primary" type="MarginContainer" parent="SplitContainer"]

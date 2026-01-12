@@ -5,6 +5,8 @@ const WINDOW_NAME: StringName = "quick_menu"
 const CENTER_OFFSET: Vector2 = Vector2(0, 100)
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _selection: Array[GenomeObject]
+var _btn_move_3d: TextureButton
+var _btn_resize_3d: TextureButton
 
 
 func setup(selection: Array[GenomeObject]) -> void:
@@ -21,6 +23,8 @@ func setup(selection: Array[GenomeObject]) -> void:
 	var quick_connect_N_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_N")
 	var move_to_region_button: TextureButton = _window_internals.get_node('HBoxContainer/AddToRegion')
 	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
+	_btn_move_3d = _window_internals.get_node_or_null("HBoxContainer/Move3D") as TextureButton
+	_btn_resize_3d = _window_internals.get_node_or_null("HBoxContainer/Resize3D") as TextureButton
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
 	
 	quick_connect_CA_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.CORTICAL_AREA_TO_NEURONS))
@@ -53,6 +57,15 @@ func setup(selection: Array[GenomeObject]) -> void:
 				return
 			var area: AbstractCorticalArea = (_selection[0] as AbstractCorticalArea)
 			_titlebar.title = area.friendly_name
+			if _btn_move_3d != null:
+				_btn_move_3d.visible = true
+				_btn_move_3d.disabled = false
+				_btn_move_3d.tooltip_text = "Relocate this cortical area (3D gizmo)"
+			if _btn_resize_3d != null:
+				_btn_resize_3d.visible = true
+				_btn_resize_3d.disabled = not area.user_can_edit_dimensions_directly
+				_btn_resize_3d.tooltip_text = "Resize this cortical area (3D gizmo)" if area.user_can_edit_dimensions_directly else "This cortical area cannot be resized"
+
 			if !area.user_can_delete_this_area:
 				delete_button.disabled = true
 				delete_button.tooltip_text = "This Cortical Area Cannot Be Deleted"
@@ -69,6 +82,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 				
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+			if _btn_move_3d != null:
+				_btn_move_3d.visible = false
+			if _btn_resize_3d != null:
+				_btn_resize_3d.visible = false
 			quick_connect_button.visible = false
 			clone_button.visible = true
 			quick_connect_CA_N_button.visible = false
@@ -87,6 +104,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = region.friendly_name
 
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			if _btn_move_3d != null:
+				_btn_move_3d.visible = false
+			if _btn_resize_3d != null:
+				_btn_resize_3d.visible = false
 			open_3d_tab_button.visible = false  # Hide 3D tab button for multiple cortical areas
 			quick_connect_button.visible = false
 			clone_button.visible = false
@@ -107,6 +128,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			if _btn_move_3d != null:
+				_btn_move_3d.visible = false
+			if _btn_resize_3d != null:
+				_btn_resize_3d.visible = false
 			open_3d_tab_button.visible = false  # Hide 3D tab button for multiple brain regions
 			quick_connect_button.visible = false
 			clone_button.visible = false
@@ -119,6 +144,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = "Selected multiple regions"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			if _btn_move_3d != null:
+				_btn_move_3d.visible = false
+			if _btn_resize_3d != null:
+				_btn_resize_3d.visible = false
 			open_3d_tab_button.visible = false  # Hide 3D tab button for mixed objects
 			quick_connect_button.visible = false
 			clone_button.visible = false
@@ -239,6 +268,70 @@ func _button_open_3d_tab() -> void:
 	
 	BV.WM.spawn_3d_brain_monitor_tab(region)
 	_debug_selection_state("_button_open_3d_tab before close")
+	close_window()
+
+func _button_move_3d() -> void:
+	if _selection.size() == 0:
+		BV.NOTIF.add_notification("Please select something!")
+		close_window()
+		return
+	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+		close_window()
+		return
+	var area: AbstractCorticalArea = _selection[0] as AbstractCorticalArea
+	if area == null or area.current_parent_region == null:
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move (3D) Unavailable",
+			"Cannot start 3D relocation: no parent region available for this cortical area."
+		))
+		close_window()
+		return
+	var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(area.current_parent_region)
+	if bm == null:
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move (3D) Unavailable",
+			"No active 3D Brain Monitor found for this area's parent region.\n\nOpen a 3D tab for that region, then try again."
+		))
+		close_window()
+		return
+	bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+	close_window()
+
+func _button_resize_3d() -> void:
+	if _selection.size() == 0:
+		BV.NOTIF.add_notification("Please select something!")
+		close_window()
+		return
+	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+		close_window()
+		return
+	var area: AbstractCorticalArea = _selection[0] as AbstractCorticalArea
+	if area == null:
+		close_window()
+		return
+	if not area.user_can_edit_dimensions_directly:
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize (3D) Unavailable",
+			"This cortical area cannot be resized."
+		))
+		close_window()
+		return
+	if area.current_parent_region == null:
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize (3D) Unavailable",
+			"Cannot start 3D resizing: no parent region available for this cortical area."
+		))
+		close_window()
+		return
+	var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(area.current_parent_region)
+	if bm == null:
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize (3D) Unavailable",
+			"No active 3D Brain Monitor found for this area's parent region.\n\nOpen a 3D tab for that region, then try again."
+		))
+		close_window()
+		return
+	bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.RESIZE)
 	close_window()
 
 func _on_focus_lost() -> void:

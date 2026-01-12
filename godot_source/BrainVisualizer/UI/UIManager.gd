@@ -574,6 +574,54 @@ var _loaded_theme: Theme
 var _loaded_theme_scale: Vector2 = Vector2(1.0, 1.0)
 var _possible_UI_scales: Array[float] = []
 
+# Split handle textures (generated at runtime to avoid SVG import sizing quirks)
+var _split_handle_v: Texture2D = null ## @cursor:critical-path - UI affordance must be deterministic across platforms
+var _split_handle_h: Texture2D = null ## @cursor:critical-path - UI affordance must be deterministic across platforms
+
+
+## Ensures splitter handle textures exist. We generate these at runtime to guarantee pixel size
+## (SVG import settings can clamp the rendered size and make the handle appear tiny).
+func _ensure_split_handle_textures() -> void:
+	# Always regenerate so edits to sizes/colors apply deterministically after restart/theme reload.
+	# (These textures were previously cached and could make changes appear to have no effect.)
+	#
+	# "Option A + B":
+	# - Make the handle visually thicker (bigger bump)
+	# - Keep it elegant with longer "|| / ==" marks
+	# Make marks 3x longer:
+	# - Vertical: increase texture height (length), keep width (thickness)
+	# - Horizontal: increase texture width (length), keep height (thickness)
+	_split_handle_v = _make_split_handle_texture(Vector2i(20, 216), true)  # thickness 20px, 3x length
+	_split_handle_h = _make_split_handle_texture(Vector2i(216, 20), false) # thickness 20px, 3x length
+
+
+## Generates an "||" (or "==") split handle icon of a known pixel size.
+static func _make_split_handle_texture(size_px: Vector2i, is_vertical: bool) -> Texture2D:
+	var img: Image = Image.create(size_px.x, size_px.y, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	# Brighter neutral gray so it reads on dark backgrounds.
+	# Slightly dimmed (per UX feedback) while remaining discoverable.
+	var bar_color: Color = Color(0.88, 0.9, 0.93, 0.92)
+	if is_vertical:
+		# Two vertical bars centered in a fixed-width texture.
+		var bar_w: int = maxi(2, int(size_px.x * 0.16))
+		var gap: int = maxi(2, int(size_px.x * 0.12))
+		var bar_h: int = maxi(14, int(size_px.y * 0.72)) # longer mark (Option B)
+		var y0: int = (size_px.y - bar_h) / 2
+		var x0: int = (size_px.x - (bar_w * 2 + gap)) / 2
+		img.fill_rect(Rect2i(x0, y0, bar_w, bar_h), bar_color)
+		img.fill_rect(Rect2i(x0 + bar_w + gap, y0, bar_w, bar_h), bar_color)
+	else:
+		# Two horizontal bars centered in a fixed-height texture.
+		var bar_h2: int = maxi(2, int(size_px.y * 0.16))
+		var gap2: int = maxi(2, int(size_px.y * 0.12))
+		var bar_w2: int = maxi(14, int(size_px.x * 0.72)) # longer mark (Option B)
+		var x02: int = (size_px.x - bar_w2) / 2
+		var y02: int = (size_px.y - (bar_h2 * 2 + gap2)) / 2
+		img.fill_rect(Rect2i(x02, y02, bar_w2, bar_h2), bar_color)
+		img.fill_rect(Rect2i(x02, y02 + bar_h2 + gap2, bar_w2, bar_h2), bar_color)
+	return ImageTexture.create_from_image(img)
+
 
 ## Given the element node, uses the theme_variant property to retrieve the minimum size of the current theme. If there is no theme variant, fall back onto the given default option
 func get_minimum_size_from_loaded_theme_variant_given_control(control: Control, fallback_type: StringName) -> Vector2i:
@@ -635,6 +683,26 @@ func _load_new_theme(theme: Theme) -> void:
 	var scalar: Vector2 = Vector2(1,1)
 	
 	_loaded_theme = theme
+	# Ensure split handles are a consistent, visible size across all platforms/themes.
+	_ensure_split_handle_textures()
+	_loaded_theme.set_icon("h_grabber", "SplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("v_grabber", "SplitContainer", _split_handle_h)
+	_loaded_theme.set_icon("h_touch_dragger", "SplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("v_touch_dragger", "SplitContainer", _split_handle_h)
+	_loaded_theme.set_icon("grabber", "HSplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("grabber", "VSplitContainer", _split_handle_h)
+	_loaded_theme.set_icon("touch_dragger", "HSplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("touch_dragger", "VSplitContainer", _split_handle_h)
+	# Use a thicker standard split bar (full-height/width band) so the affordance is obvious.
+	# This is more reliable than touch_dragger sizing, which can still read like a small nub.
+	_loaded_theme.set_constant("separation", "SplitContainer", 20)
+	_loaded_theme.set_constant("separation", "HSplitContainer", 20)
+	_loaded_theme.set_constant("separation", "VSplitContainer", 20)
+	_loaded_theme.set_constant("autohide", "SplitContainer", 0)
+	# Make the drag handle background brighter (still neutral gray) so it is discoverable.
+	_loaded_theme.set_color("touch_dragger_color", "SplitContainer", Color(0.92, 0.94, 0.97, 0.72))
+	_loaded_theme.set_color("touch_dragger_hover_color", "SplitContainer", Color(0.96, 0.97, 0.99, 0.84))
+	_loaded_theme.set_color("touch_dragger_pressed_color", "SplitContainer", Color(1.0, 1.0, 1.0, 0.94))
 	if _loaded_theme.has_constant("size_x", "generic_scale"):
 		scalar.x = float(_loaded_theme.get_constant("size_x", "generic_scale")) / 4.0
 	else:
@@ -645,7 +713,26 @@ func _load_new_theme(theme: Theme) -> void:
 		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")
 	
 	_loaded_theme_scale = scalar
-	
+
+	# IMPORTANT: Ensure the theme is actually applied to the active UI Control tree.
+	# Many BV widgets opt-in to theme_changed and set their own theme, but core containers
+	# like SplitContainer will continue using the project default theme unless we set it here.
+	#
+	# This is the key reason prior "make it bigger" changes appeared to have no effect.
+	if has_node("/root/BrainVisualizer/UIManager/CB_Holder"):
+		$CB_Holder.theme = _loaded_theme
+		# Ensure nested UIView inherits the theme even if reparented later.
+		if $CB_Holder.has_node("UIView"):
+			$CB_Holder/UIView.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/TopBar"):
+		$TopBar.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/NotificationSystem"):
+		$NotificationSystem.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/TempLoadingScreen"):
+		$TempLoadingScreen.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/ScaleControl"):
+		$ScaleControl.theme = _loaded_theme
+
 	$VersionLabel.theme = theme
 	theme_changed.emit(theme)
 
