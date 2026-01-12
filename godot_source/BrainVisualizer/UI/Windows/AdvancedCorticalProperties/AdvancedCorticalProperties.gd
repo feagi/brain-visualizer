@@ -4,6 +4,9 @@ class_name AdvancedCorticalProperties
 
 #TODO URGENT: Major missing feature -> per unit connection to cache for live cahce updates
 
+# @cursor:critical-path - UI permission enforcement for CORE cortical areas
+# Core areas: everything read-only/disabled except position and connections.
+
 # region Window Global
 
 @export var controls_to_hide_in_simple_mode: Array[Control] = [] #NOTE custom logic for sections, do not include those here
@@ -72,6 +75,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	
 	_refresh_all_relevant()
+	_apply_type_based_ui_restrictions()
 	
 	# Request the newest state from feagi, and dont continue until then
 	# Only if FeagiCore is ready and network components are initialized
@@ -82,6 +86,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	# refresh all relevant sections again
 	_refresh_all_relevant()
+	_apply_type_based_ui_restrictions()
 	
 	# Re-detect isvi segments now that we have fresh data from FEAGI
 	if len(_cortical_area_refs) == 1:
@@ -139,6 +144,128 @@ func _refresh_all_relevant() -> void:
 		_refresh_from_cache_memory()
 	if true: # currently, all cortical areas have this
 		_refresh_from_cache_psp()
+	
+	# Ensure per-type UI permissions are re-applied after refresh (some refresh methods
+	# adjust editability based on internal toggles, e.g. PSP).
+	_apply_type_based_ui_restrictions()
+
+
+func _is_core_type_context() -> bool:
+	# Never hardcode cortical IDs; enforce based on cortical type.
+	return AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs) == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE
+
+
+func _apply_type_based_ui_restrictions() -> void:
+	# Currently only CORE has strict UI restrictions.
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return
+	if !_is_core_type_context():
+		return
+	_apply_core_type_restrictions()
+
+
+func _apply_core_type_restrictions() -> void:
+	# Rule: on CORE areas, with the exception of the position field and connections,
+	# everything else should be readonly and grayed out.
+	#
+	# NOTE: Connections section is already single-select only; do not disable it.
+	# NOTE: Position is editable only for single-select in existing behavior; we preserve that.
+	var is_single: bool = _cortical_area_refs.size() == 1
+	
+	# Summary (allow only position)
+	if _line_cortical_name != null:
+		_line_cortical_name.editable = false
+	if _region_button != null:
+		_region_button.disabled = true
+	if _device_count != null:
+		_device_count.editable = false
+	if _line_voxel_neuron_density != null:
+		_line_voxel_neuron_density.editable = false
+	if _line_synaptic_attractivity != null:
+		_line_synaptic_attractivity.editable = false
+	if _vector_dimensions_spin != null:
+		_vector_dimensions_spin.editable = false
+	if _vector_dimensions_nonspin != null:
+		_vector_dimensions_nonspin.editable = false
+	if _vector_visualization_voxel_granularity != null:
+		_vector_visualization_voxel_granularity.editable = false
+	
+	if _vector_position != null and is_single:
+		_vector_position.editable = true
+	
+	# Apply button: keep available for position updates (it will remain disabled until a change).
+	# No action required here.
+	
+	# Neuron Firing Parameters
+	if _button_MP_Accumulation != null:
+		_button_MP_Accumulation.disabled = true
+	if _line_Fire_Threshold != null:
+		_line_Fire_Threshold.editable = false
+	if _line_Threshold_Limit != null:
+		_line_Threshold_Limit.editable = false
+	if _line_neuron_excitability != null:
+		_line_neuron_excitability.editable = false
+	if _line_Refactory_Period != null:
+		_line_Refactory_Period.editable = false
+	if _line_Leak_Constant != null:
+		_line_Leak_Constant.editable = false
+	if _line_Leak_Variability != null:
+		_line_Leak_Variability.editable = false
+	if _line_Consecutive_Fire_Count != null:
+		_line_Consecutive_Fire_Count.editable = false
+	if _line_Snooze_Period != null:
+		_line_Snooze_Period.editable = false
+	if _line_Threshold_Inc != null:
+		_line_Threshold_Inc.editable = false
+	if _button_firing_send != null:
+		_button_firing_send.disabled = true
+	
+	# Memory
+	if _line_initial_neuron_lifespan != null:
+		_line_initial_neuron_lifespan.editable = false
+	if _line_lifespan_growth_rate != null:
+		_line_lifespan_growth_rate.editable = false
+	if _line_longterm_memory_threshold != null:
+		_line_longterm_memory_threshold.editable = false
+	if _line_temporal_depth != null:
+		_line_temporal_depth.editable = false
+	if _button_memory_send != null:
+		_button_memory_send.disabled = true
+	
+	# Post Synaptic Potential Parameters
+	if _line_Post_Synaptic_Potential != null:
+		_line_Post_Synaptic_Potential.editable = false
+	if _line_PSP_Max != null:
+		_line_PSP_Max.editable = false
+	if _line_Degeneracy_Constant != null:
+		_line_Degeneracy_Constant.editable = false
+	if _button_PSP_Uniformity != null:
+		_button_PSP_Uniformity.disabled = true
+	if _button_MP_Driven_PSP != null:
+		_button_MP_Driven_PSP.disabled = true
+	if _button_pspp_send != null:
+		_button_pspp_send.disabled = true
+	
+	# Monitoring
+	if membrane_toggle != null:
+		membrane_toggle.disabled = true
+	if post_synaptic_toggle != null:
+		post_synaptic_toggle.disabled = true
+	if render_activity_toggle != null:
+		render_activity_toggle.disabled = true
+	if _button_monitoring_send != null:
+		_button_monitoring_send.disabled = true
+	
+	# Danger Zone (delete/reset)
+	# Use direct node lookup to avoid expanding the exported node_paths list in the .tscn.
+	if _section_dangerzone != null:
+		var dz_root: Node = _section_dangerzone
+		var delete_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete/DeleteButton")
+		if delete_btn is BaseButton:
+			(delete_btn as BaseButton).disabled = true
+		var reset_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset/ResetButton")
+		if reset_btn is BaseButton:
+			(reset_btn as BaseButton).disabled = true
 
 #NOTE custom logic for sections
 func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool) -> void:
