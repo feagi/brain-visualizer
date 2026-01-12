@@ -206,6 +206,9 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		if enable_startup_camera_intro:
 			_startup_intro_center = _last_scene_center
 			_play_startup_camera_intro()
+	
+	# Ensure cortical area labels are snapped to the camera-facing edge after initial camera framing.
+	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Plays a brief camera intro that drops from above and gently zooms into the scene
 ## The camera ends exactly at its current transform, which is assumed to be the intended initial view
@@ -972,10 +975,34 @@ func _on_user_camera_moved() -> void:
 	var vp := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp.x / max(1.0, vp.y)
 	var dist := cam_pos.distance_to(center)
+	_update_all_cortical_area_label_positions_to_camera_edge()
 
 ## Handle user pressing R to reset camera using auto-frame logic
 func _on_user_camera_reset_requested() -> void:
 	await _auto_frame_camera_to_objects()
+	_update_all_cortical_area_label_positions_to_camera_edge()
+
+## Repositions cortical area labels so they remain below each area but appear at the camera-facing edge of the cortical depth.
+func _update_all_cortical_area_label_positions_to_camera_edge() -> void:
+	# Main scene cortical visualizations
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		viz.bv_update_friendly_name_label_positions()
+	
+	# Cortical areas within brain region frames (plates)
+	for region_viz in _brain_region_visualizations_by_ID.values():
+		if region_viz == null or not is_instance_valid(region_viz):
+			continue
+		if region_viz.get("_cortical_area_visualizations") == null:
+			continue
+		var cortical_visualizations = region_viz._cortical_area_visualizations
+		if cortical_visualizations == null:
+			continue
+		for cortical_viz in cortical_visualizations.values():
+			if cortical_viz == null or not is_instance_valid(cortical_viz):
+				continue
+			cortical_viz.bv_update_friendly_name_label_positions()
 
 
 func _update_tab_title_after_setup() -> void:

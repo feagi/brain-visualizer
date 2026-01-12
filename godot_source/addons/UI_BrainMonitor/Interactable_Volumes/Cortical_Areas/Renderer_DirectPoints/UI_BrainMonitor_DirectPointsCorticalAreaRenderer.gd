@@ -361,7 +361,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+		bv_update_friendly_name_label_position()
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -399,7 +399,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+		bv_update_friendly_name_label_position()
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -410,6 +410,28 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
 	# print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)  # Suppressed - called too frequently
+
+## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
+## (avoids the label sitting at the center of the cortical depth).
+func bv_update_friendly_name_label_position() -> void:
+	if _static_body == null or _friendly_name_label == null:
+		return
+	if _should_use_png_icon_by_id(_cortical_area_id):
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return
+	
+	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
+	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
+	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
+	
+	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility

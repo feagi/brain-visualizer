@@ -67,7 +67,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	
 	_static_body.position = _position_godot_space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+	bv_update_friendly_name_label_position()
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
@@ -75,7 +75,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+	bv_update_friendly_name_label_position()
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
@@ -139,6 +139,26 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 		clampi(world_godot_position_floored.z, 0, _dimensions.z - 1)
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
+
+## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
+## (avoids the label sitting at the center of the cortical depth).
+func bv_update_friendly_name_label_position() -> void:
+	if _static_body == null or _friendly_name_label == null:
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return
+	
+	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
+	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
+	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
+	
+	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
 	
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 	_is_hovered_over = is_highlighted

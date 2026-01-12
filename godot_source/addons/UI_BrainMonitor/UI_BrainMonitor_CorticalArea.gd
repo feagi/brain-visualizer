@@ -188,6 +188,13 @@ func set_new_position(new_position: Vector3i) -> void:
 	if _directpoints_renderer != null:
 		_directpoints_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 
+## Repositions the area name labels so they sit below the cortical area but at the camera-facing edge of its depth.
+func bv_update_friendly_name_label_positions() -> void:
+	if _dda_renderer != null:
+		_dda_renderer.bv_update_friendly_name_label_position()
+	if _directpoints_renderer != null:
+		_directpoints_renderer.bv_update_friendly_name_label_position()
+
 func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = false) -> void:
 	if is_moused_over == _is_volume_moused_over:
 		return

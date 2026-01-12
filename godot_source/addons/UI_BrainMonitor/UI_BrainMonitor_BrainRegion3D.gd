@@ -723,17 +723,12 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 	# Position the renderers at the new location (now snapped to plate Z)
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
-		if cortical_viz._dda_renderer._friendly_name_label != null:
-			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
-			var label_y_offset = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
-			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 	
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
-		if cortical_viz._directpoints_renderer._friendly_name_label != null:
-			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
-			var label_y_offset = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
-			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
+	
+	# Keep labels below the cortical area, but ensure they sit at the camera-facing edge of the cortical depth.
+	cortical_viz.bv_update_friendly_name_label_positions()
 
 func _get_plate_global_z(is_input: bool) -> float:
 	# Fetch the exact Z from the plate nodes to avoid drift
