@@ -64,7 +64,8 @@ func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
 	_find_possible_scales()
-	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1-DARK.tres")) #TODO temporary!
+	# Default UI scale at startup: +2 levels from 1.0x (e.g., 1.5x with current theme set).
+	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1.5-DARK.tres")) #TODO temporary!
 
 func _process(_delta: float):
 	if _fps_label:
