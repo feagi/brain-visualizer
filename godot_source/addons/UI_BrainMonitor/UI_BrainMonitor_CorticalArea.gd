@@ -389,10 +389,24 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 	
 	# Align X with the friendly-name label's plated positioning (when available).
 	var label := _get_friendly_name_label()
-	var x_world: float = parent_body.global_position.x
+	var edge_world: Vector3 = parent_body.global_position
 	if label != null and is_instance_valid(label):
-		x_world = label.global_position.x
-	_io_direction_indicator.global_position = Vector3(x_world, center_y_world, parent_body.global_position.z)
+		# Use the label's X/Z position since it is already camera-aware (snapped to camera-facing edge).
+		edge_world = Vector3(label.global_position.x, edge_world.y, label.global_position.z)
+	else:
+		# Fall back to the same camera-facing-edge logic used by the label renderers.
+		var viewport := get_viewport()
+		if viewport != null:
+			var cam := viewport.get_camera_3d()
+			if cam != null:
+				var cam_in_body_local: Vector3 = parent_body.to_local(cam.global_position)
+				var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
+				# parent_body.global_transform.basis.z already includes scale; half-depth is basis.z * 0.5.
+				var half_depth_vec_world: Vector3 = parent_body.global_transform.basis.z * 0.5
+				var edge_pos_world: Vector3 = parent_body.global_position + (z_sign * half_depth_vec_world)
+				edge_world = Vector3(edge_pos_world.x, edge_world.y, edge_pos_world.z)
+
+	_io_direction_indicator.global_position = Vector3(edge_world.x, center_y_world, edge_world.z)
 
 	# Prevent inherited non-uniform scaling (especially Z) from thickening the arrow.
 	var parent_scale: Vector3 = parent_body.global_transform.basis.get_scale()
