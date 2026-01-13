@@ -2078,7 +2078,8 @@ func _on_cortical_area_removed(area: AbstractCorticalArea) -> void:
 
 ## Forces a complete refresh of the brain region (public method for external calls)
 func force_refresh() -> void:
-	print("🔄 FORCE REFRESH: External refresh requested for region '%s'" % _representing_region.friendly_name)
+	if not FEAGIRequests._clone_operation_in_progress:
+		print("🔄 FORCE REFRESH: External refresh requested for region '%s'" % _representing_region.friendly_name)
 	_refresh_frame_contents()
 
 ## Starts monitoring connections for changes that could affect I/O status
@@ -2179,7 +2180,7 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 	var src := mapping.source_cortical_area
 	var dst := mapping.destination_cortical_area
 	if _representing_region and (src in _representing_region.contained_cortical_areas or dst in _representing_region.contained_cortical_areas):
-		print("🌐 GLOBAL MAPPING CHANGE: Refreshing region '%s' due to mapping %s -> %s" % [_representing_region.friendly_name, src.cortical_ID, dst.cortical_ID])
+		# Suppressed spam log during clone
 		_check_io_status_and_refresh()
 
 
@@ -2187,14 +2188,13 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 func _on_region_partial_mappings_changed(_param) -> void:
 	if not _connection_monitoring_enabled:
 		return
-	print("🧭 REGION PARTIAL MAPPINGS CHANGED: Triggering refresh for region '%s'" % _representing_region.friendly_name)
+	# Suppressed spam log during clone
 	_check_io_status_and_refresh()
 
 
 ## Checks if I/O status has changed and refreshes if needed
 func _check_io_status_and_refresh() -> void:
-	print("🔍 CHECKING I/O STATUS: Analyzing current vs previous I/O configuration")
-	# Force refresh - the I/O detection logic will handle determining conflicts
+	# Suppressed spam log during clone
 	force_refresh()
 
 ## Validates that all plates are properly aligned
@@ -2228,6 +2228,11 @@ func _validate_plate_alignment() -> void:
 
 ## Refreshes the entire frame contents
 func _refresh_frame_contents() -> void:
+	# CRITICAL: Skip refresh during active clone operations to prevent freeing the new visualization
+	if FEAGIRequests._clone_operation_in_progress:
+		# Suppressed spam log during clone
+		return
+	
 	print("🔄 REFRESH: Starting frame content refresh for region '%s'" % _representing_region.friendly_name)
 	
 	# Log current partial mappings state for debugging
@@ -2400,6 +2405,13 @@ func handle_double_click() -> void:
 ## CRITICAL: Cleans up ALL children to prevent node duplication during refresh
 func _cleanup_all_children() -> void:
 	print("🧹 CLEANUP: Removing all children from region '%s' to prevent duplication" % _representing_region.friendly_name)
+	# STRATEGIC LOG: Show call stack when cleanup happens right after clone
+	var stack = get_stack()
+	print("  📞 CLEANUP CALL STACK:")
+	for i in range(min(5, stack.size())):
+		var frame = stack[i]
+		print("    %d. %s:%d in %s()" % [i, frame.source, frame.line, frame.function])
+	
 	var children_count = get_child_count()
 	print("  📦 Removing %d children..." % children_count)
 	

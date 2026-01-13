@@ -1,6 +1,9 @@
 extends RefCounted
 class_name FEAGIRequests
 
+## Global flag to prevent region frame refresh during active clone operations
+static var _clone_operation_in_progress: bool = false
+
 #region Genome and FEAGI general
 
 # WARNING: You probably don't want to call this directly!
@@ -1349,6 +1352,10 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	var new_id: String = response.get("new_area_id", "")
 	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, new_id])
+	
+	# CRITICAL: Block all region frame refresh during clone operation to prevent visualization from being freed
+	_clone_operation_in_progress = true
+	
 	# Refresh area details and region membership incrementally
 	if new_id != "":
 		# Match "Create cortical area" behavior: add a placeholder into local cache immediately,
@@ -1451,6 +1458,30 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 				for scene in brain_monitor_scenes:
 					if scene is UI_BrainMonitor_3DScene:
 						(scene as UI_BrainMonitor_3DScene).force_refresh_all_cortical_connections()
+		
+		# CRITICAL: Wait one frame for all queued signals to process while flag is still true
+		await Engine.get_main_loop().process_frame
+		
+		# Wait ANOTHER frame to ensure ALL mapping signals are fully processed
+		await Engine.get_main_loop().process_frame
+		
+		# Now that all data is loaded and signals processed, simply clear the flag
+		# DO NOT force refresh - the visualization is already correctly positioned and functional
+		_clone_operation_in_progress = false
+		print("FEAGI REQUEST: Clone complete, refresh guard lifted")
+		
+		# DEBUG: Verify the cloned area still exists in the BM
+		if BV.UI:
+			var cloned_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
+			if cloned_area != null and cloned_area.current_parent_region != null:
+				var bm_target: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(cloned_area.current_parent_region)
+				if bm_target != null:
+					var exists = bm_target.has_cortical_area_visualization(new_id)
+					print("FEAGI REQUEST: Cloned area %s exists in BM after flag lifted: %s" % [new_id, exists])
+	else:
+		# Ensure flag is cleared even if clone failed
+		_clone_operation_in_progress = false
+	
 	return FEAGI_response_data
 
 ## Initiate region clone as pending amalgamation (no finalize). Returns amalgamation_id and circuit_size.

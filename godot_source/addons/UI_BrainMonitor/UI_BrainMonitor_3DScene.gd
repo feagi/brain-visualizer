@@ -1954,14 +1954,9 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	# Show call stack to find who's calling this - SUPPRESSED DUE TO OUTPUT OVERFLOW
 	# print("🚨 CALL STACK for _add_cortical_area:")
-	# var stack = get_stack()
-	# stack.reverse()
-	# for i in range(min(3, stack.size())):
-	# 	var frame = stack[i]
-	# 	print("  %d. %s:%s in %s()" % [i, frame.source, frame.line, frame.function])
+	# Return existing visualization if already registered (e.g., during clone's manual injection)
 	if area.cortical_ID in _cortical_visualizations_by_ID:
-		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
-		return null
+		return _cortical_visualizations_by_ID[area.cortical_ID]
 	
 	# Check if this area should be created
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
@@ -2006,7 +2001,14 @@ func has_cortical_area_visualization(cortical_id: String) -> bool:
 	return cortical_id in _cortical_visualizations_by_ID
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
-	print("🗑️ _remove_cortical_area CALLED for cortical_ID: %s" % area.cortical_ID)
+	print("🗑️ _remove_cortical_area CALLED for %s" % area.cortical_ID)
+	# STRATEGIC LOG: Show call stack to see what's removing the area
+	var stack = get_stack()
+	print("  📞 REMOVAL CALL STACK:")
+	for i in range(min(5, stack.size())):
+		var frame = stack[i]
+		print("    %d. %s:%d in %s()" % [i, frame.source, frame.line, frame.function])
+	
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
@@ -2014,10 +2016,8 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_previously_moused_over_volumes.erase(rendering_area)
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	if is_instance_valid(rendering_area):
-		print("🗑️ _remove_cortical_area: Queueing free for rendering_area of %s" % area.cortical_ID)
 		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
-	print("🗑️ _remove_cortical_area: Completed removal of %s from 3D scene" % area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
