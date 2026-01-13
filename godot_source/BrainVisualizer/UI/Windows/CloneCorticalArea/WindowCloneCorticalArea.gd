@@ -45,7 +45,16 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	if active_bm == null:
 		push_error("WindowCloneCorticalArea: No brain monitor available for preview creation!")
 		return
-	_preview = active_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false, _cloning_cortical_area.cortical_type, _cloning_cortical_area)
+	# Do NOT auto-frame the camera during clone: creating/moving the clone preview should not reset user view.
+	_preview = active_bm.create_preview(
+		_field_3d_location.current_vector,
+		_cloning_cortical_area.dimensions_3D,
+		false,
+		_cloning_cortical_area.cortical_type,
+		_cloning_cortical_area,
+		false, # auto_frame_on_create
+		true  # auto_frame_on_interaction
+	)
 	_preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
 
 
