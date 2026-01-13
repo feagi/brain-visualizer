@@ -2001,14 +2001,6 @@ func has_cortical_area_visualization(cortical_id: String) -> bool:
 	return cortical_id in _cortical_visualizations_by_ID
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
-	print("🗑️ _remove_cortical_area CALLED for %s" % area.cortical_ID)
-	# STRATEGIC LOG: Show call stack to see what's removing the area
-	var stack = get_stack()
-	print("  📞 REMOVAL CALL STACK:")
-	for i in range(min(5, stack.size())):
-		var frame = stack[i]
-		print("    %d. %s:%d in %s()" % [i, frame.source, frame.line, frame.function])
-	
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return

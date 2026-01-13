@@ -2405,13 +2405,6 @@ func handle_double_click() -> void:
 ## CRITICAL: Cleans up ALL children to prevent node duplication during refresh
 func _cleanup_all_children() -> void:
 	print("🧹 CLEANUP: Removing all children from region '%s' to prevent duplication" % _representing_region.friendly_name)
-	# STRATEGIC LOG: Show call stack when cleanup happens right after clone
-	var stack = get_stack()
-	print("  📞 CLEANUP CALL STACK:")
-	for i in range(min(5, stack.size())):
-		var frame = stack[i]
-		print("    %d. %s:%d in %s()" % [i, frame.source, frame.line, frame.function])
-	
 	var children_count = get_child_count()
 	print("  📦 Removing %d children..." % children_count)
 	

@@ -1391,12 +1391,10 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 		
 		await get_cortical_area(new_id)
 		
-		# CRITICAL FIX: FEAGI returns the SOURCE area's coordinates, not the NEW area's coordinates
-		# Force the correct coordinates after get_cortical_area() overwrites them
+		# CRITICAL FIX: FEAGI backend bug - clone endpoint returns SOURCE area's coordinates
+		# instead of the NEW area's coordinates. Force-correct them after fetching.
 		var area_after_fetch: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
 		if area_after_fetch != null and area_after_fetch.coordinates_3D != new_position_3D:
-			print("FEAGI REQUEST: ⚠️ FEAGI returned wrong coordinates for cloned area %s: %s (expected %s)" % [new_id, area_after_fetch.coordinates_3D, new_position_3D])
-			print("FEAGI REQUEST: 🔧 Force-correcting coordinates to requested position")
 			area_after_fetch.FEAGI_change_coordinates_3D(new_position_3D)
 		
 		# Immediate UI placement: do not rely on regions_summary timing.
@@ -1477,40 +1475,6 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 		# DO NOT force refresh - the visualization is already correctly positioned and functional
 		_clone_operation_in_progress = false
 		print("FEAGI REQUEST: Clone complete, refresh guard lifted")
-		
-		# DEBUG: Verify the cloned area still exists in the BM and is properly set up
-		if BV.UI:
-			var cloned_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
-			if cloned_area != null and cloned_area.current_parent_region != null:
-				var bm_target: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(cloned_area.current_parent_region)
-				if bm_target != null:
-					var exists = bm_target.has_cortical_area_visualization(new_id)
-					print("FEAGI REQUEST: Cloned area %s exists in BM dictionary: %s" % [new_id, exists])
-					print("  📊 Area data coordinates: %s" % cloned_area.coordinates_3D)
-					if exists:
-						var viz = bm_target.get_cortical_area_visualization(new_id)
-						if viz != null:
-							print("  📍 Visualization node valid: %s" % is_instance_valid(viz))
-							print("  🌳 Visualization in tree: %s" % viz.is_inside_tree())
-							print("  👶 Visualization parent: %s" % (viz.get_parent().name if viz.get_parent() != null else "NO PARENT"))
-							print("  👶 Visualization child count: %d" % viz.get_child_count())
-							# Check the DDA and DirectPoints renderers
-							if viz.get("_dda_renderer") != null:
-								var dda = viz._dda_renderer
-								print("    🎨 DDA Renderer exists")
-								if dda.get("_static_body") != null and is_instance_valid(dda._static_body):
-									var body = dda._static_body
-									print("      👁️ DDA body visible: %s, in_tree: %s, position: %s" % [body.visible, body.is_inside_tree(), body.global_position])
-								else:
-									print("      ❌ DDA body is NULL or invalid")
-							if viz.get("_directpoints_renderer") != null:
-								var dp = viz._directpoints_renderer
-								print("    🎨 DirectPoints Renderer exists")
-								if dp.get("_static_body") != null and is_instance_valid(dp._static_body):
-									var body = dp._static_body
-									print("      👁️ DirectPoints body visible: %s, in_tree: %s, position: %s" % [body.visible, body.is_inside_tree(), body.global_position])
-								else:
-									print("      ❌ DirectPoints body is NULL or invalid")
 	else:
 		# Ensure flag is cleared even if clone failed
 		_clone_operation_in_progress = false
