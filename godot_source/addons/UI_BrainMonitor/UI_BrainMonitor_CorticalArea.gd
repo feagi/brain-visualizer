@@ -417,10 +417,44 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
-	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
-	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
-	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
+	
+	# If inhibitory and excitatory coexist between two areas, render two independent arcs.
+	# - Excitatory: green
+	# - Inhibitory: red
+	# The arcs use a slightly different bend to remain visually distinguishable.
+	var has_inhibitory := false
+	var has_excitatory := false
+	if mapping_set != null and not mapping_set.mappings.is_empty():
+		has_inhibitory = mapping_set.is_any_PSP_multiplier_negative()
+		has_excitatory = mapping_set.is_any_PSP_multiplier_positive()
+	
+	if has_inhibitory and has_excitatory:
+		var mixed_node := Node3D.new()
+		var plastic_prefix = "PLA_" if is_plastic else "STD_"
+		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
+		
+		# Slightly different bend multipliers for separation
+		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_global_mode, 0.43)
+		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_global_mode, 0.37)
+		mixed_node.add_child(excitatory_curve)
+		mixed_node.add_child(inhibitory_curve)
+		return mixed_node
+	
+	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
+	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_global_mode, 0.4)
+
+## Internal helper that creates a single visual arc for a connection.
+## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
+func _create_connection_curve_variant(
+	start_pos: Vector3,
+	end_pos: Vector3,
+	connection_id: StringName,
+	is_inhibitory: bool,
+	is_plastic: bool,
+	is_global_mode: bool,
+	arc_height_multiplier: float
+) -> Node3D:
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
@@ -434,7 +468,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	var mid_point = (start_pos + end_pos) / 2.0
 	
 	# Create an upward arc - arc height based on distance
-	var arc_height = distance * 0.4  # 40% of distance for nice arc
+	var arc_height = distance * arc_height_multiplier
 	var control_point = mid_point + Vector3(0, arc_height, 0)
 	
 	# For plastic connections, add wobble effect by modifying control point and segments
@@ -866,10 +900,41 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 
 ## Create a recursive (self-looping) connection
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
-	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
-	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
-	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
+	
+	# If inhibitory and excitatory coexist in the recursive mapping set, render two loops
+	# separated slightly in height so both remain visible.
+	var has_inhibitory := false
+	var has_excitatory := false
+	if mapping_set != null and not mapping_set.mappings.is_empty():
+		has_inhibitory = mapping_set.is_any_PSP_multiplier_negative()
+		has_excitatory = mapping_set.is_any_PSP_multiplier_positive()
+	
+	if has_inhibitory and has_excitatory:
+		var mixed_loop := Node3D.new()
+		var plastic_prefix = "PLA_" if is_plastic else "STD_"
+		mixed_loop.name = "MIXED_RECURS_" + plastic_prefix + area_id
+		
+		var loop_height_separation := 0.6  # Small vertical separation between E/I loops
+		var excitatory_loop = _create_recursive_loop_variant(center_pos, area_id, false, is_plastic, is_global_mode, loop_height_separation)
+		var inhibitory_loop = _create_recursive_loop_variant(center_pos, area_id, true, is_plastic, is_global_mode, -loop_height_separation)
+		mixed_loop.add_child(excitatory_loop)
+		mixed_loop.add_child(inhibitory_loop)
+		return mixed_loop
+	
+	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
+	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, is_global_mode, 0.0)
+
+## Internal helper that creates a single recursive loop visual.
+## loop_height_offset vertically shifts the loop relative to its default loop height.
+func _create_recursive_loop_variant(
+	center_pos: Vector3,
+	area_id: StringName,
+	is_inhibitory: bool,
+	is_plastic: bool,
+	is_global_mode: bool,
+	loop_height_offset: float
+) -> Node3D:
 	
 	# Create a container for the loop
 	var loop_node = Node3D.new()
@@ -879,7 +944,7 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 	
 	# Create a circular loop around the cortical area
 	var loop_radius = 3.0  # Radius of the loop around the area
-	var loop_height = 2.0  # Height above the area center
+	var loop_height = 2.0 + loop_height_offset  # Height above the area center
 	var num_segments = 16  # More segments for smooth circle
 	
 	# Calculate loop points in a circle
@@ -978,13 +1043,15 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
 		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
 	elif is_inhibitory:
-		# Inhibitory recursive connections - Dark red/maroon
-		material.albedo_color = Color(0.8, 0.2, 0.2, 0.9)  # Dark red
-		material.emission = Color(0.6, 0.1, 0.1)
+		# Inhibitory recursive connections - Red
+		# Keep consistent with non-recursive inhibitory connections.
+		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
+		material.emission = Color(1.0, 0.2, 0.2)
 	else:
-		# Excitatory recursive connections - Purple/Magenta color (distinct from regular green)
-		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
-		material.emission = Color(0.8, 0.2, 0.8)
+		# Excitatory recursive connections - Green
+		# Keep consistent with non-recursive excitatory connections.
+		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
+		material.emission = Color(0.2, 1.0, 0.3)
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.5
