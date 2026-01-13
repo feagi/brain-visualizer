@@ -304,18 +304,6 @@ texture_pressed = ExtResource("19_fxjdk")
 texture_hover = ExtResource("19_fxjdk")
 texture_disabled = ExtResource("19_fxjdk")
 
-[node name="Previews" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "View Previews"
-texture = ExtResource("21_n6kq0")
-expand_mode = 3
-script = ExtResource("20_6yf7l")
-texture_normal = ExtResource("21_n6kq0")
-texture_pressed = ExtResource("21_n6kq0")
-texture_hover = ExtResource("21_n6kq0")
-texture_disabled = ExtResource("21_n6kq0")
-
 [node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
 
@@ -386,6 +374,5 @@ layout_mode = 2
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
 [connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
-[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Previews" to="." method="_preview_button_pressed"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

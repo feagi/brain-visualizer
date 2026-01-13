@@ -5,9 +5,6 @@ var _version: LineEdit
 var _interface_dropdown: OptionButton
 var _advanced_mode: ToggleButton
 var _autoconfigure_IO: ToggleButton
-var _skip_rate: IntInput
-var _supression: IntInput
-var _plasicity: IntInput
 var _camera_animation_section: VerticalCollapsible
 
 
@@ -16,18 +13,21 @@ func _ready() -> void:
 	_interface_dropdown = $VBoxContainer2/OptionButton
 	_advanced_mode = $VBoxContainer3/ToggleButton
 	_autoconfigure_IO = $VBoxContainer4/ToggleButton
-	_skip_rate = $VBoxContainer5/SkipRate
-	_supression = $VBoxContainer6/Supression
 	_camera_animation_section = $Camera_Animation
-	_plasicity = $VBoxContainer7/plasticity
 	
 	_advanced_mode.set_toggle_no_signal(BV.UI.is_in_advanced_mode)
+	# Keep the UI magnification dropdown in sync with the global UI scale controls (top-right +/-).
+	if not BV.UI.theme_changed.is_connected(_on_theme_changed):
+		BV.UI.theme_changed.connect(_on_theme_changed)
 	_interface_dropdown.selected = _get_theme_index()
-	_skip_rate.current_int = FeagiCore.skip_rate
-	_supression.current_int = FeagiCore.supression_threshold
-	_plasicity.current_int = FeagiCore.feagi_local_cache.plasticity_queue_depth
 	_version.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_camera_animation_section.setup()
+
+func _on_theme_changed(_new_theme: Theme) -> void:
+	# Update dropdown selection to reflect the latest chosen UI magnification.
+	if _interface_dropdown == null:
+		return
+	_interface_dropdown.selected = _get_theme_index()
 
 ## Attempts to set BV settings as described in UI
 func apply_settings() -> void:
@@ -40,12 +40,6 @@ func apply_settings() -> void:
 		var zoom_value: float = split_strings[0].to_float()
 		BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	BV.UI.set_advanced_mode(_advanced_mode.button_pressed)
-	if FeagiCore.skip_rate != _skip_rate.current_int:
-		FeagiCore.requests.change_skip_rate(_skip_rate.current_int)
-	if FeagiCore.supression_threshold != _supression.current_int:
-		FeagiCore.requests.change_supression_threshold(_supression.current_int)
-	if FeagiCore.feagi_local_cache.plasticity_queue_depth != _plasicity.current_int:
-		FeagiCore.requests.update_plasticity_queue_depth(_plasicity.current_int)
 
 
 # This is really stupid, but temporary
