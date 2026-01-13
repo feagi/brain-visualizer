@@ -183,14 +183,16 @@ func _call_register_agent_for_shm() -> bool:
 	# STEP 1: Query FEAGI's burst frequency BEFORE registration
 	var feagi_hz = await _get_feagi_burst_frequency()
 	if feagi_hz <= 0.0:
-		print("𒓉 [REG] ⚠️ Failed to get FEAGI burst frequency, defaulting to 60 Hz request")
-		feagi_hz = 60.0
+		print("𒓉 [REG] ⚠️ Failed to get FEAGI burst frequency, defaulting to 20 Hz request")
+		feagi_hz = 20.0
 	
-	# STEP 2: Calculate requested rate = min(feagi_frequency, 60)
-	# - If FEAGI < 60 Hz → request FEAGI's exact rate
-	# - If FEAGI >= 60 Hz → cap at 60 Hz (BV's max)
-	var requested_hz = min(feagi_hz, 60.0)
-	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 60 Hz)" % [feagi_hz, requested_hz])
+	# STEP 2: Calculate requested rate = min(feagi_frequency, 20)
+	# - If FEAGI < 20 Hz → request FEAGI's exact rate
+	# - If FEAGI >= 20 Hz → cap at 20 Hz (BV default)
+	var requested_hz = min(feagi_hz, 20.0)
+	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 20 Hz)" % [feagi_hz, requested_hz])
+	# Ensure SHM polling has a negotiated rate even if registration response omits `rates`
+	set_meta("_negotiated_viz_hz", requested_hz)
 	
 	# Build registration payload (matches FEAGI 2.0 infrastructure agent schema)
 	var payload := {
@@ -244,12 +246,12 @@ func _call_register_agent_for_shm() -> bool:
 		var rates: Dictionary = resp["rates"]
 		if rates.has("visualization"):
 			var viz_rates: Dictionary = rates["visualization"]
-			var requested_hz_response = viz_rates.get("requested_hz", 60.0)
+			var requested_hz_response = viz_rates.get("requested_hz", 20.0)
 			var feagi_hz_from_response = viz_rates.get("feagi_hz", 0.0)
-			var negotiated_hz_response = viz_rates.get("negotiated_hz", 60.0)
+			var negotiated_hz_response = viz_rates.get("negotiated_hz", 20.0)
 			print("𒓉 [RATE-NEGO] Visualization rate negotiation:")
 			print("  FEAGI burst: %.1f Hz" % feagi_hz_from_response)
-			print("  BV requested: %.1f Hz (min(FEAGI, 60))" % requested_hz_response)
+			print("  BV requested: %.1f Hz (min(FEAGI, 20))" % requested_hz_response)
 			print("  Negotiated: %.1f Hz" % negotiated_hz_response)
 			# Store negotiated rate for future use (e.g., timing expectations)
 			set_meta("_negotiated_viz_hz", negotiated_hz_response)

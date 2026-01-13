@@ -478,75 +478,63 @@ impl FeagiDataDeserializer {
         out.set("area_counts", Dictionary::new());
 
         let rust_buffer: Vec<u8> = buffer.to_vec();
-        if rust_buffer.len() < 4 {
-            out.set("error", "Buffer too short for LZ4 size header");
+        if rust_buffer.is_empty() {
+            out.set("error", "Empty buffer");
             out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
             return out;
         }
-
-        let uncompressed_size =
-            u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]])
-                as i32;
-        let compressed_data = &rust_buffer[4..];
-
-        let lz4_start = std::time::Instant::now();
-        let data_to_deserialize = match std::panic::catch_unwind(|| {
-            lz4::block::decompress(compressed_data, Some(uncompressed_size))
-        }) {
-            Ok(Ok(d)) if !d.is_empty() => d,
-            Ok(Ok(_)) => {
-                out.set("error", "LZ4 decompression returned empty data");
-                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
-                return out;
-            }
-            Ok(Err(e)) => {
-                out.set("error", format!("LZ4 decompression failed: {:?}", e));
-                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
-                return out;
-            }
-            Err(_) => {
-                out.set("error", "LZ4 decompression panicked");
-                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
-                return out;
-            }
-        };
-        out.set("lz4_ms", lz4_start.elapsed().as_secs_f64() * 1000.0);
 
         // Parse + apply inside one unwind boundary to avoid cloning decoded neuron data.
         let parse_and_apply_start = std::time::Instant::now();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             use feagi_serialization::FeagiByteContainer;
 
-            let mut byte_container = FeagiByteContainer::new_empty();
-            let mut data_vec = data_to_deserialize;
+            // Canonical pipeline (transport-independent):
+            // - FeagiByteContainer v2 (first byte == 2) containing Type 11 structures
+            // - Or raw Type 11 struct bytes (first byte == 11) if upstream unwrapped it
+            let first_byte = rust_buffer[0];
+            let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if first_byte == 2 {
+                let mut byte_container = FeagiByteContainer::new_empty();
+                let mut data_vec = rust_buffer;
 
-            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                std::mem::swap(bytes, &mut data_vec);
-                Ok(())
-            }) {
-                return Err(format!("{:?}", e));
-            }
+                if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                    std::mem::swap(bytes, &mut data_vec);
+                    Ok(())
+                }) {
+                    return Err(format!("{:?}", e));
+                }
 
-            let num_structures = match byte_container.try_get_number_contained_structures() {
-                Ok(n) => n,
-                Err(e) => return Err(format!("{:?}", e)),
+                let num_structures = match byte_container.try_get_number_contained_structures() {
+                    Ok(n) => n,
+                    Err(e) => return Err(format!("{:?}", e)),
+                };
+                if num_structures == 0 {
+                    return Err("Empty container".to_string());
+                }
+
+                let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+                    Ok(s) => s,
+                    Err(e) => return Err(format!("{:?}", e)),
+                };
+
+                let neuron_data_ref = match boxed_struct
+                    .as_any()
+                    .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+                {
+                    Some(nd) => nd,
+                    None => return Err("Wrong structure type".to_string()),
+                };
+                neuron_data_ref.clone()
+            } else if first_byte == 11 {
+                let mut nd = CorticalMappedXYZPNeuronVoxels::new();
+                if let Err(e) = nd.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
+                    return Err(format!("Type 11 deserialize error: {:?}", e));
+                }
+                nd
+            } else {
+                return Err(format!("Unsupported payload first byte: {}", first_byte));
             };
-            if num_structures == 0 {
-                return Err("Empty container".to_string());
-            }
-
-            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
-                Ok(s) => s,
-                Err(e) => return Err(format!("{:?}", e)),
-            };
-
-            let neuron_data = match boxed_struct
-                .as_any()
-                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
-            {
-                Some(nd) => nd,
-                None => return Err("Wrong structure type".to_string()),
-            };
+            let neuron_data_ref: &CorticalMappedXYZPNeuronVoxels = &neuron_data_owned;
 
             let container_parse_ms = parse_and_apply_start.elapsed().as_secs_f64() * 1000.0;
 
@@ -566,7 +554,7 @@ impl FeagiDataDeserializer {
             let mut neurons_applied: i32 = 0;
             let mut area_counts = Dictionary::new();
 
-            for (cortical_id, neuron_array) in neuron_data.mappings.iter() {
+            for (cortical_id, neuron_array) in neuron_data_ref.mappings.iter() {
                 let num_neurons = neuron_array.len();
                 if num_neurons == 0 {
                     continue;

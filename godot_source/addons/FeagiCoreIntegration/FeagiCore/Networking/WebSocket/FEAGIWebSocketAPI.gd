@@ -7,8 +7,10 @@ enum WEBSOCKET_HEALTH {
 	RETRYING
 }
 
-const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
-const DEF_SOCKET_BUFFER_SIZE: int = 10000000
+# Must accommodate large visualization frames (e.g., MRI/NIFTI payloads).
+# Keep this comfortably above expected max frame size to avoid immediate disconnects.
+const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 67108864 # 64 MiB
+const DEF_SOCKET_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_PING_INTERVAL_SECONDS: float = 2.0
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
@@ -82,6 +84,12 @@ var _shm_debug_logs: bool = false
 
 # Rate-limited WS backlog diagnostics (logging only)
 var _ws_last_backlog_log_ms: int = 0
+
+# WS receive diagnostics (rate-limited)
+var _ws_last_rx_log_ms: int = 0
+const _WS_RX_LOG_INTERVAL_MS: int = 1000
+var _ws_last_apply_log_ms: int = 0
+const _WS_APPLY_LOG_INTERVAL_MS: int = 1000
 
 # SHM update rate tracking
 var _shm_updates_received: int = 0
@@ -262,6 +270,23 @@ func _process(_delta: float):
 				continue
 
 			# Decode newest binary packet (if any)
+			# Rate-limited WS receive diagnostics (high-signal for "BV shows no power" debugging):
+			# - Confirms BV is receiving frames at all
+			# - Shows payload size and first byte (2 = FeagiByteContainer v2, 11 = raw Type 11)
+			# - Avoids log spam by printing at most once per second
+			var now_ms_rx := Time.get_ticks_msec()
+			if drained_packets > 0 and now_ms_rx - _ws_last_rx_log_ms >= _WS_RX_LOG_INTERVAL_MS:
+				_ws_last_rx_log_ms = now_ms_rx
+				if newest_binary_len > 0:
+					var fb := int(newest_binary[0])
+					print("[WS-RX] packets=%d bytes=%d newest_len=%d first_byte=%d backlog_start=%d" % [
+						drained_packets, drained_bytes, newest_binary_len, fb, backlog_start
+					])
+				else:
+					print("[WS-RX] packets=%d bytes=%d (no binary payload; likely text-only frames) backlog_start=%d" % [
+						drained_packets, drained_bytes, backlog_start
+					])
+
 			if newest_binary_len > 0:
 				if not _rust_deserializer:
 					push_error("❌ [WS] Rust deserializer not available!")
@@ -274,6 +299,18 @@ func _process(_delta: float):
 							_bv_fast_dimensions_by_id,
 							true # clear_all_before_apply
 						)
+						# Rate-limited decode/apply diagnostics to pinpoint "receiving but not rendering".
+						# This will tell us if Rust decoded/applied any areas at all (and if it errored).
+						var now_ms_apply := Time.get_ticks_msec()
+						if now_ms_apply - _ws_last_apply_log_ms >= _WS_APPLY_LOG_INTERVAL_MS:
+							_ws_last_apply_log_ms = now_ms_apply
+							var ok_apply := bool(perf.get("success", false))
+							var err_apply := String(perf.get("error", ""))
+							var areas_applied := int(perf.get("areas_applied", 0))
+							var neurons_applied := int(perf.get("neurons_applied", 0))
+							print("[WS-APPLY] ok=%s areas_applied=%d neurons_applied=%d err='%s'" % [
+								str(ok_apply), areas_applied, neurons_applied, err_apply
+							])
 						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
 						# To ensure memory jelly animation still reacts to activity, route MEMORY areas through
 						# the standard bulk-array path (signals) using decoded Type11 data (no hardcoded IDs).
