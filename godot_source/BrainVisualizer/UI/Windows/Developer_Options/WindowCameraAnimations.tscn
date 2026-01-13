@@ -1,0 +1,32 @@
+[gd_scene load_steps=4 format=3 uid="uid://camerawin_tmp_uid"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="3_cam_part"]
+
+[node name="WindowCameraAnimations" type="VBoxContainer"]
+offset_right = 520.0
+offset_bottom = 520.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_script")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Camera Animations"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
+
+[node name="CameraAnimations" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_cam_part")]
+layout_mode = 2
+
