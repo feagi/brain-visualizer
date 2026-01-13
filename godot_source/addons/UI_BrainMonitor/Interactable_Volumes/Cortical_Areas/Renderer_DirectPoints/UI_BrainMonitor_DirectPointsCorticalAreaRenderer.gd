@@ -368,11 +368,16 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
+	print("🔧 DirectPoints: update_dimensions called for %s with new_dimensions: %s" % [_cortical_area_id, new_dimensions])
+	print("🔧 DirectPoints: Before super() - _position_FEAGI_space: %s, _position_godot_space: %s" % [_position_FEAGI_space, _position_godot_space])
+	
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
 	# Force non-zero dimensions so desktop WS Type11 fast-path does not treat this as uninitialized.
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
+	
+	print("🔧 DirectPoints: After super() - _dimensions: %s, _position_godot_space: %s" % [_dimensions, _position_godot_space])
 	
 	# Refresh visualization_voxel_granularity from cache and update mesh if needed.
 	# (BV allows editing this at runtime; don't rely on dimension changes to refresh mesh.)
@@ -381,6 +386,14 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Update static body scale and position
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space
+	
+	# CRITICAL FIX: Ensure _static_body remains visible after dimension updates
+	# This prevents the area from disappearing when properties are updated
+	if not _static_body.visible:
+		print("⚠️ DirectPoints: _static_body was invisible - restoring visibility!")
+		_static_body.visible = true
+	
+	print("🔧 DirectPoints: Set _static_body.scale=%s, _static_body.position=%s, visible=%s" % [_static_body.scale, _static_body.position, _static_body.visible])
 	
 	# Update collision shape size (but preserve custom sizes for special areas)
 	var collision_shape = _static_body.get_child(0) as CollisionShape3D

@@ -22,6 +22,7 @@ signal FEAGI_sent_direct_neural_points(cortical_ID: StringName, points_data: Pac
 signal FEAGI_sent_direct_neural_points_bulk(cortical_ID: StringName, x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array)
 signal feagi_requesting_reset()
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
+signal shm_visualization_enabled(shm_path: String)
 
 
 var socket_health: WEBSOCKET_HEALTH:
@@ -84,6 +85,7 @@ var _shm_debug_logs: bool = false
 
 # Rate-limited WS backlog diagnostics (logging only)
 var _ws_last_backlog_log_ms: int = 0
+var _ws_disabled_by_shm_notice_printed: bool = false
 
 # WS receive diagnostics (rate-limited)
 var _ws_last_rx_log_ms: int = 0
@@ -102,6 +104,12 @@ const _SHM_FRAME_WINDOW_SIZE: int = 10
 # SHM polling throttle (to match negotiated rate)
 var _shm_last_poll_time: float = 0.0
 var _shm_poll_interval: float = 0.0  # Calculated from negotiated rate
+
+# SHM diagnostics (rate-limited)
+var _shm_last_rx_log_ms: int = 0
+const _SHM_RX_LOG_INTERVAL_MS: int = 1000
+var _shm_last_apply_log_ms: int = 0
+const _SHM_APPLY_LOG_INTERVAL_MS: int = 1000
 
 
 func _ready():
@@ -463,6 +471,13 @@ func setup(feagi_socket_address: StringName) -> void:
 
 ## Starts a connection
 func connect_websocket() -> void:
+	# If SHM neuron visualization is active, we do not require a WebSocket connection.
+	# Keep SHM polling active, but skip WS connect attempts (prevents noisy retry spam).
+	if _use_shared_mem:
+		if not _ws_disabled_by_shm_notice_printed:
+			_ws_disabled_by_shm_notice_printed = true
+			print("[%s] [WS] WebSocket connect suppressed (SHM active)" % _get_timestamp())
+		return
 	if _socket_web_address == "":
 		push_error("FEAGI WS: No address specified!")
 		return
@@ -703,6 +718,27 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 				if !decoded_result.success:
 					print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
 					return
+
+				# Rate-limited SHM decode diagnostics (high-signal for "large scale shows nothing").
+				# Only logs when the packet came from SHM.
+				if from_shm:
+					var now_ms_shm_apply := Time.get_ticks_msec()
+					if now_ms_shm_apply - _shm_last_apply_log_ms >= _SHM_APPLY_LOG_INTERVAL_MS:
+						_shm_last_apply_log_ms = now_ms_shm_apply
+						var areas_dict: Dictionary = decoded_result.get("areas", {})
+						var area_count := areas_dict.size() if typeof(areas_dict) == TYPE_DICTIONARY else 0
+						var power_points := 0
+						if typeof(areas_dict) == TYPE_DICTIONARY:
+							for k in areas_dict.keys():
+								var clean_id := String(k).strip_edges().replace("'", "").replace('"', "")
+								if AbstractCorticalArea.is_power_area(clean_id):
+									var a_any: Variant = areas_dict.get(k)
+									var a: Dictionary = a_any as Dictionary
+									var x_arr: PackedInt32Array = a.get("x_array", PackedInt32Array())
+									power_points = x_arr.size()
+									break
+						print("[SHM-APPLY] ok=true areas=%d power_points=%d" % [area_count, power_points])
+
 				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
 				for cortical_id in decoded_result.areas.keys():
 					var area_data = decoded_result.areas[cortical_id]
@@ -730,6 +766,9 @@ func _get_timestamp() -> String:
 	return "%02d:%02d:%02d.%03d" % [time.hour, time.minute, time.second, Time.get_ticks_msec() % 1000]
 
 func _reconnect_websocket() -> void:
+	# If SHM neuron visualization is active, do not attempt WS reconnects.
+	if _use_shared_mem:
+		return
 	# Debug call stack to see what's triggering multiple calls
 	var stack = get_stack()
 	var caller = "unknown"
@@ -914,6 +953,7 @@ func _try_open_shm_path() -> void:
 	_shm_last_rate_log_time = Time.get_ticks_msec() / 1000.0
 	
 	print("𒓉 [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
+	shm_visualization_enabled.emit(p)
 	# Reset path notices to show SHM active on next _process tick
 	_shm_notice_printed = false
 	_ws_notice_printed = true
@@ -926,6 +966,26 @@ func _poll_shm_once() -> void:
 	var h := _shm_file.get_buffer(_shm_header_size)
 	if h.size() < 32:
 		return
+	# Detect SHM layout changes (e.g., FEAGI auto-resized slot size for large frames).
+	# If FEAGI recreates the SHM file with a new slot_size/num_slots, we MUST reopen and
+	# reinitialize offsets; otherwise we will seek into the wrong positions and decode garbage.
+	var hdr_num_slots := int(h.decode_u32(12))
+	var hdr_slot_size := int(h.decode_u32(16))
+	if hdr_num_slots > 0 and hdr_slot_size > 0:
+		if hdr_num_slots != _shm_num_slots or hdr_slot_size != _shm_slot_size:
+			print("[SHM] Detected SHM layout change: slots %d→%d slot_size %d→%d. Reopening %s" % [
+				_shm_num_slots, hdr_num_slots, _shm_slot_size, hdr_slot_size, _shm_path
+			])
+			_shm_file = null
+			var f2 := FileAccess.open(_shm_path, FileAccess.READ)
+			if f2 != null:
+				_shm_file = f2
+				_shm_num_slots = hdr_num_slots
+				_shm_slot_size = hdr_slot_size
+				_shm_last_seq = _decode_u64_le(h, 20) - 1
+				_shm_missed_cycles = 0
+				_shm_no_new_reported = false
+			return
 	var frame_seq := _decode_u64_le(h, 20)
 	if frame_seq <= _shm_last_seq:
 		_shm_missed_cycles += 1
@@ -965,6 +1025,16 @@ func _poll_shm_once() -> void:
 	_shm_last_seq = frame_seq
 	_shm_no_new_reported = false
 	_shm_missed_cycles = 0
+
+	# Rate-limited SHM receive diagnostics for large payloads (e.g., MRI/NIFTI frames).
+	# Confirms we received a payload and shows first byte (2=v2 container, 11=raw Type11).
+	var now_ms_shm_rx := Time.get_ticks_msec()
+	if now_ms_shm_rx - _shm_last_rx_log_ms >= _SHM_RX_LOG_INTERVAL_MS:
+		_shm_last_rx_log_ms = now_ms_shm_rx
+		var fb := int(payload[0]) if payload.size() > 0 else -1
+		print("[SHM-RX] seq=%d payload_len=%d first_byte=%d slot_size=%d" % [
+			frame_seq, payload_len, fb, _shm_slot_size
+		])
 	
 	# Track update rate with timestamps and instantaneous FPS
 	_shm_updates_received += 1

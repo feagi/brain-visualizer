@@ -71,10 +71,24 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
+	print("🔧 DDA: update_dimensions called with new_dimensions: %s" % new_dimensions)
+	print("🔧 DDA: Before super() - _position_FEAGI_space: %s, _position_godot_space: %s" % [_position_FEAGI_space, _position_godot_space])
+	
 	super(new_dimensions)
+	
+	print("🔧 DDA: After super() - _dimensions: %s, _position_godot_space: %s" % [_dimensions, _position_godot_space])
 	
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
+	
+	# CRITICAL FIX: Ensure _static_body remains visible after dimension updates
+	# This prevents the area from disappearing when properties are updated
+	if not _static_body.visible:
+		print("⚠️ DDA: _static_body was invisible - restoring visibility!")
+		_static_body.visible = true
+	
+	print("🔧 DDA: Set _static_body.scale=%s, _static_body.position=%s, visible=%s" % [_static_body.scale, _static_body.position, _static_body.visible])
+	
 	bv_update_friendly_name_label_position()
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
@@ -86,8 +100,22 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
+	print("🔧 DDA: Updated shader parameters - voxel_count: %s, depth: %d" % [new_dimensions, calculated_depth])
+	
+	# CRITICAL FIX: Recreate SVO trees with new dimensions
 	_highlight_SVO = SVOTree.create_SVOTree(new_dimensions)
 	_selection_SVO = SVOTree.create_SVOTree(new_dimensions)
+	
+	# CRITICAL FIX: Update shader texture parameters after recreating SVOs
+	# Without this, the shader uses stale/invalid texture references causing rendering to fail
+	if _highlight_image_texture != null:
+		_DDA_mat.set_shader_parameter("highlight_SVO", _highlight_image_texture)
+	if _selection_image_texture != null:
+		_DDA_mat.set_shader_parameter("selection_SVO", _selection_image_texture)
+	if _activation_image_texture != null:
+		_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
+	
+	print("✅ DDA: update_dimensions complete")
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# Validate data size - need at least 4 bytes for dimensions (2x uint16)

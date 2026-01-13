@@ -767,17 +767,22 @@ func _proxy_notification_cortical_area_updated(cortical_area: AbstractCorticalAr
 	print("UI: Cortical area %s properties updated - refreshing visualization" % cortical_area.cortical_ID)
 	print("  🔍 Current dimensions: %s" % cortical_area.dimensions_3D)
 	print("  🔍 Current coordinates: %s" % cortical_area.coordinates_3D)
-	print("  🔍 Current visibility: %s" % cortical_area.cortical_visibility)
+	print("  🔍 Current visibility (cortical_visibility): %s" % cortical_area.cortical_visibility)
+	print("  🔍 Cortical type: %s" % cortical_area.cortical_type)
+	print("  🔍 Voxel granularity: %s" % cortical_area.visualization_voxel_granularity)
 	
 	# CRITICAL FIX (similar to clone coordinate fix): Force-trigger dimension update signal
 	# to refresh renderer even if dimensions haven't changed. This ensures visualization
 	# stays in sync after property updates (e.g., firing threshold changes).
 	# The renderer is connected to dimensions_3D_updated signal and will refresh all visuals.
+	print("  🔧 Emitting dimensions_3D_updated signal with dims: %s" % cortical_area.dimensions_3D)
 	var current_dims = cortical_area.dimensions_3D
 	cortical_area.dimensions_3D_updated.emit(current_dims)
 	
 	# Also refresh granularity-specific visuals
+	print("  🔧 Calling BV_refresh_directpoints_renderer_visuals()")
 	cortical_area.BV_refresh_directpoints_renderer_visuals()
+	print("  ✅ Visualization refresh complete for %s" % cortical_area.cortical_ID)
 	
 	# Show notification
 	_notification_system.add_notification("Confirmed update of cortical area %s!" % cortical_area.friendly_name)

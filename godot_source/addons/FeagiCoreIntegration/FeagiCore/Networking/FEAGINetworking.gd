@@ -50,6 +50,20 @@ func _init():
 		print("✅ NETWORKING: genome_reset_request_recieved signal emitted")
 	)
 	add_child(websocket_API)
+	websocket_API.shm_visualization_enabled.connect(_on_shm_visualization_enabled)
+
+func _on_shm_visualization_enabled(_path: String) -> void:
+	# SHM is now active; BV no longer requires WebSocket connectivity for neuron visualization.
+	_transport_mode = TRANSPORT_MODE.SHARED_MEMORY
+	# Ensure SHM polling runs (it lives in FEAGIWebSocketAPI._process()).
+	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+	# If WS was in retry mode, stop it (reduces log spam / avoids UI disconnect loops).
+	websocket_API.disconnect_websocket()
+	# If we were waiting on WS, treat connection as healthy (HTTP already validated).
+	if _connection_state != CONNECTION_STATE.HEALTHY:
+		var prev = _connection_state
+		_connection_state = CONNECTION_STATE.HEALTHY
+		connection_state_changed.emit(prev, CONNECTION_STATE.HEALTHY)
 
 ## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify.
 ## If viable, proceeds with connection. Returns if sucessful
@@ -360,6 +374,9 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 
 func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, current_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
 	print("FEAGI NETWORK: 📡 _WS_health_changed received: %s → %s" % [FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[_previous_health], FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[current_health]])
+	# In SHM mode, WS connectivity is not required for neuron visualization.
+	if _transport_mode == TRANSPORT_MODE.SHARED_MEMORY:
+		return
 	print("FEAGI NETWORK: Current connection state before WS change: %s" % CONNECTION_STATE.keys()[_connection_state])
 	print("FEAGI NETWORK: Current transport mode: %s" % TRANSPORT_MODE.keys()[_transport_mode])
 	
