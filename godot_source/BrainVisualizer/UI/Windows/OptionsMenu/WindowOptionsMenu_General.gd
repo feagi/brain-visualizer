@@ -5,7 +5,6 @@ var _version: LineEdit
 var _interface_dropdown: OptionButton
 var _advanced_mode: ToggleButton
 var _autoconfigure_IO: ToggleButton
-var _camera_animation_section: VerticalCollapsible
 
 
 func _ready() -> void:
@@ -13,7 +12,6 @@ func _ready() -> void:
 	_interface_dropdown = $VBoxContainer2/OptionButton
 	_advanced_mode = $VBoxContainer3/ToggleButton
 	_autoconfigure_IO = $VBoxContainer4/ToggleButton
-	_camera_animation_section = $Camera_Animation
 	
 	_advanced_mode.set_toggle_no_signal(BV.UI.is_in_advanced_mode)
 	# Keep the UI magnification dropdown in sync with the global UI scale controls (top-right +/-).
@@ -21,7 +19,6 @@ func _ready() -> void:
 		BV.UI.theme_changed.connect(_on_theme_changed)
 	_interface_dropdown.selected = _get_theme_index()
 	_version.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
-	_camera_animation_section.setup()
 
 func _on_theme_changed(_new_theme: Theme) -> void:
 	# Update dropdown selection to reflect the latest chosen UI magnification.

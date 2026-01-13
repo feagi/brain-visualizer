@@ -22,6 +22,10 @@
 [ext_resource type="Texture2D" uid="uid://brc1qexp6eajy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
 [ext_resource type="Texture2D" uid="uid://lgpw7fwv70iy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png" id="19_fxjdk"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="20_6yf7l"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="27_cam_anim_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="28_cam_anim_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="29_cam_anim_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="30_cam_anim_d"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="22_eye_s"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="23_eye_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="24_eye_h"]
@@ -37,6 +41,7 @@ offset_top = 10.0
 offset_right = 1605.0
 offset_bottom = 86.0
 theme_type_variation = &"HBoxContainer_far"
+theme_override_constants/separation = 8
 script = ExtResource("1_f5hja")
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
@@ -278,6 +283,27 @@ texture_disabled = ExtResource("25_eye_d")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="CameraAnimationsPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CameraAnimationsPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="CameraAnimations" type="TextureRect" parent="CameraAnimationsPanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Camera Animations"
+texture = ExtResource("27_cam_anim_s")
+expand_mode = 3
+script = ExtResource("20_6yf7l")
+texture_normal = ExtResource("27_cam_anim_s")
+texture_pressed = ExtResource("29_cam_anim_c")
+texture_hover = ExtResource("28_cam_anim_h")
+texture_disabled = ExtResource("30_cam_anim_d")
+
 [node name="DetailsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
@@ -374,5 +400,6 @@ layout_mode = 2
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
 [connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
+[connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

@@ -155,6 +155,9 @@ func _open_create_morpology() -> void:
 func _open_options() -> void:
 	BV.WM.spawn_options()
 
+func _open_camera_animations() -> void:
+	BV.WM.spawn_camera_animations()
+
 #func _FEAGI_retireved_latency(latency_ms: int) -> void:
 #	_latency_field.current_int = latency_ms
 
