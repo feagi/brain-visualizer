@@ -102,10 +102,10 @@ func _ready():
 	_fps_label.add_theme_font_size_override("font_size", 16)
 	add_child(_fps_label)
 	
-	#TODO updated is commented out due to these signals being called when we merely retrieve the data but dont update anything, causing it to be spammed. We may wish to address this
+	# Connect cortical area cache signals
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_proxy_notification_cortical_area_added)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_proxy_notification_cortical_area_removed)
-	#FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(_proxy_notification_cortical_area_updated)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(_proxy_notification_cortical_area_updated)
 	#FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mappings_changed.connect(_proxy_notification_mappings_updated)
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
@@ -759,9 +759,27 @@ func _proxy_notification_cortical_area_added(cortical_area: AbstractCorticalArea
 	
 	
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+## Also refreshes visualization when properties are updated
 func _proxy_notification_cortical_area_updated(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 		return
+	
+	print("UI: Cortical area %s properties updated - refreshing visualization" % cortical_area.cortical_ID)
+	print("  🔍 Current dimensions: %s" % cortical_area.dimensions_3D)
+	print("  🔍 Current coordinates: %s" % cortical_area.coordinates_3D)
+	print("  🔍 Current visibility: %s" % cortical_area.cortical_visibility)
+	
+	# CRITICAL FIX (similar to clone coordinate fix): Force-trigger dimension update signal
+	# to refresh renderer even if dimensions haven't changed. This ensures visualization
+	# stays in sync after property updates (e.g., firing threshold changes).
+	# The renderer is connected to dimensions_3D_updated signal and will refresh all visuals.
+	var current_dims = cortical_area.dimensions_3D
+	cortical_area.dimensions_3D_updated.emit(current_dims)
+	
+	# Also refresh granularity-specific visuals
+	cortical_area.BV_refresh_directpoints_renderer_visuals()
+	
+	# Show notification
 	_notification_system.add_notification("Confirmed update of cortical area %s!" % cortical_area.friendly_name)
 	
 	
