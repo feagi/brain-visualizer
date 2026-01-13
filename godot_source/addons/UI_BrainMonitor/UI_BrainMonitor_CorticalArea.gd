@@ -30,6 +30,7 @@ var _io_direction_indicator: Node3D = null
 var _io_direction_indicator_material: StandardMaterial3D = null
 var _io_direction_indicator_mode: StringName = &"none" # "none" | "input" | "output" | "bidirectional"
 var _io_direction_indicator_base_scale: Vector3 = Vector3.ONE
+var _io_direction_indicator_label: Label3D = null
 
 # Tunables for arrow look/feel
 const IO_ARROW_COLOR: Color = Color(0.827, 0.706, 0.196, 0.85)  # Mustard yellow, semi-transparent
@@ -46,6 +47,7 @@ const IO_ARROW_SIZE_MIN_SHAFT_H: float = 0.18
 const IO_ARROW_SIZE_MAX_SHAFT_H: float = 0.85
 const IO_ARROW_SIZE_MIN_HEAD_H: float = 0.12
 const IO_ARROW_SIZE_MAX_HEAD_H: float = 0.55
+const IO_ARROW_LABEL_Y_GAP_MULT: float = 0.65  # Extra spacing above arrow head(s), in head-height units
 
 # Distance-based scaling for pulse spheres (flow animation)
 const PULSE_DISTANCE_SCALE_ENABLED: bool = true
@@ -344,6 +346,7 @@ func _create_io_direction_indicator(mode: StringName) -> void:
 	parent_body.add_child(root)
 	_io_direction_indicator = root
 	_io_direction_indicator_material = mat
+	_io_direction_indicator_label = _create_io_direction_indicator_label(mode)
 	set_process(true)
 
 func _update_io_direction_indicator_transform(mode: StringName) -> void:
@@ -418,6 +421,8 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 		1.0 / absf(parent_scale.y),
 		1.0 / absf(parent_scale.z)
 	)
+	_update_io_direction_indicator_label(mode, shaft_h, head_h)
+	_update_io_direction_indicator_label_visibility()
 
 	# Orient direction
 	if mode == &"input":
@@ -437,6 +442,54 @@ func _get_friendly_name_label() -> Label3D:
 	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
 		return _directpoints_renderer._friendly_name_label
 	return null
+
+func _create_io_direction_indicator_label(mode: StringName) -> Label3D:
+	if _io_direction_indicator == null or not is_instance_valid(_io_direction_indicator):
+		return null
+	var label := Label3D.new()
+	label.name = "IODirectionLabel"
+	# Keep label independent of arrow rotation/scale so it always appears above in world space.
+	label.top_level = true
+	label.font_size = 256
+	label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
+	label.modulate = Color.WHITE
+	label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.alpha_scissor_threshold = 0.5
+	label.no_depth_test = false
+	label.render_priority = 2  # Render after the arrow geometry
+	label.visible = false  # Only shown on hover
+	label.text = _io_direction_indicator_label_text(mode)
+	_io_direction_indicator.add_child(label)
+	return label
+
+func _io_direction_indicator_label_text(mode: StringName) -> String:
+	if mode == &"input":
+		return "Input Area"
+	if mode == &"output":
+		return "Output Area"
+	if mode == &"bidirectional":
+		return "Input/Output Area"
+	return ""
+
+func _update_io_direction_indicator_label(mode: StringName, shaft_h: float, head_h: float) -> void:
+	if _io_direction_indicator_label == null or not is_instance_valid(_io_direction_indicator_label):
+		return
+	if _io_direction_indicator == null or not is_instance_valid(_io_direction_indicator):
+		return
+	_io_direction_indicator_label.text = _io_direction_indicator_label_text(mode)
+	# Position label above the arrow in WORLD space (avoids inheriting arrow flips/scales).
+	var total_h: float = shaft_h + head_h
+	if mode == &"bidirectional":
+		total_h = shaft_h + (2.0 * head_h)
+	var y_above: float = (total_h / 2.0) + (head_h * IO_ARROW_LABEL_Y_GAP_MULT)
+	_io_direction_indicator_label.global_position = _io_direction_indicator.global_position + Vector3(0.0, y_above, 0.0)
+
+func _update_io_direction_indicator_label_visibility() -> void:
+	if _io_direction_indicator_label == null or not is_instance_valid(_io_direction_indicator_label):
+		return
+	# Only show label when the cortical area itself is hovered (consistent with hover highlighting).
+	_io_direction_indicator_label.visible = _is_volume_moused_over and _io_direction_indicator_mode != &"none"
 
 func _update_io_direction_indicator_geometry(mode: StringName, radius: float, shaft_h: float, head_h: float) -> void:
 	var shaft := _io_direction_indicator.get_node_or_null("ArrowShaft") as MeshInstance3D
@@ -540,6 +593,7 @@ func _clear_io_direction_indicator() -> void:
 	_io_direction_indicator = null
 	_io_direction_indicator_material = null
 	_io_direction_indicator_base_scale = Vector3.ONE
+	_io_direction_indicator_label = null
 	set_process(false)
 
 ## Computes a merged WORLD-space AABB for all MeshInstance3D descendants under `root`.
@@ -646,6 +700,7 @@ func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = fa
 		_dda_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 	if _directpoints_renderer != null:
 		_directpoints_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
+	_update_io_direction_indicator_label_visibility()
 	
 	# Show/hide neural connection curves on hover
 	if is_moused_over:
