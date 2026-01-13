@@ -88,6 +88,10 @@ popup/item_4/id = 4
 layout_mode = 2
 text = "Export Current Points"
 
+[node name="AnimationSaveLabel" type="Label" parent="."]
+layout_mode = 2
+text = "Exported Animation JSON"
+
 [node name="AnimationSave" type="TextEdit" parent="."]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2

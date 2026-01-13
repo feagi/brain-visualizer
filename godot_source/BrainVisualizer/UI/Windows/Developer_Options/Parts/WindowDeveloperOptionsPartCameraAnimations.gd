@@ -1,10 +1,17 @@
 extends VBoxContainer
 class_name WindowDeveloperOptionsPartCameraAnimations # Microsoft would be proud
 
+const _PLAY_DISABLED_TOOLTIP: String = "Animation data missing."
+const _EXPORT_DISABLED_TOOLTIP: String = "No saved positions."
+
 var _camera: Camera3D
 var _stored_positions: Array[Vector3] = []
 var _stored_rotations: Array[Quaternion] = []
 var _stored_times: Array[float] = []
+
+var _animation_save: TextEdit
+var _play_button: Button
+var _export_button: Button
 
 func _ready() -> void:
 	# Attempt to acquire the active Brain Monitor camera
@@ -13,6 +20,28 @@ func _ready() -> void:
 		_camera = bm.get_node("SubViewport/Center/PancakeCam") as Camera3D
 	else:
 		_camera = null
+	
+	_animation_save = $AnimationSave
+	_play_button = $Play
+	_export_button = $Export
+	if _animation_save != null and not _animation_save.text_changed.is_connected(_on_animation_save_text_changed):
+		_animation_save.text_changed.connect(_on_animation_save_text_changed)
+	_sync_action_button_states()
+
+func _on_animation_save_text_changed() -> void:
+	_sync_action_button_states()
+
+func _sync_action_button_states() -> void:
+	# Export: enabled only when there is at least one saved frame in memory.
+	if _export_button != null:
+		var has_saved_positions := not _stored_positions.is_empty()
+		_export_button.disabled = not has_saved_positions
+		_export_button.tooltip_text = "" if has_saved_positions else _EXPORT_DISABLED_TOOLTIP
+	# Play: enabled only when there is JSON content to execute.
+	if _play_button != null and _animation_save != null:
+		var has_animation_data := _animation_save.text.strip_edges() != ""
+		_play_button.disabled = not has_animation_data
+		_play_button.tooltip_text = "" if has_animation_data else _PLAY_DISABLED_TOOLTIP
 
 func clear_stored_data() -> void:
 	var counter: IntInput = $HBoxContainer/num_animation_points
@@ -20,12 +49,14 @@ func clear_stored_data() -> void:
 	_stored_rotations = []
 	_stored_times = []
 	counter.current_int = 0
+	_sync_action_button_states()
 
 func add_frame() -> void:
 	if _camera == null:
 		BV.NOTIF.add_notification("Developer Camera Animations: No active camera found")
 		return
 	_append_camera_transform(_camera.position, _camera.quaternion)
+	_sync_action_button_states()
 
 func export_into_json() -> void:
 	var text_node: TextEdit = $AnimationSave
@@ -35,6 +66,7 @@ func export_into_json() -> void:
 		output_arr.append(_export_index_as_dict(i))
 	var json: StringName = JSON.stringify(output_arr)
 	text_node.text = json
+	_sync_action_button_states()
 
 func execute_json() -> void:
 	var text_node: TextEdit = $AnimationSave
