@@ -636,7 +636,7 @@ func _compute_cortical_data_aabb() -> AABB:
 	var have := false
 	var merged := AABB()
 	for viz in _cortical_visualizations_by_ID.values():
-		if viz == null:
+		if viz == null or not is_instance_valid(viz):
 			continue
 		var ca = viz.get("cortical_area")
 		if ca == null:
@@ -838,7 +838,8 @@ func _update_label_overlap_visibility() -> void:
 	
 	# Collect labels from main scene cortical visualizations
 	for viz in _cortical_visualizations_by_ID.values():
-		_collect_labels_from_cortical_viz(viz, label_data, viewport)
+		if viz != null and is_instance_valid(viz):
+			_collect_labels_from_cortical_viz(viz, label_data, viewport)
 	
 	# Also collect labels from cortical areas within brain region frames (plates)
 	for region_viz in _brain_region_visualizations_by_ID.values():
@@ -1398,7 +1399,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 
 func clear_all_selected_cortical_area_neurons() -> void:
 	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
-		area.clear_all_neuron_selection_states()
+		if area != null and is_instance_valid(area):
+			area.clear_all_neuron_selection_states()
 
 func set_further_neuron_selection_restriction_to_cortical_area(restrict_to: AbstractCorticalArea) -> void:
 	if restrict_to.cortical_ID in _cortical_visualizations_by_ID:
@@ -2109,9 +2111,10 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 	
 	# Force refresh connections for all currently hovered cortical areas
 	for cortical_viz in _cortical_visualizations_by_ID.values():
-		if cortical_viz._is_volume_moused_over:
-			cortical_viz._hide_neural_connections()
-			cortical_viz._show_neural_connections()
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			if cortical_viz._is_volume_moused_over:
+				cortical_viz._hide_neural_connections()
+				cortical_viz._show_neural_connections()
 
 ## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)
 func _create_missing_brain_region_visualizations() -> void:
@@ -2162,13 +2165,14 @@ func force_create_missing_regions() -> void:
 	
 	var refreshed_count = 0
 	for cortical_viz in _cortical_visualizations_by_ID.values():
-		# Hide any existing connections
-		cortical_viz._hide_neural_connections()
-		
-		# If this area is currently hovered, show refreshed connections
-		if cortical_viz._is_volume_moused_over:
-			cortical_viz._show_neural_connections()
-			refreshed_count += 1
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			# Hide any existing connections
+			cortical_viz._hide_neural_connections()
+			
+			# If this area is currently hovered, show refreshed connections
+			if cortical_viz._is_volume_moused_over:
+				cortical_viz._show_neural_connections()
+				refreshed_count += 1
 	
 	print("BrainMonitor 3D Scene: ✅ Manual refresh completed for ", refreshed_count, " areas")
 
