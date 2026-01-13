@@ -6,6 +6,7 @@ const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brain
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
 const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png")
 const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
+const TAB_H_SEPARATION_BASE_PX: int = 12
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -35,6 +36,8 @@ func _theme_updated(new_theme: Theme) -> void:
 	if _tab_bar != null:
 		_tab_bar.theme = new_theme
 		_apply_tab_icon_max_width()
+		var scaled_sep: int = int(round(float(TAB_H_SEPARATION_BASE_PX) * BV.UI.loaded_theme_scale.x))
+		_tab_bar.add_theme_constant_override("h_separation", scaled_sep)
 
 func _apply_tab_icon_max_width() -> void:
 	if _tab_bar == null:

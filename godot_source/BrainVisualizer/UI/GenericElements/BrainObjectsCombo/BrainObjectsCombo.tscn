@@ -33,6 +33,10 @@ texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="Spacer_AfterAddCircuits" type="Control" parent="."]
+custom_minimum_size = Vector2(14, 0)
+size_flags_horizontal = 4
+
 [node name="InputsList" type="PanelContainer" parent="."]
 script = ExtResource("2_basebtn")
 
@@ -52,6 +56,10 @@ custom_minimum_size = Vector2(32, 32)
 texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
+
+[node name="Spacer_AfterAddInputs" type="Control" parent="."]
+custom_minimum_size = Vector2(14, 0)
+size_flags_horizontal = 4
 
 [node name="InterconnectAreasList" type="PanelContainer" parent="."]
 script = ExtResource("2_basebtn")
@@ -76,6 +84,10 @@ mouse_filter = 2
 focus_mode = 2
 disabled = false
 
+[node name="Spacer_AfterAddInterconnect" type="Control" parent="."]
+custom_minimum_size = Vector2(14, 0)
+size_flags_horizontal = 4
+
 
 [node name="MemoryAreasList" type="PanelContainer" parent="."]
 script = ExtResource("2_basebtn")
@@ -99,6 +111,10 @@ stretch_mode = 0
 mouse_filter = 2
 focus_mode = 2
 disabled = false
+
+[node name="Spacer_AfterAddMemory" type="Control" parent="."]
+custom_minimum_size = Vector2(14, 0)
+size_flags_horizontal = 4
 
 [node name="OutputsList" type="PanelContainer" parent="."]
 script = ExtResource("2_basebtn")

@@ -87,6 +87,11 @@ texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="Spacer_AfterAddCircuits" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
 [node name="InputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 layout_mode = 2
 script = ExtResource("2_o4dth")
@@ -120,6 +125,11 @@ texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="Spacer_AfterAddInputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
 [node name="OutputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 layout_mode = 2
 script = ExtResource("2_o4dth")
@@ -152,6 +162,11 @@ texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
+
+[node name="Spacer_AfterAddOutputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
