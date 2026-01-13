@@ -92,6 +92,7 @@ var _ws_last_rx_log_ms: int = 0
 const _WS_RX_LOG_INTERVAL_MS: int = 1000
 var _ws_last_apply_log_ms: int = 0
 const _WS_APPLY_LOG_INTERVAL_MS: int = 1000
+const _WS_DIAGNOSTICS_ENABLED: bool = false
 
 # SHM update rate tracking
 var _shm_updates_received: int = 0
@@ -283,7 +284,7 @@ func _process(_delta: float):
 			# - Shows payload size and first byte (2 = FeagiByteContainer v2, 11 = raw Type 11)
 			# - Avoids log spam by printing at most once per second
 			var now_ms_rx := Time.get_ticks_msec()
-			if drained_packets > 0 and now_ms_rx - _ws_last_rx_log_ms >= _WS_RX_LOG_INTERVAL_MS:
+			if _WS_DIAGNOSTICS_ENABLED and drained_packets > 0 and now_ms_rx - _ws_last_rx_log_ms >= _WS_RX_LOG_INTERVAL_MS:
 				_ws_last_rx_log_ms = now_ms_rx
 				if newest_binary_len > 0:
 					var fb := int(newest_binary[0])
@@ -310,7 +311,7 @@ func _process(_delta: float):
 						# Rate-limited decode/apply diagnostics to pinpoint "receiving but not rendering".
 						# This will tell us if Rust decoded/applied any areas at all (and if it errored).
 						var now_ms_apply := Time.get_ticks_msec()
-						if now_ms_apply - _ws_last_apply_log_ms >= _WS_APPLY_LOG_INTERVAL_MS:
+						if _WS_DIAGNOSTICS_ENABLED and now_ms_apply - _ws_last_apply_log_ms >= _WS_APPLY_LOG_INTERVAL_MS:
 							_ws_last_apply_log_ms = now_ms_apply
 							var ok_apply := bool(perf.get("success", false))
 							var err_apply := String(perf.get("error", ""))
