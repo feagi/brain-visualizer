@@ -207,7 +207,9 @@ func _call_register_agent_for_shm() -> bool:
 			}
 		},
 		"metadata": {"request_shared_memory": true},
-		"chosen_transport": "websocket"  # BV prefers WebSocket over ZMQ
+		# Request HYBRID so FEAGI returns shm_paths when available; BV will switch to SHM and skip WS.
+		# If FEAGI cannot provide SHM, it will still advertise WebSocket in transports and BV will connect via WS.
+		"chosen_transport": "hybrid"
 	}
 	# Avoid chained member resolution at parse time; guard address_list
 	var addr_list = http_API.get("address_list")

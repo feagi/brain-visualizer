@@ -488,6 +488,41 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 	if bytes.size() == 0:
 		push_error("FEAGI: Cannot process empty byte array!")
 		return
+
+	# FEAGI Byte Container v2 (first byte == 2)
+	# This is a wrapper format used by FEAGI (SHM/WS) that can contain one or more structures.
+	# Format (from feagi-serialization::FeagiByteContainer):
+	# - [0]   version (u8) == 2
+	# - [1:3] increment_counter (u16 LE)
+	# - [3]   struct_count (u8)
+	# - then struct_count * u32 LE lengths
+	# - then each structure payload (each payload begins with structure type, e.g., 1 or 11)
+	if bytes[0] == 2:
+		if bytes.size() < 4:
+			push_error("FEAGI: Invalid ByteContainer v2 (too short)")
+			return
+		var struct_count := int(bytes[3])
+		if struct_count <= 0:
+			# Valid empty container
+			return
+		var lookup_len := 4 * struct_count
+		var header_total := 4 + lookup_len
+		if bytes.size() < header_total:
+			push_error("FEAGI: Invalid ByteContainer v2 (header truncated)")
+			return
+		var data_off := header_total
+		for i in range(struct_count):
+			var len_off := 4 + i * 4
+			var struct_len := int(bytes.decode_u32(len_off))
+			if struct_len <= 0:
+				continue
+			if data_off + struct_len > bytes.size():
+				push_error("FEAGI: Invalid ByteContainer v2 (structure out of bounds)")
+				return
+			var struct_bytes := bytes.slice(data_off, data_off + struct_len)
+			_process_wrapped_byte_structure(struct_bytes, from_shm)
+			data_off += struct_len
+		return
 	
 	## respond as per type
 	match(bytes[0]):
@@ -686,7 +721,8 @@ func _looks_like_feagi_ws_payload(bytes: PackedByteArray) -> bool:
 	if bytes.size() == 0:
 		return false
 	var t := int(bytes[0])
-	return t == 1 or t == 8 or t == 9 or t == 10 or t == 11
+	# 2 is FeagiByteContainer v2 wrapper (contains 1/11 internally)
+	return t == 1 or t == 2 or t == 8 or t == 9 or t == 10 or t == 11
 
 func _is_probably_text(bytes: PackedByteArray) -> bool:
 	# Heuristic: small (<= 256) and all ASCII/whitespace
