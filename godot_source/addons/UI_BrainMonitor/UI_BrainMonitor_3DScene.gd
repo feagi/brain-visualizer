@@ -154,6 +154,8 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			top_row = HBoxContainer.new()
 			top_row.name = "Top_Row"
 			top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			# Keep the top row compact; otherwise it can expand to fill available vertical space.
+			top_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			top_row.mouse_filter = Control.MOUSE_FILTER_PASS
 			_UI_layer_for_BM.add_child(top_row)
 			# Add a spacer to push Bottom_Row to bottom if not present
@@ -174,6 +176,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			_combo.name = "BrainObjectsCombo"
 			top_row.add_child(_combo)
 			_combo.mouse_filter = Control.MOUSE_FILTER_STOP
+			_combo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			_combo.set_3d_context(self, _representing_region)
 	
 

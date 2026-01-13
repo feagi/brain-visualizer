@@ -11,9 +11,11 @@
 
 [node name="BrainObjectsCombo" type="HBoxContainer"]
 mouse_filter = 1
+size_flags_vertical = 4
 script = ExtResource("1_script")
 
 [node name="BrainRegionsList" type="PanelContainer" parent="."]
+size_flags_vertical = 4
 script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="BrainRegionsList"]
@@ -29,6 +31,7 @@ text = "Circuits"
 
 [node name="TextureButton_BrainRegions" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
+size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
@@ -38,6 +41,7 @@ custom_minimum_size = Vector2(14, 0)
 size_flags_horizontal = 4
 
 [node name="InputsList" type="PanelContainer" parent="."]
+size_flags_vertical = 4
 script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="InputsList"]
@@ -53,6 +57,7 @@ text = "Inputs"
 
 [node name="TextureButton_Inputs" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
+size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
@@ -62,6 +67,7 @@ custom_minimum_size = Vector2(14, 0)
 size_flags_horizontal = 4
 
 [node name="InterconnectAreasList" type="PanelContainer" parent="."]
+size_flags_vertical = 4
 script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="InterconnectAreasList"]
@@ -77,6 +83,7 @@ text = "Interconnect Areas"
 
 [node name="TextureButton_Interconnect" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
+size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
@@ -90,6 +97,7 @@ size_flags_horizontal = 4
 
 
 [node name="MemoryAreasList" type="PanelContainer" parent="."]
+size_flags_vertical = 4
 script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MemoryAreasList"]
@@ -105,6 +113,7 @@ text = "Memory Areas"
 
 [node name="TextureButton_Memory" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
+size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
@@ -117,6 +126,7 @@ custom_minimum_size = Vector2(14, 0)
 size_flags_horizontal = 4
 
 [node name="OutputsList" type="PanelContainer" parent="."]
+size_flags_vertical = 4
 script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="OutputsList"]
@@ -132,6 +142,7 @@ text = "Outputs"
 
 [node name="TextureButton_Outputs" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
+size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
 ignore_texture_size = true
 stretch_mode = 0
