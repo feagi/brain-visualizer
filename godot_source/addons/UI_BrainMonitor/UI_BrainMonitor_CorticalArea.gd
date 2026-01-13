@@ -35,7 +35,7 @@ var _io_direction_indicator_label: Label3D = null
 # Tunables for arrow look/feel
 const IO_ARROW_COLOR: Color = Color(0.827, 0.706, 0.196, 0.85)  # Mustard yellow, semi-transparent
 const IO_ARROW_EMISSION_COLOR: Color = Color(0.827, 0.706, 0.196, 1.0)
-const IO_ARROW_PULSE_PERIOD_MS: float = 1500.0
+const IO_ARROW_PULSE_PERIOD_MS: float = 3000.0
 const IO_ARROW_ALPHA_MIN: float = 0.15
 const IO_ARROW_ALPHA_MAX: float = 0.75
 const IO_ARROW_EMISSION_MIN: float = 1.2

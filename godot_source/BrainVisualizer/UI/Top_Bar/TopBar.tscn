@@ -260,6 +260,7 @@ theme_type_variation = &"MarginContainer_far"
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Split view options (Circuit Builder / Brain Monitor / Split View)"
 
 [node name="ActivityRenderingPanel" type="PanelContainer" parent="."]
 layout_mode = 2
