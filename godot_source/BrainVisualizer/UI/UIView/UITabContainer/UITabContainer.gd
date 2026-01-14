@@ -7,6 +7,7 @@ const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/Bu
 const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png")
 const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
 const TAB_H_SEPARATION_BASE_PX: int = 12
+const TAB_LEFT_PADDING_BASE_PX: int = 6
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -38,6 +39,17 @@ func _theme_updated(new_theme: Theme) -> void:
 		_apply_tab_icon_max_width()
 		var scaled_sep: int = int(round(float(TAB_H_SEPARATION_BASE_PX) * BV.UI.loaded_theme_scale.x))
 		_tab_bar.add_theme_constant_override("h_separation", scaled_sep)
+		var scaled_padding: int = int(round(float(TAB_LEFT_PADDING_BASE_PX) * BV.UI.loaded_theme_scale.x))
+		var selected_tab = _tab_bar.get_theme_stylebox("tab_selected")
+		if selected_tab != null:
+			var selected_override = selected_tab.duplicate()
+			selected_override.content_margin_left = scaled_padding
+			_tab_bar.add_theme_stylebox_override("tab_selected", selected_override)
+		var unselected_tab = _tab_bar.get_theme_stylebox("tab_unselected")
+		if unselected_tab != null:
+			var unselected_override = unselected_tab.duplicate()
+			unselected_override.content_margin_left = scaled_padding
+			_tab_bar.add_theme_stylebox_override("tab_unselected", unselected_override)
 
 func _apply_tab_icon_max_width() -> void:
 	if _tab_bar == null:
