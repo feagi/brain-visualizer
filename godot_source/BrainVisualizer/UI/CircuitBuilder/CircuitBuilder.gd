@@ -28,6 +28,11 @@ var _representing_region: BrainRegion
 var _move_timer: Timer
 var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value is new vector2 position
 var _move_flush_pending: bool = false
+var _multi_relocate_active: bool = false
+var _multi_relocate_anchor_mouse: Vector2 = Vector2.ZERO
+var _multi_relocate_node_start_positions: Dictionary = {}
+var _multi_relocate_nodes: Array[CBNodeConnectableBase] = []
+var _suppress_move_buffer: bool = false
 
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
@@ -280,6 +285,9 @@ func _CACHE_link_region_output_open_added(link: ConnectionChainLink) -> void:
 signal user_request_viewing_subregion(region: BrainRegion)
 
 func _gui_input(event):
+	if _multi_relocate_active:
+		_handle_multi_relocate_input(event)
+		return
 	if !(event is InputEventMouseButton):
 		return
 	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
@@ -324,6 +332,14 @@ func _node_deselect(element: GraphElement) -> void:
 		BV.UI.selection_system.remove_from_highlighted((element as CBNodeCorticalArea).representing_cortical_area)
 		return
 
+## Ensure only the provided element remains selected in GraphEdit.
+func _select_single_graph_element(element: GraphElement) -> void:
+	for node in get_children():
+		if node is GraphElement and node != element:
+			(node as GraphElement).selected = false
+	if element != null:
+		element.selected = true
+
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
 	BV.UI.selection_system.clear_all_highlighted()
 	user_request_viewing_subregion.emit(region_node.representing_region)
@@ -361,6 +377,8 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 
 ## Every time a cortical node moves, store and send it when time is ready
 func _genome_object_moved(node: CBNodeConnectableBase, new_position: Vector2i) -> void:
+	if _suppress_move_buffer:
+		return
 	var genome_object: GenomeObject 
 	if node is CBNodeCorticalArea:
 		genome_object = (node as CBNodeCorticalArea).representing_cortical_area
@@ -407,6 +425,78 @@ func _flush_move_buffer() -> void:
 		return
 	BV.NOTIF.add_notification(
 		"Move saved positions to genome.",
+		NotificationSystemNotification.NOTIFICATION_TYPE.INFO
+	)
+
+func start_multi_relocate(selection: Array[GenomeObject]) -> void:
+	_multi_relocate_nodes.clear()
+	_multi_relocate_node_start_positions.clear()
+	for obj in selection:
+		if obj is AbstractCorticalArea or obj is BrainRegion:
+			var node = _get_associated_connectable_graph_node(obj)
+			if node != null:
+				_multi_relocate_nodes.append(node)
+				_multi_relocate_node_start_positions[node] = node.position_offset
+	if _multi_relocate_nodes.is_empty():
+		BV.NOTIF.add_notification("No selectable areas found for relocate.")
+		return
+	_multi_relocate_active = true
+	_suppress_move_buffer = true
+	_multi_relocate_anchor_mouse = get_global_mouse_position()
+	BV.NOTIF.add_notification("Relocate mode: move mouse, left-click to commit.")
+
+func _handle_multi_relocate_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var delta_pixels: Vector2 = get_global_mouse_position() - _multi_relocate_anchor_mouse
+		var delta_graph: Vector2 = delta_pixels / max(zoom, 0.0001)
+		for node in _multi_relocate_nodes:
+			if _multi_relocate_node_start_positions.has(node):
+				var start_pos: Vector2 = _multi_relocate_node_start_positions[node]
+				node.position_offset = start_pos + delta_graph
+		return
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			_end_multi_relocate(true)
+		return
+
+func _end_multi_relocate(commit: bool) -> void:
+	_multi_relocate_active = false
+	_suppress_move_buffer = false
+	if not commit:
+		return
+	call_deferred("_commit_multi_relocate")
+
+func _commit_multi_relocate() -> void:
+	if _multi_relocate_nodes.is_empty():
+		return
+	var payload: Dictionary = {}
+	for node in _multi_relocate_nodes:
+		if node is CBNodeCorticalArea:
+			payload[(node as CBNodeCorticalArea).representing_cortical_area] = Vector2i(node.position_offset)
+		elif node is CBNodeRegion:
+			payload[(node as CBNodeRegion).representing_region] = Vector2i(node.position_offset)
+	if payload.is_empty():
+		return
+	print("Sending change of 2D positions for %d objects(s)" % len(payload.keys()))
+	var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(payload)
+	if result.has_errored:
+		print("CB_RELAYOUT_DEBUG: move save failed -> ", result.decode_response_as_generic_error_code())
+		BV.NOTIF.add_notification(
+			"Relocate failed to save positions.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+		)
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
+		BV.NOTIF.add_notification(
+			"Relocate saved positions but failed to save genome.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
+		)
+		return
+	BV.NOTIF.add_notification(
+		"Relocate saved positions to genome.",
 		NotificationSystemNotification.NOTIFICATION_TYPE.INFO
 	)
 

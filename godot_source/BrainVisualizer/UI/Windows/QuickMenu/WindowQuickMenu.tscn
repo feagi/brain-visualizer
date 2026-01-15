@@ -176,6 +176,19 @@ texture_disabled = ExtResource("14_acjss")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="Relocate2D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Relocate selected areas (2D)"
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("27_move_icon")
+texture_pressed = ExtResource("29_move_icon_c")
+texture_hover = ExtResource("30_move_icon_h")
+texture_disabled = ExtResource("31_move_icon_d")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="Move3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
@@ -220,6 +233,7 @@ stretch_mode = 5
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToRegion" to="." method="_button_add_to_region"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Relocate2D" to="." method="_button_relocate_2d"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Move3D" to="." method="_button_move_3d"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Resize3D" to="." method="_button_resize_3d"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Delete" to="." method="_button_delete"]

@@ -30,7 +30,12 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 func _on_single_left_click() -> void:
 	if _dragged:
 		return
-	BV.UI.selection_system.clear_all_highlighted()
+	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_SHIFT)
+	if not is_multi:
+		var cb_parent = get_parent()
+		if cb_parent is CircuitBuilder:
+			(cb_parent as CircuitBuilder)._select_single_graph_element(self)
+		BV.UI.selection_system.clear_all_highlighted()
 	BV.UI.selection_system.add_to_highlighted(_representing_cortical_area)
 	BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK)
 

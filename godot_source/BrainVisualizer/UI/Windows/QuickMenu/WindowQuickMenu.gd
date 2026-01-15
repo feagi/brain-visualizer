@@ -7,6 +7,7 @@ var _mode: GenomeObject.ARRAY_MAKEUP
 var _selection: Array[GenomeObject]
 var _btn_move_3d: TextureButton
 var _btn_resize_3d: TextureButton
+var _btn_relocate_2d: TextureButton
 
 
 func setup(selection: Array[GenomeObject]) -> void:
@@ -23,6 +24,7 @@ func setup(selection: Array[GenomeObject]) -> void:
 	var quick_connect_N_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_N")
 	var move_to_region_button: TextureButton = _window_internals.get_node('HBoxContainer/AddToRegion')
 	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
+	_btn_relocate_2d = _window_internals.get_node_or_null("HBoxContainer/Relocate2D") as TextureButton
 	_btn_move_3d = _window_internals.get_node_or_null("HBoxContainer/Move3D") as TextureButton
 	_btn_resize_3d = _window_internals.get_node_or_null("HBoxContainer/Resize3D") as TextureButton
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
@@ -44,6 +46,8 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			if _btn_relocate_2d != null:
+				_btn_relocate_2d.visible = false
 			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
 			details_button.tooltip_text = "View Cortical Area Details"
 			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
@@ -82,6 +86,8 @@ func setup(selection: Array[GenomeObject]) -> void:
 				
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+			if _btn_relocate_2d != null:
+				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -104,6 +110,10 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = region.friendly_name
 
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			if _btn_relocate_2d != null:
+				_btn_relocate_2d.visible = true
+				_btn_relocate_2d.disabled = false
+				_btn_relocate_2d.tooltip_text = "Relocate selected areas (2D)"
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -128,6 +138,8 @@ func setup(selection: Array[GenomeObject]) -> void:
 				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			if _btn_relocate_2d != null:
+				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -144,6 +156,8 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = "Selected multiple regions"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			if _btn_relocate_2d != null:
+				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -333,6 +347,59 @@ func _button_resize_3d() -> void:
 		return
 	bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.RESIZE)
 	close_window()
+
+func _button_relocate_2d() -> void:
+	if _selection.size() == 0:
+		BV.NOTIF.add_notification("Please select something!")
+		close_window()
+		return
+	if _mode != GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+		close_window()
+		return
+	var cb := _get_active_cb_from_ui()
+	if cb == null:
+		BV.NOTIF.add_notification("No active Circuit Builder tab found.")
+		close_window()
+		return
+	cb.start_multi_relocate(_selection)
+	close_window()
+
+func _get_active_cb_from_ui() -> CircuitBuilder:
+	return _search_for_active_cb_in_view(BV.UI.root_UI_view)
+
+func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _search_for_active_cb_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _search_for_active_cb_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null
 
 func _on_focus_lost() -> void:
 	close_window()
