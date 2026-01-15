@@ -27,6 +27,7 @@ var _subregion_nodes: Dictionary = {}
 var _representing_region: BrainRegion
 var _move_timer: Timer
 var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value is new vector2 position
+var _move_flush_pending: bool = false
 
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
@@ -368,16 +369,46 @@ func _genome_object_moved(node: CBNodeConnectableBase, new_position: Vector2i) -
 	else:
 		return
 	print("Buffering change in position of genome object ")
-	if _moved_genome_objects_buffer == {}:
-		print("Starting 2D move timer for %d seconds" % move_time_delay_before_update_FEAGI)
-		_move_timer.start()
 	_moved_genome_objects_buffer[genome_object] = new_position
+	_request_immediate_move_flush()
 
 ## When the move timer goes off, send all the buffered genome objects with their new positions to feagi
 func _move_timer_finished():
-	print("Sending change of 2D positions for %d objects(s)" % len(_moved_genome_objects_buffer.keys()))
-	FeagiCore.requests.mass_move_genome_objects_2D(_moved_genome_objects_buffer)
+	await _flush_move_buffer()
+
+func _request_immediate_move_flush() -> void:
+	if _move_flush_pending:
+		return
+	_move_flush_pending = true
+	get_tree().create_timer(0.0).timeout.connect(_move_timer_finished)
+
+func _flush_move_buffer() -> void:
+	_move_flush_pending = false
+	if _moved_genome_objects_buffer.is_empty():
+		return
+	var payload := _moved_genome_objects_buffer
 	_moved_genome_objects_buffer = {}
+	print("Sending change of 2D positions for %d objects(s)" % len(payload.keys()))
+	var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(payload)
+	if result.has_errored:
+		print("CB_RELAYOUT_DEBUG: move save failed -> ", result.decode_response_as_generic_error_code())
+		BV.NOTIF.add_notification(
+			"Move failed to save positions.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+		)
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
+		BV.NOTIF.add_notification(
+			"Move saved positions but failed to save genome.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
+		)
+		return
+	BV.NOTIF.add_notification(
+		"Move saved positions to genome.",
+		NotificationSystemNotification.NOTIFICATION_TYPE.INFO
+	)
 
 ## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
 func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:
@@ -440,7 +471,28 @@ func relayout_nodes() -> void:
 		elif node is CBNodeRegion:
 			update_payload[(node as CBNodeRegion).representing_region] = Vector2i(new_pos)
 	if not update_payload.is_empty():
-		FeagiCore.requests.mass_move_genome_objects_2D(update_payload)
+		print("CB_RELAYOUT_DEBUG: saving %d objects to FEAGI" % update_payload.size())
+		var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(update_payload)
+		if result.has_errored:
+			print("CB_RELAYOUT_DEBUG: save failed -> ", result.decode_response_as_generic_error_code())
+			BV.NOTIF.add_notification(
+				"Auto-arrange failed to save positions.",
+				NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+			)
+			return
+		print("CB_RELAYOUT_DEBUG: saving genome after relayout")
+		var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+		if save_result.has_errored:
+			print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
+			BV.NOTIF.add_notification(
+				"Auto-arrange saved positions but failed to save genome.",
+				NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
+			)
+			return
+		BV.NOTIF.add_notification(
+			"Auto-arrange saved positions to genome.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.INFO
+		)
 
 ## Compute layout positions using simple barycenter ordering to reduce connection overlap.
 func _compute_relayout_positions() -> Dictionary:
