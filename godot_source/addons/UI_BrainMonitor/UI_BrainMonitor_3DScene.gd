@@ -97,6 +97,9 @@ static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 func _ready() -> void:
 	_node_3D_root = $SubViewport/Center
 	_UI_layer_for_BM = $SubViewport/BM_UI
+	# Keep SubViewport size in sync with container for consistent UI scaling.
+	resized.connect(_update_subviewport_size)
+	_update_subviewport_size()
 	
 	# TODO check mode (PC)
 	_pancake_cam = $SubViewport/Center/PancakeCam
@@ -132,6 +135,16 @@ func _ready() -> void:
 		_world_3D = _pancake_cam.get_world_3d()
 
 
+## Ensure SubViewport matches this container size to avoid UI scale drift.
+func _update_subviewport_size() -> void:
+	var subviewport := $SubViewport as SubViewport
+	if subviewport == null:
+		return
+	var target_size := Vector2i(maxi(1, int(size.x)), maxi(1, int(size.y)))
+	if subviewport.size != target_size:
+		subviewport.size = target_size
+
+
 
 ## Public accessor to the Pancake camera to avoid external access to private members
 func get_pancake_camera() -> UI_BrainMonitor_PancakeCamera:
@@ -146,38 +159,39 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	
 	# Add the context-aware brain objects combo to the overlay top-left
 	if _UI_layer_for_BM and _should_show_combo_buttons:
-		# Ensure a top row exists (so we can keep Bottom_Row at bottom)
-		var top_row: HBoxContainer = null
-		if _UI_layer_for_BM.has_node("Top_Row"):
-			top_row = _UI_layer_for_BM.get_node("Top_Row") as HBoxContainer
+		# Ensure Bottom_Row stays last so it sits at the bottom
+		if _UI_layer_for_BM.has_node("Bottom_Row"):
+			var bottom_row := _UI_layer_for_BM.get_node("Bottom_Row")
+			_UI_layer_for_BM.move_child(bottom_row, _UI_layer_for_BM.get_child_count() - 1)
+		# Use a dedicated overlay layer so the combo can be offset like Circuit Builder (8,8)
+		var top_row_layer: Control = null
+		if $SubViewport.has_node("Top_Row_Layer"):
+			top_row_layer = $SubViewport.get_node("Top_Row_Layer") as Control
 		else:
-			top_row = HBoxContainer.new()
-			top_row.name = "Top_Row"
-			top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			# Keep the top row compact; otherwise it can expand to fill available vertical space.
-			top_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			top_row.mouse_filter = Control.MOUSE_FILTER_PASS
-			_UI_layer_for_BM.add_child(top_row)
-			# Add a spacer to push Bottom_Row to bottom if not present
-			if not _UI_layer_for_BM.has_node("Spacer_V"):
-				var spacer := Control.new()
-				spacer.name = "Spacer_V"
-				spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				_UI_layer_for_BM.add_child(spacer)
-			# Ensure Bottom_Row stays last so it's at the bottom
-			if _UI_layer_for_BM.has_node("Bottom_Row"):
-				var bottom_row := _UI_layer_for_BM.get_node("Bottom_Row")
-				_UI_layer_for_BM.move_child(bottom_row, _UI_layer_for_BM.get_child_count() - 1)
-		# Instantiate combo into top row if not already present
-		if not top_row.has_node("BrainObjectsCombo"):
+			top_row_layer = Control.new()
+			top_row_layer.name = "Top_Row_Layer"
+			top_row_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+			top_row_layer.mouse_filter = Control.MOUSE_FILTER_PASS
+			$SubViewport.add_child(top_row_layer)
+		# If an old Top_Row exists, migrate the combo out of it
+		if _UI_layer_for_BM.has_node("Top_Row"):
+			var old_top_row := _UI_layer_for_BM.get_node("Top_Row")
+			if old_top_row.has_node("BrainObjectsCombo"):
+				_combo = old_top_row.get_node("BrainObjectsCombo") as BrainObjectsCombo
+				old_top_row.remove_child(_combo)
+				top_row_layer.add_child(_combo)
+		# Instantiate combo into layer if not already present
+		if _combo == null and top_row_layer.has_node("BrainObjectsCombo"):
+			_combo = top_row_layer.get_node("BrainObjectsCombo") as BrainObjectsCombo
+		if _combo == null:
 			var combo_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
 			_combo = combo_scene.instantiate()
 			_combo.name = "BrainObjectsCombo"
-			top_row.add_child(_combo)
-			_combo.mouse_filter = Control.MOUSE_FILTER_STOP
-			_combo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			_combo.set_3d_context(self, _representing_region)
+			top_row_layer.add_child(_combo)
+		_combo.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_combo.position = Vector2(8, 8)
+		_combo.mouse_filter = Control.MOUSE_FILTER_STOP
+		_combo.set_3d_context(self, _representing_region)
 	
 
 	
