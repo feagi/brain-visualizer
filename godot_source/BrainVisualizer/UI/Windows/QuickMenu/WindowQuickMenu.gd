@@ -5,15 +5,17 @@ const WINDOW_NAME: StringName = "quick_menu"
 const CENTER_OFFSET: Vector2 = Vector2(0, 100)
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _selection: Array[GenomeObject]
+var _selection_context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN
 var _btn_move_3d: TextureButton
 var _btn_resize_3d: TextureButton
 var _btn_relocate_2d: TextureButton
 
 
-func setup(selection: Array[GenomeObject]) -> void:
+func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN) -> void:
 	print("🔍 QuickMenu: setup() called with %d objects" % selection.size())
 	_mode = GenomeObject.get_makeup_of_array(selection)
 	_selection = selection
+	_selection_context = context
 	print("🔍 QuickMenu: _selection assigned, size: %d, mode: %s" % [_selection.size(), _mode])
 	
 	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
@@ -46,8 +48,14 @@ func setup(selection: Array[GenomeObject]) -> void:
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			var is_circuit_builder_context := _selection_context in [
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
+			]
 			if _btn_relocate_2d != null:
-				_btn_relocate_2d.visible = false
+				_btn_relocate_2d.visible = is_circuit_builder_context
+				_btn_relocate_2d.disabled = not is_circuit_builder_context
+				_btn_relocate_2d.tooltip_text = "Relocate this cortical area (2D)" if is_circuit_builder_context else _btn_relocate_2d.tooltip_text
 			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
 			details_button.tooltip_text = "View Cortical Area Details"
 			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
@@ -63,12 +71,19 @@ func setup(selection: Array[GenomeObject]) -> void:
 			_titlebar.title = area.friendly_name
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = true
-				_btn_move_3d.disabled = false
+				_btn_move_3d.disabled = is_circuit_builder_context
 				_btn_move_3d.tooltip_text = "Relocate this cortical area (3D gizmo)"
 			if _btn_resize_3d != null:
 				_btn_resize_3d.visible = true
-				_btn_resize_3d.disabled = not area.user_can_edit_dimensions_directly
+				_btn_resize_3d.disabled = is_circuit_builder_context or not area.user_can_edit_dimensions_directly
 				_btn_resize_3d.tooltip_text = "Resize this cortical area (3D gizmo)" if area.user_can_edit_dimensions_directly else "This cortical area cannot be resized"
+			if is_circuit_builder_context:
+				quick_connect_CA_N_button.disabled = true
+				quick_connect_N_CA_button.disabled = true
+				quick_connect_N_N_button.disabled = true
+				quick_connect_CA_N_button.tooltip_text = "Voxel-level quick connect is only available in 3D view."
+				quick_connect_N_CA_button.tooltip_text = "Voxel-level quick connect is only available in 3D view."
+				quick_connect_N_N_button.tooltip_text = "Voxel-level quick connect is only available in 3D view."
 
 			if !area.user_can_delete_this_area:
 				delete_button.disabled = true
@@ -139,7 +154,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
 			if _btn_relocate_2d != null:
-				_btn_relocate_2d.visible = false
+				_btn_relocate_2d.visible = true
+				_btn_relocate_2d.disabled = false
+				_btn_relocate_2d.tooltip_text = "Relocate selected regions (2D)"
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -157,7 +174,9 @@ func setup(selection: Array[GenomeObject]) -> void:
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
 			if _btn_relocate_2d != null:
-				_btn_relocate_2d.visible = false
+				_btn_relocate_2d.visible = true
+				_btn_relocate_2d.disabled = false
+				_btn_relocate_2d.tooltip_text = "Relocate selected objects (2D)"
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -353,7 +372,12 @@ func _button_relocate_2d() -> void:
 		BV.NOTIF.add_notification("Please select something!")
 		close_window()
 		return
-	if _mode != GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+	if _mode not in [
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA,
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS,
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS,
+		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
+	]:
 		close_window()
 		return
 	var cb := _get_active_cb_from_ui()

@@ -470,23 +470,35 @@ func _end_multi_relocate(commit: bool) -> void:
 func _commit_multi_relocate() -> void:
 	if _multi_relocate_nodes.is_empty():
 		return
-	var payload: Dictionary = {}
+	var cortical_payload: Dictionary = {}
+	var region_payload: Dictionary = {}
 	for node in _multi_relocate_nodes:
 		if node is CBNodeCorticalArea:
-			payload[(node as CBNodeCorticalArea).representing_cortical_area] = Vector2i(node.position_offset)
+			cortical_payload[(node as CBNodeCorticalArea).representing_cortical_area] = Vector2i(node.position_offset)
 		elif node is CBNodeRegion:
-			payload[(node as CBNodeRegion).representing_region] = Vector2i(node.position_offset)
-	if payload.is_empty():
+			region_payload[(node as CBNodeRegion).representing_region] = Vector2i(node.position_offset)
+	if cortical_payload.is_empty() and region_payload.is_empty():
 		return
-	print("Sending change of 2D positions for %d objects(s)" % len(payload.keys()))
-	var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(payload)
-	if result.has_errored:
-		print("CB_RELAYOUT_DEBUG: move save failed -> ", result.decode_response_as_generic_error_code())
-		BV.NOTIF.add_notification(
-			"Relocate failed to save positions.",
-			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
-		)
-		return
+	if not cortical_payload.is_empty():
+		print("Sending change of 2D positions for %d cortical area(s)" % len(cortical_payload.keys()))
+		var cortical_result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(cortical_payload)
+		if cortical_result.has_errored:
+			print("CB_RELAYOUT_DEBUG: move save failed -> ", cortical_result.decode_response_as_generic_error_code())
+			BV.NOTIF.add_notification(
+				"Relocate failed to save cortical areas.",
+				NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+			)
+			return
+	if not region_payload.is_empty():
+		print("Sending change of 2D positions for %d region(s)" % len(region_payload.keys()))
+		var region_result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(region_payload)
+		if region_result.has_errored:
+			print("CB_RELAYOUT_DEBUG: move save failed -> ", region_result.decode_response_as_generic_error_code())
+			BV.NOTIF.add_notification(
+				"Relocate failed to save regions.",
+				NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+			)
+			return
 	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
 	if save_result.has_errored:
 		print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())

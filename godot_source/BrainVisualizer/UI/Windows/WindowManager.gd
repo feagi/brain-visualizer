@@ -212,9 +212,9 @@ func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRe
 	var move_to_region: WindowAddToRegion = _default_spawn_window(_PREFAB_MOVE_TO_REGION, WindowAddToRegion.WINDOW_NAME) as WindowAddToRegion
 	move_to_region.setup(objects, starting_region)
 
-func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject]) -> void:
+func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN) -> void:
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME) as QuickCorticalMenu
-	quick_cortical_menu.setup(selected_objects)
+	quick_cortical_menu.setup(selected_objects, context)
 
 func spawn_view_previews() -> void:
 	var view_previews: WindowViewPreviews = _default_spawn_window(_PREFAB_VIEW_PREVIEWS, WindowViewPreviews.WINDOW_NAME) as WindowViewPreviews
