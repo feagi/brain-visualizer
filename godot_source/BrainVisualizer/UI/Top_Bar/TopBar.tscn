@@ -65,6 +65,7 @@ script = ExtResource("2_o4dth")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList"]
 layout_mode = 2
+metadata/hover_scale_target = true
 
 [node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -91,6 +92,7 @@ texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
+metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterAddCircuits" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(18, 0)
@@ -103,6 +105,7 @@ script = ExtResource("2_o4dth")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList"]
 layout_mode = 2
+metadata/hover_scale_target = true
 
 [node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -129,6 +132,7 @@ texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
+metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterAddInputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(18, 0)
@@ -141,6 +145,7 @@ script = ExtResource("2_o4dth")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList"]
 layout_mode = 2
+metadata/hover_scale_target = true
 
 [node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -167,6 +172,7 @@ texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
+metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterAddOutputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(18, 0)

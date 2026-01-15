@@ -202,17 +202,22 @@ func _is_root_region() -> bool:
 func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool) -> void:
 	# Circuits always visible
 	$BrainRegionsList.visible = true
-	$TextureButton_BrainRegions.visible = true
+	if _btn_brain_regions_add:
+		_btn_brain_regions_add.visible = true
 	# Interconnect/Memory visibility
 	$InterconnectAreasList.visible = show_interconnect_and_memory
-	$TextureButton_Interconnect.visible = show_interconnect_and_memory
+	if _btn_interconnect_add:
+		_btn_interconnect_add.visible = show_interconnect_and_memory
 	$MemoryAreasList.visible = show_interconnect_and_memory
-	$TextureButton_Memory.visible = show_interconnect_and_memory
+	if _btn_memory_add:
+		_btn_memory_add.visible = show_interconnect_and_memory
 	# Inputs/Outputs visibility
 	$InputsList.visible = show_inputs_and_outputs
-	$TextureButton_Inputs.visible = show_inputs_and_outputs
+	if _btn_inputs_add:
+		_btn_inputs_add.visible = show_inputs_and_outputs
 	$OutputsList.visible = show_inputs_and_outputs
-	$TextureButton_Outputs.visible = show_inputs_and_outputs
+	if _btn_outputs_add:
+		_btn_outputs_add.visible = show_inputs_and_outputs
 
 func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	# Subtle scale-up on hover to match main 3D view visual feedback style
