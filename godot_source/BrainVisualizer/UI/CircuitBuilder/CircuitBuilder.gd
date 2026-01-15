@@ -460,21 +460,13 @@ func _compute_relayout_positions() -> Dictionary:
 	for node in nodes:
 		if node is CBNodeCorticalArea:
 			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
-			var area_id_lower := String(area.cortical_ID).to_lower()
-			match(area.cortical_type):
-				AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-					outputs.append(node)
-				AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-					inputs.append(node)
-				AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-					middle.append(node)
-				_:
-					if area_id_lower.begins_with("i"):
-						inputs.append(node)
-					elif area_id_lower.begins_with("o"):
-						outputs.append(node)
-					else:
-						middle.append(node)
+			var side := _classify_cortical_io_side(area)
+			if side == "left":
+				inputs.append(node)
+			elif side == "right":
+				outputs.append(node)
+			else:
+				middle.append(node)
 		else:
 			middle.append(node)
 	for io_node in region_io_nodes:
@@ -490,8 +482,8 @@ func _compute_relayout_positions() -> Dictionary:
 	var inner_right_x := middle_x + _compute_max_width(middle) + LAYOUT_COLUMN_GAP
 	var right_x := inner_right_x + _compute_max_width_region_io(inner_outputs) + LAYOUT_COLUMN_GAP
 	# Place IO columns first, then position interconnects between them.
-	var ordered_inputs := _sort_nodes_by_current_y(inputs)
-	var ordered_outputs := _sort_nodes_by_current_y(outputs)
+	var ordered_inputs := _sort_io_nodes(inputs, true)
+	var ordered_outputs := _sort_io_nodes(outputs, false)
 	var input_positions := _layout_column(ordered_inputs, left_x, min_y)
 	var output_positions := _layout_column(ordered_outputs, right_x, min_y)
 	var inner_input_positions := _layout_column_region_io(_sort_region_io_by_current_y(inner_inputs), inner_left_x, min_y)
@@ -520,17 +512,11 @@ func _compute_relayout_positions() -> Dictionary:
 	for node in nodes:
 		if node is CBNodeCorticalArea:
 			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
-			var area_id_lower := String(area.cortical_ID).to_lower()
-			var id_is_input := area_id_lower.begins_with("i")
-			var id_is_output := area_id_lower.begins_with("o")
 			var target_x := middle_x
-			if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			var side := _classify_cortical_io_side(area)
+			if side == "left":
 				target_x = left_x
-			elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-				target_x = right_x
-			elif id_is_input:
-				target_x = left_x
-			elif id_is_output:
+			elif side == "right":
 				target_x = right_x
 			_set_node_column_x(layout_positions, node, target_x)
 	for io_node in region_io_nodes:
@@ -620,6 +606,71 @@ func _sort_nodes_by_current_y(nodes: Array[CBNodeConnectableBase]) -> Array[CBNo
 	for item in sortable:
 		ordered.append(item["node"])
 	return ordered
+
+func _sort_io_nodes(nodes: Array[CBNodeConnectableBase], is_input_column: bool) -> Array[CBNodeConnectableBase]:
+	var sortable: Array[Dictionary] = []
+	for node in nodes:
+		var priority: int = _io_priority_for_node(node, is_input_column)
+		sortable.append({"node": node, "priority": priority, "y": node.position_offset.y})
+	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var priority_a: int = int(a.get("priority", 0))
+		var priority_b: int = int(b.get("priority", 0))
+		if priority_a == priority_b:
+			return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
+		return priority_a < priority_b
+	)
+	var ordered: Array[CBNodeConnectableBase] = []
+	for item in sortable:
+		ordered.append(item["node"])
+	return ordered
+
+func _io_priority_for_node(node: CBNodeConnectableBase, is_input_column: bool) -> int:
+	if node is CBNodeCorticalArea:
+		var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
+		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
+			var label := _core_io_label(area)
+			if is_input_column and label == "power":
+				return -100
+			if (not is_input_column) and label == "fatigue":
+				return -100
+			if (not is_input_column) and label == "death":
+				return -90
+	return 0
+
+func _classify_cortical_io_side(area: AbstractCorticalArea) -> String:
+	var area_id_lower := String(area.cortical_ID).to_lower()
+	var area_name_lower := String(area.friendly_name).to_lower()
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+		return "left"
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		return "right"
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
+		var core_label := _core_io_label(area)
+		if core_label == "power":
+			return "left"
+		if core_label in ["fatigue", "death"]:
+			return "right"
+		if area_id_lower.begins_with("i") or area_name_lower.contains("input") or area_name_lower.contains("ipu"):
+			return "left"
+		if area_id_lower.begins_with("o") or area_name_lower.contains("output") or area_name_lower.contains("opu"):
+			return "right"
+		return "right"
+	if area_id_lower.begins_with("i"):
+		return "left"
+	if area_id_lower.begins_with("o"):
+		return "right"
+	return "middle"
+
+func _core_io_label(area: AbstractCorticalArea) -> String:
+	var area_id_lower := String(area.cortical_ID).to_lower()
+	var area_name_lower := String(area.friendly_name).to_lower()
+	if area_id_lower.contains("pwr") or area_name_lower.contains("power"):
+		return "power"
+	if area_name_lower.contains("fatigue"):
+		return "fatigue"
+	if area_name_lower.contains("death"):
+		return "death"
+	return "other"
 
 func _set_node_column_x(layout_positions: Dictionary, node: GraphElement, target_x: float) -> void:
 	var new_position := Vector2(target_x, node.position_offset.y)
