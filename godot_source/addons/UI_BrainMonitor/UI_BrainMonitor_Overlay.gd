@@ -112,3 +112,8 @@ func show_manipulation_position(cortical_area: AbstractCorticalArea, position_3d
 
 func clear_manipulation_position() -> void:
 	_mouse_context_label.text = ""
+
+func show_manipulation_dimensions(cortical_area: AbstractCorticalArea, dimensions_3d: Vector3i) -> void:
+	if cortical_area == null:
+		return
+	_mouse_context_label.text = "Resize - " + cortical_area.friendly_name + "  " + str(dimensions_3d)

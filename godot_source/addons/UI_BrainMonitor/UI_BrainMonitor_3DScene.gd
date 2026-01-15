@@ -121,6 +121,9 @@ func _ready() -> void:
 		
 		# Ensure SubViewport has a World3D with proper environment
 		var subviewport = $SubViewport as SubViewport
+		# Tabbed brain monitors need local input coordinates for correct hover.
+		if BV.UI.temp_root_bm != null and BV.UI.temp_root_bm != self:
+			subviewport.handle_input_locally = true
 		if subviewport.world_3d == null:
 			# Tab brain monitors need SEPARATE World3D to avoid seeing main content
 			if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
@@ -524,6 +527,8 @@ func _compute_world_aabb(node: Node) -> AABB:
 func _process(delta: float) -> void:
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
+	if _manipulation_active and (_manipulation_gizmo == null or _manipulation_preview == null):
+		_manipulation_active = false
 	
 	
 	# Update combo context after setup has region
@@ -533,6 +538,7 @@ func _process(delta: float) -> void:
 	# Update label visibility to prevent overlaps (throttled for performance)
 	_update_label_overlap_visibility()
 	if _manipulation_active:
+		_update_manipulation_position_label()
 		var enter_down := Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER)
 		if enter_down and not _enter_key_latched:
 			_finish_manipulation_drag_and_confirm(true)
@@ -552,6 +558,10 @@ func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody
 	if hit.is_empty():
 		return null
 	return hit[&"collider"] as StaticBody3D
+
+func _ensure_ui_overlay() -> void:
+	if _UI_layer_for_BM == null and has_node("SubViewport/BM_UI"):
+		_UI_layer_for_BM = get_node("SubViewport/BM_UI")
 
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
@@ -1153,6 +1163,7 @@ func _update_tab_title_after_setup() -> void:
 
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
+	_ensure_ui_overlay()
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
 	var currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 	var currently_mousing_over_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -1160,6 +1171,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	for bm_input_event in bm_input_events: # multiple events can happen at once
 		
 		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
+			var allow_context_updates := (not _manipulation_active) or _manipulation_gizmo == null or _manipulation_preview == null
 			# If user is currently dragging a gizmo axis, consume hover moves to update preview.
 			if _manipulation_active and _manipulation_dragging and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN in bm_input_event.all_buttons_being_held:
 				_process_manipulation_drag(bm_input_event)
@@ -1261,7 +1273,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
-				_UI_layer_for_BM.clear() # temp!
+				if allow_context_updates:
+					_UI_layer_for_BM.clear() # temp!
 				
 				continue
 				
@@ -1270,7 +1283,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
 			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
 				var region_frame = hit_body.get_parent()
-				if region_frame and _UI_layer_for_BM:
+				if region_frame and _UI_layer_for_BM and allow_context_updates:
 					var plate_kind := ""
 					match hit_body.name:
 						"InputPlateClickArea": plate_kind = "Input plate"
@@ -1305,7 +1318,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
 					currently_mousing_over_neurons[hit_parent_parent] = typed_arr
 				
-				_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
+				if allow_context_updates:
+					_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
 			
 			# Check if we hit a brain region frame (by checking script global name)
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
@@ -1314,7 +1328,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					region_frame.set_hover_state(true)
 					print("🧠 Hovering over red line wireframe brain region: %s" % region_frame.representing_region.friendly_name)
 					# Fallback plate detection by hit position against plate meshes (in case plate colliders weren't hit)
-					if _UI_layer_for_BM:
+					if _UI_layer_for_BM and allow_context_updates:
 						var hit_pos: Vector3 = hit["position"]
 						var plate_map := {
 							"Input plate": "RegionAssembly/InputPlate",
@@ -1348,7 +1362,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									var projected: Vector3 = ray_from.lerp(ray_to, t)
 									var local: Vector3 = plate.global_transform.affine_inverse() * projected
 									if abs(local.x) <= half_x and abs(local.z) <= half_z:
-										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
+										if allow_context_updates:
+											_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
 										break
 			# Check if we hit a plate click area (input/output/conflict/mother)
 			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
@@ -1365,7 +1380,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var region_name := "Region"
 					if region_frame.representing_region:
 						region_name = region_frame.representing_region.friendly_name
-					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
+					if allow_context_updates:
+						_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			
@@ -1401,7 +1417,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if hit.is_empty():
 				# Clicking over nothing
 				# Clear plate hover label if we click on empty space
-				if _UI_layer_for_BM:
+				if _UI_layer_for_BM and not _manipulation_active:
 					_UI_layer_for_BM.clear_plate_hover()
 				
 				# Right-click camera reset removed to allow trackpad rotation
@@ -1802,14 +1818,20 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 				new_dims.z = max(1, new_dims.z + step_delta)
 		_manipulation_current_dims = new_dims
 		_manipulation_preview.set_new_dimensions(new_dims)
+		_update_manipulation_position_label()
 
 	_manipulation_start_param += float(step_delta)
 	_manipulation_start_pos = _manipulation_current_pos
 	_manipulation_start_dims = _manipulation_current_dims
 
 func _update_manipulation_position_label() -> void:
-	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("show_manipulation_position"):
+	_ensure_ui_overlay()
+	if _UI_layer_for_BM == null:
+		return
+	if _manipulation_mode == MANIPULATION_MODE.MOVE and _UI_layer_for_BM.has_method("show_manipulation_position"):
 		_UI_layer_for_BM.show_manipulation_position(_manipulation_area, _manipulation_current_pos)
+	elif _manipulation_mode == MANIPULATION_MODE.RESIZE and _UI_layer_for_BM.has_method("show_manipulation_dimensions"):
+		_UI_layer_for_BM.show_manipulation_dimensions(_manipulation_area, _manipulation_current_dims)
 
 func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	if not _manipulation_active:
@@ -1854,7 +1876,10 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 			"Cannot apply: resize would exceed NPU capacity.\n\nReduce dimensions or free up neurons elsewhere."
 		))
 		return
-		_prompt_confirm_and_apply_resize(candidate_dims)
+	if force_commit:
+		_apply_resize(candidate_dims)
+		return
+	_prompt_confirm_and_apply_resize(candidate_dims)
 
 func _apply_move(new_pos: Vector3i) -> void:
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
@@ -1891,8 +1916,42 @@ func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:
 				"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
 			))
 			return
+		var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+		if save_result.has_errored:
+			var save_details = save_result.decode_response_as_generic_error_code()
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Save failed",
+				"Saved size but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+			))
+			return
+		# Update local cache so BV visuals resize immediately.
+		if _manipulation_area != null:
+			_manipulation_area.FEAGI_change_dimensions_3D(new_dims)
 		_end_manipulation_session(true)
 	BV.WM.spawn_popup(ConfigurablePopupDefinition.create_cancel_and_action_popup("Confirm Resize", msg, accept, "Save", "Cancel"))
+
+func _apply_resize(new_dims: Vector3i) -> void:
+	var payload := {"cortical_dimensions": FEAGIUtils.vector3i_to_array(new_dims)}
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	if result.has_errored:
+		var details = result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize failed",
+			"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved size but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	# Update local cache so BV visuals resize immediately.
+	if _manipulation_area != null:
+		_manipulation_area.FEAGI_change_dimensions_3D(new_dims)
+	_end_manipulation_session(true)
 
 func _would_overflow_capacity(candidate_dims: Vector3i) -> bool:
 	if _manipulation_area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
