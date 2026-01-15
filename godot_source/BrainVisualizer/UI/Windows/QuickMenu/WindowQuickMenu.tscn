@@ -38,8 +38,14 @@
 [ext_resource type="Texture2D" uid="uid://bf7pyukfpp6lm" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png" id="24_3d_bm_c"]
 [ext_resource type="Texture2D" uid="uid://bifpogme5tcti" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_H.png" id="25_3d_bm_h"]
 [ext_resource type="Texture2D" uid="uid://yign32sg7jln" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_D.png" id="26_3d_bm_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="27_move_icon"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="28_resize_icon"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/relocate_S.jpg" id="27_move_icon"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/scale_S.jpg" id="28_resize_icon"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/scale_C.jpg" id="32_resize_icon_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/scale_H.jpg" id="33_resize_icon_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/scale_D.jpg" id="34_resize_icon_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/relocate_C.jpg" id="29_move_icon_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/relocate_H.jpg" id="30_move_icon_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/relocate_D.jpg" id="31_move_icon_d"]
 
 [node name="QuickCorticalMenu" type="VBoxContainer"]
 size_flags_horizontal = 0
@@ -177,9 +183,9 @@ tooltip_text = "Move Cortical Area (3D)"
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("27_move_icon")
-texture_pressed = ExtResource("27_move_icon")
-texture_hover = ExtResource("27_move_icon")
-texture_disabled = ExtResource("27_move_icon")
+texture_pressed = ExtResource("29_move_icon_c")
+texture_hover = ExtResource("30_move_icon_h")
+texture_disabled = ExtResource("31_move_icon_d")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -190,9 +196,9 @@ tooltip_text = "Resize Cortical Area (3D)"
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("28_resize_icon")
-texture_pressed = ExtResource("28_resize_icon")
-texture_hover = ExtResource("28_resize_icon")
-texture_disabled = ExtResource("28_resize_icon")
+texture_pressed = ExtResource("32_resize_icon_c")
+texture_hover = ExtResource("33_resize_icon_h")
+texture_disabled = ExtResource("34_resize_icon_d")
 ignore_texture_size = true
 stretch_mode = 5
 
