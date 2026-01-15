@@ -14,9 +14,14 @@ const META_KIND: StringName = &"bv_gizmo_kind"
 
 const KIND_MOVE: StringName = &"move"
 const KIND_RESIZE: StringName = &"resize"
+const KIND_CLOSE: StringName = &"close"
 
 var _mode: MODE = MODE.MOVE
 var _axis_length: float = 0.0
+var _close_root: Node3D = null
+var _close_hovered: bool = false
+var _close_hover_tween: Tween = null
+var _close_sprite: Sprite3D = null
 
 func setup(mode: MODE) -> void:
 	_mode = mode
@@ -44,6 +49,7 @@ func _build_axes() -> void:
 	_add_axis(AXIS.Y, Color(0.2, 1.0, 0.2, 0.9), Vector3.UP, axis_length, shaft_radius, head_length, head_radius)
 	# FEAGI +Z maps to Godot -Z (FORWARD) in this project (see renderer Z flip).
 	_add_axis(AXIS.Z, Color(0.2, 0.4, 1.0, 0.9), Vector3.FORWARD, axis_length, shaft_radius, head_length, head_radius)
+	_add_close_handle(axis_length)
 
 func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft_radius: float, head_length: float, head_radius: float) -> void:
 	var axis_root := Node3D.new()
@@ -104,6 +110,72 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	body.transform.basis = _basis_from_y_axis(dir)
 	body.position = dir.normalized() * (axis_length * 0.5)
 	axis_root.add_child(body)
+
+func _add_close_handle(axis_length: float) -> void:
+	var close_root := Node3D.new()
+	close_root.name = "CloseHandle"
+	add_child(close_root)
+	_close_root = close_root
+
+	var sprite := Sprite3D.new()
+	sprite.texture = _create_close_icon_texture()
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.pixel_size = 0.01
+	close_root.add_child(sprite)
+	_close_sprite = sprite
+
+	var body := StaticBody3D.new()
+	body.name = "Pick_Close"
+	body.set_meta(META_KIND, KIND_CLOSE)
+	body.collision_layer = 1
+	body.collision_mask = 1
+	body.input_ray_pickable = true
+	var shape := CollisionShape3D.new()
+	var pick_sphere := SphereShape3D.new()
+	pick_sphere.radius = 1.2
+	shape.shape = pick_sphere
+	body.add_child(shape)
+	close_root.add_child(body)
+
+	# Place the close handle below the gizmo center.
+	close_root.position = Vector3(0.0, -axis_length * 0.9, 0.0)
+
+## Update close handle placement to face the camera and remain clickable.
+func update_close_handle(world_pos: Vector3, camera_pos: Vector3) -> void:
+	if _close_root == null:
+		return
+	_close_root.global_position = world_pos
+
+## Grow/shrink close handle on hover so it's clearly interactive.
+func set_close_hovered(is_hovered: bool) -> void:
+	if _close_root == null or _close_hovered == is_hovered:
+		return
+	_close_hovered = is_hovered
+	if _close_hover_tween != null and _close_hover_tween.is_running():
+		_close_hover_tween.kill()
+	_close_hover_tween = create_tween()
+	var target_scale := Vector3.ONE * (1.25 if is_hovered else 1.0)
+	_close_hover_tween.tween_property(_close_root, "scale", target_scale, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+## Builds a white X with a circular outline as a Sprite3D texture.
+func _create_close_icon_texture() -> Texture2D:
+	var size := 128
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var center := Vector2(size / 2, size / 2)
+	var radius := 48.0
+	var ring_thickness := 3.0
+	var x_thickness := 3.0
+	for y in size:
+		for x in size:
+			var p := Vector2(x, y)
+			var d := p.distance_to(center)
+			var on_ring: bool = abs(d - radius) <= ring_thickness
+			var on_diag_a: bool = abs(float(x - y)) <= x_thickness
+			var on_diag_b: bool = abs(float((size - 1 - x) - y)) <= x_thickness
+			if on_ring or on_diag_a or on_diag_b:
+				img.set_pixel(x, y, Color(1, 1, 1, 0.95))
+	return ImageTexture.create_from_image(img)
 
 func _basis_from_y_axis(target_dir: Vector3) -> Basis:
 	var y := target_dir.normalized()

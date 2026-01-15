@@ -89,6 +89,8 @@ var _intro_start_rot: Quaternion
 var _intro_target_rot: Quaternion
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
+var _is_mouse_hovering_viewport: bool = false
+var _enter_key_latched: bool = false
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -530,20 +532,38 @@ func _process(delta: float) -> void:
 	
 	# Update label visibility to prevent overlaps (throttled for performance)
 	_update_label_overlap_visibility()
+	if _manipulation_active:
+		var enter_down := Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER)
+		if enter_down and not _enter_key_latched:
+			_finish_manipulation_drag_and_confirm()
+		_enter_key_latched = enter_down
+	else:
+		_enter_key_latched = false
 
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(true)
-		# Track the last entry position in this SubViewport in pixels
-		var sv: SubViewport = $SubViewport
-		_qc_last_mouse_entry_pos = sv.get_mouse_position()
+	_is_mouse_hovering_viewport = true
+	# Track the last entry position in this SubViewport in pixels
+	var sv: SubViewport = $SubViewport
+	_qc_last_mouse_entry_pos = sv.get_mouse_position()
 
 func _on_container_mouse_exited() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(false)
-		# Reset bridge and entry tracking when leaving this viewport
-		_clear_bridge_segment()
-		_qc_last_mouse_entry_pos = Vector2.ZERO
+	_is_mouse_hovering_viewport = false
+	# Reset bridge and entry tracking when leaving this viewport
+	_clear_bridge_segment()
+	_qc_last_mouse_entry_pos = Vector2.ZERO
+
+## Allow Enter to confirm and close manipulation without clicking the X.
+func _unhandled_input(event: InputEvent) -> void:
+	if not _manipulation_active:
+		return
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo and (key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER):
+			_finish_manipulation_drag_and_confirm()
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()
@@ -1132,6 +1152,14 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				_process_manipulation_drag(bm_input_event)
 				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+			if _manipulation_active and _manipulation_gizmo != null and _manipulation_gizmo.has_method("set_close_hovered"):
+				var hover_close := false
+				if not hit.is_empty():
+					var hit_body: StaticBody3D = hit[&"collider"]
+					if is_instance_valid(hit_body) and hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
+						if hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
+							hover_close = true
+				_manipulation_gizmo.set_close_hovered(hover_close)
 			var source_bm = BV.UI.qc_guide_source_bm
 			# Compute end point and hover state if either we own the guide or we need to draw a bridge
 			var need_visual := _qc_guide_active or (source_bm != null)
@@ -1368,13 +1396,18 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var hit_body: StaticBody3D = hit[&"collider"]
 
 			# Runtime manipulation gizmo takes priority over normal selection/hover.
-			if _manipulation_active and is_instance_valid(hit_body) and hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
-				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-					if bm_input_event.button_pressed:
-						_start_manipulation_drag(hit_body, bm_input_event)
-					else:
+			if _manipulation_active and is_instance_valid(hit_body):
+				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) and hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
 						_finish_manipulation_drag_and_confirm()
-				continue
+					continue
+				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+						if bm_input_event.button_pressed:
+							_start_manipulation_drag(hit_body, bm_input_event)
+						else:
+							_finish_manipulation_drag_and_confirm()
+					continue
 			
 			# Check if we hit a cortical area renderer
 			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
@@ -1564,8 +1597,8 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		false,
 		area.cortical_type,
 		area,
-		true,  # frame once on create
-		mode == MANIPULATION_MODE.MOVE  # keep camera moving out during relocation; disable for resize to reduce visual jitter
+		false,  # do not auto-frame on create during manipulation
+		false  # do not auto-frame during user drag
 	)
 
 	_manipulation_gizmo = UI_BrainMonitor_RuntimeTransformGizmo.new()
@@ -1576,6 +1609,8 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 
 	_update_manipulation_gizmo_transform()
 	_update_manipulation_capacity_warning()
+	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
+		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
 
 	# Keep gizmo pinned as preview moves/resizes.
 	_manipulation_preview.user_moved_preview.connect(func(p: Vector3i):
@@ -1617,11 +1652,26 @@ func _update_manipulation_gizmo_transform() -> void:
 	var body := _get_preview_static_body(_manipulation_preview)
 	if body == null:
 		return
+	var gizmo_scale: float = _get_gizmo_scale_for_camera(body.global_position)
+	_manipulation_gizmo.scale = Vector3.ONE * gizmo_scale
 	# Place gizmo on the +X (right) side of the volume, outside its bounds.
 	# This makes it easier to access for very large cortical areas.
 	var axis_len: float = _manipulation_gizmo.get_axis_length() if _manipulation_gizmo.has_method("get_axis_length") else 0.0
+	axis_len *= gizmo_scale
 	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
 	_manipulation_gizmo.global_position = body.global_position + Vector3(offset_x, 0.0, 0.0)
+	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
+		var camera_pos: Vector3 = _pancake_cam.global_position
+		var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
+		var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 1.0, 0.0) + toward_camera * (axis_len * 2.0)
+		_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+
+func _get_gizmo_scale_for_camera(target_pos: Vector3) -> float:
+	if _pancake_cam == null:
+		return 1.0
+	var dist: float = _pancake_cam.global_position.distance_to(target_pos)
+	var scale := dist / 25.0
+	return clamp(scale, 0.6, 4.0)
 
 func _update_manipulation_capacity_warning() -> void:
 	if not _manipulation_active or _manipulation_preview == null:
@@ -1766,7 +1816,7 @@ func _finish_manipulation_drag_and_confirm() -> void:
 	if _manipulation_mode == MANIPULATION_MODE.MOVE:
 		if candidate_pos == _manipulation_start_pos:
 			return
-		_prompt_confirm_and_apply_move(candidate_pos)
+		_apply_move(candidate_pos)
 		return
 
 	# RESIZE
@@ -1780,20 +1830,25 @@ func _finish_manipulation_drag_and_confirm() -> void:
 		return
 	_prompt_confirm_and_apply_resize(candidate_dims)
 
-func _prompt_confirm_and_apply_move(new_pos: Vector3i) -> void:
-	var msg := "Save new position for '%s'?\n\nFrom: %s\nTo:   %s" % [str(_manipulation_area.friendly_name), str(_manipulation_start_pos), str(new_pos)]
-	var accept := func() -> void:
-		var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
-		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
-		if result.has_errored:
-			var details = result.decode_response_as_generic_error_code()
-			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
-				"Move failed",
-				"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
-			))
-			return
-		_end_manipulation_session(true)
-	BV.WM.spawn_popup(ConfigurablePopupDefinition.create_cancel_and_action_popup("Confirm Move", msg, accept, "Save", "Cancel"))
+func _apply_move(new_pos: Vector3i) -> void:
+	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	if result.has_errored:
+		var details = result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move failed",
+			"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved position but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	_end_manipulation_session(true)
 
 func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:
 	var msg := "Save new size for '%s'?\n\nFrom: %s\nTo:   %s" % [str(_manipulation_area.friendly_name), str(_manipulation_start_dims), str(new_dims)]
