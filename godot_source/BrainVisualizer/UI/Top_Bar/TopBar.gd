@@ -305,6 +305,7 @@ func _focus_region_from_topbar(region: BrainRegion) -> void:
 	if bm != null:
 		if bm.has_method("focus_on_brain_region"):
 			bm.focus_on_brain_region(region)
+			bm.flash_indicator_for_brain_region(region)
 			return
 		if bm.get_pancake_camera():
 			bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
@@ -320,6 +321,7 @@ func _focus_cortical_from_topbar(area: AbstractCorticalArea) -> void:
 	if bm != null:
 		if bm.has_method("focus_on_cortical_area"):
 			bm.focus_on_cortical_area(area)
+			bm.flash_indicator_for_cortical_area(area)
 			return
 		if bm.get_pancake_camera():
 			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)

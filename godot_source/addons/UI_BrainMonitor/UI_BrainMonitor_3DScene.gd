@@ -177,6 +177,26 @@ func focus_on_brain_region(region: BrainRegion) -> void:
 			return
 	_pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 
+
+## Show a temporary focus indicator above a cortical area visualization.
+func flash_indicator_for_cortical_area(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	# Use the existing visualization to place the arrow at the true world center.
+	var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area.cortical_ID, null)
+	if viz != null and is_instance_valid(viz):
+		_spawn_indicator_for_node_center(viz)
+
+
+## Show a temporary focus indicator above a brain region frame.
+func flash_indicator_for_brain_region(region: BrainRegion) -> void:
+	if region == null:
+		return
+	# Use the existing visualization to place the arrow at the true world center.
+	var region_frame = _brain_region_visualizations_by_ID.get(region.region_ID, null)
+	if region_frame != null and is_instance_valid(region_frame):
+		_spawn_indicator_for_node_center(region_frame)
+
 func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_should_show_combo_buttons = show_combo_buttons
 	_representing_region = region

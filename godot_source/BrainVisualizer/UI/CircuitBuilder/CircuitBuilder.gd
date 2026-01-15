@@ -409,12 +409,36 @@ func focus_on_region(region: BrainRegion) -> void:
 	if node == null:
 		return
 	_center_on_graph_element(node)
+	_bring_node_to_front_and_jiggle(node)
 
 func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(area)
 	if node == null:
 		return
 	_center_on_graph_element(node)
+	_bring_node_to_front_and_jiggle(node)
+
+## Ensure the chosen node is on top and visually emphasized.
+func _bring_node_to_front_and_jiggle(node: GraphElement) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	# Raise above overlapping nodes in the GraphEdit canvas.
+	var parent_node := node.get_parent()
+	if parent_node != null:
+		parent_node.move_child(node, parent_node.get_child_count() - 1)
+	node.z_index = 4096
+	# Soft jiggle without changing graph position (avoid triggering moves).
+	var original_rotation: float = node.rotation
+	var original_scale: Vector2 = node.scale
+	node.pivot_offset = node.size * 0.5
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(node, "rotation", original_rotation + 0.06, 0.08)
+	tween.tween_property(node, "rotation", original_rotation - 0.06, 0.08)
+	tween.tween_property(node, "rotation", original_rotation, 0.08)
+	tween.tween_property(node, "scale", original_scale * 1.03, 0.08)
+	tween.tween_property(node, "scale", original_scale, 0.1)
 
 func _center_on_graph_element(element: GraphElement) -> void:
 	# Determine a target zoom to fit the node comfortably in the current viewport, then zoom out a bit

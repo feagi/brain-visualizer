@@ -290,6 +290,8 @@ func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
 		if _bm_scene.has_method("focus_on_brain_region"):
 			_bm_scene.focus_on_brain_region(region)
+			if _bm_scene.has_method("flash_indicator_for_brain_region"):
+				_bm_scene.flash_indicator_for_brain_region(region)
 		else:
 			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 		return
@@ -298,6 +300,8 @@ func _focus_region(region: BrainRegion) -> void:
 		if active_bm and active_bm.get_pancake_camera():
 			if active_bm.has_method("focus_on_brain_region"):
 				active_bm.focus_on_brain_region(region)
+				if active_bm.has_method("flash_indicator_for_brain_region"):
+					active_bm.flash_indicator_for_brain_region(region)
 			else:
 				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 			return
@@ -313,6 +317,8 @@ func _focus_cortical(area: AbstractCorticalArea) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
 		if _bm_scene.has_method("focus_on_cortical_area"):
 			_bm_scene.focus_on_cortical_area(area)
+			if _bm_scene.has_method("flash_indicator_for_cortical_area"):
+				_bm_scene.flash_indicator_for_cortical_area(area)
 		else:
 			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
 			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
@@ -322,6 +328,8 @@ func _focus_cortical(area: AbstractCorticalArea) -> void:
 		if active_bm and active_bm.get_pancake_camera():
 			if active_bm.has_method("focus_on_cortical_area"):
 				active_bm.focus_on_cortical_area(area)
+				if active_bm.has_method("flash_indicator_for_cortical_area"):
+					active_bm.flash_indicator_for_cortical_area(area)
 			else:
 				var center_pos2 = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
 				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos2)
