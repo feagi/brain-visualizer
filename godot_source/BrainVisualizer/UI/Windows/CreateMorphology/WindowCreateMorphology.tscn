@@ -34,13 +34,20 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
 [node name="Header" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Select Connectivity Rule Type:"
+
+[node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
 
 [node name="Options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
 script = ExtResource("3_2s0i3")
 
 [node name="Vector" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("4_ujsmp")]
@@ -140,12 +147,13 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "TEX"
+theme_type_variation = &"Label_Header"
+text = "Rule Name"
 
 [node name="Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
-placeholder_text = " Type Rule Name Here..."
+placeholder_text = "Type rule name..."
 script = ExtResource("3_6i23i")
 
 [node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_c1klg")]
@@ -163,19 +171,25 @@ layout_mode = 2
 [node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Description"
 
 [node name="Description_text" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
-custom_minimum_size = Vector2(0, 120)
+custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
-placeholder_text = " Type your custom description here..."
+placeholder_text = "Type your custom description here..."
 script = ExtResource("12_koy8n")
+
+[node name="SeparatorButtons" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 4
+alignment = 2
+theme_override_constants/separation = 8
 
 [node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 custom_minimum_size = Vector2(128, 64)
