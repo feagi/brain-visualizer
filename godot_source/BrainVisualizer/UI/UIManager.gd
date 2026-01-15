@@ -679,6 +679,8 @@ func _update_screen_size():
 ## Used to reposition notifications so they dont intersect with top bar
 func _top_bar_resized() -> void:
 	_notification_system.position.y = _top_bar.size.y + _top_bar.position.y
+	if has_node("/root/BrainVisualizer/UIManager/CB_Holder"):
+		$CB_Holder.offset_top = _top_bar.position.y + _top_bar.size.y + 8
 
 func _load_new_theme(theme: Theme) -> void:
 	var scalar: Vector2 = Vector2(1,1)
